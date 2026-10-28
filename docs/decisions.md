@@ -9,14 +9,13 @@ The owner's other open items are in [backlog.md](backlog.md), "Needs the user". 
 
 - **A21, the F-Droid recipe's qalc build (P22):** `fdroid/README.md` names the open answer. Until F-Droid says whether checked-in derived data (`find/factors.yaml`) is acceptable, the recipe keeps its libxml2 and libqalculate builds, unchanged. Yes: before C4 it drops both. No: it runs `tools/find-index/refresh-factors.mjs` and fails on a diff.
 
-- **R4a:** (1) before R24c a unit picked in Find is a chip Enter refuses ("units come with the unit view"); or draw units disabled in Home and CAS? (2) the empty query's ten categories are ours (`find/categories.ts`): rename or reorder?
 
 ## Decided proposals
 
 Newest first within each group.
 
 ### Pipeline and process
-- **Owner answers of 2026-10-28 (after the day shift).** Home shows a one-element `seq[…]` as its value, a longer sequence as a list in braces (G119, F108).
+- **Owner answers of 2026-10-28 (after the day shift).** Home shows a one-element `seq[…]` as its value, a longer sequence as a list in braces (G119, F108); after R4a (`b9f0042`): until R24c, units show disabled in Find ("units come with the unit view"), no chip Enter refuses (R90, no package yet); Find's ten categories stay.
 - **Owner answers of 2026-10-26, afternoon (the after-night report checked).** One green night is enough for a new core case (S24's c61–c66); R4a's gate includes G114 (F108). Full text: archive.
 - **Owner answers of 2026-10-26 (after the eleventh night).** G112's rule (one list as the only argument is refused for every name the probe finds) stands until F107 narrows it; F101 and F104 are G113, before R4a. Full text: archive.
 - **Owner answers of 2026-10-25, afternoon (verification check).** A wall-clock test that fails only under load is a timing case, not a bug (`isTiming`); the gate gets the pipeline's retry list (A39). Would change if: a timing case fails without load. Full text: archive.

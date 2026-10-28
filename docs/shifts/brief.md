@@ -10,7 +10,7 @@
 **The freeze ended** on 2026-10-27, before its count: repeated green runs added nothing, and the mornings' failures were UI (c46: F110, F117), not the engine. **The net stays:** every merge runs the core list (R74; [tests/core/core.yaml](../../tests/core/core.yaml), 66 cases, 63 active, 3 waiting for Find), night.sh runs the device's core list after each Opus pass when the night has a device (A33, A41), and the owner's [morning check](../../tests/core/MORNING.md) runs on the night's device. A red result is a bug to fix (a FIX of the next Opus pass, or a backlog bug line past a day of work), not a gate. **The pace** (owner, 2026-10-27): about two weeks of Claude Max are left (to about 2026-11-10). Each night carries about 9 hours of real work, the most important steps first, so a usage limit late costs the least; the day runs what needs the owner's eye.
 
 **By day, one pipeline at a time** (owner, 2026-10-18), each after the one before is merged; the lane that needs the owner's look:
-1. **Find:** R4a (G113, G114 and R72 merged on 2026-10-28), then a split of the start chunk (no package yet: it is cut on R4a's start chunk; R83 raised the budget to 61 kB, owner 2026-10-27, and the Settings base needs room), then R4b (after R15c3 and R49).
+1. **Find:** R4a merged (`b9f0042`, 2026-10-28; R90 by day), then a split of the start chunk (no package yet: it is cut on R4a's start chunk; R83 raised the budget to 61 kB, owner 2026-10-27, and the Settings base needs room), then R4b (after R15c3 and R49).
 2. **The Settings base** (owner, 2026-10-27; decisions.md "Settings in the Mode sheet, and presets"; [mockups/settings.html](../mockups/settings.html)): R85, R49, R86, R57 (R4b sets the free keys in R49's levels; the comma is the owner's daily use); then R50e, R87 (before A7), R70, R15c4, R38a → R38b, R59; R88 (after R4b, R57, R50e) → R89; R55 (after R15c4); R53; R12b → R12c → R41; R36, R33 → R37, R40.
 3. **The units:** R24b → R24c → R24d, R60–R63, R71; G81 with them.
 4. **annabell on devices:** A9 with the owner's phone (F41); A43 (an update keeps the data; before A7); A4b after R4b; A7 → A8 on the owner's go.
@@ -26,7 +26,6 @@
 
 | # | Package | Agent, model | Lane | Starts when merged | Size |
 |---|---|---|---|---|---|
-| [R4a](packages/R4a.md) | Find on Math | ron, Opus (P17: input) | day | now | ~2 d |
 | [R85](packages/R85.md) | Shift + Fmt opens Mode | ron, Sonnet | day | now | ~0.25 d |
 | [A9](packages/A9.md) | Key vibration on the owner's phone | annabell, Sonnet | day (device) | the phone connected | ~0.5 d |
 | [A43](packages/A43.md) | An app update keeps the user's data (before A7) | annabell, Sonnet | day (device) | now | ~0.5 d |
