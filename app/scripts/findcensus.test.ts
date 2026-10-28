@@ -178,6 +178,13 @@ describe("findcensus classes", () => {
     expect(rawText("znorder", "undef", "home", "znorder(17,0.5)")).toBe("undef");
     expect(classify("diff", "cas", "diff(x^2,x)", answer({ text: "2*x" }), null)).toEqual({ cls: "symbolic", detail: "2*x" });
   });
+  it("calls Giac's sequence print raw (G114): alone or inside a list, not a name that merely holds seq", () => {
+    expect(rawText("fMin", "seq[1/2]", "home", "fMin(x^2-x,x)")).toBe("a sequence");
+    expect(rawText("fMax", "[seq[1,2],3]", "cas", "fMax(-x^2,x)")).toBe("a sequence");
+    expect(rawText("seqsolve", "seqsolve(x)", "cas", "seqsolve(x)")).toBeNull();
+    expect(rawText("f", "myseq[1]+seqs", "cas", "f(x)")).toBeNull();
+    expect(classify("fMin", "home", "fMin(x^2-x,x)", answer({ text: "seq[1/2]" }), null).cls).toBe("raw");
+  });
   it("calls an unevaluated call on numbers raw in Home, and in CAS only with a float in it (an exact form otherwise)", () => {
     expect(onNumbers("Ei(1)")).toBe(true);
     expect(onNumbers("sin(pasdeg*x)")).toBe(false);
