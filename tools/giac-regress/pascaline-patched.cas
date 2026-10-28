@@ -320,6 +320,27 @@ Digits:=40:; pc("g121-atan-tan-4i-12",'(atan(tan(4*i)))',4*i,5/10^12);
 // patch 0013-asin-ln-real-rules.patch
 // g121-atan-tan-neg3+4i-12 (precision.yaml, oracle)
 Digits:=40:; pc("g121-atan-tan-neg3+4i-12",'(atan(tan(-3+4*i)))',(14159265359/10^11)+4*i,5/10^13+5/10^12);
+// patch 0013-asin-ln-real-rules.patch
+// g125-asin-cos-asin10-12 (precision.yaml, oracle)
+Digits:=40:; pc("g125-asin-cos-asin10-12",'(asin(cos(asin(10))))',(299322284613/10^11)*i,5/10^12);
+// patch 0013-asin-ln-real-rules.patch
+// g125-asin-cos-asin10-30 (precision.yaml, oracle)
+Digits:=40:; pc("g125-asin-cos-asin10-30",'(asin(cos(asin(10))))',(299322284612638089791266771377/10^29)*i,5/10^30);
+// patch 0013-asin-ln-real-rules.patch
+// g125-asin-cos-asin-neg3-12 (precision.yaml, oracle)
+Digits:=40:; pc("g125-asin-cos-asin-neg3-12",'(asin(cos(asin(-3))))',(176274717404/10^11)*i,5/10^12);
+// patch 0013-asin-ln-real-rules.patch
+// g125-acos-cos-acos10-12 (precision.yaml, oracle)
+Digits:=40:; pc("g125-acos-cos-acos10-12",'(acos(cos(acos(10))))',(299322284613/10^11)*i,5/10^12);
+// patch 0013-asin-ln-real-rules.patch
+// g125-asin-sin-ln-neg2-12 (precision.yaml, oracle)
+Digits:=40:; pc("g125-asin-sin-ln-neg2-12",'(asin(sin(ln(-2))))',(69314718056/10^11)+(314159265359/10^11)*i,5/10^13+5/10^12);
+// patch 0013-asin-ln-real-rules.patch
+// g125-acos-sin-neg1-2i-12 (precision.yaml, oracle)
+Digits:=40:; pc("g125-acos-sin-neg1-2i-12",'(acos(sin(-1-2*i)))',(257079632679/10^11)+2*i,5/10^12+5/10^12);
+// patch 0013-asin-ln-real-rules.patch
+// g125-acos-cos-2+3i-12 (precision.yaml, oracle)
+Digits:=40:; pc("g125-acos-cos-2+3i-12",'(acos(cos(2+3*i)))',2+3*i,5/10^12+5/10^12);
 // patch 0012-abs-power-real-base.patch
 // g118-abs-acos-pi-sq-12 (precision.yaml, oracle)
 Digits:=40:; pc("g118-abs-acos-pi-sq-12",'(abs(acos(pi))^2)',(328162743582/10^11),5/10^12);

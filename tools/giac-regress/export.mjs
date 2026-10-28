@@ -178,7 +178,7 @@ export const KNOWN_IDS = new Set([
   "g71-census-tri-sin1e70",
 ]);
 // The ids that pass on our patched build and fail on stock giac_2.1.0-1 (found by matching the cases the tests and canaries of patches
-// 0003 and 0005 name (tanh-test.ts, mpfr-pi-test.ts, patch-canary.ts) and the ids of G75 and G60; G111's g111-* of patch 0007; G113's g113-* of patch 0009 (g113-poisson_cdf-2.5 passes on stock, a guard in the check file); G113f1's ties of patch 0010; G115's g115-* of patch 0011; G118's g118-* of patch 0012; G121's g116-* and g121-* of patch 0013; G122's g122-* of patch 0014. Each id was run on the stock build (engine/giac/_out/release) and fails there; ln(-pi)-30 passes on stock at these Digits, so it stays in the check file; the g60-f5 and g78-novalue lines seemed to pass on stock until G118 (their difference is an MPFR NaN, printed undef, that pc() took for a pass). g58-acos-5!^(2.5+5!)-30 has budgetMs, so it is left out as a time guard): [id, the patch file the line rests on]. They go to pascaline-patched.cas, not to the check file.
+// 0003 and 0005 name (tanh-test.ts, mpfr-pi-test.ts, patch-canary.ts) and the ids of G75 and G60; G111's g111-* of patch 0007; G113's g113-* of patch 0009 (g113-poisson_cdf-2.5 passes on stock, a guard in the check file); G113f1's ties of patch 0010; G115's g115-* of patch 0011; G118's g118-* of patch 0012; G121's g116-* and g121-* and G125's g125-* of patch 0013; G122's g122-* of patch 0014. Each id was run on the stock build (engine/giac/_out/release) and fails there; ln(-pi)-30 passes on stock at these Digits, so it stays in the check file; the g60-f5 and g78-novalue lines seemed to pass on stock until G118 (their difference is an MPFR NaN, printed undef, that pc() took for a pass). g58-acos-5!^(2.5+5!)-30 has budgetMs, so it is left out as a time guard): [id, the patch file the line rests on]. They go to pascaline-patched.cas, not to the check file.
 export const PATCHED_IDS = new Map([
   ["prec-g50-tanh(i)-12", "0003-complex-tanh-mpfr.patch"],
   ["prec-g50-tanh(i)-30", "0003-complex-tanh-mpfr.patch"],
@@ -299,6 +299,15 @@ export const PATCHED_IDS = new Map([
   ["g121-acos-cos-2i-12", "0013-asin-ln-real-rules.patch"],
   ["g121-atan-tan-4i-12", "0013-asin-ln-real-rules.patch"],
   ["g121-atan-tan-neg3+4i-12", "0013-asin-ln-real-rules.patch"],
+  // G125: asin/acos of sin/cos of a complex w that patch 0013 already covers (stock: the real-w rules, F112's 0.148*i); the guard
+  // g125-asin-cos-1/3-12 passes on stock and stays in the check file
+  ["g125-asin-cos-asin10-12", "0013-asin-ln-real-rules.patch"],
+  ["g125-asin-cos-asin10-30", "0013-asin-ln-real-rules.patch"],
+  ["g125-asin-cos-asin-neg3-12", "0013-asin-ln-real-rules.patch"],
+  ["g125-acos-cos-acos10-12", "0013-asin-ln-real-rules.patch"],
+  ["g125-asin-sin-ln-neg2-12", "0013-asin-ln-real-rules.patch"],
+  ["g125-acos-sin-neg1-2i-12", "0013-asin-ln-real-rules.patch"],
+  ["g125-acos-cos-2+3i-12", "0013-asin-ln-real-rules.patch"],
   // G122: asin(sin(a)) with a large n = round(a/pi) (stock: the odd branch for an even n past 32 bits, n from a at Digits 40); the DEG cases
   // g122-deg-* are left out (angle mode), the CAS guards g122-cas-* too (CAS view), and the CANCELS_IDS
   ["g122-asin-cos-20!-12", "0014-asin-big-reduction.patch"],
