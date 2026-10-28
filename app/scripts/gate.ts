@@ -11,6 +11,7 @@ import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, isAbsolute, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { oracleVenvPython, setupLine, touchesG2 } from "./g2check.ts";
 import { countAll, evalOutside, judge, readBaseline, totals, writeBaseline } from "./text-rules.ts";
 import {
   duration, formatLine, playwrightFailedSpecs, retryable, summarizeDocs, summarizeGolden, summarizePlaywright, summarizeCasBack, summarizeSeqSweep, summarizeSize, summarizeSweep, summarizeViewSweep, summarizeFindCensus, summarizeTypecheck, regeneratesIndex, selectsGolden, summarizeVitest, vitestFailures,
@@ -234,6 +235,18 @@ const checks: Check[] = [
       // S7: every link resolves, and the brief, backlog, decisions, docs/04 and each package file stay within their budgets
       const r = run("docs", "node", [join(repo, "tools/docs-check.mjs")], {}, 60_000, repo);
       return summarizeDocs(r.out, r.code);
+    },
+  },
+  {
+    // G79: G2-CHECKLIST.md is generated from g2.yaml; a hand edit fails (oracle.py --g2 --check)
+    name: "g2check",
+    skip: () => (changed !== null && !touchesG2(changed, repo) ? `no g2.yaml, G2-CHECKLIST.md or g2-linked golden file changed against ${base}` : null),
+    run: () => {
+      const py = oracleVenvPython(repo, mainCheckout);
+      if (!py) return { ok: false, detail: `no oracle venv; set it up: ${setupLine}` };
+      const r = run("g2check", py, [join(repo, "tests/golden/oracle.py"), "--g2", "--check"], {}, 5 * 60_000, repo);
+      const bad = r.out.split("\n").filter((l) => l.startsWith("PROBLEM"));
+      return r.code === 0 ? { ok: true, detail: "checklist matches g2.yaml" } : { ok: false, detail: bad.length ? bad.slice(0, 3).join("; ") : `exit ${r.code}` };
     },
   },
 ];
