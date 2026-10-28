@@ -356,10 +356,11 @@ export function renameNames(text: string, to: ReadonlyMap<string, string>, q: Qu
 }
 
 /** `text` with every number literal (`12`, `2.5`, `.5`, `1e-3`, `1.2E5`; not inside a name, `x1`, `0x1F`, nor a
- *  string) replaced by `f` of its mantissa and exponent part (`e-3`, or undefined) where `f` gives a text. */
+ *  string) replaced by `f` of its mantissa and exponent part (`e-3`, or undefined) where `f` gives a text. G117: `..`
+ *  is Giac's range operator, so a number ends before it and one starts right after it (`1.5..3` is 1.5 and 3). */
 export function mapNumbers(text: string, f: (mant: string, exp: string | undefined) => string | null, q: Quoting): string {
   const t = withoutStrings(text, (x) => " ".repeat(x.length), q);
-  const re = new RegExp(`${NAME}|(\\d+\\.\\d*|\\.\\d+|\\d+)([eE][+-]?\\d+)?`, "g");
+  const re = new RegExp(`${NAME}|(\\d+\\.(?!\\.)\\d*|(?<!\\.)\\.\\d+|\\d+)([eE][+-]?\\d+)?`, "g");
   let out = "";
   let i = 0;
   for (let m = re.exec(t); m; m = re.exec(t)) {
