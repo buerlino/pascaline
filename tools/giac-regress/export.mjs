@@ -99,6 +99,7 @@ export function caseLine(c, file) {
   if (c.mark === "⚠" && /(?<![A-Za-z_0-9])int\(/.test(c.input)) return { leftOut: "shown value from Home's numeric integration (G90), not Giac's answer" };
   // G111: Home shows the double of a function with no MPFR path (igamma), which Giac keeps unevaluated at Digits 40
   if (c.id.startsWith("g111-") && c.mark === "⚠" && /no MPFR path/.test(c.note ?? "")) return { leftOut: "a double of a function with no MPFR path (Home's value, G111)" };
+  if (CANCELS_IDS.has(c.id)) return { leftOut: "an exact answer whose evalf at Digits 40 cancels a large k*pi (Home raises the precision, G122)" };
   if (c.expect === undefined) return { leftOut: "mark only (no value)" };
   if (partsOf(c.expect) === null) return { leftOut: "not a number (refusal, text, list or truth value)" };
   const digits = file === "home.yaml" ? 12 : (s.digits ?? 12); // the home stage evaluates at 12 digits whatever settings.digits says
@@ -177,7 +178,7 @@ export const KNOWN_IDS = new Set([
   "g71-census-tri-sin1e70",
 ]);
 // The ids that pass on our patched build and fail on stock giac_2.1.0-1 (found by matching the cases the tests and canaries of patches
-// 0003 and 0005 name (tanh-test.ts, mpfr-pi-test.ts, patch-canary.ts) and the ids of G75 and G60; G111's g111-* of patch 0007; G113's g113-* of patch 0009 (g113-poisson_cdf-2.5 passes on stock, a guard in the check file); G113f1's ties of patch 0010; G115's g115-* of patch 0011; G118's g118-* of patch 0012; G121's g116-* and g121-* of patch 0013. Each id was run on the stock build (engine/giac/_out/release) and fails there; ln(-pi)-30 passes on stock at these Digits, so it stays in the check file; the g60-f5 and g78-novalue lines seemed to pass on stock until G118 (their difference is an MPFR NaN, printed undef, that pc() took for a pass). g58-acos-5!^(2.5+5!)-30 has budgetMs, so it is left out as a time guard): [id, the patch file the line rests on]. They go to pascaline-patched.cas, not to the check file.
+// 0003 and 0005 name (tanh-test.ts, mpfr-pi-test.ts, patch-canary.ts) and the ids of G75 and G60; G111's g111-* of patch 0007; G113's g113-* of patch 0009 (g113-poisson_cdf-2.5 passes on stock, a guard in the check file); G113f1's ties of patch 0010; G115's g115-* of patch 0011; G118's g118-* of patch 0012; G121's g116-* and g121-* of patch 0013; G122's g122-* of patch 0014. Each id was run on the stock build (engine/giac/_out/release) and fails there; ln(-pi)-30 passes on stock at these Digits, so it stays in the check file; the g60-f5 and g78-novalue lines seemed to pass on stock until G118 (their difference is an MPFR NaN, printed undef, that pc() took for a pass). g58-acos-5!^(2.5+5!)-30 has budgetMs, so it is left out as a time guard): [id, the patch file the line rests on]. They go to pascaline-patched.cas, not to the check file.
 export const PATCHED_IDS = new Map([
   ["prec-g50-tanh(i)-12", "0003-complex-tanh-mpfr.patch"],
   ["prec-g50-tanh(i)-30", "0003-complex-tanh-mpfr.patch"],
@@ -298,6 +299,25 @@ export const PATCHED_IDS = new Map([
   ["g121-acos-cos-2i-12", "0013-asin-ln-real-rules.patch"],
   ["g121-atan-tan-4i-12", "0013-asin-ln-real-rules.patch"],
   ["g121-atan-tan-neg3+4i-12", "0013-asin-ln-real-rules.patch"],
+  // G122: asin(sin(a)) with a large n = round(a/pi) (stock: the odd branch for an even n past 32 bits, n from a at Digits 40); the DEG cases
+  // g122-deg-* are left out (angle mode), the CAS guards g122-cas-* too (CAS view), and the CANCELS_IDS
+  ["g122-asin-cos-20!-12", "0014-asin-big-reduction.patch"],
+  ["g122-acos-sin-20!-12", "0014-asin-big-reduction.patch"],
+  ["g122-asin-sin-20!-12", "0014-asin-big-reduction.patch"],
+  ["g122-acos-cos-20!-12", "0014-asin-big-reduction.patch"],
+  ["g122-asin-sin-1e20-12", "0014-asin-big-reduction.patch"],
+]);
+// G122: Giac's exact answer is right (patch 0014), but pc()'s evalf of it at Digits 40 cancels the digits of a large k*pi
+// (asin(cos(30!)) = -pi/2+30!-k*pi with k of 32 digits keeps about 7, -pi/2+10^50-k*pi none); Home raises the precision
+// until the digits agree, so the golden gate checks these cases and the regression file leaves them out.
+export const CANCELS_IDS = new Set([
+  "g116-asin-cos-30!-12",
+  "g122-asin-cos-1e50-12",
+  "g122-acos-sin-1e50-12",
+  "g122-asin-sin-1e50-12",
+  "g122-acos-cos-1e50-12",
+  "g122-asin-cos-1e50-30",
+  "g122-acos-sin-1e20-30",
 ]);
 export const knownReason = (id) => (KNOWN_IDS.has(id) ? KNOWN_RULES.find(([re]) => re.test(id))?.[1] : undefined);
 

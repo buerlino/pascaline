@@ -57,6 +57,9 @@ const CANARIES: [string, string, RegExp, string][] = [
   ["0013-asin-ln-real-rules.patch", "giac-2.1.0/src/usual.cc", /^\/\/ ln\(a\^b\)\s*if \(is_positive\(a,contextptr\)\)\s*return b\*ln\(a,contextptr\);/, "// ln(a^b)"],
   // atan(tan(a)) = a-n*pi with n = floor(a/pi+1/2) of the double of any a, real or not (atan(tan(4*i)) = 4*i-i*pi)
   ["0013-asin-ln-real-rules.patch", "giac-2.1.0/src/usual.cc", /gen tmp2=evalf_double\(e\._SYMBptr->feuille,0,contextptr\);\s*if \(tmp2\.type<_IDNT\)\s*tmp2=_floor\(tmp2\/tmp\+plus_one_half,contextptr\);/, "if (atan_tan_no_floor(contextptr))"],
+  // G122, patch 0014: asin(sin(a)) = +-(a-n*pi) takes n = round(a/pi) from a at the current Digits and tests the parity of an _INT_ n only
+  // (asin(cos(30!)) = 0.221 for -0.221, asin(sin(10^50)) at Digits 40 near 1.4e10)
+  ["0014-asin-big-reduction.patch", "giac-2.1.0/src/usual.cc", /gen n=_round\(a\/cste,contextptr\);\s*b=a-n\*cste; \/\/ in \[-pi\/2,pi\/2\]\s*if \(n\.type==_INT_ && n\.val%2==0\)/, "// asin(sin(a))==a-2*k*pi or pi-a-2*k*pi"],
   // G96, patch 0006: symb_reim takes a non-integer power of a base of unknown sign as real (r=s, i=0)
   ["0006-reim-root-of-unknown-sign.patch", "giac-2.1.0/src/gen.cc", /is_positive\(-e,contextptr\)\)\{\s*r=pow\(-e,expo,contextptr\)\*cos\(cst_pi\*expo,contextptr\);\s*i=pow\(-e,expo,contextptr\)\*sin\(cst_pi\*expo,contextptr\);\s*\}\s*else \{\s*r=s;\s*i=0;/, "sommei.push_back(signei*(*it)*pow(r,n-j)*pow(i,j));"],
 ];
