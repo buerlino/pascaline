@@ -3,8 +3,10 @@
 // browser is idle after the engine is ready, or on the first Math press. The index is a Vite asset outside every
 // chunk (find-index.<hash>.json), fetched here and prepared once. No usage ranking and nothing stored (P11).
 import indexUrl from "./_gen/find-index.json?url";
+import type { AppShell } from "../apps/shell.svelte.ts";
 import type { MenuItem } from "../apps/types.ts";
-import { t } from "../i18n/index.ts";
+import type { EntryController } from "../entry/controller.ts";
+import { findText as t } from "../i18n/enFind.ts";
 import { CATEGORIES, categoryItems } from "./categories.ts";
 import { prepare, search, type PreparedIndex } from "./rank.ts";
 import type { FindItem, IndexItem } from "./types.ts";
@@ -47,7 +49,7 @@ const LOG_IDS = new Set(["unit:dB", "unit:dBm", "unit:dBW", "unit:bel", "unit:Np
 /** A unit's mark in its row: a pick of it would not convert (R4a, finding 17). */
 export function unitNote(it: FindItem): string | undefined {
   if (it.kind !== "unit" || it.si !== undefined) return undefined;
-  return LOG_IDS.has(it.id) || /^Np/.test(it.dim ?? "") ? t("find.convertsOnly") : t("find.noFactor");
+  return LOG_IDS.has(it.id) || /^Np/.test(it.dim ?? "") ? t("convertsOnly") : t("noFactor");
 }
 
 /** The highlighted item's details, under the list (docs/04 3.6): syntax and line, a value with its uncertainty. */
@@ -55,9 +57,9 @@ export function preview(it: FindItem): string {
   const name = shownName(it);
   const parts: string[] = [];
   if (it.kind === "fn" || it.kind === "tmpl") parts.push(it.syntax ?? `${name}(…)`, it.desc ?? it.title);
-  else if (it.kind === "const") parts.push(`${name} = ${it.value ?? "?"}${it.unit ? ` ${it.unit}` : ""}`, it.unc ? `± ${it.unc}` : t("find.exact"));
-  else parts.push(it.title, it.si !== undefined ? t("find.factor", { si: it.si }) : (unitNote(it) ?? ""));
-  if (it.tier === 1) parts.push(t("find.notChecked"));
+  else if (it.kind === "const") parts.push(`${name} = ${it.value ?? "?"}${it.unit ? ` ${it.unit}` : ""}`, it.unc ? `± ${it.unc}` : t("exact"));
+  else parts.push(it.title, it.si !== undefined ? t("factor", { si: it.si }) : (unitNote(it) ?? ""));
+  if (it.tier === 1) parts.push(t("notChecked"));
   return parts.filter(Boolean).join(" · ");
 }
 
@@ -87,4 +89,17 @@ export function constChipOf(it: FindItem): { id: string; symbol: string; chip: {
   if (it.kind !== "const" || !m || it.value === undefined) return undefined;
   const chip = it.unc === undefined ? { value: it.value, exact: true } : { value: it.value, exact: false, unc: it.unc };
   return { id: m[1] as string, symbol: m[2] as string, chip };
+}
+
+/** Math (R4a): Find over the history or view, as a list that takes letters (decisions.md R21). A pick (docs/04 3.6)
+ *  puts a constant on the line as a chip with its value and uncertainty, anything else as its insert (a function
+ *  with the cursor in its first argument). */
+export function showFind(shell: AppShell, entry: EntryController, index: FindIndex): void {
+  const pick = (it: FindItem): void => {
+    const c = constChipOf(it);
+    if (c) entry.insertConst(c.id, c.symbol, c.chip);
+    else entry.run({ kind: "insert", latex: it.insert });
+  };
+  const { categories, search } = findMenu(index, pick);
+  shell.showFind(t("title"), categories, search);
 }

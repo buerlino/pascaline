@@ -37,7 +37,6 @@
   };
 
   import { paletteAction, paletteItems } from "./views/tmplSheet.ts";
-  import type { FindItem } from "./find/types.ts";
   // Find (R4a) is its own chunk with the index beside it: both load when the browser is idle after the engine is ready
   // (docs/04 3.3), or on the first Math press.
   type FindCode = { m: typeof import("./find/finder.ts"); index: import("./find/finder.ts").FindIndex };
@@ -193,14 +192,13 @@
     if (shiftPalettes) open(shiftPalettes);
     else void loadShiftPalettes().then(open);
   }
-  /** Math (R4a): Find over the history or view, as a list that takes letters (decisions.md R21). Until its code and the
-   *  index are in, every key waits in the queue (decisions.md R8). A view without an entry line has nothing to insert into. */
+  /** Math (R4a): Find (find/finder.ts). Until its code and the index are in, every key waits in the queue (decisions.md
+   *  R8). A view without an entry line has nothing to insert into. */
   function openFind(): void {
     if (!shell.showsEntry) return dead();
     const show = (f: FindCode): void => {
       picked = null;
-      const { categories, search } = f.m.findMenu(f.index, insertFound);
-      shell.showFind(t("find.title"), categories, search);
+      f.m.showFind(shell, entry, f.index);
     };
     if (findCode && sheetChunk.C) return show(findCode);
     sheetLoad = Promise.all([loadFind(), loadSheetView()]).then(
@@ -213,13 +211,6 @@
         dead();
       },
     );
-  }
-  /** A Find pick (docs/04 3.6): a constant as a chip with its value and uncertainty, anything else as its insert (a
-   *  function with the cursor in its first argument). */
-  function insertFound(it: FindItem): void {
-    const c = findCode?.m.constChipOf(it);
-    if (c) entry.insertConst(c.id, c.symbol, c.chip);
-    else entry.run({ kind: "insert", latex: it.insert });
   }
   function insertTemplate(p: PaletteItem): void {
     entry.run(paletteAction(p, session.settings.entry === "line"));
