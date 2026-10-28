@@ -45,6 +45,20 @@ test("switching apps never focuses an element that opens the system keyboard", a
   await expectNoSystemKeyboard(page, "Function Symb again");
 });
 
+test("Find (R4a) has no <input>: open, typing and a pick never focus an element that opens the system keyboard", async ({ page }) => {
+  await tap(page, ["math"]);
+  const find = page.getByTestId("find");
+  await expect(find).toBeVisible();
+  await expectNoSystemKeyboard(page, "Find open");
+  await tap(page, ["tmpl"]);
+  await expect(find.getByTestId("sheet-filter")).toHaveText("c");
+  expect(await find.locator("input, textarea, [contenteditable]").count()).toBe(0);
+  await expectNoSystemKeyboard(page, "Find with a query");
+  await find.getByRole("menuitem").first().tap();
+  await expect(find).toBeHidden();
+  await expectNoSystemKeyboard(page, "after a Find pick");
+});
+
 /** The deepest focused element is editable (the entry field's input, or an editor). */
 const editableFocused = (page: Page) => focused(page).then((f) => f.editable);
 
