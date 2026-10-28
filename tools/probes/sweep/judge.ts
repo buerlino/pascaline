@@ -11,6 +11,8 @@ export type Oracle = { kind: "value"; re: string; im: string } | { kind: "novalu
 /** What Home showed for the input, in the shape the worker thread sends back. `hang` is a missed deadline (the worker was killed). */
 export interface Shown {
   hang?: true;
+  /** G116: the engine died on the input (G94: wasm memory out of bounds); the runner restarted it. */
+  crash?: true;
   ok?: boolean;
   error?: string;
   display?: string;
@@ -20,10 +22,10 @@ export interface Shown {
   n?: number;
 }
 
-export type VerdictKind = "ok" | "wrong" | "novalue" | "hang" | "skip" | "refused" | "nonnumber";
+export type VerdictKind = "ok" | "wrong" | "novalue" | "hang" | "crash" | "skip" | "refused" | "nonnumber";
 export interface Verdict {
   kind: VerdictKind;
-  /** The failed check, for the known-failures list: `=`, `≈`, `⚠n`, `part` (a part not shown or shown against a 0), `novalue`, `hang`. */
+  /** The failed check, for the known-failures list: `=`, `≈`, `⚠n`, `part` (a part not shown or shown against a 0), `novalue`, `hang`, `crash`. */
   check?: string;
   detail?: string;
 }
@@ -89,6 +91,7 @@ const tinyRel = (a: Dec, b: Dec, p: number): boolean => atMost(sub(a, b), 2n, ma
  */
 export function judge(shown: Shown, oracle: Oracle, digits: number): Verdict {
   if (shown.hang) return { kind: "hang", check: "hang", detail: "no answer before the deadline" };
+  if (shown.crash) return { kind: "crash", check: "crash", detail: (shown.display ?? "").slice(0, 80) };
   if (oracle.kind === "skip") return { kind: "skip", detail: oracle.reason };
   if (!shown.ok) {
     return { kind: "refused", detail: `${shown.error ?? "error"}: ${shown.display ?? ""}`.slice(0, 80) };

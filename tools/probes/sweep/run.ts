@@ -5,6 +5,7 @@ import { existsSync } from "node:fs";
 import { resolve } from "node:path";
 import { Worker } from "node:worker_threads";
 import { latexToGiac } from "../../../app/src/input/latex-to-giac.ts";
+import { generateEdges } from "./edges.ts";
 import { generate, PINNED } from "./gen.ts";
 import { judge, type Oracle, type Shown, type Verdict } from "./judge.ts";
 import type { Job } from "./worker.ts";
@@ -21,11 +22,13 @@ export interface Judged extends Run {
   ms: number;
 }
 
-/** The runs of a seed: the pinned inputs, then every tree in RAD at 12 or 30 digits, trees with an angle function also in DEG. Duplicates dropped. */
-export function runsOf(seed: number, count: number): Run[] {
+/** The runs of a seed: the pinned inputs, then every tree in RAD at 12 or 30 digits, trees with an angle function also in DEG. Duplicates dropped.
+ * With `edges` (G116) the trees are edges.ts's and the pinned inputs (the gate's) are left out. */
+export function runsOf(seed: number, count: number, edges = false): Run[] {
   const seen = new Set<string>();
   const out: Run[] = [];
-  const all = [...PINNED.map((c) => ({ c, digits: 12 as const })), ...generate(seed, count).map((c, i) => ({ c, digits: (i % 2 === 0 ? 12 : 30) as 12 | 30 }))];
+  const trees = (edges ? generateEdges(seed, count) : generate(seed, count)).map((c, i) => ({ c, digits: (i % 2 === 0 ? 12 : 30) as 12 | 30 }));
+  const all = [...(edges ? [] : PINNED.map((c) => ({ c, digits: 12 as const }))), ...trees];
   all.forEach(({ c, digits }) => {
     for (const angle of c.angle ? (["rad", "deg"] as const) : (["rad"] as const)) {
       const key = `${angle} ${digits} ${c.latex}`;
@@ -82,6 +85,7 @@ export class Runner {
         clearTimeout(t);
         w.off("message", on);
         w.off("error", onErr);
+        w.off("exit", onExit);
         res(s);
       };
       const on = (m: { id: number; shown: Shown }): void => {
@@ -93,10 +97,12 @@ export class Runner {
         void w.terminate();
         done(s);
       };
-      const onErr = (e: Error): void => kill({ ok: false, error: "engine", display: `worker error: ${e.message}` });
+      const onErr = (e: Error): void => kill({ ok: false, crash: true, error: "engine", display: `worker error: ${e.message}` });
+      const onExit = (code: number): void => kill({ ok: false, crash: true, error: "engine", display: `worker exit ${code}` });
       const t = setTimeout(() => kill({ hang: true }), this.deadlineMs);
       w.on("message", on);
       w.on("error", onErr);
+      w.once("exit", onExit);
       w.postMessage(job);
     });
   }
@@ -111,6 +117,13 @@ export interface SweepResult {
   judged: Judged[];
   refused: number;
   restarts: number;
+}
+
+/** One run through the host (the runner's worker) and the judge. */
+export async function judgeOne(runner: Runner, run: Run, giac: string, oracle: Oracle): Promise<Judged> {
+  const t0 = performance.now();
+  const shown = await runner.run(giac, run.angle, run.digits);
+  return { ...run, verdict: judge(shown, oracle, run.digits), shown, ms: performance.now() - t0 };
 }
 
 /** Runs and judges every run, one worker with a deadline per case; it never stops early. */
@@ -130,9 +143,7 @@ export async function sweep(runs: readonly Run[], oracles: readonly Oracle[], de
         judged.push({ ...run, verdict: { kind: "skip", detail: `parser refused: ${(e as Error).message.slice(0, 60)}` }, ms: 0 });
         continue;
       }
-      const t0 = performance.now();
-      const shown = await runner.run(giac, run.angle, run.digits);
-      judged.push({ ...run, verdict: judge(shown, oracle, run.digits), shown, ms: performance.now() - t0 });
+      judged.push(await judgeOne(runner, run, giac, oracle));
     }
   } finally {
     await runner.close();

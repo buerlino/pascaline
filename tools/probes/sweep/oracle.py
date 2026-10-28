@@ -72,6 +72,10 @@ def ACOSH(x):
 
 
 def ATANH(x):
+    # G116: on the cut (a real |x| > 1) mpmath takes the lower side (atanh(3) = 0.35 - 1.57i); the oracle takes the textbook
+    # 1/2 ln((1+x)/(1-x)) with the principal ln, which is Giac's (+1.57i). A convention, written down in the G116 report.
+    if not isinstance(x, mpc) and abs(x) > 1:
+        return log((1 + x) / (1 - x)) / 2
     return atanh(x)
 
 
