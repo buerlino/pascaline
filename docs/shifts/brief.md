@@ -10,13 +10,13 @@
 **The freeze ended** on 2026-10-27, before its count: repeated green runs added nothing, and the mornings' failures were UI (c46: F110, F117), not the engine. **The net stays:** every merge runs the core list (R74; [tests/core/core.yaml](../../tests/core/core.yaml), 66 cases, 63 active, 3 waiting for Find), night.sh runs the device's core list after each Opus pass when the night has a device (A33, A41), and the owner's [morning check](../../tests/core/MORNING.md) runs on the night's device. A red result is a bug to fix (a FIX of the next Opus pass, or a backlog bug line past a day of work), not a gate. **The pace** (owner, 2026-10-27): about two weeks of Claude Max are left (to about 2026-11-10). Each night carries about 9 hours of real work, the most important steps first, so a usage limit late costs the least; the day runs what needs the owner's eye.
 
 **By day, one pipeline at a time** (owner, 2026-10-18), each after the one before is merged; the lane that needs the owner's look:
-1. **Find:** R4a (after G113 and G114; R72 first, which tonight's queue holds), then a split of the start chunk (no package yet: it is cut on R4a's start chunk; R83 raised the budget to 61 kB, owner 2026-10-27, and the Settings base needs room), then R4b (after R15c3 and R49).
+1. **Find:** R4a (G113, G114 and R72 merged on 2026-10-28), then a split of the start chunk (no package yet: it is cut on R4a's start chunk; R83 raised the budget to 61 kB, owner 2026-10-27, and the Settings base needs room), then R4b (after R15c3 and R49).
 2. **The Settings base** (owner, 2026-10-27; decisions.md "Settings in the Mode sheet, and presets"; [mockups/settings.html](../mockups/settings.html)): R85, R49, R86, R57 (R4b sets the free keys in R49's levels; the comma is the owner's daily use); then R50e, R87 (before A7), R70, R15c4, R38a → R38b, R59; R88 (after R4b, R57, R50e) → R89; R55 (after R15c4); R53; R12b → R12c → R41; R36, R33 → R37, R40.
 3. **The units:** R24b → R24c → R24d, R60–R63, R71; G81 with them.
 4. **annabell on devices:** A9 with the owner's phone (F41); A43 (an update keeps the data; before A7); A4b after R4b; A7 → A8 on the owner's go.
 5. **Every morning:** the owner's check (MORNING.md, on the night's device when the night had one, about 10 minutes). The day session writes each failed step as a backlog bug line on phase-1 and logs one line in `.coord/log.md`: `- HH:MM morning <date>: clean` or `- HH:MM morning <date>: fails <ids>`.
 
-**At night, the night-safe lane** (section 0c; no APK, no eye on the UI): first what the next day's work waits for (R4a: G113, G114, R72), then silent wrong numbers and everyday bugs by reach (G115, G117, G118), the engine fuzzer G116, tools (A26, G79); the shortest steps last. **The nightly fuzz** (owner, 2026-10-27): from the night of 2026-10-28, once G116 is merged, every night runs `node scripts/sweep.ts --nightly --edges` once with its triage; that night's planner writes the step into 0c, sized by G116's report (time per 1,000 trees). A package whose lane says day runs by day, whatever room a night has.
+**At night, the night-safe lane** (section 0c; no APK, no eye on the UI): silent wrong numbers and everyday bugs by reach (G115, G117, G118), the engine fuzzer G116, tools (A26, G79); the shortest steps last. **The nightly fuzz** (owner, 2026-10-27): from the night of 2026-10-28, once G116 is merged, every night runs `node scripts/sweep.ts --nightly --edges` once with its triage; that night's planner writes the step into 0c, sized by G116's report (time per 1,000 trees). A package whose lane says day runs by day, whatever room a night has.
 
 **No package yet** (backlog, by reach): F73 and F107 (they waited for the end of the freeze), F80, F85, F70, F71; the background stream F61, F62, F86, F112, F114, G94, F106; what G116 finds. S20 (the MPFI spike) by day.
 
@@ -26,7 +26,7 @@
 
 | # | Package | Agent, model | Lane | Starts when merged | Size |
 |---|---|---|---|---|---|
-| [R4a](packages/R4a.md) | Find on Math | ron, Opus (P17: input) | day | G113, G114, R72 | ~2 d |
+| [R4a](packages/R4a.md) | Find on Math | ron, Opus (P17: input) | day | now | ~2 d |
 | [R85](packages/R85.md) | Shift + Fmt opens Mode | ron, Sonnet | day | now | ~0.25 d |
 | [A9](packages/A9.md) | Key vibration on the owner's phone | annabell, Sonnet | day (device) | the phone connected | ~0.5 d |
 | [A43](packages/A43.md) | An app update keeps the user's data (before A7) | annabell, Sonnet | day (device) | now | ~0.5 d |
@@ -52,9 +52,6 @@ Estimates are wall-clock guesses from the log (a package 25 min to 2 h from star
 
 | Step | What | Agent, model | Branch | After | Est. |
 |---|---|---|---|---|---|
-| 136 | [G113](packages/G113.md): a probability off the integers is 0; negbinomial_icdf exact (F101, F104) | gorge, Opus | `p1/gorge-pmfint` | — | 75 min |
-| 137 | [G114](packages/G114.md): the census sees Giac's sequence answers (F108) | gorge, Sonnet | `p1/gorge-censusseq` | — | 40 min |
-| 138 | [R72](packages/R72.md): parse.ts in three files, no behaviour change (before R4a by day) | ron, Opus | `p1/ron-m4a-parsesplit` | — | 50 min |
 | 139 | [G115](packages/G115.md): atan near 1 is not π/4 (F113) | gorge, Opus | `p1/gorge-atannearone` | — | 75 min |
 | 140 | [A26](packages/A26.md): the docs check sees every live doc | annabell, Sonnet | `p1/annabell-docsindex` | — | 25 min |
 | 141 | [G116](packages/G116.md): the engine fuzzer, the oracle sweep at the edges | gorge, Opus | `p1/gorge-fuzz` | — | 2 h |
