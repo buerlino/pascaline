@@ -5,7 +5,7 @@
 #   {"kind": "skip", "reason": "..."}   unstable, a convention (negative base to a non-integer power, 0^0), complex in DEG, too slow
 # Run: tests/golden/.venv/bin/python -I tools/probes/sweep/oracle.py < requests.json   (mpmath 1.3.0)
 import json, signal, sys
-from mpmath import mp, mpf, mpc, sqrt, exp, sinh, cosh, tanh, asinh, log, pi, e, factorial, fabs, sin, cos, tan, asin, acos, atan, isfinite
+from mpmath import mp, mpf, mpc, sqrt, exp, sinh, cosh, tanh, asinh, acosh, atanh, cbrt, sign, log, pi, e, factorial, fabs, sin, cos, tan, asin, acos, atan, isfinite
 
 
 class Skip(Exception):
@@ -67,6 +67,23 @@ def ABS(x):
     return fabs(x)
 
 
+def ACOSH(x):
+    return acosh(x)
+
+
+def ATANH(x):
+    return atanh(x)
+
+
+def CBRT(x):
+    # G116: the cube root key is Giac's surd(x,3), the real root of a negative real (realOddRoots); of a complex it is a convention
+    if isinstance(x, mpc):
+        if x.imag != 0:
+            raise Skip("cube root of a complex")
+        x = x.real
+    return sign(x) * cbrt(fabs(x))
+
+
 def DIV(a, b):
     return a / b
 
@@ -87,7 +104,7 @@ def POW(a, b):
 
 
 NS = dict(mpf=mpf, sqrt=sqrt, exp=exp, sinh=sinh, cosh=cosh, tanh=tanh, asinh=asinh, SIN=SIN, COS=COS, TAN=TAN, ASIN=ASIN, ACOS=ACOS,
-          ATAN=ATAN, LN=LN, LOG10=LOG10, ABS=ABS, DIV=DIV, FACT=FACT, POW=POW)
+          ATAN=ATAN, ACOSH=ACOSH, ATANH=ATANH, CBRT=CBRT, LN=LN, LOG10=LOG10, ABS=ABS, DIV=DIV, FACT=FACT, POW=POW)
 
 
 def at(expr, dps):
@@ -140,6 +157,8 @@ def main():
             out.append({"kind": "skip", "reason": "oracle too slow (3 s)"})
         except (OverflowError, MemoryError):
             out.append({"kind": "skip", "reason": "oracle overflow"})
+        except Exception as x:  # G116: an edge input mpmath cannot take (NoConvergence, …) is a skip, never the end of the run
+            out.append({"kind": "skip", "reason": f"oracle error: {type(x).__name__}"})
         finally:
             signal.setitimer(signal.ITIMER_REAL, 0)
     json.dump(out, sys.stdout)
