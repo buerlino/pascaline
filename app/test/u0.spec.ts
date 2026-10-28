@@ -104,9 +104,9 @@ test("every key reserves a legend line above its face, and every key in a row wi
 const dead = async (page: import("@playwright/test").Page, id: string): Promise<boolean> =>
   (await page.locator(`[data-key="${id}"]`).getAttribute("data-dead")) === "true";
 
-test("finding 3: Vars and Math are dimmed in the plain layer, Tmpl opens its palette (R10); all three type A, B, C in Alpha", async ({ page }) => {
-  for (const id of ["vars", "math"]) expect(await dead(page, id), `${id} plain`).toBe(true);
-  expect(await dead(page, "tmpl"), "tmpl plain").toBe(false);
+test("finding 3: Vars is dimmed in the plain layer, Math opens Find (R4a), Tmpl its palette (R10); all three type A, B, C in Alpha", async ({ page }) => {
+  expect(await dead(page, "vars"), "vars plain").toBe(true);
+  for (const id of ["math", "tmpl"]) expect(await dead(page, id), `${id} plain`).toBe(false);
   await tap(page, ["alpha"]);
   for (const id of ["vars", "math", "tmpl"]) expect(await dead(page, id), `${id} alpha`).toBe(false);
   await tap(page, ["vars"]); // the A

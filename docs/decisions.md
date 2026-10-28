@@ -9,6 +9,8 @@ The owner's other open items are in [backlog.md](backlog.md), "Needs the user". 
 
 - **A21, the F-Droid recipe's qalc build (P22):** `fdroid/README.md` names the open answer. Until F-Droid says whether checked-in derived data (`find/factors.yaml`) is acceptable, the recipe keeps its libxml2 and libqalculate builds, unchanged. Yes: before C4 it drops both. No: it runs `tools/find-index/refresh-factors.mjs` and fails on a diff.
 
+- **R4a:** (1) before R24c a unit picked in Find is a chip Enter refuses ("units come with the unit view"); or draw units disabled in Home and CAS? (2) the empty query's ten categories are ours (`find/categories.ts`): rename or reorder?
+
 ## Decided proposals
 
 Newest first within each group.
