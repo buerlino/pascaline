@@ -283,9 +283,10 @@ export const PATCHED_IDS = new Map([
   ["g118-abs-acos-pi-6-12", "0012-abs-power-real-base.patch"],
   ["g118-abs-acos-pi-3-12", "0012-abs-power-real-base.patch"],
   ["g118-abs-of-acos-pi-sq-12", "0012-abs-power-real-base.patch"],
-  // G121: asin(sin(z)), acos(cos(z)) and ln(a^b) of a complex z, b (stock: Giac's real-argument rules, i*pi-z and b*ln(a)); the guards
-  // g121-ln-2^(1+i)-12, g121-ln-neg-pi^(3/2)-12, g121-asin-sin-2-12, g121-asin-sin-neg3-12, g121-acos-cos-4-12, g121-asin-sin-sqrt-neg2-12 and
-  // g121-asin-sin-1+i-sqrt2-12 pass on stock and stay in the check file
+  // G121: asin(sin(z)), acos(cos(z)), atan(tan(z)) and ln(a^b) of a complex z, b (stock: Giac's real-argument rules, i*pi-z, z-i*pi and
+  // b*ln(a)); the guards g121-ln-2^(1+i)-12, g121-ln-neg-pi^(3/2)-12, g121-asin-sin-2-12, g121-asin-sin-neg3-12, g121-acos-cos-4-12,
+  // g121-asin-sin-sqrt-neg2-12, g121-asin-sin-1+i-sqrt2-12, g121-atan-tan-2i-12, g121-atan-tan-1+i-12 and g121-atan-tan-2-12 pass on stock
+  // and stay in the check file
   ["g116-asin-sin-sqrt-neg-pi-30", "0013-asin-ln-real-rules.patch"],
   ["g116-acos-cos-ln-neg-pi-30", "0013-asin-ln-real-rules.patch"],
   ["g116-ln-2^(10i)-12", "0013-asin-ln-real-rules.patch"],
@@ -293,6 +294,10 @@ export const PATCHED_IDS = new Map([
   ["g121-asin-cos-2i-12", "0013-asin-ln-real-rules.patch"],
   ["g121-ln-2^(10i)-30", "0013-asin-ln-real-rules.patch"],
   ["g121-ln-2^(-7i)-12", "0013-asin-ln-real-rules.patch"],
+  ["g116-asin-sin-2i-12", "0013-asin-ln-real-rules.patch"],
+  ["g121-acos-cos-2i-12", "0013-asin-ln-real-rules.patch"],
+  ["g121-atan-tan-4i-12", "0013-asin-ln-real-rules.patch"],
+  ["g121-atan-tan-neg3+4i-12", "0013-asin-ln-real-rules.patch"],
 ]);
 export const knownReason = (id) => (KNOWN_IDS.has(id) ? KNOWN_RULES.find(([re]) => re.test(id))?.[1] : undefined);
 

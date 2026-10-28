@@ -273,6 +273,9 @@ Digits:=40:; pc("g115-atan-1-1e-9-30",'(atan(1-1/10^9))',(7853981628974483093656
 // g115-atan-1+1e-10-30 (precision.yaml, oracle)
 Digits:=40:; pc("g115-atan-1+1e-10-30",'(atan(1+10^-10))',(78539816344744830961316084582/10^29),5/10^31);
 // patch 0013-asin-ln-real-rules.patch
+// g116-asin-sin-2i-12 (precision.yaml, oracle)
+Digits:=40:; pc("g116-asin-sin-2i-12",'(asin(sin(2*i)))',2*i,5/10^12);
+// patch 0013-asin-ln-real-rules.patch
 // g116-asin-sin-sqrt-neg-pi-30 (precision.yaml, oracle)
 Digits:=40:; pc("g116-asin-sin-sqrt-neg-pi-30",'(asin(sin(sqrt(-pi))))',(177245385090551602729816748334/10^29)*i,5/10^30);
 // patch 0013-asin-ln-real-rules.patch
@@ -281,6 +284,9 @@ Digits:=40:; pc("g116-acos-cos-ln-neg-pi-30",'(acos(cos(ln(-pi))))',(11447298858
 // patch 0013-asin-ln-real-rules.patch
 // g116-ln-2^(10i)-12 (precision.yaml, oracle)
 Digits:=40:; pc("g116-ln-2^(10i)-12",'(ln(2^(10*i)))',(64828649842/10^11)*i,5/10^13);
+// patch 0013-asin-ln-real-rules.patch
+// g121-acos-cos-2i-12 (precision.yaml, oracle)
+Digits:=40:; pc("g121-acos-cos-2i-12",'(acos(cos(2*i)))',2*i,5/10^12);
 // patch 0013-asin-ln-real-rules.patch
 // g121-acos-cos-sqrt-neg2-12 (precision.yaml, oracle)
 Digits:=40:; pc("g121-acos-cos-sqrt-neg2-12",'(acos(cos(sqrt(-2))))',(141421356237/10^11)*i,5/10^12);
@@ -293,6 +299,12 @@ Digits:=40:; pc("g121-ln-2^(10i)-30",'(ln(2^(10*i)))',(6482864984198666172470344
 // patch 0013-asin-ln-real-rules.patch
 // g121-ln-2^(-7i)-12 (precision.yaml, oracle)
 Digits:=40:; pc("g121-ln-2^(-7i)-12",'(ln(2^(-7*i)))',(143115504326/10^11)*i,5/10^12);
+// patch 0013-asin-ln-real-rules.patch
+// g121-atan-tan-4i-12 (precision.yaml, oracle)
+Digits:=40:; pc("g121-atan-tan-4i-12",'(atan(tan(4*i)))',4*i,5/10^12);
+// patch 0013-asin-ln-real-rules.patch
+// g121-atan-tan-neg3+4i-12 (precision.yaml, oracle)
+Digits:=40:; pc("g121-atan-tan-neg3+4i-12",'(atan(tan(-3+4*i)))',(14159265359/10^11)+4*i,5/10^13+5/10^12);
 // patch 0012-abs-power-real-base.patch
 // g118-abs-acos-pi-sq-12 (precision.yaml, oracle)
 Digits:=40:; pc("g118-abs-acos-pi-sq-12",'(abs(acos(pi))^2)',(328162743582/10^11),5/10^12);

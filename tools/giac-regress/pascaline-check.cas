@@ -627,6 +627,12 @@ Digits:=40:; pc("g121-asin-sin-2-12",'(asin(sin(2)))',(114159265359/10^11),5/10^
 Digits:=40:; pc("g121-asin-sin-neg3-12",'(asin(sin(-3)))',-(14159265359/10^11),5/10^13);
 // g121-acos-cos-4-12 (precision.yaml, oracle)
 Digits:=40:; pc("g121-acos-cos-4-12",'(acos(cos(4)))',(228318530718/10^11),5/10^12);
+// g121-atan-tan-2i-12 (precision.yaml, oracle)
+Digits:=40:; pc("g121-atan-tan-2i-12",'(atan(tan(2*i)))',2*i,5/10^12);
+// g121-atan-tan-1+i-12 (precision.yaml, oracle)
+Digits:=40:; pc("g121-atan-tan-1+i-12",'(atan(tan(1+i)))',1+i,5/10^12+5/10^12);
+// g121-atan-tan-2-12 (precision.yaml, oracle)
+Digits:=40:; pc("g121-atan-tan-2-12",'(atan(tan(2)))',-(114159265359/10^11),5/10^12);
 // g117-home-sum-range (precision.yaml, derived)
 Digits:=40:; pc("g117-home-sum-range",'(sum(x^2,x=1..3))',14,5/10^11);
 // g118-abs-asin2-4-30 (precision.yaml, oracle)
