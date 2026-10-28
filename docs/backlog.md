@@ -73,8 +73,7 @@ The one place for "where are we and what's left", one or two lines per open item
 - **F109, no package.** Home `DelAVars()` shows `DelAVars`, its own name: no answer and no refusal. Family 5.
 - **F112, G125 (S16).** Home `asin(cos(asin(10)))` ≈ 0.148369807463·i, right 2.99322284613·i on either branch: Giac's exact form adds `i*pi` (`MODE=raw … 'asin(cos(asin(10)))'`).
 - **F114, G126 (S16).** Home `asin(tan(2)-10^5040)` at 30 digits ⚠ 2 -1.6-1E4·i, right -1.5708+11605.722·i: cancellation in Giac's log form; G116: `acos(-10^20+1/2)` ⚠ 12 3.14159265359-21.4875625974·i (right 3.14159265359-46.7448490404·i; golden pending g116-acos-neg-1e20-half-12), `asinh(-10^1250)` ⚠ 1 1E3+3·i. Family 6.
-- **F119, G121 (G116).** Home `asin(sin(2*i))` ≈ 1.14159265359·i (right 2·i), `acos(cos(ln(-π)))` ≈ 1.99686276774 (right 1.14472988585+3.14159265359·i): Giac's exact `asin(sin(z))` = `i*pi-z`, `acos(cos(z))` = `(1+i)*pi-z` are rules for real z. Golden pending g116-asin-sin-*, g116-acos-cos-*. Family 3.
-- **F120, G121 (G116).** Home `ln(2^(10*i))` ≈ 6.9314718056·i (right 0.64828649842·i): Giac's `ln(a^b)` = `b*ln(a)`, a rule for real b. Golden pending g116-ln-2^(10i)-12. Family 3.
+- **F119 rest, G121 (patch 0013).** The values are right since G121; `asin(sin(2*i))` and `acos(cos(2*i))` (exactly 2·i) now show ≈, not =, since Giac leaves them unevaluated. Golden pending g116-asin-sin-2i-12, g121-acos-cos-2i-12; decision in decisions.md (G121).
 - **F121, G122 (G116).** Home `asin(cos(30!))` ≈ 0.221312219023 (right -0.221312219023): Giac's `-pi/2+n-k*pi` takes k at too few digits. Golden pending g116-asin-cos-30!-12. Family 3.
 - **F122, no package (G116).** Home `(atan(ln(-π)+9007199254740993))^(sin(10^-300)-10^300)` kills the engine (stack overflow inside Giac's wasm). G94's kind.
 - **F123, G123 (G116).** Home `1.000000000000001^(10^50)` shows ⚠ 12 1 (about 10^(4.3·10^34), an overflow). Family 6.
