@@ -51,8 +51,6 @@ Estimates are wall-clock guesses from the log (a package 25 min to 2 h from star
 
 | Step | What | Agent, model | Branch | After | Est. |
 |---|---|---|---|---|---|
-| 192 | **G121** Giac's real-only rewrites on complex arguments (F119, F120); engine patch | gorge, Opus | p1/gorge-realrules | — | 2 h |
-| 193 | **G122** asin(cos(30!)) has the wrong sign (F121); likely an engine patch | gorge, Opus | p1/gorge-bigreduce | — | 1.5 h |
 | 194 | **G125** asin(cos(asin(10))) is wrong (F112); likely an engine patch | gorge, Opus | p1/gorge-asincos | — | 1 h |
 | 195 | **G126** inverse functions of huge arguments lose their digits but keep their mark (F114) | gorge, Opus | p1/gorge-hugeinverse | — | 1.5 h |
 | 196 | **G119** Home shows seq[…] as a value or a list (F108) | gorge, Opus | p1/gorge-seqshow | — | 1 h |
