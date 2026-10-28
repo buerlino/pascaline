@@ -38,6 +38,20 @@ describe("toExactLiterals", () => {
   });
 });
 
+describe("a range a..b is not a decimal (G117, F83)", () => {
+  it.each([
+    ["1..3", "1..3"],
+    ["sum(x^2,x=1..3)", "sum(x^2,x=1..3)"],
+    ["1.5..3", "(15/10^1)..3"],
+    ["0..1e1", "0..(1*10^1)"],
+    ["int(x,x=0..1.5)", "int(x,x=0..(15/10^1))"],
+  ])("%s -> %s, and restoreLiterals gives the typed text back", async (input, out) => {
+    const { restoreLiterals } = await import("./homeEval.ts");
+    expect(toExactLiterals(input)).toBe(out);
+    expect(restoreLiterals(out, input)).toBe(input);
+  });
+});
+
 describe("restoreLiterals (G14)", () => {
   it("puts typed decimals back into a kept test", async () => {
     const { restoreLiterals } = await import("./homeEval.ts");
