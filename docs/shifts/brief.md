@@ -16,7 +16,7 @@
 4. **annabell on devices:** A9 with the owner's phone (F41); A43 (an update keeps the data; before A7); A4b after R4b; A7 → A8 on the owner's go.
 5. **Every morning:** the owner's check (MORNING.md, on the night's device when the night had one, about 10 minutes). The day session writes each failed step as a backlog bug line on phase-1 and logs one line in `.coord/log.md`: `- HH:MM morning <date>: clean` or `- HH:MM morning <date>: fails <ids>`.
 
-**At night, the night-safe lane** (section 0c; no APK, no eye on the UI): silent wrong numbers and everyday bugs by reach (G115, G117, G118), the engine fuzzer G116, tools (A26, G79); the shortest steps last. **The nightly fuzz** (owner, 2026-10-27): from the night of 2026-10-28, once G116 is merged, every night runs `node scripts/sweep.ts --nightly --edges` once with its triage; that night's planner writes the step into 0c, sized by G116's report (time per 1,000 trees). A package whose lane says day runs by day, whatever room a night has.
+**At night, the night-safe lane** (section 0c; no APK, no eye on the UI): silent wrong numbers and everyday bugs by reach (G117, G118), the engine fuzzer G116, tools (A26, G79); the shortest steps last. **The nightly fuzz** (owner, 2026-10-27): from the night of 2026-10-28, once G116 is merged, every night runs `node scripts/sweep.ts --nightly --edges` once with its triage; that night's planner writes the step into 0c, sized by G116's report (time per 1,000 trees). A package whose lane says day runs by day, whatever room a night has.
 
 **No package yet** (backlog, by reach): F73 and F107 (they waited for the end of the freeze), F80, F85, F70, F71; the background stream F61, F62, F86, F112, F114, G94, F106; what G116 finds. S20 (the MPFI spike) by day.
 
@@ -52,8 +52,6 @@ Estimates are wall-clock guesses from the log (a package 25 min to 2 h from star
 
 | Step | What | Agent, model | Branch | After | Est. |
 |---|---|---|---|---|---|
-| 139 | [G115](packages/G115.md): atan near 1 is not π/4 (F113) | gorge, Opus | `p1/gorge-atannearone` | — | 75 min |
-| 140 | [A26](packages/A26.md): the docs check sees every live doc | annabell, Sonnet | `p1/annabell-docsindex` | — | 25 min |
 | 141 | [G116](packages/G116.md): the engine fuzzer, the oracle sweep at the edges | gorge, Opus | `p1/gorge-fuzz` | — | 2 h |
 | 142 | [G117](packages/G117.md): a range a..b is not a decimal (F83) | gorge, Opus | `p1/gorge-rangeliteral` | — | 45 min |
 | 143 | [G118](packages/G118.md): abs squared of a complex number (F111) | gorge, Opus | `p1/gorge-abssquare` | — | 75 min |

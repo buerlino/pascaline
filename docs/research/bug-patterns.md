@@ -151,6 +151,7 @@ Checked and right today: `Digits:=5` typed in CAS does not leak into Home (the h
 | r16-F5 | `⚠ 14` where 12 or 13 digits are right (`asin(sinh(π))·e^(44.4)` and four more) | asin and acos of a real \|x\|>1 return a double; outer functions amplify it | **proposed G60** |
 | r16-F6 | `√(asinh(cos 10))` shows a real part 4.7E-15 under ⚠ 13 | Giac's sqrt of that value; every digit of the real part is noise | **proposed G60** |
 | n19 2.7 | CAS stored tanh, see family 1 | | **merged G56 `c4e68e9`** |
+| F113 | DEG `atan(cos(0.001))` = `= 45` (right 44.9999999956) | Giac's atan accepted a pi/12 multiple on a double test at 1e-7 with no exact check | fixed G115 (patch 0011) `e6155f8` |
 
 **Hunt.**
 - **Functions with a hidden double:** if `evalf(f(x),30)` and `evalf(f(x),60)` print the same double digits, there is no MPFR path. Candidates: Bessel and Airy, complex inverse trig and asinh, complex Gamma, zeta, erf of complex, LambertW, the incomplete gamma, hypergeometric, polylog. Also the functions that return floats on the exact path (normald_icdf, romberg, nInt, fsolve).
