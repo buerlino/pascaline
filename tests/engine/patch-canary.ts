@@ -50,6 +50,11 @@ const CANARIES: [string, string, RegExp, string][] = [
   // G118, patch 0012: pow takes abs(b)^n as b^n (even n) when b has no literal i, real or not (abs(acos(pi))^2 = acos(pi)^2)
   ["0012-abs-power-real-base.patch", "giac-2.1.0/src/gen.cc", /if \(u==at_abs && exponent\.type==_INT_ && !complex_mode\(contextptr\) && !has_i\(base\)\)\{/, "if (u==at_unit){"],
   ["0012-abs-power-real-base.patch", "giac-2.1.0/src/gen.cc", /if \(\(exponent % 2==0\) && base\._SYMBptr->sommet==at_abs\)\s*return/, "gen pow(const gen & base, unsigned long int exponent){"],
+  // G121, patch 0013: asin(sin(a)) = +-(a-n*pi) (and asin(cos(a)), acos(cos(a)) through it) for any a with a numeric value, real or not
+  // (asin(sin(2*i)) = i*pi-2*i); the symbolic form of the same rule; ln(a^b) = b*ln(a) for a > 0 and any b (ln(2^(10*i)) = 10*i*ln(2))
+  ["0013-asin-ln-real-rules.patch", "giac-2.1.0/src/usual.cc", /^e=symbolic\(at_sin,cste\/2-e\._SYMBptr->feuille\);\s*if \(e\.is_symb_of_sommet\(at_sin\) && has_evalf\(e\._SYMBptr->feuille,a,1,contextptr\)\)\{/, "e=symbolic(at_sin,cste/2-e._SYMBptr->feuille);"],
+  ["0013-asin-ln-real-rules.patch", "giac-2.1.0/src/usual.cc", /if \(e\.is_symb_of_sommet\(at_sin\)\)\{\s*a=e\._SYMBptr->feuille;\s*gen n=_round\(a\/cste,contextptr\);/, "e=symbolic(at_sin,cste/2-e._SYMBptr->feuille);"],
+  ["0013-asin-ln-real-rules.patch", "giac-2.1.0/src/usual.cc", /^\/\/ ln\(a\^b\)\s*if \(is_positive\(a,contextptr\)\)\s*return b\*ln\(a,contextptr\);/, "// ln(a^b)"],
   // G96, patch 0006: symb_reim takes a non-integer power of a base of unknown sign as real (r=s, i=0)
   ["0006-reim-root-of-unknown-sign.patch", "giac-2.1.0/src/gen.cc", /is_positive\(-e,contextptr\)\)\{\s*r=pow\(-e,expo,contextptr\)\*cos\(cst_pi\*expo,contextptr\);\s*i=pow\(-e,expo,contextptr\)\*sin\(cst_pi\*expo,contextptr\);\s*\}\s*else \{\s*r=s;\s*i=0;/, "sommei.push_back(signei*(*it)*pow(r,n-j)*pow(i,j));"],
 ];
