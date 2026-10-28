@@ -29,6 +29,20 @@ const CANARIES: [string, string, RegExp, string][] = [
   ["0007-densities-outside-support.patch", "giac-2.1.0/src/moyal.cc", /return apply2nd\(n,x,contextptr,chisquare\);\s*gen n2=n\/2;/, "gen chisquare(const gen & n,const gen & x,GIAC_CONTEXT){"],
   // G111, patch 0008: _fracmod passes any modulus to fracmod, whose in_fracmod takes mpz_sqrt of a negative one (a trap)
   ["0008-fracmod-positive-modulus.patch", "giac-2.1.0/src/usual.cc", /vecteur & v=\*args\._VECTptr;\s*return fracmod\(v\[0\],v\[1\]\);/, "gen _fracmod(const gen & args,GIAC_CONTEXT){"],
+  // G113, patch 0009: a discrete pmf or cdf at a k off the integers took the formula (poisson(2,3/2) = 0.288)
+  ["0009-pmf-integer-support.patch", "giac-2.1.0/src/moyal.cc", /if \(k\.type==_DOUBLE_ \|\| k\.type==_FLOAT_ \|\| k\.type==_FRAC\)\{\s*if \(p\.type==_DOUBLE_ \|\| p\.type==_FLOAT_ \|\| p\.type==_FRAC\)/, "gen binomial(const gen & N,const gen & K,const gen & P,GIAC_CONTEXT){"],
+  ["0009-pmf-integer-support.patch", "giac-2.1.0/src/moyal.cc", /swapgen\(k,p\);\s*if \(is_zero\(k\)\)\s*return pow\(p,r,contextptr\);/, "gen _negbinomial(const gen & g,GIAC_CONTEXT){"],
+  ["0009-pmf-integer-support.patch", "giac-2.1.0/src/moyal.cc", /gen n=v\[0\],p=v\[1\],k=v\[2\];\s*return _Beta\(makesequence\(n,k\+1,p,1\),contextptr\);/, "gen _negbinomial_cdf(const gen & g,GIAC_CONTEXT){"],
+  // negbinomial_cdf(n,p,k1,k2) is cdf(k2)-cdf(k1), which leaves k1 out (aide_cas: Proba(x<=X<=y))
+  ["0009-pmf-integer-support.patch", "giac-2.1.0/src/moyal.cc", /return _Beta\(makesequence\(n,k2\+1,p,1\),contextptr\)-_Beta\(makesequence\(n,k1\+1,p,1\),contextptr\);/, "gen _negbinomial_cdf(const gen & g,GIAC_CONTEXT){"],
+  // negbinomial_icdf reads T._DOUBLE_val of an unconverted T (an exact 1/5 reads as 0)
+  ["0009-pmf-integer-support.patch", "giac-2.1.0/src/moyal.cc", /gen R=v\[0\],P=evalf_double\(v\[1\],1,contextptr\),T=v\[2\];/, "gen _negbinomial_icdf(const gen & g,GIAC_CONTEXT){"],
+  ["0009-pmf-integer-support.patch", "giac-2.1.0/src/moyal.cc", /return apply2nd\(m,k,contextptr,poisson\);\s*gen M=evalf_double\(m,1,contextptr\);/, "gen poisson(const gen & m,const gen & k,GIAC_CONTEXT){"],
+  ["0009-pmf-integer-support.patch", "giac-2.1.0/src/moyal.cc", /^gen poisson_cdf\(const gen & lambda_,const gen & x,GIAC_CONTEXT\)\{\s*gen fx=_floor\(x,contextptr\);/, "gen poisson_cdf(const gen & lambda_,const gen & x,GIAC_CONTEXT){"],
+  ["0009-pmf-integer-support.patch", "giac-2.1.0/src/moyal.cc", /return poisson_cdf\(v\[0\],v\[2\],contextptr\)-poisson_cdf\(v\[0\],v\[1\]-1,contextptr\);/, "gen _poisson_cdf(const gen & g,GIAC_CONTEXT){"],
+  ["0009-pmf-integer-support.patch", "giac-2.1.0/src/moyal.cc", /gen K\(k\);\s*if \(is_positive\(-k,contextptr\)\)\s*return gensizeerr\(contextptr\);\s*return pow\(1-p,k-1,contextptr\)\*p;/, "gen geometric(const gen & p,const gen & k,GIAC_CONTEXT){"],
+  ["0009-pmf-integer-support.patch", "giac-2.1.0/src/moyal.cc", /if \(is_strictly_positive\(-k,contextptr\)\)\s*return gensizeerr\(contextptr\);\s*return 1-pow\(1-p,k,contextptr\);/, "gen geometric_cdf(const gen & p,const gen & k,GIAC_CONTEXT){"],
+  ["0009-pmf-integer-support.patch", "giac-2.1.0/src/moyal.cc", /return geometric_cdf\(v\[0\],v\[2\],contextptr\)-geometric_cdf\(v\[0\],v\[1\]-1,contextptr\);/, "gen _geometric_cdf(const gen & g,GIAC_CONTEXT){"],
   // G96, patch 0006: symb_reim takes a non-integer power of a base of unknown sign as real (r=s, i=0)
   ["0006-reim-root-of-unknown-sign.patch", "giac-2.1.0/src/gen.cc", /is_positive\(-e,contextptr\)\)\{\s*r=pow\(-e,expo,contextptr\)\*cos\(cst_pi\*expo,contextptr\);\s*i=pow\(-e,expo,contextptr\)\*sin\(cst_pi\*expo,contextptr\);\s*\}\s*else \{\s*r=s;\s*i=0;/, "sommei.push_back(signei*(*it)*pow(r,n-j)*pow(i,j));"],
 ];
