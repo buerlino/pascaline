@@ -221,6 +221,12 @@ Digits:=40:; pc("g113-negbinomial_icdf-decimal",'(negbinomial_icdf(3,(5/10^1),(2
 // patch 0009-pmf-integer-support.patch
 // g113-negbinomial_icdf-0.7 (precision.yaml, oracle)
 Digits:=40:; pc("g113-negbinomial_icdf-0.7",'(negbinomial_icdf(3,1/2,7/10))',4,5/10^12);
+// patch 0010-negbinomial-icdf-exact.patch
+// g113f1-negbinomial_icdf-tie-1 (precision.yaml, oracle)
+Digits:=40:; pc("g113f1-negbinomial_icdf-tie-1",'(negbinomial_icdf(3,1/3,1/9))',1,5/10^12);
+// patch 0010-negbinomial-icdf-exact.patch
+// g113f1-negbinomial_icdf-tie-2 (precision.yaml, oracle)
+Digits:=40:; pc("g113f1-negbinomial_icdf-tie-2",'(negbinomial_icdf(3,1/3,17/81))',2,5/10^12);
 // patch 0006-reim-root-of-unknown-sign.patch
 // g96-cas-im-2sqrt (bench.yaml, derived)
 Digits:=40:; pc("g96-cas-im-2sqrt",'subst(im(2*sqrt(x)),x,-1)',2,1/10^30);

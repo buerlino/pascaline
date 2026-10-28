@@ -176,7 +176,7 @@ export const KNOWN_IDS = new Set([
   "g71-census-tri-sin1e70",
 ]);
 // The ids that pass on our patched build and fail on stock giac_2.1.0-1 (found by matching the cases the tests and canaries of patches
-// 0003 and 0005 name (tanh-test.ts, mpfr-pi-test.ts, patch-canary.ts) and the ids of G75 and G60; G111's g111-* of patch 0007; G113's g113-* of patch 0009 (g113-poisson_cdf-2.5 passes on stock, a guard in the check file). Each id was run on the stock build (engine/giac/_out/release) and fails there; ln(-pi)-30 and the g60-f5 lines pass on stock at these Digits, so they stay in the check file. g58-acos-5!^(2.5+5!)-30 has budgetMs, so it is left out as a time guard): [id, the patch file the line rests on]. They go to pascaline-patched.cas, not to the check file.
+// 0003 and 0005 name (tanh-test.ts, mpfr-pi-test.ts, patch-canary.ts) and the ids of G75 and G60; G111's g111-* of patch 0007; G113's g113-* of patch 0009 (g113-poisson_cdf-2.5 passes on stock, a guard in the check file); G113f1's ties of patch 0010. Each id was run on the stock build (engine/giac/_out/release) and fails there; ln(-pi)-30 and the g60-f5 lines pass on stock at these Digits, so they stay in the check file. g58-acos-5!^(2.5+5!)-30 has budgetMs, so it is left out as a time guard): [id, the patch file the line rests on]. They go to pascaline-patched.cas, not to the check file.
 export const PATCHED_IDS = new Map([
   ["prec-g50-tanh(i)-12", "0003-complex-tanh-mpfr.patch"],
   ["prec-g50-tanh(i)-30", "0003-complex-tanh-mpfr.patch"],
@@ -252,6 +252,10 @@ export const PATCHED_IDS = new Map([
   ["g113-negbinomial_icdf-exact", "0009-pmf-integer-support.patch"],
   ["g113-negbinomial_icdf-decimal", "0009-pmf-integer-support.patch"],
   ["g113-negbinomial_icdf-0.7", "0009-pmf-integer-support.patch"],
+  // G113f1: negbinomial_icdf at an exact tie (patch 0009: one step high). g113f1-negbinomial_icdf-tie-0 passes on stock by accident (stock reads the
+  // double field of the exact 1/27 as 0, and t <= 0 gives 0) and the non-tie guard g113f1-negbinomial_icdf-between passes there too: both stay in the check file
+  ["g113f1-negbinomial_icdf-tie-1", "0010-negbinomial-icdf-exact.patch"],
+  ["g113f1-negbinomial_icdf-tie-2", "0010-negbinomial-icdf-exact.patch"],
 ]);
 export const knownReason = (id) => (KNOWN_IDS.has(id) ? KNOWN_RULES.find(([re]) => re.test(id))?.[1] : undefined);
 

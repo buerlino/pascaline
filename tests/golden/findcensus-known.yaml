@@ -815,7 +815,7 @@ classes:
   "nSolve": "u|u"
   "negbinomial": "uuuu|uuuu"
   "negbinomial_cdf": "uuuu|ssus"
-  "negbinomial_icdf": "uuur|uuur"
+  "negbinomial_icdf": "urrr|urrr"
   "neighbors": "u|u"
   "network_transitivity": "-"
   "neural_network": "s|s"
