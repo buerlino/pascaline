@@ -127,6 +127,7 @@ Checked and right today: `Digits:=5` typed in CAS does not leak into Home (the h
 | n19 2.8 | `floor(cos(pi/7)-cos(2*pi/7)+cos(3*pi/7)+1/2)` = ⚠ 0 (exact 1) | on a cut no precision decides; G38's second round shows Giac's guess | **merged G57 `80387e7`** (refuse) |
 | n19 2.2 | run-once assignments keep an undecided `=` | see family 1 | **merged G48 `08262fe`** |
 | D4 (Solve) | the substitution check confirmed a wrong root | it substitutes in the same engine with the same flag (see family 2) | route R; lesson for every check-back |
+| F111 | Home `abs(acos(pi))^2` ≈ -3.28 (right 3.28) | Giac's `pow` took abs(b)^2 = b^2 when b had no literal i, real or not | fixed G118 (patch 0012) `810c62d` |
 
 **Hunt.**
 - **Every decision Giac makes:** sign, abs, floor, ceil, round, trunc, frac, max, min, comparisons, piecewise, when, ifte, sort, iquo, irem of floats, and the sign tests inside int, sum, limit and solve.
@@ -255,6 +256,7 @@ Checked and right today: `Digits:=5` typed in CAS does not leak into Home (the h
 | n19 2.5, G54 | raw `median([1,2,3,4])` = 2 in a library body; `irem` there is Giac's | the parser's renames (`CALL_NAME`) and the engine's (`complexSafe`) apply to parsed text only | **merged G54 `9ee7ecc`** (before R59) |
 | chk 16 | a library `// test:` line passes on Giac's rules while Home shows another value | `library.ts:300` runs raw `eval` | **open** (R59's text; r14 section 5's rule) |
 | R56b | see family 7 | Function and Solve call `parseLatex` directly | **merged R56b `0773b64`** |
+| F83 | CAS `sum(x^2,x=1..3)` an error, Home `≈ 14`; `1.5..3` = 0.5, `x=0..1e1` = x=1 | mapNumbers (the decimals) and Giac's `..` operator | fixed G117 `e1a5dde` |
 
 **Hunt.**
 - **Every way into Giac:** Home, CAS, Solve, Function analysis and table, the plot compiler, the unit view's builder, library import and its test lines, the defs replay, the backup restore (R38b), Find inserts, paste. For each, list which of our rules apply: the `CALL_NAME` renames, pasmod, complexSafe, pasexp and pasdeg, realOddRoots, exact decimals (P9), restoreLiterals, chip names. Run one corpus through every path; every difference is a bug or a decision to write down (G55's corpus fits).

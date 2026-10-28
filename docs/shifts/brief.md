@@ -48,13 +48,10 @@ The queue below is the next nights'. **Start it from the phase-1 worktree:** `cd
 9. **The end:** after the last pass and its FIX packages, `scripts/pipeline.sh report` writes and commits the shift report; henri then answers `SHIFT DONE`. **On time (A17):** start `scripts/night.sh --until <HH:MM>` (`--dry-run` shows the plan); from that time, or at `--max-steps` minus 2, henri is asked only for the last Opus pass (or `NO PASS`), then night.sh runs the report and stops. The pipeline merges only the commit its audit read and stops with `NOT MERGED (the branch is not the audited HEAD)` otherwise.
 
 ### The queue (the night of 2026-10-27; steps 101–135 are done or dropped)
-Estimates are wall-clock guesses from the log (a package 25 min to 2 h from start to MERGED; an engine patch adds a rebuild). A package merged by day is skipped (log it); a step whose "After" is not merged is skipped for that night and stays in the queue. The audit model follows rule 1. The Opus passes come from rule 5 (about 25 min each, after every three finished packages, FIX packages included) and are not rows. About 8 hours to 06:30 with the passes; 143 and 144 run only if the night has room, else they open the next night's queue.
+Estimates are wall-clock guesses from the log (a package 25 min to 2 h from start to MERGED; an engine patch adds a rebuild). A package merged by day is skipped (log it); a step whose "After" is not merged is skipped for that night and stays in the queue. The audit model follows rule 1. The Opus passes come from rule 5 (about 25 min each, after every three finished packages, FIX packages included) and are not rows. About 8 hours to 06:30 with the passes; 144 runs only if the night has room, else they open the next night's queue.
 
 | Step | What | Agent, model | Branch | After | Est. |
 |---|---|---|---|---|---|
-| 141 | [G116](packages/G116.md): the engine fuzzer, the oracle sweep at the edges | gorge, Opus | `p1/gorge-fuzz` | — | 2 h |
-| 142 | [G117](packages/G117.md): a range a..b is not a decimal (F83) | gorge, Opus | `p1/gorge-rangeliteral` | — | 45 min |
-| 143 | [G118](packages/G118.md): abs squared of a complex number (F111) | gorge, Opus | `p1/gorge-abssquare` | — | 75 min |
 | 144 | [G79](packages/G79.md): the G2 checklist cannot drift from g2.yaml | gorge, Sonnet | `p1/gorge-g2check` | — | 30 min |
 | 190 | **The last Opus pass** on what came after the last pass, then its FIX packages | Opus | — | — | 20 min + fixes |
 | 191 | Shift report, then stop | — | — | — | 10 min |
