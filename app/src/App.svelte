@@ -37,6 +37,19 @@
   };
 
   import { paletteAction, paletteItems } from "./views/tmplSheet.ts";
+  import type { FindItem } from "./find/types.ts";
+  // Find (R4a) is its own chunk with the index beside it: both load when the browser is idle after the engine is ready
+  // (docs/04 3.3), or on the first Math press.
+  type FindCode = { m: typeof import("./find/finder.ts"); index: import("./find/finder.ts").FindIndex };
+  let findCode: FindCode | null = null;
+  let findLoading: Promise<FindCode> | null = null;
+  const loadFind = (): Promise<FindCode> =>
+    (findLoading ??= import("./find/finder.ts")
+      .then(async (m) => (findCode = { m, index: await m.loadIndex() }))
+      .catch((e: unknown) => {
+        findLoading = null; // a later Math press tries again
+        throw e;
+      }));
 
   let { session, entry, shell, userKeys }: { session: Session; entry: EntryController; shell: AppShell; userKeys: UserKeys } = $props();
 
@@ -127,7 +140,9 @@
   }
   $effect(() => {
     // (a browser without requestIdleCallback loads it on the first use)
-    if (session.engineState === "ready" && "requestIdleCallback" in window) requestIdleCallback(() => void loadClip(), { timeout: 3000 });
+    if (session.engineState !== "ready" || !("requestIdleCallback" in window)) return;
+    requestIdleCallback(() => void loadClip(), { timeout: 3000 });
+    requestIdleCallback(() => void loadFind().catch(() => {}), { timeout: 5000 }); // the first Math press tries again
   });
 
   /** Home/CAS: the entry line is cleared as soon as the job starts; the result arrives in the history. Apps decide themselves. */
@@ -177,6 +192,34 @@
       openPalette(id, m.paletteText(`${id}.title`), id === "rel" ? m.relations : m.symbols, (cell) => m.paletteText(`${id}.${cell}`));
     if (shiftPalettes) open(shiftPalettes);
     else void loadShiftPalettes().then(open);
+  }
+  /** Math (R4a): Find over the history or view, as a list that takes letters (decisions.md R21). Until its code and the
+   *  index are in, every key waits in the queue (decisions.md R8). A view without an entry line has nothing to insert into. */
+  function openFind(): void {
+    if (!shell.showsEntry) return dead();
+    const show = (f: FindCode): void => {
+      picked = null;
+      const { categories, search } = f.m.findMenu(f.index, insertFound);
+      shell.showFind(t("find.title"), categories, search);
+    };
+    if (findCode && sheetChunk.C) return show(findCode);
+    sheetLoad = Promise.all([loadFind(), loadSheetView()]).then(
+      ([f]) => {
+        sheetLoad = null;
+        show(f);
+      },
+      () => {
+        sheetLoad = null; // the code or the index did not load: the queued keys run without Find
+        dead();
+      },
+    );
+  }
+  /** A Find pick (docs/04 3.6): a constant as a chip with its value and uncertainty, anything else as its insert (a
+   *  function with the cursor in its first argument). */
+  function insertFound(it: FindItem): void {
+    const c = findCode?.m.constChipOf(it);
+    if (c) entry.insertConst(c.id, c.symbol, c.chip);
+    else entry.run({ kind: "insert", latex: it.insert });
   }
   function insertTemplate(p: PaletteItem): void {
     entry.run(paletteAction(p, session.settings.entry === "line"));
@@ -276,6 +319,7 @@
     openMode,
     openTemplates,
     openShiftPalette,
+    openFind,
     withClip,
     loadClip: () => void loadClip(),
     dead,
@@ -450,7 +494,7 @@
   <sheetChunk.C
     {sheet}
     {over}
-    testid={shell.switcherOpen ? "apps" : "menu"}
+    testid={shell.switcherOpen ? "apps" : sheet.id === "find" ? "find" : "menu"}
     below={entryHeight}
     {keyBox}
     ontap={(i) => shell.picked(sheet.activate(i))}

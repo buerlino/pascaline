@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // What a key does while a sheet is open (docs/05 3.1 with section 7). Shift and Alpha are ignored for picking: a key
 // is read by what it is, never by the layer, so no key goes through the sheet into the entry line (rule 4).
-import type { Key } from "../keyboard/keyboard.ts";
+import type { Key, Layer } from "../keyboard/keyboard.ts";
 
 export type SheetKey =
   | { kind: "move"; by: 1 | -1 }
@@ -59,4 +59,31 @@ export function sheetKey(key: Key, filter: boolean): SheetKey {
 export function sheetFlick(key: Key, down: boolean, filter: boolean): SheetKey {
   const ch = down && filter ? letterOf(key) : undefined;
   return ch ? { kind: "letter", ch } : { kind: "none" };
+}
+
+/** The status line's controls keep their job in Find: they close it and go there, or toggle their sheet. */
+const FIND_PASS: readonly string[] = ["menu", "apps", "home", "cas", "switch", "symb", "plot", "num"];
+
+/**
+ * A key in Find (R4a, docs/04 3.7, decisions.md S2 rule M1). Every key types its letter in lower case, Tmpl and Math
+ * too (no Alpha press); a flick down types it on any key. A digit key picks the row with its number while the level's
+ * query is empty (the categories, a category's items) and types its digit once a letter is typed (`g0`, `log10`).
+ * Shift + a key, or a flick up, types the key's own character (a digit, `.`). ▲ ▼ move, Enter inserts, ▶ opens a
+ * category, ◀ and Esc go back a level (the top closes), ⌫ deletes. `shift`: Shift is on for this tap; `empty`: the
+ * open level's query is empty.
+ */
+export function findKey(key: Key, layer: Layer | undefined, shift: boolean, empty: boolean): SheetKey {
+  const fixed = BY_ID[key.id];
+  if (fixed) return fixed;
+  const p = key.actions.primary;
+  if (p?.kind === "special" && FIND_PASS.includes(p.name)) return { kind: "pass" };
+  const own = p?.kind === "type" && [...p.text].length === 1 ? p.text : undefined;
+  const letter = letterOf(key)?.toLowerCase();
+  if (layer === "alpha") return letter ? { kind: "letter", ch: letter } : { kind: "none" };
+  if (layer === "shift" || (layer === undefined && shift)) return own && !/^\p{L}$/u.test(own) ? { kind: "letter", ch: own } : { kind: "none" };
+  const d = DIGIT.exec(key.id);
+  if (d) return empty ? { kind: "pick", n: Number(d[1]) || 10 } : { kind: "letter", ch: d[1] as string };
+  // a hardware key's own character (R31 hands it on as the primary layer): `.` and `/` type themselves
+  if (layer === "primary" && own && !/^\p{L}$/u.test(own)) return { kind: "letter", ch: own };
+  return letter ? { kind: "letter", ch: letter } : { kind: "none" };
 }

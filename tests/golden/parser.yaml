@@ -647,6 +647,9 @@ cases:
   - { id: "pal-greek-09", latex: "\\Sigma+\\sigma+\\delta+\\theta+\\lambda+\\rho+\\tau+\\chi", expect: "Sigma+sigma+delta+theta+lambda+rho+tau+chi", source: "derived", group: "palettes" }
   - { id: "pal-greek-10", latex: "\\Psi+1", expect: "Psi_+1", source: "derived", group: "palettes", note: "R18f1: Giac keeps Psi and Phi (Psi:=3 is refused); precision.yaml prec-greek-Psi stores 3 and gets 4" }
   - { id: "pal-greek-11", latex: "\\Phi^2", expect: "Phi_^2", source: "derived", group: "palettes" }
+  # --- Find chips (R4a): a unit or prefix picked in Find is refused in Home (P8: the unit view takes it), never read as a name
+  - { id: "find-unit-01", latex: "3\\unit{km/h}{\\mathrm{km/h}}", error: true, source: "derived", group: "find", note: "parse.unitChip" }
+  - { id: "find-pfx-01", latex: "2\\pfx{k}{\\mathrm{k}}", error: true, source: "derived", group: "find", note: "parse.unitChip" }
   # --- R28 (2026-10-18): units mode, the unit view's formula (docs/04 4.3). `options: { units: true }`; a prompt
   # \placeholder[id]{…} after a number is its unit slot, pasu<i> in the order written (its body is never read: the slot's
   # units come from R24a's model); \const{ID}{…} is pask<j>; \pm after a number is pasupm(value,sigma) (G18); \to before

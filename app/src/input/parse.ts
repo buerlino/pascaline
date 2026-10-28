@@ -709,6 +709,11 @@ class Parser implements CalcParser {
       case "&":
         // R18: the Shift + 9 palette has & as the G2's does; what it means there is not known yet (G2 checklist)
         throw parseError("parse.hasNoMeaning");
+      case "unit":
+      case "pfx":
+        // R4a: a unit or prefix from Find goes on the line as a chip; Home is unit-free (P8), the unit view takes it
+        this.pos++;
+        throw parseError("parse.unitChip", { name: this.groupText() });
       case ARING:
         // R18: Å is the ångström, a unit; Home is unit-free (P8), so it is refused, never read as a name
         throw parseError("parse.isAUnit");

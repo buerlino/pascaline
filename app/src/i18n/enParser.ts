@@ -37,6 +37,7 @@ export const enParser = {
   "parse.needsBrackets": "{text} needs brackets: {text}(…)",
   "parse.unsupportedNameUnits": "unsupported name \\{name}{{text}} (units are not supported yet)",
   "parse.hasNoMeaning": "& has no meaning here yet; for logic use AND (Shift + 6)",
+  "parse.unitChip": "{name} is a unit: units come with the unit view",
   "parse.isAUnit": "Å is a unit (the ångström): units come with the unit view",
   "parse.unsupportedCommand": "unsupported command \\{name}",
   "parse.needsAnArgument": "\\{name} needs an argument",

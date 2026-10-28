@@ -54,12 +54,18 @@ export interface MenuItem {
   readonly latex?: string;
   /** In a grid sheet: the key that picks this cell (its id) and its legend, shown on the cell (Shift + 6, R18). */
   readonly pick?: { readonly key: string; readonly legend: string };
+  /** A short mark drawn in the row (Find, R4a: a unit without an exact factor; already translated). */
+  readonly note?: string;
+  /** Find (R4a): the highlighted item's details, drawn under the list (already translated). */
+  readonly preview?: string;
 }
 
 export interface SubMenu {
   /** Already translated. */
   readonly title: string;
   readonly items: readonly MenuItem[];
+  /** Find's categories (R4a): letters typed in this level search with this (views/sheet.svelte.ts Level.search). */
+  readonly search?: (query: string) => readonly MenuItem[];
 }
 
 export interface AppInstance {

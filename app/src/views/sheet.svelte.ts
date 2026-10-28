@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // One sheet for every list (docs/05 3.1 with section 7): the model behind Sheet.svelte. Apps, the view menus, the
-// Home/CAS Menu and the row actions use it now; Find, the template palette and the settings values build on it.
+// Home/CAS Menu, the row actions, the template palette and Find (R4a: a level that searches) use it.
 // Plain state, no DOM: the keys reach it through sheetKeys.ts, touch through Sheet.svelte.
 import type { MenuItem } from "../apps/types.ts";
 import type { IconId } from "./icons.ts";
@@ -49,6 +49,9 @@ export class Level {
   readonly memo: string;
   /** Letters filter this level (long lists; Find forces it on). */
   readonly filterable: boolean;
+  /** Find (R4a): a typed query replaces the items with these hits, in their order, unnumbered (digits type then). */
+  readonly search: ((query: string) => readonly MenuItem[]) | undefined;
+  private found: { q: string; items: readonly MenuItem[] } | null = null;
 
   /** Reopening starts on the last pick (false: always on the first row, for a sheet whose ◀ ▶ change values). */
   private readonly remember: boolean;
@@ -62,17 +65,27 @@ export class Level {
     this.memo = memo;
     this.remember = opts?.remember ?? true;
     this.columns = opts?.columns;
-    this.filterable = this.columns === undefined && (opts?.filterable ?? source().length > FILTER_ABOVE);
+    this.search = opts?.search;
+    this.filterable = this.columns === undefined && (this.search !== undefined || (opts?.filterable ?? source().length > FILTER_ABOVE));
     this.highlight = this.start(opts?.at);
   }
 
   get items(): readonly MenuItem[] {
-    return this.source();
+    const q = this.filter;
+    if (!this.search || q === "") return this.source();
+    if (this.found?.q !== q) this.found = { q, items: this.search(q) };
+    return this.found.items;
+  }
+
+  /** The level shows a query's hits (Find with letters typed): its digits type, so no row has a number (rule M1). */
+  get searching(): boolean {
+    return this.search !== undefined && this.filter !== "";
   }
 
   /** The rows on screen. Without a filter every item keeps its place and number (disabled ones too); with one, the
-   *  matches are numbered in order. */
+   *  matches are numbered in order. A search's hits are the rows as they come, without numbers. */
   get rows(): Row[] {
+    if (this.searching) return this.items.map((item, index) => ({ item, index, n: undefined }));
     const out: Row[] = [];
     this.items.forEach((item, index) => {
       if (!matches(item.label, this.filter)) return;
@@ -152,7 +165,7 @@ export class Level {
   backspace(): boolean {
     if (this.filter === "") return false;
     this.filter = this.filter.slice(0, -1);
-    if (!this.rows.some((r) => r.index === this.highlight)) this.highlight = this.firstRow();
+    if (this.search || !this.rows.some((r) => r.index === this.highlight)) this.highlight = this.firstRow();
     return true;
   }
 }
@@ -165,6 +178,8 @@ export interface SheetOptions {
   columns?: number;
   /** The icon drawn before the title (views/icons.ts; R83: the Menu's view). */
   icon?: IconId;
+  /** Find (R4a): letters search with this instead of filtering the labels (see Level.search). */
+  search?: (query: string) => readonly MenuItem[];
 }
 
 /** What a pick did: opened a submenu or did nothing (the sheet stays), or chose an item to run (the sheet closes). */
@@ -279,7 +294,8 @@ export class Sheet {
     }
     if (item.submenu) {
       const sub = item.submenu;
-      this.levels = [...this.levels, new Level(sub.title, () => sub.items, `${level.memo}/${item.id}`)];
+      const opts = sub.search ? { search: sub.search, remember: false } : undefined;
+      this.levels = [...this.levels, new Level(sub.title, () => sub.items, `${level.memo}/${item.id}`, opts)];
       return STAY;
     }
     return { kind: "run", item };

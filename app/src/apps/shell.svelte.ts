@@ -262,6 +262,10 @@ export class AppShell {
   showMenu(title: string, items: readonly MenuItem[], opts?: { remember?: boolean; at?: string }): void {
     this.sheet = new Sheet(`list:${title}`, title, () => items, opts);
   }
+  /** Find (R4a): its categories, searched by the letters typed (Sheet id "find"; route.ts gives it docs/04 3.7's keys). */
+  showFind(title: string, categories: readonly MenuItem[], search: (q: string) => readonly MenuItem[]): void {
+    this.sheet = new Sheet("find", title, () => categories, { search, remember: false });
+  }
   /** A palette on the grid sheet: Tmpl (R10; its key closes it again), Shift + 6 `rel` and Shift + 9 `sym` (R18; the
    *  digits pick inside those, so only Esc and Cancel close them). Each opens on its last pick. */
   togglePalette(id: PaletteId, title: string, items: () => readonly MenuItem[], columns: number): void {
