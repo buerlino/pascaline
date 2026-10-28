@@ -6,7 +6,7 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { oracleVenvPython, touchesG2 } from "./g2check.ts";
+import { oracleVenvPython, setupLine, touchesG2 } from "./g2check.ts";
 
 const repo = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const common = spawnSync("git", ["rev-parse", "--path-format=absolute", "--git-common-dir"], { cwd: repo, encoding: "utf8" }).stdout.trim();
@@ -18,7 +18,10 @@ function check(file: string): { code: number; out: string } {
   return { code: r.status ?? 1, out: `${r.stdout}${r.stderr}` };
 }
 
-describe.skipIf(py === null)("oracle.py --g2 --check (G79)", () => {
+describe("oracle.py --g2 --check (G79)", () => {
+  it("has the oracle venv", () => {
+    if (py === null) throw new Error(`no oracle venv for the G79 tests; set it up: ${setupLine}`);
+  });
   it("passes on the stored checklist", () => {
     const r = check(checklist);
     expect(r.out).toContain("checklist ok");
@@ -44,5 +47,11 @@ describe("touchesG2", () => {
     expect(touchesG2(["tests/golden/G2-CHECKLIST.md"], repo)).toBe(true);
     expect(touchesG2(["tests/golden/home.yaml"], repo)).toBe(true);
     expect(touchesG2(["app/src/foo.ts"], repo)).toBe(false);
+  });
+  it("counts a file that lost its last link or was deleted (link in the base version)", () => {
+    const base = (f: string): string | null => (f === "tests/golden/solve.yaml" ? '  - { id: "solve/x", g2: 12 }' : null);
+    expect(touchesG2(["tests/golden/nolink-gone.yaml"], repo, base)).toBe(false);
+    expect(touchesG2(["tests/golden/solve.yaml"], repo, base)).toBe(true);
+    expect(touchesG2(["tests/golden/deleted-file.yaml"], repo, () => "{ g2: 3 }")).toBe(true);
   });
 });

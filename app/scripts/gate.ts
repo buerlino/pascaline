@@ -65,6 +65,11 @@ const changed = ((): string[] | null => {
   const r = spawnSync("git", ["diff", "--name-only", `${base}...`], { cwd: repo, encoding: "utf8" });
   return r.status === 0 ? r.stdout.split("\n").filter(Boolean) : null;
 })();
+/** A file as it is on the base (for a g2-link that the branch removed); null when it does not exist there. */
+function baseText(f: string): string | null {
+  const r = spawnSync("git", ["show", `${base}:${f}`], { cwd: repo, encoding: "utf8" });
+  return r.status === 0 ? r.stdout : null;
+}
 interface Check {
   name: string;
   skip?: () => string | null;
@@ -240,7 +245,7 @@ const checks: Check[] = [
   {
     // G79: G2-CHECKLIST.md is generated from g2.yaml; a hand edit fails (oracle.py --g2 --check)
     name: "g2check",
-    skip: () => (changed !== null && !touchesG2(changed, repo) ? `no g2.yaml, G2-CHECKLIST.md or g2-linked golden file changed against ${base}` : null),
+    skip: () => (changed !== null && !touchesG2(changed, repo, baseText) ? `no g2.yaml, G2-CHECKLIST.md, oracle.py or g2-linked golden file changed against ${base}` : null),
     run: () => {
       const py = oracleVenvPython(repo, mainCheckout);
       if (!py) return { ok: false, detail: `no oracle venv; set it up: ${setupLine}` };

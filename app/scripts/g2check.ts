@@ -14,15 +14,18 @@ export function oracleVenvPython(repo: string, main: string = repo): string | nu
 
 export const setupLine = "python3 -m venv tests/golden/.venv && tests/golden/.venv/bin/pip install mpmath==1.3.0 pyyaml==6.0.2";
 
-/** Whether the diff touches the checklist's sources: g2.yaml, the checklist, or a golden yaml file that has a `g2:` link. */
-export function touchesG2(changed: string[], repo: string): boolean {
+/** Whether the diff touches the checklist's sources: g2.yaml, the checklist, oracle.py, or a golden yaml file that has a `g2:` link
+ * in its branch version or in the base version (`baseText`: a file that lost its last link, or was deleted, still counts). */
+export function touchesG2(changed: string[], repo: string, baseText: (f: string) => string | null = () => null): boolean {
+  const link = /\bg2: *\d+/;
   return changed.some((f) => {
     if (f === "tests/golden/g2.yaml" || f === "tests/golden/G2-CHECKLIST.md" || f === "tests/golden/oracle.py") return true;
     if (!/^tests\/golden\/[^/]+\.yaml$/.test(f)) return false;
     try {
-      return /\bg2: *\d+/.test(readFileSync(join(repo, f), "utf8"));
+      if (link.test(readFileSync(join(repo, f), "utf8"))) return true;
     } catch {
-      return false;
+      // deleted on the branch: look at the base version
     }
+    return link.test(baseText(f) ?? "");
   });
 }
