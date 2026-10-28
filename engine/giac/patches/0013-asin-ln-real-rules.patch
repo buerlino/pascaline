@@ -1,0 +1,48 @@
+# Upstream: giac 2.1.0 usual.cc asin and ln. asin(sin(a)) = +-(a-n*pi) and asin(cos(a)) through sin(pi/2-a) are rules for a real a, but asin took them for any a with a numeric value: asin(sin(2*i)) gave i*pi-2*i (Home 1.14159265359*i, right 2*i), and acos, which is pi/2-asin, gave acos(cos(ln(-pi))) = (1+i)*pi-ln(-pi), a real 1.99686276774 (right ln(-pi) = 1.14472988585+3.14159265359*i). ln(a^b) = b*ln(a) checked a > 0 but not b: ln(2^(10*i)) gave 10*i*ln(2), 6.9314718056*i (right 0.64828649842*i). The asin rules now need a real a (a numeric value with a zero imaginary part, or is_real); a complex a keeps asin (and acos) unevaluated, so evalf computes the principal value. ln(a^b) = b*ln(a) also needs is_real(b). atan(tan(a)) = a-n*pi took n = floor(a/pi+1/2) of a complex a, imaginary part too: atan(tan(4*i)) gave 4*i-i*pi (right 4*i); n now comes from re(a), and a result on the cut re = +-pi/2 (or a complex symbolic a) keeps atan unevaluated. A real a keeps its exact answer (asin(sin(2)) = pi-2, acos(cos(4)) = 2*pi-4, ln(2^x) = x*ln(2), atan(tan(2)) = 2-pi).
+--- a/src/usual.cc
++++ b/src/usual.cc
+@@ -486,7 +486,9 @@
+       gen a=e._SYMBptr->feuille._VECTptr->front();
+       gen b=e._SYMBptr->feuille._VECTptr->back();
+       // ln(a^b)
+-      if (is_positive(a,contextptr))
++      // Pascaline patch 0013 (G121): ln(a^b) = b*ln(a) only for a real b; for a complex b the imaginary part of
++      // b*ln(a) can leave (-pi,pi]: ln(2^(10*i)) gave 10*i*ln(2), about 6.93*i (right 0.648*i)
++      if (is_positive(a,contextptr) && is_real(b,contextptr))
+ 	return b*ln(a,contextptr);
+     }
+     return symb_ln(e);
+@@ -765,8 +767,19 @@
+           tmp = 200;
+       }
+       gen tmp2=evalf_double(e._SYMBptr->feuille,0,contextptr);
+-      if (tmp2.type<_IDNT)
++      // Pascaline patch 0013 (G121): atan(tan(a)) = a-n*pi with n = floor(a/pi+1/2) is a rule for a real a; _floor of a
++      // complex also floors its imaginary part, so atan(tan(4*i)) gave 4*i-i*pi (right 4*i). tan has the real period pi:
++      // n comes from re(a) alone, and a re(a-n*pi) at the cut +-pi/2 keeps atan unevaluated; a complex symbolic a too.
++      if (tmp2.type==_CPLX){
++	gen r=evalf_double(re(tmp2,contextptr)/tmp+plus_one_half,1,contextptr);
++	if (r.type!=_DOUBLE_ || absdouble(r._DOUBLE_val-std::floor(r._DOUBLE_val+.5))<1e-12)
++	  return symb_atan(e);
++	tmp2=_floor(r,contextptr);
++      }
++      else if (tmp2.type<_IDNT)
+ 	tmp2=_floor(tmp2/tmp+plus_one_half,contextptr);
++      else if (!is_real(e._SYMBptr->feuille,contextptr))
++	return symb_atan(e);
+       else
+ 	tmp2=_floor(e._SYMBptr->feuille/tmp+plus_one_half,contextptr);
+       if (tmp2.type==_FLOAT_)
+@@ -2323,6 +2336,12 @@
+     if ((e.type==_SYMB) && (e._SYMBptr->sommet==at_neg))
+       return -asin(e._SYMBptr->feuille,contextptr);
+     gen cste=angle_radian(contextptr)?cst_pi:(angle_degree(contextptr)?180:200);
++    // Pascaline patch 0013 (G121): the rewrites below, asin(sin(a)) = +-(a-n*pi) and asin(cos(a)) through sin(pi/2-a),
++    // hold for a real a only (acos(cos(a)) comes here as pi/2-asin(cos(a))): asin(sin(2*i)) gave i*pi-2*i (right 2*i),
++    // acos(cos(ln(-pi))) gave (1+i)*pi-ln(-pi), a real number. A complex a keeps asin unevaluated.
++    if ((e.is_symb_of_sommet(at_sin) || e.is_symb_of_sommet(at_cos)) &&
++        (has_evalf(e._SYMBptr->feuille,a,1,contextptr)?!is_zero(im(a,contextptr),contextptr):!is_real(e._SYMBptr->feuille,contextptr)))
++      return symb_asin(e);
+     if (e.is_symb_of_sommet(at_cos))
+       e=symbolic(at_sin,cste/2-e._SYMBptr->feuille);
+     if (e.is_symb_of_sommet(at_sin) && has_evalf(e._SYMBptr->feuille,a,1,contextptr)){
