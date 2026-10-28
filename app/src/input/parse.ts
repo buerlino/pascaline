@@ -6,284 +6,18 @@ import { parseError, parseText, type ParseKey, type ParseVars } from "../i18n/en
 import { ANS_KEY, constKey, resKey, type ChipTable } from "./chips.ts";
 import { chipName, chipToGiac } from "./chip-giac.ts";
 import type { Json } from "./emit.ts";
+import { bigOp, integral, limit, matrix, tryDerivative, tryPartial, type CalcParser } from "./parseCalculus.ts";
+import { ABS_LIKE, BASE_PREFIX, CONSTS, FACTOR_CMDS, FUNCS, GREEK, INVERSE, LOGIC_FUNCS, NAMED_FUNCS, RELATION, letterName,
+  type ParseInfo, type ParseOptions, type UnitsInfo } from "./parseTables.ts";
+import { ARING, CARET, EMARK, LOGIC, promptId, tokenize, type Tok } from "./tokenize.ts";
 
-type Tok =
-  /** gap (F43, R51): spacing (a space or a spacing command) separates this number from a number just before it. */
-  | { t: "num"; v: string; gap?: true }
-  | { t: "ch"; v: string }
-  /** id: a MathLive prompt `\placeholder[id]{…}` (R28), whose v is "placeholder". */
-  | { t: "cmd"; v: string; id?: string }
-  | { t: "open"; v: string }
-  | { t: "close"; v: string };
+export { GREEK, LETTER_NAMES, type ParseInfo, type ParseOptions, type UnitsInfo } from "./parseTables.ts";
 
-const SPACING = new Set([",", ";", ":", "!", " ", "quad", "qquad", "displaystyle", "textstyle"]);
-const OPEN_CMD: Record<string, string> = { lfloor: "floor", lceil: "ceil", lbrace: "{", "{": "{" };
-const CLOSE_CMD: Record<string, string> = { rfloor: "floor", rceil: "ceil", rbrace: "}", "}": "}" };
-
-/** Token for a literal caret (one-line mode): power of the next factor, not a TeX superscript. */
-const CARET = "^caret";
-/** The exponent mark (R14): the key's `\emark` macro, or the bare character U+1D07 the reference draws. */
-const EMARK = "emark";
-
-/** Token prefix of the infix logic words (R18): `logic:and`, `logic:or`, `logic:xor`. */
-const LOGIC = "logic:";
-/** The Å of the Shift + 9 palette (R18), refused with a message. */
-const ARING = "aring";
-/** The id of a MathLive prompt token `\placeholder[id]{…}` (R28, the unit view's slots), else undefined. Its body is
- *  skipped: a slot's units live in R24a's model and are never read back from the LaTeX (docs/04 4.3). */
-const promptId = (t: Tok | undefined): string | undefined => (t?.t === "cmd" ? t.id : undefined);
-
-/** The end of a `{…}` group starting at `j` (braces balanced, `\{` and `\}` skipped), or -1. */
-function groupEnd(src: string, j: number): number {
-  if (src[j] !== "{") return -1;
-  let depth = 0;
-  for (let k = j; k < src.length; k++) {
-    const c = src[k];
-    if (c === "\\") k++;
-    else if (c === "{") depth++;
-    else if (c === "}" && --depth === 0) return k + 1;
-  }
-  return -1;
-}
-
-/** The length of a decimal comma at `j` ("," or MathLive's "{,}"), 0 if there is none or the setting is off. */
-function commaAt(src: string, j: number, decimalComma: boolean): number {
-  if (!decimalComma) return 0;
-  return src[j] === "," ? 1 : src.startsWith("{,}", j) ? 3 : 0;
-}
-
-/** decimalComma (L6): "3,5" and MathLive's "3{,}5" are the number 3.5; use ";" between arguments then. */
-function tokenize(src: string, decimalComma = false): Tok[] {
-  const out: Tok[] = [];
-  let i = 0;
-  const n = src.length;
-  const isDigit = (c: string | undefined) => c !== undefined && c >= "0" && c <= "9";
-  // F43 (R51): spacing was skipped right after the token out[gapAt - 1]
-  let gapAt = -1;
-  while (i < n) {
-    const c = src[i] as string;
-    if (c === " " || c === "\n" || c === "\t") {
-      gapAt = out.length;
-      i++;
-    } else if (c === "\\") {
-      let j = i + 1;
-      while (j < n && /[A-Za-z]/.test(src[j] as string)) j++;
-      const name = j > i + 1 ? src.slice(i + 1, j) : (src[j++] ?? "");
-      i = j;
-      if (SPACING.has(name)) {
-        gapAt = out.length;
-        continue;
-      }
-      if (name === "mathbin") {
-        // P4: the polar sign is entered as \mathbin{\measuredangle} so that a following ÷ does not absorb it into the numerator
-        const m = /^\{\s*\\measuredangle\s*\}/.exec(src.slice(i));
-        if (m) {
-          i += m[0].length;
-          out.push({ t: "cmd", v: "measuredangle" });
-          continue;
-        }
-      }
-      if (name === "placeholder") {
-        // R28: a named prompt, one token; the id is letters and digits (u1, end)
-        const m = /^\[([A-Za-z0-9]+)\]\s*/.exec(src.slice(i));
-        const end = m ? groupEnd(src, i + m[0].length) : -1;
-        if (m && end > 0) {
-          i = end;
-          out.push({ t: "cmd", v: "placeholder", id: m[1] as string });
-          continue;
-        }
-      }
-      if (name === "AA") {
-        // the Å of the Shift + 9 palette (\AA keeps MathLive in math mode; a pasted Å is read below)
-        out.push({ t: "cmd", v: ARING });
-        continue;
-      }
-      if (name === "operatorname" || name === "mathrm") {
-        // R18: the logic words of the Shift + 6 palette are infix operators, written \operatorname{AND} (MathLive may
-        // write \operatorname{\mathrm{AND}})
-        const m = /^\{\s*(?:\\mathrm\{\s*(AND|OR|XOR)\s*\}|(AND|OR|XOR))\s*\}/.exec(src.slice(i));
-        if (m) {
-          i += m[0].length;
-          out.push({ t: "cmd", v: `${LOGIC}${(m[1] ?? m[2] ?? "").toLowerCase()}` });
-          continue;
-        }
-      }
-      if (name === "char") {
-        // L4: the literal caret of the one-line entry mode, \char"5E (MathLive serialises it with a trailing space)
-        const m = /^(?:"5E|"5e|94)\b ?/.exec(src.slice(i));
-        if (!m) {
-          out.push({ t: "cmd", v: "char" });
-          continue;
-        }
-        i += m[0].length;
-        out.push({ t: "cmd", v: CARET });
-        continue;
-      }
-      if (name === "left" || name === "right") {
-        while (src[i] === " ") i++;
-        let d = src[i] ?? "";
-        i++;
-        if (d === "\\" && (src[i] === "{" || src[i] === "}")) {
-          // \left\{ ... \right\}: braces (a list, L6)
-          d = src[i++] as string;
-        } else if (d === "\\") {
-          let k = i;
-          while (k < n && /[A-Za-z]/.test(src[k] as string)) k++;
-          d = src.slice(i - 1, k);
-          i = k;
-        }
-        // \left. … \right| is the evaluate-at bar (Tmpl, R10); a lone \left. or \right. still has to pair up
-        out.push({ t: name === "left" ? "open" : "close", v: d });
-      } else if (name in OPEN_CMD) out.push({ t: "open", v: OPEN_CMD[name] as string });
-      else if (name in CLOSE_CMD) out.push({ t: "close", v: CLOSE_CMD[name] as string });
-      else out.push({ t: "cmd", v: name });
-    } else if (isDigit(c) || (c === "." && isDigit(src[i + 1]))) {
-      let j = i;
-      while (isDigit(src[j])) j++;
-      const comma = commaAt(src, j, decimalComma);
-      let v: string;
-      if (src[j] === "." && isDigit(src[j + 1])) {
-        j++;
-        while (isDigit(src[j])) j++;
-        v = src.slice(i, j);
-      } else if (comma && isDigit(src[j + comma])) {
-        const intPart = src.slice(i, j);
-        j += comma;
-        const k = j;
-        while (isDigit(src[j])) j++;
-        v = `${intPart}.${src.slice(k, j)}`;
-      } else if (src[j] === "." && c !== ".") {
-        // "5." alone: treat the dot as part of the number
-        j++;
-        v = src.slice(i, j);
-      } else v = src.slice(i, j);
-      // F24 (R29): a second decimal separator right after a number with one (2.5.3, 1..5, 2,5,3) is not a product
-      if (v.includes(".")) {
-        if (src[j] === ".") throw parseError("parse.onePoint");
-        const c2 = commaAt(src, j, decimalComma);
-        if (c2 && isDigit(src[j + c2])) throw parseError("parse.oneComma");
-      }
-      // F43 (R51): the parser refuses a number after a number and spacing (2 3, 1\,000), never a silent product
-      out.push(gapAt === out.length && out[out.length - 1]?.t === "num" ? { t: "num", v, gap: true } : { t: "num", v });
-      i = j;
-    } else if (c === "\u1D07") {
-      out.push({ t: "cmd", v: EMARK });
-      i++;
-    } else if (c === "\u00C5") {
-      out.push({ t: "cmd", v: ARING });
-      i++;
-    } else if (c === "(") {
-      out.push({ t: "open", v: "(" });
-      i++;
-    } else if (c === ")") {
-      out.push({ t: "close", v: ")" });
-      i++;
-    } else {
-      out.push({ t: "ch", v: c });
-      i++;
-    }
-  }
-  return out;
-}
-
-/**
- * Greek letters are variable names (R18), never units (μ, Ω) or Giac's own names. Giac reads most of them as plain
- * names, but some are taken: `epsilon` is a setting (it evaluates to 1e-12), `Gamma` is the Gamma function and cannot
- * be stored, `beta`, `gamma` stay clear of the Beta and Euler names, and `Phi`, `Psi` are reserved (`Psi:=3` is
- * refused, R18f1). Those get a trailing `_`, which Giac's latex()
- * draws as the letter and a stray `_` (render/tidy.ts removes it). One letter is one name: \epsilon and \varepsilon,
- * \phi and \varphi, \theta and \vartheta are the same variable.
- */
-export const GREEK: Readonly<Record<string, string>> = {
-  alpha: "alpha", beta: "beta_", gamma: "gamma_", delta: "delta", epsilon: "epsilon_", varepsilon: "epsilon_",
-  zeta: "zeta", eta: "eta", theta: "theta", vartheta: "theta", iota: "iota", kappa: "kappa", lambda: "lambda",
-  mu: "mu", nu: "nu", xi: "xi", rho: "rho", sigma: "sigma", tau: "tau", phi: "phi", varphi: "phi", chi: "chi",
-  psi: "psi", omega: "omega", Gamma: "Gamma_", Delta: "Delta", Theta: "Theta", Lambda: "Lambda", Sigma: "Sigma",
-  Phi: "Phi_", Psi: "Psi_", Omega: "Omega",
-};
-/**
- * R67 (decisions R58b): a typed letter is always a name. Giac reads `e` as exp(1) and `i` as √−1 (`e:=3` is refused,
- * `sum(i^2,i,1,3)` an error), so the letters e and i go in as the stand-ins `e_` and `i_`, drawn as the letters again
- * (render/tidy.ts). The constants come from the eˣ key (\exponentialE) and Shift + 2 (\imaginaryI).
- */
-export const LETTER_NAMES: Readonly<Record<string, string>> = { e: "e_", i: "i_" };
-const letterName = (v: string): string => LETTER_NAMES[v] ?? v;
-const CONSTS: Record<string, string> = {
-  pi: "Pi", exponentialE: "ExponentialE", imaginaryI: "ImaginaryUnit", infty: "PositiveInfinity",
-};
-/** LaTeX function command -> MathJSON head. */
-const FUNCS: Record<string, string> = {
-  sin: "Sin", cos: "Cos", tan: "Tan", cot: "Cot", sec: "Sec", csc: "Csc",
-  arcsin: "Arcsin", arccos: "Arccos", arctan: "Arctan",
-  sinh: "Sinh", cosh: "Cosh", tanh: "Tanh",
-  ln: "Ln", log: "Log", lg: "Lg", exp: "Exp", det: "Determinant",
-  gcd: "Gcd", lcm: "Lcm", max: "Max", min: "Min", arg: "Arg", Re: "Re", Im: "Im",
-};
-const INVERSE: Record<string, string> = {
-  Sin: "Arcsin", Cos: "Arccos", Tan: "Arctan", Sinh: "Arsinh", Cosh: "Arcosh", Tanh: "Artanh",
-};
-const RELATION: Record<string, string> = {
-  "=": "Equal", "<": "Less", ">": "Greater", lt: "Less", gt: "Greater",
-  ne: "NotEqual", neq: "NotEqual", le: "LessEqual", leq: "LessEqual", ge: "GreaterEqual", geq: "GreaterEqual",
-};
-/** Names that become function calls when followed by parentheses (single letters need to be listed). */
-const NAMED_FUNCS = new Set(["abs", "sqrt", "floor", "ceil", "round", "sign", "gcd", "lcm", "max", "min", "det", "mod"]);
-/** R18: the logic words of the Shift + 6 palette written as calls, by their name in \operatorname. EQ is the G2's
- *  list command (G2 item 32): equality of the two whole objects, Giac's == (Giac has no EQ). */
-const LOGIC_FUNCS: Readonly<Record<string, { head: string; args: number }>> = {
-  NOT: { head: "Not", args: 1 },
-  EQ: { head: "EqualTest", args: 2 },
-};
-const ABS_LIKE: Record<string, string> = { abs: "Abs", sign: "Sign", floor: "Floor", ceil: "Ceil", round: "Round" };
-const FACTOR_CMDS = new Set([
-  "frac", "dfrac", "tfrac", "sqrt", "binom", "overline", "int", "sum", "prod", "lim", "begin",
-  "operatorname", "mathrm", "mathit", "res", "ans", "const",
-]);
-
-export interface ParseOptions {
-  /** Single letters that name functions when followed by parentheses. Default f, g, h. */
-  userFunctions?: ReadonlySet<string>;
-  /** L6 setting: the decimal separator is a comma; arguments are then separated by ";". */
-  decimalComma?: boolean;
-  /** The entry's chip table: the values of its \res, \ans and \const chips (input/chips.ts). */
-  chips?: ChipTable;
-  /** R65 (Home): a result chip that is not exact goes in as its name `pasr_<k>` (chip-giac.ts chipName), listed in
-   *  ParseInfo.named for the engine (G49), not as its value. */
-  chipNames?: boolean;
-  /** R28, the unit view (docs/04 4.3): a prompt after a number is its unit slot, `\pm` after a number its standard
-   *  uncertainty, a constant chip stays a constant and `\to` before the last prompt marks the end slot. */
-  units?: boolean;
-}
-
-/** R28: what units mode found besides the formula, for G16's UnitRequest. */
-export interface UnitsInfo {
-  /** The prompt ids of the unit slots in the order written: `pasu<i>` is slots[i-1]. */
-  slots: string[];
-  /** Find constant ids without "const:": `pask<j>` is consts[j-1]; a constant used twice is one entry. */
-  consts: string[];
-  /** The prompt id of the end slot after `\to`, if there is one. */
-  end?: string;
-}
-
-/** What the parser found besides the expression. */
-export interface ParseInfo {
-  json: Json;
-  /** A chip whose value is not exact was used, so the result cannot be marked "=" (docs/04 2.4). */
-  inexact: boolean;
-  /** With `chipNames`: the chips that went in by name, keyed by the k of `pasr_<k>`. */
-  named?: ChipTable;
-  /** Units mode only. */
-  units?: UnitsInfo;
-}
-
-/** Letters that start a base prefix after a lone 0 (0x, 0b, 0o), and what may follow them. */
-const BASE_PREFIX: Record<string, RegExp> = { x: /^[0-9A-Fa-f]/, b: /^[0-9]/, o: /^[0-9]/ };
-
-class Parser {
-  private pos = 0;
-  private noDiff = 0;
-  private user: ReadonlySet<string>;
-  private toks: Tok[];
+class Parser implements CalcParser {
+  pos = 0;
+  noDiff = 0;
+  user: ReadonlySet<string>;
+  toks: Tok[];
   private readonly chips: ChipTable;
   /** R28: units mode and what it found (null outside units mode). */
   readonly units: UnitsInfo | null;
@@ -302,22 +36,25 @@ class Parser {
     this.units = o.units ? { slots: [], consts: [] } : null;
   }
 
-  private peek(k = 0): Tok | undefined {
+  subParse(toks: Tok[]): Json {
+    return new Parser(toks, { userFunctions: this.user }).parseAll();
+  }
+  peek(k = 0): Tok | undefined {
     return this.toks[this.pos + k];
   }
-  private fail(key: ParseKey, vars?: ParseVars): never {
+  fail(key: ParseKey, vars?: ParseVars): never {
     const t = this.peek();
     throw parseError(t ? "parse.atToken" : "parse.atEnd", { msg: parseText(key, vars), tok: t ? t.v : "" });
   }
-  private isCh(v: string, k = 0): boolean {
+  isCh(v: string, k = 0): boolean {
     const t = this.peek(k);
     return t?.t === "ch" && t.v === v;
   }
-  private isCmd(v: string, k = 0): boolean {
+  isCmd(v: string, k = 0): boolean {
     const t = this.peek(k);
     return t?.t === "cmd" && t.v === v;
   }
-  private expectCh(v: string): void {
+  expectCh(v: string): void {
     if (!this.isCh(v)) this.fail("parse.expected", { v });
     this.pos++;
   }
@@ -362,7 +99,7 @@ class Parser {
 
   // ---- levels ----
   /** The lowest level: definitions and stores, then the function arrow, then logic, then one comparison. */
-  private relation(): Json {
+  relation(): Json {
     const def = this.definitionName();
     if (def) this.user = new Set([...this.user, def]);
     const left = this.logicOr();
@@ -430,7 +167,7 @@ class Parser {
     return left;
   }
 
-  private additive(): Json {
+  additive(): Json {
     let acc = this.term();
     for (;;) {
       if (this.isCh("+")) {
@@ -443,7 +180,7 @@ class Parser {
     }
   }
 
-  private term(): Json {
+  term(): Json {
     if (this.isCh("-")) {
       this.pos++;
       return this.negate(this.term());
@@ -515,7 +252,7 @@ class Parser {
   }
 
   /** Differential marker (d x or \mathrm{d}x) at the current position: tokens it spans, else 0. */
-  private diffLen(): number {
+  diffLen(): number {
     if (this.isCh("d") && this.peek(1)?.t === "ch" && /[A-Za-z]/.test((this.peek(1) as Tok).v)) return 1;
     if (this.isCmd("mathrm") && this.isCh("{", 1) && this.isCh("d", 2) && this.isCh("}", 3)) {
       return this.peek(4)?.t === "ch" ? 4 : 0;
@@ -546,7 +283,7 @@ class Parser {
     }
   }
 
-  private implicit(): Json {
+  implicit(): Json {
     const parts: Json[] = [this.postfix()];
     while (this.startsFactor()) {
       this.besideResult();
@@ -654,11 +391,11 @@ class Parser {
     }
     return this.atom();
   }
-  private script(): Json {
+  script(): Json {
     return this.arg();
   }
 
-  private groupText(): string {
+  groupText(): string {
     this.expectCh("{");
     let s = "";
     while (!this.isCh("}")) {
@@ -833,7 +570,7 @@ class Parser {
     }
   }
 
-  private symbol(letter: string): Json {
+  symbol(letter: string): Json {
     this.pos++;
     let name = letter;
     if (this.isCh("_")) {
@@ -903,7 +640,7 @@ class Parser {
         throw parseError("parse.aMixedNumber");
       case "frac":
       case "dfrac": {
-        const d = this.tryPartial() ?? this.tryDerivative();
+        const d = tryPartial(this) ?? tryDerivative(this);
         if (d) return d;
         this.pos++;
         const a = this.arg();
@@ -929,14 +666,14 @@ class Parser {
         this.pos++;
         return ["Conjugate", this.arg()];
       case "int":
-        return this.integral();
+        return integral(this);
       case "sum":
       case "prod":
-        return this.bigOp(name === "sum" ? "Sum" : "Product");
+        return bigOp(this, name === "sum" ? "Sum" : "Product");
       case "lim":
-        return this.limit();
+        return limit(this);
       case "begin":
-        return this.matrix();
+        return matrix(this);
       case "operatorname":
       case "mathrm":
       case "mathit": {
@@ -1019,192 +756,6 @@ class Parser {
     if (base !== undefined) args.push(base);
     const call: Json = [callHead, ...args];
     return power === undefined ? call : ["Power", call, power];
-  }
-
-  /**
-   * The derivative template (Tmpl, R10): `\frac{\partial e}{\partial x}` = de/dx. Undefined (nothing consumed) when
-   * the numerator does not start with \partial; a \partial fraction of any other shape is an error, never a guess.
-   */
-  private tryPartial(): Json | undefined {
-    if (!this.isCh("{", 1) || !this.isCmd("partial", 2)) return undefined;
-    this.pos += 3;
-    if (this.isCh("}")) throw parseError("parse.derivativeTheExpression");
-    const body = this.relation();
-    this.expectCh("}");
-    this.expectCh("{");
-    if (!this.isCmd("partial")) this.fail("parse.derivativeExpectedBefore");
-    this.pos++;
-    const v = this.peek();
-    if (v?.t !== "ch" || !/^[A-Za-z]$/.test(v.v)) this.fail("parse.derivativeExpectedA");
-    const name = this.symbol((v as Tok).v);
-    if (typeof name !== "string") this.fail("parse.derivativeExpectedA");
-    this.expectCh("}");
-    return ["D", body, name];
-  }
-
-  /** \frac{d}{dx} f, \frac{d^2}{dx^2} f, with d or \mathrm{d}. Returns undefined (position restored) if not a derivative. */
-  private tryDerivative(): Json | undefined {
-    const save = this.pos;
-    const saveToks = this.toks.slice();
-    const restore = (): undefined => {
-      this.pos = save;
-      this.toks = saveToks;
-      return undefined;
-    };
-    this.pos++; // \frac
-    const dsym = (): boolean => {
-      if (this.isCh("d")) {
-        this.pos++;
-        return true;
-      }
-      if (this.isCmd("mathrm") && this.isCh("{", 1) && this.isCh("d", 2) && this.isCh("}", 3)) {
-        this.pos += 4;
-        return true;
-      }
-      return false;
-    };
-    const order = (): number => {
-      if (!this.isCh("^")) return 1;
-      this.pos++;
-      const t = this.peek();
-      if (this.isCh("{") && this.peek(1)?.t === "num" && this.isCh("}", 2)) {
-        const v = Number((this.peek(1) as Tok).v);
-        this.pos += 3;
-        return v;
-      }
-      if (t?.t === "num" && t.v.length === 1) {
-        this.pos++;
-        return Number(t.v);
-      }
-      return NaN;
-    };
-    if (!this.isCh("{")) return restore();
-    this.pos++;
-    if (!dsym()) return restore();
-    const n1 = order();
-    if (!this.isCh("}")) return restore();
-    this.pos++;
-    if (!this.isCh("{")) return restore();
-    this.pos++;
-    if (!dsym()) return restore();
-    const v = this.peek();
-    if (v?.t !== "ch" || !/^[A-Za-z]$/.test(v.v)) return restore();
-    this.pos++;
-    const n2 = order();
-    if (!this.isCh("}") || !(n1 >= 1) || n1 !== n2) return restore();
-    this.pos++;
-    let body = this.implicit();
-    for (let i = 0; i < n1; i++) body = ["D", body, letterName(v.v)];
-    return body;
-  }
-
-  private integral(): Json {
-    this.pos++;
-    let lo: Json | undefined;
-    let hi: Json | undefined;
-    while (this.isCh("_") || this.isCh("^")) {
-      const which = (this.peek() as Tok).v;
-      this.pos++;
-      const e = this.script();
-      if (which === "_") lo = e;
-      else hi = e;
-    }
-    this.noDiff++;
-    const body = this.additive();
-    this.noDiff--;
-    const len = this.diffLen();
-    if (len === 0) this.fail("parse.integralNeedsDx");
-    this.pos += len; // the d marker; the variable follows
-    const v = letterName((this.peek() as Tok).v);
-    this.pos++;
-    if (lo === undefined && hi === undefined) return ["Integrate", body, v];
-    if (lo === undefined || hi === undefined) throw parseError("parse.integralNeedsBoth");
-    return ["Integrate", body, ["Tuple", v, lo, hi]];
-  }
-
-  private bigOp(head: "Sum" | "Product"): Json {
-    this.pos++;
-    this.expectCh("_");
-    this.expectCh("{");
-    const v = this.peek();
-    if (v?.t !== "ch" || !/^[A-Za-z]$/.test(v.v)) this.fail("parse.expectedIndexVariable");
-    this.pos++;
-    this.expectCh("=");
-    const lo = this.additive();
-    this.expectCh("}");
-    this.expectCh("^");
-    const hi = this.script();
-    const body = this.term();
-    return [head, body, ["Tuple", letterName((v as Tok).v), lo, hi]];
-  }
-
-  private limit(): Json {
-    this.pos++;
-    this.expectCh("_");
-    this.expectCh("{");
-    const v = this.peek();
-    if (v?.t !== "ch" || !/^[A-Za-z]$/.test(v.v)) this.fail("parse.expectedLimitVariable");
-    this.pos++;
-    if (!this.isCmd("to")) this.fail("parse.expectedTo");
-    this.pos++;
-    const start = this.pos;
-    let depth = 0;
-    while (this.peek() && !(depth === 0 && this.isCh("}"))) {
-      if (this.isCh("{")) depth++;
-      if (this.isCh("}")) depth--;
-      this.pos++;
-    }
-    let target = this.toks.slice(start, this.pos);
-    this.pos++; // }
-    let dir: Json | undefined;
-    const sign = (tk: Tok | undefined): string | undefined => (tk?.t === "ch" && (tk.v === "+" || tk.v === "-") ? tk.v : undefined);
-    const n = target.length;
-    if (n >= 3 && target[n - 2]?.t === "ch" && (target[n - 2] as Tok).v === "^" && sign(target[n - 1])) {
-      dir = { num: sign(target[n - 1]) === "+" ? "1" : "-1" };
-      target = target.slice(0, n - 2);
-    } else if (n >= 5 && (target[n - 4] as Tok).v === "^" && (target[n - 3] as Tok).v === "{" && sign(target[n - 2]) && (target[n - 1] as Tok).v === "}") {
-      dir = { num: sign(target[n - 2]) === "+" ? "1" : "-1" };
-      target = target.slice(0, n - 4);
-    }
-    const a = new Parser(target, { userFunctions: this.user }).parseAll();
-    const body = this.term();
-    const out: Json[] = ["Limit", ["Function", body, letterName(v.v)], a];
-    if (dir !== undefined) out.push(dir);
-    return out;
-  }
-
-  private matrix(): Json {
-    this.pos++;
-    const env = this.groupText();
-    if (!["pmatrix", "bmatrix", "matrix", "cases"].includes(env)) throw parseError("parse.unsupportedEnvironment", { env });
-    const rows: Json[] = [];
-    let row: Json[] = [];
-    for (;;) {
-      // the piecewise template (Tmpl, R10) writes "if" before each condition
-      if (env === "cases" && row.length === 1 && this.isCmd("text")) {
-        this.pos++;
-        if (this.groupText().trim() !== "if") this.fail("parse.piecewiseExpectedIf");
-      }
-      row.push(this.relation());
-      if (this.isCh("&")) {
-        this.pos++;
-      } else if (this.isCmd("\\")) {
-        this.pos++;
-        rows.push(["List", ...row]);
-        row = [];
-      } else break;
-    }
-    rows.push(["List", ...row]);
-    if (!this.isCmd("end")) this.fail("parse.expectedEnd");
-    this.pos++;
-    if (this.groupText() !== env) throw parseError("parse.mismatchedEnd");
-    if (env === "cases") {
-      // value & if condition, one row each: piecewise(condition, value, …)
-      const pairs = rows.map((r) => (r as Json[]).slice(1));
-      if (pairs.some((p) => p.length !== 2)) throw parseError("parse.piecewiseEachLine");
-      return ["Piecewise", ...pairs.map((p) => ["Pair", p[0] as Json, p[1] as Json] as Json)];
-    }
-    return ["Matrix", ["List", ...rows]];
   }
 }
 
