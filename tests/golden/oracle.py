@@ -10,6 +10,7 @@ in the canonical text of app/src/engine/format.ts (STD).
   tests/golden/.venv/bin/python tests/golden/oracle.py            # check every file, exit 1 on a problem
   tests/golden/.venv/bin/python tests/golden/oracle.py --write    # fill/refresh expect for source: oracle
   tests/golden/.venv/bin/python tests/golden/oracle.py --g2       # also regenerate tests/golden/G2-CHECKLIST.md
+  tests/golden/.venv/bin/python tests/golden/oracle.py --g2 --check # exit 1 with the item numbers when G2-CHECKLIST.md was edited by hand (G79)
   tests/golden/.venv/bin/python tests/golden/oracle.py home.yaml  # one file
   tests/golden/.venv/bin/python tests/golden/oracle.py --digits 30 # default digits for cases without settings.digits (12)
 
@@ -454,7 +455,7 @@ def cell(s: str) -> str:
     return str(s).replace("|", "\\|").replace("\n", " ")
 
 
-def write_checklist(items, files) -> None:
+def build_checklist(items, files) -> str:
     links = {}
     for path in files:
         for c in load_cases(path):
@@ -477,8 +478,28 @@ def write_checklist(items, files) -> None:
         out.append("| " + " | ".join([str(it["n"]), cell(it["area"]), cell(it["question"]), cell(it["why"]),
                                        cell(it["asked_by"]), cell(it.get("answer", "")),
                                        ", ".join(links.get(it["n"], []))]) + " |")
-    CHECKLIST.write_text("\n".join(out) + "\n")
+    return "\n".join(out) + "\n"
+
+
+def write_checklist(items, files) -> None:
+    CHECKLIST.write_text(build_checklist(items, files))
     print(f"wrote {CHECKLIST}")
+
+
+def checklist_diff(want: str, have: str) -> list:
+    """G79: the item numbers (or 'header') whose line differs between the generated and the stored checklist."""
+    def rows(t):
+        d, other = {}, []
+        for line in t.splitlines():
+            m = re.match(r"\| (\d+) \|", line)
+            if m:
+                d[m.group(1)] = line
+            else:
+                other.append(line)
+        return d, other
+    (w, wo), (h, ho) = rows(want), rows(have)
+    bad = [k for k in sorted(set(w) | set(h), key=int) if w.get(k) != h.get(k)]
+    return bad + (["header"] if wo != ho else [])
 
 
 def main(argv) -> int:
@@ -486,6 +507,11 @@ def main(argv) -> int:
     if "--digits" in argv:
         i = argv.index("--digits")
         DIGITS = int(argv[i + 1])
+        argv = argv[:i] + argv[i + 2:]
+    stored = CHECKLIST
+    if "--checklist" in argv:
+        i = argv.index("--checklist")
+        stored = Path(argv[i + 1])
         argv = argv[:i] + argv[i + 2:]
     write = "--write" in argv
     items = yaml.safe_load((HERE / "g2.yaml").read_text())["items"]
@@ -499,6 +525,12 @@ def main(argv) -> int:
             print(f"PROBLEM g2.yaml item {it['n']}: answered but source is {it.get('source')!r}")
             bad += 1
     files = case_files(argv)
+    if "--check" in argv:  # G79: read-only; the stored checklist must be what --g2 would write
+        diff = checklist_diff(build_checklist(items, sorted(p for p in HERE.glob("*.yaml") if p.name != "g2.yaml")), stored.read_text())
+        for k in diff:
+            print(f"PROBLEM {stored.name}: item {k} differs from g2.yaml (regenerate with --g2)")
+        print(f"checklist {'differs' if diff else 'ok'}: {len(diff)} item(s)")
+        return 1 if diff or bad else 0
     texts = []
     for path in files:
         n, text = check_file(path, write, set(numbers))

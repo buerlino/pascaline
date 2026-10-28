@@ -11,6 +11,7 @@ import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, isAbsolute, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { oracleVenvPython, setupLine, touchesG2 } from "./g2check.ts";
 import { countAll, evalOutside, judge, readBaseline, totals, writeBaseline } from "./text-rules.ts";
 import {
   duration, formatLine, playwrightFailedSpecs, retryable, summarizeDocs, summarizeGolden, summarizePlaywright, summarizeCasBack, summarizeSeqSweep, summarizeSize, summarizeSweep, summarizeViewSweep, summarizeFindCensus, summarizeTypecheck, regeneratesIndex, selectsGolden, summarizeVitest, vitestFailures,
@@ -64,6 +65,11 @@ const changed = ((): string[] | null => {
   const r = spawnSync("git", ["diff", "--name-only", `${base}...`], { cwd: repo, encoding: "utf8" });
   return r.status === 0 ? r.stdout.split("\n").filter(Boolean) : null;
 })();
+/** A file as it is on the base (for a g2-link that the branch removed); null when it does not exist there. */
+function baseText(f: string): string | null {
+  const r = spawnSync("git", ["show", `${base}:${f}`], { cwd: repo, encoding: "utf8" });
+  return r.status === 0 ? r.stdout : null;
+}
 interface Check {
   name: string;
   skip?: () => string | null;
@@ -234,6 +240,18 @@ const checks: Check[] = [
       // S7: every link resolves, and the brief, backlog, decisions, docs/04 and each package file stay within their budgets
       const r = run("docs", "node", [join(repo, "tools/docs-check.mjs")], {}, 60_000, repo);
       return summarizeDocs(r.out, r.code);
+    },
+  },
+  {
+    // G79: G2-CHECKLIST.md is generated from g2.yaml; a hand edit fails (oracle.py --g2 --check)
+    name: "g2check",
+    skip: () => (changed !== null && !touchesG2(changed, repo, baseText) ? `no g2.yaml, G2-CHECKLIST.md, oracle.py or g2-linked golden file changed against ${base}` : null),
+    run: () => {
+      const py = oracleVenvPython(repo, mainCheckout);
+      if (!py) return { ok: false, detail: `no oracle venv; set it up: ${setupLine}` };
+      const r = run("g2check", py, [join(repo, "tests/golden/oracle.py"), "--g2", "--check"], {}, 5 * 60_000, repo);
+      const bad = r.out.split("\n").filter((l) => l.startsWith("PROBLEM"));
+      return r.code === 0 ? { ok: true, detail: "checklist matches g2.yaml" } : { ok: false, detail: bad.length ? bad.slice(0, 3).join("; ") : `exit ${r.code}` };
     },
   },
 ];
