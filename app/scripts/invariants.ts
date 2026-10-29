@@ -58,7 +58,7 @@ export function invariantsStage(failures: readonly InvariantFailure[], known: re
   for (const k of known)
     if (!got.has(keyOf(k))) {
       fixed++;
-      lines.push(`NOW PASSING ${k.id} [${k.check}]: remove it from the stage's own known list in tests/golden/ (invariants-known.yaml, sweep-known.yaml, seqsweep, casback-known.yaml, viewsweep-known.yaml) (${k.package})`);
+      lines.push(`NOW PASSING ${k.id} [${k.check}]: remove it from the stage's own known list in tests/golden/ (invariants-known.yaml, sweep-known.yaml (the nightly sweep's own rows are in sweep-nightly-known.yaml, which the gate never reads), seqsweep, casback-known.yaml, viewsweep-known.yaml) (${k.package})`);
     }
   return { ok: fresh === 0 && fixed === 0, lines, summary: `${still} known failures, ${fresh} new, ${fixed} now passing` };
 }

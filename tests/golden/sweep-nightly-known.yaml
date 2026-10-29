@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# A44: the open findings of the nightly oracle sweep (app/scripts/sweep.ts --nightly), hidden from its report. Same fields as sweep-known.yaml
+# (id = "<angle> <digits> <keyboard LaTeX>", check = the judge's check, package = the open backlog id that removes the row). Only --nightly reads
+# this file; the gate stage reads sweep-known.yaml alone, so a row here that passes never turns the gate red: the nightly report lists it as
+# "now passing" and the next fix removes it. The nightly fuzz adds rows here, not to sweep-known.yaml. The 20 acos/acosh hangs of seed 1793285778
+# (.tasks/sweep-2026-10-29-g120-triage.md) have no backlog line yet and stay out.
+known:
+  # F122: exact base to an exact huge exponent kills the engine (seed 1793285778 and G116's)
+  - { id: 'rad 30 \left(\operatorname{asinh}\left(\sqrt[3]{0.5}\right)\right)^{\left(\frac{\pi}{2}+10^{-3}\right)^{\frac{90+10^{-3}}{\frac{\pi}{2}+10^{-6}}}}', check: crash, package: F122 }
+  - { id: 'rad 12 \left(\arctan\left(\ln\left(-\pi\right)+9007199254740993\right)\right)^{\sin\left(1ᴇ-300\right)-\left(1ᴇ300\right)}', check: crash, package: F122 }
+  - { id: 'deg 12 \left(\arctan\left(\ln\left(-\pi\right)+9007199254740993\right)\right)^{\sin\left(1ᴇ-300\right)-\left(1ᴇ300\right)}', check: crash, package: F122 }
+  # G120's five findings
+  - { id: 'rad 12 \frac{\sin\left(\sqrt[3]{\sin\left(\frac{\pi}{2}-\frac{\pi}{10^{8}}\right)}\right)}{\sqrt{\left(\operatorname{acosh}\left(-0.5\right)\right)^{3}}}', check: '≈', package: F129 }
+  - { id: 'rad 30 \arccos\left(9007199254740993^{9007199254740993}\right)\times \arcsin\left(\arccos\left(90+10^{-3}\right)\right)', check: part, package: F130 }
+  - { id: 'rad 30 \operatorname{asinh}\left(\operatorname{acosh}\left(10^{-6}\right)\right)', check: '⚠n', package: F131 }
+  - { id: 'rad 30 \arcsin\left(\frac{\sqrt{-1.000001}}{100000000000000000001\times 1}\right)', check: '≈', package: F132 }
+  - { id: 'rad 30 \sqrt[3]{\frac{\frac{90+10^{-3}}{1ᴇ300}}{\cos\left(\operatorname{acosh}\left(-0.5\right)\right)}}', check: '⚠n', package: F133 }
