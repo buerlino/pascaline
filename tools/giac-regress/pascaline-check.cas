@@ -309,6 +309,8 @@ Digits:=40:; pc("g84-keep-sinpi",'(sin(pi))',0,1/10^30);
 Digits:=40:; pc("g84-keep-zero-times",'(0*exp(-10^30))',0,1/10^30);
 // g84-keep-exp-cancel (home.yaml, derived)
 Digits:=40:; pc("g84-keep-exp-cancel",'(exp(-10^30)*exp(10^30))',1,5/10^12);
+// g123-keep-pow-1e15 (home.yaml, oracle)
+Digits:=40:; pc("g123-keep-pow-1e15",'((1000000000000001/10^15)^(10^15))',(271828182846/10^11),5/10^12);
 // g78-keep-int-exp-inf (home.yaml, derived)
 Digits:=40:; pc("g78-keep-int-exp-inf",'(int(exp(-x),x,0,inf))',1,5/10^12);
 // g78-keep-piecewise (home.yaml, derived)
@@ -683,4 +685,6 @@ Digits:=40:; pc("g118-abs-1+i-sq",'(abs(1+i)^2)',2,5/10^12);
 Digits:=40:; pc("g118-abs-neg2-sq",'(abs(-2)^2)',4,5/10^12);
 // g118-abs-pi-sq (precision.yaml, oracle)
 Digits:=40:; pc("g118-abs-pi-sq",'(abs(pi)^2)',(986960440109/10^11),5/10^12);
+// g123-keep-pow-1e7-30 (precision.yaml, oracle)
+Digits:=40:; pc("g123-keep-pow-1e7-30",'((10000001/10^7)^(10^7))',(271828169254496627119855022578/10^29),5/10^30);
 print("pascaline-check: "+pasfail+" of "+pasn+" failed");
