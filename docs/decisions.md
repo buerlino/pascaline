@@ -7,7 +7,6 @@ Phase 0 decisions (D1–D9, P1, P2): [spike/DECISIONS.md](../spike/DECISIONS.md)
 
 The owner's other open items are in [backlog.md](backlog.md), "Needs the user". Once decided, an entry moves to "Decided proposals".
 
-- **G119 (2026-10-29): Giac's sequence answers beyond fMin and fMax.** Every Home sequence answer now shows as its value or a braced list (`op(list[1,2])` {1,2}, `divmod`, `eigenvals`, the regressions, `q5,q6:=…`); `fMax(x^2,x)` shows Giac's {-infinity,+infinity}, an empty sequence still `seq[]`. CAS unchanged (F108). Would change if: the owner wants it for fMin and fMax only, or CAS too.
 - **A21, the F-Droid recipe's qalc build (P22):** `fdroid/README.md` names the open answer. Until F-Droid says whether checked-in derived data (`find/factors.yaml`) is acceptable, the recipe keeps its libxml2 and libqalculate builds, unchanged. Yes: before C4 it drops both. No: it runs `tools/find-index/refresh-factors.mjs` and fails on a diff.
 
 
@@ -177,3 +176,4 @@ The defaults that bind code and tests, one line each. A default changes when its
 - **Releases:** the engine is built in the pinned container (P2 met: +2.3 % start), under `setarch -R` so `giac.wasm` is bit-reproducible. **Minimum WebView:** Chrome 95, with an inline "update" notice below it (minSdk 24).
 - **Tests:** the golden gate as docs/04 7.3 (the G2 checklist generated from `tests/golden/g2.yaml`); a pending task's budget is its planned press count, values `derived` or `oracle`; the Tab One Enter benchmark skips only our parser (`?bench=1`); timing tests skip their assertion when the load average exceeds the cores; a ⚠ case showing a wrong value has no `oracle` (G49f2).
 - **G116, the sweep oracle:** on atanh's cut it takes Giac's side (+π/2·i for a real x > 1), and an argument on a cut within noise is a skip. Would change if: a case shows Giac off the textbook side.
+- **G119, Giac's sequence answers in Home (Opus pass 6):** every one shows as its value with its own mark (one element) or as Giac's list type in braces (`fMin`, `fMax`, `op`, `divmod`, `eigenvals`, the regressions, `q5,q6:=…`), so Ans reads back a value or a list; `fMax(x^2,x)` shows Giac's {-infinity,+infinity}. CAS unchanged (F108). Would change if: the owner wants it for fMin and fMax only, or for CAS too.
