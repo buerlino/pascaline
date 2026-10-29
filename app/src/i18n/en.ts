@@ -17,6 +17,7 @@ export const en = {
   "key.redo": "Redo",
   "key.paste": "Paste",
   "key.fmt": "Fmt",
+  "key.mode": "Mode",
   "key.clear": "Clear",
   "key.sto": "Store",
   "key.emark": "ᴇ",
