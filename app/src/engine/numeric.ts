@@ -29,7 +29,7 @@ import {
 } from "./format.ts";
 import { ICDF_DIGITS, ICDF_FAILED, erfValueText, icdfCalls, icdfPolished } from "./icdf.ts";
 import type { GiacValue } from "./bridge.ts";
-import { callsOf, functionsIn, LIST_TYPE, type Quoting, splitList, topLevelArgs, wholeCall } from "./giacPrint.ts";
+import { callsOf, functionsIn, LIST_TYPE, matrixTyped, type Quoting, splitList, topLevelArgs, wholeCall } from "./giacPrint.ts";
 import { complexReads, complexReplacedIn, complexSafe, forValue, nonReal, purgeReads } from "./complex.ts";
 
 export interface Giac {
@@ -252,7 +252,7 @@ export function shapeOfValue(v: GiacValue): Shape | null {
   const els = v.elements;
   if (!els || n === 0 || n > MAX_ITEMS) return null;
   const listForm = v.text.startsWith(LIST_TYPE);
-  if (!v.text.startsWith("[") && !listForm) return null;
+  if (!v.text.startsWith("[") && !listForm && !(v.kind === "matrix" && matrixTyped(v.text))) return null; // G130: zeros(2,3) again
   if (v.kind === "list") return els.length !== n ? null : listForm ? { kind: "list", n, braces: true } : { kind: "list", n };
   if (listForm || cols === 0 || n * cols > MAX_ITEMS || els.length !== n * cols) return null;
   return { kind: "matrix", rows: n, cols };
