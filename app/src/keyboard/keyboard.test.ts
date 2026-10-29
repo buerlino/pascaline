@@ -64,6 +64,9 @@ describe("keyboard spec", () => {
     // View: results mode (R53) and Help (milestone 6) not built: dead in both layers, so it is drawn dimmed
     expect(actionFor(k("view"), false, false)).toEqual({ kind: "special", name: "none" });
     expect(actionFor(k("view"), true, false)).toEqual({ kind: "special", name: "none" });
+    // R85: Fmt's free Shift cell opens Mode
+    expect(k("fmt").actions.shift).toEqual({ kind: "special", name: "mode" });
+    expect(k("fmt").label.shift).toBe("$key.mode");
     expect(k("view").label).toEqual({ primary: "$key.view", shift: "$key.help" });
     // the cluster keeps no alpha letters, so no key in it draws the letter line (vertical space, docs/03 rule 9)
     for (const key of keyboard.keys.filter((x) => x.row < MATHS_ROW)) expect(key.label.alpha ?? key.actions.alpha, key.id).toBeUndefined();

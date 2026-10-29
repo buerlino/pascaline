@@ -311,7 +311,7 @@ keys:
     source: virtual-calc  # r9c4 (shift π; alpha #)
   - { id: sub, row: 8, col: 4, cls: op, label: { primary: "−", alpha: ":" }, primary: { type: "-" }, alpha: { type: ":" }, source: virtual-calc }  # r9c5 (alpha :; shift Base not ours)
 
-  - { id: fmt, row: 9, col: 0, cls: ctl, label: { primary: "$key.fmt" }, primary: { special: fmt }, source: assumed }  # at the reference's On key (r10c1); ours cycles the display format of the last result (Settings: Format key cycle)
+  - { id: fmt, row: 9, col: 0, cls: ctl, label: { primary: "$key.fmt", shift: "$key.mode" }, primary: { special: fmt }, shift: { special: mode }, source: assumed }  # at the reference's On key (r10c1); ours cycles the display format of the last result (Settings: Format key cycle); Shift opens Mode on Angle (R85, assumed: a free Shift cell, docs/04 5.1)
   - { id: d0, row: 9, col: 1, cls: num, label: { primary: "0" }, primary: { type: "0" }, alpha: { special: none }, source: virtual-calc }  # r10c2 (no quote mark, P12 point 8; alpha is dead, not 0; shift Notes not ours)
   - { id: dot, row: 9, col: 2, cls: num, label: { primary: ".", shift: "=" }, primary: { type: "." }, shift: { type: "=" }, source: virtual-calc }  # r10c3 (shift =)
   - { id: space, row: 9, col: 3, cls: num, label: { primary: "␣", shift: "_" }, primary: { type: " " }, shift: { type: "_" }, source: virtual-calc }  # r10c4 (space; shift _)
