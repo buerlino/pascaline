@@ -143,12 +143,12 @@ describe.skipIf(!giacAvailable())("G124 a list form Giac documents", () => {
   });
 
   it("answers the six inputs in Home with Giac's value", () => {
-    // Home shows Giac's matrix type as Giac prints it, as for matrix(2,3) (zeros are Giac's 0.0)
-    expect(home("matrix(list[[1,2],[3,4]])")).toMatchObject({ ok: true, display: "matrix[[1,2],[3,4]]" });
-    expect(home("zeros(list[2,3])")).toMatchObject({ ok: true, display: "matrix[[0.0,0.0,0.0],[0.0,0.0,0.0]]" });
+    // G130: Home shows Giac's matrix type as the rows a plain [[…]] shows (zeros are Giac's 0.0, each through the formatter)
+    expect(home("matrix(list[[1,2],[3,4]])")).toMatchObject({ ok: true, display: "[[1,2],[3,4]]" });
+    expect(home("zeros(list[2,3])")).toMatchObject({ ok: true, display: "[[0,0,0],[0,0,0]]", shape: [2, 3] });
     const r = home("ranm(list[2,3])");
     expect(r).toMatchObject({ ok: true });
-    expect(r.ok && r.display, "a 2×3 matrix").toMatch(/^matrix\[\[-?\d+,-?\d+,-?\d+\],\[-?\d+,-?\d+,-?\d+\]\]$/);
+    expect(r.ok && r.display, "a 2×3 matrix").toMatch(/^\[\[-?\d+,-?\d+,-?\d+\],\[-?\d+,-?\d+,-?\d+\]\]$/);
     expect(home("simp2(list[12,18])")).toMatchObject({ ok: true, display: "[2,3]" });
     expect(home("iegcd(list[45,75])")).toMatchObject({ ok: true, display: "[2,-1,15]" });
     // a stored list: simp2 and subst read it alike (12·(−1) + 18·1 = 6 = gcd(12,18))
@@ -178,7 +178,7 @@ describe.skipIf(!giacAvailable())("G124 a list form Giac documents", () => {
     ]) {
       expect(home(input), input).toMatchObject(REFUSAL);
     }
-    expect(home("zeros(list[2,3])")).toMatchObject({ ok: true, display: "matrix[[0.0,0.0,0.0],[0.0,0.0,0.0]]" });
+    expect(home("zeros(list[2,3])")).toMatchObject({ ok: true, display: "[[0,0,0],[0,0,0]]" });
     expect(home("ranm(list[2,3])")).toMatchObject({ ok: true });
     expect(home("newMat(list[2,3])")).toMatchObject({ ok: true });
   });

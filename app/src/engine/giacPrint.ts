@@ -160,6 +160,16 @@ export function splitList(text: string): string[] | null {
  *  subtype, so bridge-3's text and the state read's give it with no extra call. A solve result is one too. */
 export const LIST_TYPE = "list[";
 
+/** G130 (F125): how Giac prints a value of its matrix subtype (11: matrix(2,3), zeros, idn, a matrix sum); a `[[…]]`
+ *  vector is the same matrix to Giac, printed without the word. */
+export const MATRIX_TYPE = "matrix[";
+export function matrixTyped(text: string): boolean {
+  return text.startsWith(MATRIX_TYPE);
+}
+/** Giac text of the matrix `name` holds as plain rows, the matrix and each row of subtype 0 (matrix({{1,2},{3,4}}) keeps
+ *  its rows of the list type, `matrix[list[1,2],list[3,4]]`); the elements stay as they are. */
+export const MATRIX_ROWS = (name: string): string => `apply(pasrow->[op(pasrow)],[op(${name})])`;
+
 /** Giac's print with every value of its list type written with braces, as the G2 shows a list (`list[[1,2],3]` →
  *  `{[1,2],3}`, `[list[1,2],3]` → `[{1,2},3]`), at any depth; strings and a name that ends in `list` are left alone.
  *  Bridge-3 gives the kind and the flat elements but no print in braces, and a list inside a vector needs the nesting. */

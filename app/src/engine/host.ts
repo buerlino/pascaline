@@ -40,7 +40,7 @@ import { callsIn, floatBounds, giacPair, hasDefiniteIntegral, integratedNumerica
 import { enEngine } from "../i18n/enEngine.ts";
 import { dropAngleFactor, PASDEG } from "../input/angles.ts";
 import { askedDigits, DOUBLE_DIGITS, doubleFormsIn, notBuiltin, floatsShown, unauditedIn, floatFacts, hasFloat, integratedFacts, numberLatex, shapeOfValue, valuePrecision, whyOf, withDigits } from "./numeric.ts";
-import { balanced, bracesOf, callsOf, isName, leadingName, LIST_TYPE, namesIn, wholeCall, wordsOf, parsePrinted, typedFromPrinted } from "./giacPrint.ts";
+import { balanced, bracesOf, callsOf, isName, leadingName, LIST_TYPE, MATRIX_ROWS, matrixTyped, namesIn, wholeCall, wordsOf, parsePrinted, typedFromPrinted } from "./giacPrint.ts";
 import { decidedAtDouble, decideTwice, restsOnDecision } from "./decisions.ts";
 import { assignmentIn, formIn, formOf, mayStore, programStores, STATE_HEADS, STRING_HEADS, writesThrough, type InputForm, type ProgramStores } from "./stores.ts";
 import { fnFacts, inherited, nameFacts, readFacts, readsFacts, storedFacts, storeFacts, type FactsHost } from "./facts.ts";
@@ -1024,6 +1024,12 @@ export class EngineHost implements FactsHost {
     if (guarded) {
       const stored = this.giac.eval(`${guarded.name}:=pcasans`);
       if (isError(stored)) return fail(stored, isTimeout(stored) ? "timeout" : "engine");
+    }
+    // G130 (F125): Giac's matrix subtype prints as `matrix[…]`, engine text: pcasans becomes the plain rows, which Giac reads
+    // as the same matrix (Home does the same); latex() draws both alike.
+    if (matrixTyped(text)) {
+      const rows = this.giac.eval(`pcasans:=${MATRIX_ROWS("pcasans")}`);
+      if (!isError(rows)) text = rows;
     }
     // A check that could not finish: the result stands with ⚠ (its numeric facts, or the text's mark).
     const unverified = refused === "unchecked";
