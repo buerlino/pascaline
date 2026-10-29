@@ -75,7 +75,7 @@ The one place for "where are we and what's left", one or two lines per open item
 - **F122, no package (G116).** Home `(atan(ln(-π)+9007199254740993))^(sin(10^-300)-10^300)` kills the engine (stack overflow inside Giac's wasm); also `(asinh(∛0.5))^((π/2+10^-3)^((90+10^-3)/(π/2+10^-6)))` (G120). G94's kind.
 - **F126, G135 (G129's Not done).** Home `cos(w)` with `w:=atan(2*i)` stored in CAS, and `f(2*i)` with `f(x):=cos(atan(x))` defined in CAS, show 0.57735026919*i, right -0.57735026919*i: the exact pass evaluates a stored text with Giac's atan (G129 reads only the input's own atan through pasatanx). Family 8.
 - **F127, no package (G130's Not done).** A matrix inside a list keeps Giac's word: Home and CAS `[idn(2),1]` show `[matrix[[1,0],[0,1]],1]`, `list[idn(2)]` `{matrix[[1,0],[0,1]]}`; and Home `zeros(2,3)` costs 13 Giac calls per Enter (was 10; G130's bar was one more). Family 1.
-- **F129, G132 (G120).** Home `sin(∛0.9)/√(acosh(-0.5)^3)` ≈ -0.191841201673-0.191841201673·i (right: the negative); `√(z^3)` taken as z·√z. Pending `g120-sin-cbrt-*`. Family 3.
+- **F129, fixed by G132 (remove on merge).** `√(z^3)` taken as z·√z for a complex z (Giac's `(a^b)^c` = `a^(b*c)` with no branch check); patch 0018. `simplify`/`normal` of such a power still take the other root (G132 report). Family 3.
 - **F130, fixed by G131 (remove on merge).** A refused factor (an MPFR NaN) dropped out of a product under ≈; patch 0017. Family 6.
 - **F131, G134 (G120).** Home `asinh(acosh(10^-6))` (30 digits) ⚠ -0.45158…+1.5708·i, on neither side of asinh's cut (right 1.0232266530…+1.5708·i). Pending `g120-asinh-*`. Family 3.
 - **F132, G133 (G120).** Home `asin(√-1.000001/100000000000000000001)` at 30 digits ≈ with 21 right digits. Pending `g120-asin-*`. Family 4.
