@@ -42,7 +42,7 @@ export const PROBED_EVIDENCE: Readonly<Record<string, string>> = {
   exponentiald_icdf: "exponentiald_icdf(list[1,2]) = exponentiald_icdf(1,2) = -i*pi",
   geometric: "geometric(list[2,3]) = geometric(2,3) = 2",
   geometric_cdf: "geometric_cdf(list[1,2]) = geometric_cdf(1,2) = 1",
-  geometric_icdf: "geometric_icdf(list[2,3]) = geometric_icdf(2,3) = -floor(-(i*pi+ln(2))/(i*pi))",
+  geometric_icdf: "geometric_icdf(list[2,3]) = geometric_icdf(2,3) = 1",
   weibull: "weibull(list[2,0.3,0.6]) = weibull(2,0.3,0.6) = 0.244208518516",
   weibulld: "weibulld(list[2,0.3,0.6]) = weibulld(2,0.3,0.6) = 0.244208518516",
   weibull_cdf: "weibull_cdf(list[2,0.3,0.6]) = weibull_cdf(2,0.3,0.6) = 0.981684361111",
