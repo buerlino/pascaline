@@ -341,6 +341,12 @@ cases:
   - { id: "g84-keep-sinpi", input: "sin(pi)", oracle: "F(0)", expect: "0", mark: "=", source: "derived", note: "guard: an exact 0 stays" }
   - { id: "g84-keep-zero-times", input: "0*exp(-10^30)", oracle: "F(0)", expect: "0", mark: "=", source: "derived", note: "guard: Giac's exact 0, not an underflow" }
   - { id: "g84-keep-exp-cancel", input: "exp(-10^30)*exp(10^30)", oracle: "F(1)", expect: "1", mark: "=", source: "derived", note: "guard: exactly 1" }
+  # --- G123 (backlog F123, G116's sweep): a power past MPFR's range is refused, never a double's number with ⚠ ---------
+  - { id: "g123-overflow-pow-1e50", input: "1.000000000000001^(10^50)", expect: "Overflow: the number is too large", source: "derived", note: "F123: about 10^(4.34294481903E34) (mpmath: 10^50*ln(1+10^-15)/ln(10)), past MPFR's exponent range; Giac's evalf at P is +infinity, and the double fallback (ln(a/b) cancels to 0 in a double) showed ⚠ 12 1" }
+  - { id: "g123-overflow-pow-1e30", input: "1.0000001^(10^30)", expect: "Overflow: the number is too large", source: "derived", note: "guard: about 10^(4.34294460189E22) (mpmath); the double overflows too, so G78's lostNumber refuses it" }
+  - { id: "g123-overflow-10-1e20", input: "10.0^(10^20)", expect: "Overflow: the number is too large", source: "derived", note: "guard: 10^(10^20), past MPFR's exponent range" }
+  - { id: "g123-underflow-pow-1e50", input: "0.999999999999999^(10^50)", expect: "Underflow: the number is too small", source: "derived", note: "guard: about 10^(-4.34294481903E34) (mpmath: 10^50*ln(1-10^-15)/ln(10))" }
+  - { id: "g123-keep-pow-1e15", input: "1.000000000000001^(10^15)", oracle: "power(M(F('1.000000000000001')),10**15)", expect: "2.71828182846", mark: "≈", source: "oracle", note: "guard: a power near 1 that fits keeps its value (e^(1-5E-16))" }
   - { id: "g84-keep-cos-pi/7", input: "cos(pi/7)-cos(2*pi/7)+cos(3*pi/7)-1/2", mark: "⚠", source: "derived", note: "mark-only guard: exactly 0 (oracle: mpmath at 200 digits leaves 1.6e-201, as g38-floor-cos-pi/7), which Giac's simplify does not prove; its evalf is noise, not an MPFR zero, so it is no underflow and stays ⚠ 0" }
   - { id: "g78-keep-limit-inf", input: "limit(1/x^2,x,0)", expect: "+infinity", source: "derived", note: "an infinity the answer is, typed as a limit: Giac's answer stays" }
   - { id: "g78-keep-int-exp-inf", input: "int(exp(-x),x,0,inf)", oracle: "F(1)", expect: "1", mark: "=", source: "derived", note: "a typed inf bound is not a division by zero" }
