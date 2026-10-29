@@ -73,8 +73,10 @@ describe.skipIf(!giacAvailable())("G78 on the real engine", () => {
     expect(home("exp(-1000)")).toMatchObject({ ok: true, display: "5.07595889755E-435" });
     for (const input of ["sin(pi)", "0*exp(-10^30)"]) expect(home(input), input).toMatchObject({ ok: true, display: "0", facts: { exact: true } });
     expect(home("exp(-10^30)*exp(10^30)")).toMatchObject({ ok: true, display: "1" });
-    for (const input of ["cos(pi/7)-cos(2*pi/7)+cos(3*pi/7)-1/2", "exp(10^-70)-1"])
-      expect(home(input), input).toMatchObject({ ok: true, display: "0", facts: { warn: "unchecked" } });
+    expect(home("cos(pi/7)-cos(2*pi/7)+cos(3*pi/7)-1/2")).toMatchObject({ ok: true, display: "0", facts: { warn: "unchecked" } });
+    // G126: exp(10^-70)-1 is 0 at P and P+20, its value 1.0000…E-70 (derived: x+x^2/2+…) from P+40 on, so the steps go on.
+    expect(home("exp(10^-70)-1")).toMatchObject({ ok: true, display: "1E-70", facts: { exact: false, reliableDigits: 40 } });
+    expect(home("exp(10^-70)-1").facts).not.toHaveProperty("warn");
   });
   it("decides an underflow on Giac's exact answer: an element Giac's simplify proves 0 is no underflow (G84)", () => {
     try {
