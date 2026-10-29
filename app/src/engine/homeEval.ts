@@ -580,20 +580,13 @@ export function homeEval(
       if (d.value) value = d.value;
     }
   }
-  // G119 (F108): Giac's sequence answer (fMin, fMax, op) is no value Home shows (`seq[1/2]`, `1,-1`), and Giac adds a
-  // stored sequence's elements into one sum (Ans+1 of 1,-1 gave 1). One element becomes its value, with the value's own
-  // mark; several Giac's list type, shown in braces as G109's; Ans, the chips and the copy read back what Giac reads.
-  if (value.kind === "sequence" && !isError(exactOut)) {
-    const n = Number(giac.eval(`size(${ans})`));
-    if (Number.isInteger(n) && n >= 1) {
-      withDigits(giac, P, s.digits, () => {
-        const v = giac.value(`${ans}:=${n === 1 ? `${ans}[0]` : `list[${ans}]`}`, at);
-        if (!isError(v.text)) {
-          value = v;
-          exactOut = v.cut ? giac.eval(ans) : v.text;
-        }
-      });
-    }
+  // G119 (F108): Giac's sequence answer (fMin, fMax, op) is no value Home shows (`seq[1/2]`, `1,-1`), and Giac adds a stored
+  // sequence's elements into one sum (Ans+1 of 1,-1 gave 1): one element becomes its value with its own mark, several Giac's
+  // list type, shown in braces as G109's; Ans, the chips and the copy read back what Giac reads.
+  const seqSize = value.kind === "sequence" && !isError(exactOut) ? Number(giac.eval(`size(${ans})`)) : 0;
+  if (Number.isInteger(seqSize) && seqSize >= 1) {
+    const v = withDigits(giac, P, s.digits, () => giac.value(`${ans}:=${seqSize === 1 ? `${ans}[0]` : `list[${ans}]`}`, at));
+    if (!isError(v.text)) [value, exactOut] = [v, v.cut ? withDigits(giac, P, s.digits, () => giac.eval(ans)) : v.text];
   }
   const W = Math.max(s.workDigits, s.digits + 10);
   const late = (): boolean => now() - t0 > HOME_DEADLINE_MS;
