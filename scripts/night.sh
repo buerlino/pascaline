@@ -210,7 +210,10 @@ while :; do
     why=""
     if [[ -n "$deadline" ]] && (( $(now) >= deadline )); then why="--until $until_hm reached"
     elif (( steps >= max_steps - 2 )); then why="step cap $max_steps minus the two closing steps"; fi
-    if [[ -n "$why" ]]; then closing=1; log "night.sh: closing ($why): the last Opus pass, then the report"; say "closing ($why): the last Opus pass, then the report"; fi
+    if [[ -n "$why" ]]; then
+      then_what="then the report"; [[ "$lane" != B ]] || then_what="no report (lane A's)"
+      closing=1; log "night.sh: closing ($why): the last Opus pass, $then_what"; say "closing ($why): the last Opus pass, $then_what"
+    fi
   fi
 
   if (( closing == 1 )); then  # closing step 1: henri's last Opus pass line
