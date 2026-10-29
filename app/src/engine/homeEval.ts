@@ -17,7 +17,7 @@ import { valueFactsOf, type ValueFacts } from "./types.ts";
 import type { GiacValue } from "./bridge.ts";
 import { floatBounds, refusalOf, giacPair, hasDefiniteIntegral, integratedNumerically, type Refusal } from "./converge.ts";
 import { enEngine } from "../i18n/enEngine.ts";
-import { lostFloat, lostNumber, throughInfinity, underflow, zeroElements } from "./novalue.ts";
+import { elementAt, lostFloat, lostNumber, throughInfinity, underflow, zeroElements } from "./novalue.ts";
 import { icdfAtEnd, icdfCalls } from "./icdf.ts";
 import { NO_BODIES, nonSquarePower, type Bodies } from "./nonsquare.ts";
 import { POLY_AT, POLY_AT_ANY_DEPTH, unaskedPoly } from "./polyvec.ts";
@@ -580,6 +580,14 @@ export function homeEval(
       if (d.value) value = d.value;
     }
   }
+  // G119 (F108): Giac's sequence answer (fMin, fMax, op) is no value Home shows (`seq[1/2]`, `1,-1`), and Giac adds a stored
+  // sequence's elements into one sum (Ans+1 of 1,-1 gave 1): one element becomes its value with its own mark, several Giac's
+  // list type, shown in braces as G109's; Ans, the chips and the copy read back what Giac reads.
+  const seqSize = value.kind === "sequence" && !isError(exactOut) ? Number(giac.eval(`size(${ans})`)) : 0;
+  if (Number.isInteger(seqSize) && seqSize >= 1) {
+    const v = withDigits(giac, P, s.digits, () => giac.value(`${ans}:=${seqSize === 1 ? `${ans}[0]` : `list[${ans}]`}`, at));
+    if (!isError(v.text)) [value, exactOut] = [v, v.cut ? withDigits(giac, P, s.digits, () => giac.eval(ans)) : v.text];
+  }
   const W = Math.max(s.workDigits, s.digits + 10);
   const late = (): boolean => now() - t0 > HOME_DEADLINE_MS;
   // G78: a function of the user's (a program may change globals) stops the walk for an infinity; ours do not.
@@ -761,7 +769,10 @@ export function homeEval(
     return asked !== null ? { ...r, digits: asked } : r;
   }
 
-  let facts = exactFacts(giac, ans, shape, s.digits, s.maxExactDigits, exactOut, value);
+  // G126: an element 0 at P and P+20 asks underflow here, before the steps (the call below would make it anyway).
+  const checked = new Map<number, boolean>();
+  const underflowAt = once ? undefined : (k: number): boolean => checked.set(k, !late() && underflow(giac, [elementAt(ans, shape, k)], valuePrecision(s.digits))).get(k)!;
+  let facts = exactFacts(giac, ans, shape, s.digits, s.maxExactDigits, exactOut, value, underflowAt);
   if (!facts) {
     const d = shape.kind === "scalar" ? doubleFallback(giac, ans, body, s.digits, s.digits) : null;
     if (!d) return symbolic();
@@ -782,7 +793,7 @@ export function homeEval(
   }
   // G84 (F60): an element that reads as 0 while Giac's exact answer is not 0 (exp(-10^30)) is an underflow, refused as an
   // overflow is; after provedRational, which turns an exact 0 Giac can prove into one.
-  if (!once && !late() && underflow(giac, zeroElements(ans, facts, shape), valuePrecision(s.digits))) return refuse("underflow", "exact");
+  if (!once && ([...checked.values()].some(Boolean) || (!late() && underflow(giac, zeroElements(ans, facts, shape, new Set(checked.keys())), valuePrecision(s.digits))))) return refuse("underflow", "exact");
   // G59 (r16 F3): an input with a decimal is checked against Giac's numeric evaluation of it; a disagreement is ⚠ with no
   // count, "exact and numeric differ". Only with audited functions in the input and the result, and none that Giac gets
   // wrong on complex arguments reaching the result through a stored name (the numeric route would read Giac's own).

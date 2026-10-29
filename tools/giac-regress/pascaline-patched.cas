@@ -281,6 +281,9 @@ Digits:=40:; pc("g116-asin-sin-sqrt-neg-pi-30",'(asin(sin(sqrt(-pi))))',(1772453
 // patch 0013-asin-ln-real-rules.patch
 // g116-acos-cos-ln-neg-pi-30 (precision.yaml, oracle)
 Digits:=40:; pc("g116-acos-cos-ln-neg-pi-30",'(acos(cos(ln(-pi))))',(114472988584940017414342735135/10^29)+(314159265358979323846264338328/10^29)*i,5/10^30+5/10^30);
+// patch 0015-asin-asinh-ln-cancellation.patch
+// g116-acos-neg-1e20-half-12 (precision.yaml, oracle)
+Digits:=40:; pc("g116-acos-neg-1e20-half-12",'(acos(-10^20+1/2))',(314159265359/10^11)-(467448490404/10^10)*i,5/10^12+5/10^11);
 // patch 0013-asin-ln-real-rules.patch
 // g116-ln-2^(10i)-12 (precision.yaml, oracle)
 Digits:=40:; pc("g116-ln-2^(10i)-12",'(ln(2^(10*i)))',(64828649842/10^11)*i,5/10^13);
@@ -341,6 +344,54 @@ Digits:=40:; pc("g125-acos-sin-neg1-2i-12",'(acos(sin(-1-2*i)))',(257079632679/1
 // patch 0013-asin-ln-real-rules.patch
 // g125-acos-cos-2+3i-12 (precision.yaml, oracle)
 Digits:=40:; pc("g125-acos-cos-2+3i-12",'(acos(cos(2+3*i)))',2+3*i,5/10^12+5/10^12);
+// patch 0015-asin-asinh-ln-cancellation.patch
+// g126-acos-neg-1e20-half-30 (precision.yaml, oracle)
+Digits:=40:; pc("g126-acos-neg-1e20-half-30",'(acos(-10^20+1/2))',(314159265358979323846264338328/10^29)-(467448490404408589897720612151/10^28)*i,5/10^30+5/10^29);
+// patch 0015-asin-asinh-ln-cancellation.patch
+// g126-asin-neg-1e20-half-12 (precision.yaml, oracle)
+Digits:=40:; pc("g126-asin-neg-1e20-half-12",'(asin(-10^20+1/2))',-(157079632679/10^11)+(467448490404/10^10)*i,5/10^12+5/10^11);
+// patch 0015-asin-asinh-ln-cancellation.patch
+// g126-asin-neg-1e20-half-30 (precision.yaml, oracle)
+Digits:=40:; pc("g126-asin-neg-1e20-half-30",'(asin(-10^20+1/2))',-(157079632679489661923132169164/10^29)+(467448490404408589897720612151/10^28)*i,5/10^30+5/10^29);
+// patch 0015-asin-asinh-ln-cancellation.patch
+// g126-asinh-neg-1e300-12 (precision.yaml, oracle)
+Digits:=40:; pc("g126-asinh-neg-1e300-12",'(asinh(-10^300))',-(691468675079/10^9),5/10^10);
+// patch 0015-asin-asinh-ln-cancellation.patch
+// g126-asinh-neg-1e300-30 (precision.yaml, oracle)
+Digits:=40:; pc("g126-asinh-neg-1e300-30",'(asinh(-10^300))',-(691468675078773650514814668527/10^27),5/10^28);
+// patch 0015-asin-asinh-ln-cancellation.patch
+// g126-asinh-neg-1e1250-12 (precision.yaml, oracle)
+Digits:=40:; pc("g126-asinh-neg-1e1250-12",'(asinh(-10^1250))',-(287892451342/10^8),5/10^9);
+// patch 0015-asin-asinh-ln-cancellation.patch
+// g126-asinh-neg-1e1250-30 (precision.yaml, oracle)
+Digits:=40:; pc("g126-asinh-neg-1e1250-30",'(asinh(-10^1250))',-(287892451342311705033190655048/10^26),5/10^27);
+// patch 0015-asin-asinh-ln-cancellation.patch
+// g126-asin-tan2-1e5040-12 (precision.yaml, oracle)
+Digits:=40:; pc("g126-asin-tan2-1e5040-12",'(asin(tan(2)-10^5040))',-(157079632679/10^11)+(116057220159/10^7)*i,5/10^12+5/10^8);
+// patch 0015-asin-asinh-ln-cancellation.patch
+// g126-asin-tan2-1e5040-30 (precision.yaml, oracle)
+Digits:=40:; pc("g126-asin-tan2-1e5040-30",'(asin(tan(2)-10^5040))',-(157079632679489661923132169164/10^29)+(116057220158705501927600941637/10^25)*i,5/10^30+5/10^26);
+// patch 0015-asin-asinh-ln-cancellation.patch
+// g126-asin-neg3+1e20i-12 (precision.yaml, oracle)
+Digits:=40:; pc("g126-asin-neg3+1e20i-12",'(asin(-3+10^20*i))',-(3/10^20)+(467448490404/10^10)*i,5/10^32+5/10^11);
+// patch 0015-asin-asinh-ln-cancellation.patch
+// g126-asinh-neg1e20+i-12 (precision.yaml, oracle)
+Digits:=40:; pc("g126-asinh-neg1e20+i-12",'(asinh(-10^20+i))',-(467448490404/10^10)+(1/10^20)*i,5/10^11+5/10^32);
+// patch 0015-asin-asinh-ln-cancellation.patch
+// g126-acos-neg-1e20-tiny-i-12 (precision.yaml, oracle)
+Digits:=40:; pc("g126-acos-neg-1e20-tiny-i-12",'(acos(-10^20-10^-400*i))',(314159265359/10^11)+(467448490404/10^10)*i,5/10^12+5/10^11);
+// patch 0015-asin-asinh-ln-cancellation.patch
+// g126-acos-neg-1e20-tiny-i-30 (precision.yaml, oracle)
+Digits:=40:; pc("g126-acos-neg-1e20-tiny-i-30",'(acos(-10^20-10^-400*i))',(314159265358979323846264338328/10^29)+(467448490404408589897770612151/10^28)*i,5/10^30+5/10^29);
+// patch 0015-asin-asinh-ln-cancellation.patch
+// g126-asinh-tiny-neg-1e20i-12 (precision.yaml, oracle)
+Digits:=40:; pc("g126-asinh-tiny-neg-1e20i-12",'(asinh(10^-400-10^20*i))',(467448490404/10^10)-(157079632679/10^11)*i,5/10^11+5/10^12);
+// patch 0015-asin-asinh-ln-cancellation.patch
+// g126-asinh-tiny-neg-1e20i-30 (precision.yaml, oracle)
+Digits:=40:; pc("g126-asinh-tiny-neg-1e20i-30",'(asinh(10^-400-10^20*i))',(467448490404408589897770612151/10^28)-(157079632679489661923132169164/10^29)*i,5/10^29+5/10^30);
+// patch 0015-asin-asinh-ln-cancellation.patch
+// g126-asinh-neg-1e20-30 (precision.yaml, oracle)
+Digits:=40:; pc("g126-asinh-neg-1e20-30",'(asinh(-10^20))',-(467448490404408589897770612151/10^28),5/10^29);
 // patch 0012-abs-power-real-base.patch
 // g118-abs-acos-pi-sq-12 (precision.yaml, oracle)
 Digits:=40:; pc("g118-abs-acos-pi-sq-12",'(abs(acos(pi))^2)',(328162743582/10^11),5/10^12);

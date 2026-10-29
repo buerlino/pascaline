@@ -1,0 +1,110 @@
+# Upstream: giac 2.1.0 usual.cc asinasln, asinhasln, asinh. The ln forms -i*ln(i*x+sqrt(1-x^2)) (asin, and acos = pi/2-asin) and ln(x+sqrt(x^2+1)) (asinh) add two terms of size |x| and opposite sign when |x| is large and x lies on the cancelling side (asin: im(x)>0, or x real and negative; asinh: re(x)<0, or x on the imaginary axis below 0), so acos(-10^20+1/2) gave 3.14159265359-21.4875625974*i (right 3.14159265359-46.7448490404*i) and asinh(-10^1250) a value with no right digit. Both functions are odd, in their ln forms too ((i*x+s)*(-i*x+s) = 1 and neither factor is a negative real), so on that side the value is taken as -f(-x), the same number without the cancellation. The side is read from the double of x, for |x| > 1 (below, the sum is at least sqrt(2)-1 in size); a part whose double reads 0 but is not exactly 0 is decided by its exact sign (is_exactly_zero and the MPFR sign; stock form when undecided); a symbolic x keeps its form. For a complex float x, sqrt(1-x^2) is taken as sqrt(1-x)*sqrt(1+x) (the same principal value; asinh: sqrt(1+i*x)*sqrt(1-i*x)): Giac's complex float x*x loses a tiny imaginary part (x=-10^20-10^-400*i: im(1-x*x) = +1e-800, right -2e-380) and put the root on the wrong side of its cut; each factor is a principal sqrt that keeps the sign of a tiny imaginary part (Giac's complex float sqrt of a+b*i, a<0, b tiny, returns +i*sqrt(-a) for either sign of b). asinh of an exact x above 1 in size with a part below the double range (10^-400-10^20*i) stays unevaluated, so evalf takes that float path (its exact ln form needed hundreds of digits).
+--- a/src/usual.cc
++++ b/src/usual.cc
+@@ -2150,8 +2150,82 @@
+   symbolic symb_asin(const gen & e){
+     return symbolic(at_asin,e);
+   }
++  // G126: whether the ln forms of asin and asinh cancel at x: i*x+sqrt(1-x^2) (asin) and x+sqrt(x^2+1) (asinh, hyp) add
++  // two terms of about |x| and opposite sign when |x| is large and x has im(x)>0, or is real and negative (asin), re(x)<0,
++  // or is imaginary below 0 (asinh): acos(-10^20+1/2) lost 40 digits. Both functions are odd, also in their ln forms
++  // ((i*x+s)*(-i*x+s)=1 and neither factor is a negative real), so -f(-x) is the same value without the cancellation.
++  // Decided on the double of x, for |x|>1; a symbolic x keeps its form.
++  static bool ln_form_cancels(const gen & x,bool hyp,GIAC_CONTEXT){
++    gen d=evalf_double(x,1,contextptr);
++    double r,i;
++    if (d.type==_DOUBLE_){
++      r=d._DOUBLE_val; i=0;
++    }
++    else if (d.type==_CPLX && d._CPLXptr->type==_DOUBLE_ && (d._CPLXptr+1)->type==_DOUBLE_){
++      r=d._CPLXptr->_DOUBLE_val; i=(d._CPLXptr+1)->_DOUBLE_val;
++    }
++    else
++      return false;
++    if (!(r*r+i*i>1)) // |x|<=1: the sum is at least sqrt(2)-1 in size, nothing to gain
++      return false;
++    // A part whose double reads 0 may be a tiny exact nonzero (x=-10^20-10^-400*i): then its exact sign decides
++    // (is_exactly_zero and the MPFR sign; is_zero reads the double), and a sign Giac cannot decide keeps the stock form.
++    if (hyp){
++      if (r!=0)
++        return r<0;
++      gen rx=re(x,contextptr);
++      if (!is_exactly_zero(rx))
++        return is_strictly_positive(-rx,contextptr);
++      return i<0;
++    }
++    if (i!=0)
++      return i>0;
++    gen ix=im(x,contextptr);
++    if (!is_exactly_zero(ix))
++      return is_strictly_positive(ix,contextptr);
++    return r<0;
++  }
++  // G126: whether x, of size above 1, has a part whose double reads 0 but is not exactly 0 (10^-400-10^20*i): its exact
++  // ln form needs hundreds of digits at evalf, so asinh keeps it unevaluated and evalf takes the float path.
++  static bool part_below_double(const gen & x,GIAC_CONTEXT){
++    gen d=evalf_double(x,1,contextptr);
++    double r,i;
++    if (d.type==_DOUBLE_){
++      r=d._DOUBLE_val; i=0;
++    }
++    else if (d.type==_CPLX && d._CPLXptr->type==_DOUBLE_ && (d._CPLXptr+1)->type==_DOUBLE_){
++      r=d._CPLXptr->_DOUBLE_val; i=(d._CPLXptr+1)->_DOUBLE_val;
++    }
++    else
++      return false;
++    if (!(r*r+i*i>1))
++      return false;
++    return (r==0 && !is_exactly_zero(re(x,contextptr))) || (i==0 && !is_exactly_zero(im(x,contextptr)));
++  }
++  // G126: sqrt(1-x^2) as sqrt(1-x)*sqrt(1+x) for a complex float x (the same principal value): Giac's complex float
++  // product x*x loses a tiny imaginary part (x=-10^20-10^-400*i gave im(1-x*x) = +1e-800, right -2e-380), which put
++  // the root on the other side of its cut.
++  // Giac's complex float sqrt of w=a+b*i with a<0 and a tiny b returns +i*sqrt(-a) whatever the sign of b
++  // (sqrt(-1e20-1e-400*i) = +1e10*i, right -1e10*i); with a<0, sqrt(w) = |b|/(2t)+sign(b)*i*t, t = sqrt((|w|-a)/2),
++  // has no cancellation, and the sign of b is MPFR's.
++  static gen principal_sqrt(const gen & w,GIAC_CONTEXT){
++    if (w.type!=_CPLX)
++      return sqrt(w,contextptr);
++    gen a=re(w,contextptr),b=im(w,contextptr);
++    if (is_exactly_zero(b) || !is_strictly_positive(-a,contextptr))
++      return sqrt(w,contextptr);
++    gen t=sqrt((abs(w,contextptr)-a)/2,contextptr);
++    return abs(b,contextptr)/(2*t)+(is_strictly_positive(b,contextptr)?cst_i:-cst_i)*t;
++  }
++  static gen sqrt_one_minus_square(const gen & x,GIAC_CONTEXT){
++    if (x.type==_CPLX && (x._CPLXptr->type==_REAL || x._CPLXptr->type==_DOUBLE_))
++      return principal_sqrt(1-x,contextptr)*principal_sqrt(1+x,contextptr);
++    return sqrt(1-x*x,contextptr);
++  }
+   static gen asinasln(const gen & x,GIAC_CONTEXT){
+-    return -cst_i*ln(cst_i*x+sqrt(1-x*x,contextptr),contextptr);
++    if (ln_form_cancels(x,false,contextptr))
++      return cst_i*ln(-cst_i*x+sqrt_one_minus_square(x,contextptr),contextptr);
++    return -cst_i*ln(cst_i*x+sqrt_one_minus_square(x,contextptr),contextptr);
+     // return cst_i*ln(sqrt(x*x-1,contextptr)+x,contextptr)+cst_pi_over_2;
+   }
+   gen * normal_sin_pi_12_ptr_(){
+@@ -2779,7 +2853,10 @@
+ 
+   // static symbolic symb_asinh(const gen & e){  return symbolic(at_asinh,e);  }
+   static gen asinhasln(const gen & x,GIAC_CONTEXT){
+-    return ln(x+sqrt(x*x+1,contextptr),contextptr);
++    gen s=x.type==_CPLX?sqrt_one_minus_square(cst_i*x,contextptr):sqrt(x*x+1,contextptr); // sqrt(x^2+1)
++    if (ln_form_cancels(x,true,contextptr))
++      return -ln(-x+s,contextptr);
++    return ln(x+s,contextptr);
+   }
+   gen asinh(const gen & e0,GIAC_CONTEXT){
+     if (e0.type==_FLOAT_){
+@@ -2823,6 +2900,10 @@
+       return symbolic(at_program,gen(makevecteur(a,0,asinh(b,contextptr)),_SEQ__VECT));
+     if (keep_acosh_asinh(contextptr))
+       return symbolic(at_asinh,e);
++    if (part_below_double(e,contextptr))
++      return symbolic(at_asinh,e);
++    if (ln_form_cancels(e,true,contextptr))
++      return -ln(-e+sqrt(pow(e,2)+1,contextptr),contextptr);
+     return ln(e+sqrt(pow(e,2)+1,contextptr),contextptr);
+   }
+   static gen d_asinh(const gen & args,GIAC_CONTEXT){
