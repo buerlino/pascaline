@@ -709,4 +709,8 @@ Digits:=40:; pc("g131-keep-acos-1e20-times-sqrt-neg2-12",'(acos(10^20)*sqrt(-2))
 Digits:=40:; pc("g131-keep-acos-1e300-times-asin-acos-90.001-30",'(acos(10^300)*asin(acos(90+10^-3)))',-(162466859971211866520968980225/10^26),5/10^27);
 // g131-keep-acos2-times-asin2-12 (precision.yaml, oracle)
 Digits:=40:; pc("g131-keep-acos2-times-asin2-12",'(acos(2)*asin(2))',(173437810227/10^11)+(206867262703/10^11)*i,5/10^12+5/10^12);
+// g132-keep-sqrt-acosh-neg2-plus10-cubed-12 (precision.yaml, oracle)
+Digits:=40:; pc("g132-keep-sqrt-acosh-neg2-plus10-cubed-12",'(sqrt((acosh(-2)+10)^3))',(369760208799/10^10)+(159029870598/10^10)*i,5/10^11+5/10^11);
+// g132-keep-sqrt-pi-cubed-12 (precision.yaml, oracle)
+Digits:=40:; pc("g132-keep-sqrt-pi-cubed-12",'(sqrt(pi^3))',(556832799683/10^11),5/10^12);
 print("pascaline-check: "+pasfail+" of "+pasn+" failed");

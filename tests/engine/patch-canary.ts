@@ -67,6 +67,8 @@ const CANARIES: [string, string, RegExp, string][] = [
   ["0016-floor-complex-value.patch", "giac-2.1.0/src/usual.cc", /if \(tmp\.type==_CPLX && is_zero\(\*\(tmp\._CPLXptr\+1\),contextptr\)\)\s*tmp=\*tmp\._CPLXptr;\s*if \(tmp\.type==_REAL\)\{/, "static bool warnfloor=true;"],
   // G131, patch 0017: real_object::is_zero takes an MPFR NaN as zero (mpfr_sgn(NaN) is 0), so NaN times a complex number is the complex number
   ["0017-mpfr-nan-not-zero.patch", "giac-2.1.0/src/gen.cc", /bool real_object::is_zero\(\) const\{\s*#ifdef HAVE_LIBMPFR\s*return !mpfr_sgn\(inf\);/, "bool real_object::is_zero() const{"],
+  // G132, patch 0018: pow takes (a^b)^c as a^(b*c) (or abs(a)^(b*c)) for any base with no literal i (sqrt(acosh(-1/2)^3) = the other root)
+  ["0018-pow-of-pow-branch.patch", "giac-2.1.0/src/gen.cc", /return inv\(pow\(base\._SYMBptr->feuille,exponent,contextptr\),contextptr\);\s*if \(u==at_pow && !has_i\(base\)\)\{/, "if (u==at_inv && base._SYMBptr->feuille.type==_SYMB"],
   // G96, patch 0006: symb_reim takes a non-integer power of a base of unknown sign as real (r=s, i=0)
   ["0006-reim-root-of-unknown-sign.patch", "giac-2.1.0/src/gen.cc", /is_positive\(-e,contextptr\)\)\{\s*r=pow\(-e,expo,contextptr\)\*cos\(cst_pi\*expo,contextptr\);\s*i=pow\(-e,expo,contextptr\)\*sin\(cst_pi\*expo,contextptr\);\s*\}\s*else \{\s*r=s;\s*i=0;/, "sommei.push_back(signei*(*it)*pow(r,n-j)*pow(i,j));"],
 ];
