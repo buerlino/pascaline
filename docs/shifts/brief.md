@@ -51,7 +51,6 @@ Estimates are wall-clock guesses from the log (a package 25 min to 2 h from star
 
 | Step | What | Agent, model | Branch | After | Est. |
 |---|---|---|---|---|---|
-| 197 | **G124** constructors Giac answers right with one list are refused (F107) | gorge, Opus | p1/gorge-listctor | — | 1 h |
 | 198 | **G123** an overflowing power shows ⚠ 12 1 (F123) | gorge, Opus | p1/gorge-overflowmark | — | 1 h |
 | 199 | **G127** exp(cosh(floor(asin(pi)))) is "No value found" (F86) | gorge, Opus | p1/gorge-evalfnest | — | 1 h |
 | 200 | **G128** exact acosh of a negative number flips between precisions (F61, acosh part) | gorge, Opus | p1/gorge-acoshneg | — | 45 min |
