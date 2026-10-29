@@ -65,6 +65,8 @@ const CANARIES: [string, string, RegExp, string][] = [
   ["0015-asin-asinh-ln-cancellation.patch", "giac-2.1.0/src/usual.cc", /^static gen asinhasln\(const gen & x,GIAC_CONTEXT\)\{\s*return ln\(x\+sqrt\(x\*x\+1,contextptr\),contextptr\);/, "static gen asinhasln(const gen & x,GIAC_CONTEXT){"],
   // G127, patch 0016: floor of a complex value that is not an exact Gaussian rational falls to symb_floor (floor(asin(pi)) stays unevaluated)
   ["0016-floor-complex-value.patch", "giac-2.1.0/src/usual.cc", /if \(tmp\.type==_CPLX && is_zero\(\*\(tmp\._CPLXptr\+1\),contextptr\)\)\s*tmp=\*tmp\._CPLXptr;\s*if \(tmp\.type==_REAL\)\{/, "static bool warnfloor=true;"],
+  // G131, patch 0017: real_object::is_zero takes an MPFR NaN as zero (mpfr_sgn(NaN) is 0), so NaN times a complex number is the complex number
+  ["0017-mpfr-nan-not-zero.patch", "giac-2.1.0/src/gen.cc", /bool real_object::is_zero\(\) const\{\s*#ifdef HAVE_LIBMPFR\s*return !mpfr_sgn\(inf\);/, "bool real_object::is_zero() const{"],
   // G96, patch 0006: symb_reim takes a non-integer power of a base of unknown sign as real (r=s, i=0)
   ["0006-reim-root-of-unknown-sign.patch", "giac-2.1.0/src/gen.cc", /is_positive\(-e,contextptr\)\)\{\s*r=pow\(-e,expo,contextptr\)\*cos\(cst_pi\*expo,contextptr\);\s*i=pow\(-e,expo,contextptr\)\*sin\(cst_pi\*expo,contextptr\);\s*\}\s*else \{\s*r=s;\s*i=0;/, "sommei.push_back(signei*(*it)*pow(r,n-j)*pow(i,j));"],
 ];
