@@ -8,14 +8,13 @@ import { defaultHomeSettings, precisionFacts } from "./homeEval.ts";
 import { markOf } from "./format.ts";
 import { defaultCasSettings } from "./types.ts";
 import { giacAvailable, nodeHost } from "./nodeGiac.ts";
-import { MATRIX_ROWS, matrixTyped } from "./giacPrint.ts";
+import { matrixTyped } from "./matrixType.ts";
 
 describe("matrixTyped", () => {
   it("tells Giac's matrix print from a plain vector", () => {
     expect(matrixTyped("matrix[[0,0],[0,0]]")).toBe(true);
     expect(matrixTyped("[[0,0],[0,0]]")).toBe(false);
     expect(matrixTyped("list[[1,2]]")).toBe(false);
-    expect(MATRIX_ROWS("pasans")).toContain("op(pasans)");
   });
 });
 

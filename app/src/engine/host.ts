@@ -40,7 +40,7 @@ import { callsIn, floatBounds, giacPair, hasDefiniteIntegral, integratedNumerica
 import { enEngine } from "../i18n/enEngine.ts";
 import { dropAngleFactor, PASDEG } from "../input/angles.ts";
 import { askedDigits, DOUBLE_DIGITS, doubleFormsIn, notBuiltin, floatsShown, unauditedIn, floatFacts, hasFloat, integratedFacts, numberLatex, shapeOfValue, valuePrecision, whyOf, withDigits } from "./numeric.ts";
-import { balanced, bracesOf, callsOf, isName, leadingName, LIST_TYPE, MATRIX_ROWS, matrixTyped, namesIn, wholeCall, wordsOf, parsePrinted, typedFromPrinted } from "./giacPrint.ts";
+import { balanced, bracesOf, callsOf, isName, leadingName, LIST_TYPE, namesIn, wholeCall, wordsOf, parsePrinted, typedFromPrinted } from "./giacPrint.ts";
 import { decidedAtDouble, decideTwice, restsOnDecision } from "./decisions.ts";
 import { assignmentIn, formIn, formOf, mayStore, programStores, STATE_HEADS, STRING_HEADS, writesThrough, type InputForm, type ProgramStores } from "./stores.ts";
 import { fnFacts, inherited, nameFacts, readFacts, readsFacts, storedFacts, storeFacts, type FactsHost } from "./facts.ts";
@@ -55,6 +55,7 @@ import type { Quantity, UnitError, UnitJob } from "../units/types.ts";
 import { contextDiff, hostContext, isFlagName, namesFlag, namesUnreadFlag } from "./flags.ts";
 import { contextOf, gated, type GatedGiac } from "./ctxGate.ts";
 import { aboutsOf, leakPart, namesAssuming, putBack, selfHolding, setsAssumption } from "./assumed.ts";
+import { plainRowsText } from "./matrixType.ts";
 
 /** G65: what the call after an input found: the names it read and stored (stateRead.ts), and Giac's settings. */
 interface AfterInput {
@@ -1025,12 +1026,7 @@ export class EngineHost implements FactsHost {
       const stored = this.giac.eval(`${guarded.name}:=pcasans`);
       if (isError(stored)) return fail(stored, isTimeout(stored) ? "timeout" : "engine");
     }
-    // G130 (F125): Giac's matrix subtype prints as `matrix[…]`, engine text: pcasans becomes the plain rows, which Giac reads
-    // as the same matrix (Home does the same); latex() draws both alike.
-    if (matrixTyped(text)) {
-      const rows = this.giac.eval(`pcasans:=${MATRIX_ROWS("pcasans")}`);
-      if (!isError(rows)) text = rows;
-    }
+    text = plainRowsText(this.giac, "pcasans", text); // G130 (F125): Giac's matrix type as plain rows, as in Home
     // A check that could not finish: the result stands with ⚠ (its numeric facts, or the text's mark).
     const unverified = refused === "unchecked";
     const pair = !single && hasDefiniteIntegral(exactInput) && giacPair(text) !== null;

@@ -27,7 +27,8 @@ import { principalPowers } from "./powers.ts";
 import { dropAngleFactor, hasAngleFactor } from "../input/angles.ts";
 import { decimalFromRational, decimalFromString, formatConfirmed, isZero, tieRisk, ZERO_VALUE, type ComplexValue, type DecimalValue, type PrecisionFacts, type PrecisionWarn, type PrecisionWhy } from "./format.ts";
 import { askedDigits, DOUBLE_DIGITS, doubleFallback, exactFacts, floatFacts, floatPathFacts, integratedFacts, hasFloat, isAudited, doubleFormsIn, unauditedIn, numericDisagrees, notBuiltin, floatsShown, heavySplit, REGROUP_MAX, shapeOfValue, endsEarly, valuePrecision, whyOf, withDigits, type ElementFacts, type Giac, type Shape } from "./numeric.ts";
-import { bracesOf, functionsIn, LIST_TYPE, MATRIX_ROWS, mapNumbers, matrixTyped, replaceLiteral, wordsOf, type Quoting } from "./giacPrint.ts";
+import { bracesOf, functionsIn, LIST_TYPE, mapNumbers, replaceLiteral, wordsOf, type Quoting } from "./giacPrint.ts";
+import { matrixTyped, plainRows } from "./matrixType.ts";
 import { complexSafe, exactAtan, readsReplaced } from "./complex.ts";
 import { decidedAtDouble, decideTwice, decidingStored, restsOnDecision } from "./decisions.ts";
 import { PLAIN_FORM, type InputForm } from "./stores.ts";
@@ -548,19 +549,12 @@ export function homeEval(
   const at = isAudited(exactBody, "typed") && complexSafe(exactBody, "typed") === exactBody ? [P, P + 20] : [];
   // G129 (F124): every atan is the principal one (exactAtan), but in an input that runs once (a definition keeps its atan)
   let runText = once ? exactBody : exactAtan(exactBody, "typed");
-  // G130 (F125): Giac's matrix subtype (matrix(2,3), zeros, idn, a matrix sum) prints as `matrix[…]`, engine text Home does
-  // not show: Ans becomes the plain rows, which Giac reads as the same matrix (its arithmetic gives the subtype back). Run at
-  // P, in the same Digits as the value it rewrites.
-  const plainRows = (v: GiacValue): GiacValue => {
-    if (!matrixTyped(v.text)) return v;
-    const rows = giac.value(`${ans}:=${MATRIX_ROWS(ans)}`, at);
-    return isError(rows.text) ? v : rows;
-  };
+  // G130 (F125): Giac's matrix type becomes plain rows in Ans (matrixType.ts), in the run's Digits
   const exactRun = (): string =>
     withDigits(giac, P, s.digits, () => {
       const first = giac.value(`${ans}:=(${runText})`, at);
       ambiguous = giac.ambiguousPower?.();
-      const v = plainRows(first);
+      const v = plainRows(giac, ans, first, at);
       value = v;
       return v.cut ? giac.eval(ans) : v.text;
     });
@@ -607,7 +601,7 @@ export function homeEval(
   }
   // G130: a value decided again (decideTwice) is Giac's print too
   if (matrixTyped(value.text) && !isError(exactOut)) {
-    const v = withDigits(giac, P, s.digits, () => plainRows(value));
+    const v = withDigits(giac, P, s.digits, () => plainRows(giac, ans, value, at));
     if (v !== value) [value, exactOut] = [v, v.cut ? withDigits(giac, P, s.digits, () => giac.eval(ans)) : v.text];
   }
   const W = Math.max(s.workDigits, s.digits + 10);
