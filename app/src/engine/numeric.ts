@@ -481,7 +481,8 @@ function exactElement(re: { v: DecimalValue; p: bigint; q: bigint }, im: { v: De
  * agreement check, P against P+20, then P+20 against P+40. Giac's symbolic re() and im() are asked only for a value
  * that is not real, or whose digits end (it may be a rational re() finds): a part they give as a rational keeps it.
  * G44f1: erf and erfc are read through our MPFR definitions, which run at Digits: the value is evaluated from its text
- * at each precision with Digits set to it. Null when some element is not a number.
+ * at each precision with Digits set to it. Null when some element is not a number. G126: `underflowAt(k)`, whether
+ * element k, 0 at P and P+20, is an underflow (no steps then); without it such an element takes the steps.
  */
 export function exactFacts(
   giac: Giac,
@@ -491,6 +492,7 @@ export function exactFacts(
   maxExactDigits: number,
   text: string,
   v: GiacValue,
+  underflowAt?: (k: number) => boolean,
 ): ElementFacts[] | null {
   const P = valuePrecision(digits);
   const n = size(shape);
@@ -524,7 +526,7 @@ export function exactFacts(
   const P2 = [P, P + 20];
   const first = erf !== safe ? null : src === name && P2.every((d) => v.at?.[String(d)] !== undefined) ? v : giac.value(src, P2);
   try {
-    const out = factsFrom(giac, name, v, first, read, whole, known, shape, digits, maxExactDigits, text);
+    const out = factsFrom(giac, name, v, first, read, whole, known, shape, digits, maxExactDigits, text, underflowAt);
     if (erf === safe || !out) return out;
     return giac.eval(ICDF_FAILED).trim() !== "0" ? out.map((f) => (f.exact ? f : { ...f, warn: "unaudited" as const })) : out;
   } finally {
@@ -546,6 +548,7 @@ function factsFrom(
   digits: number,
   maxExactDigits: number,
   text: string,
+  underflowAt?: (k: number) => boolean,
 ): ElementFacts[] | null {
   const P = valuePrecision(digits);
   const n = size(shape);
@@ -593,15 +596,16 @@ function factsFrom(
     [P, kept(A)],
     [P + 20, kept(B)],
   ]);
-  return agreedFacts(known, digits, P, (prec) => {
-    const at = levels.get(prec) ?? level(prec);
-    return at && kept(at);
-  });
+  const at = (prec: number): Parts[] | null => {
+    const L = levels.get(prec) ?? level(prec);
+    return L && kept(L);
+  };
+  return agreedFacts(known, digits, P, at, underflowAt);
 }
 
 /** The facts of the elements not known yet (`facts` null there) from the agreement of their values at P, P+20 and the
  *  further levels (`evalfAt`), see exactFacts. */
-function agreedFacts(facts: readonly (ElementFacts | null)[], digits: number, P: number, evalfAt: (prec: number) => Parts[] | null): ElementFacts[] | null {
+function agreedFacts(facts: readonly (ElementFacts | null)[], digits: number, P: number, evalfAt: (prec: number) => Parts[] | null, underflowAt?: (k: number) => boolean): ElementFacts[] | null {
   const A = evalfAt(P);
   const B = A && evalfAt(P + 20);
   if (!A || !B) return null;
@@ -621,13 +625,14 @@ function agreedFacts(facts: readonly (ElementFacts | null)[], digits: number, P:
     return true;
   };
   // G126: zeros before any value confirm nothing (asin(sin(10^70)) = 10^70-n*pi is an exact 0 at P and P+20), so the steps
-  // go on, unless it is 0 at MAX_EVAL_DIGITS too (an underflow); zeros after noise stop them, as two agreeing levels.
+  // go on within the budget, unless it is an underflow; zeros after noise stop them, as two agreeing levels.
   const zero = (x: ComplexValue): boolean => isZero(x.re) && isZero(x.im);
+  // An underflow (Home's novalue.ts underflow, `underflowAt`) refuses the result, so no element takes steps then.
   const leadingZero = facts.map((f, k) => !f && zero(A[k]!) && zero(B[k]!));
-  const top = leadingZero.some(Boolean) ? evalfAt(MAX_EVAL_DIGITS) : null;
+  const under = underflowAt !== undefined && leadingZero.some((z, k) => z && underflowAt(k));
   return facts.map((f, k) => {
     if (f) return f;
-    let leading = leadingZero[k]! && (top === null || !zero(top[k]!));
+    let leading = leadingZero[k]! && !under;
     let reliable = leadingZero[k] ? (leading ? 0 : digits) : confirmedComplex(A[k]!, B[k]!, P, P);
     let value = denoised(A[k]!, B[k]!, P);
     let at = P + 20;
