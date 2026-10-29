@@ -24,6 +24,26 @@ export const COMPLEX_DEFINITIONS: Readonly<Record<string, string>> = {
   pasatan: "pasatan(z):={ if (type(z)==DOM_LIST) return map(z,pasatan); if (type(evalf(z))==DOM_COMPLEX) return i/2*(ln(1-i*z)-ln(1+i*z)); return atan(z); }",
 };
 
+/**
+ * G129 (F124): Home's exact pass reads an input's atan through `pasatanx`, so every atan of one input is the principal
+ * one, whichever function wraps it. Giac's own atan on its cut (z = i·t, |t| > 1) is the other side, and Giac's rules
+ * rewrite trig(atan z) before pasatan's ln form is ever applied (cos(atan(2*i)) gave i*sqrt(3)/3, the right value is
+ * -i*sqrt(3)/3). On the cut pasatanx is the principal value sign(t)·π/2 + i·atanh(1/t), exact and in a form Giac's
+ * rules read right; anywhere else it is Giac's atan itself, so its closed forms stay (atan(1) = pi/4, atan(tan(4*i)) =
+ * 4*i, cos(atan(1+i))). Loaded once per engine (homeEval.ts ENGINE_DEFINITIONS, through any input that names atan).
+ */
+export const EXACT_ATAN: Readonly<Record<string, string>> = {
+  pasatanx:
+    "pasatanx(z):={ if (type(z)==DOM_LIST) return map(z,pasatanx); " +
+    "if (type(evalf(z))==DOM_COMPLEX and re(z)==0 and abs(im(z))>1) return sign(im(z))*pi/2+i*atanh(1/im(z)); return atan(z); }",
+};
+
+/** `text` with every atan and arctan call replaced by pasatanx (EXACT_ATAN), outside strings; one that is the argument
+ *  of tan stays Giac's atan: tan(atan(z)) = z on any branch, and Giac's rule keeps it exact (tan(atan(2*i)) = 2*i). */
+export function exactAtan(text: string, q: Quoting): string {
+  return renameCalls(text, { atan: "pasatanx", arctan: "pasatanx" }, q).replace(/(^|[^\w.])tan\(pasatanx\(/g, "$1tan(atan(");
+}
+
 /** The Giac names (and aliases) that COMPLEX_DEFINITIONS replace. */
 const COMPLEX_REPLACED: Readonly<Record<string, string>> = {
   atan: "pasatan", arctan: "pasatan",

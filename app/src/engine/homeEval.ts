@@ -28,7 +28,7 @@ import { dropAngleFactor, hasAngleFactor } from "../input/angles.ts";
 import { decimalFromRational, decimalFromString, formatConfirmed, isZero, tieRisk, ZERO_VALUE, type ComplexValue, type DecimalValue, type PrecisionFacts, type PrecisionWarn, type PrecisionWhy } from "./format.ts";
 import { askedDigits, DOUBLE_DIGITS, doubleFallback, exactFacts, floatFacts, floatPathFacts, integratedFacts, hasFloat, isAudited, doubleFormsIn, unauditedIn, numericDisagrees, notBuiltin, floatsShown, heavySplit, REGROUP_MAX, shapeOfValue, endsEarly, valuePrecision, whyOf, withDigits, type ElementFacts, type Giac, type Shape } from "./numeric.ts";
 import { bracesOf, functionsIn, LIST_TYPE, mapNumbers, replaceLiteral, wordsOf, type Quoting } from "./giacPrint.ts";
-import { complexSafe, readsReplaced } from "./complex.ts";
+import { complexSafe, EXACT_ATAN, exactAtan, readsReplaced } from "./complex.ts";
 import { decidedAtDouble, decideTwice, decidingStored, restsOnDecision } from "./decisions.ts";
 import { PLAIN_FORM, type InputForm } from "./stores.ts";
 
@@ -200,6 +200,8 @@ export const ENGINE_DEFINITIONS: Readonly<Record<string, string>> = {
     "s:=0; for (k:=0;k<size(l);k:=k+1) s:=s+1/l[k]; return normal(1/s); }",
   // G106f1: whether a value holds a coefficient vector at any depth (polyvec.ts; its check defines it in the same call).
   [POLY_AT]: POLY_AT_ANY_DEPTH,
+  // G129: Home's exact pass reads atan through pasatanx (complex.ts EXACT_ATAN); definitionsUsedBy loads it for atan.
+  ...EXACT_ATAN,
 };
 
 /** Definitions whose text is built engine-side (host.ts) so their tables stay out of the start chunk: G30 `eseries`
@@ -260,6 +262,8 @@ export function symbolicWhy(warn: PrecisionWarn | undefined, sides: string): Pre
 /** The names of our definitions that `input` mentions. */
 export function definitionsUsedBy(input: string): string[] {
   const words = new Set(wordsOf(input));
+  // G129: the exact pass renames atan and arctan to pasatanx (exactAtan), so an input that names them needs it
+  if (words.has("atan") || words.has("arctan")) words.add("pasatanx");
   return [...Object.keys(ENGINE_DEFINITIONS), ...WORKER_DEFINITION_NAMES].filter((name) => words.has(name));
 }
 
@@ -545,14 +549,22 @@ export function homeEval(
   // An input of audited functions alone (elementary ones, whose evalf is MPFR's and quick) asks for its value's digits
   // at P and P + 20 in the same call (exactFacts reads them); any other input asks when they are needed.
   const at = isAudited(exactBody, "typed") && complexSafe(exactBody, "typed") === exactBody ? [P, P + 20] : [];
+  // G129 (F124): every atan of the input is the principal one (pasatanx), also where Giac's rules rewrite trig(atan z);
+  // not in an input that runs once (a definition keeps the atan it was given; complexReads reads it through pasatan).
+  let runText = once ? exactBody : exactAtan(exactBody, "typed");
   const exactRun = (): string =>
     withDigits(giac, P, s.digits, () => {
-      const v = giac.value(`${ans}:=(${exactBody})`, at);
+      const v = giac.value(`${ans}:=(${runText})`, at);
       ambiguous = giac.ambiguousPower?.();
       value = v;
       return v.cut ? giac.eval(ans) : v.text;
     });
   let exactOut = exactRun();
+  // A result that still holds the name (a program, an unevaluated call) is run with Giac's atan: our name is not shown.
+  if (runText !== exactBody && exactOut.includes("pasatanx")) {
+    runText = exactBody;
+    exactOut = exactRun();
+  }
   // An == or ≠ test on a side with a float in it (input/emit.ts equalityTest): its true or false is approximate, and
   // decided by its own digits (R18f2): run once more with the verdict set.
   const inexactTest = test && giac.eval(EQ_INEXACT_FLAG) === "1";
@@ -570,7 +582,7 @@ export function homeEval(
   // G57: a decision the precisions do not agree on, or a tie Giac cannot prove, is refused (any value would be a guess).
   let refusedCut = false;
   if (!once && !inexactTest && !isError(exactOut) && !hasFloat(exactOut) && restsOnDecision(exactBody, "typed", exactOut, notBuiltin(giac))) {
-    const d = decideTwice(giac, exactBody, exactOut, s.digits, s.digits);
+    const d = decideTwice(giac, runText, exactOut, s.digits, s.digits);
     if ("undecided" in d) undecided = true;
     if ("undecided" in d && d.refused) refusedCut = true;
     if (!("undecided" in d) && d.from !== undefined) {
