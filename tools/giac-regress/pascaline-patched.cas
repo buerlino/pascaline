@@ -443,4 +443,7 @@ Digits:=40:; pc("g128-acosh-neg3.5-dec-30",'(acosh(-(35/10^1)))',(19248473002384
 // patch 0006-reim-root-of-unknown-sign.patch
 // g96-cas-im-2sqrt (bench.yaml, derived)
 Digits:=40:; pc("g96-cas-im-2sqrt",'subst(im(2*sqrt(x)),x,-1)',2,1/10^30);
+// patch 0017-mpfr-nan-not-zero.patch
+// g131-nan-times-complex (precision.yaml g120-acos-overflow-times-sqrt-neg2-12, derived)
+Digits:=40:; pc("g131-nan-times-complex",'when(string(evalf(acos(9007199254740993^9007199254740993)*sqrt(-2)))=="undef",1,0)',1,1/10^30);
 print("pascaline-patched: "+pasfail+" of "+pasn+" failed (none may fail on our patched build)");
