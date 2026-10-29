@@ -514,5 +514,98 @@ changed() { echo scripts/gc.sh; }; checks=auto; spec_file="$tmp/spec-plain"
 changed() { echo docs/x.md; }; [[ ",$(want_checks)," != *,shell,* ]] || fail "A47a: want_checks has shell for a docs diff"
 grep -qF '[[ "$name" != shell ]] && machine_failure "$out"' "$here/pipeline.sh" || fail "A47a: a shell check quoting 'command not found' counts as a machine failure"
 
+# A47b: the merge queue. A sandbox with the real devlock and stub agents that write who holds integ (or "free") where it matters.
+mq="$tmp/mq"; mkdir -p "$mq/bin" "$mq/tools" "$mq/docs/shifts/packages" "$mq/app"; git init -q -b main "$mq"
+cp "$here/../tools/devlock.sh" "$mq/tools/"; : > "$mq/docs/shifts/brief.md"; echo t > "$mq/app/keep"; echo t > "$mq/tracked"
+printf '### annabell, Z1: a package, branch `p1/z1`\n' > "$mq/docs/shifts/packages/Z1.md"
+cat > "$mq/bin/owner" <<STUB
+#!/bin/sh
+cat "$mq/.coord/locks/integ/owner" 2>/dev/null || echo free
+STUB
+cat > "$mq/bin/npm" <<STUB
+#!/bin/sh
+case "\$*" in
+  ci*) owner >> "$mq/npmci-owner"; mkdir -p node_modules/x;;
+  *typecheck*) echo "\$(git rev-parse --abbrev-ref HEAD) merges=\$(git log --merges --oneline phase-1 | wc -l) integ=\$(owner)" >> "$mq/checks";;
+esac
+exit 0
+STUB
+cat > "$mq/bin/claude" <<STUB
+#!/bin/sh
+br=\$(git rev-parse --abbrev-ref HEAD 2>/dev/null | tr / -)
+case "\$*" in
+  *"Opus pass "*) owner > "$mq/pass-start"; sleep 1; owner > "$mq/pass-end"; echo "OPUS PASS";;
+  *"Write the shift report"*) owner > "$mq/report-owner"; echo abc1234;;
+  *"--agent sofia"*) echo "\$br \$(owner)" >> "$mq/audits"; sleep 2
+     if [ -n "\$MQ_FIX" ] && [ "\$br" = "\$MQ_FIX" ] && [ ! -e "$mq/fixed-\$br" ]; then touch "$mq/fixed-\$br"; echo FIX; echo "a.txt:1: say more"; else echo APPROVED; fi;;
+  *"fix round"*) echo "\$br \$(owner)" >> "$mq/fixes"; echo more >> "\$br.txt"; git add -A; git -c user.name=t -c user.email=t@t commit -qm fix; echo fixed;;
+  *) if [ -n "\$MQ_HOLD" ]; then i=0; while [ ! -e "\$MQ_HOLD" ] && [ \$i -lt 150 ]; do sleep 0.2; i=\$((i + 1)); done; fi
+     echo w > "\$br.txt"; git add -A; git -c user.name=t -c user.email=t@t commit -qm "work \$br"; echo done;;
+esac
+STUB
+chmod +x "$mq/bin/"*; git -C "$mq" add -A; gc "$mq" init; git -C "$mq" branch phase-1
+git -C "$mq" worktree add -q "$mq/.claude/worktrees/phase-1" phase-1; p1q="$mq/.claude/worktrees/phase-1"
+mqrun() { (cd "$mq" && unset PASCALINE_COORD PW_PORT PASCALINE_LOCK_PID && PATH="$mq/bin:$PATH" GIAC_OUT="$mq/engine" "$@"); }
+# the package is read from phase-1's commit: a changed package file in the phase-1 worktree is not what the run reads
+sed -i 's/p1\/z1/p1\/zz/' "$p1q/docs/shifts/packages/Z1.md"
+out="$(mqrun "$script" annabell Z1 --dry-run 2>&1)"; rc=$?
+[[ $rc -eq 0 ]] && grep -q 'branch p1/z1' <<<"$out" || fail "A47b: the package is not read from phase-1's commit (dirty worktree): rc $rc: $(head -n 3 <<<"$out")"
+git -C "$p1q" checkout -q docs/shifts/packages/Z1.md
+# two runs whose workers finish together: the second's checks start after the first's merge; each merge's tree is its audited tree
+export MQ_HOLD="$tmp/mq-hold"
+mqrun "$script" ron "queue task" --id Q1 --branch p1/q1 --checks typecheck > "$tmp/q1.out" 2>&1 & q1=$!
+mqrun "$script" ron "queue task" --id Q2 --branch p1/q2 --checks typecheck > "$tmp/q2.out" 2>&1 & q2=$!
+for _ in $(seq 1 100); do git -C "$mq" show-ref --verify --quiet refs/heads/p1/q1 && git -C "$mq" show-ref --verify --quiet refs/heads/p1/q2 && break; sleep 0.1; done
+sleep 1; touch "$MQ_HOLD"; wait "$q1" "$q2"; unset MQ_HOLD
+grep -q '^RESULT #[0-9]* Q1: MERGED' "$tmp/q1.out" && grep -q '^RESULT #[0-9]* Q2: MERGED' "$tmp/q2.out" || fail "A47b: two queued runs did not both merge: $(cat "$tmp/q1.out" "$tmp/q2.out")"
+[[ "$(sed -n 's/^[^ ]* merges=\([0-9]*\).*/\1/p' "$mq/checks" | tr '\n' ' ')" == "0 1 " ]] || fail "A47b: the second run's checks did not start after the first merge: $(cat "$mq/checks")"
+grep -q 'integ=free' "$mq/checks" && fail "A47b: checks ran without the integ lock: $(cat "$mq/checks")"
+[[ -n "$(cat "$mq/npmci-owner" 2>/dev/null)" ]] && ! grep -q free "$mq/npmci-owner" || fail "A47b: npm ci in the phase-1 worktree ran without integ: $(cat "$mq/npmci-owner" 2>&1)"
+for m in $(git -C "$mq" rev-list --merges --first-parent phase-1); do
+  [[ -z "$(git -C "$mq" diff "$m^2" "$m")" ]] || fail "A47b: merge ${m:0:9} differs from its audited commit: $(git -C "$mq" diff --stat "$m^2" "$m")"
+done
+grep -q 'free' "$mq/audits" && fail "A47b: an audit ran without integ: $(cat "$mq/audits")"
+# a FIX releases integ; the fix round runs outside it; the run queues again and merges
+: > "$mq/audits"
+out="$(MQ_FIX=p1-q3 mqrun "$script" ron "queue task" --id Q3 --branch p1/q3 --checks typecheck 2>&1)"
+grep -q '^RESULT #[0-9]* Q3: MERGED' <<<"$out" || fail "A47b: a run with one FIX did not merge: $out"
+[[ "$(cat "$mq/fixes" 2>/dev/null)" == "p1-q3 free" ]] || fail "A47b: the fix round ran under integ: $(cat "$mq/fixes" 2>&1)"
+[[ "$(grep -c '^p1-q3 pipeline-' "$mq/audits")" -eq 2 ]] || fail "A47b: the run did not queue again for its second audit: $(cat "$mq/audits")"
+[[ "$(grep -c 'pipeline #[0-9]* Q3: in the queue' "$mq/.coord/log.md")" -eq 2 ]] || fail "A47b: the two queue entries are not logged: $(grep Q3 "$mq/.coord/log.md")"
+# a start with a dirty phase-1 worktree (an interactive session holds integ) waits for integ, then merges
+(cd "$mq" && unset PASCALINE_LOCK_PID && tools/devlock.sh acquire integ owner-x 0 >/dev/null)
+echo edit >> "$p1q/tracked"
+mqrun "$script" ron "queue task" --id Q4 --branch p1/q4 --checks typecheck > "$tmp/q4.out" 2>&1 & q4=$!
+for _ in $(seq 1 150); do grep -q 'Q4: waiting for integ (owner-x)' "$mq/.coord/log.md" 2>/dev/null && break; sleep 0.2; done
+grep -q 'Q4: waiting for integ (owner-x)' "$mq/.coord/log.md" || fail "A47b: a start with a dirty phase-1 worktree does not wait for integ: $(cat "$tmp/q4.out")"
+git -C "$p1q" checkout -q tracked; (cd "$mq" && tools/devlock.sh release integ owner-x >/dev/null)
+wait "$q4"
+grep -q '^RESULT #[0-9]* Q4: MERGED' "$tmp/q4.out" || fail "A47b: the run that waited for integ did not merge: $(cat "$tmp/q4.out")"
+grep -q 'Q4: integ taken after a wait of [0-9]* s' "$mq/.coord/log.md" || fail "A47b: the integ wait's length is not logged"
+# a pass holds integ from its start to its end and releases it; its prompt no longer takes the lock; so does the report
+out="$(mqrun "$script" pass 5 "Q1" none 2>&1)"
+[[ "$(cat "$mq/pass-start" 2>/dev/null)" == pass-5 && "$(cat "$mq/pass-end" 2>/dev/null)" == pass-5 ]] || fail "A47b: the pass does not hold integ from start to end: $(cat "$mq/pass-start" "$mq/pass-end" 2>&1)"
+[[ ! -e "$mq/.coord/locks/integ" ]] || fail "A47b: the pass left integ held: $(cat "$mq/.coord/locks/integ/owner")"
+grep -q 'acquire integ' <<<"$(sed -n '/subcommand: pass/,/subcommand: device/p' "$here/pipeline.sh" | grep 'prompt=')" && fail "A47b: the pass prompt still takes integ"
+out="$(mqrun "$script" report 2>&1)"
+[[ "$(cat "$mq/report-owner" 2>/dev/null)" == report ]] && [[ ! -e "$mq/.coord/locks/integ" ]] || fail "A47b: the report does not hold integ for its run: $(cat "$mq/report-owner" 2>&1): $out"
+grep -q 'acquire integ' <<<"$(sed -n '/subcommand: report/,/subcommand: selftest/p' "$here/pipeline.sh" | grep 'prompt=')" && fail "A47b: the report prompt still takes integ"
+# the device step holds integ while it builds the APK and releases it before the device run
+cat > "$mq/bin/adb" <<'STUB'
+#!/bin/sh
+case "$*" in *get-state*) echo device;; *"dumpsys battery"*) echo "  level: 80";; *"dumpsys window"*) echo "  isKeyguardShowing=false";; esac
+exit 0
+STUB
+printf '#!/bin/sh\nowner > "%s/build-owner"; mkdir -p dist; echo apk > dist/pascaline.apk\n' "$mq" > "$p1q/tools/device-build.sh"
+printf '#!/bin/sh\nowner > "%s/core-owner"; echo "CORE DEVICE 3/3 (known 0, needs 0)"\n' "$mq" > "$p1q/tools/core-device.sh"
+chmod +x "$mq/bin/adb" "$p1q/tools/device-build.sh" "$p1q/tools/core-device.sh"
+out="$(mqrun env ANDROID_SERIAL=TESTSERIAL "$script" device 6 2>&1)"
+[[ "$(cat "$mq/build-owner" 2>/dev/null)" == device-6 && "$(cat "$mq/core-owner" 2>/dev/null)" == free ]] || fail "A47b: the device step does not hold integ for the build only: build $(cat "$mq/build-owner" 2>&1), core $(cat "$mq/core-owner" 2>&1): $out"
+# the lock order is stated in the header; the serial time (queue entry to release) of each run is logged
+grep -q '^# Lock order: integ before host-cpu' "$here/pipeline.sh" || fail "A47b: the header does not state the lock order"
+grep -oE 'Q[1-4]: integ released after [0-9]+ s in the queue' "$mq/.coord/log.md" > "$tmp/serial" || true
+[[ "$(wc -l < "$tmp/serial")" -eq 5 ]] || fail "A47b: not every queue entry logs its serial time: $(cat "$tmp/serial")"
+echo "A47b serial times: $(sed 's/: integ released after / /; s/ s in the queue/ s/' "$tmp/serial" | paste -sd, - | sed 's/,/, /g')"
+
 [[ $fails -eq 0 ]] || { echo "pipeline.test.sh: $fails failure(s) in $count packages" >&2; exit 1; }
 echo "pipeline.test.sh: ok ($count packages)"
