@@ -9,7 +9,7 @@ import { defaultHomeSettings } from "./homeEval.ts";
 import { defaultCasSettings } from "./types.ts";
 import { giacAvailable, loadNodeGiac } from "./nodeGiac.ts";
 import { rewriteAngles } from "../input/angles.ts";
-import { lostNumber, throughInfinity, underflow, zeroElements } from "./novalue.ts";
+import { lostNumber, overflowAt, throughInfinity, underflow, zeroElements } from "./novalue.ts";
 
 describe.skipIf(!giacAvailable())("G78 on the real engine", () => {
   let host: EngineHost;
@@ -98,6 +98,25 @@ describe.skipIf(!giacAvailable())("G78 on the real engine", () => {
       giac.eval("purge(pasU)");
     }
   });
+  it("refuses an overflow MPFR finds where a double finds a finite number (G123, F123)", () => {
+    // About 10^(4.34294481903E34) (mpmath); the double's ln(a/b) cancels to 0, so it showed ⚠ 1.
+    for (const digits of [12, 30])
+      expect(host.home("1.000000000000001^(10^50)", { ...defaultHomeSettings, digits }).result, `${digits}`).toMatchObject({ ok: false, error: "overflow" });
+    giac.eval("pasov:=exp(10^50*ln(1000000000000001/1000000000000000))");
+    expect(overflowAt(giac, "pasov", giac.eval("pasov"), 40)).toBe(true);
+    giac.eval("pasov:=exp(10^15*ln(1000000000000001/1000000000000000))");
+    expect(overflowAt(giac, "pasov", giac.eval("pasov"), 40)).toBe(false);
+    // An infinity the answer is (a limit) is no overflow.
+    expect(overflowAt(giac, "infinity", "+infinity", 40)).toBe(false);
+    // A geometry object is no number: asked without drawing it (an evalf of it alone threw "window is not defined").
+    for (const g of ["point(1,0.5)", "segment(i,1+i)", "LineHorz(-1)"]) {
+      expect(host.home(g, defaultHomeSettings).result.error, g).not.toBe("engine");
+      giac.eval(`pasov:=${g};1`);
+      expect(() => overflowAt(giac, "pasov", "pnt", 40), g).not.toThrow();
+    }
+    giac.eval("purge(pasov);1");
+  });
+
   it("refuses an infinite definite integral in Home; the CAS view keeps Giac's +infinity", () => {
     expect(home("int(1/x^2,x,-1,1)")).toMatchObject({ ok: false, error: "integralDiverges" });
     expect(host.cas("int(1/x^2,x,-1,1)", defaultCasSettings).result).toMatchObject({ ok: true, text: "+infinity" });

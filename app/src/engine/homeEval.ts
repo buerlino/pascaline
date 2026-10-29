@@ -17,7 +17,7 @@ import { valueFactsOf, type ValueFacts } from "./types.ts";
 import type { GiacValue } from "./bridge.ts";
 import { floatBounds, refusalOf, giacPair, hasDefiniteIntegral, integratedNumerically, type Refusal } from "./converge.ts";
 import { enEngine } from "../i18n/enEngine.ts";
-import { elementAt, lostFloat, lostNumber, throughInfinity, underflow, zeroElements } from "./novalue.ts";
+import { elementAt, lostFloat, lostNumber, overflowAt, throughInfinity, underflow, zeroElements } from "./novalue.ts";
 import { icdfAtEnd, icdfCalls } from "./icdf.ts";
 import { NO_BODIES, nonSquarePower, type Bodies } from "./nonsquare.ts";
 import { POLY_AT, POLY_AT_ANY_DEPTH, unaskedPoly } from "./polyvec.ts";
@@ -790,6 +790,8 @@ export function homeEval(
   const underflowAt = once ? undefined : (k: number): boolean => checked.set(k, !late() && underflow(giac, [elementAt(ans, shape, k)], valuePrecision(s.digits))).get(k)!;
   let facts = exactFacts(giac, ans, shape, s.digits, s.maxExactDigits, exactOut, value, underflowAt);
   if (!facts) {
+    // G123 (F123): MPFR's infinity at P is an overflow, whatever a double makes of it (1.000000000000001^(10^50) gave 1.0).
+    if (!once && !late() && shape.kind === "scalar" && overflowAt(giac, ans, exactOut, valuePrecision(s.digits))) return refuse("overflow", "exact");
     const d = shape.kind === "scalar" ? doubleFallback(giac, ans, body, s.digits, s.digits) : null;
     if (!d) return symbolic();
     // G84 (F60): a double's 0 where MPFR found no value (exp(cosh(asin(π)/pasdeg))) whose exact answer is not 0.

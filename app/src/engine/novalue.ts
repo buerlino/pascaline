@@ -118,6 +118,18 @@ export function lostNumber(
   return infinite(giac.eval(`evalf(${slot})`)) ? "overflow" : "noValue";
 }
 
+/**
+ * G123 (F123): whether the value in `slot`, whose exact text `output` holds no infinity, is MPFR's ±infinity at `P`
+ * digits: an overflow (1.000000000000001^(10^50), about 10^(4.3E34)), where a double finds a finite number (its ln(a/b)
+ * cancels to 0, so exp of it is 1.0). One engine call, read through string(): a geometry object (point(1,0.5)) as the
+ * value of a call makes Giac draw it, which throws "window is not defined" in the engine.
+ */
+export function overflowAt(giac: Giac, slot: string, output: string, P: number): boolean {
+  // Giac's string() text of an infinity, with and without the quotes it prints; a literal inside the function, so the
+  // module adds nothing to the start chunk (G123f1).
+  return !infinite(output) && ["+infinity", "-infinity", "infinity", '"+infinity"', '"-infinity"', '"infinity"'].includes(giac.eval(`string(evalf(${slot},${P}))`).trim());
+}
+
 /** F50: a float path's `error` text for an input with no free name: Giac's undef or an infinity (no number found);
  *  null for Giac's own error message, which stays. */
 export function lostFloat(giac: Giac, input: string, error: string): NoValue | null {
