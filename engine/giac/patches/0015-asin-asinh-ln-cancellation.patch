@@ -1,0 +1,53 @@
+# Upstream: giac 2.1.0 usual.cc asinasln, asinhasln, asinh. The ln forms -i*ln(i*x+sqrt(1-x^2)) (asin, and acos = pi/2-asin) and ln(x+sqrt(x^2+1)) (asinh) add two terms of size |x| and opposite sign when |x| is large and x lies on the cancelling side (asin: im(x)>0, or x real and negative; asinh: re(x)<0, or x on the imaginary axis below 0), so acos(-10^20+1/2) gave 3.14159265359-21.4875625974*i (right 3.14159265359-46.7448490404*i) and asinh(-10^1250) a value with no right digit. Both functions are odd, in their ln forms too ((i*x+s)*(-i*x+s) = 1 and neither factor is a negative real), so on that side the value is taken as -f(-x), the same number without the cancellation. The side is read from the double of x, for |x| > 1 (below, the sum is at least sqrt(2)-1 in size); a symbolic x keeps its form.
+--- a/src/usual.cc
++++ b/src/usual.cc
+@@ -2150,7 +2150,31 @@
+   symbolic symb_asin(const gen & e){
+     return symbolic(at_asin,e);
+   }
++  // G126: whether the ln forms of asin and asinh cancel at x: i*x+sqrt(1-x^2) (asin) and x+sqrt(x^2+1) (asinh, hyp) add
++  // two terms of about |x| and opposite sign when |x| is large and x has im(x)>0, or is real and negative (asin), re(x)<0,
++  // or is imaginary below 0 (asinh): acos(-10^20+1/2) lost 40 digits. Both functions are odd, also in their ln forms
++  // ((i*x+s)*(-i*x+s)=1 and neither factor is a negative real), so -f(-x) is the same value without the cancellation.
++  // Decided on the double of x, for |x|>1; a symbolic x keeps its form.
++  static bool ln_form_cancels(const gen & x,bool hyp,GIAC_CONTEXT){
++    gen d=evalf_double(x,1,contextptr);
++    double r,i;
++    if (d.type==_DOUBLE_){
++      r=d._DOUBLE_val; i=0;
++    }
++    else if (d.type==_CPLX && d._CPLXptr->type==_DOUBLE_ && (d._CPLXptr+1)->type==_DOUBLE_){
++      r=d._CPLXptr->_DOUBLE_val; i=(d._CPLXptr+1)->_DOUBLE_val;
++    }
++    else
++      return false;
++    if (!(r*r+i*i>1)) // |x|<=1: the sum is at least sqrt(2)-1 in size, nothing to gain
++      return false;
++    if (hyp)
++      return r<0 || (r==0 && i<0);
++    return i>0 || (i==0 && r<0);
++  }
+   static gen asinasln(const gen & x,GIAC_CONTEXT){
++    if (ln_form_cancels(x,false,contextptr))
++      return cst_i*ln(-cst_i*x+sqrt(1-x*x,contextptr),contextptr);
+     return -cst_i*ln(cst_i*x+sqrt(1-x*x,contextptr),contextptr);
+     // return cst_i*ln(sqrt(x*x-1,contextptr)+x,contextptr)+cst_pi_over_2;
+   }
+@@ -2779,6 +2803,8 @@
+ 
+   // static symbolic symb_asinh(const gen & e){  return symbolic(at_asinh,e);  }
+   static gen asinhasln(const gen & x,GIAC_CONTEXT){
++    if (ln_form_cancels(x,true,contextptr))
++      return -ln(-x+sqrt(x*x+1,contextptr),contextptr);
+     return ln(x+sqrt(x*x+1,contextptr),contextptr);
+   }
+   gen asinh(const gen & e0,GIAC_CONTEXT){
+@@ -2823,6 +2849,8 @@
+       return symbolic(at_program,gen(makevecteur(a,0,asinh(b,contextptr)),_SEQ__VECT));
+     if (keep_acosh_asinh(contextptr))
+       return symbolic(at_asinh,e);
++    if (ln_form_cancels(e,true,contextptr))
++      return -ln(-e+sqrt(pow(e,2)+1,contextptr),contextptr);
+     return ln(e+sqrt(pow(e,2)+1,contextptr),contextptr);
+   }
+   static gen d_asinh(const gen & args,GIAC_CONTEXT){
