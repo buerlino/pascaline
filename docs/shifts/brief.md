@@ -11,7 +11,7 @@
 
 **By day, one pipeline at a time** (owner, 2026-10-18), each after the one before is merged; the lane that needs the owner's look:
 1. **Find:** R4a merged (`b9f0042`, 2026-10-28; R90 by day), then a split of the start chunk (no package yet: it is cut on R4a's start chunk; R83 raised the budget to 61 kB, owner 2026-10-27, and the Settings base needs room), then R4b (after R15c3 and R49).
-2. **The Settings base** (owner, 2026-10-27; decisions.md "Settings in the Mode sheet, and presets"; [mockups/settings.html](../mockups/settings.html)): R85, R49, R86, R57 (R4b sets the free keys in R49's levels; the comma is the owner's daily use); then R50e, R87 (before A7), R70, R15c4, R38a → R38b, R59; R88 (after R4b, R57, R50e) → R89; R55 (after R15c4); R53; R12b → R12c → R41; R36, R33 → R37, R40.
+2. **The Settings base** (owner, 2026-10-27; decisions.md "Settings in the Mode sheet, and presets"; [mockups/settings.html](../mockups/settings.html)): R85 merged (`1d35189`, 2026-10-29), then R49, R86, R57 (R4b sets the free keys in R49's levels; the comma is the owner's daily use); then R50e, R87 (before A7), R70, R15c4, R38a → R38b, R59; R88 (after R4b, R57, R50e) → R89; R55 (after R15c4); R53; R12b → R12c → R41; R36, R33 → R37, R40.
 3. **The units:** R24b → R24c → R24d, R60–R63, R71; G81 with them.
 4. **annabell on devices:** A9 with the owner's phone (F41); A43 (an update keeps the data; before A7); A4b after R4b; A7 → A8 on the owner's go.
 5. **Every morning:** the owner's check (MORNING.md, on the night's device when the night had one, about 10 minutes). The day session writes each failed step as a backlog bug line on phase-1 and logs one line in `.coord/log.md`: `- HH:MM morning <date>: clean` or `- HH:MM morning <date>: fails <ids>`.
@@ -26,7 +26,6 @@
 
 | # | Package | Agent, model | Lane | Starts when merged | Size |
 |---|---|---|---|---|---|
-| [R85](packages/R85.md) | Shift + Fmt opens Mode | ron, Sonnet | day | now | ~0.25 d |
 | [A9](packages/A9.md) | Key vibration on the owner's phone | annabell, Sonnet | day (device) | the phone connected | ~0.5 d |
 | [A43](packages/A43.md) | An app update keeps the user's data (before A7) | annabell, Sonnet | day (device) | now | ~0.5 d |
 
@@ -46,17 +45,19 @@ The queue below is the next nights'. **Start it from the phase-1 worktree:** `cd
 8. **A step that ends without a RESULT line on stdout** (the pipeline died; A10 makes every exit print one): henri runs the same step once more; if the log then shows it twice without a RESULT, he skips it and goes on. **Worker gone without a report** (no commit): the pipeline logs `NOT MERGED (no commits)` and keeps the worktree; henri runs the same step once more (the pipeline resumes the branch). If that fails too, go on.
 9. **The end:** after the last pass and its FIX packages, `scripts/pipeline.sh report` writes and commits the shift report; henri then answers `SHIFT DONE`. **On time (A17):** start `scripts/night.sh --until <HH:MM>` (`--dry-run` shows the plan); from that time, or at `--max-steps` minus 2, henri is asked only for the last Opus pass (or `NO PASS`), then night.sh runs the report and stops. The pipeline merges only the commit its audit read and stops with `NOT MERGED (the branch is not the audited HEAD)` otherwise.
 
-### The queue (the night of 2026-10-28; steps 101–191 are done or dropped)
-Estimates are wall-clock guesses from the log (a package 25 min to 2 h from start to MERGED; an engine patch adds a rebuild). A package merged by day is skipped (log it); a step whose "After" is not merged is skipped for that night and stays in the queue. The audit model follows rule 1. The Opus passes come from rule 5 (about 25 min each, after every three finished packages, FIX packages included) and are not rows. About 10 hours with the passes at the estimates; at the 2026-10-28 day shift's pace (40 min a package) about 8 hours, to 08:00.
+### The queue (the day-night of 2026-10-29, 10:00 to 18:30, no device; steps 101–197 are done or dropped)
+Estimates are wall-clock guesses from the log (a package 25 min to 2 h from start to MERGED; an engine patch adds a rebuild). A package merged by day is skipped (log it); a step whose "After" is not merged is skipped for that night and stays in the queue. The audit model follows rule 1. The Opus passes come from rule 5 (about 25 min each, after every three finished packages, FIX packages included) and are not rows. About 7 hours with the passes at the estimates, inside `--until 18:30`; no device (`ANDROID_SERIAL` unset: `DEVICE SKIPPED` after each pass).
 
 | Step | What | Agent, model | Branch | After | Est. |
 |---|---|---|---|---|---|
-| 198 | **G123** an overflowing power shows ⚠ 12 1 (F123) | gorge, Opus | p1/gorge-overflowmark | — | 1 h |
-| 199 | **G127** exp(cosh(floor(asin(pi)))) is "No value found" (F86) | gorge, Opus | p1/gorge-evalfnest | — | 1 h |
-| 200 | **G128** exact acosh of a negative number flips between precisions (F61, acosh part) | gorge, Opus | p1/gorge-acoshneg | — | 45 min |
-| 201 | **G120** the nightly fuzz of 2026-10-28 and its triage | gorge, Opus | p1/gorge-nightfuzz-1028 | — | 45 min |
-| 202 | **The last Opus pass** on what came after the last pass, then its FIX packages | Opus | — | — | 20 min + fixes |
-| 203 | Shift report, then stop | — | — | — | 10 min |
+| 198 | **G129** one atan, two branches in one input: a silent wrong sign (F124) | gorge, Opus | p1/gorge-atanbranch | — | 1 h |
+| 199 | **G123** an overflowing power shows ⚠ 12 1 (F123) | gorge, Opus | p1/gorge-overflowmark | — | 1 h |
+| 200 | **G130** Home shows Giac's matrix type raw (F125) | gorge, Opus | p1/gorge-matrixtype | — | 1 h |
+| 201 | **G127** exp(cosh(floor(asin(pi)))) is "No value found" (F86) | gorge, Opus | p1/gorge-evalfnest | — | 1 h |
+| 202 | **G128** exact acosh of a negative number flips between precisions (F61, acosh part) | gorge, Opus | p1/gorge-acoshneg | — | 45 min |
+| 203 | **G120** the nightly fuzz and its triage | gorge, Opus | p1/gorge-nightfuzz-1028 | — | 45 min |
+| 204 | **The last Opus pass** on what came after the last pass, then its FIX packages | Opus | — | — | 20 min + fixes |
+| 205 | Shift report, then stop | — | — | — | 10 min |
 
 ### The commands henri replies with (one per decision; `scripts/night.sh` runs it)
 - `scripts/pipeline.sh <agent> "<ID>" --model <sonnet|opus> --audit-model auto`: the next queue step not done (the queue's skip rule above); `--audit-model opus` where its row says "audit Opus".

@@ -33,6 +33,7 @@ The one place for "where are we and what's left", one or two lines per open item
 - Flick misfires (R9: 20 px arm, 12 px cancel); whether the first tap after a cold start vibrates (R35); R7's sheet defaults; the 36 px cluster rows and the 28 px status line (R15b).
 - A11: Share session, Paste of `1.5e-3`; a chip tapped right after a flick (R15c2); the ~8 px strip right of an inner fraction (R42); "Working…" on the WebView and a taller CAS result growing its row (F8); the trackpad's `touch-action: none` (K1).
 - The memory cap on the Tab One: `makemat(1,30000,30000)` in CAS gives "Out of memory" and the app stays up (G24).
+- R85 (merged `1d35189`): on the Fairphone, Shift, Fmt opens Mode on Angle; ▶, Enter gives DEG (the owner).
 - R81 (F99, merged `a956ede`): the system keyboard stays closed after a return to the app, on the Fairphone (`tools/probes/ime-return.py`, annabell).
 - Removal tests to read: the "stored in Home" line under CAS results (R32), the angle check (R37), library imports (S4), Undo (P13).
 
@@ -72,8 +73,8 @@ The one place for "where are we and what's left", one or two lines per open item
 - **F109, no package.** Home `DelAVars()` shows `DelAVars`, its own name: no answer and no refusal. Family 5.
 - **F122, no package (G116).** Home `(atan(ln(-π)+9007199254740993))^(sin(10^-300)-10^300)` kills the engine (stack overflow inside Giac's wasm). G94's kind.
 - **F123, G123 (G116).** Home `1.000000000000001^(10^50)` shows ⚠ 12 1 (about 10^(4.3·10^34), an overflow). Family 6.
-- **F124, no package (G125).** Home `asin(cos(atan(2*i)))` ≈ 0.549306144334·i, right −0.549306144334·i: Home's `atan(2*i)` shows π/2+0.549·i (our principal branch, pasatan, `app/src/engine/complex.ts:24`), but Giac's exact `cos(atan(2*i))` = i·√3/3 follows Giac's own cut (−π/2+0.549·i), so the same atan has two branches in one input. Family 8.
-- **F125, no package (G124's report).** Home shows Giac's matrix type as Giac prints it, with no mark: `matrix(2,3)` = `matrix[[0,0,0],[0,0,0]]` (phase-1), and after G124 `matrix({{1,2},{3,4}})` = `matrix[{1,2},{3,4}]`, `zeros({2,3})` = `matrix[[0.0,…]]`, where `[[1,2],[3,4]]` shows `[[1,2],[3,4]]` with mark =. Family 1.
+- **F124, G129 (G125).** Home `asin(cos(atan(2*i)))` ≈ 0.549306144334·i, right −0.549306144334·i: Home's `atan(2*i)` shows π/2+0.549·i (our principal branch, pasatan, `app/src/engine/complex.ts:24`), but Giac's exact `cos(atan(2*i))` = i·√3/3 follows Giac's own cut (−π/2+0.549·i), so the same atan has two branches in one input. Family 8.
+- **F125, G130 (G124's report).** Home shows Giac's matrix type as Giac prints it, with no mark: `matrix(2,3)` = `matrix[[0,0,0],[0,0,0]]` (phase-1), and after G124 `matrix({{1,2},{3,4}})` = `matrix[{1,2},{3,4}]`, `zeros({2,3})` = `matrix[[0.0,…]]`, where `[[1,2],[3,4]]` shows `[[1,2],[3,4]]` with mark =. Family 1.
 - **G94, no package.** Depth-3 generated trees in the view sweep crash the in-process engine (wasm memory out of bounds, Opus pass 53; S16: also the nightly view sweep at count 300, seed 20752); raw output in the 2026-10-21 drafts (`../drafts/2026-10-21-packages/g94-raw`).
 - **The hardening without a bug line:** A31 (a gate stage for the shell tests in `tools/` and `scripts/`, not drafted); r16's end mark, a 50,000-input sweep with no new false mark, is not met (Opus pass 82; G94 stops the view sweep at volume); G116 (merged `b812262`): `node scripts/sweep.ts --nightly --edges`, about 7 min per 5,000 trees; its first two seeds gave F119–F123 (triage: `.tasks/sweep-2026-10-28-g116-triage.md`).
 

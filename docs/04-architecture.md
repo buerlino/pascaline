@@ -308,7 +308,8 @@ Positions use our rows and columns (`spec/keyboard.yaml`); the reference's id is
 | Shift + 5 [r8c3]; Shift + 8 [r7c3] | `[ ]` vector or matrix template (EN5); `{ }` list (built, R54) | reference |
 | Shift + 4 [r8c2]; Shift + 7 [r7c2] | the matrix editor (EN5); the list editor, deferred with Statistics | reference: Matrix, List |
 | Unit slots | the unit pad (`spec/unit-pad.yaml`, docs/archive/r9-unit-pad.md): prefix and unit cells over the maths rows, S5's arrangement, 18 user slots; Enter to the next slot, `→` the end slot. Until R24c, `spec/keyboard.yaml` `unit_slot:` holds S1's letters | P11, S1, P14 |
-| Unassigned Shift cells (11 since R15c2: Shift + ▲ ▼ ◀ ▶, Vars, a b/c, `( )`, `,`, 1, 0, Fmt; decided: `,` becomes ± with R71, Fmt opens Mode with R85) | they get the functions the task benchmark shows are pressed most, not a list made in advance | decisions.md "The letters stay" |
+| Fmt (row 9, col 0) | a tap cycles the last result's format; Shift (and a flick up) opens Mode on Angle (built, R85) | ours; decisions.md "Settings in the Mode sheet, and presets" |
+| Unassigned Shift cells (10 since R85: Shift + ▲ ▼ ◀ ▶, Vars, a b/c, `( )`, `,`, 1, 0; decided: `,` becomes ± with R71) | they get the functions the task benchmark shows are pressed most, not a list made in advance | decisions.md "The letters stay" |
 | Prefix chips | a strip above the keypad, only after a number, only if task 3 shows a gain | P8 |
 
 
