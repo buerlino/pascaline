@@ -138,12 +138,35 @@ setup_node_modules() {
   [[ -e "$wt/app/node_modules" ]] && return 0
   integ_take "pipeline-$n" "pipeline #$n $id:" || die "integ lock busy for 7200 s (node_modules)"
   refresh_integ_node_modules
-  # copy aside, then rename: an interrupted copy never leaves a half-filled node_modules that the guard above would keep
-  rm -rf "$wt/app/node_modules.tmp.$$"
-  if cp -al "$integ/app/node_modules" "$wt/app/node_modules.tmp.$$"; then mv "$wt/app/node_modules.tmp.$$" "$wt/app/node_modules"
-  else rm -rf "$wt/app/node_modules.tmp.$$"; die "could not copy node_modules into $wt"; fi
+  copy_node_modules "$wt"
   integ_drop
   runlog "node_modules copied from $integ/app ($((SECONDS - t0)) s)"
+}
+# copy_node_modules <wt>: <wt>/app/node_modules becomes a fresh hard-link copy of the phase-1 worktree's; integ must be held.
+# Copied aside, then renamed: an interrupted copy never leaves a half-filled node_modules; an older copy is swapped out, then removed.
+copy_node_modules() {
+  local d="$1/app/node_modules" tmp="$1/app/node_modules.tmp.$$" old="$1/app/node_modules.old.$$"
+  [[ $integ_held -eq 1 ]] || die "copy_node_modules without the integ lock"
+  rm -rf "$tmp" "$old"
+  cp -al "$integ/app/node_modules" "$tmp" || { rm -rf "$tmp"; die "could not copy node_modules into $1"; }
+  if [[ -e "$d" || -L "$d" ]]; then mv -T "$d" "$old"; fi
+  mv -T "$tmp" "$d"; rm -rf "$old"
+}
+# queue_node_modules: in the queue (integ held), after phase-1 was merged into the branch: a branch whose node_modules lack a package
+# of its lock (another lane merged a dependency meanwhile) gets the phase-1 worktree's, refreshed first; a branch whose own lock
+# differs from phase-1's gets npm ci in its worktree (under host-cpu: integ before host-cpu). A failing npm ci is a machine failure.
+queue_node_modules() {
+  [[ -f "$wt/app/package-lock.json" ]] && node_modules_stale "$wt/app" || return 0
+  local t0=$SECONDS rc=0
+  if git -C "$wt" diff --quiet phase-1 HEAD -- app/package-lock.json; then
+    refresh_integ_node_modules; copy_node_modules "$wt"
+    log "pipeline #$n $id: node_modules refreshed from $integ/app after merging phase-1 ($((SECONDS - t0)) s)"; return 0
+  fi
+  host_cpu_acquire "pipeline-$n" "pipeline #$n $id:" || queue_stop "host-cpu lock busy for 7200 s (npm ci)"
+  (cd "$wt/app" && timeout 1800 npm ci --prefer-offline) > "$run/npm-ci-branch.log" 2>&1 || rc=1
+  tools/devlock.sh release host-cpu "pipeline-$n" >/dev/null || true
+  [[ $rc -eq 0 ]] || queue_stop "machine: npm ci in $wt failed; see $run/npm-ci-branch.log"
+  log "pipeline #$n $id: npm ci in the branch's worktree after merging phase-1 ($((SECONDS - t0)) s)"
 }
 
 # ---------- subcommand: pass ----------
@@ -662,6 +685,7 @@ queue_enter() {
   in_queue=1
   integ_clean "$integ" || dirty_stop
   merge_phase1
+  queue_node_modules  # the merge may have brought a new dependency
   [[ $nowork -eq 0 || $first_entry -eq 0 ]] || rounds=$merge_conflicts  # review-only: its first resolve round is a fix round (A10)
   first_entry=0
   if [[ $engine_managed -eq 1 ]]; then  # phase-1's engine as it is now (red-first; promoted by the last merge, so usually a copy)

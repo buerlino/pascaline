@@ -518,6 +518,7 @@ grep -qF '[[ "$name" != shell ]] && machine_failure "$out"' "$here/pipeline.sh" 
 mq="$tmp/mq"; mkdir -p "$mq/bin" "$mq/tools" "$mq/docs/shifts/packages" "$mq/app"; git init -q -b main "$mq"
 cp "$here/../tools/devlock.sh" "$mq/tools/"; : > "$mq/docs/shifts/brief.md"; echo t > "$mq/app/keep"; echo t > "$mq/tracked"
 printf '### annabell, Z1: a package, branch `p1/z1`\n' > "$mq/docs/shifts/packages/Z1.md"
+echo node_modules/ > "$mq/.gitignore"  # the stub workers commit with git add -A
 cat > "$mq/bin/owner" <<STUB
 #!/bin/sh
 cat "$mq/.coord/locks/integ/owner" 2>/dev/null || echo free
@@ -525,8 +526,8 @@ STUB
 cat > "$mq/bin/npm" <<STUB
 #!/bin/sh
 case "\$*" in
-  ci*) owner >> "$mq/npmci-owner"; mkdir -p node_modules/x;;
-  *typecheck*) echo "\$(git rev-parse --abbrev-ref HEAD) merges=\$(git log --merges --oneline phase-1 | wc -l) integ=\$(owner)" >> "$mq/checks";;
+  ci*) owner >> "$mq/npmci-owner"; mkdir -p node_modules/x; node "$mq/fake-ci.js";;
+  *typecheck*) echo "\$(git rev-parse --abbrev-ref HEAD) merges=\$(git log --merges --oneline phase-1 | wc -l) integ=\$(owner) newdep=\$(test -f node_modules/newdep/package.json && echo yes || echo no)" >> "$mq/checks";;
 esac
 exit 0
 STUB
@@ -539,9 +540,19 @@ case "\$*" in
   *"--agent sofia"*) echo "\$br \$(owner)" >> "$mq/audits"; sleep 2
      if [ -n "\$MQ_FIX" ] && [ "\$br" = "\$MQ_FIX" ] && [ ! -e "$mq/fixed-\$br" ]; then touch "$mq/fixed-\$br"; echo FIX; echo "a.txt:1: say more"; else echo APPROVED; fi;;
   *"fix round"*) echo "\$br \$(owner)" >> "$mq/fixes"; echo more >> "\$br.txt"; git add -A; git -c user.name=t -c user.email=t@t commit -qm fix; echo fixed;;
-  *) if [ -n "\$MQ_HOLD" ]; then i=0; while [ ! -e "\$MQ_HOLD" ] && [ \$i -lt 150 ]; do sleep 0.2; i=\$((i + 1)); done; fi
+  *) if [ -n "\$MQ_HOLD" ]; then touch "\$MQ_HOLD.started"; i=0; while [ ! -e "\$MQ_HOLD" ] && [ \$i -lt 150 ]; do sleep 0.2; i=\$((i + 1)); done; fi
      echo w > "\$br.txt"; git add -A; git -c user.name=t -c user.email=t@t commit -qm "work \$br"; echo done;;
 esac
+STUB
+cat > "$mq/fake-ci.js" <<'STUB'
+// npm ci, faked: every package of package-lock.json into node_modules, and the hidden lock node_modules_stale reads
+const fs = require("fs");
+let lock; try { lock = JSON.parse(fs.readFileSync("package-lock.json", "utf8")); } catch { process.exit(0); }
+for (const [k, v] of Object.entries(lock.packages || {})) {
+  if (!k.startsWith("node_modules/")) continue;
+  fs.mkdirSync(k, { recursive: true }); fs.writeFileSync(k + "/package.json", JSON.stringify({ version: v.version }));
+}
+fs.writeFileSync("node_modules/.package-lock.json", JSON.stringify(lock));
 STUB
 chmod +x "$mq/bin/"*; git -C "$mq" add -A; gc "$mq" init; git -C "$mq" branch phase-1
 git -C "$mq" worktree add -q "$mq/.claude/worktrees/phase-1" phase-1; p1q="$mq/.claude/worktrees/phase-1"
@@ -582,6 +593,15 @@ git -C "$p1q" checkout -q tracked; (cd "$mq" && tools/devlock.sh release integ o
 wait "$q4"
 grep -q '^RESULT #[0-9]* Q4: MERGED' "$tmp/q4.out" || fail "A47b: the run that waited for integ did not merge: $(cat "$tmp/q4.out")"
 grep -q 'Q4: integ taken after a wait of [0-9]* s' "$mq/.coord/log.md" || fail "A47b: the integ wait's length is not logged"
+# phase-1 gains a dependency (a lock entry) while the worker runs: after the queue merges phase-1 in, the checks see the new module
+export MQ_HOLD="$tmp/mq-hold5"
+mqrun "$script" ron "queue task" --id Q5 --branch p1/q5 --checks typecheck > "$tmp/q5.out" 2>&1 & q5=$!
+for _ in $(seq 1 100); do [[ -e "$MQ_HOLD.started" ]] && break; sleep 0.1; done  # the worker runs: its node_modules are copied
+printf '{"packages":{"":{},"node_modules/newdep":{"version":"1.0.0"}}}' > "$p1q/app/package-lock.json"
+git -C "$p1q" add app/package-lock.json; git -C "$p1q" -c user.name=t -c user.email=t@t commit -qm "dep: newdep"
+touch "$MQ_HOLD"; wait "$q5"; unset MQ_HOLD
+grep -q '^RESULT #[0-9]* Q5: MERGED' "$tmp/q5.out" || fail "A47b: the run after phase-1 gained a dependency did not merge: $(cat "$tmp/q5.out")"
+grep -q '^p1/q5 .* newdep=yes$' "$mq/checks" || fail "A47b: the checks ran on node_modules without phase-1's new dependency: $(grep '^p1/q5 ' "$mq/checks")"
 # a pass holds integ from its start to its end and releases it; its prompt no longer takes the lock; so does the report
 out="$(mqrun "$script" pass 5 "Q1" none 2>&1)"
 [[ "$(cat "$mq/pass-start" 2>/dev/null)" == pass-5 && "$(cat "$mq/pass-end" 2>/dev/null)" == pass-5 ]] || fail "A47b: the pass does not hold integ from start to end: $(cat "$mq/pass-start" "$mq/pass-end" 2>&1)"
