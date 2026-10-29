@@ -71,7 +71,6 @@ The one place for "where are we and what's left", one or two lines per open item
 - **F66, no package.** The plot evaluator has NaN at x = 0 for x·x/x where Giac simplifies to x (`viewsweep-known.yaml`); Home and the plot disagree at one point. Also `√x·√x` for x < 0 (roots-11, G87's KNOWN list).
 - **F108, no package (Home fixed by G119).** CAS `fMin(x^2-2*x+1,x)` still shows Giac's `seq[1]` (census `cas fMin/0`, `cas fMax/0`); Home `op([])` shows `seq[]`. Family 5.
 - **F109, no package.** Home `DelAVars()` shows `DelAVars`, its own name: no answer and no refusal. Family 5.
-- **F114, G126 (S16).** Home `asin(tan(2)-10^5040)` at 30 digits ⚠ 2 -1.6-1E4·i, right -1.5708+11605.722·i: cancellation in Giac's log form; G116: `acos(-10^20+1/2)` ⚠ 12 3.14159265359-21.4875625974·i (right 3.14159265359-46.7448490404·i; golden pending g116-acos-neg-1e20-half-12), `asinh(-10^1250)` ⚠ 1 1E3+3·i. Family 6.
 - **F112, G125 (S16).** Home `asin(cos(asin(10)))` ≈ 0.148369807463·i, right 2.99322284613·i on either branch: Giac's exact form adds `i*pi` (`MODE=raw … 'asin(cos(asin(10)))'`).
 - **F122, no package (G116).** Home `(atan(ln(-π)+9007199254740993))^(sin(10^-300)-10^300)` kills the engine (stack overflow inside Giac's wasm). G94's kind.
 - **F123, G123 (G116).** Home `1.000000000000001^(10^50)` shows ⚠ 12 1 (about 10^(4.3·10^34), an overflow). Family 6.
