@@ -440,6 +440,51 @@ Digits:=40:; pc("g128-acosh-neg-sqrt2-30",'(acosh(-sqrt(2)))',(88137358701954302
 // patch 0005-mpfr-pi-and-real-domains.patch
 // g128-acosh-neg3.5-dec-30 (precision.yaml, oracle)
 Digits:=40:; pc("g128-acosh-neg3.5-dec-30",'(acosh(-(35/10^1)))',(19248473002384137899910356537/10^28)+(314159265358979323846264338328/10^29)*i,5/10^30+5/10^30);
+// patch 0018-pow-of-pow-branch.patch
+// g132-sqrt-acosh-neg2-cubed-12 (precision.yaml, oracle)
+Digits:=40:; pc("g132-sqrt-acosh-neg2-cubed-12",'(sqrt(acosh(-2)^3))',(118723766852/10^11)-(617405788037/10^11)*i,5/10^12+5/10^12);
+// patch 0018-pow-of-pow-branch.patch
+// g132-sqrt-acosh-neg2-cubed-30 (precision.yaml, oracle)
+Digits:=40:; pc("g132-sqrt-acosh-neg2-cubed-30",'(sqrt(acosh(-2)^3))',(118723766851763820935617289965/10^29)-(617405788036696676473656561918/10^29)*i,5/10^30+5/10^30);
+// patch 0018-pow-of-pow-branch.patch
+// g132-sqrt-acosh-neg2-minus3-cubed-12 (precision.yaml, oracle)
+Digits:=40:; pc("g132-sqrt-acosh-neg2-minus3-cubed-12",'(sqrt((acosh(-2)-3)^3))',(672073122394/10^11)-(320602100354/10^12)*i,5/10^12+5/10^13);
+// patch 0018-pow-of-pow-branch.patch
+// g132-sqrt-neg-acosh-neg2-cubed-12 (precision.yaml, oracle)
+Digits:=40:; pc("g132-sqrt-neg-acosh-neg2-cubed-12",'(sqrt((-acosh(-2))^3))',(617405788037/10^11)+(118723766852/10^11)*i,5/10^12+5/10^12);
+// patch 0018-pow-of-pow-branch.patch
+// g132-sqrt-3-minus-acosh-neg2-cubed-12 (precision.yaml, oracle)
+Digits:=40:; pc("g132-sqrt-3-minus-acosh-neg2-cubed-12",'(sqrt((3-acosh(-2))^3))',(320602100354/10^12)+(672073122394/10^11)*i,5/10^13+5/10^12);
+// patch 0018-pow-of-pow-branch.patch
+// g132-sqrt-acosh-neg-half-cubed-12 (precision.yaml, oracle)
+Digits:=40:; pc("g132-sqrt-acosh-neg-half-cubed-12",'(sqrt(acosh(-1/2)^3))',(214325044527/10^11)-(214325044527/10^11)*i,5/10^12+5/10^12);
+// patch 0018-pow-of-pow-branch.patch
+// g132-sqrt-acosh-neg-half-cubed-30 (precision.yaml, oracle)
+Digits:=40:; pc("g132-sqrt-acosh-neg-half-cubed-30",'(sqrt(acosh(-1/2)^3))',(21432504452712774170943397548/10^28)-(21432504452712774170943397548/10^28)*i,5/10^30+5/10^30);
+// patch 0018-pow-of-pow-branch.patch
+// g132-sqrt-acosh-neg-half-5-12 (precision.yaml, oracle)
+Digits:=40:; pc("g132-sqrt-acosh-neg-half-5-12",'(sqrt(acosh(-1/2)^5))',(448881323578/10^11)+(448881323578/10^11)*i,5/10^12+5/10^12);
+// patch 0018-pow-of-pow-branch.patch
+// g132-sqrt-acosh-neg-half-sq-12 (precision.yaml, oracle)
+Digits:=40:; pc("g132-sqrt-acosh-neg-half-sq-12",'(sqrt(acosh(-1/2)^2))',(209439510239/10^11)*i,5/10^12);
+// patch 0018-pow-of-pow-branch.patch
+// g132-sqrt-acosh-neg-half-4-12 (precision.yaml, oracle)
+Digits:=40:; pc("g132-sqrt-acosh-neg-half-4-12",'(sqrt(acosh(-1/2)^4))',(438649084493/10^11),5/10^12);
+// patch 0018-pow-of-pow-branch.patch
+// g132-cbrt-acosh-neg2-cubed-12 (precision.yaml, oracle)
+Digits:=40:; pc("g132-cbrt-acosh-neg2-cubed-12",'((acosh(-2)^3)^(1/3))',(206222009789/10^11)-(271131532125/10^11)*i,5/10^12+5/10^12);
+// patch 0018-pow-of-pow-branch.patch
+// g132-sqrt-acosh-neg2-plus10-sq-12 (precision.yaml, oracle)
+Digits:=40:; pc("g132-sqrt-acosh-neg2-plus10-sq-12",'(sqrt((acosh(-2)+10)^2))',(113169578969/10^10)+(314159265359/10^11)*i,5/10^11+5/10^12);
+// patch 0018-pow-of-pow-branch.patch
+// g132-sqrt-neg-pi-cubed-12 (precision.yaml, oracle)
+Digits:=40:; pc("g132-sqrt-neg-pi-cubed-12",'(sqrt((-pi)^3))',(556832799683/10^11)*i,5/10^12);
+// patch 0018-pow-of-pow-branch.patch
+// g132-sqrt-acos-pi-cubed-12 (precision.yaml, oracle)
+Digits:=40:; pc("g132-sqrt-acos-pi-cubed-12",'(sqrt(acos(pi)^3))',(172405833956/10^11)-(172405833956/10^11)*i,5/10^12+5/10^12);
+// patch 0018-pow-of-pow-branch.patch
+// g132-sqrt-acos-pi-cubed-30 (precision.yaml, oracle)
+Digits:=40:; pc("g132-sqrt-acos-pi-cubed-30",'(sqrt(acos(pi)^3))',(172405833955943445126749655912/10^29)-(172405833955943445126749655912/10^29)*i,5/10^30+5/10^30);
 // patch 0006-reim-root-of-unknown-sign.patch
 // g96-cas-im-2sqrt (bench.yaml, derived)
 Digits:=40:; pc("g96-cas-im-2sqrt",'subst(im(2*sqrt(x)),x,-1)',2,1/10^30);

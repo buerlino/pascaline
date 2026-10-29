@@ -12,6 +12,8 @@ const repo = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const common = spawnSync("git", ["rev-parse", "--path-format=absolute", "--git-common-dir"], { cwd: repo, encoding: "utf8" }).stdout.trim();
 const py = oracleVenvPython(repo, common ? resolve(common, "..") : repo);
 const checklist = join(repo, "tests/golden/G2-CHECKLIST.md");
+// each case starts oracle.py (Python + mpmath, about 1 s alone); under the full suite's parallel load it passed 5 s (run 315)
+const SPAWN_MS = 30_000;
 
 function check(file: string): { code: number; out: string } {
   const r = spawnSync(py as string, [join(repo, "tests/golden/oracle.py"), "--g2", "--check", "--checklist", file], { encoding: "utf8" });
@@ -26,7 +28,7 @@ describe("oracle.py --g2 --check (G79)", () => {
     const r = check(checklist);
     expect(r.out).toContain("checklist ok");
     expect(r.code).toBe(0);
-  });
+  }, SPAWN_MS);
   it("fails on a hand edit and names the item", () => {
     const dir = mkdtempSync(join(tmpdir(), "g2check-"));
     const copy = join(dir, "G2-CHECKLIST.md");
@@ -38,7 +40,7 @@ describe("oracle.py --g2 --check (G79)", () => {
     expect(r.code).toBe(1);
     expect(r.out).toMatch(/item 5 differs/);
     expect(r.out).not.toMatch(/item 4 /);
-  });
+  }, SPAWN_MS);
 });
 
 describe("touchesG2", () => {
