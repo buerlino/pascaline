@@ -64,12 +64,16 @@ engine_key() {
 engine_stamp() { cat "$1/.engine-key" 2>/dev/null || true; }
 engine_sha() { sha256sum "$1/giac.wasm" 2>/dev/null | cut -c1-16; }
 # engine_build <worktree holding the sources> <key> <out root> <log>: builds once per key into <root>/key-<key> under the
-# host-cpu lock; a finished build with the right stamp is reused. Fails with the build log's tail on stdout.
+# host-cpu lock; a finished build with the right stamp is reused, and the stamp is read again once the lock is held, so two
+# runs that want one key build it once (A47a). Fails with the build log's tail on stdout.
 engine_build() {
   local src="$1" key="$2" root="$3" log="$4" dest tmp rc=0
   dest="$root/key-$key"
   if [[ -f "$dest/giac.wasm" && "$(engine_stamp "$dest")" == "$key" ]]; then return 0; fi
-  tools/devlock.sh acquire host-cpu "engine-$key" 1800 >/dev/null || { echo "host-cpu lock busy"; return 1; }
+  host_cpu_acquire "engine-$key" "engine $key:" || { echo "host-cpu lock busy"; return 1; }
+  if [[ -f "$dest/giac.wasm" && "$(engine_stamp "$dest")" == "$key" ]]; then  # built by another run while this one waited
+    tools/devlock.sh release host-cpu "engine-$key" >/dev/null || true; return 0
+  fi
   tmp="$root/.tmp-$key.$$"; rm -rf "$tmp"; mkdir -p "$tmp"
   GIAC_BUILD_OUT="$tmp" GIAC_BUILD_DIR="$root/.build-$key" timeout 3600 "$src/engine/giac/build-wasm.sh" > "$log" 2>&1 || rc=1
   if [[ $rc -eq 0 && -f "$tmp/gsl/giac.wasm" ]]; then
@@ -80,16 +84,102 @@ engine_build() {
   tools/devlock.sh release host-cpu "engine-$key" >/dev/null || true
   [[ $rc -eq 0 ]] || { echo "build-wasm.sh failed: $(tail -n 2 "$log" | tr '\n' ' ' | cut -c1-160)"; return 1; }
 }
-# engine_promote <out root> <key>: <root>/gsl becomes the build of <key>; the old one stays as gsl.prev.
+# engine_ensure <worktree holding the sources> <key> <out root> <log>: <root>/key-<key> exists with its stamp (A47a: the pipeline's
+# GIAC_OUT is always such an immutable directory, never gsl). A gsl stamped with the key is copied (a gsl swapped during the copy is
+# noticed by its stamp and the copy dropped); otherwise engine_build builds it.
+engine_ensure() {
+  local src="$1" key="$2" root="$3" log="$4" dest tmp
+  dest="$root/key-$key"
+  if [[ -f "$dest/giac.wasm" && "$(engine_stamp "$dest")" == "$key" ]]; then return 0; fi
+  if [[ -f "$root/gsl/giac.wasm" && "$(engine_stamp "$root/gsl")" == "$key" ]]; then
+    tmp="$root/.copy-$key.$$"; rm -rf "$tmp"
+    if cp -a "$root/gsl" "$tmp" 2>/dev/null && [[ "$(engine_stamp "$tmp")" == "$key" && "$(engine_stamp "$root/gsl")" == "$key" ]]; then
+      if [[ -f "$dest/giac.wasm" && "$(engine_stamp "$dest")" == "$key" ]] || mv -T "$tmp" "$dest" 2>/dev/null; then rm -rf "$tmp"; return 0; fi
+    fi
+    rm -rf "$tmp"
+  fi
+  engine_build "$src" "$key" "$root" "$log"
+}
+# engine_promote <out root> <key>: <root>/gsl (a copy for people and tools outside the pipeline) becomes the build of <key>; the
+# old one stays as gsl.prev. Under a flock on <root>/.promote.lock, so two runs never promote at once; a gsl already at <key> is kept.
 engine_promote() {
   local root="$1" key="$2"
-  rm -rf "$root/gsl.new" && cp -a "$root/key-$key" "$root/gsl.new" || return 1
-  rm -rf "$root/gsl.prev"
-  if [[ ! -e "$root/gsl" ]]; then mv -T "$root/gsl.new" "$root/gsl"; return; fi
-  # one atomic exchange (coreutils >= 9.5): $root/gsl never goes missing for a concurrent user of the shared engine
-  if mv --exchange "$root/gsl.new" "$root/gsl" 2>/dev/null; then mv -T "$root/gsl.new" "$root/gsl.prev"
-  else mv -T "$root/gsl" "$root/gsl.prev" && mv -T "$root/gsl.new" "$root/gsl"; fi
+  (
+    flock -w 600 9 || exit 1
+    [[ "$(engine_stamp "$root/gsl")" != "$key" || ! -f "$root/gsl/giac.wasm" ]] || exit 0
+    rm -rf "$root/gsl.new" && cp -a "$root/key-$key" "$root/gsl.new" || exit 1
+    rm -rf "$root/gsl.prev"
+    if [[ ! -e "$root/gsl" ]]; then mv -T "$root/gsl.new" "$root/gsl"; exit; fi
+    # one atomic exchange (coreutils >= 9.5): $root/gsl never goes missing for a concurrent user of the shared engine
+    if mv --exchange "$root/gsl.new" "$root/gsl" 2>/dev/null; then mv -T "$root/gsl.new" "$root/gsl.prev"
+    else mv -T "$root/gsl" "$root/gsl.prev" && mv -T "$root/gsl.new" "$root/gsl"; fi
+  ) 9>"$root/.promote.lock"
 }
+
+# ---- A47a: jobs apart ----
+# take_number <tasks dir> [<wanted pass number>]: the next job number from <tasks>/counter, read and written in one flock hold
+# (<tasks>/counter.lock), so two jobs started at once never share a number. With a wanted pass number it also takes a pass
+# number from <tasks>/pass-counter in the same hold: the wanted one when it is free (above the last taken and no .tasks/pass-<n>),
+# else the next free one. Prints "<job>" or "<job> <pass>".
+take_number() {
+  local tasks="$1" want="${2:-}" fd c n p last
+  mkdir -p "$tasks"
+  exec {fd}>>"$tasks/counter.lock"
+  if ! flock -w 120 "$fd"; then exec {fd}>&-; return 1; fi
+  c="$(cat "$tasks/counter" 2>/dev/null || true)"; [[ "$c" =~ ^[0-9]+$ ]] || c=0
+  n=$((c + 1)); echo "$n" > "$tasks/counter"
+  if [[ -n "$want" ]]; then
+    last="$(cat "$tasks/pass-counter" 2>/dev/null || true)"; [[ "$last" =~ ^[0-9]+$ ]] || last=0
+    p="$want"; (( p > last )) || p=$((last + 1))
+    while [[ -e "$tasks/pass-$p" ]]; do p=$((p + 1)); done
+    mkdir -p "$tasks/pass-$p"; echo "$p" > "$tasks/pass-counter"
+    echo "$n $p"
+  else echo "$n"; fi
+  exec {fd}>&-
+}
+# peek_number <tasks dir>: the number the next job would take (dry runs take none).
+peek_number() {
+  local c; c="$(cat "$1/counter" 2>/dev/null || true)"; [[ "$c" =~ ^[0-9]+$ ]] || c=0; echo $((c + 1))
+}
+# job_port <job number>: every kind's dev-server port (runs, passes, censuses, device steps, reports): 5200 + n % 100.
+job_port() { echo $((5200 + $1 % 100)); }
+# host_cpu_acquire <owner> <log prefix>: the host-cpu lock, waiting up to 7200 s (PASCALINE_CPU_WAIT); logs (with the caller's
+# log function, when it has one) "waiting for host-cpu (<holder>)" once, and the wait's length when it ends.
+host_cpu_acquire() {
+  local owner="$1" pre="$2" t0=$SECONDS holder locks
+  tools/devlock.sh acquire host-cpu "$owner" 0 >/dev/null 2>&1 && return 0
+  locks="${coord:-${PASCALINE_COORD:-$(cd "$(git rev-parse --git-common-dir)/.." && pwd)/.coord}}/locks"
+  holder="$(cat "$locks/host-cpu/owner" 2>/dev/null || echo '?')"
+  _lib_log "$pre waiting for host-cpu ($holder)"
+  if tools/devlock.sh acquire host-cpu "$owner" "${PASCALINE_CPU_WAIT:-7200}" >/dev/null 2>&1; then
+    _lib_log "$pre host-cpu taken after a wait of $((SECONDS - t0)) s"; return 0
+  fi
+  _lib_log "$pre host-cpu still busy after a wait of $((SECONDS - t0)) s"; return 1
+}
+_lib_log() { if declare -F log >/dev/null; then log "$*"; fi; }
+# The shell tests (A47a): run by `pipeline.sh selftest` and by the check `shell`. PASCALINE_SELFTEST_TESTS (absolute paths) overrides.
+SELFTESTS=(scripts/pipeline.test.sh scripts/gc.test.sh tools/devlock.test.sh)
+# selftest_run <repo dir> <log>: runs each test (clean of the pipeline's own environment); prints "PASSED", or
+# "FAILED (<test>: <first failing line>)" and fails.
+selftest_run() {
+  local dir="$1" log="$2" t rc line
+  local -a tests
+  if [[ -n "${PASCALINE_SELFTEST_TESTS:-}" ]]; then read -ra tests <<<"$PASCALINE_SELFTEST_TESTS"
+  else tests=("${SELFTESTS[@]/#/$dir/}"); fi
+  : > "$log"
+  for t in "${tests[@]}"; do
+    echo "== $t" >> "$log"; rc=0
+    (cd "$dir" && env -u PASCALINE_LOCK_PID -u PASCALINE_COORD -u GIAC_OUT -u PW_PORT -u PASCALINE_SELFTEST_TESTS timeout -k 30 1800 "$t") > "$log.one" 2>&1 || rc=$?
+    cat "$log.one" >> "$log"
+    if [[ $rc -ne 0 ]]; then
+      line="$(grep -m1 -E '^FAIL' "$log.one" || tail -n 1 "$log.one")"; [[ $rc -ne 124 ]] || line="timed out after 1800 s"
+      rm -f "$log.one"; echo "FAILED (${t##*/}: $(cut -c1-200 <<<"${line:-exit $rc}"))"; return 1
+    fi
+  done
+  rm -f "$log.one"; echo PASSED
+}
+# shell_selected: succeeds when a changed file (one per line, on stdin) is a pipeline script or a tool script (A47a).
+shell_selected() { grep -qE '^(scripts/|tools/[^/]*\.sh$)'; }
 
 # A37: the tests that failed in some of <total> runs and passed in others. Reads item files (one "file<TAB>title" per failing item,
 # one file per run) and prints "<failed runs>/<total><TAB><item>" for every item that failed in fewer than all runs.

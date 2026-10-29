@@ -6,7 +6,7 @@
 #   scripts/pipeline.sh <ron|gorge|annabell|sandra> "<package ID or task text>" [options]
 #       --branch B          branch (default: the package heading's branch, or p1/<agent>-<slug>)
 #       --id ID             the package ID when the task is free text (a FIX package: G17f1)
-#       --model M           worker model: sonnet (default) or opus;  --effort E (default medium)
+#       --model M           worker model: sonnet (default) or opus;  --effort E (worker and fix rounds; default high)
 #       --audit-model M     sofia's model for the diff audit: auto (default: opus when --model opus or the diff
 #                           touches app/src/input/, app/src/engine/, app/src/units/, engine/ or spec/keyboard.yaml, else
 #                           sonnet), sonnet or opus. auto is a floor: a gorge package, or such a diff, gets opus even
@@ -17,7 +17,8 @@
 #       --no-merge          stop after the audit; print the merge command instead
 #       --dry-run           print the bundle and the commands; start no agent, make no worktree
 #   scripts/pipeline.sh pass <n> "<IDs with merge commits or unmerged branches>" ["<open questions>"] [--dry-run]
-#                           an Opus pass by sofia on phase-1 (brief section 0c "Opus pass")
+#                           an Opus pass by sofia on phase-1 (brief section 0c "Opus pass"); n when it is free, else the next
+#                           free pass number (.tasks/pass-counter; logged), printed as `RESULT pass <used>: ...`
 #   scripts/pipeline.sh device <n> [--dry-run]
 #                           A33: the core list on the night's device ($ANDROID_SERIAL): test APK of phase-1's HEAD, install, tools/core-device.sh;
 #                           logs `CORE DEVICE <p>/<a> (known <k>, new <ids or none>) on <sha>`; skips (DEVICE SKIPPED), never fails
@@ -26,6 +27,9 @@
 #                           the log line `FLAKES <n>: vitest <k> of 5 runs clean, e2e <k> of 5, flaky: <ids or none>`; stops if HEAD moves
 #   scripts/pipeline.sh report
 #                           the night's shift report, written and committed on phase-1 by a fresh agent
+#   scripts/pipeline.sh selftest [ignored options]
+#                           A47a: the shell tests (scripts/pipeline.test.sh, scripts/gc.test.sh, tools/devlock.test.sh); logs and
+#                           prints `RESULT selftest: PASSED` or `RESULT selftest: FAILED (<test>: <first failing line>)`
 #
 # Lifecycle: bundle → worker (own worktree from phase-1) → deterministic checks, at most two fix
 # rounds fed only the failing output → sofia audits `git diff -U5 phase-1...<branch>` plus the
@@ -36,9 +40,12 @@
 # "RESULT -: NOT STARTED (why)" before a run number exists). Exit 0 merged, 1 not merged, 2 not started
 # or failed early, 75 usage limit (henri stops, night.sh waits).
 # Environment: PASCALINE_DL_DIR and PASCALINE_QALC_DL_DIR (tarball caches, default: the main checkout's
-# engine/giac/_downloads and engine/qalc/_downloads), GIAC_OUT; PW_PORT=$((5200 + n % 100)) (a pass: 5290 + n) is
-# exported to the worker, the fix rounds and the checks, so parallel runs never share a dev server.
-# Locks: host-cpu around the checks, integ (600 s) around the merge into phase-1.
+# engine/giac/_downloads and engine/qalc/_downloads), GIAC_OUT.
+# Jobs apart (A47a): a run, a pass, a flake census, a device step and a report take their number from .tasks/counter under
+# flock; PW_PORT=$((5200 + number % 100)) for every kind, exported to the worker, the fix rounds and the checks, so jobs alive
+# together never share a dev server. A run holds the lock branch-<branch> (its pid) for its whole life and writes <run>/pid
+# (gc leaves a live run alone). GIAC_OUT is always an immutable engine/giac/_out/key-<k>; gsl is a copy for people.
+# Locks: host-cpu around the checks and builds (waits up to 7200 s, logged), integ (600 s) around the merge into phase-1.
 set -euo pipefail
 export PASCALINE_LOCK_PID=$$   # A35: locks taken here (and by the agents it starts) record this pid
 # shellcheck source=scripts/pipeline-lib.sh
@@ -94,7 +101,7 @@ ensure_integ() {
 refresh_integ_node_modules() {
   [[ ! -e "$integ/app/node_modules" ]] || node_modules_stale "$integ/app" || return 0
   runlog "node_modules of $integ/app are missing or stale: npm ci"
-  tools/devlock.sh acquire host-cpu "pipeline-$n" 1800 >/dev/null || die "host-cpu lock busy"
+  host_cpu_acquire "pipeline-$n" "pipeline #$n $id:" || die "host-cpu lock busy for 7200 s"
   local rc=0; (cd "$integ/app" && timeout 1800 npm ci --prefer-offline) > "$run/npm-ci.log" 2>&1 || rc=1
   tools/devlock.sh release host-cpu "pipeline-$n" >/dev/null || true
   if [[ $rc -ne 0 ]]; then
@@ -118,17 +125,23 @@ setup_node_modules() {
 if [[ "${1:-}" == "pass" ]]; then
   [[ $# -ge 3 ]] || die "usage: pipeline.sh pass <n> \"<IDs>\" [\"<open questions>\"]"
   n="$2"; ids="$3"; open="${4:-none}"
-  export PW_PORT=$((5290 + n))  # a pass's e2e never meets a dev server of another checkout
+  [[ "$n" =~ ^[0-9]+$ ]] || die "usage: pipeline.sh pass <n> \"<IDs>\" [\"<open questions>\"]"
   if [[ "${5:-}" == "--dry-run" || "${4:-}" == "--dry-run" ]]; then
     [[ "$open" == "--dry-run" ]] && open=none
+    export PW_PORT="$(job_port "$(peek_number "$tasks")")"
     integ="$(integ_dir)"; : "${integ:=$main/.claude/worktrees/phase-1}"  # shown, never created
     echo "DRY RUN: Opus pass $n on: $ids; open questions: $open; PW_PORT=$PW_PORT; worktree $integ; starts nothing"; echo "RESULT pass $n: DRY RUN"; exit 0
   fi
-  ensure_integ; run="$tasks/pass-$n"; mkdir -p "$run"
-  log "Opus pass $n: spawned sofia (opus) on: $ids; waiting."
+  ensure_integ
+  read -r job used < <(take_number "$tasks" "$n") || die "pass $n: the counter lock is busy"
+  [[ -n "${used:-}" ]] || die "pass $n: no pass number taken"
+  export PW_PORT="$(job_port "$job")"  # a pass's e2e never meets a dev server of another job
+  [[ "$used" == "$n" ]] || log "Opus pass $n: pass number $n is taken; this pass is $used"
+  n="$used"; run="$tasks/pass-$n"; mkdir -p "$run"; echo $$ > "$run/pid"
+  log "Opus pass $n (job $job, PW_PORT $PW_PORT): spawned sofia (opus) on: $ids; waiting."
   prompt="Opus pass $n of the night shift: follow \"Opus pass (instructions for the Opus agent)\" in docs/shifts/brief.md section 0c for packages $ids. Open questions from the log: $open. You run in the phase-1 worktree $integ. Run any e2e with PW_PORT=$PW_PORT (exported; do not change it). Take the integration lock around the doc commit: tools/devlock.sh acquire integ pass-$n 600 before it, tools/devlock.sh release integ pass-$n right after. Reply in exactly the form the section gives (OPUS PASS, VERDICT, FIX lines, QUEUE, NOTES)."
   set +e
-  (cd "$integ" && timeout -k 60 7200 claude -p --agent sofia --model opus --effort medium "${claude_common[@]}" -n "pass-$n" "$prompt") > "$run/reply.md" 2> "$run/stderr.log"
+  (cd "$integ" && timeout -k 60 7200 claude -p --agent sofia --model opus --effort high "${claude_common[@]}" -n "pass-$n" "$prompt") > "$run/reply.md" 2> "$run/stderr.log"
   rc=$?; set -e
   if [[ $rc -ne 0 ]] && grep -qiE 'usage limit|rate limit|429|overloaded' "$run/stderr.log" "$run/reply.md"; then
     log "Opus pass $n: LIMIT (claude exit $rc)"; echo "RESULT pass $n: LIMIT"; exit 75
@@ -154,6 +167,7 @@ if [[ "${1:-}" == "device" ]]; then
     echo "RESULT device $n: DRY RUN"; exit 0
   fi
   ensure_integ; mkdir -p "$run"
+  job="$(take_number "$tasks")" || die "device $n: the counter lock is busy"; export PW_PORT="$(job_port "$job")"
   skip() { log "pipeline device $n: DEVICE SKIPPED ($*)"; echo "RESULT device $n: DEVICE SKIPPED ($*)"; exit 0; }
   [[ -n "$dev" ]] || skip "ANDROID_SERIAL not set"
   st="$(timeout -k 5 20 adb -s "$dev" get-state 2>&1 | tr -d '\r' | tail -n1 || true)"
@@ -194,19 +208,20 @@ fi
 if [[ "${1:-}" == "flakes" ]]; then
   [[ $# -ge 2 && "$2" =~ ^[0-9]+$ ]] || die "usage: pipeline.sh flakes <n> [--dry-run]"
   n="$2"; runs="${PASCALINE_FLAKES_RUNS:-5}"; run="$tasks/flakes-$n"; out_md="$tasks/flakes-$(date +%F).md"
-  export PW_PORT=$((5300 + n % 100))
   if [[ "${3:-}" == "--dry-run" ]]; then
+    export PW_PORT="$(job_port "$(peek_number "$tasks")")"
     integ="$(integ_dir)"; : "${integ:=$main/.claude/worktrees/phase-1}"
     echo "DRY RUN: flake census $n on the HEAD of $integ; $runs runs each of vitest (npm test) and e2e (npm run test:e2e); PW_PORT=$PW_PORT"
-    echo "1. tools/devlock.sh acquire host-cpu flakes-$n 1800, held until the end; npm run index once"
+    echo "1. tools/devlock.sh acquire host-cpu flakes-$n 7200 (waits logged), held until the end; npm run index once"
     echo "2. before every run: HEAD must still be the first run's sha, else FLAKES $n: ABORTED (HEAD moved); load average noted per run"
     echo "3. logs in $run; a test failing in some runs and passing in others is flaky (always failing is not)"
     echo "4. output $out_md; log: - HH:MM pipeline flakes $n: FLAKES $n: vitest <k> of $runs runs clean, e2e <k> of $runs, flaky: <ids or none>"
     echo "RESULT flakes $n: DRY RUN"; exit 0
   fi
   ensure_integ; mkdir -p "$run"; t0=$SECONDS
+  job="$(take_number "$tasks")" || die "flakes $n: the counter lock is busy"; export PW_PORT="$(job_port "$job")"
   sha="$(git -C "$integ" rev-parse HEAD)"
-  tools/devlock.sh acquire host-cpu "flakes-$n" 1800 >/dev/null || { log "pipeline flakes $n: FLAKES SKIPPED (host-cpu lock busy)"; echo "RESULT flakes $n: SKIPPED (host-cpu lock busy)"; exit 0; }
+  host_cpu_acquire "flakes-$n" "pipeline flakes $n:" || { log "pipeline flakes $n: FLAKES SKIPPED (host-cpu lock busy)"; echo "RESULT flakes $n: SKIPPED (host-cpu lock busy)"; exit 0; }
   trap 'tools/devlock.sh release host-cpu "flakes-$n" >/dev/null 2>&1 || true' EXIT
   logs_tool="$integ/app/scripts/pipeline-logs.ts"
   vcmd="${PASCALINE_FLAKES_VITEST:-FORCE_COLOR=0 NO_COLOR=1 FIND_INDEX=required timeout 1800 npm run -s test}"
@@ -244,17 +259,27 @@ fi
 # ---------- subcommand: report ----------
 if [[ "${1:-}" == "report" ]]; then
   ensure_integ; run="$tasks/report-$(date +%F)"; mkdir -p "$run"
-  log "Shift report: spawned sonnet writer; waiting."
+  job="$(take_number "$tasks")" || die "report: the counter lock is busy"; export PW_PORT="$(job_port "$job")"
+  log "Shift report (job $job): spawned sonnet writer; waiting."
   prompt="Write the shift report of docs/shifts/brief.md section 0c (\"Shift report\") for the night section of .coord/log.md (the log is on stdin). You run in the phase-1 worktree $integ: commit the report there with git commit -s and the Sonnet trailer, holding the integration lock around the commit (tools/devlock.sh acquire integ report 600 before, tools/devlock.sh release integ report after). Never push. Reply with the commit hash only."
-  tail -n 400 "$coord/log.md" | (cd "$integ" && timeout -k 60 1800 claude -p --model sonnet --effort medium "${claude_common[@]}" -n report "$prompt") > "$run/reply.md" 2> "$run/stderr.log" || true
+  tail -n 400 "$coord/log.md" | (cd "$integ" && timeout -k 60 1800 claude -p --model sonnet --effort high "${claude_common[@]}" -n report "$prompt") > "$run/reply.md" 2> "$run/stderr.log" || true
   log "Shift report: $(tail -n1 "$run/reply.md")"; echo "RESULT report: $(tail -n1 "$run/reply.md")"; exit 0
+fi
+
+# ---------- subcommand: selftest ----------
+# A47a: the three shell tests of the scripts next to this one; further options are ignored (night.sh appends --audit-model auto).
+if [[ "${1:-}" == "selftest" ]]; then
+  here="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/.." && pwd)"; out="$tasks/selftest-$(date +%F-%H%M%S).log"; t0=$SECONDS
+  if r="$(selftest_run "$here" "$out")"; then :; fi
+  log "pipeline selftest: $r ($((SECONDS - t0)) s; $out)"
+  echo "RESULT selftest: $r"; [[ "$r" == PASSED ]] && exit 0 || exit 1
 fi
 
 # ---------- a package ----------
 [[ $# -ge 2 ]] || die "usage: pipeline.sh <ron|gorge|annabell|sandra> \"<ID or task>\" [options]"
 agent="$1"; task="$2"; shift 2
 case "$agent" in ron|gorge|annabell|sandra) ;; *) die "unknown agent $agent";; esac
-branch=""; id=""; model="sonnet"; effort="medium"; audit_model="auto"; checks="auto"; merge=1; dry=0; nowork=0
+branch=""; id=""; model="sonnet"; effort="high"; audit_model="auto"; checks="auto"; merge=1; dry=0; nowork=0
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --branch) branch="$2"; shift 2;; --id) id="$2"; shift 2;; --model) model="$2"; shift 2;;
@@ -286,13 +311,26 @@ fi
 slug="$(tr -cs 'a-z0-9' '-' <<<"${id,,}" | sed 's/^-//; s/-$//')"
 [[ -n "$branch" ]] || branch="p1/$agent-$slug"
 
-# The run directory and its number.
-counter="$tasks/counter"; [[ -f "$counter" ]] || echo 0 > "$counter"
-n=$(( $(cat "$counter") + 1 ))
-run="$tasks/$(printf '%03d' "$n")-$slug"
-if [[ $dry -eq 1 ]]; then run="$(mktemp -d)"; fi
+# A47a: one run per branch: the lock branch-<branch> with this pid, held to the end (a dead pid's lock is broken by the next run).
+branch_lock="branch-${branch//\//-}"
+cleanup() { rm -f "$spec_file"; [[ "${branch_locked:-0}" -eq 0 ]] || tools/devlock.sh release "$branch_lock" "pipeline-$$" >/dev/null 2>&1 || true; }
+trap cleanup EXIT
+if [[ $dry -eq 0 ]]; then
+  if [[ $nowork -eq 1 ]]; then git show-ref --verify --quiet "refs/heads/$branch" || die "--no-worker: branch $branch does not exist"; fi
+  tools/devlock.sh acquire "$branch_lock" "pipeline-$$" 0 >/dev/null 2>&1 \
+    || die "branch $branch is in use by another run ($(cat "$coord/locks/$branch_lock/owner" 2>/dev/null || echo '?'), pid $(cat "$coord/locks/$branch_lock/pid" 2>/dev/null || echo '?'))"
+  branch_locked=1
+fi
+
+# The run directory and its number: taken from .tasks/counter under flock (a dry run only peeks).
+if [[ $dry -eq 1 ]]; then n="$(peek_number "$tasks")"; run="$(mktemp -d)"
+else
+  n="$(take_number "$tasks")" || die "the counter lock is busy"
+  run="$tasks/$(printf '%03d' "$n")-$slug"
+fi
 mkdir -p "$run"
-export PW_PORT=$((5200 + n % 100))  # a dev-server port per run (app/playwright.config.ts)
+[[ $dry -eq 1 ]] || echo $$ > "$run/pid"  # gc leaves a run dir whose pid is alive alone
+export PW_PORT="$(job_port "$n")"  # a dev-server port per job (app/playwright.config.ts)
 
 # The bundle: spec, the files it names (capped), the report format and the definition of done.
 bundle="$run/spec.md"
@@ -337,12 +375,14 @@ if [[ $dry -eq 1 ]]; then
       echo "engine build: key $bkey (branch $branch changes the engine inputs): engine/giac/build-wasm.sh under tools/devlock.sh acquire host-cpu -> $engine_root/key-$bkey"
       echo "GIAC_OUT=$engine_root/key-$bkey (worker, fix rounds and checks)"
     else
-      echo "GIAC_OUT=$engine_root/gsl (shared engine; the branch keeps the engine inputs; a build follows the worker when its key changes)"
+      echo "GIAC_OUT=$engine_root/key-$bkey (phase-1's engine, copied from gsl or built when missing; a build follows the worker when its key changes)"
     fi
+    echo "red-first's phase-1 engine: $engine_root/key-$p1key"
   fi
   echo "checks: $checks; merge: $merge; audit model: $audit_model; no-worker: $nowork"
-  echo "checks run: typecheck, vitest, docs always; size when app/ changed; e2e when app/ changed; golden when engine or parser changed"
-  echo "checks: typecheck,vitest,docs (+ size, e2e when app/ changed; + golden when engine or parser changed)"
+  echo "checks run: typecheck, vitest, docs always; size when app/ changed; e2e when app/ changed; golden when engine or parser changed; shell when scripts/ or tools/*.sh changed"
+  echo "checks: typecheck,vitest,docs (+ size, e2e when app/ changed; + golden when engine or parser changed; + shell when scripts/ or tools/*.sh changed)"
+  echo "locks: $branch_lock for the whole run (a second run on $branch is refused); host-cpu waits up to 7200 s"
   [[ "$audit_model" == auto || "$audit_model" == opus ]] || { [[ "$agent" == gorge ]] && echo "audit model raised to opus: gorge package (--audit-model $audit_model is a floor)"; }
   echo "audit model: $audit_model$([[ "$audit_model" == auto ]] && { [[ "$model" == opus ]] && echo " (opus: --model opus; else opus when the diff touches app/src/input/, app/src/engine/, app/src/units/, engine/ or spec/keyboard.yaml, else sonnet)" || echo " (opus when the diff touches app/src/input/, app/src/engine/, app/src/units/, engine/ or spec/keyboard.yaml, else sonnet)"; })"
   echo "--- bundle ($bundle, $(wc -l < "$bundle") lines) ---"; cat "$bundle"
@@ -362,9 +402,8 @@ if [[ $dry -eq 1 ]]; then
   rm -rf "$run"; echo "RESULT #$n $id: DRY RUN (nothing started)"; exit 0
 fi
 
-if [[ $nowork -eq 1 ]]; then git show-ref --verify --quiet "refs/heads/$branch" || die "--no-worker: branch $branch does not exist"; fi
-echo "$n" > "$counter"; runno="$n"
-log "pipeline #$n $id ($agent, $model) on $branch: started; bundle $bundle"
+runno="$n"
+log "pipeline #$n $id ($agent, $model, effort $effort) on $branch: started; PW_PORT $PW_PORT; bundle $bundle"
 runlog "start $id $agent $model $branch"
 
 # A28: no run checks against an engine that phase-1 lacks.
@@ -377,6 +416,7 @@ if [[ $engine_managed -eq 1 ]]; then
     why="$(engine_build "$integ" "$p1key" "$engine_root" "$engine_log")" && engine_promote "$engine_root" "$p1key" || die "engine build: ${why:-promote failed}"
     log "pipeline #$n $id: shared engine rebuilt: key $p1key, giac.wasm sha256 $(engine_sha "$engine_root/gsl") ($((SECONDS - t0)) s)"
   fi
+  why="$(engine_ensure "$integ" "$p1key" "$engine_root" "$engine_log")" || die "engine build (phase-1, key $p1key): $why"
 fi
 
 # The worker's worktree, fresh from phase-1 or resumed from the branch's last commit.
@@ -394,9 +434,8 @@ setup_node_modules "$wt"
 select_engine() {
   [[ $engine_managed -eq 1 ]] || return 0
   local k t0=$SECONDS why; k="$(engine_key "$wt" HEAD)"
-  if [[ "$k" == "$p1key" ]]; then export GIAC_OUT="$engine_root/gsl"; return 0; fi
-  if [[ "$(engine_stamp "$engine_root/key-$k")" != "$k" ]]; then log "pipeline #$n $id: building the branch's engine, key $k (phase-1: $p1key)"; fi
-  why="$(engine_build "$wt" "$k" "$engine_root" "$engine_log")" || die "engine build: $why"
+  if [[ "$k" != "$p1key" && "$(engine_stamp "$engine_root/key-$k")" != "$k" ]]; then log "pipeline #$n $id: building the branch's engine, key $k (phase-1: $p1key)"; fi
+  why="$(engine_ensure "$wt" "$k" "$engine_root" "$engine_log")" || die "engine build: $why"
   export GIAC_OUT="$engine_root/key-$k"
   runlog "engine: key $k, GIAC_OUT=$GIAC_OUT ($((SECONDS - t0)) s)"
 }
@@ -425,6 +464,7 @@ want_checks() {
       local list="typecheck,vitest"
       changed | grep -q '^app/' && list="$list,e2e,size"
       changed | golden_selected && list="$list,golden"
+      changed | shell_selected && list="$list,shell"
       list="$list,docs"; red_first_wanted "$spec_file" && list="$list,redfirst"
       echo "$list";;
     *) echo "$checks";;
@@ -452,10 +492,10 @@ rerun_timing() {  # <check> <log>: only the failing files, output appended to th
 }
 run_checks() {  # <round>; returns 1 and writes fail-<round>.txt on failure
   local round="$1" list name rc=0 why redwhy="" p1_engine="${PASCALINE_P1_ENGINE:-$GIAC_OUT}"
-  [[ $engine_managed -eq 0 ]] || p1_engine="$engine_root/gsl"
+  [[ $engine_managed -eq 0 ]] || p1_engine="$engine_root/key-$p1key"
   list="$(want_checks)"; [[ ",$list," == *,stages,* ]] || list="${list//golden/golden,stages}"  # A25: the engine stages follow golden
   [[ -n "$list" ]] || { runlog "checks: none"; return 0; }
-  tools/devlock.sh acquire host-cpu "pipeline-$n" 1800 >/dev/null || die "host-cpu lock busy"
+  host_cpu_acquire "pipeline-$n" "pipeline #$n $id:" || die "host-cpu lock busy for 7200 s"
   : > "$run/fail-$round.txt"
   for name in ${list//,/ }; do
     local out="$run/check-$round-$name.log"
@@ -472,6 +512,9 @@ run_checks() {  # <round>; returns 1 and writes fail-<round>.txt on failure
                  if [[ $sc -ne 0 ]] || stage_findings "$out" > /dev/null; then rc=1; fi;;
       size)      (cd "$wt/app" && timeout 1800 npm run -s build && timeout 300 npm run -s size) > "$out" 2>&1 || rc=1;;
       docs)      (cd "$wt" && timeout 300 node tools/docs-check.mjs && timeout 120 node tools/docs-check.test.mjs) > "$out" 2>&1 || rc=1;;
+      shell)     # A47a: the three shell tests; the full output in <log>.full, the FAIL lines here (never a machine failure: tests quote such lines)
+                 local sr; sr="$(selftest_run "$wt" "$out.full")" || rc=1
+                 { grep -E '^FAIL' "$out.full" | head -n 40 || true; echo "selftest: $sr (full output: $out.full)"; } > "$out";;
       redfirst)  why="$(red_first "$wt" "$spec_file" "${p1_engine}" "$out")" || { rc=1; echo "red-first: $why" >> "$out"; redwhy="$why"; };;
       *) die "unknown check $name";;
     esac
@@ -485,7 +528,7 @@ run_checks() {  # <round>; returns 1 and writes fail-<round>.txt on failure
       [[ $rc -eq 0 ]] && runlog "check $name: re-run (timing) passed" || runlog "check $name: re-run (timing) failed"
     fi
     if [[ $rc -eq 1 ]]; then
-      if machine_failure "$out"; then
+      if [[ "$name" != shell ]] && machine_failure "$out"; then
         tools/devlock.sh release host-cpu "pipeline-$n" >/dev/null
         mline="$(grep -m1 -E "$MACHINE_RE" "$out" | cut -c1-160)"
         log "pipeline #$n $id: NOT MERGED (machine: $name: $mline); branch $branch kept"
@@ -571,7 +614,7 @@ while :; do
       behaviour_section "$integ" "$wt" "$run/behaviour-$rounds.md"; { echo; cat "$run/behaviour-$rounds.md"; } >> "$run/audit-$rounds.in"
     else { echo; echo "## Behaviour changes"; echo "none (the diff touches no engine, input or units code)"; } >> "$run/audit-$rounds.in"; fi
     audit_prompt="AUDIT pipeline run $n, package $id, branch $branch. On stdin: the acceptance criteria, then the diff against phase-1 (the deterministic checks passed). Judge the diff against the criteria and docs/rules-core.md only; read other files only to check a claim in the diff. Look for: a criterion not met; expected values without a trustworthy source; a new parser token without its round-trip case; a fixed bug without a regression test; files outside the task's scope; keys that move; missing SPDX lines; a dependency missing from THIRD_PARTY.md. After the diff, the section Behaviour changes lists inputs whose result differs from phase-1: call each change wanted (named in the criteria Done when) or not; a change not wanted is a FIX finding. Reply with the single word APPROVED on the first line, or FIX on the first line followed by at most five findings, each with file:line, the concrete failure and the fix. Nothing else."
-    run_agent "audit-$n-$rounds" "$run/audit-$rounds.log" sofia "$(resolve_audit_model)" medium "$run/audit-$rounds.in" "$audit_prompt" "${audit_tools[@]}"
+    run_agent "audit-$n-$rounds" "$run/audit-$rounds.log" sofia "$(resolve_audit_model)" high "$run/audit-$rounds.in" "$audit_prompt" "${audit_tools[@]}"
     verdict="$(grep -m1 -oE '^(APPROVED|FIX)' "$run/audit-$rounds.log" || true)"
     if [[ "$verdict" == "APPROVED" ]]; then log "pipeline #$n $id: audit APPROVED (round $rounds)"; break; fi
     log "pipeline #$n $id: audit ${verdict:-unclear} (round $rounds): $(grep -vE '^(FIX|APPROVED)?$' "$run/audit-$rounds.log" | head -n 1 | cut -c1-120)"
