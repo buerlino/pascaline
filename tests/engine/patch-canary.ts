@@ -63,6 +63,8 @@ const CANARIES: [string, string, RegExp, string][] = [
   // G126, patch 0015: the ln forms of asin and asinh cancel for a large x on one side (acos(-10^20+1/2) lost 40 digits)
   ["0015-asin-asinh-ln-cancellation.patch", "giac-2.1.0/src/usual.cc", /^static gen asinasln\(const gen & x,GIAC_CONTEXT\)\{\s*return -cst_i\*ln\(cst_i\*x\+sqrt\(1-x\*x,contextptr\),contextptr\);/, "static gen asinasln(const gen & x,GIAC_CONTEXT){"],
   ["0015-asin-asinh-ln-cancellation.patch", "giac-2.1.0/src/usual.cc", /^static gen asinhasln\(const gen & x,GIAC_CONTEXT\)\{\s*return ln\(x\+sqrt\(x\*x\+1,contextptr\),contextptr\);/, "static gen asinhasln(const gen & x,GIAC_CONTEXT){"],
+  // G127, patch 0016: floor of a complex value that is not an exact Gaussian rational falls to symb_floor (floor(asin(pi)) stays unevaluated)
+  ["0016-floor-complex-value.patch", "giac-2.1.0/src/usual.cc", /if \(tmp\.type==_CPLX && is_zero\(\*\(tmp\._CPLXptr\+1\),contextptr\)\)\s*tmp=\*tmp\._CPLXptr;\s*if \(tmp\.type==_REAL\)\{/, "static bool warnfloor=true;"],
   // G96, patch 0006: symb_reim takes a non-integer power of a base of unknown sign as real (r=s, i=0)
   ["0006-reim-root-of-unknown-sign.patch", "giac-2.1.0/src/gen.cc", /is_positive\(-e,contextptr\)\)\{\s*r=pow\(-e,expo,contextptr\)\*cos\(cst_pi\*expo,contextptr\);\s*i=pow\(-e,expo,contextptr\)\*sin\(cst_pi\*expo,contextptr\);\s*\}\s*else \{\s*r=s;\s*i=0;/, "sommei.push_back(signei*(*it)*pow(r,n-j)*pow(i,j));"],
 ];
