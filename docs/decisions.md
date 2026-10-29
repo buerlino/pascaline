@@ -8,7 +8,6 @@ Phase 0 decisions (D1–D9, P1, P2): [spike/DECISIONS.md](../spike/DECISIONS.md)
 The owner's other open items are in [backlog.md](backlog.md), "Needs the user". Once decided, an entry moves to "Decided proposals".
 
 - **A21, the F-Droid recipe's qalc build (P22):** `fdroid/README.md` names the open answer. Until F-Droid says whether checked-in derived data (`find/factors.yaml`) is acceptable, the recipe keeps its libxml2 and libqalculate builds, unchanged. Yes: before C4 it drops both. No: it runs `tools/find-index/refresh-factors.mjs` and fails on a diff.
-- **A47b, a start waits for the queue:** a fresh worktree's node_modules copy runs under `integ` (as asked), so its worker starts only after the other lane's serial part (checks plus audit, up to an hour). Recommendation: a short lock of its own for the npm ci and the copy (order `integ`, then it, then `host-cpu`).
 
 
 ## Decided proposals
