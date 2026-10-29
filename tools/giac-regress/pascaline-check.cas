@@ -363,6 +363,14 @@ Digits:=40:; pc("g112-keep-arg",'(arg(list[1+i,2])[0])',(785398163397/10^12),5/1
 Digits:=40:; pc("g119-fmin-one",'(fMin(x^2-x,x))',(5/10^1),5/10^13);
 // g119-fmax-sin (home.yaml, oracle)
 Digits:=40:; pc("g119-fmax-sin",'(fMax(sin(x),x))',(157079632679/10^11),5/10^12);
+// g129-sin-atan-2i (home.yaml, derived)
+Digits:=40:; pc("g129-sin-atan-2i",'(sin(atan(2*i)))',(115470053838/10^11),5/10^12);
+// g129-sin-atan-neg2i (home.yaml, derived)
+Digits:=40:; pc("g129-sin-atan-neg2i",'(sin(atan(-2*i)))',-(115470053838/10^11),5/10^12);
+// g129-cos-atan-i/2 (home.yaml, oracle)
+Digits:=40:; pc("g129-cos-atan-i/2",'(cos(atan(1/2*i)))',(115470053838/10^11),5/10^12);
+// g129-cos-atan-1+i (home.yaml, oracle)
+Digits:=40:; pc("g129-cos-atan-1+i",'(cos(atan(1+i)))',(568864481006/10^12)-(351577584254/10^12)*i,5/10^13+5/10^13);
 // prec-20-sqrt2 (precision.yaml, oracle)
 Digits:=40:; pc("prec-20-sqrt2",'(sqrt(2))',(14142135623730950488/10^19),5/10^20);
 // prec-20-third (precision.yaml, oracle)
