@@ -189,7 +189,7 @@ export const KNOWN_IDS = new Set([
   "g71-census-tri-sin1e70",
 ]);
 // The ids that pass on our patched build and fail on stock giac_2.1.0-1 (found by matching the cases the tests and canaries of patches
-// 0003 and 0005 name (tanh-test.ts, mpfr-pi-test.ts, patch-canary.ts) and the ids of G75 and G60; G111's g111-* of patch 0007; G113's g113-* of patch 0009 (g113-poisson_cdf-2.5 passes on stock, a guard in the check file); G113f1's ties of patch 0010; G115's g115-* of patch 0011; G118's g118-* of patch 0012; G121's g116-* and g121-* and G125's g125-* of patch 0013; G122's g122-* of patch 0014; G126's g126-* and g116-acos-neg-1e20-half-12 of patch 0015; G127's g127-* of patch 0016. Each id was run on the stock build (engine/giac/_out/release) and fails there; ln(-pi)-30 passes on stock at these Digits, so it stays in the check file; the g60-f5 and g78-novalue lines seemed to pass on stock until G118 (their difference is an MPFR NaN, printed undef, that pc() took for a pass). g58-acos-5!^(2.5+5!)-30 has budgetMs, so it is left out as a time guard): [id, the patch file the line rests on]. They go to pascaline-patched.cas, not to the check file.
+// 0003 and 0005 name (tanh-test.ts, mpfr-pi-test.ts, patch-canary.ts) and the ids of G75 and G60, G128's g128-* of patch 0005; G111's g111-* of patch 0007; G113's g113-* of patch 0009 (g113-poisson_cdf-2.5 passes on stock, a guard in the check file); G113f1's ties of patch 0010; G115's g115-* of patch 0011; G118's g118-* of patch 0012; G121's g116-* and g121-* and G125's g125-* of patch 0013; G122's g122-* of patch 0014; G126's g126-* and g116-acos-neg-1e20-half-12 of patch 0015; G127's g127-* of patch 0016. Each id was run on the stock build (engine/giac/_out/release) and fails there; ln(-pi)-30 passes on stock at these Digits, so it stays in the check file; the g60-f5 and g78-novalue lines seemed to pass on stock until G118 (their difference is an MPFR NaN, printed undef, that pc() took for a pass). g58-acos-5!^(2.5+5!)-30 has budgetMs, so it is left out as a time guard): [id, the patch file the line rests on]. They go to pascaline-patched.cas, not to the check file.
 export const PATCHED_IDS = new Map([
   ["prec-g50-tanh(i)-12", "0003-complex-tanh-mpfr.patch"],
   ["prec-g50-tanh(i)-30", "0003-complex-tanh-mpfr.patch"],
@@ -226,6 +226,13 @@ export const PATCHED_IDS = new Map([
   ["g78-novalue-exp-cosh-asin", "0005-mpfr-pi-and-real-domains.patch"],
   ["g78-novalue-asin-pow", "0005-mpfr-pi-and-real-domains.patch"],
   ["g118-abs-acos-pi-4-30", "0005-mpfr-pi-and-real-domains.patch"],
+  // G128 (F61): acosh of a real below 1 (stock: the conjugate below -1, or a double pi/3 term at any Digits); the guards
+  // g128-acosh-neg-half-12, g128-acosh-half-30, g128-acosh-neg2-30, g128-acosh-neg10-30 and the complex g128-* pass on stock and stay in the check file
+  ["g128-acosh-neg-half-30", "0005-mpfr-pi-and-real-domains.patch"],
+  ["g128-acosh-neg-half-dec-30", "0005-mpfr-pi-and-real-domains.patch"],
+  ["g128-acosh-neg-sqrt2-12", "0005-mpfr-pi-and-real-domains.patch"],
+  ["g128-acosh-neg-sqrt2-30", "0005-mpfr-pi-and-real-domains.patch"],
+  ["g128-acosh-neg3.5-dec-30", "0005-mpfr-pi-and-real-domains.patch"],
   // G111: home.yaml's densities and cdfs outside their support (stock giac_2.1.0-1 gives the formula's value)
   ["g111-exponential", "0007-densities-outside-support.patch"],
   ["g111-exponential-cdf", "0007-densities-outside-support.patch"],
