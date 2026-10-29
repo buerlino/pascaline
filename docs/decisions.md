@@ -16,6 +16,7 @@ Newest first within each group.
 
 ### Pipeline and process
 - **G125 (Opus pass 5): a bug an earlier merge already fixed.** Its package keeps its tests as regression tests: they must fail on the stock build (`engine/giac/_out/release`) instead of on phase-1, the Opus pass rewrites its "Done when", and the branch merges review-only (`--no-worker`). Would change if: a test passes on stock too.
+- **Owner answers of 2026-10-29 (after the day-night).** The start chunk is split (R91), its 61 kB budget stays; A44 gives the nightly sweep its own known-rows file.
 - **Owner answers of 2026-10-28 (after the day shift).** Home shows a one-element `seq[…]` as its value, a longer sequence as a list in braces (G119, F108); after R4a (`b9f0042`): until R24c, units show disabled in Find ("units come with the unit view"), no chip Enter refuses (R90, no package yet); Find's ten categories stay.
 - **Owner answers of 2026-10-26, afternoon (the after-night report checked).** One green night is enough for a new core case (S24's c61–c66); R4a's gate includes G114 (F108). Full text: archive.
 - **Owner answers of 2026-10-26 (after the eleventh night).** G112's rule (one list as the only argument is refused for every name the probe finds) stands until F107 narrows it; F101 and F104 are G113, before R4a. Full text: archive.
