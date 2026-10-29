@@ -47,14 +47,11 @@ The queue below is the next nights'. **Start it from the phase-1 worktree:** `cd
 8. **A step that ends without a RESULT line on stdout** (the pipeline died; A10 makes every exit print one): henri runs the same step once more; if the log then shows it twice without a RESULT, he skips it and goes on. **Worker gone without a report** (no commit): the pipeline logs `NOT MERGED (no commits)` and keeps the worktree; henri runs the same step once more (the pipeline resumes the branch). If that fails too, go on.
 9. **The end:** after the last pass and its FIX packages, `scripts/pipeline.sh report` writes and commits the shift report; henri then answers `SHIFT DONE`. **On time (A17):** start `scripts/night.sh --until <HH:MM>` (`--dry-run` shows the plan); from that time, or at `--max-steps` minus 2, henri is asked only for the last Opus pass (or `NO PASS`), then night.sh runs the report and stops. The pipeline merges only the commit its audit read and stops with `NOT MERGED (the branch is not the audited HEAD)` otherwise.
 
-### The queue (the night of 2026-10-29 to 08:00, on the Fairphone 6; steps 101–205 are done or dropped)
+### The queue (the night of 2026-10-29 to 08:00, on the Fairphone 6; steps 101–208 are done or dropped)
 Estimates are wall-clock guesses from the log (a package 25 min to 2 h from start to MERGED; an engine patch adds a rebuild). A package merged by day is skipped (log it); a step whose "After" is not merged is skipped for that night and stays in the queue. The audit model follows rule 1. The Opus passes come from rule 5 (about 25 min each, after every three finished packages, FIX packages included) and are not rows. About 10 hours with the passes at the estimates, inside `--until 08:00`; `ANDROID_SERIAL=4d42e62f` (CORE DEVICE after each pass; no annabell device step). Owner, 2026-10-29: A44 first, then the wrong numbers under ≈ by reach, the fuzz last.
 
 | Step | What | Agent, model | Branch | After | Est. |
 |---|---|---|---|---|---|
-| 206 | [A44](packages/A44.md) the nightly sweep's own known-rows file | annabell, Sonnet | `p1/annabell-nightknown` | — | 45 min |
-| 207 | [G131](packages/G131.md) a refused factor drops out of a product (F130) | gorge, Opus | `p1/gorge-refusedfactor` | — | 1.5 h |
-| 208 | [G132](packages/G132.md) √(z³) as z·√z for a complex z (F129) | gorge, Opus | `p1/gorge-sqrtcube` | — | 1.5 h |
 | 209 | [G133](packages/G133.md) asin of a tiny imaginary number, 21 of 30 digits (F132) | gorge, Opus | `p1/gorge-asintiny` | — | 1.5 h |
 | 210 | [G134](packages/G134.md) asinh on its cut, ∛ of a tiny real (F131, F133) | gorge, Opus | `p1/gorge-cutsmall` | — | 1.5 h |
 | 211 | [G135](packages/G135.md) a stored atan takes Giac's cut (F126) | gorge, Opus | `p1/gorge-storedatan` | — | 1.5 h |
