@@ -448,6 +448,8 @@ export function heavySplit(text: string): boolean {
 /** Most working digits an agreement step uses, and the time the steps beyond P+40 may take per result (G23). */
 export const MAX_EVAL_DIGITS = 1000;
 const EXTRA_BUDGET_MS = 50;
+/** G126: the levels past P+20 a value still 0 at every level may take (P+40, P+80). */
+const LEADING_ZERO_STEPS = 2;
 
 /** Digits a value's confirmed digits must end before, to look like a rational (endsEarly). */
 const ENDS_MARGIN = 10;
@@ -625,7 +627,8 @@ function agreedFacts(facts: readonly (ElementFacts | null)[], digits: number, P:
     return true;
   };
   // G126: zeros before any value confirm nothing (asin(sin(10^70)) = 10^70-n*pi is an exact 0 at P and P+20), so the steps
-  // go on within the budget, unless it is an underflow; zeros after noise stop them, as two agreeing levels.
+  // go on, unless it is an underflow, but to P+80 at most (LEADING_ZERO_STEPS: asin(sin(10^100)) shows its value there,
+  // a true 0 Giac does not prove costs two calls more); zeros after noise stop them, as two agreeing levels.
   const zero = (x: ComplexValue): boolean => isZero(x.re) && isZero(x.im);
   // An underflow (Home's novalue.ts underflow, `underflowAt`) refuses the result, so no element takes steps then.
   const leadingZero = facts.map((f, k) => !f && zero(A[k]!) && zero(B[k]!));
@@ -636,7 +639,7 @@ function agreedFacts(facts: readonly (ElementFacts | null)[], digits: number, P:
     let reliable = leadingZero[k] ? (leading ? 0 : digits) : confirmedComplex(A[k]!, B[k]!, P, P);
     let value = denoised(A[k]!, B[k]!, P);
     let at = P + 20;
-    for (let i = 2; reliable < digits && more(i); i++) {
+    for (let i = 2; reliable < digits && !(leading && i >= 2 + LEADING_ZERO_STEPS) && more(i); i++) {
       const next = levels[i];
       if (!next) break;
       leading &&= zero(next[k]!);

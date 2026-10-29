@@ -8,7 +8,7 @@ Phase 0 decisions (D1–D9, P1, P2): [spike/DECISIONS.md](../spike/DECISIONS.md)
 The owner's other open items are in [backlog.md](backlog.md), "Needs the user". Once decided, an entry moves to "Decided proposals".
 
 - **A21, the F-Droid recipe's qalc build (P22):** `fdroid/README.md` names the open answer. Until F-Droid says whether checked-in derived data (`find/factors.yaml`) is acceptable, the recipe keeps its libxml2 and libqalculate builds, unchanged. Yes: before C4 it drops both. No: it runs `tools/find-index/refresh-factors.mjs` and fails on a diff.
-- **G126 (run 295), atanh's cut.** `atanh` of a real x > 1: Giac +π/2·i (`atanh(10^20)` = 1E-20+1.5708·i), mpmath −π/2·i; below −1 both +π/2·i. A cut convention like row `atan-cut`: keep Giac's, or a workaround row and a G2 check.
+- **G126 (run 295), atanh's cut.** Recommended: keep Giac's +π/2·i for x > 1, as with row `atan-cut`, and check it on the G2. `atanh` of a real x > 1: Giac +π/2·i (`atanh(10^20)` = 1E-20+1.5708·i), mpmath −π/2·i; below −1 both +π/2·i. The other choice is a workaround row (mpmath's side) with a canary.
 
 
 ## Decided proposals

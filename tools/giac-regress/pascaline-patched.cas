@@ -357,6 +357,18 @@ Digits:=40:; pc("g126-asin-neg3+1e20i-12",'(asin(-3+10^20*i))',-(3/10^20)+(46744
 // g126-asinh-neg1e20+i-12 (precision.yaml, oracle)
 Digits:=40:; pc("g126-asinh-neg1e20+i-12",'(asinh(-10^20+i))',-(467448490404/10^10)+(1/10^20)*i,5/10^11+5/10^32);
 // patch 0015-asin-asinh-ln-cancellation.patch
+// g126-acos-neg-1e20-tiny-i-12 (precision.yaml, oracle)
+Digits:=40:; pc("g126-acos-neg-1e20-tiny-i-12",'(acos(-10^20-10^-400*i))',(314159265359/10^11)+(467448490404/10^10)*i,5/10^12+5/10^11);
+// patch 0015-asin-asinh-ln-cancellation.patch
+// g126-acos-neg-1e20-tiny-i-30 (precision.yaml, oracle)
+Digits:=40:; pc("g126-acos-neg-1e20-tiny-i-30",'(acos(-10^20-10^-400*i))',(314159265358979323846264338328/10^29)+(467448490404408589897770612151/10^28)*i,5/10^30+5/10^29);
+// patch 0015-asin-asinh-ln-cancellation.patch
+// g126-asinh-tiny-neg-1e20i-12 (precision.yaml, oracle)
+Digits:=40:; pc("g126-asinh-tiny-neg-1e20i-12",'(asinh(10^-400-10^20*i))',(467448490404/10^10)-(157079632679/10^11)*i,5/10^11+5/10^12);
+// patch 0015-asin-asinh-ln-cancellation.patch
+// g126-asinh-tiny-neg-1e20i-30 (precision.yaml, oracle)
+Digits:=40:; pc("g126-asinh-tiny-neg-1e20i-30",'(asinh(10^-400-10^20*i))',(467448490404408589897770612151/10^28)-(157079632679489661923132169164/10^29)*i,5/10^29+5/10^30);
+// patch 0015-asin-asinh-ln-cancellation.patch
 // g126-asinh-neg-1e20-30 (precision.yaml, oracle)
 Digits:=40:; pc("g126-asinh-neg-1e20-30",'(asinh(-10^20))',-(467448490404408589897770612151/10^28),5/10^29);
 // patch 0012-abs-power-real-base.patch
