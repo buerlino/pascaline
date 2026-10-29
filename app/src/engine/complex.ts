@@ -4,7 +4,7 @@
 // through our definition (pasatan); a stored name or user function that calls it is read through a copy
 // (complexReads). Split from numeric.ts (cleanup 2026-10-20, item 13). Synchronous, UI-free; only erasable TypeScript.
 import { AUDITED_FUNCTIONS, namePrint, type Giac } from "./numeric.ts";
-import { functionsIn, leadingName, names, namesIn, programParams, renameCalls, renameNames, topLevelArgs, type Quoting } from "./giacPrint.ts";
+import { functionsIn, leadingName, mapNames, names, namesIn, programParams, renameCalls, renameNames, topLevelArgs, type Quoting } from "./giacPrint.ts";
 
 function isError(out: string): boolean {
   return out.startsWith("GIAC_ERROR");
@@ -41,7 +41,17 @@ export const EXACT_ATAN: Readonly<Record<string, string>> = {
 /** `text` with every atan and arctan call replaced by pasatanx (EXACT_ATAN), outside strings; one that is the argument
  *  of tan stays Giac's atan: tan(atan(z)) = z on any branch, and Giac's rule keeps it exact (tan(atan(2*i)) = 2*i). */
 export function exactAtan(text: string, q: Quoting): string {
-  return renameCalls(text, { atan: "pasatanx", arctan: "pasatanx" }, q).replace(/(^|[^\w.])tan\(pasatanx\(/g, "$1tan(atan(");
+  // where the argument of the last tan( starts
+  let tanArg = -1;
+  return mapNames(
+    text,
+    (n) => {
+      const kept = n.at === tanArg;
+      if (n.call && n.name === "tan") tanArg = n.at + 4;
+      return n.call && !kept && (n.name === "atan" || n.name === "arctan") ? "pasatanx" : null;
+    },
+    q,
+  );
 }
 
 /** The Giac names (and aliases) that COMPLEX_DEFINITIONS replace. */

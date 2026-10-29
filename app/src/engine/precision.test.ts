@@ -410,7 +410,7 @@ describe("G50: complex arguments of the audited functions (pure)", () => {
   it("G129: exactAtan reads every atan of the input through pasatanx, but the one tan takes (tan(atan(z)) = z on any branch)", async () => {
     const { exactAtan } = await import("./complex.ts");
     expect(exactAtan("asin(cos(atan(2*i)))+arctan(x)", "typed")).toBe("asin(cos(pasatanx(2*i)))+pasatanx(x)");
-    expect(exactAtan("tan(atan(2*i))+tan(arctan(3*i))+atan(tan(4*i))", "typed")).toBe("tan(atan(2*i))+tan(atan(3*i))+pasatanx(tan(4*i))");
+    expect(exactAtan("tan(atan(2*i))+tan(arctan(3*i))+atan(tan(4*i))", "typed")).toBe("tan(atan(2*i))+tan(arctan(3*i))+pasatanx(tan(4*i))");
     expect(exactAtan('atan2(1,2)+atanh(i)+mytan(atan(i))+"atan(i)"', "typed")).toBe('atan2(1,2)+atanh(i)+mytan(pasatanx(i))+"atan(i)"');
   });
   it("shortDigits: a part printed as a double where MPFR digits were asked confirms one digit fewer (source: derived)", async () => {
