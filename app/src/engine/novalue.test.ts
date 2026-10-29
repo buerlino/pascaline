@@ -104,6 +104,13 @@ describe.skipIf(!giacAvailable())("G78 on the real engine", () => {
       expect(host.home("1.000000000000001^(10^50)", { ...defaultHomeSettings, digits }).result, `${digits}`).toMatchObject({ ok: false, error: "overflow" });
     giac.eval("pasov:=exp(10^50*ln(1000000000000001/1000000000000000))");
     expect(overflowAt(giac, "pasov", giac.eval("pasov"), 40)).toBe(true);
+    // G123f2: a complex overflow (Giac's +infinity*i) is one too, at 12 and 30 digits through Home (2+i*… was refused
+    // on phase-1 already, by another path: a guard); overflowAt takes an infinite part.
+    for (const input of ["i*1.000000000000001^(10^50)", "2+i*1.000000000000001^(10^50)"])
+      for (const digits of [12, 30])
+        expect(host.home(input, { ...defaultHomeSettings, digits }).result, `${input} ${digits}`).toMatchObject({ ok: false, error: "overflow" });
+    giac.eval("pasov:=2+i*exp(10^50*ln(1000000000000001/1000000000000000))");
+    expect(overflowAt(giac, "pasov", giac.eval("pasov"), 40)).toBe(true);
     giac.eval("pasov:=exp(10^15*ln(1000000000000001/1000000000000000))");
     expect(overflowAt(giac, "pasov", giac.eval("pasov"), 40)).toBe(false);
     // An infinity the answer is (a limit) is no overflow.

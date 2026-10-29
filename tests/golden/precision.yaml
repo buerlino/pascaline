@@ -754,6 +754,8 @@ cases:
   - { id: "g118-cas-abs-x-3", kind: "cas", input: "abs(x)^3", expect: "abs(x)*x^2", source: "derived", note: "guard: an odd power of a free real x keeps stock Giac's abs(x)*x^2 (stock and patched builds agree)" }
   # G123 (backlog F123): the 30-digit cases of home.yaml's G123 block (the home stage runs at 12 digits)
   - { id: "g123-overflow-pow-1e50-30", input: "1.000000000000001^(10^50)", settings: { digits: 30 }, expect: "error: Overflow: the number is too large", source: "derived", note: "F123 at 30 digits: it showed ⚠ 14 1" }
+  - { id: "g123f2-overflow-i-pow-1e50-30", input: "i*1.000000000000001^(10^50)", settings: { digits: 30 }, expect: "error: Overflow: the number is too large", source: "derived", note: "F123 complex at 30 digits: it showed ⚠ i" }
+  - { id: "g123f2-overflow-2-i-pow-1e50-30", input: "2+i*1.000000000000001^(10^50)", settings: { digits: 30 }, expect: "error: Overflow: the number is too large", source: "derived", note: "guard at 30 digits (refused on phase-1 already)" }
   - { id: "g123-overflow-pow-1e30-30", input: "1.0000001^(10^30)", settings: { digits: 30 }, expect: "error: Overflow: the number is too large", source: "derived", note: "guard at 30 digits" }
   - { id: "g123-overflow-exp-1e20", input: "exp(10^20)", settings: { digits: 30 }, expect: "error: Overflow: the number is too large", source: "derived", note: "guard: 10^(4.34294481903E19) (mpmath: 10^20/ln(10))" }
   - { id: "g123-underflow-pow-1e50-30", input: "0.999999999999999^(10^50)", settings: { digits: 30 }, expect: "error: Underflow: the number is too small", source: "derived", note: "guard at 30 digits" }

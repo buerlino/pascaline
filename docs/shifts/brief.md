@@ -50,8 +50,6 @@ Estimates are wall-clock guesses from the log (a package 25 min to 2 h from star
 
 | Step | What | Agent, model | Branch | After | Est. |
 |---|---|---|---|---|---|
-| 199 | **G123** an overflowing power shows ⚠ 12 1 (F123) | gorge, Opus | p1/gorge-overflowmark | — | 1 h |
-| 201 | **G127** exp(cosh(floor(asin(pi)))) is "No value found" (F86) | gorge, Opus | p1/gorge-evalfnest | — | 1 h |
 | 202 | **G128** exact acosh of a negative number flips between precisions (F61, acosh part) | gorge, Opus | p1/gorge-acoshneg | — | 45 min |
 | 203 | **G120** the nightly fuzz and its triage | gorge, Opus | p1/gorge-nightfuzz-1028 | — | 45 min |
 | 204 | **The last Opus pass** on what came after the last pass, then its FIX packages | Opus | — | — | 20 min + fixes |
