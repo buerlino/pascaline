@@ -55,6 +55,7 @@ import type { Quantity, UnitError, UnitJob } from "../units/types.ts";
 import { contextDiff, hostContext, isFlagName, namesFlag, namesUnreadFlag } from "./flags.ts";
 import { contextOf, gated, type GatedGiac } from "./ctxGate.ts";
 import { aboutsOf, leakPart, namesAssuming, putBack, selfHolding, setsAssumption } from "./assumed.ts";
+import { plainRowsText } from "./matrixType.ts";
 
 /** G65: what the call after an input found: the names it read and stored (stateRead.ts), and Giac's settings. */
 interface AfterInput {
@@ -1025,6 +1026,7 @@ export class EngineHost implements FactsHost {
       const stored = this.giac.eval(`${guarded.name}:=pcasans`);
       if (isError(stored)) return fail(stored, isTimeout(stored) ? "timeout" : "engine");
     }
+    text = plainRowsText(this.giac, "pcasans", text); // G130 (F125): Giac's matrix type as plain rows, as in Home
     // A check that could not finish: the result stands with ⚠ (its numeric facts, or the text's mark).
     const unverified = refused === "unchecked";
     const pair = !single && hasDefiniteIntegral(exactInput) && giacPair(text) !== null;
