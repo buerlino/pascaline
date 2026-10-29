@@ -1,0 +1,13 @@
+# Upstream: giac 2.1.0 gen.cc real_object::is_zero. mpfr_sgn of a NaN is 0, so an MPFR NaN (the evalf of a value past MPFR's exponent range: acos(9007199254740993^9007199254740993) at any Digits) was zero for is_zero and is_exactly_zero, and one for is_one (NaN-1 is a NaN). operator_times returns b when is_one(a) for a _REAL times a _CPLX, so evalf(acos(N^N)*sqrt(-2)) gave 1.41421356237*i (the NaN factor dropped; Home showed it with ≈, right -4.67957162223E17), and gen(re,NaN) dropped a NaN imaginary part. Now a NaN is not zero (nor one), so the product stays a NaN (undef) and Home refuses it as it refuses the factor alone.
+--- a/src/gen.cc
++++ b/src/gen.cc
+@@ -16700,6 +16700,9 @@
+ 
+   bool real_object::is_zero() const{
+ #ifdef HAVE_LIBMPFR
++    // a NaN is no zero: mpfr_sgn(NaN) is 0, so is_zero, is_exactly_zero and is_one (a-1 is a NaN too) held for it, and
++    // an MPFR NaN times a complex number returned the complex number (operator_times, is_one(a)?b:...)
++    if (mpfr_nan_p(inf)) return false;
+     return !mpfr_sgn(inf);
+ #else
+     return mpf_sgn(inf)==0;
