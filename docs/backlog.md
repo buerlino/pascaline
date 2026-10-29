@@ -73,6 +73,8 @@ The one place for "where are we and what's left", one or two lines per open item
 - **F109, no package.** Home `DelAVars()` shows `DelAVars`, its own name: no answer and no refusal. Family 5.
 - **F122, no package (G116).** Home `(atan(ln(-π)+9007199254740993))^(sin(10^-300)-10^300)` kills the engine (stack overflow inside Giac's wasm). G94's kind.
 - **F123, G123 (G116).** Home `1.000000000000001^(10^50)` shows ⚠ 12 1 (about 10^(4.3·10^34), an overflow). Family 6.
+- **F126, no package (G129's Not done).** Home `cos(w)` with `w:=atan(2*i)` stored in CAS, and `f(2*i)` with `f(x):=cos(atan(x))` defined in CAS, show 0.57735026919*i, right -0.57735026919*i: the exact pass evaluates a stored text with Giac's atan (G129 reads only the input's own atan through pasatanx). Family 8.
+- **F127, no package (G130's Not done).** A matrix inside a list keeps Giac's word: Home and CAS `[idn(2),1]` show `[matrix[[1,0],[0,1]],1]`, `list[idn(2)]` `{matrix[[1,0],[0,1]]}`; and Home `zeros(2,3)` costs 13 Giac calls per Enter (was 10; G130's bar was one more). Family 1.
 - **G94, no package.** Depth-3 generated trees in the view sweep crash the in-process engine (wasm memory out of bounds, Opus pass 53; S16: also the nightly view sweep at count 300, seed 20752); raw output in the 2026-10-21 drafts (`../drafts/2026-10-21-packages/g94-raw`).
 - **The hardening without a bug line:** A31 (a gate stage for the shell tests in `tools/` and `scripts/`, not drafted); r16's end mark, a 50,000-input sweep with no new false mark, is not met (Opus pass 82; G94 stops the view sweep at volume); G116 (merged `b812262`): `node scripts/sweep.ts --nightly --edges`, about 7 min per 5,000 trees; its first two seeds gave F119–F123 (triage: `.tasks/sweep-2026-10-28-g116-triage.md`).
 

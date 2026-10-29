@@ -50,9 +50,7 @@ Estimates are wall-clock guesses from the log (a package 25 min to 2 h from star
 
 | Step | What | Agent, model | Branch | After | Est. |
 |---|---|---|---|---|---|
-| 198 | **G129** one atan, two branches in one input: a silent wrong sign (F124) | gorge, Opus | p1/gorge-atanbranch | — | 1 h |
 | 199 | **G123** an overflowing power shows ⚠ 12 1 (F123) | gorge, Opus | p1/gorge-overflowmark | — | 1 h |
-| 200 | **G130** Home shows Giac's matrix type raw (F125) | gorge, Opus | p1/gorge-matrixtype | — | 1 h |
 | 201 | **G127** exp(cosh(floor(asin(pi)))) is "No value found" (F86) | gorge, Opus | p1/gorge-evalfnest | — | 1 h |
 | 202 | **G128** exact acosh of a negative number flips between precisions (F61, acosh part) | gorge, Opus | p1/gorge-acoshneg | — | 45 min |
 | 203 | **G120** the nightly fuzz and its triage | gorge, Opus | p1/gorge-nightfuzz-1028 | — | 45 min |
