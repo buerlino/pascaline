@@ -125,10 +125,10 @@ export function lostNumber(
  * value of a call makes Giac draw it, which throws "window is not defined" in the engine.
  */
 export function overflowAt(giac: Giac, slot: string, output: string, P: number): boolean {
-  return !infinite(output) && INFINITIES.has(giac.eval(`string(evalf(${slot},${P}))`).trim());
+  // Giac's string() text of an infinity, with and without the quotes it prints; a literal inside the function, so the
+  // module adds nothing to the start chunk (G123f1).
+  return !infinite(output) && ["+infinity", "-infinity", "infinity", '"+infinity"', '"-infinity"', '"infinity"'].includes(giac.eval(`string(evalf(${slot},${P}))`).trim());
 }
-/** Giac's string() text of an infinity, with and without the quotes it prints. */
-const INFINITIES: ReadonlySet<string> = new Set(["+infinity", "-infinity", "infinity"].flatMap((t) => [t, `"${t}"`]));
 
 /** F50: a float path's `error` text for an input with no free name: Giac's undef or an infinity (no number found);
  *  null for Giac's own error message, which stays. */
