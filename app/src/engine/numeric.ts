@@ -620,18 +620,30 @@ function agreedFacts(facts: readonly (ElementFacts | null)[], digits: number, P:
     precs[i] = prec;
     return true;
   };
+  // G126: two levels that both give 0 confirm nothing here: an exact form such as asin(sin(10^70)) = 10^70-n*pi cancels to
+  // an exact 0 at P and P+20 and has its value at P+40 and beyond, so the steps go on; a value no two levels confirm stays
+  // 0, ⚠ without a count (zeroUnconfirmed).
+  const zero = (x: ComplexValue): boolean => isZero(x.re) && isZero(x.im);
+  const agree = (a: ComplexValue, b: ComplexValue, aPrecision: number): number => (zero(a) && zero(b) ? 0 : confirmedComplex(a, b, aPrecision, P));
   return facts.map((f, k) => {
     if (f) return f;
-    let reliable = confirmedComplex(A[k]!, B[k]!, P, P);
+    let reliable = agree(A[k]!, B[k]!, P);
     let value = denoised(A[k]!, B[k]!, P);
     let at = P + 20;
     for (let i = 2; reliable < digits && more(i); i++) {
       const next = levels[i];
       if (!next) break;
-      reliable = Math.max(reliable, confirmedComplex(levels[i - 1]![k]!, next[k]!, precs[i - 1]!, P));
+      reliable = Math.max(reliable, agree(levels[i - 1]![k]!, next[k]!, precs[i - 1]!));
       value = denoised(levels[i - 1]![k]!, next[k]!, precs[i - 1]!);
       at = precs[i]!;
     }
+    // No two levels confirmed a digit and some level gave 0: the values are noise around a 0 (a true 0 Giac does not
+    // prove, cos(pi/7)-cos(2*pi/7)+cos(3*pi/7)-1/2, is noise at P and P+20, 0 from P+40 on), so the value stays 0, unconfirmed.
+    if (reliable === 0 && !zero(value)) {
+      const z = levels.find((l) => l !== null && zero(l[k]!));
+      if (z) value = z[k]!;
+    }
+    if (zero(value)) reliable = P;
     reliable = Math.min(reliable, A[k]!.short ?? P, B[k]!.short ?? P);
     return zeroUnconfirmed({ value: { re: value.re, im: value.im }, exact: false, reliableDigits: reliable, big: false, at });
   });
