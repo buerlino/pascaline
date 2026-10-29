@@ -13,11 +13,11 @@ The one place for "where are we and what's left", one or two lines per open item
 | Milestone 4: Find and trust | Engine side done (marks, 30 digits, chips, copy, defs, the Find index, the size test, A4a); Find's UI: R4a merged; R91 (start-chunk split), R4b, A4b next by day |
 | Milestone 5: Units | The evaluator on Giac is done (P15: G15–G18, G25, G13, G7, G32, R28, R24a); the pad, the entry and the result view follow the Settings base |
 | Milestone 6: Structure | Not started (EN5–EN7, Help) |
-| MVP release | Not scheduled (owner, 2026-10-12); A7 and A8 on the owner's go |
+| MVP release | v0.1.0, the APK and the website from one tag: lane B (brief section 0) |
 
 `phase-1` and `master` are on GitHub; `master` was last fast-forwarded to `phase-1` on 2026-10-14 (`ef857a6`). Work continues on `phase-1`.
 
-**On track:** on scope yes, on stability no: from 2026-10-14 to 2026-10-21 phase-1 got 188 `fix` commits against 84 `feat`, and 45 of 208 merges were follow-up fixes of merged work, which is why P23 froze new work from 2026-10-21 to 2026-10-27; the core list stays the net. Speed holds on the low-end Tab One: at milestone 3 keyboard usable 662 ms, engine ready 995 ms, Plot 56 fps; Enter p95 141–153 ms after G53, at the 150 ms bar (A16, 2026-10-20). Two debts: everything is checked against the Virtual Calculator (rev 15751), not the owner's G2 (rev 15515); only the Tab One is measured regularly (Fairphone 6 once: keyboard usable 329 ms, engine ready 609 ms).
+**On track:** on scope yes; on stability: from 2026-10-14 to 2026-10-21, 188 `fix` commits against 84 `feat`, and 45 of 208 merges were follow-up fixes, why P23 froze new work to 2026-10-27. Speed holds on the Tab One (milestone 3: keyboard usable 662 ms, engine ready 995 ms, Plot 56 fps; Enter p95 under 150 ms, A16). Two debts: checks use the Virtual Calculator (rev 15751), not the owner's G2 (rev 15515); only the Tab One is measured regularly (Fairphone 6 once: 329 ms, 609 ms).
 
 ## Needs the user
 0. **The core list (P23):** cut or extend [tests/core/core.yaml](../tests/core/core.yaml) (66: 51 drafted by sandra, c52–c56 added with you on 2026-10-21, c57–c60 on 2026-10-24, c61–c66 on 2026-10-26; tell a session what to drop or add); do the [morning check](../tests/core/MORNING.md) on the night's device (about 10 minutes, 15 cases; tell the day session what failed); keep the night's device plugged in, unlocked and on the charger (A32, A33).
@@ -27,7 +27,7 @@ The one place for "where are we and what's left", one or two lines per open item
 4. **From daily use:** the key sequence that left ⌫ stuck "at log" (F39); connect your phone for A9 (F41, no vibration); more points into [feedback.md](feedback.md).
 5. **The new application id** (`io.github.buerlino.pascaline`): the next APK installs as a second app; copy what you need from the old one, then uninstall `org.pascaline.app`. Android's own backup is off (A23).
 6. **Tap "Allow USB debugging"** on a device when it shows `unauthorized`.
-7. **The domain** (decisions.md, A45): buy `pascaline-calc.org`, verify it in GitHub before any DNS record; the first deploy after A45.
+7. **v0.1.0** (decisions.md "The release path"): make the release key off this laptop, fill A7's table (A7.md); allow tags `v*` in Settings → Environments → `github-pages` before A45's deploy; read the usage meter each morning and at each lane start (tripwire 85 %); fast-forward `master` and push before the tag.
 8. **Later:** the outside rounds (two 30-minute rounds after R4b and R24c, [r18](research/r18-outside-test.md); R70 first); at milestone 5, time ten tasks by hand (E-notation against units). **Later, not now:** CI (C3), the F-Droid recipe (C4).
 
 ### One-time checks on the phone (the daily list is MORNING.md; each by the owner, or annabell when a package names it)
@@ -97,7 +97,7 @@ The one place for "where are we and what's left", one or two lines per open item
 - **C3. CI** (needs your OK); **C4. F-Droid recipe:** untested end to end; `npm ci` after `prebuild` needs an offline rework; four drifts from build.sh in `fdroid/README.md`.
 
 ### MVP release (docs/02 section 8; not scheduled)
-- **R1. GitHub releases** (**A7**, **A8**; decisions.md "The release path"). **R2. Play testing track:** never published without your OK. **R3. Screenshots and store graphics.** **R4. The help pass;** the About screen and the licence notices are R87. **A43:** an update keeps the data (before A7).
+- **R1. v0.1.0, the APK and the website from one tag** (A48, A50, A43, A7, A49, A45, A8; decisions.md "The release path"). **R2. Play testing track:** never published without your OK. **R3. Screenshots and store graphics.** **R4. The help pass;** the About screen and the licence notices are R87.
 
 ### v1 and later
 In docs/02 section 8; P8 defers most of v1 behind the engineer core. v1: Statistics, Inference, Parametric/Polar/Sequence, Spreadsheet, Finance, Linear/Triangle solvers, RPN. v2: Geometry, Advanced Graphing, 3D, Explorers.
