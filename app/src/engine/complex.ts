@@ -4,7 +4,7 @@
 // through our definition (pasatan); a stored name or user function that calls it is read through a copy
 // (complexReads). Split from numeric.ts (cleanup 2026-10-20, item 13). Synchronous, UI-free; only erasable TypeScript.
 import { AUDITED_FUNCTIONS, namePrint, type Giac } from "./numeric.ts";
-import { functionsIn, leadingName, names, namesIn, programParams, renameCalls, renameNames, topLevelArgs, type Quoting } from "./giacPrint.ts";
+import { callsOf, functionsIn, leadingName, mapNames, names, namesIn, programParams, renameCalls, renameNames, topLevelArgs, type Quoting } from "./giacPrint.ts";
 
 function isError(out: string): boolean {
   return out.startsWith("GIAC_ERROR");
@@ -23,6 +23,34 @@ function isError(out: string): boolean {
 export const COMPLEX_DEFINITIONS: Readonly<Record<string, string>> = {
   pasatan: "pasatan(z):={ if (type(z)==DOM_LIST) return map(z,pasatan); if (type(evalf(z))==DOM_COMPLEX) return i/2*(ln(1-i*z)-ln(1+i*z)); return atan(z); }",
 };
+
+/**
+ * G129 (F124): Home's exact pass reads an input's atan through `pasatanx`, so every atan of one input is the principal
+ * one, whichever function wraps it. Giac's own atan on its cut (z = i·t, |t| > 1) is the other side, and Giac's rules
+ * rewrite trig(atan z) before pasatan's ln form is ever applied (cos(atan(2*i)) gave i*sqrt(3)/3, the right value is
+ * -i*sqrt(3)/3). On the cut pasatanx is the principal value sign(t)·π/2 + i·atanh(1/t), exact and in a form Giac's
+ * rules read right; anywhere else it is Giac's atan itself, so its closed forms stay (atan(1) = pi/4, atan(tan(4*i)) =
+ * 4*i, cos(atan(1+i))). Loaded once per engine by host.ts (homeEval.ts WORKER_DEFINITION_NAMES, so the text stays out of the start chunk).
+ */
+export const EXACT_ATAN: Readonly<Record<string, string>> = {
+  pasatanx:
+    "pasatanx(z):={ if (type(z)==DOM_LIST) return map(z,pasatanx); " +
+    "if (type(evalf(z))==DOM_COMPLEX and re(z)==0 and abs(im(z))>1) return sign(im(z))*pi/2+i*atanh(1/im(z)); return atan(z); }",
+};
+
+/** `text` with every atan and arctan call replaced by pasatanx (EXACT_ATAN), outside strings; one that is the whole
+ *  argument of tan stays Giac's atan: tan(atan(z)) = z on any branch, and Giac's rule keeps it exact (tan(atan(2*i)) =
+ *  2*i). One that is only part of tan's argument (tan(atan(2*i)/2)) is pasatanx: there the branch shows. */
+export function exactAtan(text: string, q: Quoting): string {
+  const tans = callsOf(text, ["tan"], q);
+  // the atan calls that are the whole argument of a tan (only blanks between the brackets)
+  const kept = new Set(
+    callsOf(text, ["atan", "arctan"], q)
+      .filter((a) => a.close >= 0 && tans.some((t) => t.open < a.at && a.close < t.close && text.slice(t.open + 1, a.at).trim() === "" && text.slice(a.close + 1, t.close).trim() === ""))
+      .map((a) => a.at),
+  );
+  return mapNames(text, (n) => (n.call && (n.name === "atan" || n.name === "arctan") && !kept.has(n.at) ? "pasatanx" : null), q);
+}
 
 /** The Giac names (and aliases) that COMPLEX_DEFINITIONS replace. */
 const COMPLEX_REPLACED: Readonly<Record<string, string>> = {

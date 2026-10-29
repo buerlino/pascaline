@@ -29,6 +29,7 @@ import {
   unquote,
 } from "./homeEval.ts";
 import { eseriesDefinition } from "./eseries.ts";
+import { EXACT_ATAN } from "./complex.ts";
 import { askedLiterals } from "./asked.ts";
 import { backInDegrees, needsDegrees } from "./degrees.ts";
 import { resolveAngle } from "./angleMigration.ts";
@@ -212,11 +213,11 @@ export class EngineHost implements FactsHost {
     this.needOurs(text);
   }
 
-  /** Our definitions (ENGINE_DEFINITIONS, eseries) that `text` mentions and that are not loaded yet. */
+  /** Our definitions (ENGINE_DEFINITIONS, eseries, pasatanx) that `text` mentions and that are not loaded yet. */
   private needOurs(text: string): void {
     for (const name of definitionsUsedBy(text)) {
       if (this.loaded.has(name)) continue;
-      this.giac.eval(ENGINE_DEFINITIONS[name] ?? eseriesDefinition());
+      this.giac.eval(ENGINE_DEFINITIONS[name] ?? EXACT_ATAN[name] ?? eseriesDefinition());
       this.loaded.add(name);
     }
   }
