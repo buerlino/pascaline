@@ -200,8 +200,7 @@ export const ENGINE_DEFINITIONS: Readonly<Record<string, string>> = {
     "s:=0; for (k:=0;k<size(l);k:=k+1) s:=s+1/l[k]; return normal(1/s); }",
   // G106f1: whether a value holds a coefficient vector at any depth (polyvec.ts; its check defines it in the same call).
   [POLY_AT]: POLY_AT_ANY_DEPTH,
-  // G129: Home's exact pass reads atan through pasatanx (complex.ts EXACT_ATAN); definitionsUsedBy loads it for atan.
-  ...EXACT_ATAN,
+  ...EXACT_ATAN, // G129: the exact pass's atan (complex.ts), loaded by definitionsUsedBy for an input that names atan
 };
 
 /** Definitions whose text is built engine-side (host.ts) so their tables stay out of the start chunk: G30 `eseries`
@@ -262,8 +261,7 @@ export function symbolicWhy(warn: PrecisionWarn | undefined, sides: string): Pre
 /** The names of our definitions that `input` mentions. */
 export function definitionsUsedBy(input: string): string[] {
   const words = new Set(wordsOf(input));
-  // G129: the exact pass renames atan and arctan to pasatanx (exactAtan), so an input that names them needs it
-  if (words.has("atan") || words.has("arctan")) words.add("pasatanx");
+  if (words.has("atan") || words.has("arctan")) words.add("pasatanx"); // G129: the exact pass's atan (exactAtan)
   return [...Object.keys(ENGINE_DEFINITIONS), ...WORKER_DEFINITION_NAMES].filter((name) => words.has(name));
 }
 
@@ -549,8 +547,7 @@ export function homeEval(
   // An input of audited functions alone (elementary ones, whose evalf is MPFR's and quick) asks for its value's digits
   // at P and P + 20 in the same call (exactFacts reads them); any other input asks when they are needed.
   const at = isAudited(exactBody, "typed") && complexSafe(exactBody, "typed") === exactBody ? [P, P + 20] : [];
-  // G129 (F124): every atan of the input is the principal one (pasatanx), also where Giac's rules rewrite trig(atan z);
-  // not in an input that runs once (a definition keeps the atan it was given; complexReads reads it through pasatan).
+  // G129 (F124): every atan is the principal one (exactAtan), but in an input that runs once (a definition keeps its atan)
   let runText = once ? exactBody : exactAtan(exactBody, "typed");
   const exactRun = (): string =>
     withDigits(giac, P, s.digits, () => {
@@ -560,7 +557,7 @@ export function homeEval(
       return v.cut ? giac.eval(ans) : v.text;
     });
   let exactOut = exactRun();
-  // A result that still holds the name (a program, an unevaluated call) is run with Giac's atan: our name is not shown.
+  // A result that still holds our name (a program) is run with Giac's atan, so the name is not shown.
   if (runText !== exactBody && exactOut.includes("pasatanx")) {
     runText = exactBody;
     exactOut = exactRun();

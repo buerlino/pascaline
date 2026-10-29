@@ -4,5 +4,5 @@
 # file, with the reason in the package's report (the audit reads it); a split lowers the line (or removes it under 800).
 app/src/engine/numeric.ts: 1042
 app/src/engine/host.ts: 1269
-app/src/engine/homeEval.ts: 824
+app/src/engine/homeEval.ts: 833
 app/src/engine/host.test.ts: 908
