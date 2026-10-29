@@ -1,0 +1,28 @@
+# Upstream: giac 2.1.0 usual.cc _floor (and ceil, round, which go through it). A floor whose argument has a complex value that is not an exact Gaussian rational stayed unevaluated at eval (the value after subst is a _CPLX, which none of the real branches take): floor(asin(pi)) stayed floor(asin(pi)). evalf of it floors the parts through the exact _CPLX branch and returns the exact integers 1-2*i, so evalf(cosh(floor(asin(pi)))) gave the text cosh(1-2*i) (Home: no value; right -0.642148124716-1.06860742138*i). Now a complex value floors each part (re and im of the argument, through the real path and its precision raise), as the exact _CPLX branch does; an imaginary part at the rounding noise of the real one keeps floor unevaluated, as before.
+--- a/src/usual.cc
++++ b/src/usual.cc
+@@ -7304,6 +7304,24 @@
+     gen tmp=subst(args,l,lnew,false,contextptr);
+     if (tmp.type==_CPLX && is_zero(*(tmp._CPLXptr+1),contextptr))
+       tmp=*tmp._CPLXptr;
++    if (tmp.type==_CPLX){
++      // a complex value: the floor of each part, as the _CPLX branch above does for an exact one (evalf of the same
++      // floor does it too, but returns exact integers, so f(floor(z)) in evalf kept f of an exact Gaussian integer
++      // unevaluated). Each part takes the real path below with its precision raise. An imaginary part at the
++      // rounding noise of the real one keeps floor unevaluated, as before.
++      gen gr=evalf_double(abs(*tmp._CPLXptr,contextptr),1,contextptr),gi=evalf_double(abs(*(tmp._CPLXptr+1),contextptr),1,contextptr);
++      double tr=gr.type==_DOUBLE_?gr._DOUBLE_val:1e300,ti=gi.type==_DOUBLE_?gi._DOUBLE_val:0;
++      gen r,i;
++      if (ti>tr*std::pow(10.0,2-decimal_digits(contextptr)) && ti>1e-300){
++        reim(args,r,i,contextptr);
++        if (!is_zero(i,contextptr) && r!=args && i!=args){
++          gen fr=_floor(r,contextptr),fi=_floor(i,contextptr);
++          if (is_integer(fr) && is_integer(fi))
++            return fr+cst_i*fi;
++        }
++      }
++      return symb_floor(args);
++    }
+     if (tmp.type==_REAL){
+ #ifdef HAVE_LIBMPFR
+       // reeval with the right precision

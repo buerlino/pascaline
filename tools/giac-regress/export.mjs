@@ -189,7 +189,7 @@ export const KNOWN_IDS = new Set([
   "g71-census-tri-sin1e70",
 ]);
 // The ids that pass on our patched build and fail on stock giac_2.1.0-1 (found by matching the cases the tests and canaries of patches
-// 0003 and 0005 name (tanh-test.ts, mpfr-pi-test.ts, patch-canary.ts) and the ids of G75 and G60; G111's g111-* of patch 0007; G113's g113-* of patch 0009 (g113-poisson_cdf-2.5 passes on stock, a guard in the check file); G113f1's ties of patch 0010; G115's g115-* of patch 0011; G118's g118-* of patch 0012; G121's g116-* and g121-* and G125's g125-* of patch 0013; G122's g122-* of patch 0014; G126's g126-* and g116-acos-neg-1e20-half-12 of patch 0015. Each id was run on the stock build (engine/giac/_out/release) and fails there; ln(-pi)-30 passes on stock at these Digits, so it stays in the check file; the g60-f5 and g78-novalue lines seemed to pass on stock until G118 (their difference is an MPFR NaN, printed undef, that pc() took for a pass). g58-acos-5!^(2.5+5!)-30 has budgetMs, so it is left out as a time guard): [id, the patch file the line rests on]. They go to pascaline-patched.cas, not to the check file.
+// 0003 and 0005 name (tanh-test.ts, mpfr-pi-test.ts, patch-canary.ts) and the ids of G75 and G60; G111's g111-* of patch 0007; G113's g113-* of patch 0009 (g113-poisson_cdf-2.5 passes on stock, a guard in the check file); G113f1's ties of patch 0010; G115's g115-* of patch 0011; G118's g118-* of patch 0012; G121's g116-* and g121-* and G125's g125-* of patch 0013; G122's g122-* of patch 0014; G126's g126-* and g116-acos-neg-1e20-half-12 of patch 0015; G127's g127-* of patch 0016. Each id was run on the stock build (engine/giac/_out/release) and fails there; ln(-pi)-30 passes on stock at these Digits, so it stays in the check file; the g60-f5 and g78-novalue lines seemed to pass on stock until G118 (their difference is an MPFR NaN, printed undef, that pc() took for a pass). g58-acos-5!^(2.5+5!)-30 has budgetMs, so it is left out as a time guard): [id, the patch file the line rests on]. They go to pascaline-patched.cas, not to the check file.
 export const PATCHED_IDS = new Map([
   ["prec-g50-tanh(i)-12", "0003-complex-tanh-mpfr.patch"],
   ["prec-g50-tanh(i)-30", "0003-complex-tanh-mpfr.patch"],
@@ -347,6 +347,13 @@ export const PATCHED_IDS = new Map([
   ["g126-acos-neg-1e20-tiny-i-30", "0015-asin-asinh-ln-cancellation.patch"],
   ["g126-asinh-tiny-neg-1e20i-12", "0015-asin-asinh-ln-cancellation.patch"],
   ["g126-asinh-tiny-neg-1e20i-30", "0015-asin-asinh-ln-cancellation.patch"],
+  // G127: f of a floor, ceil or round of a complex value (stock: floor stays unevaluated and evalf gives f of an exact Gaussian
+  // integer as text); the guard g127-exp-cosh-floor-real-12 passes on stock and stays in the check file
+  ["g127-exp-cosh-floor-asin-pi-12", "0016-floor-complex-value.patch"],
+  ["g127-exp-cosh-floor-asin-pi-30", "0016-floor-complex-value.patch"],
+  ["g127-cosh-floor-asin-pi-12", "0016-floor-complex-value.patch"],
+  ["g127-exp-ceil-asin-pi-12", "0016-floor-complex-value.patch"],
+  ["g127-exp-round-asin-10-12", "0016-floor-complex-value.patch"],
 ]);
 // G122: Giac's exact answer is right (patch 0014), but pc()'s evalf of it at Digits 40 cancels the digits of a large k*pi
 // (asin(cos(30!)) = -pi/2+30!-k*pi with k of 32 digits keeps about 7, -pi/2+10^50-k*pi none); Home raises the precision
