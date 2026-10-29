@@ -9,7 +9,12 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
 
+        <!-- A46: Android itself opens the system keyboard when the window regains focus on a quick return
+             (ImeTracker SHOW_AUTO_EDITOR_FORWARD_NAV, server side) while the WebView still reports an editor; the
+             page's own hide comes first and is ignored, so the JS guards in main.ts cannot stop it. No field of
+             ours wants the system keyboard (every editable has inputmode=none), so it never starts shown. -->
         <activity
+            android:windowSoftInputMode="stateAlwaysHidden"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|navigation|density"
             android:name=".MainActivity"
             android:label="@string/title_activity_main"
