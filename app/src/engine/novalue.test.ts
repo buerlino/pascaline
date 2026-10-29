@@ -108,7 +108,13 @@ describe.skipIf(!giacAvailable())("G78 on the real engine", () => {
     expect(overflowAt(giac, "pasov", giac.eval("pasov"), 40)).toBe(false);
     // An infinity the answer is (a limit) is no overflow.
     expect(overflowAt(giac, "infinity", "+infinity", 40)).toBe(false);
-    giac.eval("purge(pasov)");
+    // A geometry object is no number: asked without drawing it (an evalf of it alone threw "window is not defined").
+    for (const g of ["point(1,0.5)", "segment(i,1+i)", "LineHorz(-1)"]) {
+      expect(host.home(g, defaultHomeSettings).result.error, g).not.toBe("engine");
+      giac.eval(`pasov:=${g};1`);
+      expect(() => overflowAt(giac, "pasov", "pnt", 40), g).not.toThrow();
+    }
+    giac.eval("purge(pasov);1");
   });
 
   it("refuses an infinite definite integral in Home; the CAS view keeps Giac's +infinity", () => {
