@@ -27,7 +27,8 @@ The one place for "where are we and what's left", one or two lines per open item
 4. **From daily use:** the key sequence that left ⌫ stuck "at log" (F39); connect your phone for A9 (F41, no vibration); more points into [feedback.md](feedback.md).
 5. **The new application id** (`io.github.buerlino.pascaline`): the next APK installs as a second app; copy what you need from the old one, then uninstall `org.pascaline.app`. Android's own backup is off (A23).
 6. **Tap "Allow USB debugging"** on a device when it shows `unauthorized`.
-7. **Later:** the outside rounds (two 30-minute rounds after R4b and R24c, [r18](research/r18-outside-test.md); R70 first); at milestone 5, time ten tasks by hand (E-notation against units). **Later, not now:** the name and trademark checks, CI (C3), the F-Droid recipe (C4).
+7. **The domain** (decisions.md, A45): buy `pascaline-calc.org`, verify it in GitHub before any DNS record; the first deploy after A45.
+8. **Later:** the outside rounds (two 30-minute rounds after R4b and R24c, [r18](research/r18-outside-test.md); R70 first); at milestone 5, time ten tasks by hand (E-notation against units). **Later, not now:** CI (C3), the F-Droid recipe (C4).
 
 ### One-time checks on the phone (the daily list is MORNING.md; each by the owner, or annabell when a package names it)
 - Flick misfires (R9: 20 px arm, 12 px cancel); whether the first tap after a cold start vibrates (R35); R7's sheet defaults; the 36 px cluster rows and the 28 px status line (R15b).

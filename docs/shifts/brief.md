@@ -29,6 +29,7 @@
 | [R91](packages/R91.md) | Split the start chunk (room for the Settings base) | ron, Sonnet (audit Opus) | day | now | ~0.5 d |
 | [A9](packages/A9.md) | Key vibration on the owner's phone | annabell, Sonnet | day (device) | the phone connected | ~0.5 d |
 | [A43](packages/A43.md) | An app update keeps the user's data (before A7) | annabell, Sonnet | day (device) | now | ~0.5 d |
+| [A45](packages/A45.md) | The web version on GitHub Pages at pascaline-calc.org | annabell, Sonnet (audit Opus) | day | now (deploy: the owner's domain steps) | ~0.5 d |
 
 **Why these models:** Opus where a slip breaks entry, the unit chain or stored data for every later package, or gives a wrong number (P17: the engine, input and units); sandra and sofia run Opus; Sonnet elsewhere (an existing pattern, pinned by tests); the audit model follows P17.
 
