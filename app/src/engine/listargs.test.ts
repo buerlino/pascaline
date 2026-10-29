@@ -168,4 +168,17 @@ describe.skipIf(!giacAvailable())("G124 a list form Giac documents", () => {
       expect(home(input), input).toMatchObject(REFUSAL);
     }
   });
+
+  it("refuses a dimension list that is not two integers of at least 1 (G124f1)", () => {
+    // Giac's documented dimension form is exactly two: zeros(list[2,3,4]) and zeros(list[5]) were [] (exact),
+    // zeros(list[-2,3]) matrix[[0.0,0.0,0.0]], ranm(list[-2,3]) a 1×3 and ranm(list[2,3,4]) a 2×3 random matrix
+    for (const input of [
+      "zeros(list[2,3,4])", "zeros(list[5])", "zeros(list[-2,3])", "zeros(list[0,3])", "ranm(list[-2,3])", "ranm(list[2,3,4])",
+    ]) {
+      expect(home(input), input).toMatchObject(REFUSAL);
+    }
+    expect(home("zeros(list[2,3])")).toMatchObject({ ok: true, display: "matrix[[0.0,0.0,0.0],[0.0,0.0,0.0]]" });
+    expect(home("ranm(list[2,3])")).toMatchObject({ ok: true });
+    expect(home("newMat(list[2,3])")).toMatchObject({ ok: true });
+  });
 });
