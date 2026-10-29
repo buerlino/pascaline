@@ -30,7 +30,7 @@ export const COMPLEX_DEFINITIONS: Readonly<Record<string, string>> = {
  * rewrite trig(atan z) before pasatan's ln form is ever applied (cos(atan(2*i)) gave i*sqrt(3)/3, the right value is
  * -i*sqrt(3)/3). On the cut pasatanx is the principal value sign(t)·π/2 + i·atanh(1/t), exact and in a form Giac's
  * rules read right; anywhere else it is Giac's atan itself, so its closed forms stay (atan(1) = pi/4, atan(tan(4*i)) =
- * 4*i, cos(atan(1+i))). Loaded once per engine (homeEval.ts ENGINE_DEFINITIONS, through any input that names atan).
+ * 4*i, cos(atan(1+i))). Loaded once per engine by host.ts (homeEval.ts WORKER_DEFINITION_NAMES, so the text stays out of the start chunk).
  */
 export const EXACT_ATAN: Readonly<Record<string, string>> = {
   pasatanx:

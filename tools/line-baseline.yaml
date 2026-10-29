@@ -3,6 +3,6 @@
 # fails when a file grows past its line, or a file not listed passes 800. Raise a line only in the diff that grows the
 # file, with the reason in the package's report (the audit reads it); a split lowers the line (or removes it under 800).
 app/src/engine/numeric.ts: 1042
-app/src/engine/host.ts: 1269
-app/src/engine/homeEval.ts: 833
+app/src/engine/host.ts: 1270
+app/src/engine/homeEval.ts: 832
 app/src/engine/host.test.ts: 908

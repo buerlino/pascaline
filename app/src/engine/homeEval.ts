@@ -28,7 +28,7 @@ import { dropAngleFactor, hasAngleFactor } from "../input/angles.ts";
 import { decimalFromRational, decimalFromString, formatConfirmed, isZero, tieRisk, ZERO_VALUE, type ComplexValue, type DecimalValue, type PrecisionFacts, type PrecisionWarn, type PrecisionWhy } from "./format.ts";
 import { askedDigits, DOUBLE_DIGITS, doubleFallback, exactFacts, floatFacts, floatPathFacts, integratedFacts, hasFloat, isAudited, doubleFormsIn, unauditedIn, numericDisagrees, notBuiltin, floatsShown, heavySplit, REGROUP_MAX, shapeOfValue, endsEarly, valuePrecision, whyOf, withDigits, type ElementFacts, type Giac, type Shape } from "./numeric.ts";
 import { bracesOf, functionsIn, LIST_TYPE, mapNumbers, replaceLiteral, wordsOf, type Quoting } from "./giacPrint.ts";
-import { complexSafe, EXACT_ATAN, exactAtan, readsReplaced } from "./complex.ts";
+import { complexSafe, exactAtan, readsReplaced } from "./complex.ts";
 import { decidedAtDouble, decideTwice, decidingStored, restsOnDecision } from "./decisions.ts";
 import { PLAIN_FORM, type InputForm } from "./stores.ts";
 
@@ -200,12 +200,11 @@ export const ENGINE_DEFINITIONS: Readonly<Record<string, string>> = {
     "s:=0; for (k:=0;k<size(l);k:=k+1) s:=s+1/l[k]; return normal(1/s); }",
   // G106f1: whether a value holds a coefficient vector at any depth (polyvec.ts; its check defines it in the same call).
   [POLY_AT]: POLY_AT_ANY_DEPTH,
-  ...EXACT_ATAN, // G129: the exact pass's atan (complex.ts), loaded by definitionsUsedBy for an input that names atan
 };
 
-/** Definitions whose text is built engine-side (host.ts) so their tables stay out of the start chunk: G30 `eseries`
- *  (IEC 60063 preferred value nearest to x in x's decade, eseries.ts). Only the names are known here. */
-export const WORKER_DEFINITION_NAMES: readonly string[] = ["eseries"];
+/** Definitions whose text is built engine-side (host.ts) to keep it out of the start chunk: G30 `eseries` (eseries.ts,
+ *  IEC 60063) and G129 `pasatanx` (complex.ts EXACT_ATAN, for an input that names atan). Only the names are known here. */
+export const WORKER_DEFINITION_NAMES: readonly string[] = ["eseries", "pasatanx"];
 
 /** Set to 1 by an == or ≠ test that met a float (input/emit.ts equalityTest, which spells the same name). Purged, not
  *  set to 0, before an input runs: `sto` inside the test's function would read a value as the place to store to.
