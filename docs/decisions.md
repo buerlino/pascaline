@@ -7,6 +7,7 @@ Phase 0 decisions (D1–D9, P1, P2): [spike/DECISIONS.md](../spike/DECISIONS.md)
 
 The owner's other open items are in [backlog.md](backlog.md), "Needs the user". Once decided, an entry moves to "Decided proposals".
 
+- **G119 (2026-10-29): Giac's sequence answers beyond fMin and fMax.** Every Home sequence answer now shows as its value or a braced list (`op(list[1,2])` {1,2}, `divmod`, `eigenvals`, the regressions, `q5,q6:=…`); `fMax(x^2,x)` shows Giac's {-infinity,+infinity}, an empty sequence still `seq[]`. CAS unchanged (F108). Would change if: the owner wants it for fMin and fMax only, or CAS too.
 - **A21, the F-Droid recipe's qalc build (P22):** `fdroid/README.md` names the open answer. Until F-Droid says whether checked-in derived data (`find/factors.yaml`) is acceptable, the recipe keeps its libxml2 and libqalculate builds, unchanged. Yes: before C4 it drops both. No: it runs `tools/find-index/refresh-factors.mjs` and fails on a diff.
 
 
