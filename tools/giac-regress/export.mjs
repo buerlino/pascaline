@@ -174,6 +174,8 @@ export const KNOWN_IDS = new Set([
   "g129-cos-atan-2.0i",
   "g129-atan-2i",
   "g129-atan-2i-plus-0",
+  "g129-tan-half-atan-2i",
+  "g129-tan-half-atan-2i-sum",
   "g71-trunc-sin1e70",
   "g71-heaviside-sin1e70",
   "g71-round-besselj-1e12",

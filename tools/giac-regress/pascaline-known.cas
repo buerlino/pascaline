@@ -21,6 +21,10 @@ Digits:=40:; pc("g129-cos-atan-2.0i",'(cos(atan((20/10^1)*i)))',-(57735026919/10
 Digits:=40:; pc("g129-atan-2i",'(atan(2*i))',(157079632679/10^11)+(549306144334/10^12)*i,5/10^12+5/10^13);
 // g129-atan-2i-plus-0 (home.yaml, oracle): register row atan-cut (G50, G60, G129): complex atan beyond ±i takes the other side of its cut, and Giac's exact cos(atan(z)) on the cut does too
 Digits:=40:; pc("g129-atan-2i-plus-0",'(atan(2*i)+0)',(157079632679/10^11)+(549306144334/10^12)*i,5/10^12+5/10^13);
+// g129-tan-half-atan-2i (home.yaml, oracle): register row atan-cut (G50, G60, G129): complex atan beyond ±i takes the other side of its cut, and Giac's exact cos(atan(z)) on the cut does too
+Digits:=40:; pc("g129-tan-half-atan-2i",'(tan(atan(2*i)/2))',(866025403784/10^12)+(5/10^1)*i,5/10^13+5/10^13);
+// g129-tan-half-atan-2i-sum (home.yaml, oracle): register row atan-cut (G50, G60, G129): complex atan beyond ±i takes the other side of its cut, and Giac's exact cos(atan(z)) on the cut does too
+Digits:=40:; pc("g129-tan-half-atan-2i-sum",'(tan(atan(2*i)/2)+atan(2*i))',(243682173058/10^11)+(104930614433/10^11)*i,5/10^12+5/10^12);
 // prec-2-normald_icdf-value (precision.yaml, oracle): register row icdf-double (G44): the inverse distribution functions return a double at any Digits (or +infinity far in a tail)
 Digits:=40:; pc("prec-2-normald_icdf-value",'(normald_icdf(10^-10))',-(63613409024/10^10),5/10^12);
 // prec-g44-normald_icdf-0.025-30 (precision.yaml, oracle): register row icdf-double (G44): the inverse distribution functions return a double at any Digits (or +infinity far in a tail)

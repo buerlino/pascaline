@@ -4,7 +4,7 @@
 // through our definition (pasatan); a stored name or user function that calls it is read through a copy
 // (complexReads). Split from numeric.ts (cleanup 2026-10-20, item 13). Synchronous, UI-free; only erasable TypeScript.
 import { AUDITED_FUNCTIONS, namePrint, type Giac } from "./numeric.ts";
-import { functionsIn, leadingName, mapNames, names, namesIn, programParams, renameCalls, renameNames, topLevelArgs, type Quoting } from "./giacPrint.ts";
+import { callsOf, functionsIn, leadingName, mapNames, names, namesIn, programParams, renameCalls, renameNames, topLevelArgs, type Quoting } from "./giacPrint.ts";
 
 function isError(out: string): boolean {
   return out.startsWith("GIAC_ERROR");
@@ -38,20 +38,18 @@ export const EXACT_ATAN: Readonly<Record<string, string>> = {
     "if (type(evalf(z))==DOM_COMPLEX and re(z)==0 and abs(im(z))>1) return sign(im(z))*pi/2+i*atanh(1/im(z)); return atan(z); }",
 };
 
-/** `text` with every atan and arctan call replaced by pasatanx (EXACT_ATAN), outside strings; one that is the argument
- *  of tan stays Giac's atan: tan(atan(z)) = z on any branch, and Giac's rule keeps it exact (tan(atan(2*i)) = 2*i). */
+/** `text` with every atan and arctan call replaced by pasatanx (EXACT_ATAN), outside strings; one that is the whole
+ *  argument of tan stays Giac's atan: tan(atan(z)) = z on any branch, and Giac's rule keeps it exact (tan(atan(2*i)) =
+ *  2*i). One that is only part of tan's argument (tan(atan(2*i)/2)) is pasatanx: there the branch shows. */
 export function exactAtan(text: string, q: Quoting): string {
-  // where the argument of the last tan( starts
-  let tanArg = -1;
-  return mapNames(
-    text,
-    (n) => {
-      const kept = n.at === tanArg;
-      if (n.call && n.name === "tan") tanArg = n.at + 4;
-      return n.call && !kept && (n.name === "atan" || n.name === "arctan") ? "pasatanx" : null;
-    },
-    q,
+  const tans = callsOf(text, ["tan"], q);
+  // the atan calls that are the whole argument of a tan (only blanks between the brackets)
+  const kept = new Set(
+    callsOf(text, ["atan", "arctan"], q)
+      .filter((a) => a.close >= 0 && tans.some((t) => t.open < a.at && a.close < t.close && text.slice(t.open + 1, a.at).trim() === "" && text.slice(a.close + 1, t.close).trim() === ""))
+      .map((a) => a.at),
   );
+  return mapNames(text, (n) => (n.call && (n.name === "atan" || n.name === "arctan") && !kept.has(n.at) ? "pasatanx" : null), q);
 }
 
 /** The Giac names (and aliases) that COMPLEX_DEFINITIONS replace. */
