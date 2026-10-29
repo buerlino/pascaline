@@ -620,20 +620,26 @@ function agreedFacts(facts: readonly (ElementFacts | null)[], digits: number, P:
     precs[i] = prec;
     return true;
   };
-  // G126: two levels that both give 0 confirm nothing here: an exact form such as asin(sin(10^70)) = 10^70-n*pi cancels to
-  // an exact 0 at P and P+20 and has its value at P+40 and beyond, so the steps go on; a value no two levels confirm stays
-  // 0, ⚠ without a count (zeroUnconfirmed).
+  // G126: zeros before any level gave a value confirm nothing: an exact form such as asin(sin(10^70)) = 10^70-n*pi
+  // cancels to an exact 0 at P and P+20 and has its value at P+40 and beyond, so the steps go on. Two zeros after a value
+  // (noise at P and P+20, then 0) still stop them; a value no two levels confirm stays 0, ⚠ without a count (zeroUnconfirmed).
+  // One evaluation at MAX_EVAL_DIGITS first: a value still 0 there (an underflow, exp(-10^30)) has nothing to gain from
+  // the steps between and stays as before.
   const zero = (x: ComplexValue): boolean => isZero(x.re) && isZero(x.im);
-  const agree = (a: ComplexValue, b: ComplexValue, aPrecision: number): number => (zero(a) && zero(b) ? 0 : confirmedComplex(a, b, aPrecision, P));
+  const leadingZero = facts.map((f, k) => !f && zero(A[k]!) && zero(B[k]!));
+  const top = leadingZero.some(Boolean) ? evalfAt(MAX_EVAL_DIGITS) : null;
   return facts.map((f, k) => {
     if (f) return f;
-    let reliable = agree(A[k]!, B[k]!, P);
+    let leading = leadingZero[k]! && (top === null || !zero(top[k]!));
+    // 0 at P, P+20 and MAX_EVAL_DIGITS: no steps
+    let reliable = leadingZero[k] ? (leading ? 0 : digits) : confirmedComplex(A[k]!, B[k]!, P, P);
     let value = denoised(A[k]!, B[k]!, P);
     let at = P + 20;
     for (let i = 2; reliable < digits && more(i); i++) {
       const next = levels[i];
       if (!next) break;
-      reliable = Math.max(reliable, agree(levels[i - 1]![k]!, next[k]!, precs[i - 1]!));
+      leading &&= zero(next[k]!);
+      reliable = Math.max(reliable, leading ? 0 : confirmedComplex(levels[i - 1]![k]!, next[k]!, precs[i - 1]!, P));
       value = denoised(levels[i - 1]![k]!, next[k]!, precs[i - 1]!);
       at = precs[i]!;
     }
