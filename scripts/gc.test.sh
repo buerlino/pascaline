@@ -35,6 +35,10 @@ head -c 3000000 /dev/zero > engine/giac/_out/key-dead/giac.wasm
 touch -d '40 days ago' "$T/archive/2026-01-01"
 # a finished run with an .err (dry run must keep it)
 mkdir "$T/001-old"; echo "### x on branch p1/gone" > "$T/001-old/spec.md"; echo e > "$T/001-old/w.err"
+# A47a: a run whose branch does not exist yet but whose pid is alive is kept; one with a dead pid is archived
+sleep 300 & live=$!; trap 'kill "$live" 2>/dev/null; rm -rf "$tmp"' EXIT
+mkdir "$T/002-live" "$T/003-dead"; echo "### y on branch p1/notyet" > "$T/002-live/spec.md"; echo "$live" > "$T/002-live/pid"
+echo "### z on branch p1/gone2" > "$T/003-dead/spec.md"; echo 999999 > "$T/003-dead/pid"
 
 snap() { { find "$T" "$C" engine -type f -printf '%p %s %T@\n'; find "$T" "$C" engine -type d -printf 'd %p\n'; } | grep -v 'gc-.*-dry.md' | sort | md5sum; }
 before="$(snap)"
@@ -64,6 +68,8 @@ d="$T/archive/$(date +%F)"
 [[ -f "$T/archive/$(date -d "5 days ago" +%F)/big.log.gz" && ! -f "$T/archive/$(date -d "5 days ago" +%F)/big.log" ]] || fail "old archive log not gzipped"
 [[ ! -d engine/giac/_out/key-dead && -d "engine/giac/_out/key-$kp" && -d "engine/giac/_out/key-$kx" && -d engine/giac/_out/gsl && -d engine/giac/_out/base ]] || fail "engine prune wrong"
 [[ ! -d "$T/archive/2026-01-01" ]] || fail "old archive folder kept"
+[[ -d "$T/002-live" && ! -d "$d/002-live" ]] || fail "A47a: gc --apply archived a run dir whose pid is alive"
+[[ -d "$d/003-dead" && ! -d "$T/003-dead" ]] || fail "A47a: gc --apply kept a run dir whose pid is gone"
 first="$(wc -l < "$T/gc-$(date +%F).md")"
 bash scripts/gc.sh --apply >/dev/null 2>&1
 [[ "$(wc -l < "$T/gc-$(date +%F).md")" -gt "$first" ]] || fail "second apply overwrote the report"

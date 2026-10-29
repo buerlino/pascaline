@@ -184,7 +184,7 @@ out="$(ed p1/eng)"
 grep -q "^engine build: key $k1 " <<<"$out" && grep -qE "^GIAC_OUT=.*/engine/giac/_out/key-$k1 \(worker, fix rounds and checks\)" <<<"$out" || fail "A28: a branch with a new patch prints no engine build with its key and GIAC_OUT: $out"
 out="$(ed p1/same)"
 grep -q '^engine build' <<<"$out" && fail "A28: an unchanged key prints an engine build: $out"
-grep -qE '^GIAC_OUT=.*/engine/giac/_out/gsl ' <<<"$out" || fail "A28: an unchanged key does not keep the shared engine: $out"
+grep -qE "^GIAC_OUT=.*/engine/giac/_out/key-$k0 " <<<"$out" || fail "A47a: an unchanged key does not use phase-1's key directory: $out"
 grep -q '^engine rebuild' <<<"$out" && fail "A28: a matching stamp prints a rebuild"
 echo stale > "$e/engine/giac/_out/gsl/.engine-key"
 out="$(ed p1/same)"
@@ -438,6 +438,81 @@ grep -qx 'none' "$bh/o2.md" || fail "A18: no change does not print none"
 STUB_SLOW=1 PASCALINE_BEHAVIOUR_SECONDS=1 PASCALINE_BEHAVIOUR_TOOL="$bh/tool.mjs" behaviour_section "$bh/a" "$bh/b" "$bh/o3.md"
 grep -q 'timed out after 20 min' "$bh/o3.md" || fail "A18: a timeout is not reported: $(cat "$bh/o3.md")"
 grep -q 'behaviour_section "$integ" "$wt"' "$here/pipeline.sh" || fail "A18: pipeline.sh does not run the stage"
+
+# A47a: jobs apart. A sandbox with the real devlock, a managed engine (a stub build-wasm.sh that counts its builds) and a stub
+# worker that commits the PW_PORT and GIAC_OUT it was given.
+ja="$tmp/ja"; mkdir -p "$ja/bin" "$ja/tools" "$ja/docs/shifts" "$ja/app" "$ja/engine/giac/patches"; git init -q -b main "$ja"
+cp "$here/../tools/devlock.sh" "$ja/tools/"; : > "$ja/docs/shifts/brief.md"; echo t > "$ja/app/keep"
+printf '#!/bin/sh\necho b >> "%s/ja-builds"; sleep 2; mkdir -p "$GIAC_BUILD_OUT/gsl" && echo wasm > "$GIAC_BUILD_OUT/gsl/giac.wasm"\n' "$tmp" > "$ja/engine/giac/build-wasm.sh"
+printf '#!/bin/sh\n[ "$1" = ci ] && mkdir -p node_modules/x\nexit 0\n' > "$ja/bin/npm"
+cat > "$ja/bin/claude" <<'STUB'
+#!/bin/sh
+case "$*" in
+  *"Opus pass "*) sleep 1; echo "OPUS PASS port=$PW_PORT";;
+  *"--agent sofia"*) echo APPROVED;;
+  *) if [ -n "$JA_HOLD" ]; then i=0; while [ ! -e "$JA_HOLD" ] && [ $i -lt 100 ]; do sleep 0.2; i=$((i + 1)); done; fi
+     echo "$PW_PORT" > port.txt; echo "$GIAC_OUT" > giac.txt; git add -A; git -c user.name=t -c user.email=t@t commit -qm "work $$"; echo done;;
+esac
+STUB
+chmod +x "$ja/bin/"* "$ja/engine/giac/build-wasm.sh"; git -C "$ja" add -A; gc "$ja" init; git -C "$ja" branch phase-1
+git -C "$ja" worktree add -q "$ja/.claude/worktrees/phase-1" phase-1
+jarun() { (cd "$ja" && unset GIAC_OUT PASCALINE_COORD PW_PORT PASCALINE_LOCK_PID && PATH="$ja/bin:$PATH" "$@"); }
+# two runs started at once: different numbers, run dirs and ports; phase-1's engine built once; GIAC_OUT a key-<k> directory
+jarun "$script" ron "sandbox task" --id J1 --branch p1/j1 --checks typecheck --no-merge > "$tmp/j1.out" 2>&1 & j1=$!
+jarun "$script" ron "sandbox task" --id J2 --branch p1/j2 --checks typecheck --no-merge > "$tmp/j2.out" 2>&1 & j2=$!
+wait "$j1" "$j2"
+r1="$(grep -oE '^RESULT #[0-9]+ J1: APPROVED' "$tmp/j1.out")"; r2="$(grep -oE '^RESULT #[0-9]+ J2: APPROVED' "$tmp/j2.out")"
+[[ -n "$r1" && -n "$r2" && "${r1%% J1*}" != "${r2%% J2*}" ]] || fail "A47a: two runs started at once: $(cat "$tmp/j1.out" "$tmp/j2.out")"
+[[ "$(ls -d "$ja"/.tasks/[0-9][0-9][0-9]-j[12] 2>/dev/null | wc -l)" -eq 2 ]] || fail "A47a: two runs started at once share a run dir: $(ls "$ja/.tasks")"
+p1="$(git -C "$ja" show p1/j1:port.txt 2>/dev/null)"; p2="$(git -C "$ja" show p1/j2:port.txt 2>/dev/null)"
+[[ -n "$p1" && -n "$p2" && "$p1" != "$p2" ]] || fail "A47a: two runs started at once share a port ($p1, $p2)"
+[[ "$(wc -l < "$tmp/ja-builds" 2>/dev/null)" -eq 1 ]] || fail "A47a: one engine key built $(wc -l < "$tmp/ja-builds" 2>/dev/null) times by two runs"
+for b in p1/j1 p1/j2; do
+  git -C "$ja" show "$b:giac.txt" 2>/dev/null | grep -qE '/engine/giac/_out/key-[0-9a-f]{16}$' || fail "A47a: the GIAC_OUT of $b is not a key-<k> directory: $(git -C "$ja" show "$b:giac.txt" 2>&1)"
+done
+no1="${r1#RESULT #}"; no1="${no1%% *}"; [[ -f "$ja/.tasks/$(printf '%03d' "$no1")-j1/pid" ]] || fail "A47a: the run dir has no pid file"
+# two passes started at once: different pass numbers and ports
+jarun "$script" pass 3 "X1" none > "$tmp/ps1.out" 2>&1 & q1=$!
+jarun "$script" pass 3 "X2" none > "$tmp/ps2.out" 2>&1 & q2=$!
+wait "$q1" "$q2"
+pn="$(cat "$tmp/ps1.out" "$tmp/ps2.out" | grep -oE '^RESULT pass [0-9]+' | sort -u | wc -l)"; pp="$(cat "$tmp/ps1.out" "$tmp/ps2.out" | grep -oE 'port=[0-9]+' | sort -u | wc -l)"
+[[ "$pn" -eq 2 && "$pp" -eq 2 ]] || fail "A47a: two passes started at once share a pass number or a port: $(cat "$tmp/ps1.out" "$tmp/ps2.out")"
+grep -q 'RESULT pass 3: ' "$tmp/ps1.out" "$tmp/ps2.out" && grep -q 'RESULT pass 4: ' "$tmp/ps1.out" "$tmp/ps2.out" || fail "A47a: pass 3 twice does not give passes 3 and 4"
+grep -q 'pass number 3 is taken; this pass is 4' "$ja/.coord/log.md" || fail "A47a: the moved pass number is not logged"
+# a second run on a branch whose run is alive ends at once with a RESULT line
+export JA_HOLD="$tmp/ja-hold"
+jarun "$script" ron "sandbox task" --id J3 --branch p1/j3 --checks none --no-merge > "$tmp/j3.out" 2>&1 & j3=$!
+for _ in $(seq 1 100); do git -C "$ja" show-ref --verify --quiet refs/heads/p1/j3 && break; sleep 0.1; done
+t0=$SECONDS; out="$(jarun timeout -k 5 15 "$script" ron "sandbox task" --id J4 --branch p1/j3 --checks none --no-merge 2>&1)"; dt=$((SECONDS - t0))
+touch "$JA_HOLD"; wait "$j3"; unset JA_HOLD
+grep -q '^RESULT .*branch p1/j3 is in use by another run' <<<"$out" && [[ $dt -lt 10 ]] || fail "A47a: a second run on a live run's branch: ${dt} s: $out"
+[[ "$(git -C "$ja" log --oneline phase-1..p1/j3 | wc -l)" -eq 1 ]] || fail "A47a: two workers committed on one branch"
+grep -q '^RESULT #[0-9]* J3: APPROVED' "$tmp/j3.out" || fail "A47a: the first run on the branch did not finish: $(cat "$tmp/j3.out")"
+# a host-cpu wait is logged once with its holder, and its length; every wait of the pipeline is 7200 s
+(cd "$ja" && unset PASCALINE_COORD PASCALINE_LOCK_PID && mkdir -p .coord/locks/host-cpu && echo holder-x > .coord/locks/host-cpu/owner \
+  && coord="$ja/.coord" && log() { echo "$*" >> "$tmp/ja-cpu.log"; } && PASCALINE_CPU_WAIT=1 host_cpu_acquire me "pre:") && fail "A47a: a busy host-cpu was taken"
+rm -rf "$ja/.coord/locks/host-cpu"
+[[ "$(grep -c '^pre: waiting for host-cpu (holder-x)$' "$tmp/ja-cpu.log" 2>/dev/null)" -eq 1 ]] && grep -q '^pre: host-cpu still busy after a wait of [0-9]* s$' "$tmp/ja-cpu.log" || fail "A47a: the host-cpu wait is not logged once with its holder and length: $(cat "$tmp/ja-cpu.log" 2>&1)"
+grep -q 'PASCALINE_CPU_WAIT:-7200' "$here/pipeline-lib.sh" || fail "A47a: the host-cpu wait is not 7200 s"
+grep -qE 'acquire host-cpu [^ ]+ 1800' "$here/pipeline.sh" "$here/pipeline-lib.sh" && fail "A47a: a host-cpu wait of 1800 s is left"
+# effort: high for the worker, fix rounds, audit, pass and report; henri stays medium
+grep -q 'effort="high"' "$here/pipeline.sh" && grep -q 'sofia "$(resolve_audit_model)" high' "$here/pipeline.sh" && grep -q 'agent sofia --model opus --effort high' "$here/pipeline.sh" && grep -q 'model sonnet --effort high "${claude_common\[@\]}" -n report' "$here/pipeline.sh" || fail "A47a: an effort is not high"
+grep -q 'agent henri --model sonnet --effort medium' "$here/night.sh" || fail "A47a: henri is not medium"
+# selftest: PASSED on real tests (the pipeline test itself is left out: it would run itself), FAILED with the first failing line
+printf '#!/bin/sh\necho ok\n' > "$tmp/st-ok.sh"; printf '#!/bin/sh\necho noise\necho "FAIL: stub broke"\nexit 1\n' > "$tmp/st-bad.sh"; chmod +x "$tmp/st-ok.sh" "$tmp/st-bad.sh"
+out="$(jarun env PASCALINE_SELFTEST_TESTS="$here/gc.test.sh $here/../tools/devlock.test.sh $tmp/st-ok.sh" "$script" selftest --audit-model auto 2>&1)"; rc=$?
+[[ $rc -eq 0 ]] && grep -qx 'RESULT selftest: PASSED' <<<"$out" || fail "A47a: selftest on passing tests: rc $rc: $out"
+out="$(jarun env PASCALINE_SELFTEST_TESTS="$tmp/st-ok.sh $tmp/st-bad.sh" "$script" selftest --audit-model auto 2>&1)"; rc=$?
+[[ $rc -ne 0 ]] && grep -qx 'RESULT selftest: FAILED (st-bad.sh: FAIL: stub broke)' <<<"$out" || fail "A47a: selftest on a failing stub: rc $rc: $out"
+grep -q 'pipeline selftest: FAILED (st-bad.sh: FAIL: stub broke)' "$ja/.coord/log.md" || fail "A47a: selftest is not logged"
+# the check shell joins the auto checks for scripts/ and tools/*.sh
+printf '%s\n' scripts/gc.sh | shell_selected && printf '%s\n' tools/devlock.sh | shell_selected || fail "A47a: a script diff does not select the shell check"
+printf '%s\n' tools/find-index/x.mjs app/src/a.ts docs/x.md | shell_selected && fail "A47a: an unrelated diff selects the shell check"
+eval "$(sed -n '/^want_checks() {/,/^}/p' "$here/pipeline.sh")"
+changed() { echo scripts/gc.sh; }; checks=auto; spec_file="$tmp/spec-plain"
+[[ ",$(want_checks)," == *,shell,* ]] || fail "A47a: want_checks lacks shell for a scripts/ diff"
+changed() { echo docs/x.md; }; [[ ",$(want_checks)," != *,shell,* ]] || fail "A47a: want_checks has shell for a docs diff"
+grep -qF '[[ "$name" != shell ]] && machine_failure "$out"' "$here/pipeline.sh" || fail "A47a: a shell check quoting 'command not found' counts as a machine failure"
 
 [[ $fails -eq 0 ]] || { echo "pipeline.test.sh: $fails failure(s) in $count packages" >&2; exit 1; }
 echo "pipeline.test.sh: ok ($count packages)"

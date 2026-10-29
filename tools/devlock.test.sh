@@ -6,7 +6,7 @@ set -euo pipefail
 SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/devlock.sh"
 T="$(mktemp -d)"
 trap 'rm -rf "$T"' EXIT
-unset PASCALINE_COORD
+unset PASCALINE_COORD PASCALINE_LOCK_PID  # a caller's pid (the pipeline exports its own) would be recorded by every acquire
 fail() { echo "FAIL: $*" >&2; exit 1; }
 
 mkdir -p "$T/main/tools"
