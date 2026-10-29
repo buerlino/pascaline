@@ -620,18 +620,14 @@ function agreedFacts(facts: readonly (ElementFacts | null)[], digits: number, P:
     precs[i] = prec;
     return true;
   };
-  // G126: zeros before any level gave a value confirm nothing: an exact form such as asin(sin(10^70)) = 10^70-n*pi
-  // cancels to an exact 0 at P and P+20 and has its value at P+40 and beyond, so the steps go on. Two zeros after a value
-  // (noise at P and P+20, then 0) still stop them; a value no two levels confirm stays 0, ⚠ without a count (zeroUnconfirmed).
-  // One evaluation at MAX_EVAL_DIGITS first: a value still 0 there (an underflow, exp(-10^30)) has nothing to gain from
-  // the steps between and stays as before.
+  // G126: zeros before any value confirm nothing (asin(sin(10^70)) = 10^70-n*pi is an exact 0 at P and P+20), so the steps
+  // go on, unless it is 0 at MAX_EVAL_DIGITS too (an underflow); zeros after noise stop them, as two agreeing levels.
   const zero = (x: ComplexValue): boolean => isZero(x.re) && isZero(x.im);
   const leadingZero = facts.map((f, k) => !f && zero(A[k]!) && zero(B[k]!));
   const top = leadingZero.some(Boolean) ? evalfAt(MAX_EVAL_DIGITS) : null;
   return facts.map((f, k) => {
     if (f) return f;
     let leading = leadingZero[k]! && (top === null || !zero(top[k]!));
-    // 0 at P, P+20 and MAX_EVAL_DIGITS: no steps
     let reliable = leadingZero[k] ? (leading ? 0 : digits) : confirmedComplex(A[k]!, B[k]!, P, P);
     let value = denoised(A[k]!, B[k]!, P);
     let at = P + 20;
@@ -643,12 +639,9 @@ function agreedFacts(facts: readonly (ElementFacts | null)[], digits: number, P:
       value = denoised(levels[i - 1]![k]!, next[k]!, precs[i - 1]!);
       at = precs[i]!;
     }
-    // No two levels confirmed a digit and some level gave 0: the values are noise around a 0 (a true 0 Giac does not
-    // prove, cos(pi/7)-cos(2*pi/7)+cos(3*pi/7)-1/2, is noise at P and P+20, 0 from P+40 on), so the value stays 0, unconfirmed.
-    if (reliable === 0 && !zero(value)) {
-      const z = levels.find((l) => l !== null && zero(l[k]!));
-      if (z) value = z[k]!;
-    }
+    // Nothing confirmed and some level 0: noise around a 0 Giac does not prove; the value stays 0, unconfirmed.
+    const z = reliable === 0 && !zero(value) ? levels.find((l) => l !== null && zero(l[k]!)) : undefined;
+    if (z) value = z[k]!;
     if (zero(value)) reliable = P;
     reliable = Math.min(reliable, A[k]!.short ?? P, B[k]!.short ?? P);
     return zeroUnconfirmed({ value: { re: value.re, im: value.im }, exact: false, reliableDigits: reliable, big: false, at });
