@@ -19,12 +19,14 @@ GIAC_OUT=<abs dir> npm run golden                          # engine gate; must e
 GIAC_OUT=<abs dir> npm run gallery                         # every view and layer → app/test/gallery/index.html
 tests/golden/.venv/bin/python tests/golden/oracle.py [--write|--g2]   # mpmath oracle (venv: tests/golden/README.md)
 ./build.sh [--dev] [--measure] [--unsigned] [--install [SERIAL]]      # clean source → dist/pascaline.apk (--no-units: Find holds functions only)
+scripts/night.sh --lane A|B --until HH:MM [--dry-run]           # the night, one lane per table of brief 0c (A47c); no --lane: one queue
+scripts/night.sh --stop A|B|all                                 # the owner's stop: logs STOPPED; the lane ends after its running step
 PASCALINE_DL_DIR=<main checkout>/engine/giac/_downloads   # in a worktree: reuse the tarball cache; GIAC_OUT=<main>/engine/giac/_out/gsl
 ```
 Devices, locks and timings: `tools/README.md` (`tools/devlock.sh acquire host-cpu <name> 1800` around heavy work).
 
 ## Pipeline
-Every package runs through `scripts/pipeline.sh` (docs/shifts/rules.md section 4; the night queue is brief.md section 0c); never merge or start a worker another way. An interactive session that edits the `phase-1` worktree holds `tools/devlock.sh acquire integ <name> 1800` until it is clean again. `.tasks/` (gitignored) holds bundles, logs and the counter; `.coord/log.md` gets one line per step.
+Every package runs through `scripts/pipeline.sh` (docs/shifts/rules.md section 4; the night queue is brief.md section 0c); never merge or start a worker another way. An interactive session that edits the `phase-1` worktree holds `tools/devlock.sh acquire integ <name> 7200` until it is clean again; it waits for the merge queue like a run (a run holds `integ` from its checks to its merge, A47b). `.tasks/` (gitignored) holds bundles, logs and the counter; `.coord/log.md` gets one line per step.
 Context hygiene: `.claude/settings.json` denies reads of build output, caches, lock files, screenshots and run logs. Read sections (`grep -n '^#'`), not whole files; the owner's untracked files are not yours.
 
 ## Repo layout
