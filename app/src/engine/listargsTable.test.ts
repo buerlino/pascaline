@@ -2,7 +2,8 @@
 // G112 (backlog F103): listargsTable.ts is what tools/probes/list-args.ts found on the pinned engine. This replays the probe's
 // last pass (every name of Find's index and of the census but the skipped ones, in order, on one engine) and fails when the
 // engine and the table disagree: a name that now reads its one list as its arguments, or no longer does, or another reason.
-// Refresh with `WRITE=1 node tools/probes/list-args.ts`. Needs the Find index (skipped without one; FIND_INDEX=required fails),
+// G124: and the second class, the hits whose one-list form Giac documents (PROBED_LIST_FORMS). Refresh with
+// `WRITE=1 node tools/probes/list-args.ts`. Needs the Find index (skipped without one; FIND_INDEX=required fails),
 // Giac's tarball (PASCALINE_DL_DIR, default the main checkout's cache) and the engine.
 import { spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
@@ -10,12 +11,13 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { giacAvailable, loadNodeGiac } from "./nodeGiac.ts";
-import { PROBED_LIST_AS_ARGUMENTS, PROBED_NAMES } from "./listargsTable.ts";
-import { PROBE_SKIPPED, PROBED_EVIDENCE } from "./listargsEvidence.ts";
+import { PROBED_LIST_AS_ARGUMENTS, PROBED_LIST_FORMS, PROBED_NAMES } from "./listargsTable.ts";
+import { PROBE_SKIPPED, PROBED_EVIDENCE, PROBED_LIST_FORM_EVIDENCE } from "./listargsEvidence.ts";
 import { LIST_AS_ARGUMENTS } from "./listargs.ts";
 import { aideCas } from "../../../tools/probes/findcensus/run.ts";
 import { listArgNames } from "../../../tools/probes/listargs/names.ts";
 import { uninformative, verdict } from "../../../tools/probes/listargs/sweep.ts";
+import { helpEntries, intendedForm } from "../../../tools/probes/listargs/intended.ts";
 
 const repo = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 const hasIndex = existsSync(join(repo, "app/src/find/_gen/find-index.json"));
@@ -27,7 +29,8 @@ it("the Find index is there when required", () => {
 describe.skipIf(!hasIndex || !giacAvailable())("G112 the list-as-arguments table", () => {
   it("is what the probe finds on the pinned engine", { timeout: 300_000 }, async () => {
     const common = spawnSync("git", ["rev-parse", "--path-format=absolute", "--git-common-dir"], { cwd: repo, encoding: "utf8" }).stdout.trim();
-    const names = listArgNames(repo, await aideCas(common ? resolve(common, "..") : repo));
+    const aide = await aideCas(common ? resolve(common, "..") : repo);
+    const names = listArgNames(repo, aide);
     expect(names.length, "the probe's names changed: run the probe again").toBe(PROBED_NAMES);
     const { giac } = await loadNodeGiac();
     const found: Record<string, string> = {};
@@ -37,7 +40,17 @@ describe.skipIf(!hasIndex || !giacAvailable())("G112 the list-as-arguments table
       if (v.hit) found[n.name] = v.why;
     }
     expect(found).toEqual(PROBED_EVIDENCE);
-    expect(Object.keys(found)).toEqual(PROBED_LIST_AS_ARGUMENTS);
+    // G124: the hits with a documented list form (tools/probes/listargs/intended.ts) and their evidence; the rest are refused
+    const entries = helpEntries(aide);
+    const forms: Record<string, string> = {};
+    const why: Record<string, string> = {};
+    for (const n of Object.keys(found)) {
+      const f = intendedForm((s) => giac.eval(s), entries, n);
+      if (f) [forms[n], why[n]] = [f.form, f.why];
+    }
+    expect(forms).toEqual(PROBED_LIST_FORMS);
+    expect(why).toEqual(PROBED_LIST_FORM_EVIDENCE);
+    expect(Object.keys(found).filter((n) => !Object.hasOwn(forms, n))).toEqual(PROBED_LIST_AS_ARGUMENTS);
     expect(Object.keys(PROBE_SKIPPED).every((s) => names.some((n) => n.name === s))).toBe(true);
   });
 

@@ -143,13 +143,17 @@ describe.skipIf(!giacAvailable())("G124 a list form Giac documents", () => {
   });
 
   it("answers the six inputs in Home with Giac's value", () => {
-    expect(home("matrix(list[[1,2],[3,4]])")).toMatchObject({ ok: true, display: "[[1,2],[3,4]]" });
-    expect(home("zeros(list[2,3])")).toMatchObject({ ok: true, display: "[[0,0,0],[0,0,0]]" });
+    // Home shows Giac's matrix type as Giac prints it, as for matrix(2,3) (zeros are Giac's 0.0)
+    expect(home("matrix(list[[1,2],[3,4]])")).toMatchObject({ ok: true, display: "matrix[[1,2],[3,4]]" });
+    expect(home("zeros(list[2,3])")).toMatchObject({ ok: true, display: "matrix[[0.0,0.0,0.0],[0.0,0.0,0.0]]" });
     const r = home("ranm(list[2,3])");
     expect(r).toMatchObject({ ok: true });
-    expect(r.ok && r.display, "a 2×3 matrix").toMatch(/^\[\[-?\d+,-?\d+,-?\d+\],\[-?\d+,-?\d+,-?\d+\]\]$/);
-    expect(home("simp2(list[12,18])")).toMatchObject({ ok: true, display: "{2,3}" });
-    expect(home("iegcd(list[45,75])")).toMatchObject({ ok: true, display: "{2,-1,15}" });
+    expect(r.ok && r.display, "a 2×3 matrix").toMatch(/^matrix\[\[-?\d+,-?\d+,-?\d+\],\[-?\d+,-?\d+,-?\d+\]\]$/);
+    expect(home("simp2(list[12,18])")).toMatchObject({ ok: true, display: "[2,3]" });
+    expect(home("iegcd(list[45,75])")).toMatchObject({ ok: true, display: "[2,-1,15]" });
+    // a stored list: simp2 and subst read it alike (12·(−1) + 18·1 = 6 = gcd(12,18))
+    expect(home("P:=list[12,18]")).toMatchObject({ ok: true });
+    expect(home("iegcd(P)")).toMatchObject({ ok: true, display: "[-1,1,6]" });
     expect(home("subst(list[x+1,x=2])")).toMatchObject({ ok: true, display: "3" });
   });
 
@@ -158,7 +162,9 @@ describe.skipIf(!giacAvailable())("G124 a list form Giac documents", () => {
       expect(home(input), input).toMatchObject(REFUSAL);
     }
     // zeros([x^2-1,x+y-1]) is zeros(x^2-1,x+y-1) = [] (the system has the roots [1,0] and [-1,2]); matrix(list[1,2]) is a 1×2 zero matrix
-    for (const input of ["zeros([x^2-1,x+y-1])", "matrix(list[1,2])", "ranm(list[2,1/2])"]) {
+    // zeros(L) of a stored L:=list[2,3] solves L = 0 (Giac: []), so a dimension list must be typed
+    expect(home("L:=list[2,3]")).toMatchObject({ ok: true });
+    for (const input of ["zeros([x^2-1,x+y-1])", "matrix(list[1,2])", "ranm(list[2,1/2])", "zeros(L)", "matrix(L)"]) {
       expect(home(input), input).toMatchObject(REFUSAL);
     }
   });
