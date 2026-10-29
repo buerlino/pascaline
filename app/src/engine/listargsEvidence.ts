@@ -241,6 +241,22 @@ export const PROBED_EVIDENCE: Readonly<Record<string, string>> = {
   evolute: "evolute(list[1,2]) = evolute(1,2) = [undef,2]",
 };
 
+/** G124: the evidence of each name of PROBED_LIST_FORMS (tools/probes/listargs/intended.ts): Giac's help or source, the value. */
+export const PROBED_LIST_FORM_EVIDENCE: Readonly<Record<string, string>> = {
+  newMat: "help \"Returns the list with n rows and p columns, made with zeros\"; newMat(list[2,3]) = newMat(2,3) = [[0,0,0],[0,0,0]]",
+  ranm: "help \"an n*m matrix that contains random integers\"; ranm(list[2,3]) = ranm(2,3) = matrix[[6,55,-64],[-99,31,5]]",
+  randMat: "help \"an n*m matrix that contains random integers\"; randMat(list[2,3]) = randMat(2,3) = matrix[[6,55,-64],[-99,31,5]]",
+  randmatrix: "help \"an n*m matrix that contains random integers\"; randmatrix(list[2,3]) = randmatrix(2,3) = matrix[[6,55,-64],[-99,31,5]]",
+  zeros: "source ti89.cc _zeros: a vector of two integers a,b is _matrix(a,b,0.0); zeros(list[2,3]) = zeros(2,3) = matrix[[0.0,0.0,0.0],[0.0,0.0,0.0]]",
+  subst: "help \"Substitutes a value for a variable in an expression\"; subst(list[x+1,x=2]) = subst(x+1,x=2) = 3; subst(x+1) is an error, a stored list alike",
+  substituer: "help \"Substitutes a value for a variable in an expression\"; substituer(list[x+1,x=2]) = substituer(x+1,x=2) = 3; substituer(x+1) is an error, a stored list alike",
+  iegcd: "help \"Extended greatest common divisor of 2 integers\"; iegcd(list[45,75]) = iegcd(45,75) = [2,-1,15]; iegcd(45) is an error, a stored list alike",
+  igcdex: "help \"Extended greatest common divisor of 2 integers\"; igcdex(list[45,75]) = igcdex(45,75) = [2,-1,15]; igcdex(45) is an error, a stored list alike",
+  bezout_entiers: "help \"Extended greatest common divisor of 2 integers\"; bezout_entiers(list[45,75]) = bezout_entiers(45,75) = [2,-1,15]; bezout_entiers(45) is an error, a stored list alike",
+  matrix: "help \"or make a matrix with a table\"; matrix(list[[1,2],[3,4]]) = [[1,2],[3,4]] = matrix[[1,2],[3,4]]",
+  simp2: "help \"Returns the list [A/gcd(A,B),B/gcd(A,B)]\"; simp2(list[12,18]) = simp2(12,18) = [2,3]; simp2(12) is an error, a stored list alike",
+};
+
 /** Names the probe skipped: no answer in 5000 ms, or the engine threw (the test replays the rest in this order). */
 export const PROBE_SKIPPED: Readonly<Record<string, string>> = {
   parallel: "the engine threw: ReferenceError: window is not defined",

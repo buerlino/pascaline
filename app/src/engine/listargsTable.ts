@@ -4,7 +4,7 @@
 // Giac reads as their argument list (f(list[a,b]) = f(a,b), or one number); each name's reason is in listargsEvidence.ts
 // (kept out of the app bundle).
 
-/** The names, in the probe's order. */
+/** The names, in the probe's order, but those of PROBED_LIST_FORMS. */
 export const PROBED_LIST_AS_ARGUMENTS: readonly string[] = [
   "surd", "root", "exponential", "irem", "remain", "comb", "nCr", "normald_cdf", "normal_cdf", "int", "integrate",
   "integrer", "diff", "derive", "deriver", "limit", "limite", "lim", "roots", "znorder", "linspace", "besselY",
@@ -15,9 +15,9 @@ export const PROBED_LIST_AS_ARGUMENTS: readonly string[] = [
   "gammad_cdf", "gammad_icdf", "betad", "betad_cdf", "betad_icdf", "hamdist", "companion", "pour", "powerpc",
   "is_isosceles", "JordanBlock", "frenet", "zip", "rdiv", "unapply", "fMax", "fMin", "fracmod", "iratrecon", "Beta",
   "compare", "range", "seq", "mult_c_conjugate", "multiplier_conjugue_complexe", "mult_conjugate",
-  "multiplier_conjugue", "comDenom", "Int", "dfc", "risch", "subs", "newMat", "binomial", "binomial_cdf",
-  "binomial_icdf", "negbinomial", "negbinomial_cdf", "negbinomial_icdf", "poisson_cdf", "poisson_icdf", "poisson",
-  "convert", "convertir", "homogeneize", "chisquare", "chisquared", "chisquare_cdf", "chisquared_cdf", "chisquare_icdf",
+  "multiplier_conjugue", "comDenom", "Int", "dfc", "risch", "subs", "binomial", "binomial_cdf", "binomial_icdf",
+  "negbinomial", "negbinomial_cdf", "negbinomial_icdf", "poisson_cdf", "poisson_icdf", "poisson", "convert",
+  "convertir", "homogeneize", "chisquare", "chisquared", "chisquare_cdf", "chisquared_cdf", "chisquare_icdf",
   "chisquared_icdf", "fisher", "snedecor", "fisherd", "snedecord", "fisher_cdf", "snedecor_cdf", "fisherd_cdf",
   "snedecord_cdf", "normald", "normal_icdf", "normald_icdf", "student", "studentd", "student_cdf", "student_icdf",
   "UTPC", "UTPF", "UTPN", "UTPT", "genpoly", "coeff", "coeffs", "taylor", "atan2", "canonical_form", "cyclotomic",
@@ -26,13 +26,29 @@ export const PROBED_LIST_AS_ARGUMENTS: readonly string[] = [
   "laguerre", "laplace", "legendre", "legendre_symbol", "logb", "makelist", "newton", "of", "parameq", "partfrac",
   "cpartfrac", "perm", "nPr", "powmod", "powermod", "pow", "Psi", "ptayl", "rand", "random", "randint", "hasard",
   "randfisher", "randnorm", "randNorm", "normalvariate", "randgammad", "gammavariate", "randweibulld", "weibullvariate",
-  "randbetad", "betavariate", "randpoly", "randPoly", "ranm", "randMat", "randmatrix", "randvector", "ranv", "reorder",
-  "resultant", "sylvester", "same", "series", "zeros", "smod", "mods", "subst", "substituer", "piecewise",
-  "tchebyshev1", "tchebyshev2", "truncate", "abcuv", "iabcuv", "iegcd", "igcdex", "bezout_entiers", "bezoutian",
-  "fourier_an", "fourier_cn", "gbasis_simult_primes", "horner", "when", "makemat", "matrix", "display", "color",
-  "propfrac", "propFrac", "romberg", "gaussquad", "simp2", "Zeta", "soundsec", "ztrans", "in_ideal", "dayofweek",
-  "trail2edges", "geodetic2ecef", "brownian", "mathml", "evolute",
+  "randbetad", "betavariate", "randpoly", "randPoly", "randvector", "ranv", "reorder", "resultant", "sylvester", "same",
+  "series", "smod", "mods", "piecewise", "tchebyshev1", "tchebyshev2", "truncate", "abcuv", "iabcuv", "bezoutian",
+  "fourier_an", "fourier_cn", "gbasis_simult_primes", "horner", "when", "makemat", "display", "color", "propfrac",
+  "propFrac", "romberg", "gaussquad", "Zeta", "soundsec", "ztrans", "in_ideal", "dayofweek", "trail2edges",
+  "geodetic2ecef", "brownian", "mathml", "evolute",
 ];
+
+/** G124 (backlog F107): the names whose one list Giac reads as their arguments by documented intent, with the list's form
+ *  ("any"; "integers", dimensions: exactly two integers of at least 1; "rows", a matrix's rows); outside the form the call stays refused. */
+export const PROBED_LIST_FORMS: Readonly<Record<string, "any" | "integers" | "rows">> = {
+  newMat: "integers",
+  ranm: "integers",
+  randMat: "integers",
+  randmatrix: "integers",
+  zeros: "integers",
+  subst: "any",
+  substituer: "any",
+  iegcd: "any",
+  igcdex: "any",
+  bezout_entiers: "any",
+  matrix: "rows",
+  simp2: "any",
+};
 
 /** How many names the probe asked (the index's and the census's, the skipped ones included). */
 export const PROBED_NAMES = 1589;

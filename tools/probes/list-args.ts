@@ -10,7 +10,8 @@
 // Needs the Find index (`npm run index` in app/), Giac's tarball (PASCALINE_DL_DIR, default the main checkout's cache) and the
 // engine as tools/probes/engine.ts (GIAC_OUT). One engine, the names in order; a name that hangs (DEADLINE_MS, default 5000) or
 // traps the engine is skipped and listed (SKIP in the table), and the pass runs again until none is new, so that the last
-// pass is what listargsTable.test.ts replays in one process.
+// pass is what listargsTable.test.ts replays in one process. G124: a hit whose one-list form Giac documents (listargs/intended.ts)
+// is written to PROBED_LIST_FORMS with its evidence instead of the refused names.
 import { spawnSync } from "node:child_process";
 import { writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
@@ -19,6 +20,8 @@ import { Worker } from "node:worker_threads";
 import { aideCas } from "./findcensus/run.ts";
 import { listArgNames } from "./listargs/names.ts";
 import { tableFiles } from "./listargs/table.ts";
+import { helpEntries, intendedForm, type ListForm } from "./listargs/intended.ts";
+import { loadNodeGiac } from "../../app/src/engine/nodeGiac.ts";
 import type { Answer, Job } from "./listargs/worker.ts";
 import type { Verdict } from "./listargs/sweep.ts";
 
@@ -29,7 +32,8 @@ const deadline = Number(process.env["DEADLINE_MS"] ?? 5000);
 
 const only = process.argv.slice(2);
 const t0 = performance.now();
-const all = listArgNames(repo, await aideCas(mainCheckout));
+const aide = await aideCas(mainCheckout);
+const all = listArgNames(repo, aide);
 const names = only.length ? all.filter((n) => only.includes(n.name)) : all;
 
 /** One pass over `names` minus `skip` on one engine; a hang or a trap adds the name to `skip` and starts a new engine. */
@@ -99,8 +103,18 @@ console.log(
 );
 if (r.fresh > 0) throw new Error("new skips in the last pass: the table would not replay");
 
+// G124: the hits whose one-list form Giac documents (listargs/intended.ts) are not refused, each with its evidence
+const entries = helpEntries(aide);
+const { giac } = await loadNodeGiac();
+const forms: [string, ListForm, string][] = [];
+for (const [n] of hits) {
+  const f = intendedForm((s) => giac.eval(s), entries, n);
+  if (f) forms.push([n, f.form, f.why]);
+}
+for (const [n, form, why] of forms) console.log(`form ${n.padEnd(20)} ${form}: ${why}`);
+
 if (process.env["WRITE"] === "1" && !only.length) {
-  const { table, evidence } = tableFiles(hits.map(([n, v]) => [n, v.why] as const), [...skip], deadline, names.length);
+  const { table, evidence } = tableFiles(hits.map(([n, v]) => [n, v.why] as const), forms, [...skip], deadline, names.length);
   writeFileSync(resolve(repo, "app/src/engine/listargsTable.ts"), table);
   writeFileSync(resolve(repo, "app/src/engine/listargsEvidence.ts"), evidence);
   console.log("wrote app/src/engine/listargsTable.ts and listargsEvidence.ts");

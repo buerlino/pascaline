@@ -130,3 +130,56 @@ describe("R80f1 a LIST_IN_ARGUMENTS entry for argument 0", () => {
     expect(listAsArguments(giac, "f0(3,list[1,2])", () => false, table)).toBeNull();
   });
 });
+
+// G124 (backlog F107): for a few names Giac's reading of one list as the argument list is the documented meaning (the probe's
+// second class, listargsEvidence.ts PROBED_LIST_FORM_EVIDENCE): a matrix from its rows, dimensions of zeros or of a random
+// matrix, the pair of simp2 and iegcd, subst's expression and equation. Expected values are Giac's own (derived: [[1,2],[3,4]]
+// is the rows; 45·2 + 75·(−1) = 15 = gcd(45,75); 12/6 = 2, 18/6 = 3; x+1 at x=2 is 3); the G111, R80f1 and G112 names stay.
+describe.skipIf(!giacAvailable())("G124 a list form Giac documents", () => {
+  let host: EngineHost;
+  const home = (input: string) => host.home(input, defaultHomeSettings).result;
+  beforeAll(async () => {
+    host = await nodeHost();
+  });
+
+  it("answers the six inputs in Home with Giac's value", () => {
+    // Home shows Giac's matrix type as Giac prints it, as for matrix(2,3) (zeros are Giac's 0.0)
+    expect(home("matrix(list[[1,2],[3,4]])")).toMatchObject({ ok: true, display: "matrix[[1,2],[3,4]]" });
+    expect(home("zeros(list[2,3])")).toMatchObject({ ok: true, display: "matrix[[0.0,0.0,0.0],[0.0,0.0,0.0]]" });
+    const r = home("ranm(list[2,3])");
+    expect(r).toMatchObject({ ok: true });
+    expect(r.ok && r.display, "a 2×3 matrix").toMatch(/^matrix\[\[-?\d+,-?\d+,-?\d+\],\[-?\d+,-?\d+,-?\d+\]\]$/);
+    expect(home("simp2(list[12,18])")).toMatchObject({ ok: true, display: "[2,3]" });
+    expect(home("iegcd(list[45,75])")).toMatchObject({ ok: true, display: "[2,-1,15]" });
+    // a stored list: simp2 and subst read it alike (12·(−1) + 18·1 = 6 = gcd(12,18))
+    expect(home("P:=list[12,18]")).toMatchObject({ ok: true });
+    expect(home("iegcd(P)")).toMatchObject({ ok: true, display: "[-1,1,6]" });
+    expect(home("subst(list[x+1,x=2])")).toMatchObject({ ok: true, display: "3" });
+  });
+
+  it("keeps refusing the G111, R80f1 and G112 names, and a list outside the documented form", () => {
+    for (const input of ["LambertW([1,2])", "hermite([1,2])", "Psi(list[1,2])", "normald_cdf([0,1])", "comb(list[5,2])"]) {
+      expect(home(input), input).toMatchObject(REFUSAL);
+    }
+    // zeros([x^2-1,x+y-1]) is zeros(x^2-1,x+y-1) = [] (the system has the roots [1,0] and [-1,2]); matrix(list[1,2]) is a 1×2 zero matrix
+    // zeros(L) of a stored L:=list[2,3] solves L = 0 (Giac: []), so a dimension list must be typed
+    expect(home("L:=list[2,3]")).toMatchObject({ ok: true });
+    for (const input of ["zeros([x^2-1,x+y-1])", "matrix(list[1,2])", "ranm(list[2,1/2])", "zeros(L)", "matrix(L)"]) {
+      expect(home(input), input).toMatchObject(REFUSAL);
+    }
+  });
+
+  it("refuses a dimension list that is not two integers of at least 1 (G124f1)", () => {
+    // Giac's documented dimension form is exactly two: zeros(list[2,3,4]) and zeros(list[5]) were [] (exact),
+    // zeros(list[-2,3]) matrix[[0.0,0.0,0.0]], ranm(list[-2,3]) a 1×3 and ranm(list[2,3,4]) a 2×3 random matrix
+    for (const input of [
+      "zeros(list[2,3,4])", "zeros(list[5])", "zeros(list[-2,3])", "zeros(list[0,3])", "ranm(list[-2,3])", "ranm(list[2,3,4])",
+      "zeros(list[x,3])", // guard: an element that is not an integer
+    ]) {
+      expect(home(input), input).toMatchObject(REFUSAL);
+    }
+    expect(home("zeros(list[2,3])")).toMatchObject({ ok: true, display: "matrix[[0.0,0.0,0.0],[0.0,0.0,0.0]]" });
+    expect(home("ranm(list[2,3])")).toMatchObject({ ok: true });
+    expect(home("newMat(list[2,3])")).toMatchObject({ ok: true });
+  });
+});
