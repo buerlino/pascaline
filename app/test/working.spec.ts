@@ -78,16 +78,18 @@ test("Solve: its Working… line shows only after 150 ms", async ({ page }) => {
   await expect(page.locator('[data-app="solve"]')).toBeVisible();
   await tap(page, ["@symb", "x", "shift", "dot", "d5", "enter", "@num"]);
   await expect(page.locator('[data-testid="solve-table"] tr[data-name="x"]')).toBeVisible();
-  // every frame: since when the line has said Working…, and whether it can be seen
+  // every frame: since when the line has said Working…, and whether it can be seen. Timed by the frame's own time (the
+  // clock the CSS delay runs on), not performance.now() in the callback: under load a late callback started `since`
+  // late and saw the line at t < 130 (pipeline run 314).
   await page.evaluate(() => {
     const log: { t: number; seen: boolean }[] = [];
     (window as unknown as { __info: typeof log }).__info = log;
     let since: number | undefined;
-    const frame = (): void => {
+    const frame = (now: number): void => {
       const e = document.querySelector('[data-testid="solve-info"]');
       if (e?.textContent === "Working…") {
-        since ??= performance.now();
-        log.push({ t: performance.now() - since, seen: getComputedStyle(e).visibility === "visible" });
+        since ??= now;
+        log.push({ t: now - since, seen: getComputedStyle(e).visibility === "visible" });
       }
       requestAnimationFrame(frame);
     };
