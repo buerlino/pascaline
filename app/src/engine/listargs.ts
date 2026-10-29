@@ -27,16 +27,21 @@ import { PROBED_LIST_AS_ARGUMENTS, PROBED_LIST_FORMS } from "./listargsTable.ts"
 export const LIST_AS_ARGUMENTS: readonly string[] = PROBED_LIST_AS_ARGUMENTS;
 const LIST_AS = new Set(LIST_AS_ARGUMENTS);
 
-/** G124: the names refused outside their documented one-list form: a typed, non-empty list of integers only (dimensions)
- *  or of lists only (rows); a list held by a name stays refused. "any" names are never refused (f of one element alone is an
+/** G124: the names refused outside their documented one-list form: a typed list of exactly two integers of at least 1
+ *  (dimensions; G124f1: zeros(list[2,3,4]) and zeros(list[5]) were [], zeros(list[-2,3]) one row, ranm(list[2,3,4]) 2×3)
+ *  or a non-empty list of lists only (rows); a list held by a name stays refused. "any" names are never refused (f of one element alone is an
  *  error in Giac, and the probe checks a stored list too). */
 const FORMED: ReadonlyMap<string, "integers" | "rows"> = new Map(
   Object.entries(PROBED_LIST_FORMS).flatMap(([n, f]) => (f === "any" ? [] : [[n, f] as const])),
 );
 /** Giac test of the evaluated argument: 1 when it is a list outside the name's form. */
 function outsideForm(a: string, form: "integers" | "rows"): string {
-  const t = form === "integers" ? "DOM_INT" : "DOM_LIST";
-  return `when(type(${a})==DOM_LIST,when(size(${a})>0 and count_eq(${t},apply(type,${a}))==size(${a}),0,1),0)`;
+  if (form === "rows") {
+    return `when(type(${a})==DOM_LIST,when(size(${a})>0 and count_eq(DOM_LIST,apply(type,${a}))==size(${a}),0,1),0)`;
+  }
+  // nested whens: each test is decided (an element x would leave `x>=1` open), and [k] is read only on a size-2 list
+  const d = (k: number, then: string) => `when(type((${a})[${k}])==DOM_INT,when((${a})[${k}]>=1,${then},1),1)`;
+  return `when(type(${a})==DOM_LIST,when(size(${a})==2,${d(0, d(1, "0"))},1),0)`;
 }
 
 /** R80f1: functions that answer a list among their arguments wrongly (probed on the shared engine with patch 0007,

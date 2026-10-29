@@ -41,7 +41,7 @@ ${lines.join("\n")}
 ];
 
 /** G124 (backlog F107): the names whose one list Giac reads as their arguments by documented intent, with the list's form
- *  ("any"; "integers", dimensions; "rows", a matrix's rows); outside the form the call stays refused. */
+ *  ("any"; "integers", dimensions: exactly two integers of at least 1; "rows", a matrix's rows); outside the form the call stays refused. */
 export const PROBED_LIST_FORMS: Readonly<Record<string, "any" | "integers" | "rows">> = {
 ${forms.map(([n, f]) => `  ${n}: ${q(f)},`).join("\n")}
 };

@@ -5,8 +5,8 @@
 // reading exists). Each entry is checked on the pinned engine and against Giac's help (aide_cas) or source; list-args.ts
 // writes the evidence into app/src/engine/listargsEvidence.ts and the forms into listargsTable.ts. Only erasable TypeScript.
 
-/** Which one-list argument is the documented form: "any" list (f of one element alone is an error), a non-empty list of
- *  integers only (dimensions), or a non-empty list of lists only (rows). Outside its form the call stays refused. */
+/** Which one-list argument is the documented form: "any" list (f of one element alone is an error), exactly two integers
+ *  of at least 1 (dimensions: rows and columns; G124f1), or a non-empty list of lists only (rows). Outside its form the call stays refused. */
 export type ListForm = "any" | "integers" | "rows";
 
 interface Intended {

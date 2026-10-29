@@ -174,6 +174,7 @@ describe.skipIf(!giacAvailable())("G124 a list form Giac documents", () => {
     // zeros(list[-2,3]) matrix[[0.0,0.0,0.0]], ranm(list[-2,3]) a 1×3 and ranm(list[2,3,4]) a 2×3 random matrix
     for (const input of [
       "zeros(list[2,3,4])", "zeros(list[5])", "zeros(list[-2,3])", "zeros(list[0,3])", "ranm(list[-2,3])", "ranm(list[2,3,4])",
+      "zeros(list[x,3])", // guard: an element that is not an integer
     ]) {
       expect(home(input), input).toMatchObject(REFUSAL);
     }
