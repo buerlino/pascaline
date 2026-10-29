@@ -69,7 +69,7 @@ The one place for "where are we and what's left", one or two lines per open item
 - **F62, no package.** `sin(cosh(10!))` takes 11 s in Home; the 2 s deadline misses; G82 does not stop it (one call, 20 checks). S16: also `tan(cos(sinh(10!)))`, `cos(cosh(10!))`, `tan(sinh(1.5ᴇ8))`, `log(asin(√(2ᴇ22)))`.
 - **F63, no package.** A stored ⚠ value (`BesselJ(1,2)`) read through a function, after a relaunch or by its name shows one confirmed digit fewer than the value itself (11, not 12: cautious, not wrong; `tests/golden/seqsweep-known.yaml` 6–7).
 - **F66, no package.** The plot evaluator has NaN at x = 0 for x·x/x where Giac simplifies to x (`viewsweep-known.yaml`); Home and the plot disagree at one point. Also `√x·√x` for x < 0 (roots-11, G87's KNOWN list).
-- **F108, G119 (G114 made the census see `seq[`: only fMin and fMax answer a sequence).** Home `fMin(x^2-x,x)` shows `seq[1/2]`, `fMax` too; the census reads it as symbolic (`classify.ts` RAW_WORDS has no `seq[`), so R4a's gate cannot see Giac's sequence answers. Family 5.
+- **F108, no package (Home fixed by G119).** CAS `fMin(x^2-2*x+1,x)` still shows Giac's `seq[1]` (census `cas fMin/0`, `cas fMax/0`); Home `op([])` shows `seq[]`. Family 5.
 - **F109, no package.** Home `DelAVars()` shows `DelAVars`, its own name: no answer and no refusal. Family 5.
 - **F112, G125 (S16).** Home `asin(cos(asin(10)))` ≈ 0.148369807463·i, right 2.99322284613·i on either branch: Giac's exact form adds `i*pi` (`MODE=raw … 'asin(cos(asin(10)))'`).
 - **F122, no package (G116).** Home `(atan(ln(-π)+9007199254740993))^(sin(10^-300)-10^300)` kills the engine (stack overflow inside Giac's wasm). G94's kind.

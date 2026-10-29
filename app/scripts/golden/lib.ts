@@ -62,8 +62,9 @@ export const LOOKS_NUMERIC = /^-?(\d+(\.\d+)?|\.\d+)(E[+-]?\d+)?([+-](\d+(\.\d+)
 /** A mark-only case still needs an answer: a number, or a non-number that holds a float (G27: its ⚠ is the mark the
  *  case checks), or a list of numbers. The input echoed back (BesselJ(1,2) at 30 digits) is a lost result. */
 export function lostAnswer(shown: string, input: string): boolean {
-  // G48: a list, matrix or sequence of numbers (`[899450126402,1]`, `899450126402,1`) is an answer too.
-  const numbers = shown.replace(/[[\]]/g, "").split(",");
+  // G48: a list, matrix or sequence of numbers (`[899450126402,1]`, `899450126402,1`) is an answer too; G119: a sequence
+  // shows as Giac's list type, in braces (`{899450126402,1}`).
+  const numbers = shown.replace(/[[\]{}]/g, "").split(",");
   return !numbers.every((x) => LOOKS_NUMERIC.test(x)) && !(hasFloat(shown) && shown !== input);
 }
 
