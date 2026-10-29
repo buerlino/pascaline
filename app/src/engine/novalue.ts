@@ -124,8 +124,9 @@ export function lostNumber(
  * cancels to 0, so exp of it is 1.0). One engine call.
  */
 export function overflowAt(giac: Giac, slot: string, output: string, P: number): boolean {
-  return !infinite(output) && /^[+-]?infinity$/.test(giac.eval(`evalf(${slot},${P})`).trim());
+  return !infinite(output) && INFINITIES.has(giac.eval(`evalf(${slot},${P})`).trim());
 }
+const INFINITIES: ReadonlySet<string> = new Set(["+infinity", "-infinity", "infinity"]);
 
 /** F50: a float path's `error` text for an input with no free name: Giac's undef or an infinity (no number found);
  *  null for Giac's own error message, which stays. */
