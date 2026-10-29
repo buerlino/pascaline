@@ -58,7 +58,7 @@ merge_failure_reason() {
 # engine_key <git dir> <rev>: a hash of the engine's inputs at <rev> (build-wasm.sh, patches/ without its README, wasm/), from the
 # blob ids in the tree, so it needs no checkout and takes milliseconds.
 engine_key() {
-  git -C "$1" ls-tree -r "$2" -- engine/giac/build-wasm.sh engine/giac/patches engine/giac/wasm 2>/dev/null | grep -v 'patches/README.md' | sha256sum | cut -c1-16
+  git -C "$1" ls-tree -r "$2" -- engine/giac/build-wasm.sh engine/giac/patches engine/giac/wasm 2>/dev/null | { grep -v 'patches/README.md' || true; } | sha256sum | cut -c1-16
 }
 # engine_stamp <engine dir>: the key an engine directory was built from (empty when unstamped).
 engine_stamp() { cat "$1/.engine-key" 2>/dev/null || true; }
@@ -143,19 +143,24 @@ peek_number() {
 }
 # job_port <job number>: every kind's dev-server port (runs, passes, censuses, device steps, reports): 5200 + n % 100.
 job_port() { echo $((5200 + $1 % 100)); }
-# host_cpu_acquire <owner> <log prefix>: the host-cpu lock, waiting up to 7200 s (PASCALINE_CPU_WAIT); logs (with the caller's
-# log function, when it has one) "waiting for host-cpu (<holder>)" once, and the wait's length when it ends.
-host_cpu_acquire() {
-  local owner="$1" pre="$2" t0=$SECONDS holder locks
-  tools/devlock.sh acquire host-cpu "$owner" 0 >/dev/null 2>&1 && return 0
+# lock_wait <resource> <owner> <log prefix> <wait s>: a devlock lock, waiting up to <wait s>; logs (with the caller's log function,
+# when it has one) "waiting for <resource> (<holder>)" once, and the wait's length when it ends.
+lock_wait() {
+  local res="$1" owner="$2" pre="$3" wait="$4" t0=$SECONDS holder locks
+  tools/devlock.sh acquire "$res" "$owner" 0 >/dev/null 2>&1 && return 0
   locks="${coord:-${PASCALINE_COORD:-$(cd "$(git rev-parse --git-common-dir)/.." && pwd)/.coord}}/locks"
-  holder="$(cat "$locks/host-cpu/owner" 2>/dev/null || echo '?')"
-  _lib_log "$pre waiting for host-cpu ($holder)"
-  if tools/devlock.sh acquire host-cpu "$owner" "${PASCALINE_CPU_WAIT:-7200}" >/dev/null 2>&1; then
-    _lib_log "$pre host-cpu taken after a wait of $((SECONDS - t0)) s"; return 0
+  holder="$(cat "$locks/$res/owner" 2>/dev/null || echo '?')"
+  _lib_log "$pre waiting for $res ($holder)"
+  if tools/devlock.sh acquire "$res" "$owner" "$wait" >/dev/null 2>&1; then
+    _lib_log "$pre $res taken after a wait of $((SECONDS - t0)) s"; return 0
   fi
-  _lib_log "$pre host-cpu still busy after a wait of $((SECONDS - t0)) s"; return 1
+  _lib_log "$pre $res still busy after a wait of $((SECONDS - t0)) s"; return 1
 }
+# host_cpu_acquire <owner> <log prefix>: the host-cpu lock, waiting up to 7200 s (PASCALINE_CPU_WAIT).
+host_cpu_acquire() { lock_wait host-cpu "$1" "$2" "${PASCALINE_CPU_WAIT:-7200}"; }
+# integ_acquire <owner> <log prefix>: the integ lock (the merge queue, A47b), waiting up to 7200 s (PASCALINE_INTEG_WAIT).
+# Lock order: integ before host-cpu; whoever holds host-cpu never waits for integ.
+integ_acquire() { lock_wait integ "$1" "$2" "${PASCALINE_INTEG_WAIT:-7200}"; }
 _lib_log() { if declare -F log >/dev/null; then log "$*"; fi; }
 # The shell tests (A47a): run by `pipeline.sh selftest` and by the check `shell`. PASCALINE_SELFTEST_TESTS (absolute paths) overrides.
 SELFTESTS=(scripts/pipeline.test.sh scripts/gc.test.sh tools/devlock.test.sh)

@@ -31,10 +31,12 @@
 #                           A47a: the shell tests (scripts/pipeline.test.sh, scripts/gc.test.sh, tools/devlock.test.sh); logs and
 #                           prints `RESULT selftest: PASSED` or `RESULT selftest: FAILED (<test>: <first failing line>)`
 #
-# Lifecycle: bundle → worker (own worktree from phase-1) → deterministic checks, at most two fix
-# rounds fed only the failing output → sofia audits `git diff -U5 phase-1...<branch>` plus the
-# acceptance criteria → `git merge --no-ff --signoff <the audited sha>` into phase-1 (NOT MERGED when the branch is
-# not at that sha) → worktree and branch removed.
+# Lifecycle: bundle → worker (own worktree from phase-1) → the merge queue (A47b): the run takes integ, merges phase-1 into
+# the branch (a conflict is a resolve round), runs the deterministic checks and sofia's audit of `git diff -U5
+# phase-1...<branch>` plus the acceptance criteria, and on APPROVED `git merge --no-ff --signoff <the audited sha>` into
+# phase-1 (NOT MERGED when the branch is not at that sha), promotes the engine and releases integ; so a merge commit's
+# tree is the tree the checks and the audit read. A failed check or a FIX releases integ, the fix round runs outside it
+# and the run queues again (at most two fix rounds) → worktree and branch removed.
 # Progress goes to .tasks/<n>-<id>/run.log and one line per step to .coord/log.md; stdout gets
 # only the final RESULT line, on every exit (die too: "RESULT #n ID: NOT MERGED (why)", or
 # "RESULT -: NOT STARTED (why)" before a run number exists). Exit 0 merged, 1 not merged, 2 not started
@@ -45,7 +47,11 @@
 # flock; PW_PORT=$((5200 + number % 100)) for every kind, exported to the worker, the fix rounds and the checks, so jobs alive
 # together never share a dev server. A run holds the lock branch-<branch> (its pid) for its whole life and writes <run>/pid
 # (gc leaves a live run alone). GIAC_OUT is always an immutable engine/giac/_out/key-<k>; gsl is a copy for people.
-# Locks: host-cpu around the checks and builds (waits up to 7200 s, logged), integ (600 s) around the merge into phase-1.
+# Locks: integ (waits up to 7200 s, logged) for the merge queue, the npm ci and node_modules copy of the phase-1 worktree, a
+# rebuild of phase-1's engine at a start, a whole pass, a whole report and a device step's APK build; host-cpu (waits up to
+# 7200 s, logged) around the checks and builds.
+# Lock order: integ before host-cpu, everywhere; nothing that holds host-cpu waits for integ (no deadlock between lanes).
+# Starts read the package and the brief from phase-1's commit (git show), so a dirty phase-1 worktree never stops a start.
 set -euo pipefail
 export PASCALINE_LOCK_PID=$$   # A35: locks taken here (and by the agents it starts) record this pid
 # shellcheck source=scripts/pipeline-lib.sh
@@ -86,19 +92,36 @@ die() {
 integ_dir() {
   git worktree list --porcelain | awk '/^worktree /{w=$2} /^branch refs\/heads\/phase-1$/{print w}'
 }
-ensure_integ() {
+ensure_integ() {  # [clean]: with "clean", a dirty phase-1 worktree ends the job (the flake census)
   integ="$(integ_dir)"
   if [[ -z "$integ" ]]; then
     integ="$main/.claude/worktrees/phase-1"
     git worktree add "$integ" phase-1 >/dev/null
   fi
-  [[ -z "$(git -C "$integ" status --porcelain --untracked-files=no)" ]] || die "phase-1 worktree $integ is not clean"
+  [[ "${1:-}" != clean ]] || integ_clean "$integ" || die "phase-1 worktree $integ is not clean"
+}
+# A47b: the integ lock of this job; the EXIT trap drops it, so no exit path leaves it held.
+integ_held=0; integ_owner=""; integ_t0=0
+integ_take() {  # <owner> <log prefix>
+  integ_acquire "$1" "$2" || return 1
+  integ_held=1; integ_owner="$1"; integ_t0=$SECONDS
+}
+integ_drop() {
+  [[ $integ_held -eq 1 ]] || return 0
+  tools/devlock.sh release integ "$integ_owner" >/dev/null 2>&1 || true; integ_held=0
+}
+# queue_leave: a run leaves the merge queue (integ released), logging its serial time (queue entry to release).
+in_queue=0
+queue_leave() {
+  [[ $in_queue -eq 1 ]] || { integ_drop; return 0; }
+  in_queue=0; integ_drop
+  log "pipeline #$n $id: integ released after $((SECONDS - integ_t0)) s in the queue"
 }
 
 # Node modules: every worktree gets its own hard-link copy of the phase-1 worktree's, so an npm ci in one never empties another's
 # (A24); the main checkout may sit on an old branch (A34). A phase-1 copy that lacks a package of its lock is rebuilt first, under
-# the host-cpu lock; a failing npm ci ends the run as a machine failure. A symlink left by an older run is replaced.
-refresh_integ_node_modules() {
+# integ, then host-cpu (A47b); a failing npm ci ends the run as a machine failure. The copy runs under integ too. A symlink left by an older run is replaced.
+refresh_integ_node_modules() {  # under integ (A47b): no copy reads it while npm ci rebuilds it
   [[ ! -e "$integ/app/node_modules" ]] || node_modules_stale "$integ/app" || return 0
   runlog "node_modules of $integ/app are missing or stale: npm ci"
   host_cpu_acquire "pipeline-$n" "pipeline #$n $id:" || die "host-cpu lock busy for 7200 s"
@@ -113,11 +136,13 @@ setup_node_modules() {
   local wt="$1" t0=$SECONDS
   [[ ! -L "$wt/app/node_modules" ]] || rm -f "$wt/app/node_modules"
   [[ -e "$wt/app/node_modules" ]] && return 0
+  integ_take "pipeline-$n" "pipeline #$n $id:" || die "integ lock busy for 7200 s (node_modules)"
   refresh_integ_node_modules
   # copy aside, then rename: an interrupted copy never leaves a half-filled node_modules that the guard above would keep
   rm -rf "$wt/app/node_modules.tmp.$$"
   if cp -al "$integ/app/node_modules" "$wt/app/node_modules.tmp.$$"; then mv "$wt/app/node_modules.tmp.$$" "$wt/app/node_modules"
   else rm -rf "$wt/app/node_modules.tmp.$$"; die "could not copy node_modules into $wt"; fi
+  integ_drop
   runlog "node_modules copied from $integ/app ($((SECONDS - t0)) s)"
 }
 
@@ -138,11 +163,17 @@ if [[ "${1:-}" == "pass" ]]; then
   export PW_PORT="$(job_port "$job")"  # a pass's e2e never meets a dev server of another job
   [[ "$used" == "$n" ]] || log "Opus pass $n: pass number $n is taken; this pass is $used"
   n="$used"; run="$tasks/pass-$n"; mkdir -p "$run"; echo $$ > "$run/pid"
+  # A47b: the pass holds integ from its start to its end: no merge meets its edits, and it reads one unmoving HEAD
+  trap integ_drop EXIT
+  integ_take "pass-$n" "Opus pass $n:" || die "pass $n: integ lock busy for 7200 s"
+  integ_clean "$integ" || die "pass $n: phase-1 worktree $integ is not clean"
   log "Opus pass $n (job $job, PW_PORT $PW_PORT): spawned sofia (opus) on: $ids; waiting."
-  prompt="Opus pass $n of the night shift: follow \"Opus pass (instructions for the Opus agent)\" in docs/shifts/brief.md section 0c for packages $ids. Open questions from the log: $open. You run in the phase-1 worktree $integ. Run any e2e with PW_PORT=$PW_PORT (exported; do not change it). Take the integration lock around the doc commit: tools/devlock.sh acquire integ pass-$n 600 before it, tools/devlock.sh release integ pass-$n right after. Reply in exactly the form the section gives (OPUS PASS, VERDICT, FIX lines, QUEUE, NOTES)."
+  prompt="Opus pass $n of the night shift: follow \"Opus pass (instructions for the Opus agent)\" in docs/shifts/brief.md section 0c for packages $ids. Open questions from the log: $open. You run in the phase-1 worktree $integ. Run any e2e with PW_PORT=$PW_PORT (exported; do not change it). The pipeline holds the integration lock (integ) for you for the whole pass: do not take or release it yourself, whatever the brief says. Reply in exactly the form the section gives (OPUS PASS, VERDICT, FIX lines, QUEUE, NOTES)."
   set +e
   (cd "$integ" && timeout -k 60 7200 claude -p --agent sofia --model opus --effort high "${claude_common[@]}" -n "pass-$n" "$prompt") > "$run/reply.md" 2> "$run/stderr.log"
   rc=$?; set -e
+  integ_clean "$integ" || log "Opus pass $n: left the phase-1 worktree not clean (the queue's next run stops on it)"
+  log "Opus pass $n: integ released after $((SECONDS - integ_t0)) s"; integ_drop
   if [[ $rc -ne 0 ]] && grep -qiE 'usage limit|rate limit|429|overloaded' "$run/stderr.log" "$run/reply.md"; then
     log "Opus pass $n: LIMIT (claude exit $rc)"; echo "RESULT pass $n: LIMIT"; exit 75
   fi
@@ -159,11 +190,11 @@ if [[ "${1:-}" == "device" ]]; then
   if [[ "${3:-}" == "--dry-run" ]]; then
     integ="$(integ_dir)"; : "${integ:=$main/.claude/worktrees/phase-1}"
     echo "DRY RUN: device step $n on ${dev:-<ANDROID_SERIAL unset: DEVICE SKIPPED>}; output in $run; at most 30 minutes"
-    echo "1. (cd $integ && tools/device-build.sh --test) = the test APK of phase-1's HEAD, built under the host-cpu lock (build.sh takes it)"
-    echo "2. tools/devlock.sh acquire ${dev:-<serial>} device-$n-install 600; adb -s ${dev:-<serial>} install -r $integ/dist/pascaline.apk (our app only); release"
+    echo "1. under integ (device-$n, waits up to 7200 s): (cd $integ && tools/device-build.sh --test) = the test APK of phase-1's HEAD, built under the host-cpu lock (build.sh takes it); the APK copied to $run; integ released"
+    echo "2. tools/devlock.sh acquire ${dev:-<serial>} device-$n-install 600; adb -s ${dev:-<serial>} install -r $run/pascaline.apk (our app only); release"
     echo "3. ANDROID_SERIAL=${dev:-<serial>} tools/core-device.sh   (A32's runner; holds the device lock, stay-awake and restore)"
     echo "4. log: - HH:MM pipeline device $n: CORE DEVICE <p>/<a> (known <k>, new <ids or none>) on <sha>"
-    echo "skipped, never failed (exit 0): no device or unauthorized, battery under 10 %, screen locked (KEYCODE_WAKEUP, dumpsys window isKeyguardShowing=true; checked before the build and again before the runner), a build failure -> DEVICE SKIPPED (<why>)"
+    echo "skipped, never failed (exit 0): integ busy for 7200 s, a dirty phase-1 worktree, no device or unauthorized, battery under 10 %, screen locked (KEYCODE_WAKEUP, dumpsys window isKeyguardShowing=true; checked before the build and again before the runner), a build failure -> DEVICE SKIPPED (<why>)"
     echo "RESULT device $n: DRY RUN"; exit 0
   fi
   ensure_integ; mkdir -p "$run"
@@ -180,13 +211,18 @@ if [[ "${1:-}" == "device" ]]; then
     grep -q 'isKeyguardShowing=true' <<<"$w"
   }
   locked && skip "screen locked"
+  # A47b: integ while the APK is built (one HEAD, no merge meanwhile), released before the device run; build.sh takes host-cpu itself
+  trap integ_drop EXIT
+  integ_take "device-$n" "pipeline device $n:" || skip "integ lock busy"
+  integ_clean "$integ" || skip "phase-1 worktree not clean"
   sha="$(git -C "$integ" rev-parse --short HEAD)"
-  t0=$SECONDS
-  # build.sh takes the host-cpu lock itself (waiting for it): do not hold it here
+  t0=$SECONDS; rm -f "$run/pascaline.apk"
   rc=0; (cd "$integ" && timeout -k 60 1200 tools/device-build.sh --test) > "$run/build.log" 2>&1 || rc=$?
-  [[ $rc -eq 0 && -f "$integ/dist/pascaline.apk" ]] || skip "build failed, rc=$rc; see $run/build.log"
+  [[ $rc -ne 0 || ! -f "$integ/dist/pascaline.apk" ]] || cp "$integ/dist/pascaline.apk" "$run/pascaline.apk" || rc=1
+  integ_drop
+  [[ $rc -eq 0 && -f "$run/pascaline.apk" ]] || skip "build failed, rc=$rc; see $run/build.log"
   "$integ/tools/devlock.sh" acquire "$dev" "device-$n-install" 600 >/dev/null || skip "device lock busy"
-  rc=0; timeout -k 30 300 adb -s "$dev" install -r "$integ/dist/pascaline.apk" > "$run/install.log" 2>&1 || rc=$?
+  rc=0; timeout -k 30 300 adb -s "$dev" install -r "$run/pascaline.apk" > "$run/install.log" 2>&1 || rc=$?
   "$integ/tools/devlock.sh" release "$dev" "device-$n-install" >/dev/null || true
   [[ $rc -eq 0 ]] || skip "install failed, rc=$rc; see $run/install.log"
   before=0; [[ -f "$coord/device-runs.jsonl" ]] && before="$(wc -l < "$coord/device-runs.jsonl")"
@@ -218,7 +254,7 @@ if [[ "${1:-}" == "flakes" ]]; then
     echo "4. output $out_md; log: - HH:MM pipeline flakes $n: FLAKES $n: vitest <k> of $runs runs clean, e2e <k> of $runs, flaky: <ids or none>"
     echo "RESULT flakes $n: DRY RUN"; exit 0
   fi
-  ensure_integ; mkdir -p "$run"; t0=$SECONDS
+  ensure_integ clean; mkdir -p "$run"; t0=$SECONDS
   job="$(take_number "$tasks")" || die "flakes $n: the counter lock is busy"; export PW_PORT="$(job_port "$job")"
   sha="$(git -C "$integ" rev-parse HEAD)"
   host_cpu_acquire "flakes-$n" "pipeline flakes $n:" || { log "pipeline flakes $n: FLAKES SKIPPED (host-cpu lock busy)"; echo "RESULT flakes $n: SKIPPED (host-cpu lock busy)"; exit 0; }
@@ -260,9 +296,13 @@ fi
 if [[ "${1:-}" == "report" ]]; then
   ensure_integ; run="$tasks/report-$(date +%F)"; mkdir -p "$run"
   job="$(take_number "$tasks")" || die "report: the counter lock is busy"; export PW_PORT="$(job_port "$job")"
+  trap integ_drop EXIT  # A47b: the report holds integ for its whole run
+  integ_take report "Shift report:" || die "report: integ lock busy for 7200 s"
+  integ_clean "$integ" || die "report: phase-1 worktree $integ is not clean"
   log "Shift report (job $job): spawned sonnet writer; waiting."
-  prompt="Write the shift report of docs/shifts/brief.md section 0c (\"Shift report\") for the night section of .coord/log.md (the log is on stdin). You run in the phase-1 worktree $integ: commit the report there with git commit -s and the Sonnet trailer, holding the integration lock around the commit (tools/devlock.sh acquire integ report 600 before, tools/devlock.sh release integ report after). Never push. Reply with the commit hash only."
+  prompt="Write the shift report of docs/shifts/brief.md section 0c (\"Shift report\") for the night section of .coord/log.md (the log is on stdin). You run in the phase-1 worktree $integ: commit the report there with git commit -s and the Sonnet trailer. The pipeline holds the integration lock (integ) for you: do not take or release it yourself. Never push. Reply with the commit hash only."
   tail -n 400 "$coord/log.md" | (cd "$integ" && timeout -k 60 1800 claude -p --model sonnet --effort high "${claude_common[@]}" -n report "$prompt") > "$run/reply.md" 2> "$run/stderr.log" || true
+  integ_drop
   log "Shift report: $(tail -n1 "$run/reply.md")"; echo "RESULT report: $(tail -n1 "$run/reply.md")"; exit 0
 fi
 
@@ -289,20 +329,23 @@ while [[ $# -gt 0 ]]; do
 done
 
 ensure_integ
-brief="$integ/docs/shifts/brief.md"
+# A47b: the brief, the package and the files it names come from phase-1's commit, never from the phase-1 worktree (which may
+# be dirty, or mid-edit by a pass or an interactive session holding integ).
+p1file() { [[ "$(git cat-file -t "phase-1:$1" 2>/dev/null)" == blob ]]; }  # <path>: a file in phase-1's commit
+brief="$(mktemp)"; spec_file="$(mktemp)"; trap 'rm -f "$spec_file" "$brief"' EXIT
+git show phase-1:docs/shifts/brief.md > "$brief" 2>/dev/null || true
 
 # The spec: the package file docs/shifts/packages/<ID>.md (its first line is the heading with the branch), or the task text itself.
-spec_file="$(mktemp)"; trap 'rm -f "$spec_file"' EXIT
 if [[ "$task" =~ ^[A-Z][0-9]+[a-z0-9]*$ ]]; then
   id="${id:-$task}"
-  pkg="$integ/docs/shifts/packages/$task.md"
-  [[ -f "$pkg" ]] || die "package $task has no package file $pkg"
-  cp "$pkg" "$spec_file"
-  heading="$(head -n1 "$pkg")"
+  pkg="docs/shifts/packages/$task.md"
+  p1file "$pkg" || die "package $task has no package file $pkg on phase-1"
+  git show "phase-1:$pkg" > "$spec_file"
+  heading="$(head -n1 "$spec_file")"
   # shellcheck disable=SC2016
   if [[ -z "$branch" ]]; then
     branch="$(grep -oE 'branch `[^`]+`' <<<"$heading" | head -n1 | sed 's/branch `//; s/`$//' || true)"
-    [[ -n "$branch" ]] || die "package $task: the first line of $pkg has no branch \`...\`: $heading"
+    [[ -n "$branch" ]] || die "package $task: the first line of $pkg (phase-1) has no branch \`...\`: $heading"
   fi
 else
   printf '%s\n' "$task" > "$spec_file"
@@ -313,7 +356,7 @@ slug="$(tr -cs 'a-z0-9' '-' <<<"${id,,}" | sed 's/^-//; s/-$//')"
 
 # A47a: one run per branch: the lock branch-<branch> with this pid, held to the end (a dead pid's lock is broken by the next run).
 branch_lock="branch-${branch//\//-}"
-cleanup() { rm -f "$spec_file"; [[ "${branch_locked:-0}" -eq 0 ]] || tools/devlock.sh release "$branch_lock" "pipeline-$$" >/dev/null 2>&1 || true; }
+cleanup() { queue_leave; rm -f "$spec_file" "$brief"; [[ "${branch_locked:-0}" -eq 0 ]] || tools/devlock.sh release "$branch_lock" "pipeline-$$" >/dev/null 2>&1 || true; }
 trap cleanup EXIT
 if [[ $dry -eq 0 ]]; then
   if [[ $nowork -eq 1 ]]; then git show-ref --verify --quiet "refs/heads/$branch" || die "--no-worker: branch $branch does not exist"; fi
@@ -342,9 +385,9 @@ bundle="$run/spec.md"
   { grep -oE '\b[A-Za-z0-9_][A-Za-z0-9_./-]*\.(ts|svelte|yaml|yml|md|mjs|js|sh|py|cc|json|css|html)\b' "$spec_file" || true; } | sort -u |
   while read -r f; do
     [[ "$f" == docs/shifts/* || "$f" == *package-lock.json ]] && continue
-    [[ -f "$integ/$f" ]] || continue
+    p1file "$f" || continue
     [[ $total -ge 2000 ]] && { echo "(more files omitted: bundle cap reached)"; break; }
-    lines=$(wc -l < "$integ/$f"); echo; echo "### $f ($lines lines)"; echo '```'; head -n 400 "$integ/$f"; echo '```'
+    lines=$(git show "phase-1:$f" | wc -l); echo; echo "### $f ($lines lines)"; echo '```'; { git show "phase-1:$f" || true; } | head -n 400; echo '```'
     total=$((total + (lines < 400 ? lines : 400)))
   done
   echo; echo "## Your report (brief section 2)"
@@ -363,7 +406,7 @@ if [[ $dry -eq 1 ]]; then
   echo "DRY RUN: pipeline run $n, package $id, agent $agent ($model, $effort), branch $branch"
   echo "PASCALINE_QALC_DL_DIR=$PASCALINE_QALC_DL_DIR PASCALINE_DL_DIR=$PASCALINE_DL_DIR PW_PORT=$PW_PORT"
   echo "integration worktree: $integ"; echo "worker worktree: $wt"
-  echo "setup: cp -al $integ/app/node_modules $wt/app/node_modules   (own copy per worktree, from the phase-1 worktree; npm ci there first when it lacks a package of its lock; a symlink is replaced)"
+  echo "setup: cp -al $integ/app/node_modules $wt/app/node_modules   (own copy per worktree, from the phase-1 worktree; npm ci there first when it lacks a package of its lock; both under integ; a symlink is replaced)"
   echo "machine failure: a check log with 'command not found', a missing node_modules or a missing bare module ends the run as NOT MERGED (machine: ...), no fix round"
   if [[ $engine_managed -eq 0 ]]; then echo "engine: GIAC_OUT=$GIAC_OUT set by the caller; no engine build"
   else
@@ -382,22 +425,23 @@ if [[ $dry -eq 1 ]]; then
   echo "checks: $checks; merge: $merge; audit model: $audit_model; no-worker: $nowork"
   echo "checks run: typecheck, vitest, docs always; size when app/ changed; e2e when app/ changed; golden when engine or parser changed; shell when scripts/ or tools/*.sh changed"
   echo "checks: typecheck,vitest,docs (+ size, e2e when app/ changed; + golden when engine or parser changed; + shell when scripts/ or tools/*.sh changed)"
-  echo "locks: $branch_lock for the whole run (a second run on $branch is refused); host-cpu waits up to 7200 s"
+  echo "locks: $branch_lock for the whole run (a second run on $branch is refused); integ and host-cpu wait up to 7200 s each; lock order integ before host-cpu"
   [[ "$audit_model" == auto || "$audit_model" == opus ]] || { [[ "$agent" == gorge ]] && echo "audit model raised to opus: gorge package (--audit-model $audit_model is a floor)"; }
   echo "audit model: $audit_model$([[ "$audit_model" == auto ]] && { [[ "$model" == opus ]] && echo " (opus: --model opus; else opus when the diff touches app/src/input/, app/src/engine/, app/src/units/, engine/ or spec/keyboard.yaml, else sonnet)" || echo " (opus when the diff touches app/src/input/, app/src/engine/, app/src/units/, engine/ or spec/keyboard.yaml, else sonnet)"; })"
   echo "--- bundle ($bundle, $(wc -l < "$bundle") lines) ---"; cat "$bundle"
   echo "--- commands ---"
   echo "git worktree add $wt -b $branch phase-1   (or: git worktree add $wt $branch, when the branch exists)"
   if [[ $nowork -eq 1 ]]; then
-    echo "(--no-worker: no worker; git -C $wt merge phase-1 first, a conflict is a fix round for $agent)"
+    echo "(--no-worker: no worker; the queue's git -C $wt merge phase-1 comes first, a conflict is a fix round for $agent)"
   else
     echo "cat $bundle | claude -p --agent $agent --model $model --effort $effort ${claude_common[*]} ${worker_tools[*]} -n pl-$n-$agent \"<worker prompt>\""
   fi
+  echo "queue (after the worker and after each fix round): tools/devlock.sh acquire integ pipeline-$n 7200 (wait logged); git -C $wt merge phase-1 (a conflict is a resolve round); the engine; the checks; the audit; on APPROVED the merge and the engine promotion, then release; a failed check or a FIX releases integ before its fix round"
   echo "checks in $wt/app: typecheck; npm run index && FIND_INDEX=required npm test; e2e when app/ changed; golden when engine or parser changed"
   echo "git -C $wt diff -U5 phase-1...<audited sha> | claude -p --agent sofia --model ${audit_model/auto/<auto: opus for --model opus or app/src/input/, app/src/engine/, engine/, spec/keyboard.yaml; else sonnet>} ${audit_tools[*]} \"AUDIT ...\""
   echo "audit input: the criteria, the diff, then \"## Behaviour changes\": when the diff touches engine/, app/src/engine/, app/src/input/ or app/src/units/, node app/scripts/behaviour-diff.ts <phase-1 worktree> $wt (once per audit round, timeout 20 min, never retried; timeout -> \"timed out after 20 min\"), else \"none\"; a change the package does not name is a FIX"
   echo "audited=\$(git -C $wt rev-parse HEAD) at each audit; the merge takes that sha, or stops with NOT MERGED (the branch is not the audited HEAD) when $branch is not at it"
-  echo "git -C $integ merge --no-ff --signoff <audited sha>; git worktree remove $wt; git branch -d $branch   (under: tools/devlock.sh acquire integ pipeline-$n 600)"
+  echo "git -C $integ merge --no-ff --signoff <audited sha>; git worktree remove $wt; git branch -d $branch   (still in the queue; NOT MERGED when phase-1 is not an ancestor of the audited sha)"
   echo "environment for the worker, the fix rounds and the checks: PASCALINE_QALC_DL_DIR, PASCALINE_DL_DIR, PW_PORT=$PW_PORT"
   rm -rf "$run"; echo "RESULT #$n $id: DRY RUN (nothing started)"; exit 0
 fi
@@ -408,15 +452,21 @@ runlog "start $id $agent $model $branch"
 
 # A28: no run checks against an engine that phase-1 lacks.
 engine_log="$run/engine-build.log"
+# A47b: a build from the phase-1 worktree's sources runs under integ (no merge changes them meanwhile; integ before host-cpu).
 if [[ $engine_managed -eq 1 ]]; then
   p1key="$(engine_key "$main" phase-1)"
-  if [[ "$(engine_stamp "$engine_root/gsl")" != "$p1key" ]]; then
-    log "pipeline #$n $id: shared engine is not phase-1's ($p1key); rebuilding first"
-    t0=$SECONDS
-    why="$(engine_build "$integ" "$p1key" "$engine_root" "$engine_log")" && engine_promote "$engine_root" "$p1key" || die "engine build: ${why:-promote failed}"
-    log "pipeline #$n $id: shared engine rebuilt: key $p1key, giac.wasm sha256 $(engine_sha "$engine_root/gsl") ($((SECONDS - t0)) s)"
+  if [[ "$(engine_stamp "$engine_root/gsl")" != "$p1key" || "$(engine_stamp "$engine_root/key-$p1key")" != "$p1key" ]]; then
+    integ_take "pipeline-$n" "pipeline #$n $id:" || die "integ lock busy for 7200 s (phase-1's engine)"
+    p1key="$(engine_key "$main" phase-1)"  # phase-1 may have moved while this run waited
+    if [[ "$(engine_stamp "$engine_root/gsl")" != "$p1key" ]]; then
+      log "pipeline #$n $id: shared engine is not phase-1's ($p1key); rebuilding first"
+      t0=$SECONDS
+      why="$(engine_build "$integ" "$p1key" "$engine_root" "$engine_log")" && engine_promote "$engine_root" "$p1key" || die "engine build: ${why:-promote failed}"
+      log "pipeline #$n $id: shared engine rebuilt: key $p1key, giac.wasm sha256 $(engine_sha "$engine_root/gsl") ($((SECONDS - t0)) s)"
+    fi
+    why="$(engine_ensure "$integ" "$p1key" "$engine_root" "$engine_log")" || die "engine build (phase-1, key $p1key): $why"
+    integ_drop
   fi
-  why="$(engine_ensure "$integ" "$p1key" "$engine_root" "$engine_log")" || die "engine build (phase-1, key $p1key): $why"
 fi
 
 # The worker's worktree, fresh from phase-1 or resumed from the branch's last commit.
@@ -558,8 +608,8 @@ resolve_audit_model() {
   else echo sonnet; fi
 }
 
-# Round 0: the worker (or, with --no-worker, the merge of phase-1 into the branch).
-rounds=0
+# Round 0: the worker (with --no-worker, none: the queue's merge of phase-1 is its first step).
+rounds=0; resolves=0
 # A38: bring phase-1 into the branch (a branch that already contains it is left alone); a conflict is a resolve round for the agent.
 # Sets merge_conflicts=1 when a resolve round ran; ends the run when it fails.
 merge_phase1() {
@@ -567,15 +617,16 @@ merge_phase1() {
   git -C "$wt" merge-base --is-ancestor phase-1 HEAD && return 0
   log "pipeline #$n $id: merging phase-1 into $branch"
   if ! git -C "$wt" merge --no-edit --signoff phase-1 > "$run/premerge.log" 2>&1; then
-    local conflicts; conflicts="$(git -C "$wt" diff --name-only --diff-filter=U)"
+    local conflicts r; conflicts="$(git -C "$wt" diff --name-only --diff-filter=U)"
     if [[ -z "$conflicts" ]]; then
       git -C "$wt" merge --abort >/dev/null 2>&1 || true
       die "merge of phase-1 into $branch failed without conflicts: $(tail -n 1 "$run/premerge.log")"
     fi
+    resolves=$((resolves + 1)); r="$run/resolve-$resolves"
     { echo "## merging phase-1 into $branch conflicts in:"; echo "$conflicts"; echo
-      while IFS= read -r f; do echo "### $f"; grep -nE '^(<<<<<<<|=======|>>>>>>>)' "$wt/$f" | head -n 40; done <<<"$conflicts"; } > "$run/fail-1.txt"
+      while IFS= read -r f; do echo "### $f"; grep -nE '^(<<<<<<<|=======|>>>>>>>)' "$wt/$f" | head -n 40; done <<<"$conflicts"; } > "$r.txt"
     merge_conflicts=1
-    run_agent "fix-$n-1" "$run/fix-1.log" "$agent" "$model" "$effort" "$run/fail-1.txt" "You are $agent on branch $branch in your own worktree, a merge of phase-1 is in progress with conflicts (files and conflict markers on stdin) for package $id. Resolve every conflict keeping both sides' intent, git add the files and finish the merge with git commit -s (and your model's trailer). Run the typecheck. Reply in at most three lines." "${worker_tools[@]}"
+    run_agent "resolve-$n-$resolves" "$r.log" "$agent" "$model" "$effort" "$r.txt" "You are $agent on branch $branch in your own worktree, a merge of phase-1 is in progress with conflicts (files and conflict markers on stdin) for package $id. Resolve every conflict keeping both sides' intent, git add the files and finish the merge with git commit -s (and your model's trailer). Run the typecheck. Reply in at most three lines." "${worker_tools[@]}"
     if git -C "$wt" rev-parse -q --verify MERGE_HEAD >/dev/null || [[ -n "$(git -C "$wt" diff --name-only --diff-filter=U)" ]]; then
       git -C "$wt" merge --abort >/dev/null 2>&1 || true
       die "conflicts merging phase-1 into $branch not resolved (files: $(tr '\n' ' ' <<<"$conflicts"); worktree $wt kept)"
@@ -585,22 +636,46 @@ merge_phase1() {
 }
 
 if [[ $nowork -eq 0 ]]; then
-  # A38: a resumed branch gets phase-1 first, as --no-worker's does
+  # A38: a resumed branch gets phase-1 first, so its worker starts on today's code
   [[ $resumed -eq 0 ]] || merge_phase1
   run_agent "pl-$n-$agent" "$run/worker-0.log" "$agent" "$model" "$effort" "$bundle" "$worker_prompt" "${worker_tools[@]}"
   log "pipeline #$n $id: worker done, $(git -C "$wt" log -1 --format=%h) — $(tail -n 1 "$run/worker-0.log" | cut -c1-120)"
-else
-  # Review-only: bring phase-1 into the branch first; a conflict is a fix round for the agent.
-  merge_phase1; rounds=$merge_conflicts
 fi
 if [[ -z "$(git -C "$wt" log --oneline "phase-1..HEAD")" ]]; then
   log "pipeline #$n $id: NOT MERGED (no commits on $branch)"; echo "RESULT #$n $id: NOT MERGED (no commits; worktree $wt kept)"; exit 1
 fi
 
-# Fix rounds: the checks and the audit share at most two rounds.
+# A47b: the merge queue. The run takes integ (waits up to 7200 s, logged); while it holds it nothing else merges into phase-1, so
+# the checks and the audit read the branch with today's phase-1 merged in, and that is what merges. A stop ends the run.
+queue_stop() {  # <why>: leaves the queue and ends the run, the branch and the worktree kept
+  queue_leave; log "pipeline #$n $id: NOT MERGED ($1); branch $branch kept"
+  echo "RESULT #$n $id: NOT MERGED ($1; branch $branch, worktree $wt kept)"; exit 1
+}
+dirty_stop() {  # an edit nobody took integ for (rules section 4 point 5): stop rather than merge into it (A24)
+  queue_leave; log "pipeline #$n $id: NOT MERGED (phase-1 worktree not clean); branch $branch kept"
+  echo "RESULT #$n $id: NOT MERGED (phase-1 worktree not clean; branch $branch, worktree $wt kept)"; exit 1
+}
+first_entry=1
+queue_enter() {
+  log "pipeline #$n $id: in the queue (round $rounds)"
+  integ_take "pipeline-$n" "pipeline #$n $id:" || queue_stop "integ lock busy for 7200 s"
+  in_queue=1
+  integ_clean "$integ" || dirty_stop
+  merge_phase1
+  [[ $nowork -eq 0 || $first_entry -eq 0 ]] || rounds=$merge_conflicts  # review-only: its first resolve round is a fix round (A10)
+  first_entry=0
+  if [[ $engine_managed -eq 1 ]]; then  # phase-1's engine as it is now (red-first; promoted by the last merge, so usually a copy)
+    p1key="$(engine_key "$main" phase-1)"
+    why="$(engine_ensure "$integ" "$p1key" "$engine_root" "$engine_log")" || die "engine build (phase-1, key $p1key): $why"
+  fi
+  select_engine  # the merge may have changed the key
+}
+
+# The checks and the audit share at most two fix rounds; a fix round runs outside the queue.
 verdict=""; audited=""
 while :; do
-  select_engine
+  select_engine  # a branch with its own engine key builds it before it queues (host-cpu only)
+  queue_enter
   if ! run_checks "$rounds"; then
     log "pipeline #$n $id: checks failed (round $rounds): $(head -n 1 "$run/fail-$rounds.txt")"
     reason="the checks failed"; feedback="$run/fail-$rounds.txt"
@@ -620,6 +695,7 @@ while :; do
     log "pipeline #$n $id: audit ${verdict:-unclear} (round $rounds): $(grep -vE '^(FIX|APPROVED)?$' "$run/audit-$rounds.log" | head -n 1 | cut -c1-120)"
     reason="the audit asked for fixes"; feedback="$run/audit-$rounds.log"
   fi
+  queue_leave  # a failed check or a FIX: the fix round runs outside the queue
   if [[ $rounds -ge 2 ]]; then
     log "pipeline #$n $id: NOT MERGED after two fix rounds; branch $branch kept at $(git -C "$wt" log -1 --format=%h)"
     echo "RESULT #$n $id: NOT MERGED ($reason twice; branch $branch, worktree $wt kept; see $run)"; exit 1
@@ -631,27 +707,18 @@ while :; do
   log "pipeline #$n $id: fix round $rounds done, $(git -C "$wt" log -1 --format=%h)"
 done
 
-# Merge into phase-1 in its worktree; on a conflict keep the branch.
-# Only the audited commit is merged, and only when the branch points at it (A17).
+# Still in the queue: merge into phase-1 in its worktree. Only the audited commit is merged, only when the branch points at it
+# (A17), and only when it holds phase-1 as it is now (A47b: then the merge commit's tree is the audited tree).
 if ! why="$(audited_head_check "$wt" "$branch" "$audited")"; then
-  log "pipeline #$n $id: NOT MERGED (the branch is not the audited HEAD): $why; branch $branch kept"
+  queue_leave; log "pipeline #$n $id: NOT MERGED (the branch is not the audited HEAD): $why; branch $branch kept"
   echo "RESULT #$n $id: NOT MERGED (the branch is not the audited HEAD; $why; worktree $wt kept)"; exit 1
 fi
 if [[ $merge -eq 0 ]]; then
-  echo "RESULT #$n $id: APPROVED, not merged (--no-merge); merge: git -C $integ merge --no-ff --signoff $audited"; exit 0
+  queue_leave; echo "RESULT #$n $id: APPROVED, not merged (--no-merge); merge: git -C $integ merge --no-ff --signoff $audited"; exit 0
 fi
-tools/devlock.sh acquire integ "pipeline-$n" 600 >/dev/null || die "integ lock busy; approved branch $branch kept at ${audited:0:9}"
-if ! why="$(audited_head_check "$wt" "$branch" "$audited")"; then  # again under the lock
-  tools/devlock.sh release integ "pipeline-$n" >/dev/null || true
-  log "pipeline #$n $id: NOT MERGED (the branch is not the audited HEAD): $why; branch $branch kept"
-  echo "RESULT #$n $id: NOT MERGED (the branch is not the audited HEAD; $why; worktree $wt kept)"; exit 1
-fi
-if ! integ_clean "$integ"; then  # ensure_integ checked only at the start (A24)
-  tools/devlock.sh release integ "pipeline-$n" >/dev/null || true
-  log "pipeline #$n $id: NOT MERGED (phase-1 worktree not clean); branch $branch kept"
-  echo "RESULT #$n $id: NOT MERGED (phase-1 worktree not clean; branch $branch, worktree $wt kept)"; exit 1
-fi
-merge_key_before="$(engine_key "$main" phase-1)"
+integ_clean "$integ" || dirty_stop  # the audit read the branch, not the phase-1 worktree: an edit made meanwhile is still stopped
+git merge-base --is-ancestor phase-1 "$audited" || queue_stop "phase-1 moved while the run held integ, so the audited commit lacks it"
+merge_key_before=""; [[ $engine_managed -eq 0 ]] || merge_key_before="$(engine_key "$main" phase-1)"
 if git -C "$integ" merge --no-ff --signoff -m "Merge $branch: $id (pipeline run $n)" "$audited" > "$run/merge.log" 2>&1; then
   mc="$(git -C "$integ" rev-parse --short HEAD)"
   git worktree remove --force "$wt" >/dev/null 2>&1 || true
@@ -667,8 +734,8 @@ else
   result="RESULT #$n $id: NOT MERGED ($why; branch $branch, worktree $wt kept)"
   rc=1
 fi
-tools/devlock.sh release integ "pipeline-$n" >/dev/null || true
-# A28: a merge that changed the engine's key moves the shared engine to that build (old one kept as gsl.prev).
+# A28: a merge that changed the engine's key moves the shared engine to that build (old one kept as gsl.prev), still in the queue
+# (A47b), so the next run's start finds it.
 if [[ $rc -eq 0 && $engine_managed -eq 1 ]]; then
   mkey="$(engine_key "$main" phase-1)"
   if [[ "$mkey" != "$merge_key_before" ]]; then
@@ -679,6 +746,7 @@ if [[ $rc -eq 0 && $engine_managed -eq 1 ]]; then
     fi
   fi
 fi
+queue_leave
 # Garbage collection every 3rd finished task.
 if (( n % 3 == 0 )); then "$integ/scripts/gc.sh" --apply >> "$run/run.log" 2>&1 || log "pipeline #$n: gc failed (see $run/run.log)"; fi
 echo "$result"; exit $rc
