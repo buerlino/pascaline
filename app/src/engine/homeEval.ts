@@ -548,10 +548,19 @@ export function homeEval(
   const at = isAudited(exactBody, "typed") && complexSafe(exactBody, "typed") === exactBody ? [P, P + 20] : [];
   // G129 (F124): every atan is the principal one (exactAtan), but in an input that runs once (a definition keeps its atan)
   let runText = once ? exactBody : exactAtan(exactBody, "typed");
+  // G130 (F125): Giac's matrix subtype (matrix(2,3), zeros, idn, a matrix sum) prints as `matrix[…]`, engine text Home does
+  // not show: Ans becomes the plain rows, which Giac reads as the same matrix (its arithmetic gives the subtype back). Run at
+  // P, in the same Digits as the value it rewrites.
+  const plainRows = (v: GiacValue): GiacValue => {
+    if (!matrixTyped(v.text)) return v;
+    const rows = giac.value(`${ans}:=${MATRIX_ROWS(ans)}`, at);
+    return isError(rows.text) ? v : rows;
+  };
   const exactRun = (): string =>
     withDigits(giac, P, s.digits, () => {
-      const v = giac.value(`${ans}:=(${runText})`, at);
+      const first = giac.value(`${ans}:=(${runText})`, at);
       ambiguous = giac.ambiguousPower?.();
+      const v = plainRows(first);
       value = v;
       return v.cut ? giac.eval(ans) : v.text;
     });
@@ -596,11 +605,10 @@ export function homeEval(
     const v = withDigits(giac, P, s.digits, () => giac.value(`${ans}:=${seqSize === 1 ? `${ans}[0]` : `list[${ans}]`}`, at));
     if (!isError(v.text)) [value, exactOut] = [v, v.cut ? withDigits(giac, P, s.digits, () => giac.eval(ans)) : v.text];
   }
-  // G130 (F125): Giac's matrix subtype (matrix(2,3), zeros, idn, a matrix sum) prints as `matrix[…]`, engine text Home does
-  // not show: Ans becomes the plain rows, which Giac reads as the same matrix (its arithmetic gives the subtype back).
+  // G130: a value decided again (decideTwice) is Giac's print too
   if (matrixTyped(value.text) && !isError(exactOut)) {
-    const v = withDigits(giac, P, s.digits, () => giac.value(`${ans}:=${MATRIX_ROWS(ans)}`, at));
-    if (!isError(v.text)) [value, exactOut] = [v, v.cut ? withDigits(giac, P, s.digits, () => giac.eval(ans)) : v.text];
+    const v = withDigits(giac, P, s.digits, () => plainRows(value));
+    if (v !== value) [value, exactOut] = [v, v.cut ? withDigits(giac, P, s.digits, () => giac.eval(ans)) : v.text];
   }
   const W = Math.max(s.workDigits, s.digits + 10);
   const late = (): boolean => now() - t0 > HOME_DEADLINE_MS;
