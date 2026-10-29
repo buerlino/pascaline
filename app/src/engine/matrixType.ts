@@ -3,16 +3,11 @@
 // engine text Home and CAS do not show (docs/04: never raw engine text). A `[[…]]` vector is the same matrix to Giac (its
 // arithmetic gives the subtype back), so the answer's slot is rewritten as plain rows, each row plain too
 // (matrix({{1,2},{3,4}}) keeps rows of the list type, `matrix[list[1,2],list[3,4]]`); the elements stay as they are.
+// Whether a print is of the matrix type is read in giacPrint.ts (P20: the one reader of Giac text; bridge-3 has no subtype).
 // Runs synchronously next to the engine; only erasable TypeScript syntax.
 import type { GiacValue } from "./bridge.ts";
 import type { Giac } from "./numeric.ts";
-
-/** How Giac prints a value of its matrix subtype. */
-export const MATRIX_TYPE = "matrix[";
-
-export function matrixTyped(text: string): boolean {
-  return text.startsWith(MATRIX_TYPE);
-}
+import { matrixTyped } from "./giacPrint.ts";
 
 /** Giac text of the matrix `slot` holds as plain rows. */
 function rowsOf(slot: string): string {
@@ -24,7 +19,7 @@ const failed = (text: string): boolean => text.startsWith("GIAC_ERROR");
 /** Home: `v`, the value `slot` holds, stored back as plain rows (one bridge-3 call, `at` as the caller asks, in the
  *  caller's Digits); `v` itself when it is no matrix type or Giac fails. */
 export function plainRows(giac: Giac, slot: string, v: GiacValue, at: readonly number[]): GiacValue {
-  if (!matrixTyped(v.text)) return v;
+  if (v.kind !== "matrix" || !matrixTyped(v.text)) return v;
   const rows = giac.value(`${slot}:=${rowsOf(slot)}`, at);
   return failed(rows.text) ? v : rows;
 }

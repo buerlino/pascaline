@@ -27,8 +27,8 @@ import { principalPowers } from "./powers.ts";
 import { dropAngleFactor, hasAngleFactor } from "../input/angles.ts";
 import { decimalFromRational, decimalFromString, formatConfirmed, isZero, tieRisk, ZERO_VALUE, type ComplexValue, type DecimalValue, type PrecisionFacts, type PrecisionWarn, type PrecisionWhy } from "./format.ts";
 import { askedDigits, DOUBLE_DIGITS, doubleFallback, exactFacts, floatFacts, floatPathFacts, integratedFacts, hasFloat, isAudited, doubleFormsIn, unauditedIn, numericDisagrees, notBuiltin, floatsShown, heavySplit, REGROUP_MAX, shapeOfValue, endsEarly, valuePrecision, whyOf, withDigits, type ElementFacts, type Giac, type Shape } from "./numeric.ts";
-import { bracesOf, functionsIn, LIST_TYPE, mapNumbers, replaceLiteral, wordsOf, type Quoting } from "./giacPrint.ts";
-import { matrixTyped, plainRows } from "./matrixType.ts";
+import { bracesOf, functionsIn, LIST_TYPE, mapNumbers, matrixTyped, replaceLiteral, wordsOf, type Quoting } from "./giacPrint.ts";
+import { plainRows } from "./matrixType.ts";
 import { complexSafe, exactAtan, readsReplaced } from "./complex.ts";
 import { decidedAtDouble, decideTwice, decidingStored, restsOnDecision } from "./decisions.ts";
 import { PLAIN_FORM, type InputForm } from "./stores.ts";
@@ -600,7 +600,7 @@ export function homeEval(
     if (!isError(v.text)) [value, exactOut] = [v, v.cut ? withDigits(giac, P, s.digits, () => giac.eval(ans)) : v.text];
   }
   // G130: a value decided again (decideTwice) is Giac's print too
-  if (matrixTyped(value.text) && !isError(exactOut)) {
+  if (value.kind === "matrix" && matrixTyped(value.text) && !isError(exactOut)) {
     const v = withDigits(giac, P, s.digits, () => plainRows(giac, ans, value, at));
     if (v !== value) [value, exactOut] = [v, v.cut ? withDigits(giac, P, s.digits, () => giac.eval(ans)) : v.text];
   }

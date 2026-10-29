@@ -8,13 +8,18 @@ import { defaultHomeSettings, precisionFacts } from "./homeEval.ts";
 import { markOf } from "./format.ts";
 import { defaultCasSettings } from "./types.ts";
 import { giacAvailable, nodeHost } from "./nodeGiac.ts";
-import { matrixTyped } from "./matrixType.ts";
+import { matrixTyped } from "./giacPrint.ts";
 
 describe("matrixTyped", () => {
   it("tells Giac's matrix print from a plain vector", () => {
     expect(matrixTyped("matrix[[0,0],[0,0]]")).toBe(true);
     expect(matrixTyped("[[0,0],[0,0]]")).toBe(false);
     expect(matrixTyped("list[[1,2]]")).toBe(false);
+    // G130 fix 2: the print is read in giacPrint.ts, as one value as a whole
+    expect(matrixTyped("matrix[list[1,2],list[3,4]]")).toBe(true);
+    expect(matrixTyped("matrix[[1]]*x")).toBe(false);
+    expect(matrixTyped("matrix[[1]]+matrix[[2]]")).toBe(false);
+    expect(matrixTyped('matrix["]",[1]]')).toBe(true);
   });
 });
 

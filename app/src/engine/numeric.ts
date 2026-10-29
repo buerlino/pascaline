@@ -29,8 +29,7 @@ import {
 } from "./format.ts";
 import { ICDF_DIGITS, ICDF_FAILED, erfValueText, icdfCalls, icdfPolished } from "./icdf.ts";
 import type { GiacValue } from "./bridge.ts";
-import { callsOf, functionsIn, LIST_TYPE, type Quoting, splitList, topLevelArgs, wholeCall } from "./giacPrint.ts";
-import { matrixTyped } from "./matrixType.ts";
+import { callsOf, functionsIn, LIST_TYPE, matrixTyped, type Quoting, splitList, topLevelArgs, wholeCall } from "./giacPrint.ts";
 import { complexReads, complexReplacedIn, complexSafe, forValue, nonReal, purgeReads } from "./complex.ts";
 
 export interface Giac {
