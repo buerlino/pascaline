@@ -1,0 +1,59 @@
+# Upstream: giac 2.1.0 gen.cc pow. (a^b)^c is rewritten as a^(b*c) (or abs(a)^(b*c) for an even b) for any base with no literal i, a rule that holds when im(b*ln(a)) lies in (-pi,pi] or c is an integer: sqrt(acosh(-1/2)^3) gave sqrt(acosh(-1/2))*acosh(-1/2), about -2.143+2.143*i (the principal root is 2.143-2.143*i), sqrt(acos(pi)^3), sqrt((-pi)^3) and sqrt(acosh(-1/2)^5) the other root too, sqrt(acosh(-1/2)^2) gave abs(acosh(-1/2)) (right i*2*pi/3), sqrt(acosh(-1/2)^4) gave acosh(-1/2)^2 (negative; the root is positive). Takes the rule only where it holds, decided on the doubles of a, b and c with a margin at the cut; otherwise the power stays as typed and its evalf is the principal value. A complex a where the rule holds takes a^(b*c), never abs(a). An integer c, a real a >= 0, an even b with a real a, and a, b or c with no numeric value (a free x: sqrt(x^3) = x*sqrt(x)) keep today's form.
+--- a/src/gen.cc
++++ b/src/gen.cc
+@@ -6838,6 +6838,38 @@
+     return res;
+   }
+ 
++  // Pascaline patch 0018 (G132): (a^b)^c is a^(b*c) only when im(b*ln(a)) lies in (-pi,pi] or c is an integer; the
++  // rule took any base with no literal i, so sqrt(acosh(-1/2)^3) gave acosh(-1/2)*sqrt(acosh(-1/2)), the other root.
++  // 1: the rule as before (an integer c, a real a >= 0 or an even b with a real a (the abs form), or a, b or c with no
++  // numeric value: Giac's real-variable convention); 2: a^(b*c) holds for a complex a (no abs); 0: another branch, the
++  // power stays as it is (its evalf is the principal value). Decided on the doubles, with a margin at the cut.
++  static int pow_of_pow_branch(const gen & a,const gen & b,const gen & c,GIAC_CONTEXT){
++    if (c.type==_INT_ || is_integer(c))
++      return 1;
++    gen cv=evalf_double(c,1,contextptr);
++    if (cv.type!=_DOUBLE_ || cv._DOUBLE_val==std::floor(cv._DOUBLE_val))
++      return 1;
++    gen av=evalf_double(a,1,contextptr),bv=evalf_double(b,1,contextptr);
++    if (bv.type!=_DOUBLE_)
++      return 1;
++    double re,im;
++    if (av.type==_DOUBLE_){
++      re=av._DOUBLE_val; im=0;
++    }
++    else if (av.type==_CPLX && av._CPLXptr->type==_DOUBLE_ && (av._CPLXptr+1)->type==_DOUBLE_){
++      re=av._CPLXptr->_DOUBLE_val; im=(av._CPLXptr+1)->_DOUBLE_val;
++    }
++    else
++      return 1;
++    double bd=bv._DOUBLE_val;
++    if (im==0 && (re>=0 || (bd==std::floor(bd) && std::fmod(bd,2.0)==0)))
++      return 1;
++    double t=bd*std::atan2(im,re); // im(b*ln(a))
++    if (!(std::abs(t)<M_PI*(1-1e-9)))
++      return 0;
++    return im==0?1:2;
++  }
++
+   gen pow(const gen & base,const gen & exponent,GIAC_CONTEXT){
+     if (base.type==_VECT && exponent.type==_VECT && (base.subtype==_SET__VECT || exponent.subtype==_SET__VECT)){
+       return _symmetric_difference(makesequence(base,exponent),contextptr);
+@@ -6998,13 +7030,14 @@
+       }
+       if (u==at_inv && base._SYMBptr->feuille.type==_SYMB && (base._SYMBptr->feuille._SYMBptr->sommet==at_exp ||base._SYMBptr->feuille._SYMBptr->sommet==at_pow)) 
+ 	return inv(pow(base._SYMBptr->feuille,exponent,contextptr),contextptr);
+-      if (u==at_pow && !has_i(base)){
++      int powpow=(u==at_pow && !has_i(base))?pow_of_pow_branch(base._SYMBptr->feuille[0],base._SYMBptr->feuille[1],exponent,contextptr):0;
++      if (powpow){ // Pascaline patch 0018 (G132): was u==at_pow && !has_i(base)
+ 	vecteur & v=*base._SYMBptr->feuille._VECTptr;
+ 	gen & v1=v[1];
+ 	gen new_exp=v1*exponent;
+ 	if (new_exp.type>_IDNT)
+ 	  new_exp=normal(new_exp,contextptr);
+-	if ( v1.type==_INT_ && v1.val%2==0 
++	if ( powpow==1 && v1.type==_INT_ && v1.val%2==0 
+ 	     && ((new_exp.type!=_INT_ && !is_assumed_integer(new_exp,contextptr)) || new_exp.val%2 )
+ 	     && !complex_mode(contextptr) ) 
+ 	  return pow(abs(v[0],contextptr),new_exp,contextptr); 
