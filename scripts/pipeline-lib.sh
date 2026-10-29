@@ -163,7 +163,7 @@ host_cpu_acquire() { lock_wait host-cpu "$1" "$2" "${PASCALINE_CPU_WAIT:-7200}";
 integ_acquire() { lock_wait integ "$1" "$2" "${PASCALINE_INTEG_WAIT:-7200}"; }
 _lib_log() { if declare -F log >/dev/null; then log "$*"; fi; }
 # The shell tests (A47a): run by `pipeline.sh selftest` and by the check `shell`. PASCALINE_SELFTEST_TESTS (absolute paths) overrides.
-SELFTESTS=(scripts/pipeline.test.sh scripts/gc.test.sh tools/devlock.test.sh)
+SELFTESTS=(scripts/pipeline.test.sh scripts/night.test.sh scripts/gc.test.sh tools/devlock.test.sh)
 # selftest_run <repo dir> <log>: runs each test (clean of the pipeline's own environment); prints "PASSED", or
 # "FAILED (<test>: <first failing line>)" and fails.
 selftest_run() {
@@ -285,3 +285,29 @@ behaviour_section() {
 ENGINE_STAGES=(sweep seqsweep casback viewsweep findcensus)
 # stage_findings <log>: prints the lines naming a NEW, NOW PASSING, CHANGED or GONE entry of a stage and succeeds when there are any.
 stage_findings() { grep -E '^ {2}(sweep|seq|casback|viewsweep|findcensus) (NEW|NOW PASSING|CHANGED|GONE)' "$1"; }
+
+# ---- A47c: night lanes ----
+# lane_tag: "[A] " or "[B] " when PASCALINE_LANE (exported by `night.sh --lane`) names a lane, else nothing; every log line of a lane
+# starts with it after the time.
+lane_tag() { if [[ "${PASCALINE_LANE:-}" =~ ^[AB]$ ]]; then printf '[%s] ' "$PASCALINE_LANE"; fi; }
+# henri_input <log> <lane> [<n>]: henri's stdin in a lane: the last <n> (80) lines of his lane (its tagged lines with their indented
+# continuation lines, untagged lines and headers) and every MERGED, NOT MERGED or SKIPPED line of the other lane since the newest
+# night header, in log order.
+henri_input() {
+  awk -v me="$2" -v keep="${3:-80}" '
+    { line[NR] = $0
+      if ($0 ~ /^## .* night/) { night = NR; cur = ""; lane[NR] = "" }
+      else if ($0 ~ /^#/) { cur = ""; lane[NR] = "" }
+      else if ($0 ~ /^- [0-9][0-9]:[0-9][0-9] \[[AB]\] /) { cur = substr($0, 10, 1); lane[NR] = cur }
+      else if ($0 ~ /^- /) { cur = ""; lane[NR] = "" }
+      else lane[NR] = cur }
+    END {
+      k = 0; for (i = NR; i >= 1 && k < keep; i--) if (lane[i] == "" || lane[i] == me) { own[i] = 1; k++ }
+      for (i = 1; i <= NR; i++)
+        if (own[i] || (i > night && lane[i] != "" && lane[i] != me && line[i] ~ /^- / && line[i] ~ /MERGED|SKIPPED/)) print line[i]
+    }' "$1"
+}
+# night_section <log>: the report writer's stdin: from the newest night header on (both lanes' lines), never less than the last 400 lines.
+night_section() {
+  awk '/^## .* night/ { h = NR } { l[NR] = $0 } END { s = NR - 399; if (h && h < s) s = h; if (s < 1) s = 1; for (i = s; i <= NR; i++) print l[i] }' "$1"
+}

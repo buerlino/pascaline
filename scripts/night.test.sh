@@ -69,6 +69,8 @@ grep -q '\[A\] a' "$tmp/sec.out" && grep -q '\[B\] b' "$tmp/sec.out" && grep -q 
 (source "$dir/pipeline-lib.sh"; night_section "$tmp/sec2.md") > "$tmp/sec2.out" 2>/dev/null
 grep -q '^## 2026-10-30 night' "$tmp/sec2.out" && ! grep -q '^x500$' "$tmp/sec2.out" || fail "night_section: a long night does not start at its header"
 grep -q 'night_section "$coord/log.md" | (cd "$integ"' "$dir/pipeline.sh" || fail "pipeline.sh report: the writer does not read the night section"
+# night.sh calls `scripts/pipeline.sh selftest` by a relative path: the tests must be the ones next to that script, not the main checkout's
+grep -q 'here="$(cd "$self_dir/.." && pwd)"' "$dir/pipeline.sh" && [[ "$(grep -n 'self_dir=' "$dir/pipeline.sh" | head -n1 | cut -d: -f1)" -lt "$(grep -n '^cd "$main"' "$dir/pipeline.sh" | head -n1 | cut -d: -f1)" ]] || fail "pipeline.sh selftest: the script dir is resolved after cd main"
 
 # ---- 3. the sandbox: a repo whose phase-1 holds a stub pipeline.sh, a stub henri on PATH ----
 sb="$tmp/sb"; mkdir -p "$sb/bin" "$sb/scripts"; git init -q -b main "$sb"

@@ -28,7 +28,7 @@
 #   scripts/pipeline.sh report
 #                           the night's shift report, written and committed on phase-1 by a fresh agent
 #   scripts/pipeline.sh selftest [ignored options]
-#                           A47a: the shell tests (scripts/pipeline.test.sh, scripts/gc.test.sh, tools/devlock.test.sh); logs and
+#                           A47a: the shell tests (scripts/pipeline.test.sh, scripts/night.test.sh, scripts/gc.test.sh, tools/devlock.test.sh); logs and
 #                           prints `RESULT selftest: PASSED` or `RESULT selftest: FAILED (<test>: <first failing line>)`
 #
 # Lifecycle: bundle → worker (own worktree from phase-1) → the merge queue (A47b): the run takes integ, merges phase-1 into
@@ -42,7 +42,8 @@
 # "RESULT -: NOT STARTED (why)" before a run number exists). Exit 0 merged, 1 not merged, 2 not started
 # or failed early, 75 usage limit (henri stops, night.sh waits).
 # Environment: PASCALINE_DL_DIR and PASCALINE_QALC_DL_DIR (tarball caches, default: the main checkout's
-# engine/giac/_downloads and engine/qalc/_downloads), GIAC_OUT.
+# engine/giac/_downloads and engine/qalc/_downloads), GIAC_OUT, PASCALINE_LANE (A or B, set by night.sh --lane: each log line
+# this script writes starts with [A] or [B] after its time, A47c).
 # Jobs apart (A47a): a run, a pass, a flake census, a device step and a report take their number from .tasks/counter under
 # flock; PW_PORT=$((5200 + number % 100)) for every kind, exported to the worker, the fix rounds and the checks, so jobs alive
 # together never share a dev server. A run holds the lock branch-<branch> (its pid) for its whole life and writes <run>/pid
@@ -54,8 +55,9 @@
 # Starts read the package and the brief from phase-1's commit (git show), so a dirty phase-1 worktree never stops a start.
 set -euo pipefail
 export PASCALINE_LOCK_PID=$$   # A35: locks taken here (and by the agents it starts) record this pid
+self_dir="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"  # before the cd below: a relative call (night.sh's) resolves here
 # shellcheck source=scripts/pipeline-lib.sh
-source "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/pipeline-lib.sh"
+source "$self_dir/pipeline-lib.sh"
 
 main="$(cd "$(git rev-parse --git-common-dir)/.." && pwd)"
 cd "$main"
@@ -74,7 +76,7 @@ worker_tools=(--disallowedTools Agent)
 # shellcheck disable=SC2054  # one comma-separated argument for --allowedTools
 audit_tools=(--allowedTools Read,Grep,Glob --disallowedTools Bash,Edit,Write,Agent,NotebookEdit)
 
-log() { [[ ! -s "$coord/log.md" || -z "$(tail -c1 "$coord/log.md")" ]] || echo >> "$coord/log.md"; printf -- '- %s %s\n' "$(date +%H:%M)" "$*" >> "$coord/log.md"; }
+log() { [[ ! -s "$coord/log.md" || -z "$(tail -c1 "$coord/log.md")" ]] || echo >> "$coord/log.md"; printf -- '- %s %s%s\n' "$(date +%H:%M)" "$(lane_tag)" "$*" >> "$coord/log.md"; }  # A47c: [A]/[B]
 runlog() { printf '%s %s\n' "$(date +%H:%M:%S)" "$*" >> "$run/run.log"; }
 # Every exit prints one RESULT line; runno and id are set once the run has a number and an ID.
 runno=""; id=""
@@ -201,7 +203,7 @@ if [[ "${1:-}" == "pass" ]]; then
     log "Opus pass $n: LIMIT (claude exit $rc)"; echo "RESULT pass $n: LIMIT"; exit 75
   fi
   # the reply from its OPUS PASS line on (A17); reply.md keeps it whole
-  { echo "- $(date +%H:%M) Opus pass $n reply:"; from_opus_pass "$run/reply.md" | sed 's/^/    /'; } >> "$coord/log.md"
+  { echo "- $(date +%H:%M) $(lane_tag)Opus pass $n reply:"; from_opus_pass "$run/reply.md" | sed 's/^/    /'; } >> "$coord/log.md"
   from_opus_pass "$run/reply.md"; echo "RESULT pass $n: done (exit $rc)"; exit 0
 fi
 
@@ -323,16 +325,16 @@ if [[ "${1:-}" == "report" ]]; then
   integ_take report "Shift report:" || die "report: integ lock busy for 7200 s"
   integ_clean "$integ" || die "report: phase-1 worktree $integ is not clean"
   log "Shift report (job $job): spawned sonnet writer; waiting."
-  prompt="Write the shift report of docs/shifts/brief.md section 0c (\"Shift report\") for the night section of .coord/log.md (the log is on stdin). You run in the phase-1 worktree $integ: commit the report there with git commit -s and the Sonnet trailer. The pipeline holds the integration lock (integ) for you: do not take or release it yourself. Never push. Reply with the commit hash only."
-  tail -n 400 "$coord/log.md" | (cd "$integ" && timeout -k 60 1800 claude -p --model sonnet --effort high "${claude_common[@]}" -n report "$prompt") > "$run/reply.md" 2> "$run/stderr.log" || true
+  prompt="Write the shift report of docs/shifts/brief.md section 0c (\"Shift report\") for the night section of .coord/log.md (the log is on stdin; a line with [A] or [B] after its time belongs to that night lane: report both lanes). You run in the phase-1 worktree $integ: commit the report there with git commit -s and the Sonnet trailer. The pipeline holds the integration lock (integ) for you: do not take or release it yourself. Never push. Reply with the commit hash only."
+  night_section "$coord/log.md" | (cd "$integ" && timeout -k 60 1800 claude -p --model sonnet --effort high "${claude_common[@]}" -n report "$prompt") > "$run/reply.md" 2> "$run/stderr.log" || true
   integ_drop
   log "Shift report: $(tail -n1 "$run/reply.md")"; echo "RESULT report: $(tail -n1 "$run/reply.md")"; exit 0
 fi
 
 # ---------- subcommand: selftest ----------
-# A47a: the three shell tests of the scripts next to this one; further options are ignored (night.sh appends --audit-model auto).
+# A47a: the shell tests of the scripts next to this one; further options are ignored (night.sh appends --audit-model auto).
 if [[ "${1:-}" == "selftest" ]]; then
-  here="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/.." && pwd)"; out="$tasks/selftest-$(date +%F-%H%M%S).log"; t0=$SECONDS
+  here="$(cd "$self_dir/.." && pwd)"; out="$tasks/selftest-$(date +%F-%H%M%S).log"; t0=$SECONDS
   if r="$(selftest_run "$here" "$out")"; then :; fi
   log "pipeline selftest: $r ($((SECONDS - t0)) s; $out)"
   echo "RESULT selftest: $r"; [[ "$r" == PASSED ]] && exit 0 || exit 1
@@ -585,7 +587,7 @@ run_checks() {  # <round>; returns 1 and writes fail-<round>.txt on failure
                  if [[ $sc -ne 0 ]] || stage_findings "$out" > /dev/null; then rc=1; fi;;
       size)      (cd "$wt/app" && timeout 1800 npm run -s build && timeout 300 npm run -s size) > "$out" 2>&1 || rc=1;;
       docs)      (cd "$wt" && timeout 300 node tools/docs-check.mjs && timeout 120 node tools/docs-check.test.mjs) > "$out" 2>&1 || rc=1;;
-      shell)     # A47a: the three shell tests; the full output in <log>.full, the FAIL lines here (never a machine failure: tests quote such lines)
+      shell)     # A47a: the shell tests (SELFTESTS); the full output in <log>.full, the FAIL lines here (never a machine failure: tests quote such lines)
                  local sr; sr="$(selftest_run "$wt" "$out.full")" || rc=1
                  { grep -E '^FAIL' "$out.full" | head -n 40 || true; echo "selftest: $sr (full output: $out.full)"; } > "$out";;
       redfirst)  why="$(red_first "$wt" "$spec_file" "${p1_engine}" "$out")" || { rc=1; echo "red-first: $why" >> "$out"; redwhy="$why"; };;
