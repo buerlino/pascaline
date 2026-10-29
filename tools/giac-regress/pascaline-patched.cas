@@ -425,6 +425,21 @@ Digits:=40:; pc("g127-exp-ceil-asin-pi-12",'(exp(ceil(asin(pi))))',(399232404844
 // patch 0016-floor-complex-value.patch
 // g127-exp-round-asin-10-12 (precision.yaml, oracle)
 Digits:=40:; pc("g127-exp-round-asin-10-12",'(exp(round(asin(10))))',-(73151100949/10^10)-(104274365624/10^11)*i,5/10^12+5/10^12);
+// patch 0005-mpfr-pi-and-real-domains.patch
+// g128-acosh-neg-half-30 (precision.yaml, oracle)
+Digits:=40:; pc("g128-acosh-neg-half-30",'(acosh(-1/2))',(209439510239319549230842892219/10^29)*i,5/10^30);
+// patch 0005-mpfr-pi-and-real-domains.patch
+// g128-acosh-neg-half-dec-30 (precision.yaml, oracle)
+Digits:=40:; pc("g128-acosh-neg-half-dec-30",'(acosh(-(5/10^1)))',(209439510239319549230842892219/10^29)*i,5/10^30);
+// patch 0005-mpfr-pi-and-real-domains.patch
+// g128-acosh-neg-sqrt2-12 (precision.yaml, oracle)
+Digits:=40:; pc("g128-acosh-neg-sqrt2-12",'(acosh(-sqrt(2)))',(88137358702/10^11)+(314159265359/10^11)*i,5/10^13+5/10^12);
+// patch 0005-mpfr-pi-and-real-domains.patch
+// g128-acosh-neg-sqrt2-30 (precision.yaml, oracle)
+Digits:=40:; pc("g128-acosh-neg-sqrt2-30",'(acosh(-sqrt(2)))',(88137358701954302523260932498/10^29)+(314159265358979323846264338328/10^29)*i,5/10^31+5/10^30);
+// patch 0005-mpfr-pi-and-real-domains.patch
+// g128-acosh-neg3.5-dec-30 (precision.yaml, oracle)
+Digits:=40:; pc("g128-acosh-neg3.5-dec-30",'(acosh(-(35/10^1)))',(19248473002384137899910356537/10^28)+(314159265358979323846264338328/10^29)*i,5/10^30+5/10^30);
 // patch 0006-reim-root-of-unknown-sign.patch
 // g96-cas-im-2sqrt (bench.yaml, derived)
 Digits:=40:; pc("g96-cas-im-2sqrt",'subst(im(2*sqrt(x)),x,-1)',2,1/10^30);

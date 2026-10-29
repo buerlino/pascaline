@@ -689,4 +689,18 @@ Digits:=40:; pc("g118-abs-pi-sq",'(abs(pi)^2)',(986960440109/10^11),5/10^12);
 Digits:=40:; pc("g123-keep-pow-1e4-30",'((10001/10^4)^(10^4))',(271814592682522486403766467491/10^29),5/10^30);
 // g127-exp-cosh-floor-real-12 (precision.yaml, oracle)
 Digits:=40:; pc("g127-exp-cosh-floor-real-12",'(exp(cosh(floor(asin(1/3)*10))))',(235683972909/10^7),5/10^8);
+// g128-acosh-neg-half-12 (precision.yaml, oracle)
+Digits:=40:; pc("g128-acosh-neg-half-12",'(acosh(-1/2))',(209439510239/10^11)*i,5/10^12);
+// g128-acosh-half-30 (precision.yaml, oracle)
+Digits:=40:; pc("g128-acosh-half-30",'(acosh(1/2))',(104719755119659774615421446109/10^29)*i,5/10^30);
+// g128-acosh-neg2-30 (precision.yaml, oracle)
+Digits:=40:; pc("g128-acosh-neg2-30",'(acosh(-2))',(131695789692481670862504634731/10^29)+(314159265358979323846264338328/10^29)*i,5/10^30+5/10^30);
+// g128-acosh-neg10-30 (precision.yaml, oracle)
+Digits:=40:; pc("g128-acosh-neg10-30",'(acosh(-10))',(299322284612638089791266771377/10^29)+(314159265358979323846264338328/10^29)*i,5/10^30+5/10^30);
+// g128-acosh-neg2-neg-i-30 (precision.yaml, oracle)
+Digits:=40:; pc("g128-acosh-neg2-neg-i-30",'(acosh(-2-i))',(146935174436818527325584431736/10^29)-(263423635037264867542081368873/10^29)*i,5/10^30+5/10^30);
+// g128-acosh-neg-third-i-30 (precision.yaml, oracle)
+Digits:=40:; pc("g128-acosh-neg-third-i-30",'(acosh(-1/3+i))',(901140972542642694618285560898/10^30)+(180534919560442961343161413415/10^29)*i,5/10^31+5/10^30);
+// g128-acosh-2i-30 (precision.yaml, oracle)
+Digits:=40:; pc("g128-acosh-2i-30",'(acosh(2*i))',(144363547517881034249327674027/10^29)+(157079632679489661923132169164/10^29)*i,5/10^30+5/10^30);
 print("pascaline-check: "+pasfail+" of "+pasn+" failed");
