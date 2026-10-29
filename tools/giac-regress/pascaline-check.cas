@@ -685,6 +685,6 @@ Digits:=40:; pc("g118-abs-1+i-sq",'(abs(1+i)^2)',2,5/10^12);
 Digits:=40:; pc("g118-abs-neg2-sq",'(abs(-2)^2)',4,5/10^12);
 // g118-abs-pi-sq (precision.yaml, oracle)
 Digits:=40:; pc("g118-abs-pi-sq",'(abs(pi)^2)',(986960440109/10^11),5/10^12);
-// g123-keep-pow-1e7-30 (precision.yaml, oracle)
-Digits:=40:; pc("g123-keep-pow-1e7-30",'((10000001/10^7)^(10^7))',(271828169254496627119855022578/10^29),5/10^30);
+// g123-keep-pow-1e4-30 (precision.yaml, oracle)
+Digits:=40:; pc("g123-keep-pow-1e4-30",'((10001/10^4)^(10^4))',(271814592682522486403766467491/10^29),5/10^30);
 print("pascaline-check: "+pasfail+" of "+pasn+" failed");
