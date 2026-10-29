@@ -5,7 +5,7 @@
 #
 #   scripts/gc.sh [--apply]
 #
-# 1. Archive: finished pipeline runs (.tasks/NNN-*/ whose branch is gone), .coord/handoff-*.md and
+# 1. Archive: finished pipeline runs (.tasks/NNN-*/ whose branch is gone and whose <run>/pid is not alive), .coord/handoff-*.md and
 #    other finished notes (*.patch, *-night.md, *.txt) → .tasks/archive/<date>/.
 # 2. Delete scratch: .coord/tmpbuild/*, .coord/henri_*.out older than 2 days, the agents' stray
 #    *.err logs in archived runs. Nothing tracked by git, nothing in engine/giac/_downloads or spike/prebuilt.
@@ -35,6 +35,9 @@ act() { if [[ $apply -eq 1 ]]; then "$@"; else echo "would: $*"; fi; }
   echo; echo "## Archived"
   for d in "$tasks"/[0-9][0-9][0-9]-*/; do
     [[ -d "$d" ]] || continue
+    # A47a: a run writes its pid to <run>/pid; while that pid lives the run is not finished (its branch may not exist yet)
+    rp="$(cat "$d/pid" 2>/dev/null || true)"
+    if [[ "$rp" =~ ^[1-9][0-9]*$ ]] && kill -0 "$rp" 2>/dev/null; then echo "- $d kept (its run, pid $rp, is alive)"; continue; fi
     b="$(grep -m1 -oE 'on branch [^ ]+' "$d/spec.md" 2>/dev/null | cut -d' ' -f3 || true)"
     if [[ -z "$b" ]] || ! git show-ref --verify --quiet "refs/heads/$b"; then
       act rm -f "$d"/*.err; act mkdir -p "$arch"; act mv "$d" "$arch/"; echo "- $d (branch ${b:-?} gone)"
