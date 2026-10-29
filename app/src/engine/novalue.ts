@@ -137,11 +137,15 @@ function namesOf(giac: Giac, expr: string): string[] | null {
 
 const CONSTANTS = new Set(["pi", "e", "i", "infinity", "euler_gamma"]);
 
-/** G84: the Giac texts of the elements of the result in `slot` that read as 0 and are no exact rational. */
-export function zeroElements(slot: string, facts: readonly ElementFacts[], shape: Shape): string[] {
-  const at = (k: number): string =>
-    shape.kind === "scalar" ? slot : shape.kind === "list" ? `${slot}[${k}]` : `${slot}[${Math.floor(k / shape.cols)}][${k % shape.cols}]`;
-  return facts.flatMap((f, k) => (!f.exact && isZero(f.value.re) && isZero(f.value.im) ? [at(k)] : []));
+/** The Giac text of element `k` of the result in `slot`. */
+export function elementAt(slot: string, shape: Shape, k: number): string {
+  return shape.kind === "scalar" ? slot : shape.kind === "list" ? `${slot}[${k}]` : `${slot}[${Math.floor(k / shape.cols)}][${k % shape.cols}]`;
+}
+
+/** G84: the Giac texts of the elements of the result in `slot` that read as 0 and are no exact rational (but those in
+ *  `checked`, decided already). */
+export function zeroElements(slot: string, facts: readonly ElementFacts[], shape: Shape, checked?: ReadonlySet<number>): string[] {
+  return facts.flatMap((f, k) => (!f.exact && isZero(f.value.re) && isZero(f.value.im) && !checked?.has(k) ? [elementAt(slot, shape, k)] : []));
 }
 
 /**
