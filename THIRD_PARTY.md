@@ -29,7 +29,7 @@ Generated at build time by `tools/find-index/generate.mjs`, not committed.
 2. libqalculate 5.13.1 `data/units.xml.in`, `variables.xml.in`, `prefixes.xml.in`: GPL-2.0-or-later, the library's licence (the combined work is GPL-3.0); names and titles read from the tarball. `find/factors.yaml`: the values and factors computed once by our qalc build (GPL-3.0-or-later as a file of ours; exact definitions and CODATA 2022 where they replace qalc's).
 3. `find/aliases.yaml`, `find/functions.yaml`, `find/units.yaml`: ours, GPL-3.0-or-later.
 
-The About screen will credit Giac and libqalculate and ship the MIT, LGPL and Apache notices of the components above; it does not exist yet (backlog R4, before the first release).
+Settings › Help and about (R87) lists every row of these tables with its licence and copyright line, built from this file at every build (`tools/third-party/parse.mts`), and ships the full text of each licence from `LICENSES/`. yaml (ISC) is build-time only and has no text there; Emscripten's runtime in the engine is used under the MIT side of its MIT / UIUC licence, so its rows open the MIT text (decisions.md, R87).
 
 ## Toolchain (not shipped)
 

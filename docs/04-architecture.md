@@ -369,7 +369,7 @@ One IndexedDB database `pascaline`, store `kv` (`state/storage.ts`). Keys:
 **The backup** (R11, `archive/r11-files.md`): one JSON file, each key's record as stored with its stamp (`defsStarts` left out); a restore checks the whole file, refuses it on the first fault (newer format or part, broken stamp, unknown part, a validator fault), then replaces the ticked keys in one transaction, keeps the replaced records in `backup.undo`, and reloads.
 
 ### 6.3 Decision: start-up and bytes
-- The sizes and budgets are in 8.3. New code for Find, units, copy and the matrix editor lives in lazy chunks, and so do every Settings page, sheet and the first-start tips (owner, 2026-10-20): the start chunk takes only what draws the first screen, key handlers and marks (the budget: 8.3).
+- The sizes and budgets are in 8.3. New code for Find, units, copy and the matrix editor lives in lazy chunks, and so do every Settings page, sheet and the first-start tips (owner, 2026-10-20): the start chunk takes only what draws the first screen, key handlers and marks (the budget: 8.3). `virtual:about` (`vite-plugin-about.ts`, R87): the version, THIRD_PARTY.md's parts and the texts of LICENSES/, 36 kB gzip, loaded when Settings › Help and about › About or Parts is first drawn.
 - **The size test** (A1): `app/scripts/size-check.ts` reads Vite's manifest and fails when a chunk passes its budget; `npm run build` and `build.sh` run it.
 
 
@@ -442,7 +442,7 @@ The types live in the code; this is the map. Views see `Calc` (`app/src/calc/por
 
 | Item | Budget | State | Enforced by |
 |---|---|---|---|
-| Start chunk | ≤ 175 kB raw, ≤ 61 kB gzip | 59.98 kB gzip on `c151048` (R82f2); the gzip budget rose from 60 to 61 kB on 2026-10-27 (owner; R82f2 left 20 bytes, R83's Menu title and pointer row need them; a split follows the freeze, brief section 0); `tools/probes/start-chunk.mjs` lists the bytes per source; every UI package reports its delta | size test |
+| Start chunk | ≤ 175 kB raw, ≤ 61 kB gzip; pin 58.5 kB gzip | 57.50 kB gzip on `56d017f` (R87; R91's split: 61.02 → 57.81). The pin `START_PIN_GZIP` holds: a package that grows the chunk past it raises it in the same diff, with the reason and the before and after in its report, never past 61 kB; `LAZY_PARTS` must stay dynamic chunks (R91). `tools/probes/start-chunk.mjs` lists the bytes per source; every UI package reports its delta | size test (`npm run size`) |
 | MathLive chunk (after the keypad) | ≤ 830 kB raw | 807.74 kB (2026-10-18) | size test |
 | Find UI chunk | ≤ 30 kB raw | — | size test |
 | Find index asset | ≤ 400 kB raw, ≤ 100 kB gzip | 325.7 / 67.1 kB (2026-10-15) | size test (once Find loads it) |
