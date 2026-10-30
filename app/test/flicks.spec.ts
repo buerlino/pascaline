@@ -252,7 +252,7 @@ test("Shift and Alpha taps stay as on the G2 (one-shot, Alpha twice locks) and a
   await page.evaluate(() => window.pascaline.userKeys.set("u1", "shift", { label: "Settings", action: { special: "settings" } }));
   await tap(page, ["shift", "u1"]);
   await expect(page.getByTestId("sheet-title")).toHaveText("Mode › Settings");
-  await tap(page, ["d4"]); // R49: Counters, a section of the Settings level (the fourth since R4b)
+  await tap(page, ["d5"]); // R49: Counters, a section of the Settings level (the fifth since R50e: Appearance is first)
   const value = (id: string) => page.getByTestId("menu").locator(`[data-id="${id}"]`).getByTestId("sheet-value");
   await expect(value("shift")).toHaveText("3"); // the Shift that opened Settings counts too
   await expect(value("alpha")).toHaveText("5");
