@@ -69,6 +69,10 @@ const CANARIES: [string, string, RegExp, string][] = [
   ["0017-mpfr-nan-not-zero.patch", "giac-2.1.0/src/gen.cc", /bool real_object::is_zero\(\) const\{\s*#ifdef HAVE_LIBMPFR\s*return !mpfr_sgn\(inf\);/, "bool real_object::is_zero() const{"],
   // G132, patch 0018: pow takes (a^b)^c as a^(b*c) (or abs(a)^(b*c)) for any base with no literal i (sqrt(acosh(-1/2)^3) = the other root)
   ["0018-pow-of-pow-branch.patch", "giac-2.1.0/src/gen.cc", /return inv\(pow\(base\._SYMBptr->feuille,exponent,contextptr\),contextptr\);\s*if \(u==at_pow && !has_i\(base\)\)\{/, "if (u==at_inv && base._SYMBptr->feuille.type==_SYMB"],
+  // G133, patch 0020: sqrt of a complex MPFR value takes an imaginary part within epsilon (1e-12) of 0 as 0 (sqrt(1.0-1e-20*i) = 1 at
+  // any Digits), and asin's ln form loses -log2|x| bits for a small complex x
+  ["0020-complex-sqrt-asin-small.patch", "giac-2.1.0/src/usual.cc", /a=re\(e,contextptr\);b=ratnormal\(im\(e,contextptr\),contextptr\);\s*if \(a!=e && is_zero\(b,contextptr\)\)\s*return sqrt\(a,contextptr\);/, "gen sqrt(const gen & e,GIAC_CONTEXT){"],
+  ["0020-complex-sqrt-asin-small.patch", "giac-2.1.0/src/usual.cc", /^static gen asinasln\(const gen & x,GIAC_CONTEXT\)\{\s*return -cst_i\*ln\(cst_i\*x\+sqrt\(1-x\*x,contextptr\),contextptr\);/, "static gen asinasln(const gen & x,GIAC_CONTEXT){"],
   // G135, patch 0019: atan keeps an exact argument on its cut symbolic (atan(2*i)), which Giac's cos rule reads on the other side
   ["0019-atan-exact-cut.patch", "giac-2.1.0/src/usual.cc", /atan\(b,contextptr\)\),_SEQ__VECT\)\);\s*gen tmp=evalf_double\(e,0,contextptr\);\s*if \(tmp\.type==_DOUBLE_\)\{/, "return symbolic(at_program,gen(makevecteur(a,0,atan(b,contextptr)),_SEQ__VECT));"],
   // G135, patch 0019: cos(atan(f)) = sqrt(1/(f^2+1)) takes the other root where f^2+1 is a negative real (cos(quote(atan(2*i))) = i*sqrt(3)/3)

@@ -1,0 +1,126 @@
+# Upstream: giac 2.1.0 usual.cc sqrt, asinasln, asinhasln. (1) sqrt of a _CPLX with MPFR parts (Digits > 14) went to the exact-complex path, which returns sqrt(re) when is_zero(im): for an MPFR part is_zero compares its double with epsilon (1e-12), so an imaginary part of 1e-20 was 0 at any Digits. sqrt(1.0-1e-20*i) at Digits 60 gave 1 (right 1-5e-21*i), sqrt(-1.0-1e-20*i) gave +i (right 5e-21-i, the other side of the cut); asin and acos (sqrt(1-x^2) as sqrt(1-x)*sqrt(1+x)) then gave asin(1e-20*i) = (1e-20+5e-41)*i at every Digits and asin(0.5+1e-20*i) an imaginary part of 8.66e-21 (right 1.1547e-20). Now only an exact 0 imaginary part is 0, and the root is t+i*b/(2t), t = sqrt((|z|+a)/2), for a >= 0, |b|/(2t)+sign(b)*i*t, t = sqrt((|z|-a)/2), for a < 0, with no cancellation on either side. (2) The ln forms of asin and asinh take the ln of 1+O(x), so for a small complex MPFR x they lost about -log2|x| bits in both parts (asin(1e-20*i) at Digits 30: 10 right digits and a real part of 1e-41 where it is 0). Now such an x (both parts MPFR or exactly 0, the larger below 1/4) is taken at its precision plus the bits lost plus 16, and the result rounded back; when x^2 is below the rounding the result is x. (3) asinh of an exact x that is not real and below 1/4 in size took the exact ln form ln(x+sqrt(x^2+1)), whose evalf cancels the same way (asinh(i/10^12) at Digits 40 had a real part of 1.5e-39 where it is 0); it now stays unevaluated, as asin of an exact complex does, so evalf takes asinhasln.
+# Changed by Pascaline contributors, 2026-10-30
+--- a/src/usual.cc
++++ b/src/usual.cc
+@@ -1318,6 +1318,21 @@
+ #endif
+ #endif
+       }
++      // Pascaline patch 0020 (G133): a complex MPFR value. The exact path below took an imaginary part within epsilon
++      // (1e-12) of 0 as 0 (is_zero), at any Digits: sqrt(1-i*10^-20) was 1 (asin(i*10^-20) = i*(t+t^2/2), t = 10^-20),
++      // sqrt(-1-i*10^-20) was +i, the other side of the cut. Only an exact 0 is 0 here; with rho = |e|, a >= 0 takes
++      // t = sqrt((rho+a)/2), sqrt(e) = t+i*b/(2t), a < 0 takes t = sqrt((rho-a)/2), sqrt(e) = |b|/(2t)+sign(b)*i*t
++      // (no cancellation on either side; the sign of b is MPFR's).
++      if (e.type==_CPLX && (e._CPLXptr->type==_REAL || (e._CPLXptr+1)->type==_REAL) && !is_exactly_zero(*(e._CPLXptr+1))){
++        a=*e._CPLXptr; b=*(e._CPLXptr+1);
++        gen rho=abs(e,contextptr);
++        if (is_positive(a,contextptr)){
++          gen t=sqrt((rho+a)/2,contextptr);
++          return t+cst_i*b/(2*t);
++        }
++        gen t=sqrt((rho-a)/2,contextptr);
++        return abs(b,contextptr)/(2*t)+(is_strictly_positive(b,contextptr)?cst_i:-cst_i)*t;
++      }
+       // sqrt of an exact complex number
+       if (!lop(e,at_exp).empty())
+ 	return pow(e,plus_one_half,contextptr);
+@@ -2259,12 +2274,54 @@
+       return principal_sqrt(1-x,contextptr)*principal_sqrt(1+x,contextptr);
+     return sqrt(1-x*x,contextptr);
+   }
+-  static gen asinasln(const gen & x,GIAC_CONTEXT){
++  // Pascaline patch 0020 (G133): the ln forms of asin and asinh take the ln of 1+O(x), so for a small complex MPFR x
++  // they lose about -log2|x| bits to cancellation, in both parts (asin(1e-20*i) at Digits 30 had 10 right digits and a
++  // real part of 1e-41 where it is 0). The bits lost: minus the binary exponent of the larger part of x when that part
++  // is below 1/4 and both parts are MPFR or exactly 0 (prec gets their precision); 0 otherwise (keep the form).
++  static int small_cplx_lost_bits(const gen & x,int & prec){
++    prec=0;
++    if (x.type!=_CPLX)
++      return 0;
++    bool regular=false;
++    long e=0;
++    for (int k=0;k<2;++k){
++      const gen & p=*(x._CPLXptr+k);
++      if (p.type==_REAL){
++        { int pp=int(mpfr_get_prec(p._REALptr->inf)); if (pp>prec) prec=pp; }
++        if (mpfr_regular_p(p._REALptr->inf)){
++          long pe=mpfr_get_exp(p._REALptr->inf);
++          if (!regular || pe>e) e=pe;
++          regular=true;
++        }
++        else if (!mpfr_zero_p(p._REALptr->inf))
++          return 0; // NaN or infinity
++      }
++      else if (!is_exactly_zero(p))
++        return 0;
++    }
++    if (!regular || prec==0 || e>-2)
++      return 0;
++    return int(-e);
++  }
++  // f's ln form at prec+lost+16 bits, rounded back to prec; x itself when x^2 is below the rounding (asin(x) and
++  // asinh(x) are x*(1+O(x^2)), part by part).
++  static gen small_cplx_ln_form(gen (*f)(const gen &,GIAC_CONTEXT),const gen & x,GIAC_CONTEXT){
++    int prec=0,lost=small_cplx_lost_bits(x,prec);
++    if (!lost)
++      return f(x,contextptr);
++    if (2*lost>prec+8)
++      return x;
++    return accurate_evalf(f(accurate_evalf(x,prec+lost+16),contextptr),prec);
++  }
++  static gen asinasln_form(const gen & x,GIAC_CONTEXT){
+     if (ln_form_cancels(x,false,contextptr))
+       return cst_i*ln(-cst_i*x+sqrt_one_minus_square(x,contextptr),contextptr);
+     return -cst_i*ln(cst_i*x+sqrt_one_minus_square(x,contextptr),contextptr);
+     // return cst_i*ln(sqrt(x*x-1,contextptr)+x,contextptr)+cst_pi_over_2;
+   }
++  static gen asinasln(const gen & x,GIAC_CONTEXT){
++    return small_cplx_ln_form(asinasln_form,x,contextptr);
++  }
+   gen * normal_sin_pi_12_ptr_(){
+     static gen * ans=0;
+     if (!ans) ans=new gen(normal(sin_pi_12,context0));
+@@ -2889,12 +2946,33 @@
+   define_unary_function_ptr5( at_tanh ,alias_at_tanh,&__tanh,0,true);
+ 
+   // static symbolic symb_asinh(const gen & e){  return symbolic(at_asinh,e);  }
+-  static gen asinhasln(const gen & x,GIAC_CONTEXT){
++  static gen asinhasln_form(const gen & x,GIAC_CONTEXT){
+     gen s=x.type==_CPLX?sqrt_one_minus_square(cst_i*x,contextptr):sqrt(x*x+1,contextptr); // sqrt(x^2+1)
+     if (ln_form_cancels(x,true,contextptr))
+       return -ln(-x+s,contextptr);
+     return ln(x+s,contextptr);
+   }
++  static gen asinhasln(const gen & x,GIAC_CONTEXT){
++    return small_cplx_ln_form(asinhasln_form,x,contextptr);
++  }
++  // Pascaline patch 0020 (G133): an exact x that is not real, of size below 1/4 (its double): the exact ln form
++  // ln(x+sqrt(x^2+1)) cancels as the float one does, so its evalf at P digits left a real part near 10^-P where it is
++  // 0 (Home asinh(i/10^12): 8E-680+1E-12*i, no digit confirmed). asinh keeps it unevaluated, as asin keeps an exact
++  // complex argument, and evalf takes asinhasln at its working precision. A part with a float keeps today's path.
++  static bool small_exact_cplx(const gen & x,GIAC_CONTEXT){
++    if (x.type==_CPLX){
++      for (int k=0;k<2;++k){
++        int t=(x._CPLXptr+k)->type;
++        if (t==_REAL || t==_DOUBLE_ || t==_FLOAT_)
++          return false;
++      }
++    }
++    gen d=evalf_double(x,1,contextptr);
++    if (d.type!=_CPLX || d._CPLXptr->type!=_DOUBLE_ || (d._CPLXptr+1)->type!=_DOUBLE_)
++      return false;
++    double r=d._CPLXptr->_DOUBLE_val,i=(d._CPLXptr+1)->_DOUBLE_val;
++    return i!=0 && r*r+i*i<0.0625;
++  }
+   gen asinh(const gen & e0,GIAC_CONTEXT){
+     if (e0.type==_FLOAT_){
+ #ifdef BCD
+@@ -2939,6 +3017,8 @@
+       return symbolic(at_asinh,e);
+     if (part_below_double(e,contextptr))
+       return symbolic(at_asinh,e);
++    if (small_exact_cplx(e,contextptr))
++      return symbolic(at_asinh,e);
+     if (ln_form_cancels(e,true,contextptr))
+       return -ln(-e+sqrt(pow(e,2)+1,contextptr),contextptr);
+     return ln(e+sqrt(pow(e,2)+1,contextptr),contextptr);
