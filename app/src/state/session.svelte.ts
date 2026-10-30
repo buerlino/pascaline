@@ -129,6 +129,25 @@ export const loadTidy = (): Promise<typeof import("../render/tidy.ts")> =>
     tidyChunk = undefined;
     throw e;
   }));
+/** Start the tidy chunk's load beside a job; a failure here is dealt with where the result is drawn (tidyOr). */
+const prefetchTidy = (): Promise<typeof import("../render/tidy.ts")> => {
+  const p = loadTidy();
+  p.catch(() => {});
+  return p;
+};
+/** Tidy `raw`; a chunk that will not load (a tab open across a redeploy: the old hashed file is gone) never turns the
+ *  finished result into an error: one more try, then `fallback` is drawn. */
+async function tidyOr(load: Promise<typeof import("../render/tidy.ts")>, raw: string, fallback: string): Promise<string> {
+  try {
+    return (await load).tidyGiacLatex(raw);
+  } catch {
+    try {
+      return (await loadTidy()).tidyGiacLatex(raw);
+    } catch {
+      return fallback;
+    }
+  }
+}
 const errorText = (code: CalcError | undefined, fallback: string): string =>
   code ? t(`error.${code}` as MessageKey) : fallback;
 const clamp = (n: number, lo: number, hi: number): number => Math.min(hi, Math.max(lo, Math.round(n)));
@@ -481,7 +500,10 @@ export class Session {
     const s: CalcSettings = { digits: this.settings.digits, angle: this.settings.angle, format: this.settings.format };
     try {
       if (view === "home") {
-        const [r, { tidyGiacLatex }] = await Promise.all([named ? this.calc.home(giac, s, named) : this.calc.home(giac, s), loadTidy()]);
+        const tidy = prefetchTidy();
+        const r = await (named ? this.calc.home(giac, s, named) : this.calc.home(giac, s));
+        if (live.status !== "pending") return;
+        const latex = !r.ok ? "" : r.latex !== undefined ? await tidyOr(tidy, r.latex, homeResultToLatex(r.display)) : homeResultToLatex(r.display);
         if (live.status !== "pending") return;
         live.status = r.ok ? "done" : "error";
         live.text = r.ok ? r.display : errorText(r.error, r.display);
@@ -489,15 +511,18 @@ export class Session {
         // The value, its facts and the chip text, by the one rule (results.ts, G86)
         Object.assign(live, homeItem(r, live.inexactInput === true));
         // A result that is not a number is drawn from Giac's latex(), as in CAS (R18f3); numbers from our formatter.
-        if (r.ok) live.resultLatex = r.latex !== undefined ? tidyGiacLatex(r.latex) : homeResultToLatex(r.display);
+        if (r.ok) live.resultLatex = latex;
       } else {
-        const [r, { tidyGiacLatex }] = await Promise.all([this.calc.cas(giac, s), loadTidy()]);
+        const tidy = prefetchTidy();
+        const r = await this.calc.cas(giac, s);
+        if (live.status !== "pending") return;
+        const latex = r.ok ? await tidyOr(tidy, r.latex, r.latex) : "";
         if (live.status !== "pending") return;
         live.status = r.ok ? "done" : "error";
         live.text = r.ok ? r.text : errorText(r.error, r.text);
         if (r.settingReset) live.settingReset = true;
         if (r.ok) {
-          live.resultLatex = tidyGiacLatex(r.latex);
+          live.resultLatex = latex;
           if (r.uses?.length) live.uses = r.uses;
           Object.assign(live, casItem(r, live.inexactInput === true));
         }
