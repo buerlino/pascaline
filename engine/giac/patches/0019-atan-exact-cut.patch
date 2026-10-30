@@ -1,0 +1,34 @@
+# Upstream: giac 2.1.0 usual.cc atan and tan. An exact argument on atan's cut (re(z)=0, |im(z)|>1) stayed symbolic, and Giac's exact rules then read it on the other side of the cut from the principal value (mpmath, C99 catan: atan(2*i) = pi/2+0.549i, atan(-2*i) = -pi/2-0.549i): cos(atan(z)) = sqrt(1/(z^2+1)) gave i*sqrt(3)/3 for 2*i and for -2*i (right -i*sqrt(3)/3), so a stored w:=atan(2*i) or f(x):=cos(atan(x)) at 2*i showed the wrong sign; arg(atan(2*i)) added pi (atanasln's real part -pi/2). atan returns the principal value sign(t)*pi/2-atan(1/z), t=im(z), exact, with 1/z inside the cut; tan(b+(k+1/2)*pi) is -1/tan(b) where tan(b) has a closed form, so tan(atan(2*i)) stays 2*i. Off the cut, and for a float argument (atanasln), atan is unchanged.
+# Changed by Pascaline contributors, 2026-10-30
+--- a/src/usual.cc
++++ b/src/usual.cc
+@@ -711,6 +711,15 @@
+     if (is_algebraic_program(e,a,b))
+       return symbolic(at_program,gen(makevecteur(a,0,atan(b,contextptr)),_SEQ__VECT));
+     gen tmp=evalf_double(e,0,contextptr);
++    // Pascaline patch 0019 (G135): an exact argument on the cut (re(e)=0, |im(e)|>1) stayed symbolic, and Giac's rules
++    // read it on the other side of the cut from the principal value (mpmath and C99 catan: atan(2*i) = pi/2+0.549i):
++    // cos(atan(f)) = sqrt(1/(f^2+1)) gave i*sqrt(3)/3 for 2*i and -2*i (right -i*sqrt(3)/3), arg(atan(2*i)) added pi.
++    // The principal value is sign(t)*pi/2-atan(1/e), t=im(e), and 1/e lies inside the cut, where Giac's rules hold.
++    if (tmp.type==_CPLX && is_exactly_zero(re(e,contextptr))){
++      gen t=im(e,contextptr);
++      if (is_strictly_greater(abs(t,contextptr),1,contextptr))
++	return sign(t,contextptr)*(angle_radian(contextptr)?cst_pi_over_2:(angle_degree(contextptr)?gen(90):gen(100)))-atan(inv(e,contextptr),contextptr);
++    }
+     if (tmp.type==_DOUBLE_){
+       double ed=tmp._DOUBLE_val;
+       // detect if atan is a multiples of pi/10
+@@ -2051,6 +2060,13 @@
+ 	    if (a!=0) // avoid recursion
+ 	      return tan(b,contextptr);
+ 	}
++	// Pascaline patch 0019 (G135): tan(b+(k+1/2)*pi) = -1/tan(b), where tan(b) has a closed form: atan on its cut is
++	// pi/2-atan(1/z) now, and tan(atan(2*i)) stays 2*i. A tan(b) Giac keeps (tan(1), tan(x)) keeps tan as it was.
++	if (!is_zero(b) && !is_integer(a) && is_integer(2*a)){
++	  gen tb=tan(b,contextptr);
++	  if (!is_zero(tb) && !has_op(tb,*at_tan))
++	    return -inv(tb,contextptr);
++	}
+       }
+     }
+     if (!approx_mode(contextptr)){ 

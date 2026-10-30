@@ -125,8 +125,6 @@ export const KNOWN_RULES = [
   [/^(g47-)?(prec-g44f?\d?-)?(prec-2-)?(normald|student|chisquare|fisher)_icdf|^prec-g44f?\d?-(normald|student|chisquare|fisher)_icdf|^g47-normald_icdf/, "register row icdf-double (G44): the inverse distribution functions return a double at any Digits (or +infinity far in a tail)"],
   [/^prec-g44f1-(evalf-)?erf-|^prec-g44f1-(evalf-)?erfc|^prec-3-UTPN/, "register row erfc-as-1-erf (G44f1): erfc is 1-erf and cancels, a small erf argument returns the argument"],
   [/sin1e(50|60|70|100)|sin-1e100|^prec-G23/, "register row sign-at-digits (G38, G57): sin of 10^k at Digits 40 has too few digits of the argument reduction, so floor, trunc, sign and arg of it are wrong"],
-  [/atan\(2i\)/, "register row atan-cut (G50, G60): complex atan beyond ±i takes the other side of its cut"],
-  [/^g129-/, "register row atan-cut (G50, G60, G129): complex atan beyond ±i takes the other side of its cut, and Giac's exact cos(atan(z)) on the cut does too"],
   [/Bessel|Airy|besselj/, "register row no-mpfr-path (G4, G50): no MPFR path, an error at Digits above 14"],
   [/^prec-4-romberg/, "register row no-mpfr-path (G4, G50): romberg works in a double, 30 digits asked"],
 ];
@@ -164,18 +162,6 @@ export const KNOWN_IDS = new Set([
   "prec-5-Airy_Ai(1)-12",
   "prec-5-BesselJ(0,100)-12",
   "prec-G23-sin-1e100",
-  "prec-g50-atan(2i)-12",
-  "prec-g50-atan(2i)-30",
-  // G129: the guards g129-sin-atan-*, g129-cos-atan-i/2 and g129-cos-atan-1+i pass on stock and stay in the check file
-  "g129-asin-cos-atan-2i",
-  "g129-cos-atan-2i",
-  "g129-cos-atan-3i",
-  "g129-cos-atan-neg2i",
-  "g129-cos-atan-2.0i",
-  "g129-atan-2i",
-  "g129-atan-2i-plus-0",
-  "g129-tan-half-atan-2i",
-  "g129-tan-half-atan-2i-sum",
   "g71-trunc-sin1e70",
   "g71-heaviside-sin1e70",
   "g71-round-besselj-1e12",
@@ -189,7 +175,7 @@ export const KNOWN_IDS = new Set([
   "g71-census-tri-sin1e70",
 ]);
 // The ids that pass on our patched build and fail on stock giac_2.1.0-1 (found by matching the cases the tests and canaries of patches
-// 0003 and 0005 name (tanh-test.ts, mpfr-pi-test.ts, patch-canary.ts) and the ids of G75 and G60, G128's g128-* of patch 0005; G111's g111-* of patch 0007; G113's g113-* of patch 0009 (g113-poisson_cdf-2.5 passes on stock, a guard in the check file); G113f1's ties of patch 0010; G115's g115-* of patch 0011; G118's g118-* of patch 0012; G121's g116-* and g121-* and G125's g125-* of patch 0013; G122's g122-* of patch 0014; G126's g126-* and g116-acos-neg-1e20-half-12 of patch 0015; G127's g127-* of patch 0016; G132's g132-* of patch 0018 (G131's patch 0017 has a written line in build(), its cases are refusals). Each id was run on the stock build (engine/giac/_out/release) and fails there; ln(-pi)-30 passes on stock at these Digits, so it stays in the check file; the g60-f5 and g78-novalue lines seemed to pass on stock until G118 (their difference is an MPFR NaN, printed undef, that pc() took for a pass). g58-acos-5!^(2.5+5!)-30 has budgetMs, so it is left out as a time guard): [id, the patch file the line rests on]. They go to pascaline-patched.cas, not to the check file.
+// 0003 and 0005 name (tanh-test.ts, mpfr-pi-test.ts, patch-canary.ts) and the ids of G75 and G60, G128's g128-* of patch 0005; G111's g111-* of patch 0007; G113's g113-* of patch 0009 (g113-poisson_cdf-2.5 passes on stock, a guard in the check file); G113f1's ties of patch 0010; G115's g115-* of patch 0011; G118's g118-* of patch 0012; G121's g116-* and g121-* and G125's g125-* of patch 0013; G122's g122-* of patch 0014; G126's g126-* and g116-acos-neg-1e20-half-12 of patch 0015; G127's g127-* of patch 0016; G132's g132-* of patch 0018; G129's g129-* (known lines until then), prec-g50-atan(2i) and G135's g135-home-arg-atan-2i of patch 0019 (the g129 guards pass on stock and stay in the check file; G131's patch 0017 has a written line in build(), its cases are refusals). Each id was run on the stock build (engine/giac/_out/release) and fails there; ln(-pi)-30 passes on stock at these Digits, so it stays in the check file; the g60-f5 and g78-novalue lines seemed to pass on stock until G118 (their difference is an MPFR NaN, printed undef, that pc() took for a pass). g58-acos-5!^(2.5+5!)-30 has budgetMs, so it is left out as a time guard): [id, the patch file the line rests on]. They go to pascaline-patched.cas, not to the check file.
 export const PATCHED_IDS = new Map([
   ["prec-g50-tanh(i)-12", "0003-complex-tanh-mpfr.patch"],
   ["prec-g50-tanh(i)-30", "0003-complex-tanh-mpfr.patch"],
@@ -378,6 +364,18 @@ export const PATCHED_IDS = new Map([
   ["g132-sqrt-neg-pi-cubed-12", "0018-pow-of-pow-branch.patch"],
   ["g132-sqrt-acos-pi-cubed-12", "0018-pow-of-pow-branch.patch"],
   ["g132-sqrt-acos-pi-cubed-30", "0018-pow-of-pow-branch.patch"],
+  ["prec-g50-atan(2i)-12", "0019-atan-exact-cut.patch"],
+  ["prec-g50-atan(2i)-30", "0019-atan-exact-cut.patch"],
+  ["g129-asin-cos-atan-2i", "0019-atan-exact-cut.patch"],
+  ["g129-cos-atan-2i", "0019-atan-exact-cut.patch"],
+  ["g129-cos-atan-3i", "0019-atan-exact-cut.patch"],
+  ["g129-cos-atan-neg2i", "0019-atan-exact-cut.patch"],
+  ["g129-cos-atan-2.0i", "0019-atan-exact-cut.patch"],
+  ["g129-atan-2i", "0019-atan-exact-cut.patch"],
+  ["g129-atan-2i-plus-0", "0019-atan-exact-cut.patch"],
+  ["g129-tan-half-atan-2i", "0019-atan-exact-cut.patch"],
+  ["g129-tan-half-atan-2i-sum", "0019-atan-exact-cut.patch"],
+  ["g135-home-arg-atan-2i", "0019-atan-exact-cut.patch"],
 ]);
 // G122: Giac's exact answer is right (patch 0014), but pc()'s evalf of it at Digits 40 cancels the digits of a large k*pi
 // (asin(cos(30!)) = -pi/2+30!-k*pi with k of 32 digits keeps about 7, -pi/2+10^50-k*pi none); Home raises the precision
