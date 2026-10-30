@@ -2,8 +2,9 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Clean source -> engines -> web app (dist/) -> Capacitor sync -> Gradle -> APK. The F-Droid recipe runs the same steps itself (fdroid/README.md).
 #
-#   ./build.sh [--dev] [--measure] [--test] [--unsigned] [--engine-dir DIR] [--no-units] [--install [SERIAL]]
+#   ./build.sh [--web] [--dev] [--measure] [--test] [--unsigned] [--engine-dir DIR] [--no-units] [--install [SERIAL]]
 #
+#   --web            steps 1 and 2 only (engine, Find index, web app), no Android SDK, no Gradle: app/dist for GitHub Pages (A45, .github/workflows/pages.yml)
 #   (default)        engine built with the pinned Debian trixie Emscripten in a container (P2: what every release ships)
 #   --dev            engine built with the local emsdk instead (engine/giac/build-wasm.sh; fast iteration only)
 #   --engine-dir D   use an existing engine build (giac.mjs + giac.wasm in D) and skip the engine step
@@ -12,17 +13,18 @@
 #   --test           device test build (A32): the WebView's remote debugging on so Playwright can attach over adb; never for release
 #   --unsigned       leave the APK unsigned (what F-Droid wants); default signs with the throwaway key in ~/.cache/pascaline/keys/ (PASCALINE_KEYS)
 #   --install [S]    adb install -r on device S (default $ANDROID_SERIAL or the only device); installs io.github.buerlino.pascaline only
-# Output: dist/pascaline.apk (last line printed). Env: PASCALINE_DL_DIR (Giac/GMP/MPFR/GSL tarball cache), PASCALINE_QALC_DL_DIR (libqalculate tarball cache: names and titles for the Find index), ANDROID_HOME (default ~/Android/Sdk),
+# Output: dist/pascaline.apk (last line printed); with --web, app/dist. Env: PASCALINE_DL_DIR (Giac/GMP/MPFR/GSL tarball cache), PASCALINE_QALC_DL_DIR (libqalculate tarball cache: names and titles for the Find index), ANDROID_HOME (default ~/Android/Sdk),
 # PASCALINE_KEYS (the throwaway signing key's folder, default ~/.cache/pascaline/keys), NO_LOCK=1 (the caller holds the host-cpu lock).
 set -euo pipefail
 export PASCALINE_LOCK_PID=$$   # A35: tools/devlock.sh records this pid; a lock whose pid is gone is broken by the next acquire
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$ROOT"
 
-DEV=0 MEASURE=0 TEST=0 SIGN=1 INSTALL=0 SERIAL="${ANDROID_SERIAL:-}" ENGINE_DIR="" WITH_UNITS=1
+DEV=0 WEB=0 MEASURE=0 TEST=0 SIGN=1 INSTALL=0 SERIAL="${ANDROID_SERIAL:-}" ENGINE_DIR="" WITH_UNITS=1
 while (( $# )); do
   case "$1" in
     --dev) DEV=1; shift ;;
+    --web) WEB=1; shift ;;
     --no-units) WITH_UNITS=0; shift ;;
     --measure) MEASURE=1; shift ;;
     --test) TEST=1; shift ;;
@@ -59,6 +61,8 @@ unset PASCALINE_WEBVIEW_DEBUG
 (( TEST )) && export PASCALINE_WEBVIEW_DEBUG=1
 INDEX_ARGS=(); (( WITH_UNITS )) || INDEX_ARGS=(--no-units)
 (cd app && npm ci --no-audit --no-fund >&2 && npm run index -- "${INDEX_ARGS[@]}" >&2 && npm run build >&2)
+
+(( WEB )) && { echo "$ROOT/app/dist"; exit 0; }
 
 # 3. Capacitor project (android/ is committed; sync copies dist/ and the plugin list into it)
 [[ -d android ]] || (cd app && npx cap add android >&2)

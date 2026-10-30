@@ -112,20 +112,76 @@ describe("Mode sheet", () => {
   });
 });
 
+describe("Settings › Appearance (R50e)", () => {
+  it("is the first section: Theme with its dots, Brightness, and the two switches with one line each", () => {
+    const s = settings(1);
+    expect(s.path).toBe("Mode › Settings › Appearance");
+    expect(s.level.items.map((x) => x.id)).toEqual(["theme", "brightness", "contrast", "plain"]);
+    expect(byId(s, "theme")?.dots).toHaveLength(5);
+    expect(byId(s, "theme")?.value).toBe("Pascaline");
+    expect(s.level.items.filter((x) => x.hint).map((x) => x.id)).toEqual(["contrast", "plain"]);
+  });
+  it("▶ ◀ step the theme in place, round the ends; the sheet stays", () => {
+    const s = settings(1);
+    s.right();
+    expect(session.settings.look.family).toBe("graphite");
+    expect(s.left()).toBe(true);
+    expect(s.left()).toBe(true);
+    expect(session.settings.look.family).toBe("nord");
+    expect(byId(s, "theme")?.value).toBe("Nord");
+  });
+  it("Enter, a digit or a tap on Theme lists the five; a pick keeps the sheet open and the page is told", () => {
+    const seen: string[] = [];
+    session.onLook = (l) => void seen.push(l.family);
+    const s = settings(1);
+    expect(s.enter()).toEqual({ kind: "stay" });
+    expect(s.path).toBe("Settings › Appearance › Theme");
+    expect(s.level.items.map((x) => x.label)).toEqual(["Pascaline", "Graphite", "Solarized", "Gruvbox", "Nord"]);
+    expect(s.level.items.every((x) => x.dots?.length === 5)).toBe(true);
+    expect(s.pickNumber(4)).toEqual({ kind: "stay" });
+    expect(session.settings.look.family).toBe("gruvbox");
+    expect(s.path).toBe("Settings › Appearance › Theme");
+    expect(s.level.items.filter((x) => x.selected).map((x) => x.id)).toEqual(["gruvbox"]);
+    expect(seen).toEqual(["gruvbox"]);
+    s.back();
+    expect(s.activate(0)).toEqual({ kind: "stay" }); // a tap
+    expect(s.path).toBe("Settings › Appearance › Theme");
+    s.back();
+    s.level.highlight = 0;
+    expect(s.pickNumber(1)).toEqual({ kind: "stay" }); // a digit
+    expect(s.path).toBe("Settings › Appearance › Theme");
+  });
+  it("Brightness steps System, Light, Dark; the switches toggle and stay", () => {
+    const s = settings(1);
+    s.level.highlight = at(s, "brightness");
+    expect(byId(s, "brightness")?.value).toBe("System");
+    s.right();
+    expect(session.settings.look.brightness).toBe("light");
+    s.right();
+    expect(byId(s, "brightness")?.value).toBe("Dark");
+    expect(s.enter()).toEqual({ kind: "stay" });
+    expect(s.pickNumber(3)).toEqual({ kind: "stay" });
+    expect(session.settings.look.contrast).toBe(true);
+    expect(s.pickNumber(4)).toEqual({ kind: "stay" });
+    expect(session.settings.look.plain).toBe(true);
+    expect(byId(s, "plain")?.selected).toBe(true);
+  });
+});
+
 describe("Settings, a level of the sheet (R49)", () => {
   it("has the sections built so far, in their fixed order, each with › and a value; it opens on its first row", () => {
     const s = settings();
-    expect(s.level.items.map((x) => x.id)).toEqual(["numbers", "vibration", "counters", "help"]);
+    expect(s.level.items.map((x) => x.id)).toEqual(["appearance", "numbers", "vibration", "counters", "help"]);
     expect(s.level.items.every((x) => x.submenu)).toBe(true);
-    expect(s.level.items.map((x) => x.value)).toEqual(["STD SCI ENG", "Off", "0 taps", undefined]);
-    s.pickNumber(3);
+    expect(s.level.items.map((x) => x.value)).toEqual(["Pascaline · System", "STD SCI ENG", "Off", "0 taps", undefined]);
+    s.pickNumber(4);
     s.back();
     s.back();
     expect(s.enter()).toEqual({ kind: "stay" });
-    expect(s.level.current?.id).toBe("numbers"); // not the last pick
+    expect(s.level.current?.id).toBe("appearance"); // not the last pick
   });
   it("a digit opens a section with the path in its title; ◀ or Esc goes back onto the same row", () => {
-    const s = settings(2);
+    const s = settings(3);
     expect(s.path).toBe("Mode › Settings › Key vibration");
     expect(s.left()).toBe(false); // the switch has no value to step: ◀ goes back
     expect(s.back()).toBe(true);
@@ -134,7 +190,7 @@ describe("Settings, a level of the sheet (R49)", () => {
     expect(s.path).toBe("Mode › Settings › Key vibration");
   });
   it("Numbers: the Decimal mark row first (R57), then the cycle's five ticks with the hint under the first, and the Decimals row under the Fixed tick, stepped in place", () => {
-    const s = settings(1);
+    const s = settings(2);
     expect(s.level.items.map((x) => x.id)).toEqual(["mark", "std", "sci", "eng", "pfx", "fix", "decimals"]);
     expect(s.level.items.filter((x) => x.hint).map((x) => x.id)).toEqual(["std"]);
     s.level.highlight = at(s, "decimals");
@@ -143,7 +199,7 @@ describe("Settings, a level of the sheet (R49)", () => {
     expect(s.enter()).toEqual({ kind: "stay" }); // Enter on a value row stays in Settings
   });
   it("Decimal mark is a value row: Point by default; ◀ ▶ or a tap step it between Point and Comma, and the sheet stays (R57)", () => {
-    const s = settings(1);
+    const s = settings(2);
     expect(s.level.items[0]?.id).toBe("mark"); // the level's first row (the sheet opens on the first ticked row)
     s.level.highlight = at(s, "mark");
     expect(byId(s, "mark")?.value).toBe("Point");
@@ -158,13 +214,13 @@ describe("Settings, a level of the sheet (R49)", () => {
     expect(s.activate(at(s, "mark"))).toEqual({ kind: "stay" }); // a tap steps it on
     expect(session.settings.decimalMark).toBe("comma");
   });
-  it("a digit key on the Decimal mark row steps it and stays (Shift Fmt 5 1 1 reaches it by keys)", () => {
-    const s = settings(1);
+  it("a digit key on the Decimal mark row steps it and stays (Shift Fmt 5 2 1 reaches it by keys)", () => {
+    const s = settings(2);
     expect(s.pickNumber(1)).toEqual({ kind: "stay" });
     expect(session.settings.decimalMark).toBe("comma");
   });
   it("a tick toggles on Enter or a pick, the sheet stays, and the cycle is never empty", () => {
-    const s = settings(1);
+    const s = settings(2);
     const marked = () => s.level.items.filter((i) => i.selected).map((i) => i.id);
     expect(marked()).toEqual(["std", "sci", "eng"]);
     expect(s.activate(at(s, "fix"))).toEqual({ kind: "stay" });
@@ -174,7 +230,7 @@ describe("Settings, a level of the sheet (R49)", () => {
     expect(session.settings.fmtCycle).toEqual(["std", "sci", "eng"]);
   });
   it("Key vibration: the switch, then strength (the browser cannot set it), length and Try it follow", () => {
-    const s = settings(2);
+    const s = settings(3);
     expect(s.level.items.map((x) => x.id)).toEqual(["haptics", "strength", "ms", "try"]);
     expect(byId(s, "ms")?.disabled).toBe(true);
     expect(byId(s, "try")?.disabled).toBe(true);
@@ -193,7 +249,7 @@ describe("Settings, a level of the sheet (R49)", () => {
     expect(s.pickNumber(4)).toEqual({ kind: "stay" }); // Try it
   });
   it("Counters: ▲ ▼ walk round the ends; an information row does nothing; Reset runs and stays", () => {
-    const s = settings(3);
+    const s = settings(4);
     s.level.move(-1);
     expect(s.level.current?.id).toBe("reset");
     s.level.move(1);
@@ -209,14 +265,14 @@ describe("Help and about (R87)", () => {
   const loaded = (s: Sheet) => vi.waitFor(() => expect(s.level.items[0]?.id).not.toBe("loading"));
 
   it("is the fourth section; it holds About and Parts, each opening a level", () => {
-    const s = settings(4);
+    const s = settings(5);
     expect(s.path).toBe("Mode › Settings › Help and about");
     expect(s.level.items.map((x) => x.id)).toEqual(["about", "parts"]);
     expect(s.level.items.every((x) => x.submenu)).toBe(true);
   });
 
   it("About: the version from package.json, the licence, the source URL; the licence opens its text", async () => {
-    const s = settings(4);
+    const s = settings(5);
     s.pickNumber(1);
     expect(s.path).toBe("Settings › Help and about › About"); // the last three levels
     await loaded(s);
@@ -230,7 +286,7 @@ describe("Help and about (R87)", () => {
   });
 
   it("Parts: a row per part of THIRD_PARTY.md; a single licence opens its text, a dual one a list of both", async () => {
-    const s = settings(4);
+    const s = settings(5);
     s.pickNumber(2);
     await loaded(s);
     const about = (await import("virtual:about")).default;
@@ -250,7 +306,7 @@ describe("Help and about (R87)", () => {
   });
 
   it("a text level pages with ▲ ▼ and goes back with ◀", async () => {
-    const s = settings(4);
+    const s = settings(5);
     s.pickNumber(1);
     await loaded(s);
     s.activate(at(s, "licence"));
@@ -273,14 +329,14 @@ describe("Settings › Your keys (R4b)", () => {
   };
 
   it("is the third section, between Key vibration and Counters, only where the app gives the slots", () => {
-    expect(withKeys().s.level.items.map((x) => x.id)).toEqual(["numbers", "vibration", "keys", "counters", "help"]);
+    expect(withKeys().s.level.items.map((x) => x.id)).toEqual(["appearance", "numbers", "vibration", "keys", "counters", "help"]);
     expect(settings().level.items.map((x) => x.id)).not.toContain("keys");
   });
 
   it("lists U1–U6 in three layers and Reset all; a place sets a slot, Empty this slot gives it back", () => {
     const { s, userKeys } = withKeys();
     expect(byId(s, "keys")?.value).toBe("None set");
-    s.pickNumber(3);
+    s.pickNumber(4);
     const ids = s.level.items.map((x) => x.id);
     expect(ids).toHaveLength(19);
     expect(ids.slice(0, 4)).toEqual(["u1:primary", "u1:shift", "u1:alpha", "u2:primary"]);
@@ -300,7 +356,7 @@ describe("Settings › Your keys (R4b)", () => {
 
   it("Find… hands the slot to the app", () => {
     const { s, chosen } = withKeys();
-    s.pickNumber(3);
+    s.pickNumber(4);
     s.pickNumber(5); // U2 ⇧
     const p = s.pickNumber(1);
     if (p.kind === "run") p.item.run?.();
@@ -310,7 +366,7 @@ describe("Settings › Your keys (R4b)", () => {
   it("a free key pressed while the slots are listed goes to its row in its layer; elsewhere it does nothing", () => {
     const { s } = withKeys();
     expect(s.goKey("u3", "primary")).toBe(false); // the Settings level lists no slots
-    s.pickNumber(3);
+    s.pickNumber(4);
     expect(s.goKey("u3", "shift")).toBe(true);
     expect(s.level.current?.id).toBe("u3:shift");
     expect(s.goKey("u6", "alpha")).toBe(true);

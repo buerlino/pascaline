@@ -13,6 +13,8 @@ import { MAX_DIGITS, type DecimalMark, type EntryMode, type Session } from "../s
 import { aboutText } from "../i18n/enAbout.ts";
 import { helpItems } from "./aboutItems.ts";
 import { findText } from "../i18n/enFind.ts";
+import { BRIGHTNESS, validLook, type Look } from "../theme/look.ts";
+import { familyOf, FAMILIES, stepped } from "../theme/lookView.ts";
 import { yourKeysItems, yourKeysValue, type SettingsEnv } from "./yourKeys.ts";
 
 const ANGLES: readonly AngleUnit[] = ["rad", "deg"];
@@ -120,7 +122,7 @@ export function settingsSections(session: Session, env: SettingsEnv = {}): MenuI
   const s = session.settings;
   const off = () => !s.haptics.on;
   return [
-    // (Appearance: R50e)
+    section("appearance", t("settings.appearance"), appearanceItems(session), () => `${familyOf(s.look.family).name} · ${t(`appearance.brightness.${s.look.brightness}` as MessageKey)}`),
     section("numbers", t("settings.numbers"), numbersItems(session), () => s.fmtCycle.map((m) => m.toUpperCase()).join(" ")),
     section(
       "vibration",
@@ -187,6 +189,75 @@ export function settingsSections(session: Session, env: SettingsEnv = {}): MenuI
       return t("settings.counters.value", { n: String(c.shift + c.alpha) });
     }),
     section("help", aboutText("help"), helpItems()),
+  ];
+}
+
+/** Appearance (R50e): the theme (◀ ▶ step through the five families; a tap, a digit or Enter lists them, and a pick
+ *  keeps the sheet open so the status line and keys above show it), the brightness, and the two switches. */
+function appearanceItems(session: Session): MenuItem[] {
+  const look = () => session.settings.look;
+  const setLook = (patch: Partial<Look>): void => {
+    session.settings.look = validLook({ ...look(), ...patch }, look());
+    session.save();
+    session.onLook?.({ ...session.settings.look });
+  };
+  const ids = FAMILIES.map((f) => f.id);
+  const brightness = (b: (typeof BRIGHTNESS)[number]) => t(`appearance.brightness.${b}` as MessageKey);
+  return [
+    {
+      id: "theme",
+      label: t("appearance.theme"),
+      get dots() {
+        return familyOf(look().family).dots;
+      },
+      get value() {
+        return familyOf(look().family).name;
+      },
+      adjust: (by) => setLook({ family: stepped(ids, look().family, by) }),
+      submenu: {
+        title: t("appearance.theme"),
+        items: FAMILIES.map((f) => ({
+          id: f.id,
+          label: f.name,
+          dots: f.dots,
+          keep: true,
+          get selected() {
+            return look().family === f.id;
+          },
+          run: () => setLook({ family: f.id }),
+        })),
+        remember: false,
+      },
+    },
+    {
+      id: "brightness",
+      label: t("appearance.brightness"),
+      keep: true,
+      get value() {
+        return brightness(look().brightness);
+      },
+      adjust: (by) => setLook({ brightness: stepped(BRIGHTNESS, look().brightness, by) }),
+    },
+    {
+      id: "contrast",
+      label: t("appearance.contrast"),
+      hint: t("appearance.contrast.hint"),
+      keep: true,
+      get selected() {
+        return look().contrast;
+      },
+      run: () => setLook({ contrast: !look().contrast }),
+    },
+    {
+      id: "plain",
+      label: t("appearance.plain"),
+      hint: t("appearance.plain.hint"),
+      keep: true,
+      get selected() {
+        return look().plain;
+      },
+      run: () => setLook({ plain: !look().plain }),
+    },
   ];
 }
 

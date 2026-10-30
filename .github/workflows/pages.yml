@@ -1,0 +1,52 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# A45: the web version at https://pascaline-calc.org/ (GitHub Pages, source "GitHub Actions"; the domain is set in the
+# repository's Settings → Pages, so there is no CNAME file and no gh-pages branch). Runs only by hand or on a tag v*.
+# The environment `github-pages` must allow the tag rule v* (Settings → Environments), or a tag deploy is refused.
+# Every action is pinned by commit SHA (version in the comment); app/scripts/pages.test.ts checks this file.
+name: pages
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "22"
+      - name: Fetch the pinned source tarballs (SHA-256 checked by the scripts)
+        run: |
+          (source engine/giac/build-wasm.sh; stage_fetch)
+          engine/qalc/build-wasm.sh fetch
+      - name: Build the web version (release engine, Find index, app)
+        run: |
+          NO_LOCK=1 ./build.sh --web
+      - name: Engine checksums
+        run: cat engine/giac/_out/release/SHA256SUMS
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: app/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-24.04
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1

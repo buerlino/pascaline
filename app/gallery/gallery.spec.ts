@@ -13,13 +13,15 @@ const THEMES = ["light", "dark"] as const;
 function settingsShots(): Shot[] {
   const levels = [
     { id: "", title: "Mode › Settings (R49): the next level of the sheet, the top cluster live", keys: [] },
-    { id: "-numbers", title: "Settings › Numbers: the Decimal mark (R57), the Fmt cycle (its hint under Standard) and Decimals in Fixed", keys: ["d1"] },
-    { id: "-vibration", title: "Settings › Key vibration, switched on (strength disabled with its reason), Try it", keys: ["d2", "d1"] },
-    { id: "-counters", title: "Settings › Counters: the Shift and Alpha counts, since when, Reset", keys: ["d3"] },
-    { id: "-help", title: "Settings › Help and about (R87): About Pascaline, Parts we use and their licences", keys: ["d4"] },
-    { id: "-about", title: "Help and about › About Pascaline: version, licence, source, credits", keys: ["d4", "d1"] },
-    { id: "-parts", title: "Help and about › Parts: a row per part of THIRD_PARTY.md with its licence, the copyright line under the list", keys: ["d4", "d2"] },
-    { id: "-licence", title: "Parts › a licence's full text, a level that scrolls", keys: ["d4", "d1", "d2"] },
+    { id: "-appearance", title: "Settings › Appearance (R50e): Theme with its dots, Brightness, High contrast and Plain keys", keys: ["d1"] },
+    { id: "-theme", title: "Appearance › Theme: the five families with their dots (a pick keeps the sheet open)", keys: ["d1", "enter"] },
+    { id: "-numbers", title: "Settings › Numbers: the Decimal mark (R57), the Fmt cycle (its hint under Standard) and Decimals in Fixed", keys: ["d2"] },
+    { id: "-vibration", title: "Settings › Key vibration, switched on (strength disabled with its reason), Try it", keys: ["d3", "d1"] },
+    { id: "-counters", title: "Settings › Counters: the Shift and Alpha counts, since when, Reset", keys: ["d4"] },
+    { id: "-help", title: "Settings › Help and about (R87): About Pascaline, Parts we use and their licences", keys: ["d5"] },
+    { id: "-about", title: "Help and about › About Pascaline: version, licence, source, credits", keys: ["d5", "d1"] },
+    { id: "-parts", title: "Help and about › Parts: a row per part of THIRD_PARTY.md with its licence, the copyright line under the list", keys: ["d5", "d2"] },
+    { id: "-licence", title: "Parts › a licence's full text, a level that scrolls", keys: ["d5", "d1", "d2"] },
   ];
   const sizes = [
     { tag: "small", group: "Small phone (360 × 740)", viewport: { width: 360, height: 740 } },
@@ -40,6 +42,32 @@ function settingsShots(): Shot[] {
   );
 }
 type Theme = (typeof THEMES)[number];
+
+/** R50e: Home with some history and the Shift key on, in each family (light and dark come with every shot), then the two switches. */
+function lookShots(): Shot[] {
+  const set = (patch: Record<string, unknown>) => async (p: Page) => {
+    await someHistory(p);
+    await tap(p, ["shift"]);
+    await p.evaluate((o) => {
+      const s = window.pascaline.session;
+      s.settings.look = { ...s.settings.look, ...o };
+      s.onLook?.({ ...s.settings.look });
+    }, patch);
+    await p.waitForFunction((f) => document.documentElement.getAttribute("data-family") === f, patch["family"] ?? "pascaline");
+    await p.waitForTimeout(400); // the lazy CSS is in
+  };
+  return [
+    ...(["pascaline", "graphite", "solarized", "gruvbox", "nord"] as const).map((family) => ({
+      id: `look-${family}`,
+      group: "Themes (R50e): every family, Shift on",
+      title: family[0]!.toUpperCase() + family.slice(1),
+      setup: set({ family, brightness: "system" }),
+    })),
+    { id: "look-contrast", group: "Themes (R50e): the switches", title: "Pascaline, High contrast", setup: set({ contrast: true }) },
+    { id: "look-plain", group: "Themes (R50e): the switches", title: "Pascaline, Plain keys (bold is Shift, italic is Alpha)", setup: set({ plain: true }) },
+    { id: "look-nord-both", group: "Themes (R50e): the switches", title: "Nord, High contrast and Plain keys together", setup: set({ family: "nord", contrast: true, plain: true }) },
+  ];
+}
 
 interface Shot {
   readonly id: string;
@@ -207,6 +235,7 @@ const shots: Shot[] = [
     },
   },
   ...settingsShots(),
+  ...lookShots(),
   {
     id: "home-tmpl",
     group: "Home",

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Settings schemas (docs/04 6.2): 2 = digits up to 30 and the PFX format, 3 = the decimal mark (R57), with field-by-field
-// validation of old data.
+// Settings schemas (docs/04 6.2): 2 = digits up to 30 and the PFX format, 3 = the look (R50e), 4 = the decimal mark
+// (R57), with field-by-field validation of old data.
 import { describe, expect, it } from "vitest";
 import { FakeCalc } from "../calc/fake.ts";
 import { defaultSettings, migrateSettings, MAX_DIGITS, Session, SETTINGS_SCHEMA } from "./session.svelte.ts";
@@ -31,16 +31,16 @@ describe("migrateSettings", () => {
     expect(migrated).toBe(true);
     expect(settings).toMatchObject({ digits: 30, format: "pfx", decimalMark: "point" });
   });
-  it("version 3 holds the decimal mark and needs no migration", () => {
+  it("version 4 holds the decimal mark and needs no migration", () => {
     const { settings, migrated } = migrateSettings({ schema: SETTINGS_SCHEMA, digits: 30, format: "pfx", decimalMark: "comma" });
-    expect(SETTINGS_SCHEMA).toBe(3);
+    expect(SETTINGS_SCHEMA).toBe(4);
     expect(settings.decimalMark).toBe("comma");
     expect(migrated).toBe(false);
     expect(settings.digits).toBe(30);
     expect(settings.format).toBe("pfx");
   });
   it("every earlier schema, stored with or without a mark, reads as the point unless it holds a valid mark", () => {
-    for (const schema of [undefined, 1, 2]) expect(migrateSettings({ schema, digits: 9 }).settings.decimalMark).toBe("point");
+    for (const schema of [undefined, 1, 2, 3]) expect(migrateSettings({ schema, digits: 9 }).settings.decimalMark).toBe("point");
     for (const bad of ["dot", 1, null, true]) expect(migrateSettings({ schema: SETTINGS_SCHEMA, decimalMark: bad }).settings.decimalMark).toBe("point");
     expect(migrateSettings({ decimalMark: "comma" }).settings.decimalMark).toBe("comma");
   });
@@ -59,6 +59,45 @@ describe("migrateSettings", () => {
   });
   it("unknown Format key modes are dropped from the cycle, pfx is kept", () => {
     expect(migrateSettings({ fmtCycle: ["std", "bogus", "pfx"] }).settings.fmtCycle).toEqual(["std", "pfx"]);
+  });
+});
+
+describe("the look (R50e, schema 3)", () => {
+  const first = { family: "pascaline", brightness: "dark", contrast: true, plain: false } as const;
+  it("every schema before 3 gets the first-start look and is marked as migrated", () => {
+    for (const old of [{ digits: 9 }, { schema: 2, digits: 9 }]) {
+      const { settings, migrated } = migrateSettings(old, first);
+      expect(migrated).toBe(true);
+      expect(settings.digits).toBe(9);
+      expect(settings.look).toEqual(first);
+    }
+  });
+  it("a stored look wins over the first-start look, field by field", () => {
+    const stored = { schema: 3, look: { family: "nord", brightness: "light", contrast: false, plain: true } };
+    const { settings, migrated } = migrateSettings(stored, first);
+    expect(migrated).toBe(true); // schema 3 → 4 (R57) keeps the look
+    expect(settings.look).toEqual(stored.look);
+    expect(migrateSettings({ schema: 3, look: { family: "bogus", brightness: 4, contrast: "yes", plain: true } }, first).settings.look).toEqual({ ...first, plain: true });
+    expect(migrateSettings({ schema: 3, look: 7 }, first).settings.look).toEqual(first);
+  });
+  it("the defaults are Pascaline, System, both switches off", () => {
+    expect(defaultSettings.look).toEqual({ family: "pascaline", brightness: "system", contrast: false, plain: false });
+  });
+  it("restoring tells the page the look it read", async () => {
+    const kv = memoryKv();
+    kv.data.set("settings", { schema: 3, look: { family: "nord", brightness: "light", contrast: false, plain: false } });
+    const s = new Session(new FakeCalc(), kv);
+    const seen: unknown[] = [];
+    s.onLook = (l) => seen.push(l);
+    await s.restoreSettings();
+    expect(seen).toEqual([{ family: "nord", brightness: "light", contrast: false, plain: false }]);
+  });
+  it("a start with nothing stored writes its look, so a later start does not ask the phone again", async () => {
+    const kv = memoryKv();
+    const s = new Session(new FakeCalc(), kv);
+    await s.restoreSettings();
+    expect((kv.data.get("settings") as { schema: number; look: unknown }).schema).toBe(SETTINGS_SCHEMA);
+    expect((kv.data.get("settings") as { look: unknown }).look).toEqual(defaultSettings.look);
   });
 });
 

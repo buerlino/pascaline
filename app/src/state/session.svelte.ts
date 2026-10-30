@@ -28,6 +28,7 @@ import {
   type ResultFacts,
   modeOf,
 } from "./displayMode.ts";
+import { defaultLook, validLook, type Look } from "../theme/look.ts";
 import { idbKv, type Kv } from "./storage.ts";
 import { TapCounter } from "./taps.svelte.ts";
 import { casItem, chipFactsOf, chipOf, FULL_LIMIT, homeItem, ITEMS_LIMIT } from "./results.ts";
@@ -53,10 +54,12 @@ export interface Settings extends CalcSettings {
   /** Decimals of the Fixed mode. */
   fixDecimals: number;
   haptics: HapticsSettings;
+  /** Settings › Appearance (R50e): family, brightness, High contrast, Plain keys. */
+  look: Look;
 }
 /** The stored settings' version (docs/04 6.2): 1 = no field (digits ≤ 15, formats std/sci/eng), 2 = digits ≤ 30, pfx,
- *  3 = the decimal mark (R57). */
-export const SETTINGS_SCHEMA = 3;
+ *  3 = `look` (R50e), 4 = the decimal mark (R57). */
+export const SETTINGS_SCHEMA = 4;
 /** Most significant digits the setting allows (docs/04 2.5). */
 export const MAX_DIGITS = 30;
 export const defaultSettings: Settings = {
@@ -68,6 +71,7 @@ export const defaultSettings: Settings = {
   fmtCycle: [...DEFAULT_FMT_CYCLE],
   fixDecimals: 4,
   haptics: { on: false, strength: 50, ms: 15 },
+  look: defaultLook(),
 };
 
 /** "note" is a line the app says itself (G19's safe start): text only, no entry and no result, and never stored. */
@@ -189,11 +193,13 @@ function validFacts(x: unknown): ResultFacts | undefined {
 /**
  * The settings from what was stored (docs/04 6.2): field by field, so a wrong or missing field keeps its default.
  * `schema` absent is version 1 (digits ≤ 15, formats std/sci/eng); version 2 allows digits ≤ 30 and `pfx`; version 3
- * adds `decimalMark`. Every earlier value stays valid and a missing mark is the point, so the migration only has to
- * write the data back with the current `schema`.
+ * adds `look`, version 4 `decimalMark`. Every older value stays valid and a missing mark is the point, so the
+ * migration only has to write the data back with the new schema.
+ * `firstLook` is the look of a start with nothing stored (Android: Dark; High contrast when the system asks for it).
  */
-export function migrateSettings(saved: unknown): { settings: Settings; migrated: boolean } {
+export function migrateSettings(saved: unknown, firstLook: Look = defaultSettings.look): { settings: Settings; migrated: boolean } {
   const s = structuredClone(defaultSettings);
+  s.look = { ...firstLook };
   const x = (saved && typeof saved === "object" ? saved : {}) as Partial<Record<keyof Settings | "schema", unknown>>;
   if (x["angle"] === "rad" || x["angle"] === "deg") s.angle = x["angle"];
   if (x["format"] === "std" || x["format"] === "sci" || x["format"] === "eng" || x["format"] === "pfx") s.format = x["format"];
@@ -212,6 +218,7 @@ export function migrateSettings(saved: unknown): { settings: Settings; migrated:
       ms: clamp(typeof hh.ms === "number" ? hh.ms : d.ms, HAPTIC_MS_RANGE.min, HAPTIC_MS_RANGE.max),
     };
   }
+  s.look = validLook(x["look"], firstLook);
   return { settings: s, migrated: x["schema"] !== SETTINGS_SCHEMA };
 }
 
@@ -234,6 +241,12 @@ function restoredItem(i: HistoryItem, id: number): HistoryItem {
   }
   if (typeof drawn === "string" && drawn.length <= FULL_LIMIT) out.drawn = drawn;
   return out;
+}
+
+/** The look of a first start: Dark in the Android app, System in the PWA; High contrast when the phone asks for more (R50e). */
+function firstLook(): Look {
+  const w = globalThis as { Capacitor?: { isNativePlatform?: () => boolean }; matchMedia?: (q: string) => { matches: boolean } };
+  return defaultLook(w.Capacitor?.isNativePlatform?.() === true, w.matchMedia?.("(prefers-contrast: more)").matches === true);
 }
 
 export class Session {
@@ -262,6 +275,8 @@ export class Session {
   private readonly namesRead: Promise<void>;
 
   private readonly kv: Kv;
+  /** Put a look on the page (main.ts: theme/lookApply.ts); called when it changes and once the settings are read. */
+  onLook: ((look: Look) => void) | undefined;
   /** 0 = write the history at once (tests); the app sets a delay so Enter does not wait for the store. */
   saveDelayMs = 0;
   private saveTimer: ReturnType<typeof setTimeout> | undefined;
@@ -688,11 +703,13 @@ export class Session {
   /** Settings and the open view: small, read at launch. */
   async restoreSettings(): Promise<void> {
     const saved = await this.kv.get<unknown>("settings");
-    if (saved) {
-      const { settings, migrated } = migrateSettings(saved);
-      Object.assign(this.settings, settings);
-      if (migrated) this.save(); // docs/04 6.2: write the settings back as the current schema
-    }
+    const { settings, migrated } = migrateSettings(saved, firstLook());
+    if (saved) Object.assign(this.settings, settings);
+    else this.settings.look = settings.look;
+    // docs/04 6.2: write the settings back as the newest schema. A start with nothing stored writes its look too, so
+    // High contrast from `prefers-contrast: more` is only the first start's default (R50e).
+    if (saved ? migrated : true) this.save();
+    this.onLook?.($state.snapshot(this.settings.look));
     const view = await this.kv.get<View>("view");
     if (view === "home" || view === "cas") this.view = view;
   }

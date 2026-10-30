@@ -167,9 +167,9 @@ test("Settings opened again after the sheet chunk failed once answers Down and E
   const settings = page.getByTestId("menu");
   await expect(page.getByTestId("sheet-title")).toHaveText("Mode › Settings");
   const active = settings.locator('[data-active="true"]');
-  await expect(active).toHaveAttribute("data-id", "numbers");
+  await expect(active).toHaveAttribute("data-id", "appearance");
   await tap(page, ["down"]); // the keypad's keys go through sheetPress, which reads them with the sheet chunk's keys
-  await expect(active).toHaveAttribute("data-id", "vibration");
+  await expect(active).toHaveAttribute("data-id", "numbers");
   await tap(page, ["esc", "esc"]);
   await expect(settings).toBeHidden();
 });

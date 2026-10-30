@@ -22,7 +22,7 @@ test("start fetches no About data; opening Help and about does not either, About
   const urls: string[] = [];
   page.on("request", (r) => urls.push(r.url()));
   await open(page);
-  await tap(page, ["@mode", "d5", "d5"]);
+  await tap(page, ["@mode", "d5", "d6"]);
   await expect(title(page)).toHaveText("Mode › Settings › Help and about");
   expect(urls.filter((u) => /virtual:about|about-[\w-]+\.js/.test(u))).toEqual([]);
   await tap(page, ["d1"]);
@@ -33,7 +33,7 @@ test("start fetches no About data; opening Help and about does not either, About
 test.describe("by keys", () => {
   test.beforeEach(async ({ page }) => {
     await open(page);
-    await tap(page, ["@mode", "d5", "d5"]);
+    await tap(page, ["@mode", "d5", "d6"]);
   });
 
   test("Help and about: About Pascaline and Parts we use; digit 1 shows the name, the version, GPL-3.0-or-later and the source URL", async ({ page }) => {
@@ -52,7 +52,8 @@ test.describe("by keys", () => {
 
   test("About › Licence opens the GPL text as a level that scrolls; ▼ pages down, ◀ goes back onto the same row", async ({ page }) => {
     await tap(page, ["d1", "d2"]);
-    await expect(text(page)).toContainText("GNU GENERAL PUBLIC LICENSE");
+    // the first licence text loads its lazy chunk; under the full run's load that took more than the default 5 s once (pipeline run 350)
+    await expect(text(page)).toContainText("GNU GENERAL PUBLIC LICENSE", { timeout: 20_000 });
     await expect(title(page)).toHaveText("Help and about › About › GPL-3.0-or-later");
     await expect(page.getByTestId("sheet-count")).toHaveCount(0); // a text has no item count
     const scrolls = await text(page).evaluate((e) => e.scrollHeight > e.clientHeight * 3);

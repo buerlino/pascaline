@@ -46,6 +46,38 @@ describe("applyTheme", () => {
   });
 });
 
+describe("applyTheme, two changes in a row", () => {
+  const t = (family: Family): Theme => ({ family, brightness: "dark", contrast: "normal", keys: "colour" });
+  it("ends in the last one chosen when the first load is released last", async () => {
+    const root = fakeRoot();
+    const releases = new Map<Family, () => void>();
+    const load = (f: Family): Promise<void> => new Promise((res) => void releases.set(f, res));
+    const first = applyTheme(t("nord"), root, load);
+    const second = applyTheme(t("graphite"), root, load);
+    await Promise.resolve();
+    releases.get("graphite")?.();
+    await second;
+    expect(root.attrs.get("data-family")).toBe("graphite");
+    releases.get("nord")?.();
+    await first;
+    expect(root.attrs.get("data-family")).toBe("graphite");
+  });
+  it("a change after an unfinished one still wins when the first finishes first", async () => {
+    const root = fakeRoot();
+    const releases = new Map<Family, () => void>();
+    const load = (f: Family): Promise<void> => new Promise((res) => void releases.set(f, res));
+    const first = applyTheme(t("nord"), root, load);
+    const second = applyTheme(t("gruvbox"), root, load);
+    await Promise.resolve();
+    releases.get("nord")?.();
+    await first;
+    expect(root.attrs.has("data-family")).toBe(false); // superseded: nothing set yet
+    releases.get("gruvbox")?.();
+    await second;
+    expect(root.attrs.get("data-family")).toBe("gruvbox");
+  });
+});
+
 describe("modes.css", () => {
   it("is loaded only with Plain keys or High contrast", async () => {
     let n = 0;
