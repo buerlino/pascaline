@@ -102,7 +102,7 @@ test("the angle: one tap on its chip; Mode from the format chip, ▲ to Angle, �
 });
 
 test("Settings: two taps (a chip, then Mode's last row); Esc goes back to Mode (R49)", async ({ page }) => {
-  await page.getByTestId("chip-digits").tap();
+  await page.getByTestId("chip-format").tap();
   await sheet(page).locator('[data-id="settings"]').tap();
   await expect(page.getByTestId("sheet-title")).toHaveText("Mode › Settings");
   await tap(page, ["esc"]);

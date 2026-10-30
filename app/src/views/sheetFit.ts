@@ -11,6 +11,8 @@ export const ROW_FLOOR = 36;
 export const REASON = 16;
 /** A row whose value has ◀ ▶ buttons is at least as tall as they are (44 × 44 px for the thumb). */
 export const STEP = 44;
+/** A row with a button per value (R86, Mode): 44 px buttons and 4 px of air above and below. */
+export const OPTIONS = 52;
 /** Grid cells: the floor, and the gap between them. Their normal height is the palette's own (58 Tmpl, 46 Shift). */
 export const CELL_FLOOR = 44;
 export const GAP = 4;
@@ -19,10 +21,12 @@ export const GAP = 4;
 export interface RowNeeds {
   readonly reason: boolean;
   readonly steps: boolean;
+  /** A button per value (R86). */
+  readonly options?: boolean;
 }
 
 /** A row's height for a line height `row`. */
-export const rowHeight = (row: number, r: RowNeeds): number => Math.max(row + (r.reason ? REASON : 0), r.steps ? STEP : 0);
+export const rowHeight = (row: number, r: RowNeeds): number => Math.max(row + (r.reason ? REASON : 0), r.steps ? STEP : 0, r.options ? OPTIONS : 0);
 
 /** The line height that fits `rows` into `room` px: the normal height when they fit, else as low as needed down to
  *  the floor (half-pixel steps). At the floor the list scrolls. */
@@ -50,6 +54,9 @@ export function showsReason(items: readonly MenuItem[], i: number): boolean {
 
 /** The row has a second line: its reason (showsReason) or its hint (R49). */
 export const twoLines = (items: readonly MenuItem[], i: number): boolean => showsReason(items, i) || items[i]?.hint !== undefined;
+
+/** The row draws a button per value (R86). */
+export const hasOptions = (item: MenuItem): boolean => item.options !== undefined;
 
 /** The row has a value that ◀ ▶ change in place (the Mode sheet, R21a). */
 export const hasSteps = (item: MenuItem): boolean => item.adjust !== undefined && item.value !== undefined;

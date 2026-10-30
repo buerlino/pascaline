@@ -243,12 +243,13 @@
       else shell.closeSheet();
     });
   });
-  /** A tap on a status chip (`at`: the row to start on), or a user key that holds Mode: the Mode sheet. Without `at`
-   *  it starts on Angle, so Mode, ▶, Enter always switches the angle unit. */
+  /** A tap on a status chip (`at`: the row to start on; "digits": its list, one level down), or a user key that holds
+   *  Mode: the Mode sheet. Without `at` it starts on Angle, so Mode, ▶, Enter always switches the angle unit. */
   function openMode(at?: string): void {
     onModeSheet((m) => {
       picked = null;
       shell.showMenu(t("mode.title"), m.modeItems(session), { remember: false, at });
+      if (at === "digits") shell.sheet?.enter(); // R86: the digits chip opens the list itself, Mode under it
     });
   }
   /** Run `open` at once when the lists are loaded; else after the load, with every key meanwhile waiting in the queue
@@ -479,6 +480,7 @@
     below={entryHeight}
     {keyBox}
     ontap={(i) => shell.picked(sheet.activate(i))}
+    onoption={(i, o) => shell.picked(sheet.pickOption(i, o))}
     onback={() => sheet.back()}
     onclose={() => shell.closeSheet()}
   />
