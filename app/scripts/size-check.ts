@@ -116,9 +116,8 @@ export const LAZY_PARTS = ["src/views/sheetKeys.ts", "src/views/tmplSheet.ts", "
  *  59.5 → 60 kB (R50e): phase-1 59.42 kB, the branch 59.90 kB (+0.48 kB, raw +1.2 kB): the stored look (its
  *  validation, the schema-3 migration and the first-start default) is in the settings the session reads at start; the
  *  Appearance level, the family list and the theme files are lazy chunks.
- *  60 → 60.5 kB (R57, Opus pass 18 waives its share, no lazy comma module): phase-1 measures 59.90 kB gzip, the branch
- *  60.48 kB (+0.58 kB; on the older phase-1 +0.43): the decimal mark's setting, the two key faces, the drawn comma and
- *  the hardware keys. */
+ *  60 → 60.5 kB (R57): phase-1 59.90 kB, the branch 60.48 kB (+0.58 kB): the decimal mark setting, the two key faces,
+ *  the drawn comma, the hardware keys, and the Paste and rows holds (keyboard/route.ts) are on the key path. */
 export const START_PIN_GZIP = 60.5 * KB;
 
 /** Failures for the start chunk's row when it is over the pin. */

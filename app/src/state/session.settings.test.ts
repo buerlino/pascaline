@@ -80,6 +80,14 @@ describe("the look (R50e, schema 3)", () => {
     expect(migrateSettings({ schema: 3, look: { family: "bogus", brightness: 4, contrast: "yes", plain: true } }, first).settings.look).toEqual({ ...first, plain: true });
     expect(migrateSettings({ schema: 3, look: 7 }, first).settings.look).toEqual(first);
   });
+  it("migrating from schema 1, 2 or 3 to 4 keeps a stored look and gives the point as the decimal mark (R57)", () => {
+    const look = { family: "nord", brightness: "light", contrast: true, plain: true };
+    for (const schema of [undefined, 2, 3]) {
+      const { settings, migrated } = migrateSettings({ ...(schema === undefined ? {} : { schema }), digits: 9, look }, first);
+      expect(migrated).toBe(true);
+      expect(settings).toMatchObject({ digits: 9, look, decimalMark: "point" });
+    }
+  });
   it("the defaults are Pascaline, System, both switches off", () => {
     expect(defaultSettings.look).toEqual({ family: "pascaline", brightness: "system", contrast: false, plain: false });
   });
