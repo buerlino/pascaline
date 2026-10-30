@@ -8,8 +8,6 @@
   /* keypad legend line above each key face, and the key side padding */
   --legend-h: 12px;
   --key-pad: 4px;
-  /* the unit pad's prefix cells (R24b): the Enter colour in the key's own, in every family and brightness */
-  --key-pfx: color-mix(in srgb, var(--key-enter) 34%, var(--key-num));
 }
 :root[data-family="pascaline"][data-brightness="dark"] {
   --bg: #0b1020;
@@ -35,6 +33,7 @@
   --focus: #ffc233;
   --key-on: #ffc233;
   --on-key-on: #0b1020;
+  --key-pfx: #203374;
   --on-error: #0b1020;
   color-scheme: dark;
 }
@@ -62,6 +61,7 @@
   --focus: #0025b5;
   --key-on: #0025b5;
   --on-key-on: #ffffff;
+  --key-pfx: #d6dcf3;
   --on-error: #ffffff;
   color-scheme: light;
 }

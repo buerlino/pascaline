@@ -31,7 +31,8 @@ export function contrast(a: string, b: string): number {
   return ((x as number) + 0.05) / ((y as number) + 0.05);
 }
 
-const KEY_BG = ["key-num", "key-op", "key-fn", "key-ctl", "key-nav"] as const;
+/** `key-pfx`: the unit pad's prefix cells (R24b), derived by theme-gen.ts from the Enter and digit colours. */
+const KEY_BG = ["key-num", "key-op", "key-fn", "key-ctl", "key-nav", "key-pfx"] as const;
 
 for (const [theme, t] of blocks) {
   describe(`keypad contrast, ${theme} theme`, () => {

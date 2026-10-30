@@ -6,7 +6,7 @@
   import { fitLegends } from "./fit.ts";
   import { actionFor, gridPlace, keyboard, labelFor, type Key, type Layer } from "./keyboard.ts";
   import { sheetChunk } from "../views/sheetView.svelte.ts";
-    import type { UserKeys } from "./userKeys.svelte.ts";
+  import type { UserKeys } from "./userKeys.svelte.ts";
 
   let {
     userKeys,
@@ -401,6 +401,10 @@
   .key[data-pad="prefix"] {
     background: var(--key-pfx);
   }
+  /* High contrast leaves the key colours little room to differ: the prefix cells keep an outline there too */
+  :global(:root[data-contrast="high"]) .key[data-pad="prefix"] {
+    box-shadow: inset 0 0 0 1px var(--line);
+  }
   .key[data-pad="user"] {
     box-shadow: inset 0 0 0 1px var(--muted);
   }
@@ -412,9 +416,6 @@
   .key[data-pad="empty"] {
     background: transparent;
     box-shadow: inset 0 0 0 1px var(--line);
-  }
-  .key[data-pad="empty"] .main {
-    opacity: 0.5;
   }
   /* the trackpad in the upper cluster: as low as the keys beside it */
   .key[data-zone="true"] {
