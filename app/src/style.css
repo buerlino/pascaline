@@ -8,6 +8,8 @@
   /* keypad legend line above each key face, and the key side padding */
   --legend-h: 12px;
   --key-pad: 4px;
+  /* the unit pad's prefix cells (R24b): the Enter colour in the key's own, in every family and brightness */
+  --key-pfx: color-mix(in srgb, var(--key-enter) 34%, var(--key-num));
 }
 :root[data-family="pascaline"][data-brightness="dark"] {
   --bg: #0b1020;

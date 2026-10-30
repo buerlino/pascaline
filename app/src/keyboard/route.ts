@@ -12,6 +12,7 @@ import type { EntryController } from "../entry/controller.ts";
 import { ANS_CHIP } from "../entry/macros.ts";
 import { canPick, pickAfter, pickAtOrBefore } from "../state/pickRows.ts";
 import type { HistoryItem, Session, View } from "../state/session.svelte.ts";
+import { unitPad } from "../units/padView.svelte.ts";
 import { sheetChunk, loadSheetView } from "../views/sheetView.svelte.ts";
 import { actionFor, type ActionBody, type Key, type Layer, type Special } from "./keyboard.ts";
 
@@ -323,6 +324,18 @@ function rowsLoading(c: RouteCtx, key: Key): boolean {
   return true;
 }
 
+/** The unit pad is up (R24b): a key that is one of its cells emits the cell's action in the layer it was pressed in, a
+ *  cell with nothing there is a dead key; any other key goes on its way. */
+function padPress(c: RouteCtx, key: Key, layer: Layer | undefined): boolean {
+  const mods = modsFor(c, layer);
+  const emit = unitPad.model?.press(key.id, layerOf(mods));
+  if (emit === undefined) return false;
+  c.session.clearModifiers();
+  if (emit === null) c.dead();
+  else unitPad.on(emit);
+  return true;
+}
+
 /** A key fires. `layer` overrides the Shift/Alpha state for this key only: a trackpad step ("primary"), a flick up
  *  ("shift") or down ("alpha"). */
 export function press(c: RouteCtx, key: Key, layer?: Layer): void {
@@ -330,6 +343,7 @@ export function press(c: RouteCtx, key: Key, layer?: Layer): void {
   if (p?.kind === "special" && (p.name === "shift" || p.name === "alpha")) return modifier(c, p.name, layer);
   if (sheetUndrawn(c) || rowsLoading(c, key)) return wait(c, { key, mods: modsFor(c, layer), layer });
   if (c.shell.sheet && sheetPress(c, key, layer)) return;
+  if (unitPad.model && !c.shell.sheet && padPress(c, key, layer)) return;
   const mods = modsFor(c, layer);
   c.session.clearModifiers(); // a one-shot Shift or Alpha is used up by this key, a tap or a flick
   if (c.sheetLoad === null && sheetChunk.C === null && opensSheet(key, mods)) {
