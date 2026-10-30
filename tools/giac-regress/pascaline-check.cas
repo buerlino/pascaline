@@ -717,4 +717,24 @@ Digits:=40:; pc("g132-keep-sqrt-pi-cubed-12",'(sqrt(pi^3))',(556832799683/10^11)
 Digits:=40:; pc("g135-home-cos-atan-where",'(cos(atan(x))|x=2*i)',-(57735026919/10^11)*i,5/10^13);
 // g135-home-sin-atan-where (precision.yaml, derived)
 Digits:=40:; pc("g135-home-sin-atan-where",'(sin(atan(x))|x=2*i)',(115470053838/10^11),5/10^12);
+// g133-asin-half-tiny-i-12 (precision.yaml, oracle)
+Digits:=40:; pc("g133-asin-half-tiny-i-12",'(asin(1/2+i/10^20))',(523598775598/10^12)+(115470053838/10^31)*i,5/10^13+5/10^32);
+// g133-acos-half-tiny-i-12 (precision.yaml, oracle)
+Digits:=40:; pc("g133-acos-half-tiny-i-12",'(acos(1/2+i/10^20))',(10471975512/10^10)-(115470053838/10^31)*i,5/10^12+5/10^32);
+// g133-asin-neg-tiny-neg-i-12 (precision.yaml, oracle)
+Digits:=40:; pc("g133-asin-neg-tiny-neg-i-12",'(asin(-3/5-i/10^15))',-(643501108793/10^12)-(125/10^17)*i,5/10^13+5/10^27);
+// g133-asin-tiny-i-12 (precision.yaml, oracle)
+Digits:=40:; pc("g133-asin-tiny-i-12",'(asin(i/10^20))',(1/10^20)*i,5/10^32);
+// g133-acos-tiny-i-30 (precision.yaml, oracle)
+Digits:=40:; pc("g133-acos-tiny-i-30",'(acos(i/10^20))',(157079632679489661923132169164/10^29)-(1/10^20)*i,5/10^30+5/10^50);
+// g133-sqrt-evalf-1-tiny-i-12 (precision.yaml, oracle)
+Digits:=40:; pc("g133-sqrt-evalf-1-tiny-i-12",'(sqrt(evalf(1+i/10^20)))',1+(5/10^21)*i,5/10^12+5/10^33);
+// g133-asin-tiny-complex-12 (precision.yaml, oracle)
+Digits:=40:; pc("g133-asin-tiny-complex-12",'(asin(1/10^20+i/10^20))',(1/10^20)+(1/10^20)*i,5/10^32+5/10^32);
+// g133-acos-tiny-i-12 (precision.yaml, oracle)
+Digits:=40:; pc("g133-acos-tiny-i-12",'(acos(i/10^20))',(157079632679/10^11)-(1/10^20)*i,5/10^12+5/10^32);
+// g133-acos-tiny-complex-12 (precision.yaml, oracle)
+Digits:=40:; pc("g133-acos-tiny-complex-12",'(acos(1/10^20+i/10^20))',(157079632679/10^11)-(1/10^20)*i,5/10^12+5/10^32);
+// g133-acos-tiny-complex-30 (precision.yaml, oracle)
+Digits:=40:; pc("g133-acos-tiny-complex-30",'(acos(1/10^20+i/10^20))',(157079632679489661922132169164/10^29)-(1/10^20)*i,5/10^30+5/10^50);
 print("pascaline-check: "+pasfail+" of "+pasn+" failed");
