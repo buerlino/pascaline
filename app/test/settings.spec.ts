@@ -1,141 +1,232 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// R21b (decisions.md "R21", backlog C8): the Settings page, by touch, by hardware keys and by Android back
-// (`history.back()`); back closes an open pick sheet; the history never grows. The fake engine.
+// R49 (docs/05 3.4, decisions.md "Settings in the Mode sheet, and presets"): Settings is the next level of the pick sheet
+// over the keypad's maths rows, opened by Mode's last row and by every ☰ menu's last row, with its path in the title.
+// By touch, by keys and by Android back (`history.back()`); the history never grows. The fake engine.
 import { expect, test, type Page } from "@playwright/test";
-import { open, tap } from "./helpers.ts";
+import { entryValue, open, recordVibrations, tap, vibrations } from "./helpers.ts";
 
-const page_ = (page: Page) => page.getByTestId("settings");
-const row = (page: Page, id: string) => page_(page).locator(`[data-id="${id}"]`);
-const sheet = (page: Page) => page.locator('[role="menu"]');
+const sheet = (page: Page) => page.getByTestId("menu");
+const title = (page: Page) => page.getByTestId("sheet-title");
+const row = (page: Page, id: string) => sheet(page).locator(`[role="menuitem"][data-id="${id}"]`);
+const active = (page: Page) => sheet(page).locator('[data-active="true"]');
+const rowIds = (page: Page) => sheet(page).getByRole("menuitem").evaluateAll((els) => els.map((e) => e.getAttribute("data-id")));
 const historyLength = (page: Page) => page.evaluate(() => history.length);
-/** history.back() is asynchronous: wait for its popstate. */
-const back = async (page: Page) => {
-  await page.evaluate(() => history.back());
-};
+const back = (page: Page) => page.evaluate(() => history.back());
+/** The three sections built so far, in the fixed order (Appearance, Your keys, Data and Help and about come later). */
+const SECTIONS = ["numbers", "vibration", "counters"];
 
 test.beforeEach(async ({ page }) => {
   await page.setViewportSize({ width: 412, height: 915 });
   await page.emulateMedia({ reducedMotion: "reduce" });
+  await recordVibrations(page);
   await open(page);
 });
 
-test.describe("by touch", () => {
-  test("× closes it; it covers the whole window, status line included", async ({ page }) => {
+test.describe("by keys", () => {
+  test("Mode, 5: Settings as a level of the sheet, with its path; digits pick, ▶ or Enter opens, ◀ or Esc goes back onto the same row", async ({ page }) => {
     await tap(page, ["@mode", "d5"]);
-    await expect(page_(page)).toBeVisible();
-    const [box, win] = await Promise.all([page_(page).boundingBox(), page.evaluate(() => [innerWidth, innerHeight])]);
-    expect(box).toMatchObject({ x: 0, y: 0 });
-    expect(Math.round(box?.width ?? 0)).toBe(win[0]);
-    expect(Math.round(box?.height ?? 0)).toBe(win[1]);
-    await page.getByTestId("settings-close").tap();
-    await expect(page_(page)).toBeHidden();
+    await expect(title(page)).toHaveText("Mode › Settings");
+    await expect(page.getByTestId("settings")).toHaveCount(0); // no page over everything
+    expect(await rowIds(page)).toEqual(SECTIONS);
+    await expect(active(page)).toHaveAttribute("data-id", "numbers");
+    await tap(page, ["d2"]);
+    await expect(title(page)).toHaveText("Mode › Settings › Key vibration");
+    await tap(page, ["esc"]);
+    await expect(title(page)).toHaveText("Mode › Settings");
+    await expect(active(page)).toHaveAttribute("data-id", "vibration");
+    await tap(page, ["right"]);
+    await expect(title(page)).toHaveText("Mode › Settings › Key vibration");
+    await tap(page, ["left"]);
+    await expect(title(page)).toHaveText("Mode › Settings");
+    await expect(active(page)).toHaveAttribute("data-id", "vibration");
+    await tap(page, ["down", "enter"]);
+    await expect(title(page)).toHaveText("Mode › Settings › Counters");
+    await tap(page, ["esc", "esc"]);
+    await expect(title(page)).toHaveText("Mode");
+    await expect(active(page)).toHaveAttribute("data-id", "settings");
+    await tap(page, ["esc"]);
+    await expect(sheet(page)).toHaveCount(0);
+    expect(await entryValue(page)).toBe(""); // no key reached the line
   });
 
-  test("sections instead of submenus; a tick toggles; ◀ ▶ buttons are at least 44 × 44 px", async ({ page }) => {
-    await tap(page, ["@mode", "d5"]);
-    await expect(page_(page)).toBeVisible();
-    expect(await page.locator('[data-testid="settings"] section').evaluateAll((els) => els.map((e) => e.getAttribute("data-section")))).toEqual(["fmtCycle", "vibration", "taps"]);
-    await expect(row(page, "pfx")).toHaveAttribute("aria-checked", "false");
-    await row(page, "pfx").tap();
-    await expect(row(page, "pfx")).toHaveAttribute("aria-checked", "true");
+  test("the pill, 5, 1: Numbers holds the Fmt cycle's five ticks and Decimals in Fixed; the hint is a second line under Standard", async ({ page }) => {
+    await page.getByTestId("chip-format").tap();
+    await tap(page, ["d5", "d1"]);
+    await expect(title(page)).toHaveText("Mode › Settings › Numbers");
+    expect(await rowIds(page)).toEqual(["std", "sci", "eng", "pfx", "fix", "decimals"]);
+    await expect(row(page, "std").getByTestId("row-hint")).toBeVisible();
+    await expect(sheet(page).getByTestId("row-hint")).toHaveCount(1);
+    await expect(row(page, "pfx")).toHaveAttribute("data-selected", "false");
+    await tap(page, ["d4"]); // a tick toggles and the sheet stays
+    await expect(row(page, "pfx")).toHaveAttribute("data-selected", "true");
     expect(await page.evaluate(() => window.pascaline.session.settings.fmtCycle)).toContain("pfx");
-    for (const b of await row(page, "decimals").locator("button").evaluateAll((els) => els.map((e) => e.getBoundingClientRect())))
-      expect(Math.min(b.width, b.height)).toBeGreaterThanOrEqual(44);
-    await row(page, "decimals").getByTestId("step-up").tap();
+    await tap(page, ["enter"]); // Enter on a tick toggles it too, and stays
+    await expect(row(page, "pfx")).toHaveAttribute("data-selected", "false");
+    // the top cluster's pad moves the highlight: ▲ from Prefixes to Standard, then round to Decimals; ▶ ◀ step it
+    await tap(page, ["up", "up", "up"]);
+    await expect(active(page)).toHaveAttribute("data-id", "std");
+    await tap(page, ["up"]);
+    await expect(active(page)).toHaveAttribute("data-id", "decimals");
+    await tap(page, ["right", "right", "left"]);
     expect(await page.evaluate(() => window.pascaline.session.settings.fixDecimals)).toBe(5);
+    await expect(row(page, "decimals").getByTestId("sheet-value")).toHaveText("5");
+    await expect(title(page)).toHaveText("Mode › Settings › Numbers");
   });
 
-  test("a disabled row keeps its reason", async ({ page }) => {
-    await tap(page, ["@mode", "d5"]);
-    await expect(row(page, "ms").getByTestId("settings-reason")).toHaveText("Switch key vibration on first");
-    await row(page, "haptics").tap();
-    await expect(row(page, "ms").getByTestId("settings-reason")).toHaveCount(0);
+  test("a hardware keyboard: digits pick, arrows move, Escape goes back one level", async ({ page }) => {
+    await tap(page, ["@mode"]);
+    await page.keyboard.press("5");
+    await expect(title(page)).toHaveText("Mode › Settings");
+    await page.keyboard.press("3");
+    await expect(title(page)).toHaveText("Mode › Settings › Counters");
+    await page.keyboard.press("ArrowDown");
+    await expect(active(page)).toHaveAttribute("data-id", "alpha");
+    await page.keyboard.press("Escape");
+    await expect(title(page)).toHaveText("Mode › Settings");
+    await expect(active(page)).toHaveAttribute("data-id", "counters");
+    expect(await entryValue(page)).toBe("");
   });
 });
 
-test.describe("by hardware keys", () => {
-  test("▲ ▼ move, ◀ ▶ step, Enter or space toggles, Esc closes", async ({ page }) => {
-    await tap(page, ["@mode", "d5"]);
-    const active = page_(page).locator('[data-active="true"]');
-    await expect(active).toHaveAttribute("data-id", "std");
-    await page.keyboard.press("ArrowDown");
-    await expect(active).toHaveAttribute("data-id", "sci");
-    await page.keyboard.press("Enter"); // Scientific off
-    await expect(row(page, "sci")).toHaveAttribute("aria-checked", "false");
-    await page.keyboard.press(" "); // and on again
-    await expect(row(page, "sci")).toHaveAttribute("aria-checked", "true");
-    await page.keyboard.press("ArrowUp");
-    await page.keyboard.press("ArrowUp"); // round the end: Reset
-    await expect(active).toHaveAttribute("data-id", "reset");
-    for (let i = 0; i < 6; i++) await page.keyboard.press("ArrowUp"); // since, alpha, shift, ms, strength, haptics
-    await expect(active).toHaveAttribute("data-id", "haptics");
-    await page.keyboard.press("ArrowRight");
-    expect(await page.evaluate(() => window.pascaline.session.settings.haptics.on)).toBe(true);
-    await page.keyboard.press("ArrowLeft");
-    expect(await page.evaluate(() => window.pascaline.session.settings.haptics.on)).toBe(false);
-    expect(await page.evaluate(() => window.pascaline.entry.value)).toBe(""); // nothing reached the entry line
-    await page.keyboard.press("Escape");
-    await expect(page_(page)).toBeHidden();
+test.describe("by touch", () => {
+  test("Mode's Settings row shows ›; a tap opens it, a section's tap opens it, ‹ goes back, a tap above the sheet closes it", async ({ page }) => {
+    await page.getByTestId("chip-digits").tap();
+    await expect(row(page, "settings").locator(".more")).toHaveText("›");
+    await row(page, "settings").tap();
+    await expect(title(page)).toHaveText("Mode › Settings");
+    await row(page, "counters").tap();
+    await expect(title(page)).toHaveText("Mode › Settings › Counters");
+    await sheet(page).getByRole("button", { name: "Back" }).tap();
+    await expect(title(page)).toHaveText("Mode › Settings");
+    await page.locator(".screen").click({ position: { x: 20, y: 20 } });
+    await expect(sheet(page)).toHaveCount(0);
   });
 
-  test("the keypad's keys drive it too: ▼ ▶ switches vibration on, Esc closes", async ({ page }) => {
-    await tap(page, ["@mode", "d5"]);
-    await tap(page, ["down", "down", "down", "down", "down", "down", "right"]);
+  test("every ☰ menu's last row opens the same level, with that menu in the path; ◀ goes back to the menu", async ({ page }) => {
+    await tap(page, ["@menu"]);
+    await expect(sheet(page).getByRole("menuitem").last()).toHaveAttribute("data-id", "settings");
+    await tap(page, ["d0"]);
+    await expect(title(page)).toHaveText("Home menu › Settings");
+    expect(await rowIds(page)).toEqual(SECTIONS);
+    await tap(page, ["left"]);
+    await expect(title(page)).toHaveText("Home menu");
+    await expect(active(page)).toHaveAttribute("data-id", "settings");
+    await tap(page, ["esc"]);
+    await tap(page, ["@plot"]);
+    await page.waitForFunction(() => window.pascaline.shell.app === "function" && window.pascaline.shell.loading === null);
+    await tap(page, ["@menu"]);
+    await sheet(page).getByRole("menuitem").last().tap();
+    await expect(title(page)).toHaveText("Plot menu › Settings");
+    await row(page, "numbers").tap();
+    await expect(title(page)).toHaveText("Plot menu › Settings › Numbers");
+  });
+
+  test("Key vibration: the switch, Strength, Length and Try it; switches keep the sheet open; Try it gives one pulse", async ({ page }) => {
+    await tap(page, ["@mode", "d5", "d2"]);
+    expect(await rowIds(page)).toEqual(["haptics", "strength", "ms", "try"]);
+    await expect(row(page, "try")).toHaveAttribute("aria-disabled", "true"); // off: nothing to try
+    await row(page, "haptics").tap();
+    await expect(row(page, "haptics")).toHaveAttribute("data-selected", "true");
     expect(await page.evaluate(() => window.pascaline.session.settings.haptics.on)).toBe(true);
-    await tap(page, ["d5", "esc"]);
-    await expect(page_(page)).toBeHidden();
-    expect(await page.evaluate(() => window.pascaline.entry.value)).toBe(""); // the 5 went nowhere
+    await expect(row(page, "strength")).toHaveAttribute("aria-disabled", "true"); // the web build cannot set it, and says why
+    await expect(row(page, "strength").locator(".reason")).toHaveText("The Android app only");
+    await row(page, "ms").getByTestId("step-up").tap();
+    expect(await page.evaluate(() => window.pascaline.session.settings.haptics.ms)).toBe(20);
+    const before = (await vibrations(page)).length;
+    await row(page, "try").tap();
+    await expect.poll(async () => (await vibrations(page)).slice(before)).toEqual([20]);
+    await expect(title(page)).toHaveText("Mode › Settings › Key vibration");
+  });
+
+  test("Counters: the Shift and Alpha counts, since when, and Reset, which keeps the sheet open", async ({ page }) => {
+    await tap(page, ["shift", "shift", "alpha", "alpha"]);
+    await tap(page, ["@mode", "d5", "d3"]);
+    expect(await rowIds(page)).toEqual(["shift", "alpha", "since", "reset"]);
+    await expect(row(page, "shift").getByTestId("sheet-value")).toHaveText("2");
+    await expect(row(page, "alpha").getByTestId("sheet-value")).toHaveText("2");
+    await expect(row(page, "since").getByTestId("sheet-value")).toHaveText(/^\d{4}-\d\d-\d\d$/);
+    await row(page, "reset").tap();
+    await expect(row(page, "shift").getByTestId("sheet-value")).toHaveText("0");
+    await expect(title(page)).toHaveText("Mode › Settings › Counters");
   });
 });
 
 test.describe("Android back (history.back())", () => {
-  test("back closes the page, and the next key works as before", async ({ page }) => {
-    await tap(page, ["@mode", "d5"]);
-    await expect(page_(page)).toBeVisible();
+  test("back goes back one level, then closes; the next key works as before", async ({ page }) => {
+    await tap(page, ["@mode", "d5", "d1"]);
+    await expect(title(page)).toHaveText("Mode › Settings › Numbers");
     await back(page);
-    await expect(page_(page)).toBeHidden();
+    await expect(title(page)).toHaveText("Mode › Settings");
+    await expect(active(page)).toHaveAttribute("data-id", "numbers");
+    await back(page);
+    await expect(title(page)).toHaveText("Mode");
+    await back(page);
+    await expect(sheet(page)).toHaveCount(0);
     await tap(page, ["d4", "d2"]);
-    expect(await page.evaluate(() => window.pascaline.entry.value)).toBe("42");
+    expect(await entryValue(page)).toBe("42");
   });
 
   test("back closes an open pick sheet, and the next key works as before", async ({ page }) => {
     await tap(page, ["@place"]);
-    await expect(sheet(page)).toBeVisible();
+    await expect(page.getByTestId("apps")).toBeVisible();
     await back(page);
-    await expect(sheet(page)).toHaveCount(0);
+    await expect(page.getByTestId("apps")).toHaveCount(0);
     await tap(page, ["d7"]);
-    expect(await page.evaluate(() => window.pascaline.entry.value)).toBe("7");
+    expect(await entryValue(page)).toBe("7");
   });
 
-  // R15b: Settings is reached through the Mode sheet only; before the fix in backLayer.ts the page's entry was pushed
-  // before the sheet's was taken back, so every open after the first left one entry behind
-  test("opening and closing the page or a sheet five times leaves the history as it was", async ({ page }) => {
+  test("opening Settings and closing it five ways leaves the history as it was", async ({ page }) => {
     const before = await historyLength(page);
-    // the page covers the status line's ☰: a user key that holds Menu closes it (R15c2)
-    await page.evaluate(() => window.pascaline.userKeys.set("u1", "primary", { label: "Menu", action: { special: "menu" } }));
-    for (let i = 0; i < 5; i++) {
-      await tap(page, ["@mode", "d5"]);
-      await expect(page_(page)).toBeVisible();
-      expect(await historyLength(page)).toBe(before + 1);
-      await [() => tap(page, ["esc"]), () => page.getByTestId("settings-close").tap(), () => page.evaluate(() => history.back()), () => tap(page, ["u1"]), () => page.keyboard.press("Escape")][i]!();
-      await expect(page_(page)).toBeHidden();
-      await tap(page, ["@place"]);
-      await expect(sheet(page)).toBeVisible();
-      await page.getByRole("menuitem").first().tap(); // a pick closes it
+    const closes = [
+      () => tap(page, ["esc", "esc", "esc"]),
+      () => page.locator(".screen").click({ position: { x: 20, y: 20 } }),
+      async () => {
+        await back(page);
+        await expect(title(page)).toHaveText("Mode › Settings");
+        await back(page);
+        await expect(title(page)).toHaveText("Mode");
+        await back(page);
+      },
+      () => sheet(page).getByRole("button", { name: "Close" }).tap(),
+      () => page.keyboard.press("Escape").then(() => page.keyboard.press("Escape")).then(() => page.keyboard.press("Escape")),
+    ];
+    for (const close of closes) {
+      await tap(page, ["@mode", "d5", "d1"]);
+      await expect(title(page)).toHaveText("Mode › Settings › Numbers");
+      await close();
       await expect(sheet(page)).toHaveCount(0);
     }
     await expect.poll(() => page.evaluate(() => history.state?.pascalineLayer)).toBeUndefined();
     await page.waitForTimeout(100);
-    // the entries it pushed were taken back: the position is where it began, so back leaves the app
     expect(await historyLength(page)).toBeLessThanOrEqual(before + 1);
     expect(await page.evaluate(() => history.state)).toBeNull();
   });
-
-  test("Mode then Settings (a sheet gives way to the page) takes one entry; back closes the page only", async ({ page }) => {
-    await tap(page, ["@mode", "d5"]);
-    await expect(page_(page)).toBeVisible();
-    await back(page);
-    await expect(page_(page)).toBeHidden();
-    expect(await page.evaluate(() => history.state)).toBeNull();
-  });
 });
+
+// at 360 × 740, 372 × 767 (the Fairphone 6: 380 px over the maths rows) and 412 × 915 no level cuts a row
+const LEVELS: Record<string, string[]> = {
+  "Mode › Settings": ["@mode", "d5"],
+  "Mode › Settings › Numbers": ["@mode", "d5", "d1"],
+  "Mode › Settings › Key vibration": ["@mode", "d5", "d2"],
+  "Mode › Settings › Counters": ["@mode", "d5", "d3"],
+};
+for (const [w, h] of [[360, 740], [372, 767], [412, 915]] as const)
+  test(`fit at ${w} × ${h}: every Settings level shows all its rows, the top cluster uncovered`, async ({ page }) => {
+    await page.setViewportSize({ width: w, height: h });
+    for (const [path, keys] of Object.entries(LEVELS)) {
+      await tap(page, keys);
+      await expect(title(page)).toHaveText(path);
+      if (path.endsWith("Key vibration")) await row(page, "haptics").tap(); // on: no reason line, but ◀ ▶ rows
+      const m = await sheet(page).locator(".list").evaluate((el) => ({ scroll: el.scrollHeight, client: el.clientHeight }));
+      expect(m.scroll, path).toBeLessThanOrEqual(m.client);
+      await expect(page.getByTestId("sheet-count")).toHaveCount(0);
+      const hits = await page.evaluate((ids) =>
+        ids.map((id) => {
+          const r = document.querySelector(`[data-key="${id}"]`)?.getBoundingClientRect();
+          return r ? document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2)?.closest<HTMLElement>("[data-key]")?.dataset["key"] : undefined;
+        }), ["up", "down", "left", "right", "esc"]);
+      expect(hits).toEqual(["up", "down", "left", "right", "esc"]);
+      await page.locator(".screen").click({ position: { x: 20, y: 20 } });
+      await expect(sheet(page)).toHaveCount(0);
+    }
+  });
