@@ -173,9 +173,9 @@ test("DEG → RAD by keys: a user key that holds Mode, ▶, Enter; the sheet ope
   await tap(page, ["u1"]);
   await expect(page.getByTestId("sheet-title")).toHaveText("Mode");
   await expect(active(page)).toHaveAttribute("data-id", "angle");
-  await expect(active(page).getByTestId("sheet-value")).toHaveText("Degrees");
+  await expect(active(page).locator('[aria-pressed="true"]')).toHaveText("DEG");
   await tap(page, ["right"]);
-  await expect(active(page).getByTestId("sheet-value")).toHaveText("Radians");
+  await expect(active(page).locator('[aria-pressed="true"]')).toHaveText("RAD");
   await tap(page, ["enter"]);
   await expect(sheet(page)).toBeHidden();
   expect(await angle(page)).toBe("rad");
@@ -225,7 +225,9 @@ test("the format and digits chips open the Mode sheet on their row; ◀ ▶ chan
   await expect(page.getByTestId("chip-format")).toHaveText("STD");
   await expect(sheet(page)).toBeVisible(); // ◀ on a setting steps it, it does not go back
   await tap(page, ["esc"]);
-  await page.getByTestId("chip-digits").tap();
+  await page.getByTestId("chip-digits").tap(); // R86: the chip opens the list itself, with Mode under it
+  await expect(page.getByTestId("sheet-title")).toHaveText("Mode › Significant digits");
+  await tap(page, ["left"]);
   await expect(active(page)).toHaveAttribute("data-id", "digits");
   await tap(page, ["right", "right"]);
   await expect(page.getByTestId("chip-digits")).toHaveText("14");

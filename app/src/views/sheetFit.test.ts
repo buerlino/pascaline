@@ -3,7 +3,7 @@
 import { describe, expect, it } from "vitest";
 import type { MenuItem } from "../apps/types.ts";
 import { Sheet } from "./sheet.svelte.ts";
-import { CELL_FLOOR, fitCell, fitRow, hasSteps, REASON, ROW, ROW_FLOOR, rowHeight, showsReason, STEP } from "./sheetFit.ts";
+import { CELL_FLOOR, OPTIONS, fitCell, fitRow, hasSteps, REASON, ROW, ROW_FLOOR, rowHeight, showsReason, STEP } from "./sheetFit.ts";
 
 const plain = { reason: false, steps: false };
 const rows = (n: number, r = plain) => Array.from({ length: n }, () => r);
@@ -19,6 +19,10 @@ describe("fitRow", () => {
     expect(row).toBeGreaterThanOrEqual(ROW_FLOOR);
     expect(9 * row).toBeLessThanOrEqual(337);
     expect(9 * (row + 0.5)).toBeGreaterThan(337);
+  });
+  it("a row with a button per value is 52 px (R86)", () => {
+    expect(rowHeight(36, { reason: false, steps: false, options: true })).toBe(OPTIONS);
+    expect(rowHeight(42, { reason: false, steps: false, options: false })).toBe(42);
   });
   it("stops at the floor: below it the list scrolls", () => {
     expect(fitRow(100, rows(9))).toBe(ROW_FLOOR);

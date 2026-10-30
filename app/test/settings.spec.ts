@@ -90,7 +90,7 @@ test.describe("by keys", () => {
 
 test.describe("by touch", () => {
   test("Mode's Settings row shows ›; a tap opens it, a section's tap opens it, ‹ goes back, a tap above the sheet closes it", async ({ page }) => {
-    await page.getByTestId("chip-digits").tap();
+    await page.getByTestId("chip-format").tap();
     await expect(row(page, "settings").locator(".more")).toHaveText("›");
     await row(page, "settings").tap();
     await expect(title(page)).toHaveText("Mode › Settings");

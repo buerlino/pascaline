@@ -22,6 +22,8 @@ const settings = (n?: number): Sheet => {
   return s;
 };
 const at = (s: Sheet, id: string) => s.level.items.findIndex((r) => r.id === id);
+/** The id of the value button that is marked on the highlighted row (R86). */
+const marked = (s: Sheet) => s.level.current?.options?.find((o) => o.selected)?.id;
 const byId = (s: Sheet, id: string) => s.level.items.find((r) => r.id === id);
 
 beforeEach(() => {
@@ -33,13 +35,34 @@ describe("Mode sheet", () => {
   it("opens on Angle, shows its value, and ▶ then Enter switches RAD → DEG and closes (3 keys with Shift + Fmt)", () => {
     const s = mode();
     expect(s.level.current?.id).toBe("angle");
-    expect(s.level.current?.value).toBe("Radians");
+    expect(marked(s)).toBe("rad");
     s.right();
     expect(session.settings.angle).toBe("deg");
-    expect(s.level.current?.value).toBe("Degrees");
+    expect(marked(s)).toBe("deg");
     expect(s.enter().kind).toBe("run");
     s.right();
     expect(session.settings.angle).toBe("rad"); // DEG → RAD the same way
+  });
+  it("Angle, Format and Entry have a button per value, Digits keeps its ◀ ▶ row (R86)", () => {
+    const s = mode();
+    expect(byId(s, "angle")?.options?.map((o) => o.label)).toEqual(["RAD", "DEG"]);
+    expect(byId(s, "format")?.options?.map((o) => o.label)).toEqual(["STD", "SCI", "ENG", "PFX"]);
+    expect(byId(s, "entry")?.options?.map((o) => o.id)).toEqual(["textbook", "line"]);
+    expect(byId(s, "digits")?.options).toBeUndefined();
+    expect(byId(s, "digits")?.value).toBe("12");
+    expect(byId(s, "settings")?.options).toBeUndefined();
+  });
+  it("a tap on a value button sets it and closes the sheet; a digit still steps the row forward; Enter closes", () => {
+    const s = mode("format");
+    const p = s.pickOption(at(s, "format"), "pfx");
+    expect(p.kind).toBe("run");
+    if (p.kind === "run") p.item.run?.();
+    expect(session.settings.format).toBe("pfx");
+    expect(marked(s)).toBe("pfx");
+    expect(s.pickNumber(2)).toEqual({ kind: "stay" }); // Format: forward, round the end
+    expect(session.settings.format).toBe("std");
+    expect(s.enter().kind).toBe("run");
+    expect(s.pickOption(at(s, "format"), "nope")).toEqual({ kind: "stay" });
   });
   it("always opens on Angle, even after another row was picked last", () => {
     const s = mode();

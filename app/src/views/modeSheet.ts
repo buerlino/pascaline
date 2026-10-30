@@ -4,7 +4,7 @@
 // Format key's cycle, the key vibration, the counters. A row with a value is changed in place: ◀ ▶ step it, a digit key
 // or a tap steps it forward; in Mode Enter closes, in Settings it stays. No native <select> or number input: the keypad
 // drives all of it.
-import type { MenuItem, SubMenu } from "../apps/types.ts";
+import type { MenuItem, SubMenu, ValueOption } from "../apps/types.ts";
 import type { AngleUnit, NumberFormat } from "../calc/port.ts";
 import { t, type MessageKey } from "../i18n/index.ts";
 import { hasStrength, vibrate } from "../input/haptics.ts";
@@ -27,6 +27,18 @@ function cycle<T>(all: readonly T[], now: T, by: 1 | -1): T {
   return all[(i + by + all.length) % all.length] as T;
 }
 
+/** A button per value (R86): `label` names it, `set` sets it. */
+function buttons<T extends string>(all: readonly T[], get: () => T, set: (v: T) => void, label: (v: T) => string): ValueOption[] {
+  return all.map((v) => ({
+    id: v,
+    label: label(v),
+    get selected() {
+      return get() === v;
+    },
+    run: () => set(v),
+  }));
+}
+
 /** A list of numbers to choose from; picking one sets it and closes the sheet. */
 function presets(values: readonly number[], get: () => number, set: (n: number) => void): MenuItem[] {
   return values.map((n) => ({
@@ -46,16 +58,16 @@ export function modeItems(session: Session, env: SettingsEnv = {}): MenuItem[] {
     {
       id: "angle",
       label: t("mode.angle"),
-      get value() {
-        return t(`angle.${s.angle}`);
+      get options() {
+        return buttons(ANGLES, () => s.angle, (v) => session.setAngle(v), (v) => v.toUpperCase());
       },
       adjust: (by) => session.setAngle(cycle(ANGLES, s.angle, by)),
     },
     {
       id: "format",
       label: t("mode.format"),
-      get value() {
-        return t(`format.${s.format}`);
+      get options() {
+        return buttons(FORMATS, () => s.format, (v) => session.setFormat(v), (v) => v.toUpperCase());
       },
       adjust: (by) => session.setFormat(cycle(FORMATS, s.format, by)),
     },
@@ -71,8 +83,8 @@ export function modeItems(session: Session, env: SettingsEnv = {}): MenuItem[] {
     {
       id: "entry",
       label: t("mode.entry"),
-      get value() {
-        return t(`entry.${s.entry}`);
+      get options() {
+        return buttons(ENTRIES, () => s.entry, (v) => session.setEntry(v), (v) => t(`entry.${v}`));
       },
       adjust: (by) => session.setEntry(cycle(ENTRIES, s.entry, by)),
     },
