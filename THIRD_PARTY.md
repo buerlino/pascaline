@@ -39,6 +39,15 @@ Settings › Help and about (R87) lists every row of these tables with its licen
 | Emscripten (Debian package) | 3.1.69+dfsg-3 (`debian:trixie@sha256:913f6706df59a68922d1dd08f78c2476560a8d367897200a6005b00e5f67c2d5`) | MIT / UIUC (NCSA) | https://packages.debian.org/trixie/emscripten | **release builds** of the engine (decided 2026-10-11, P2; speed condition met 2026-10-11), `engine/giac/build-wasm-release.sh` | – |
 | Gradle | 8.14.3 (distribution SHA-256 `bd711022…3531`, pinned in build.sh) | Apache-2.0 | https://services.gradle.org/distributions/gradle-8.14.3-bin.zip | Android build, downloaded by `build.sh` into `~/.cache/pascaline/`; no wrapper jar in git (F-Droid uses its own Gradle) | – |
 
+## Build and deploy (.github/workflows/pages.yml, not shipped)
+
+| Component | Version | Licence | Source | Use | Copyright |
+|---|---|---|---|---|---|
+| actions/checkout | v7.0.1 (`3d3c42e5aac5ba805825da76410c181273ba90b1`) | MIT | https://github.com/actions/checkout | Pages build | – |
+| actions/setup-node | v7.1.0 (`949feb2413d6458794dcd2491c4babbbce0c15c1`) | MIT | https://github.com/actions/setup-node | Pages build (Node 22) | – |
+| actions/upload-pages-artifact | v5.0.0 (`fc324d3547104276b827a68afc52ff2a11cc49c9`) | MIT | https://github.com/actions/upload-pages-artifact | Pages build | – |
+| actions/deploy-pages | v5.0.1 (`368f82528645a54fb793d4d04e342629a3f51346`) | MIT | https://github.com/actions/deploy-pages | Pages deploy | – |
+
 ## App (app/package.json, pinned)
 
 | Component | Version | Licence | Source | Use | Copyright |
@@ -47,7 +56,7 @@ Settings › Help and about (R87) lists every row of these tables with its licen
 | Svelte | 5.57.2 | MIT | https://github.com/sveltejs/svelte | app shell (shipped, compiled) | Copyright © 2016–2025 Svelte Contributors |
 | @sveltejs/vite-plugin-svelte | 7.3.1 | MIT | https://github.com/sveltejs/vite-plugin-svelte | build | – |
 | svelte-check | 4.7.6 | MIT | https://github.com/sveltejs/language-tools | type check | – |
-| Vite | 8.3.4 | MIT | https://github.com/vitejs/vite | build | – |
+| Vite | 8.3.4 | MIT | https://github.com/vitejs/vite | build; its module-preload helper is in the start chunk (shipped) | Copyright © 2019–present VoidZero Inc. and Vite contributors |
 | TypeScript | 6.0.3 | Apache-2.0 | https://github.com/microsoft/TypeScript | build (7.x is rejected by svelte-check 4.7.6) | – |
 | Vitest | 5.0.3 | MIT | https://github.com/vitest-dev/vitest | unit tests | – |
 | @playwright/test | 1.64.0 | Apache-2.0 | https://github.com/microsoft/playwright | browser tests | – |

@@ -418,6 +418,8 @@ Capacitor shell (Android) / PWA (service worker precaches everything after the e
 Build: build.sh → engines (container) → Find index generator (Node: Giac's help, qalc's XML, `find/factors.yaml`) → Vite (size test) → Capacitor → Gradle
 ```
 
+Web build: the service worker precaches the whole build; the engine files carry their content hash in the name and the install checks it (a missing or different file fails the install and leaves the old version); a new version waits behind the old one and the update line's Restart (the only reload) activates it; `pwa/kill/sw.js` served as `sw.js` switches the worker off; the manifest `id` is `/`; `navigator.storage.persist()` is asked once; a lazy chunk missing after a deploy reloads the page once.
+
 ### 8.2 Interfaces (every async interface)
 The types live in the code; this is the map. Views see `Calc` (`app/src/calc/port.ts`), which wraps `MathEngine` (`app/src/engine/types.ts`), which talks to worker 1.
 - **`MathEngine`:** `ready`, `home(input, s, consts?)` (G26: `consts` sends inexact constants as `pasc_<id>`), `cas`, `solve`, `unknowns`, `analyze`, `table`, `eval` (tools and benchmarks only), `definitions()` (the defs log, 6.2), `units(job, s)` (G16: a `UnitJob` built on the main thread by `units/build.ts`), `cancel`, `dispose`. The worker's home, cas and eval replies carry `defs: DefChange[]`; `{type: "define", defs}` → `{type: "defined", replayMs}` (G3).
