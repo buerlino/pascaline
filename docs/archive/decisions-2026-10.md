@@ -5,6 +5,28 @@ History only: read it when a decision is questioned. What still binds is in [../
 
 ## Decided proposals moved here later
 
+### Shortened 2026-10-30 (16:00 review) to make room for the night of 2026-10-30, as they stood
+From "Pipeline and process":
+- **Owner answers of 2026-10-26, afternoon (the after-night report checked).** One green night is enough for a new core case (S24's c61–c66); R4a's gate includes G114 (F108). Full text: archive.
+- **Owner answers of 2026-10-26 (after the eleventh night).** G112's rule (one list as the only argument is refused for every name the probe finds) stands until F107 narrows it; F101 and F104 are G113, before R4a. Full text: archive.
+- **Owner answers of 2026-10-24, evening ([core-stability report](core-stability-2026-10-24.md)).** A fix package's new tests must fail on phase-1 (A36); "Done when" names no shared doc (brief section 2). Full text: archive.
+- **Owner answers of 2026-10-24 (after the ninth night).** Lists by Giac's list type (`list[…]`, subtype 23); a `[ ]` vector keeps the dot product. Full text: archive.
+- **Owner answers of 2026-10-23.** G106 refuses a polynomial vector the input did not ask for, and a typed `{ }` list ± a number is elementwise (R78, F78); Enter in Solve's Num view empties the line (R76f1). Full text: archive.
+- **A33, A34 (Opus pass 59):** a locked device is DEVICE SKIPPED, never a failure, and its message never asks to remove a PIN (A33f2). Full text: archive.
+- **Owner answers of 2026-10-22 (after the seventh night).** A `{ }` list's x² and xʸ go elementwise, a `[ ]` vector keeps the dot product (R77); a golden case that misses only its `budgetMs` reruns once (A25). Full text: archive.
+From "Precision, engine and parser":
+- **R80's side effects (Opus pass 78; R80f1):** a matrix times a typed list scales its rows, and `mlr` with a typed list is refused. Full text: archive. Would change if: a core or golden case needs either.
+- **G77, G89 (Opus passes 68, 69):** `src/config.h` keeps pthreads (both pins, no golden difference): fixed after the freeze. G89 keeps a case's 12- and 30-digit lines. Would change if: a threaded path is taken.
+- **G82f1, G56, S17 (Opus pass 67):** Home's budget is 518,000 checks with a 1.5 s clock behind it; `factorial(10^6)`, deaf to interrupts, may be refused on a device 8× slower (honest; A20's rerun decides). A user function in a typed `evalf` stays ⚠ naming it during the freeze, its digits now right. Would change if: A20's rerun differs.
+- **G75, G103 (Opus pass 65):** patch 0003 is the sinh/sin form, not the plain swap (tanh(i)'s real part stays 0). A double in a list keeps today's display; each double as a number is the owner's choice after the freeze (no wrong value reaches the screen). Would change if: a list's double shows a wrong digit.
+- **G101, G102 (Opus pass 64):** `giac_ctx_set` resets the interrupt state itself (G75), so ctxGate.ts has no retry; `map(L,f)` and a zero-parameter call stay unwalked by nonsquare.ts. Full text: archive.
+- **R79, G99, G100 (Opus pass 63):** G99's extra bridge call per storing Enter stays; the input's parse stays its own bridge-2 call (F85); a library body Giac reads only with `undef` in it is refused; F80 waits for the bridge moves. Full text: archive.
+- **G86, R69 (Opus pass 58):** a CAS true/false resting on a float gives an inexact chip, as Home's does (G86f1). Solve keeps warn `unchecked` for a ⚠ answer; a constant's facts derive from `unc`. Copy session writes the mark of the text it writes (R69f1).
+- **A32, G97f1, G88f1 (Opus pass 57):** c53 is desktop-only on the device run (the share sheet; the morning check reads it by hand). Full text: archive.
+- **Structure audit closed (S23, 2026-10-22):** G85 met its four bars; G98–G105 are merged. Full text: archive.
+- **G85, G88, G97 (Opus pass 56):** G85 is GO by its bars (its report); api.cc's QUOTING table becomes the one source (G99). G88's ratchet runs in the pipeline's vitest (G88f1). F69 is Giac's meaning (`gen.cc:6880`, it warns): G97 refuses in our layer, with a register row and a raised text baseline (host.ts +1, nonsquare.ts +7) until shapes come from giac_value.
+- **G90 (Opus pass 55; F65, F67):** a definite int Giac leaves as `integrate(…)` is its numeric integration, ⚠ without a count; mark-only `⚠` stays "any count". Full text: archive.
+
 ### Shortened 2026-10-30 (Opus pass 15) to make room for R87's default, as it stood
 - **Start chunk budget 175 kB raw, 60 kB gzip (2026-10-14; raised 2026-10-19 by the owner, set by A15; 61 kB gzip from R83, the owner, 2026-10-27).** Rule: docs/04 6.3 and 8.3. A package's own gate guards the budget, it is not a second budget (Opus pass, 2026-10-17). A measure build (`./build.sh --measure`) is exempt: its bench code put A16's at 61.19 kB (owner, 2026-10-27). Would change if: the Tab One's keyboard-usable time moves by more than 50 ms from A4a's 688 ms (cold median, 2026-10-16), so past 738 ms.
 

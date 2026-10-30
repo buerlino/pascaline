@@ -50,36 +50,32 @@ Tonight's queue (one lane, to 07:00) comes first, then each lane's table; With t
 11. **Selftest:** a selftest step is `scripts/pipeline.sh selftest` (from A47a); its line `selftest: PASSED` finishes it; `selftest: FAILED` ends the night: henri answers `SHIFT DONE`, and the owner reads the log.
 12. **No lanes in the morning** (A47c not merged, or a selftest failed): the owner starts `scripts/night.sh` without `--lane`, and henri runs lane B's rows 401–405, then lane A's from 301, as one queue.
 
-### The queue (the night of 2026-10-29 to 07:00, one lane, on the Tab One; steps 101–219 are done, 209–213 moved to the lane tables)
-A step whose "After" is not merged, or whose selftest did not pass, is skipped; an Opus pass is not a row (rule 5). `ANDROID_SERIAL=HA24BZ2Y` (the Tab One: CORE DEVICE after the pass). Owner, 2026-10-29: only the lanes' pipeline tonight; at about 07:00 the owner reads the log and starts both lanes to 16:00 (rule 12 if not).
+### Tonight: 2026-10-30 17:00 to Saturday 09:00, both lanes on the Tab One (owner, 2026-10-30)
+`ANDROID_SERIAL=HA24BZ2Y` for both lanes, `--until 09:00`; CORE DEVICE after each pass. Tonight is lane B's weekly extreme night (rows 406–408 run). A step whose "After" is not merged is skipped. The FIX lines of Opus pass 18 (log, 17:52) run first in lane A, verbatim; lane B's A49f1 is row 403's package, not pass 17's FIX line.
 
-| Step | What | Agent, model | Branch | After | Est. |
-|---|---|---|---|---|---|
-| 220 | Shift report, then stop | — | — | — | 10 min |
-
-### Lane A queue (ron's UI; from the owner's first two-lane start; not tonight's)
-Milestone reviews (section 0): after R87 (due: R91's first screen, R49's Mode › Settings and pad, R87's Parts we use, on the Fairphone); after R50e; after R24d.
+### Lane A queue (ron's UI)
+Milestone reviews (section 0): after R50e; after R24d.
 
 | Step | What | Agent, model | Branch | After |
 |---|---|---|---|---|
-| 305 | [R4b](packages/R4b.md) Vars, Memory and the user keys from Find | ron, Sonnet | `p1/ron-m4-vars` | R15c3, R49 |
-| 306 | [R86](packages/R86.md) Mode's values in sight | ron, Sonnet | `p1/ron-modebuttons` | R49 |
-| 307 | [R57](packages/R57.md) the decimal comma as a setting | ron, Sonnet | `p1/ron-m4a-decimalcomma` | R49 |
+| 305 | R4bf1: Opus pass 18's FIX line, verbatim (R4b's pin to 59.25 kB, its docs lines) | ron, Sonnet | `p1/ron-m4-vars` | — |
+| 307 | R57f1: Opus pass 18's FIX line, verbatim (a bare comma always separates arguments) | ron, Opus | `p1/ron-m4a-decimalcomma` | 305 run |
 | 308 | [R50e](packages/R50e.md) Settings › Appearance | ron, Sonnet | `p1/ron-m4a-appearance` | R49 |
 | 309 | [R24b](packages/R24b.md) the pad drawn over the keys | ron, Sonnet | `p1/ron-m5-unitpad` | R86, R57, R50e |
 | 310 | [R24c](packages/R24c.md) the unit view entry | ron, Opus | `p1/ron-m5-unitview` | R24b |
 | 311 | [R24d](packages/R24d.md) Find in a slot and the user cells | ron, Sonnet | `p1/ron-m5-usercells` | R24c, R4b |
 
-### Lane B queue (the release, then the engine; from the owner's first two-lane start; not tonight's)
-A43, A7, A8 and A9 run by day (section 0). Steps 406–408 run only on the weekly extreme night the owner names.
+### Lane B queue (the release, then the engine)
+A43, A7, A8 and A9 run by day (section 0). Steps 406–408 run only on the weekly extreme night the owner names (tonight).
 
 | Step | What | Agent, model | Branch | After |
 |---|---|---|---|---|
-| 404 | [A49](packages/A49.md) the web version survives updates and bad deploys | annabell, Sonnet (audit Opus) | `p1/annabell-pwaharden` | R91 |
+| 401 | [A51](packages/A51.md) a timing check reruns on a quiet host | annabell, Sonnet | `p1/annabell-quietrerun` | — |
+| 403 | [A49f1](packages/A49f1.md) A49 under App.svelte's line limit (replaces pass 17's FIX) | ron, Sonnet (audit Opus) | `p1/annabell-pwaharden` | 401 run |
 | 405 | [A45](packages/A45.md) the web version on GitHub Pages | annabell, Sonnet (audit Opus) | `p1/annabell-pages` | R87, A49 |
 | 406 | [G133](packages/G133.md) asin of a tiny imaginary number (F132) | gorge, Opus | `p1/gorge-asintiny` | the weekly night |
 | 407 | [G134](packages/G134.md) asinh on its cut, ∛ of a tiny real (F131, F133) | gorge, Opus | `p1/gorge-cutsmall` | the weekly night |
-| 408 | The fuzz and its triage: [G136](packages/G136.md)'s text with a new ID | gorge, Opus | `p1/gorge-nightfuzz-<date>` | the weekly night |
+| 408 | [G137](packages/G137.md) the weekly fuzz and its triage | gorge, Opus | `p1/gorge-nightfuzz-1030` | the weekly night |
 
 ### The commands henri replies with (one per decision; `scripts/night.sh` runs it)
 - `scripts/pipeline.sh <agent> "<ID>" --model <sonnet|opus> --audit-model auto`: the next queue step not done (the queue's skip rule above); `--audit-model opus` where its row says "audit Opus".
