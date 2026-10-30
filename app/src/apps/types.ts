@@ -71,6 +71,10 @@ export interface SubMenu {
   readonly remember?: boolean;
   /** Find's categories (R4a): letters typed in this level search with this (views/sheet.svelte.ts Level.search). */
   readonly search?: (query: string) => readonly MenuItem[];
+  /** A text to read instead of rows (R87: a licence): it scrolls, ▲ ▼ page through it, ◀ and Esc go back. `items` is empty. */
+  readonly text?: string;
+  /** The highlighted row's `preview` may take several lines (R87: a part's copyright and source), not one. */
+  readonly longPreview?: boolean;
 }
 
 export interface AppInstance {

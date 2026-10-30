@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // THIRD_PARTY.md's tables as data (R87): the About screen's list of parts, so it cannot drift from the file. Used by
-// app/vite-plugin-about.ts at build time, dev and tests alike; `node tools/third-party/parse.ts` prints the JSON.
+// app/vite-plugin-about.ts at build time, dev and tests alike; `node tools/third-party/parse.mts` prints the JSON.
 // Nothing here depends on the clock or the host, so two builds of one commit give the same bytes.
 import { readFileSync, readdirSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";

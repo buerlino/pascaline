@@ -5,7 +5,7 @@
 // commit give the same bytes (fdroid/README.md).
 import { resolve } from "node:path";
 import type { Plugin } from "vite";
-import { appVersion, licenceIds, readLicences, readParts } from "../tools/third-party/parse.ts";
+import { appVersion, licenceIds, readLicences, readParts } from "../tools/third-party/parse.mts";
 
 const ID = "virtual:about";
 const ROOT = resolve(import.meta.dirname, "..");
@@ -17,9 +17,11 @@ export function aboutPlugin(): Plugin {
     load(id) {
       if (id !== `\0${ID}`) return null;
       this.addWatchFile(resolve(ROOT, "THIRD_PARTY.md"));
-      this.addWatchFile(resolve(ROOT, "LICENSES"));
-      const parts = readParts(ROOT).map((p) => ({ ...p, ids: licenceIds(p.licence) }));
-      return `export default ${JSON.stringify({ version: appVersion(ROOT), parts, licences: readLicences(ROOT) })};`;
+      const licences = readLicences(ROOT);
+      for (const lid of Object.keys(licences)) this.addWatchFile(resolve(ROOT, "LICENSES", `${lid}.txt`)); // files: a folder would count as an import
+      // only what the screen reads (the Notes column and the section heading stay in the file)
+      const parts = readParts(ROOT).map(({ name, version, licence, source, copyright }) => ({ name, version, licence, source: source.split(" ")[0] ?? "", copyright, ids: licenceIds(licence) }));
+      return `export default ${JSON.stringify({ version: appVersion(ROOT), parts, licences })};`;
     },
   };
 }

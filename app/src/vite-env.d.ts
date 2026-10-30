@@ -16,10 +16,9 @@ declare module "virtual:about" {
     readonly name: string;
     readonly version: string;
     readonly licence: string;
+    /** The first word of the Source column: its URL. */
     readonly source: string;
-    readonly note: string;
     readonly copyright: string;
-    readonly group: string;
     /** The licence ids the Licence column names ("A OR B": two). */
     readonly ids: readonly string[];
   }

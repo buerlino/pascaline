@@ -5,6 +5,7 @@ import { readFileSync, readdirSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import about from "virtual:about";
 import { en } from "../i18n/en.ts";
+import { enAbout } from "../i18n/enAbout.ts";
 import { enEngine } from "../i18n/enEngine.ts";
 import { enFind } from "../i18n/enFind.ts";
 import { enPalettes } from "../i18n/enPalettes.ts";
@@ -71,7 +72,7 @@ describe("About data", () => {
 
 describe("UI strings", () => {
   it("never name HP or Prime as a word", () => {
-    const tables = { en, enEngine, enFind, enPalettes, enParser, enUnits } as Record<string, Record<string, string>>;
+    const tables = { en, enAbout, enEngine, enFind, enPalettes, enParser, enUnits } as Record<string, Record<string, string>>;
     for (const [table, messages] of Object.entries(tables))
       for (const [key, text] of Object.entries(messages)) expect(/\b(HP|Prime)\b/.test(text), `${table}.${key}`).toBe(false);
   });

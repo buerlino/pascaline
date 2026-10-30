@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // The Mode sheet and Settings as rows of the one sheet (docs/05 3.4): what each key does to the session.
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { FakeCalc } from "../calc/fake.ts";
 import { Session } from "../state/session.svelte.ts";
 import type { Kv } from "../state/storage.ts";
@@ -89,11 +89,11 @@ describe("Mode sheet", () => {
 });
 
 describe("Settings, a level of the sheet (R49)", () => {
-  it("has the three sections built so far, in their fixed order, each with › and a value; it opens on its first row", () => {
+  it("has the sections built so far, in their fixed order, each with › and a value; it opens on its first row", () => {
     const s = settings();
-    expect(s.level.items.map((x) => x.id)).toEqual(["numbers", "vibration", "counters"]);
+    expect(s.level.items.map((x) => x.id)).toEqual(["numbers", "vibration", "counters", "help"]);
     expect(s.level.items.every((x) => x.submenu)).toBe(true);
-    expect(s.level.items.map((x) => x.value)).toEqual(["STD SCI ENG", "Off", "0 taps"]);
+    expect(s.level.items.map((x) => x.value)).toEqual(["STD SCI ENG", "Off", "0 taps", undefined]);
     s.pickNumber(3);
     s.back();
     s.back();
@@ -157,5 +157,63 @@ describe("Settings, a level of the sheet (R49)", () => {
     session.taps.counts.shift = 4;
     expect(s.activate(at(s, "reset"))).toEqual({ kind: "stay" });
     expect(session.taps.counts.shift).toBe(0);
+  });
+});
+
+describe("Help and about (R87)", () => {
+  const loaded = (s: Sheet) => vi.waitFor(() => expect(s.level.items[0]?.id).not.toBe("loading"));
+
+  it("is the fourth section; it holds About and Parts, each opening a level", () => {
+    const s = settings(4);
+    expect(s.path).toBe("Mode › Settings › Help and about");
+    expect(s.level.items.map((x) => x.id)).toEqual(["about", "parts"]);
+    expect(s.level.items.every((x) => x.submenu)).toBe(true);
+  });
+
+  it("About: the version from package.json, the licence, the source URL; the licence opens its text", async () => {
+    const s = settings(4);
+    s.pickNumber(1);
+    expect(s.path).toBe("Settings › Help and about › About Pascaline"); // the last three levels
+    await loaded(s);
+    const { version } = (await import("../../package.json")).default;
+    expect(byId(s, "version")?.value).toBe(version);
+    expect(byId(s, "licence")?.hint).toBe("GPL-3.0-or-later");
+    expect(byId(s, "source")?.hint).toBe("https://github.com/buerlino/pascaline");
+    expect(s.activate(at(s, "licence"))).toEqual({ kind: "stay" });
+    expect(s.level.text).toContain("GNU GENERAL PUBLIC LICENSE");
+    expect(s.level.items).toEqual([]);
+  });
+
+  it("Parts: a row per part of THIRD_PARTY.md; a single licence opens its text, a dual one a list of both", async () => {
+    const s = settings(4);
+    s.pickNumber(2);
+    await loaded(s);
+    const about = (await import("virtual:about")).default;
+    expect(s.level.items.length).toBe(about.parts.length);
+    const giac = s.level.items.find((x) => x.label.startsWith("Giac"));
+    expect(giac?.hint).toBe("GPL-3.0-or-later");
+    expect(giac?.preview).toContain("B. Parisse");
+    s.activate(s.level.items.findIndex((x) => x.label.startsWith("MPFR")));
+    expect(s.level.title).toBe("LGPL-3.0-or-later");
+    expect(s.level.text).toContain("GNU LESSER GENERAL PUBLIC LICENSE");
+    s.back();
+    s.activate(s.level.items.findIndex((x) => x.label.startsWith("GMP")));
+    expect(s.level.items.map((x) => x.id)).toEqual(["LGPL-3.0-or-later", "GPL-2.0-or-later"]);
+    s.activate(1);
+    expect(s.level.text).toContain("GNU GENERAL PUBLIC LICENSE");
+    expect(s.path).toBe("Parts › GMP 6.3.0 › GPL-2.0-or-later");
+  });
+
+  it("a text level pages with ▲ ▼ and goes back with ◀", async () => {
+    const s = settings(4);
+    s.pickNumber(1);
+    await loaded(s);
+    s.activate(at(s, "licence"));
+    s.level.move(1);
+    s.level.move(1);
+    s.level.move(-1);
+    expect(s.level.nudge).toBe(1);
+    expect(s.left()).toBe(false); // nothing to step: ◀ goes back, as everywhere
+    expect(s.back()).toBe(true);
   });
 });

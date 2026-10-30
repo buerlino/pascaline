@@ -107,6 +107,13 @@
     ro.observe(list);
     return () => ro.disconnect();
   });
+  // a text level: ▲ ▼ page through it (Level.nudge counts the pages asked for)
+  $effect(() => {
+    const n = level.nudge;
+    if (n === 0 || !list) return;
+    list.scrollBy({ top: n * list.clientHeight * 0.8 });
+    level.nudge = 0;
+  });
   // the highlighted row stays in view
   $effect(() => {
     void level.highlight;
@@ -192,6 +199,10 @@
         {#if cutTop || cutBottom}<span class="count" data-testid="sheet-count">{t("sheet.count", { n: String(rows.length) })}</span>{/if}
         <button type="button" class="icon" aria-label={t("apps.close")} onclick={onclose}>×</button>
       </div>
+      {#if level.text !== undefined}
+        <!-- a text to read (R87, a licence): the list's scroll and fade, no rows; ▲ ▼ page through it -->
+        <div class="list doc" class:cut-top={cutTop} class:cut-bottom={cutBottom} data-testid="sheet-text" bind:this={list} onscroll={measure}>{level.text}</div>
+      {:else}
       <div class="list" class:cut-top={cutTop} class:cut-bottom={cutBottom} style:--row={px(row)} bind:this={list} onscroll={measure}>
         {#each rows as r, i (r.index)}
           {@const steps = hasSteps(r.item)}
@@ -214,8 +225,9 @@
         {/each}
         {#if rows.length === 0}<p class="empty" data-testid="sheet-empty">{t("sheet.noMatch")}</p>{/if}
       </div>
+      {/if}
       <!-- Find (R4a): the highlighted item's details (docs/04 3.6) -->
-      {#if level.current?.preview}<div class="preview" data-testid="find-preview">{level.current.preview}</div>{/if}
+      {#if level.current?.preview}<div class="preview" class:long={level.longPreview} data-testid="find-preview">{level.current.preview}</div>{/if}
     {/if}
   </div>
   <!-- over the view: shrinks first (flex-shrink weighs by size: 1000 × its height against the sheet's 1 × its own) -->
@@ -359,6 +371,25 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+  .preview.long {
+    white-space: pre-line;
+    overflow-wrap: anywhere;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 4;
+    line-clamp: 4;
+  }
+  /* a licence text (R87): plain reading type, wrapped */
+  .doc {
+    display: block;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    padding: 4px 8px;
+    font-size: 13px;
+    line-height: 1.4;
+    color: var(--text);
+    min-height: 120px;
   }
   .icon {
     all: unset;
