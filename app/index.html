@@ -11,30 +11,24 @@
     <link rel="apple-touch-icon" href="./icons/icon-192.png" />
     <title>Pascaline</title>
     <script>
-      // The theme before the first paint (R50b, R50e): the four values come from the localStorage mirror that
-      // theme/lookApply.ts writes (IndexedDB stays the source); the family's and the switches' CSS is linked here, as a
-      // blocking link, so the first frame is already the stored theme. Nothing stored: Dark in the Android app, System in
-      // the browser, High contrast when the phone asks for it. ES5, every read in try/catch.
+      // R50e: the stored look (localStorage mirror) before the first paint; src/theme/look.ts has the rules.
       (function () {
-        var r = document.documentElement, l = {}, files = /*theme-css*/{};
-        function mq(q) { return window.matchMedia ? matchMedia(q).matches : false; }
-        try { l = JSON.parse(localStorage.getItem("pascaline.look") || "{}") || {}; } catch (e) { l = {}; }
-        var cap = window.Capacitor, native = !!(cap && cap.isNativePlatform && cap.isNativePlatform());
-        var fam = ["pascaline", "graphite", "solarized", "gruvbox", "nord"].indexOf(l.family) >= 0 ? l.family : "pascaline";
-        var br = ["system", "light", "dark"].indexOf(l.brightness) >= 0 ? l.brightness : native ? "dark" : "system";
-        var hc = typeof l.contrast === "boolean" ? l.contrast : mq("(prefers-contrast: more)"), plain = l.plain === true;
-        r.setAttribute("data-family", fam);
-        r.setAttribute("data-brightness", (br === "system" ? mq("(prefers-color-scheme: light)") : br === "light") ? "light" : "dark");
-        if (hc) r.setAttribute("data-contrast", "high");
-        if (plain) r.setAttribute("data-keys", "plain");
-        if (typeof l.bg === "string" && /^#[0-9a-f]{3,8}$/i.test(l.bg)) document.querySelector('meta[name="theme-color"]').setAttribute("content", l.bg);
-        var want = [];
-        if (fam !== "pascaline" || hc || plain) want.push(fam);
-        if (hc || plain) want.push("modes");
-        for (var i = 0; i < want.length; i++) {
-          if (!files[want[i]]) continue;
-          try { document.write('<link rel="stylesheet" href="' + new URL(files[want[i]], document.baseURI).href + '">'); } catch (e) { /* the app applies the theme once it has loaded */ }
-        }
+        var r = document.documentElement, l = {}, f = /*theme-css*/{}, w = [];
+        function q(m) { return window.matchMedia ? matchMedia(m).matches : false; }
+        try { l = JSON.parse(localStorage.getItem("pascaline.look")) || {}; } catch (e) {}
+        var c = window.Capacitor, n = c && c.isNativePlatform && c.isNativePlatform();
+        var a = ["pascaline", "graphite", "solarized", "gruvbox", "nord"].indexOf(l.family) < 0 ? "pascaline" : l.family;
+        var b = ["system", "light", "dark"].indexOf(l.brightness) < 0 ? (n ? "dark" : "system") : l.brightness;
+        var h = typeof l.contrast == "boolean" ? l.contrast : q("(prefers-contrast: more)"), p = l.plain === true;
+        r.setAttribute("data-family", a);
+        r.setAttribute("data-brightness", (b == "system" ? q("(prefers-color-scheme: light)") : b == "light") ? "light" : "dark");
+        if (h) r.setAttribute("data-contrast", "high");
+        if (p) r.setAttribute("data-keys", "plain");
+        if (/^#[0-9a-f]{3,8}$/i.test(l.bg)) document.querySelector('meta[name="theme-color"]').setAttribute("content", l.bg);
+        if (a != "pascaline" || h || p) w.push(a);
+        if (h || p) w.push("modes");
+        for (var i = 0; i < w.length; i++)
+          if (f[w[i]]) try { document.write('<link rel="stylesheet" href="' + new URL(f[w[i]], document.baseURI).href + '">'); } catch (e) {}
       })();
     </script>
   </head>
