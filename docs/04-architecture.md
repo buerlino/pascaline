@@ -364,7 +364,7 @@ One IndexedDB database `pascaline`, store `kv` (`state/storage.ts`). Keys:
 | `userKeys`, `taps`, `app.function`, `app.solve` | the user keys' slots; R9's Shift/Alpha tap counter; per app (R53 adds `uses`, its counters) |
 | `units.targets`, `units.history` | the last target per dimension; the unit view's history (milestone 5) |
 
-**Every value is stamped** with `DATA_VERSION` (`storage.ts`): `{ "@pascaline": n, value }`; a value without the stamp is version 0. On read, the steps in `MIGRATIONS` for that key run from its version up, and the value is written back stamped. Raise the version with a step whenever a stored shape or the meaning of stored Giac text changes (a parser rename such as Φ → `Phi_` rewrites the stored `defs`). **Replay budget:** 8.3 (`replayMs`, inside the engine-ready bar).
+**Every value is stamped** with `DATA_VERSION` (`storage.ts`): `{ "@pascaline": n, value }`; a value without the stamp is version 0. On read, the steps in `MIGRATIONS` for that key run from its version up, and the value is written back stamped. A save never overwrites a newer version's record, and each step is safe twice (A50). Raise the version with a step whenever a stored shape or the meaning of stored Giac text changes (a parser rename such as Φ → `Phi_`). **Replay budget:** 8.3 (`replayMs`, inside the engine-ready bar).
 
 **The backup** (R11, `archive/r11-files.md`): one JSON file, each key's record as stored with its stamp (`defsStarts` left out); a restore checks the whole file, refuses it on the first fault (newer format or part, broken stamp, unknown part, a validator fault), then replaces the ticked keys in one transaction, keeps the replaced records in `backup.undo`, and reloads.
 

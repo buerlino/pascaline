@@ -16,6 +16,7 @@ npm run gate [-- --quick]                                  # from app/: every ch
 PW_PORT=<free port> GIAC_OUT=<abs dir> npm run test:e2e    # Playwright key-sequence tests; fails at once if the port is in use
 PW_PORT=<free port> GIAC_OUT=<abs dir> npm run test:core  # the core list only (tests/core/core.yaml); also part of test:e2e
 GIAC_OUT=<abs dir> npm run golden                          # engine gate; must end in GOLDEN GATE PASSED
+tools/check-version.sh [vX.Y.Z]                            # app/package.json, build.gradle and the F-Droid recipe agree; the tag too when given (A48)
 GIAC_OUT=<abs dir> npm run gallery                         # every view and layer → app/test/gallery/index.html
 tests/golden/.venv/bin/python tests/golden/oracle.py [--write|--g2]   # mpmath oracle (venv: tests/golden/README.md)
 ./build.sh [--dev] [--measure] [--unsigned] [--install [SERIAL]]      # clean source → dist/pascaline.apk (--no-units: Find holds functions only)
