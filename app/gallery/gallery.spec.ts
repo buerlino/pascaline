@@ -43,6 +43,30 @@ function settingsShots(): Shot[] {
 }
 type Theme = (typeof THEMES)[number];
 
+/** R24b: the unit pad on the keys (`?pad=1`, dev only until R24c opens it from the units key), plain and with Shift or Alpha on, at both sizes. */
+function padShots(): Shot[] {
+  const sizes = [
+    { tag: "360", group: "Unit pad (R24b), 360 × 740", viewport: { width: 360, height: 740 } },
+    { tag: "412", group: "Unit pad (R24b), 412 × 915", viewport: { width: 412, height: 915 } },
+  ];
+  return sizes.flatMap((z) =>
+    [["", "The unit pad: the cells in the keys' faces and legends (up top left, down bottom left), the prefixes in their own colour, the user cells U1–U6 outlined", []],
+      ["-shift", "Shift on: each face shows its flick-up item", ["shift"]],
+      ["-alpha", "Alpha on: each face shows its flick-down item", ["alpha"]]].map(([id, title, keys]) => ({
+      id: `unitpad${id as string}-${z.tag}`,
+      group: z.group,
+      title: title as string,
+      viewport: z.viewport,
+      setup: async (p: Page) => {
+        await p.goto("/?pad=1");
+        await p.waitForFunction(() => (window.pascaline?.unitPad?.model ?? null) !== null);
+        await ready(p);
+        await tap(p, keys as string[]);
+      },
+    })),
+  );
+}
+
 /** R50e: Home with some history and the Shift key on, in each family (light and dark come with every shot), then the two switches. */
 function lookShots(): Shot[] {
   const set = (patch: Record<string, unknown>) => async (p: Page) => {
@@ -235,6 +259,7 @@ const shots: Shot[] = [
     },
   },
   ...settingsShots(),
+  ...padShots(),
   ...lookShots(),
   {
     id: "home-tmpl",

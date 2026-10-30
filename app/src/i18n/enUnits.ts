@@ -40,6 +40,10 @@ export const enUnits = {
   "units.read.root": "square root of {u}",
   // G37: °C or °F inside a compound unit or with a power is a temperature interval ("per degree Celsius (difference)").
   "units.read.interval": "{u} (difference)",
+  // R24b: the pad's own keys (Math is Find in a slot, Enter goes to the next slot, a flick up on Enter evaluates).
+  "units.pad.find": "Find",
+  "units.pad.enter": "Enter",
+  "units.pad.evaluate": "Eval",
 } as const satisfies Record<string, string>;
 
 export type UnitMessageKey = keyof typeof enUnits;

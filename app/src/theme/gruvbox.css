@@ -24,6 +24,7 @@
   --focus: #fabd2f;
   --key-on: #fabd2f;
   --on-key-on: #1d2021;
+  --key-pfx: #2d2c2c;
   --on-error: #1d2021;
   color-scheme: dark;
 }
@@ -51,6 +52,7 @@
   --focus: #ebdbb2;
   --key-on: #ebdbb2;
   --on-key-on: #1d2021;
+  --key-pfx: #2c2d2d;
   --on-error: #1d2021;
   color-scheme: dark;
 }
@@ -78,6 +80,7 @@
   --focus: #fabd2f;
   --key-on: #fabd2f;
   --on-key-on: #1d2021;
+  --key-pfx: #161515;
   --on-error: #0a0b0c;
   color-scheme: dark;
 }
@@ -105,6 +108,7 @@
   --focus: #ebdbb2;
   --key-on: #ebdbb2;
   --on-key-on: #1d2021;
+  --key-pfx: #151516;
   --on-error: #0a0b0c;
   color-scheme: dark;
 }
@@ -132,6 +136,7 @@
   --focus: #076678;
   --key-on: #3c3836;
   --on-key-on: #fbf1c7;
+  --key-pfx: #d9e0cd;
   --on-error: #ffffff;
   color-scheme: light;
 }
@@ -159,6 +164,7 @@
   --focus: #282828;
   --key-on: #282828;
   --on-key-on: #fbf1c7;
+  --key-pfx: #cececa;
   --on-error: #ffffff;
   color-scheme: light;
 }
@@ -186,6 +192,7 @@
   --focus: #076678;
   --key-on: #3c3836;
   --on-key-on: #fbf1c7;
+  --key-pfx: #f3f3ec;
   --on-error: #ffffff;
   color-scheme: light;
 }
@@ -213,6 +220,7 @@
   --focus: #282828;
   --key-on: #282828;
   --on-key-on: #fbf1c7;
+  --key-pfx: #fdfbf3;
   --on-error: #ffffff;
   color-scheme: light;
 }

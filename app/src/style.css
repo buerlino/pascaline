@@ -33,6 +33,7 @@
   --focus: #ffc233;
   --key-on: #ffc233;
   --on-key-on: #0b1020;
+  --key-pfx: #203374;
   --on-error: #0b1020;
   color-scheme: dark;
 }
@@ -60,6 +61,7 @@
   --focus: #0025b5;
   --key-on: #0025b5;
   --on-key-on: #ffffff;
+  --key-pfx: #d6dcf3;
   --on-error: #ffffff;
   color-scheme: light;
 }
