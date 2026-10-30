@@ -8,8 +8,8 @@
 //   degrees) and keeps the reading whose value matches its preview, the value it showed when it was stored. One that
 //   matches neither (or both) keeps its text.
 // Only erasable TypeScript syntax; no engine import, so the UI side (storage.ts) may use the pure half.
-import { PASDEG, rewriteAngles } from "../input/angles.ts";
-import { leadingName, mapNames, type Quoting, renameCalls } from "./giacPrint.ts";
+import { dropAngleFactor, hasAngleFactor, PASDEG, POLAR_OUT, RECT_IN, rewriteAngles } from "../input/angles.ts";
+import { leadingName, mapNames, opening, type Quoting, renameCalls, withoutStrings } from "./giacPrint.ts";
 
 /** A Giac evaluator (EngineHost's GiacApi has this shape). */
 interface Evaluator {
@@ -30,9 +30,43 @@ function valueCmd(cmd: string): { name: string; rhs: string } | null {
   return name !== null && rest.startsWith(":=(") && rest.endsWith(")") && rest.length >= 4 ? { name, rhs: rest.slice(3, -1) } : null;
 }
 
+/** The degree factor as a degree reading freezes it. */
+const FROZEN = "(pi/180)";
+
 /** The value text read as degrees, with the factor frozen (the mode it was typed in no longer matters). */
 export function degreeReading(rhs: string): string {
-  return mapNames(rewriteAngles(rhs, "printed"), (n) => (n.name === PASDEG ? "(pi/180)" : null), "printed");
+  return mapNames(rewriteAngles(rhs, "printed"), (n) => (n.name === PASDEG ? FROZEN : null), "printed");
+}
+
+/** POLAR_OUT and RECT_IN as a degree reading writes them, and as they were. */
+const WRAPPERS: readonly (readonly [frozen: string, text: string])[] = [POLAR_OUT, RECT_IN].map((w) => [w.split(PASDEG).join(FROZEN), w]);
+
+/**
+ * A50: the value text is a degree reading already (this step's own output, or resolveAngle's), so reading it as
+ * degrees again would apply the factor twice. It is one when, with the factors a reading writes taken back out, it
+ * reads to itself. Those are `(pi/180)*(` opening an argument, which Giac's print never has (it writes `pi/180*(x)`),
+ * `/(pi/180))` closing a bracketed call (`(atan(x)/(pi/180))`), and the polar wrappers. A value Giac printed with
+ * `(pi/180)` elsewhere keeps it; one whose print is itself a reading (`2^(atan(x)/(pi/180))`) cannot be told apart.
+ */
+function isDegreeReading(rhs: string): boolean {
+  const text = WRAPPERS.reduce((s, [frozen, w]) => s.split(frozen).join(w), rhs);
+  const t = withoutStrings(text, (x) => " ".repeat(x.length), "printed");
+  let back = "";
+  let i = 0;
+  for (let k = t.indexOf(FROZEN); k >= 0; k = t.indexOf(FROZEN, k + 1)) {
+    const end = k + FROZEN.length;
+    const argument = /[(,]/.test(t.charAt(k - 1)) && t.startsWith("*(", end);
+    const open = t.charAt(k - 1) === "/" && t.charAt(end) === ")" ? opening(t, end) : -1;
+    const name = open >= 0 ? leadingName(t.slice(open + 1)) : null;
+    const call = name !== null && t.charAt(open + 1 + name.length) === "(";
+    if (k < i || !(argument || call)) continue;
+    back += text.slice(i, k) + PASDEG;
+    i = end;
+  }
+  back += text.slice(i);
+  if (back === rhs) return false;
+  const typed = dropAngleFactor(back, "printed");
+  return !hasAngleFactor(typed, "printed") && degreeReading(typed) === rhs;
 }
 
 /** The text holds an angle function the factor rewrite would change. */
@@ -58,7 +92,8 @@ function migrateEntry(x: unknown): unknown {
     if (m && rhs !== undefined && readsAngles(rhs)) {
       // A symbolic value (free names) followed the mode at use time, and still does with pasdeg.
       if (e["early"] === true) next = [rewriteAngles(next[0]!, "printed")];
-      else if (e["angle"] === "deg") next = [`${m.name}:=(${degreeReading(rhs)})`];
+      // A degree reading already (A50: the step ran on its own output) is left as it is.
+      else if (e["angle"] === "deg") next = isDegreeReading(rhs) ? next : [`${m.name}:=(${degreeReading(rhs)})`];
       else if (e["angle"] !== "rad") out["migrate"] = "angle";
     }
   }
