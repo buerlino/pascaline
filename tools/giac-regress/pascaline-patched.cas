@@ -521,6 +521,33 @@ Digits:=40:; pc("g132-sqrt-acos-pi-cubed-30",'(sqrt(acos(pi)^3))',(1724058339559
 // patch 0019-atan-exact-cut.patch
 // g135-home-arg-atan-2i (precision.yaml, derived)
 Digits:=40:; pc("g135-home-arg-atan-2i",'(arg(atan(2*i)))',(336406778718/10^12),5/10^13);
+// patch 0020-complex-sqrt-asin-small.patch
+// g133-asin-half-tiny-i-30 (precision.yaml, oracle)
+Digits:=40:; pc("g133-asin-half-tiny-i-30",'(asin(1/2+i/10^20))',(523598775598298873077107230547/10^30)+(1154700538379251529018297561/10^47)*i,5/10^31+5/10^50);
+// patch 0020-complex-sqrt-asin-small.patch
+// g133-acos-half-tiny-i-30 (precision.yaml, oracle)
+Digits:=40:; pc("g133-acos-half-tiny-i-30",'(acos(1/2+i/10^20))',(104719755119659774615421446109/10^29)-(1154700538379251529018297561/10^47)*i,5/10^30+5/10^50);
+// patch 0020-complex-sqrt-asin-small.patch
+// g133-asin-neg-tiny-neg-i-30 (precision.yaml, oracle)
+Digits:=40:; pc("g133-asin-neg-tiny-neg-i-30",'(asin(-3/5-i/10^15))',-(643501108793284386802809228717/10^30)-(125/10^17)*i,5/10^31+5/10^45);
+// patch 0020-complex-sqrt-asin-small.patch
+// g133-asin-tiny-i-30 (precision.yaml, oracle)
+Digits:=40:; pc("g133-asin-tiny-i-30",'(asin(i/10^20))',(1/10^20)*i,5/10^50);
+// patch 0020-complex-sqrt-asin-small.patch
+// g133-asin-tiny-complex-30 (precision.yaml, oracle)
+Digits:=40:; pc("g133-asin-tiny-complex-30",'(asin(1/10^20+i/10^20))',(1/10^20)+(1/10^20)*i,5/10^50+5/10^50);
+// patch 0020-complex-sqrt-asin-small.patch
+// g133-sqrt-evalf-1-tiny-i-30 (precision.yaml, oracle)
+Digits:=40:; pc("g133-sqrt-evalf-1-tiny-i-30",'(sqrt(evalf(1+i/10^20)))',1+(5/10^21)*i,5/10^30+5/10^51);
+// patch 0020-complex-sqrt-asin-small.patch
+// g133-sqrt-evalf-neg1-tiny-neg-i-12 (precision.yaml, oracle)
+Digits:=40:; pc("g133-sqrt-evalf-neg1-tiny-neg-i-12",'(sqrt(evalf(-1-i/10^20)))',(5/10^21)-i,5/10^33+5/10^12);
+// patch 0020-complex-sqrt-asin-small.patch
+// g133-sqrt-evalf-neg1-tiny-neg-i-30 (precision.yaml, oracle)
+Digits:=40:; pc("g133-sqrt-evalf-neg1-tiny-neg-i-30",'(sqrt(evalf(-1-i/10^20)))',(5/10^21)-i,5/10^51+5/10^30);
+// patch 0020-complex-sqrt-asin-small.patch
+// g133-asin-1e-12-i-30 (precision.yaml, oracle)
+Digits:=40:; pc("g133-asin-1e-12-i-30",'(asin(i/10^12))',(999999999999999999999999833333/10^42)*i,5/10^43);
 // patch 0006-reim-root-of-unknown-sign.patch
 // g96-cas-im-2sqrt (bench.yaml, derived)
 Digits:=40:; pc("g96-cas-im-2sqrt",'subst(im(2*sqrt(x)),x,-1)',2,1/10^30);

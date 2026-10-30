@@ -59,7 +59,7 @@ export function stageGiacCheck(): void {
 }
 
 /** G108: the Giac regression files (tools/giac-regress) are what export.mjs builds now, and on our build every check line
- *  passes, every known line fails, every patched line passes (patches 0003, 0005, 0006, 0007, 0009, 0010, 0011, 0012, 0013, 0014, 0015, 0016, 0017, 0018, 0019). */
+ *  passes, every known line fails, every patched line passes (patches 0003, 0005, 0006, 0007, 0009, 0010, 0011, 0012, 0013, 0014, 0015, 0016, 0017, 0018, 0019, 0020). */
 export function stageRegress(): void {
   const fresh = spawnSync(process.execPath, [`${root}tests/engine/regress-fresh.mjs`], { encoding: "utf8", timeout: 120_000 });
   const t0 = performance.now();
@@ -72,6 +72,6 @@ export function stageRegress(): void {
   report(
     "regress",
     r.status === 0 && fresh.status === 0,
-    `Giac regression files (patches 0003, 0005, 0006, 0007, 0009, 0010, 0011, 0012, 0013, 0014, 0015, 0016, 0017, 0018, 0019): ${counts.join("; ")}, ${secs} s${fresh.status === 0 ? "" : `; ${`${fresh.stdout}${fresh.stderr}`.trim().split("\n").pop()}`}`,
+    `Giac regression files (patches 0003, 0005, 0006, 0007, 0009, 0010, 0011, 0012, 0013, 0014, 0015, 0016, 0017, 0018, 0019, 0020): ${counts.join("; ")}, ${secs} s${fresh.status === 0 ? "" : `; ${`${fresh.stdout}${fresh.stderr}`.trim().split("\n").pop()}`}`,
   );
 }
