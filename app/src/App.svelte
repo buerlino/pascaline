@@ -237,7 +237,8 @@
       shell.closeSheet();
       settings = { C: ui.C, page: new ui.SettingsPage(m.settingsSections(session)) };
     };
-    if (modeSheet && settingsUi) return show(modeSheet, settingsUi);
+    // settingsPress reads its keys from sheetChunk.keys: a first open that failed only on the sheet chunk tries it again
+    if (modeSheet && settingsUi && sheetChunk.keys) return show(modeSheet, settingsUi);
     // every key meanwhile waits in the queue (decisions.md R8), so none of them lands on the line before the page is there
     sheetLoad = Promise.all([loadModeSheet(), loadSettingsUi(), loadSheetView()]).then(
       ([m, ui]) => {
