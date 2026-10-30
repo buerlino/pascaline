@@ -729,4 +729,12 @@ Digits:=40:; pc("g133-asin-tiny-i-12",'(asin(i/10^20))',(1/10^20)*i,5/10^32);
 Digits:=40:; pc("g133-acos-tiny-i-30",'(acos(i/10^20))',(157079632679489661923132169164/10^29)-(1/10^20)*i,5/10^30+5/10^50);
 // g133-sqrt-evalf-1-tiny-i-12 (precision.yaml, oracle)
 Digits:=40:; pc("g133-sqrt-evalf-1-tiny-i-12",'(sqrt(evalf(1+i/10^20)))',1+(5/10^21)*i,5/10^12+5/10^33);
+// g133-asin-tiny-complex-12 (precision.yaml, oracle)
+Digits:=40:; pc("g133-asin-tiny-complex-12",'(asin(1/10^20+i/10^20))',(1/10^20)+(1/10^20)*i,5/10^32+5/10^32);
+// g133-acos-tiny-i-12 (precision.yaml, oracle)
+Digits:=40:; pc("g133-acos-tiny-i-12",'(acos(i/10^20))',(157079632679/10^11)-(1/10^20)*i,5/10^12+5/10^32);
+// g133-acos-tiny-complex-12 (precision.yaml, oracle)
+Digits:=40:; pc("g133-acos-tiny-complex-12",'(acos(1/10^20+i/10^20))',(157079632679/10^11)-(1/10^20)*i,5/10^12+5/10^32);
+// g133-acos-tiny-complex-30 (precision.yaml, oracle)
+Digits:=40:; pc("g133-acos-tiny-complex-30",'(acos(1/10^20+i/10^20))',(157079632679489661922132169164/10^29)-(1/10^20)*i,5/10^30+5/10^50);
 print("pascaline-check: "+pasfail+" of "+pasn+" failed");
