@@ -109,9 +109,10 @@ export const LAZY_VIEWS = ["src/views/Sheet.svelte"];
  *  and the palette cells (loaded with the sheet's view), the result tidy-up, the palettes with their names. */
 export const LAZY_PARTS = ["src/views/sheetKeys.ts", "src/views/tmplSheet.ts", "src/render/tidy.ts", "src/keyboard/shiftPalettes.ts"];
 
-/** R91's pin: the start chunk is at most this many bytes gzip, 2.5 kB under the budget of 61 kB, so the Settings base
- *  (R49, R86, R57) has room. A package that needs more raises the pin with a reason, here and in docs/04 8.3. */
-export const START_PIN_GZIP = 58.5 * KB;
+/** R91's pin: the start chunk is at most this many bytes gzip, about 2.3 kB under the budget of 61 kB, so the Settings
+ *  base (R49, R86, R57) has room. A package that needs more raises the pin with a reason, here and in docs/04 8.3.
+ *  58.5 → 58.75 (R57): the decimal mark's setting, the two key faces, the drawn comma and the hardware keys, 0.47 kB. */
+export const START_PIN_GZIP = 58.75 * KB;
 
 /** Failures for the start chunk's row when it is over the pin. */
 export function checkStartPin(row: Row): string[] {
