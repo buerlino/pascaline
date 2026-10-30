@@ -118,10 +118,10 @@ export const LAZY_PARTS = ["src/views/sheetKeys.ts", "src/views/tmplSheet.ts", "
  *  Appearance level, the family list and the theme files are lazy chunks.
  *  60 → 60.5 kB (R57): phase-1 59.90 kB, the branch 60.48 kB (+0.58 kB): the decimal mark setting, the two key faces,
  *  the drawn comma, the hardware keys, and the Paste and rows holds (keyboard/route.ts) are on the key path.
- *  60.5 → 60.65 kB (R24b): phase-1 60.48 kB, the branch 60.61 kB (+0.13 kB, raw +0.35 kB): the pad's state (units/padView),
- *  its three reads in Keypad.svelte (a cell's face and legends, the bubble) and its hook in route.ts; the pad (units/pad.ts
- *  with spec/unit-pad.yaml) is a lazy chunk. */
-export const START_PIN_GZIP = 60.65 * KB;
+ *  60.5 → 60.52 kB (R24b): phase-1 60.49 kB, the branch 60.51 kB (+0.02 kB, raw +0.06 kB): the unit pad is drawn through the
+ *  keypad's own seams (the sheet's state, sheetChunk.pad; Keypad's key list and its row of legends; one hook in
+ *  keyboard/route.ts), and everything else (units/pad.ts, units/padView, spec/unit-pad.yaml) is a lazy chunk. */
+export const START_PIN_GZIP = 60.52 * KB;
 
 /** Failures for the start chunk's row when it is over the pin. */
 export function checkStartPin(row: Row): string[] {

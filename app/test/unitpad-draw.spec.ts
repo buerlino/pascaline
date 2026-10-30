@@ -12,12 +12,12 @@ interface Cell { key: string; kind: string; tap?: { emit: Emit }; up?: { emit: E
 test.use({ viewport: { width: 360, height: 740 } });
 test.beforeEach(async ({ page }) => {
   await open(page, "engine=fake&pad=1");
-  await page.waitForFunction(() => window.pascaline.unitPad.model !== null);
+  await page.waitForFunction(() => (window.pascaline.unitPad?.model ?? null) !== null);
 });
 
-const cells = (page: Page): Promise<Cell[]> => page.evaluate(() => JSON.parse(JSON.stringify(window.pascaline.unitPad.model?.cells ?? [])) as Cell[]);
-const log = (page: Page): Promise<Emit[]> => page.evaluate(() => JSON.parse(JSON.stringify(window.pascaline.unitPad.log ?? [])) as Emit[]);
-const clear = (page: Page): Promise<void> => page.evaluate(() => void window.pascaline.unitPad.log?.splice(0));
+const cells = (page: Page): Promise<Cell[]> => page.evaluate(() => JSON.parse(JSON.stringify(window.pascaline.unitPad?.model?.cells ?? [])) as Cell[]);
+const log = (page: Page): Promise<Emit[]> => page.evaluate(() => JSON.parse(JSON.stringify(window.pascaline.unitPad?.log ?? [])) as Emit[]);
+const clear = (page: Page): Promise<void> => page.evaluate(() => void window.pascaline.unitPad?.log?.splice(0));
 const onKey = (page: Page, id: string, layer?: "shift" | "alpha"): Promise<void> => page.evaluate(([i, l]) => window.pascaline.entry.onKey(i as string, l as never), [id, layer]);
 const LAYERS = [["primary", "tap"], ["shift", "up"], ["alpha", "down"]] as const;
 
@@ -59,16 +59,34 @@ test("a user cell emits its unit; an empty one shows a dim + and is dead", async
   expect(await log(page)).toEqual([{ do: "unit", id: "s_ton" }, { do: "unit", id: "l_ton" }, { do: "unit", id: "eV" }]);
   await expect(page.locator('[data-key="u3"] .main')).toHaveText("ton");
   await expect(page.locator('[data-key="u3"] .shiftlegend')).toHaveText("l ton");
-  await expect(page.locator('[data-key="u3"]')).toHaveAttribute("data-user", "set");
+  await expect(page.locator('[data-key="u3"]')).toHaveAttribute("data-pad", "user");
   await page.evaluate(() => {
-    const m = window.pascaline.unitPad.model;
-    if (m) window.pascaline.unitPad.model = new (m.constructor as new (u: object) => typeof m)({});
+    const u = window.pascaline.unitPad;
+    const m = u?.model;
+    if (u && m) u.model = new (m.constructor as new (u: object) => NonNullable<typeof m>)({});
   });
   await expect(page.locator('[data-key="u1"] .main')).toHaveText("+");
-  await expect(page.locator('[data-key="u1"]')).toHaveAttribute("data-user", "empty");
+  await expect(page.locator('[data-key="u1"]')).toHaveAttribute("data-pad", "empty");
   await clear(page);
   await tap(page, ["u1"]);
   expect(await log(page)).toEqual([]);
+});
+
+test("a user cell shows its flick down as a legend, and the flick emits it", async ({ page }) => {
+  const height = (): Promise<number | undefined> => page.locator(".pad").boundingBox().then((b) => b?.height);
+  const before = await height();
+  await page.evaluate(() => {
+    const u = window.pascaline.unitPad;
+    const m = u?.model;
+    if (u && m) u.model = new (m.constructor as new (u: object) => NonNullable<typeof m>)({ u2: { tap: "H", down: "mH" } });
+  });
+  await expect(page.locator('[data-key="u2"] .main')).toHaveText("H");
+  await expect(page.locator('[data-key="u2"] .alphalegend')).toHaveText("mH");
+  await expect(page.locator('[data-key="u1"] .alphalegend')).toHaveCount(0); // a cell with no flick down has no line for it
+  expect(await height()).toBe(before); // the keys below do not move (docs/03 rule 8)
+  await clear(page);
+  await flick(page, "u2", "down");
+  expect(await log(page)).toEqual([{ do: "unit", id: "mH" }]);
 });
 
 test("the cells are the keys' own faces and legends, the prefixes in their own colour", async ({ page }) => {

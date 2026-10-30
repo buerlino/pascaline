@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url";
 import { parse } from "yaml";
 import { describe, expect, it } from "vitest";
 import type { IndexItem } from "../find/types.ts";
-import { keyboard, MATHS_ROW } from "../keyboard/keyboard.ts";
+import { actionFor, keyboard, labelFor, MATHS_ROW, type Key } from "../keyboard/keyboard.ts";
 import { UnitPad, defaultUser } from "./pad.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -20,6 +20,19 @@ const ids = new Set(items.map((i) => i.id));
 interface Raw { key: string; tap?: string; up?: string; down?: string }
 const spec = parse(readFileSync(join(here, "../../../spec/unit-pad.yaml"), "utf8")) as { keep: Raw[]; ops: Raw[]; prefixes: Raw[]; units: Raw[]; user: Raw[] };
 const pad = new UnitPad();
+
+/** What the keypad draws on key `id` with Shift and Alpha as given: the face, the two legends and whether it is dead. */
+function shown(p: UnitPad, id: string, shift: boolean, alpha: boolean) {
+  const k = p.key(keyboard.byId.get(id) as Key, undefined) as Key;
+  const a = actionFor(k, shift, alpha);
+  return {
+    pad: k.pad,
+    face: labelFor(k, shift, alpha) || k.label.primary || "",
+    up: (shift && !alpha) || !k.label.shift ? "" : k.label.shift,
+    down: alpha || !k.label.alpha ? "" : k.label.alpha,
+    dead: !a || (a.kind === "special" && a.name === "none"),
+  };
+}
 
 describe("the unit pad's cells", () => {
   it("lie on a maths key of spec/keyboard.yaml, a user cell on a user key", () => {
@@ -56,28 +69,28 @@ describe("the unit pad's cells", () => {
 
 describe("what a cell shows and emits", () => {
   it("shows a unit on the tap, its flicks as legends, and emits unit ids", () => {
-    expect(pad.legends("d9", false, false)).toMatchObject({ kind: "unit", face: "m", up: "ft", down: "in", dead: false });
+    expect(shown(pad, "d9", false, false)).toMatchObject({ pad: "unit", face: "m", up: "ft", down: "in", dead: false });
     expect(pad.press("d9", "primary")).toEqual({ do: "unit", id: "m" });
     expect(pad.press("d9", "shift")).toEqual({ do: "unit", id: "ft" });
     expect(pad.press("d9", "alpha")).toEqual({ do: "unit", id: "in" });
   });
 
   it("shows the layer in the face (Shift: the up item) and leaves its legend out", () => {
-    expect(pad.legends("d9", true, false)).toMatchObject({ face: "ft", up: "", down: "in" });
-    expect(pad.legends("d9", false, true)).toMatchObject({ face: "in", up: "ft", down: "" });
+    expect(shown(pad, "d9", true, false)).toMatchObject({ face: "ft", up: "", down: "in" });
+    expect(shown(pad, "d9", false, true)).toMatchObject({ face: "in", up: "ft", down: "" });
   });
 
   it("draws the Find ids as symbols and uses the spec's labels", () => {
-    expect(pad.legends("space", false, false)).toMatchObject({ face: "K", up: "°C", down: "°F" });
-    expect(pad.legends("tan", false, false)).toMatchObject({ face: "Ω", up: "S" });
+    expect(shown(pad, "space", false, false)).toMatchObject({ face: "K", up: "°C", down: "°F" });
+    expect(shown(pad, "tan", false, false)).toMatchObject({ face: "Ω", up: "S" });
     expect(pad.press("tan", "primary")).toEqual({ do: "unit", id: "ohm" });
-    expect(pad.legends("frac", false, false)).toMatchObject({ face: "°", up: "rad" });
-    expect(pad.legends("vars", false, false)).toMatchObject({ face: "mi", up: "yd", down: "mil" });
+    expect(shown(pad, "frac", false, false)).toMatchObject({ face: "°", up: "rad" });
+    expect(shown(pad, "vars", false, false)).toMatchObject({ face: "mi", up: "yd", down: "mil" });
     expect(pad.press("vars", "alpha")).toEqual({ do: "unit", id: "thou" });
   });
 
   it("emits a prefix for a prefix cell, marked as one", () => {
-    expect(pad.legends("d2", false, false)).toMatchObject({ kind: "prefix", face: "µ" });
+    expect(shown(pad, "d2", false, false)).toMatchObject({ pad: "prefix", face: "µ" });
     expect(pad.press("d2", "primary")).toEqual({ do: "prefix", id: "u" });
     expect(pad.press("d4", "alpha")).toEqual({ do: "prefix", id: "h" });
     expect(pad.press("d7", "shift")).toEqual({ do: "prefix", id: "T" });
@@ -105,18 +118,40 @@ describe("what a cell shows and emits", () => {
 
   it("is dead where a cell has nothing: null, and the legends say so", () => {
     expect(pad.press("d1", "shift")).toBeNull();
-    expect(pad.legends("d1", true, false)).toMatchObject({ face: "", dead: true });
+    expect(shown(pad, "d1", true, false)).toMatchObject({ dead: true });
     expect(pad.press("math", "shift")).toBeNull();
   });
 
   it("marks the user cells and emits their units; an empty one is dim with a +", () => {
-    expect(pad.legends("u3", false, false)).toMatchObject({ kind: "user", user: "set", face: "ton", up: "l ton" });
+    expect(shown(pad, "u3", false, false)).toMatchObject({ pad: "user", face: "ton", up: "l ton" });
     expect(pad.press("u3", "primary")).toEqual({ do: "unit", id: "s_ton" });
     expect(pad.press("u3", "shift")).toEqual({ do: "unit", id: "l_ton" });
     expect(pad.press("u4", "shift")).toEqual({ do: "unit", id: "eV" });
     const mine = new UnitPad({ ...defaultUser(), u1: {}, u2: { tap: "H", down: "mH", label: { down: "mH" } } });
-    expect(mine.legends("u1", false, false)).toMatchObject({ user: "empty", face: "+", dead: true });
+    expect(shown(mine, "u1", false, false)).toMatchObject({ pad: "empty", face: "+", dead: true });
     expect(mine.press("u1", "primary")).toBeNull();
     expect(mine.press("u2", "alpha")).toEqual({ do: "unit", id: "mH" });
+  });
+});
+
+it("finds the full generated index (otherwise the Find-id test was skipped)", () => {
+  if (hasIndex) return;
+  const msg = "app/src/find/_gen/find-index.json is missing or holds functions only; run npm run index";
+  if (process.env["FIND_INDEX"] === "required") expect.fail(msg);
+  console.warn(`pad.test: ${msg}; the test was skipped`);
+});
+
+describe("the keypad's drawing of a cell", () => {
+  it("shows a user cell's flick down as its alpha legend, and a cell with no leg in a layer is dead there", () => {
+    const mine = new UnitPad({ u2: { tap: "H", down: "mH" } });
+    expect(shown(mine, "u2", false, false)).toMatchObject({ face: "H", up: "", down: "mH" });
+    expect(shown(mine, "u2", false, true)).toMatchObject({ face: "mH", dead: false });
+    expect(shown(mine, "u2", true, false)).toMatchObject({ dead: true });
+    expect(shown(pad, "d1", false, true)).toMatchObject({ dead: true }); // the prefix m has no flick down: Alpha does not fall back to the tap
+  });
+
+  it("leaves a key that is not a cell to the keypad, and a user cell no longer a user key", () => {
+    expect(pad.key(keyboard.byId.get("esc") as Key, undefined)).toBeUndefined();
+    expect(pad.key(keyboard.byId.get("u3") as Key, undefined)?.user).toBeUndefined();
   });
 });

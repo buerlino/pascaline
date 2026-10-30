@@ -6,8 +6,7 @@
   import { fitLegends } from "./fit.ts";
   import { actionFor, gridPlace, keyboard, labelFor, type Key, type Layer } from "./keyboard.ts";
   import { sheetChunk } from "../views/sheetView.svelte.ts";
-  import { unitPad } from "../units/padView.svelte.ts";
-  import type { UserKeys } from "./userKeys.svelte.ts";
+    import type { UserKeys } from "./userKeys.svelte.ts";
 
   let {
     userKeys,
@@ -45,13 +44,12 @@
   // function at the top left (flick up), the letter at the bottom left (flick down). A legend the face already shows
   // is left out; the Shift layer's legend stays under the alpha lock, where a flick up still gives it (`=` in a name).
   /** The keys as drawn and fired: the free keys with the user's slots. */
-  const keys = $derived(keyboard.keys.map((k) => userKeys.resolve(k)));
-  /** The unit pad is up (R24b): a key that is one of its cells shows the cell, in the same face and legends. */
-  const cell = (k: Key) => (sheet ? undefined : unitPad.model?.legends(k.id, shift, alpha));
+  /** The unit pad is up (R24b): a key that is one of its cells is the cell, in the same face and legends. */
+  const keys = $derived(keyboard.keys.map((k) => sheetChunk.pad?.key(k, sheet) ?? userKeys.resolve(k)));
   const face = (k: Key): string =>
-    cell(k)?.face ?? legend(labelFor(k, shift, alpha, cas) || k.label.primary || "");
-  const hint = (k: Key): string => cell(k)?.up ?? ((shift && !alpha) || !k.label.shift ? "" : legend(k.label.shift));
-  const alphaHint = (k: Key): string => cell(k)?.down ?? (alpha || !k.label.alpha ? "" : k.label.alpha);
+    legend(labelFor(k, shift, alpha, cas) || k.label.primary || "");
+  const hint = (k: Key): string => (shift && !alpha) || !k.label.shift ? "" : legend(k.label.shift);
+  const alphaHint = (k: Key): string => (alpha || !k.label.alpha ? "" : k.label.alpha);
   /** Rows with a letter on some key reserve the letter line on every key, so the faces of a row stay level. The upper
    *  cluster has no letters, and no line for them (vertical space, docs/03 rule 9). */
   const letterRows = new Set(keyboard.keys.filter((k) => k.label.alpha).map((k) => k.row));
@@ -62,8 +60,6 @@
 
   /** A key that does nothing in the current layer (a key we don't have yet, or a layer it has no function in). */
   const dead = (k: Key): boolean => {
-    const c = cell(k);
-    if (c) return c.dead;
     if (sheet) return sheetChunk.keys?.sheetKey(k, sheet.filter).kind === "none"; // (not drawn dead before the sheet's code is in)
     const p = k.actions.primary;
     if (p?.kind === "special" && (p.name === "shift" || p.name === "alpha")) return false; // the modifiers work in every layer
@@ -78,7 +74,6 @@
     void shift;
     void alpha;
     void cas;
-    void unitPad.model;
     if (!padEl) return;
     const pad = padEl;
     fitLegends(pad);
@@ -133,8 +128,6 @@
       return alphaLock && capsLock === lower ? t("flick.unlock") : t(named ? "flick.lowerLock" : "flick.capsLock");
     }
     if (sheet) return dir === "down" && sheet.filter ? (sheetChunk.keys?.letterOf(k) ?? "") : "";
-    const c = unitPad.model?.legends(k.id, false, false);
-    if (c) return dir === "up" ? c.up : c.down;
     const [sh, al] = dir === "up" ? [true, false] : [false, true];
     const a = actionFor(k, sh, al, false, cas);
     if (!a || (a.kind === "special" && a.name === "none")) return "";
@@ -180,8 +173,7 @@
     const el = ev.target instanceof Element ? ev.target.closest<HTMLElement>("[data-key],[data-trackpad]") : null;
     if (!el) return undefined;
     if (el.dataset["trackpad"] !== undefined) return "pad";
-    const k = keyboard.byId.get(el.dataset["key"] ?? "");
-    return k && userKeys.resolve(k);
+    return keys.find((k) => k.id === el.dataset["key"]);
   }
 
   function down(ev: PointerEvent): void {
@@ -294,6 +286,8 @@
 >
   {#if padArea}<div class="trackpad" data-trackpad style:grid-row={padArea.rows} style:grid-column={padArea.cols}></div>{/if}
   {#each keys as key (key.id)}
+    <!-- the letter line: the row's, or a pad cell's own flick down (the cluster has none otherwise) -->
+    {@const lettered = letterRows.has(key.row) || (key.pad && key.label.alpha)}
     <button
       type="button"
       class={`key ${key.cls}`}
@@ -305,13 +299,13 @@
       style:grid-column={`${gridPlace(keyboard, key).start} / span ${gridPlace(keyboard, key).span}`}
       data-dead={dead(key) ? "true" : undefined}
       data-zone={isPadKey(key) ? "true" : undefined}
-      data-letters={letterRows.has(key.row) ? "true" : undefined}
-      data-user={cell(key)?.user ?? (key.user ? (userKeys.isEmpty(key) ? "empty" : "set") : undefined)}
-      data-pad={cell(key)?.kind}
+      data-letters={lettered ? "true" : undefined}
+      data-user={key.user ? (userKeys.isEmpty(key) ? "empty" : "set") : undefined}
+      data-pad={key.pad}
     >
       <span class="shiftlegend" data-fit="legend">{hint(key)}</span>
       <span class="main" data-fit="face">{face(key)}</span>
-      {#if letterRows.has(key.row)}<span class="alphalegend" data-fit="legend">{alphaHint(key)}</span>{/if}
+      {#if lettered}<span class="alphalegend" data-fit="legend">{alphaHint(key)}</span>{/if}
     </button>
   {/each}
   {#if padArea}<div class="hub" data-trackpad data-testid="pad-hub" style:grid-row={padArea.rows} style:grid-column={padArea.cols}></div>{/if}
@@ -407,7 +401,19 @@
   .key[data-pad="prefix"] {
     background: var(--key-pfx);
   }
-  .key[data-pad="user"][data-user="empty"] .main {
+  .key[data-pad="user"] {
+    box-shadow: inset 0 0 0 1px var(--muted);
+  }
+  /* a user cell with a flick down has the letter line in the cluster too: the face's track may shrink to what is left of
+     the key's 36 px less its 2 px padding (a fixed track, the face overflows it evenly), so the keys below do not move (docs/03 rule 8) */
+  .key[data-pad="user"][data-letters="true"] {
+    grid-template-rows: var(--legend-h) calc(34px - 2 * var(--legend-h)) var(--legend-h);
+  }
+  .key[data-pad="empty"] {
+    background: transparent;
+    box-shadow: inset 0 0 0 1px var(--line);
+  }
+  .key[data-pad="empty"] .main {
     opacity: 0.5;
   }
   /* the trackpad in the upper cluster: as low as the keys beside it */

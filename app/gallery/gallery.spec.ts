@@ -59,7 +59,7 @@ function padShots(): Shot[] {
       viewport: z.viewport,
       setup: async (p: Page) => {
         await p.goto("/?pad=1");
-        await p.waitForFunction(() => window.pascaline?.unitPad.model !== null && window.pascaline?.unitPad.model !== undefined);
+        await p.waitForFunction(() => (window.pascaline?.unitPad?.model ?? null) !== null);
         await ready(p);
         await tap(p, keys as string[]);
       },

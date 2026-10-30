@@ -12,7 +12,6 @@ import type { EntryController } from "../entry/controller.ts";
 import { ANS_CHIP } from "../entry/macros.ts";
 import { canPick, pickAfter, pickAtOrBefore } from "../state/pickRows.ts";
 import type { HistoryItem, Session, View } from "../state/session.svelte.ts";
-import { unitPad } from "../units/padView.svelte.ts";
 import { sheetChunk, loadSheetView } from "../views/sheetView.svelte.ts";
 import { actionFor, type ActionBody, type Key, type Layer, type Special } from "./keyboard.ts";
 
@@ -331,8 +330,8 @@ export function press(c: RouteCtx, key: Key, layer?: Layer): void {
   if (p?.kind === "special" && (p.name === "shift" || p.name === "alpha")) return modifier(c, p.name, layer);
   if (sheetUndrawn(c) || rowsLoading(c, key)) return wait(c, { key, mods: modsFor(c, layer), layer });
   if (c.shell.sheet && sheetPress(c, key, layer)) return;
-  if (unitPad.model && !c.shell.sheet && unitPad.model.route(c, key, modsFor(c, layer))) return; // the unit pad's cell (R24b)
   const mods = modsFor(c, layer);
+  if (sheetChunk.pad?.route(c, key, mods)) return; // the unit pad's cell (R24b)
   c.session.clearModifiers(); // a one-shot Shift or Alpha is used up by this key, a tap or a flick
   if (c.sheetLoad === null && sheetChunk.C === null && opensSheet(key, mods)) {
     c.sheetLoad = loadSheetView()

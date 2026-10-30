@@ -2,11 +2,12 @@
 // R24b: the unit pad (spec/unit-pad.yaml, docs/archive/r9-unit-pad.md section 1) as data: which cell lies on which key,
 // what its tap, flick up and flick down show, and which pad action each gives (R24a's PadAction). Plain TS, loaded
 // lazily with the unit view (units/padView.svelte.ts), never in the start chunk. The keypad draws a cell as the face
-// and legends of its own key (Keypad.svelte), so a cell cannot miss its key and fit.ts fits it like any legend; a press
-// goes through the keypad's gesture code and reaches `press` by key id and layer (keyboard/route.ts).
+// and legends of its own key (`key`, read through sheetChunk.pad), so a cell cannot miss its key and fit.ts fits it
+// like any legend; a press goes through the keypad's gesture code and reaches `press` by key id and layer
+// (keyboard/route.ts).
 import raw from "../../../spec/unit-pad.yaml";
 import { unitText } from "../i18n/enUnits.ts";
-import type { Key } from "../keyboard/keyboard.ts";
+import type { Action, Key } from "../keyboard/keyboard.ts";
 import type { Mods, RouteCtx } from "../keyboard/route.ts";
 import { unitPad } from "./padView.svelte.ts";
 import type { PadAction } from "./slot.ts";
@@ -41,20 +42,6 @@ export interface UserSet {
 }
 export type UserCells = Readonly<Record<string, UserSet>>;
 
-/** What the keypad draws on one key while the pad is up. */
-export interface PadLegends {
-  kind: CellKind;
-  /** The key's face: the cell's leg in the layer Shift and Alpha are in. */
-  face: string;
-  /** The legend above the face (flick up) and the one below it (flick down); empty where the face shows it. */
-  up: string;
-  down: string;
-  /** Nothing happens in this layer (no leg there, or an empty user cell). */
-  dead: boolean;
-  /** A user cell: set, or empty (outlined, a dim +). */
-  user?: "set" | "empty";
-}
-
 interface RawCell { key: string; tap?: string; up?: string; down?: string; label?: { tap?: string; up?: string; down?: string } }
 interface RawSpec {
   keep: { key: string; does: string; up?: string }[];
@@ -85,6 +72,8 @@ const KEEP: Readonly<Record<string, { text: () => string; emit: PadEmit }>> = {
   evaluate: { text: () => unitText("units.pad.evaluate"), emit: { do: "evaluate" } },
 };
 
+const DRAWN: Action = { kind: "cmd", name: "unitPad" };
+const NONE: Action = { kind: "special", name: "none" };
 const LEG = { primary: "tap", shift: "up", alpha: "down" } as const;
 
 function fail(what: string): never {
@@ -124,26 +113,31 @@ export class UnitPad {
     return this.#cells.get(key);
   }
 
-  /** The face and legends of a key in the Shift and Alpha state shown; undefined for a key that is not a pad cell. */
-  legends(key: string, shift: boolean, alpha: boolean): PadLegends | undefined {
-    const c = this.#cells.get(key);
-    if (!c) return undefined;
-    const layer: PadLayer = alpha ? "alpha" : shift ? "shift" : "primary";
-    const text = (l: PadLayer): string => c[LEG[l]]?.text ?? "";
+  /** The key as the keypad draws it while the pad is up (Keypad.svelte, through sheetChunk.pad): the cell's three legs
+   *  as the key's three legends, so a cell lies on its key by construction and fit.ts fits it like any legend. A leg the
+   *  cell has not is a dead layer (not a fall-back to the tap). undefined for a key that is not a pad cell. */
+  key(k: Key, sheet: unknown): Key | undefined {
+    const c = this.#cells.get(k.id);
+    if (!c || sheet) return undefined; // (a sheet over the keys: the keypad's own)
+    const label: Partial<Record<PadLayer, string>> = {};
+    const actions: Partial<Record<PadLayer, Action>> = {};
+    for (const layer of ["primary", "shift", "alpha"] as const) {
+      const leg = c[LEG[layer]];
+      if (leg) label[layer] = leg.text;
+      // (only whether a layer has an action matters to the drawing: the press goes to `route`)
+      actions[layer] = leg ? DRAWN : NONE;
+    }
     const empty = c.kind === "user" && c.tap === undefined;
-    return {
-      kind: c.kind,
-      face: empty && layer === "primary" ? "+" : text(layer),
-      up: layer === "shift" ? "" : text("shift"),
-      down: layer === "alpha" ? "" : text("alpha"),
-      dead: c[LEG[layer]] === undefined,
-      ...(c.kind === "user" ? { user: empty ? ("empty" as const) : ("set" as const) } : {}),
-    };
+    if (empty) label.primary = "+";
+    const { user, ...rest } = k; // (a user cell is drawn as the pad's, not by the user's own slots)
+    void user;
+    return { ...rest, label, actions, pad: empty ? "empty" : c.kind };
   }
 
   /** A key press while the pad is up (keyboard/route.ts): a cell emits its action in the layer it was pressed in and
    *  uses up a one-shot Shift or Alpha, a cell with nothing there is a dead key; true when the key was a cell. */
   route(c: RouteCtx, key: Key, mods: Mods): boolean {
+    if (c.shell.sheet) return false; // (a sheet over the keys takes them)
     const emit = this.press(key.id, mods.alpha ? "alpha" : mods.shift ? "shift" : "primary");
     if (emit === undefined) return false;
     c.session.clearModifiers();
