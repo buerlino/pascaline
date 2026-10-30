@@ -149,7 +149,7 @@ ls "$sb"/.tasks/*/fail-*.txt >/dev/null 2>&1 && [[ -n "$(cat "$sb"/.tasks/*/fail
 git -C "$sb" worktree remove --force "$sb"/.claude/worktrees/pl-001-t1 2>/dev/null; git -C "$sb" branch -D p1/t1 >/dev/null 2>&1
 out="$(SB_DIRTY="$sb/.claude/worktrees/phase-1" sbrun "$script" ron "sandbox task" --id T2 --branch p1/t2 --checks none 2>/dev/null)"
 grep -q '^RESULT #2 T2: NOT MERGED (phase-1 worktree not clean' <<<"$out" || fail "A24: a dirty phase-1 does not end as NOT MERGED (phase-1 worktree not clean): $out"
-git -C "$sb" log phase-1 --format=%s | grep -q '^Merge' && fail "A24: a dirty phase-1 was merged into"
+git -C "$sb" log phase-1 --format=%s | grep '^Merge' >/dev/null && fail "A24: a dirty phase-1 was merged into"
 # A28, behaviour: with GIAC_OUT unset the engine is managed: a real build with a stub build-wasm.sh writes the stamp and promotes
 sb2="$tmp/sb2"; mkdir -p "$sb2/bin" "$sb2/tools" "$sb2/docs/shifts" "$sb2/app/node_modules/x" "$sb2/engine/giac/patches"; git init -q -b main "$sb2"
 cp "$sb/tools/devlock.sh" "$sb2/tools/"; cp "$sb/bin/claude" "$sb/bin/npm" "$sb2/bin/"; : > "$sb2/docs/shifts/brief.md"; echo t > "$sb2/tracked"; echo t > "$sb2/app/keep"
@@ -626,7 +626,8 @@ out="$(mqrun env ANDROID_SERIAL=TESTSERIAL "$script" device 6 2>&1)"
 node_modules_stale "$p1q/app" && fail "A47bf1: precondition: the phase-1 node_modules are stale after Q5"
 (cd "$mq" && unset PASCALINE_LOCK_PID && tools/devlock.sh acquire integ owner-y 0 >/dev/null)
 out="$(mqrun env PASCALINE_INTEG_WAIT=2 "$script" ron "queue task" --id N1 --branch p1/n1 --checks typecheck 2>&1)"
-git -C "$mq" log p1/n1 --format=%s 2>/dev/null | grep -q '^work p1-n1$' || fail "A47bf1: a start with fresh phase-1 node_modules does not start its worker while integ is held: $out"
+# grep without -q: under pipefail an early-exiting grep -q SIGPIPEs git log (rc 141) and a present commit read as missing
+git -C "$mq" log p1/n1 --format=%s 2>/dev/null | grep '^work p1-n1$' >/dev/null || fail "A47bf1: a start with fresh phase-1 node_modules does not start its worker while integ is held: $out"
 [[ -f "$mq/.claude/worktrees/pl-$(sed -n 's/^RESULT #\([0-9]*\) .*/\1/p' <<<"$out" | xargs printf '%03d')-n1/app/node_modules/newdep/package.json" ]] || fail "A47bf1: the fresh start did not copy phase-1's node_modules: $out"
 grep -q 'N1: waiting for integ (owner-y)' "$mq/.coord/log.md" && ! grep -q 'NOT MERGED (integ lock busy for 7200 s (node_modules))' <<<"$out" || fail "A47bf1: the fresh start did not reach the queue: $out"
 (cd "$mq" && tools/devlock.sh release integ owner-y >/dev/null)
@@ -634,7 +635,7 @@ grep -q 'N1: waiting for nodemods' "$mq/.coord/log.md" && fail "A47bf1: a free n
 # nodemods held by another: a fresh start waits for it (logged) and copies nothing meanwhile
 (cd "$mq" && unset PASCALINE_LOCK_PID && tools/devlock.sh acquire nodemods owner-z 0 >/dev/null)
 out="$(mqrun env PASCALINE_NODEMODS_WAIT=2 "$script" ron "queue task" --id N2 --branch p1/n2 --checks typecheck 2>&1)"
-git -C "$mq" log --all --format=%s | grep -q "^work p1-n2$" && fail "A47bf1: a start copied node_modules while another held nodemods: $out"
+git -C "$mq" log --all --format=%s | grep "^work p1-n2$" >/dev/null && fail "A47bf1: a start copied node_modules while another held nodemods: $out"
 grep -q 'N2: waiting for nodemods (owner-z)' "$mq/.coord/log.md" && grep -q 'nodemods lock busy' <<<"$out" || fail "A47bf1: the nodemods wait is not logged or not named: $out"
 (cd "$mq" && tools/devlock.sh release nodemods owner-z >/dev/null)
 # the device step's build (build.sh runs npm ci in the phase-1 worktree) and a start's copy: one after the other
@@ -653,7 +654,7 @@ rm -f "$p1q/app/node_modules/.package-lock.json"
 (cd "$mq" && unset PASCALINE_LOCK_PID && tools/devlock.sh acquire integ owner-y 0 >/dev/null)
 n0="$(wc -l < "$mq/npmci-owner")"
 out="$(mqrun env PASCALINE_INTEG_WAIT=2 "$script" ron "queue task" --id N4 --branch p1/n4 --checks typecheck 2>&1)"
-git -C "$mq" log --all --format=%s | grep -q "^work p1-n4$" && fail "A47bf1: a start with stale phase-1 node_modules started its worker without integ: $out"
+git -C "$mq" log --all --format=%s | grep "^work p1-n4$" >/dev/null && fail "A47bf1: a start with stale phase-1 node_modules started its worker without integ: $out"
 grep -q 'N4: waiting for integ (owner-y)' "$mq/.coord/log.md" && grep -q 'integ lock busy' <<<"$out" || fail "A47bf1: a stale start does not wait for integ: $out"
 (cd "$mq" && tools/devlock.sh release integ owner-y >/dev/null)
 [[ "$(wc -l < "$mq/npmci-owner")" -eq "$n0" ]] || fail "A47bf1: npm ci ran in the phase-1 worktree without integ"

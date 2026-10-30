@@ -1,4 +1,5 @@
 # Upstream: giac 2.1.0 usual.cc _floor (and ceil, round, which go through it). A floor whose argument has a complex value that is not an exact Gaussian rational stayed unevaluated at eval (the value after subst is a _CPLX, which none of the real branches take): floor(asin(pi)) stayed floor(asin(pi)). evalf of it floors the parts through the exact _CPLX branch and returns the exact integers 1-2*i, so evalf(cosh(floor(asin(pi)))) gave the text cosh(1-2*i) (Home: no value; right -0.642148124716-1.06860742138*i). Now a complex value floors each part (re and im of the argument, through the real path and its precision raise), as the exact _CPLX branch does; an imaginary part at the rounding noise of the real one keeps floor unevaluated, as before.
+# Changed by Pascaline contributors, 2026-10-29
 --- a/src/usual.cc
 +++ b/src/usual.cc
 @@ -7304,6 +7304,24 @@

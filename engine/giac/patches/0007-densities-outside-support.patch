@@ -1,4 +1,5 @@
 # Upstream: giac 2.1.0 moyal.cc. The densities and cdfs check no support: exponential(21/10,-2) is 21/10*exp(21/5) where the density is 0 (x < 0), exponential_cdf(21/5,-2) = 1-exp(42/5) < 0, chisquare(2,-2) = exp(1)/2, chisquare(3,-2) a complex number; the same in gammad, gammad_cdf, weibull, weibull_cdf, betad and uniform (below and above [0,1], [a,b]), uniform_cdf (and its two-bound form, the bounds' distance over b-a), negbinomial and negbinomial_cdf, and the two-bound cdf forms take F at a bound below the support from the formula. A value provably outside the support (is_strictly_greater: a number, or a sign Giac decides) is an exact 0, a cdf above it 1; an argument of unknown sign keeps the formula. A list as x is mapped over its elements, as chisquare does with apply2nd: the formulas took Giac's power of a list (its dot product), so weibull(2,3,[1,2]) was [2/9*exp(-5/9),4/9*exp(-5/9)] and betad(2,3,[0.2,0.5]) a poly1[…].
+# Changed by Pascaline contributors, 2026-10-26
 --- a/src/moyal.cc
 +++ b/src/moyal.cc
 @@ -743,6 +743,29 @@

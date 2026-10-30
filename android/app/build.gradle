@@ -8,8 +8,11 @@ android {
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
-        // A measurement build says so in its versionName, so tools/device_run.py can report the build type.
-        versionName = (System.getenv('PASCALINE_MEASURE') == '1') ? "1.0-measure" : "1.0"
+        // versionCode and versionName stay plain literals: F-Droid's update check reads them as text (tools/check-version.sh
+        // checks them against app/package.json and the recipe). A measurement build says so in a suffix, so tools/device_run.py
+        // can report the build type (its versionName ends in "-measure").
+        versionName "0.1.0"
+        versionNameSuffix = (System.getenv('PASCALINE_MEASURE') == '1') ? "-measure" : ""
         // Measurement builds (PASCALINE_MEASURE=1) log timing marks to logcat; normal builds never do.
         buildConfigField "boolean", "MEASURE", (System.getenv('PASCALINE_MEASURE') == '1') ? "true" : "false"
         aaptOptions {
@@ -19,6 +22,11 @@ android {
         }
     }
     buildFeatures { buildConfig = true }
+    // F-Droid flags the dependency block that the Android Gradle plugin signs into the APK and the bundle
+    dependenciesInfo {
+        includeInApk = false
+        includeInBundle = false
+    }
     // D9: keep .wasm uncompressed in the APK (mmap-able, about 75 ms off cold start)
     androidResources { noCompress 'wasm' }
     // Release builds are signed with a throwaway key only when PASCALINE_KEYSTORE names one (never committed).

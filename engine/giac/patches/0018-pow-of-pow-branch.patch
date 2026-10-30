@@ -1,4 +1,5 @@
 # Upstream: giac 2.1.0 gen.cc pow. (a^b)^c is rewritten as a^(b*c) (or abs(a)^(b*c) for an even b) for any base with no literal i, a rule that holds when im(b*ln(a)) lies in (-pi,pi] or c is an integer: sqrt(acosh(-1/2)^3) gave sqrt(acosh(-1/2))*acosh(-1/2), about -2.143+2.143*i (the principal root is 2.143-2.143*i), sqrt(acos(pi)^3), sqrt((-pi)^3) and sqrt(acosh(-1/2)^5) the other root too, sqrt(acosh(-1/2)^2) gave abs(acosh(-1/2)) (right i*2*pi/3), sqrt(acosh(-1/2)^4) gave acosh(-1/2)^2 (negative; the root is positive). Takes the rule only where it holds, decided on the doubles of a, b and c with a margin at the cut; otherwise the power stays as typed and its evalf is the principal value. A complex a where the rule holds takes a^(b*c), never abs(a). An integer c, a real a >= 0, an even b with a real a, and a, b or c with no numeric value (a free x: sqrt(x^3) = x*sqrt(x)) keep today's form.
+# Changed by Pascaline contributors, 2026-10-29
 --- a/src/gen.cc
 +++ b/src/gen.cc
 @@ -6838,6 +6838,38 @@

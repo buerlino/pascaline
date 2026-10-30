@@ -1,4 +1,5 @@
 # Upstream: giac 2.1.0 gen.cc. Debug log in the EMCC add_evalf hook fires on every caseval (and reads the misspelt UI.addevalf).
+# Changed by Pascaline contributors, 2026-10-10
 --- a/src/gen.cc
 +++ b/src/gen.cc
 @@ -17194,7 +17194,6 @@

@@ -1,4 +1,5 @@
 # Upstream: giac 2.1.0 usual.cc, tanh(). For a complex MPFR argument (the _CPLX branch with _REAL or _FLOAT_ parts) tanh returns (exp(2z)+1)/(exp(2z)-1), which is coth(z): evalf(tanh(1+i)) at Digits 30 gave 0.868014...-0.217621...*i instead of 1.083923...+0.271752...*i. Computes tanh(x+iy) = (sinh(2x)+i*sin(2y))/(cosh(2x)+cos(2y)) in radians, as exp() does for a complex argument: the plain swap (exp(2z)-1)/(exp(2z)+1) also gives tanh but leaves a rounding real part for x=0 (tanh(i) = 7e-81+1.557...*i at 60 digits) and loses relative digits of the real part for small x. The double branch and real arguments are unchanged.
+# Changed by Pascaline contributors, 2026-10-24
 --- a/src/usual.cc
 +++ b/src/usual.cc
 @@ -2669,8 +2669,12 @@
