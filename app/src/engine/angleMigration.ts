@@ -55,10 +55,11 @@ function isDegreeReading(rhs: string): boolean {
   let i = 0;
   for (let k = t.indexOf(FROZEN); k >= 0; k = t.indexOf(FROZEN, k + 1)) {
     const end = k + FROZEN.length;
-    const argument = /[(,]/.test(t.charAt(k - 1)) && t.startsWith("*(", end);
-    const open = t.charAt(k - 1) === "/" && t.charAt(end) === ")" ? opening(t, end) : -1;
+    const before = k > 0 ? t.charAt(k - 1) : "";
+    const argument = ["(", ","].includes(before) && t.startsWith("*(", end);
+    const open = before === "/" && t.startsWith(")", end) ? opening(t, end) : -1;
     const name = open >= 0 ? leadingName(t.slice(open + 1)) : null;
-    const call = name !== null && t.charAt(open + 1 + name.length) === "(";
+    const call = name !== null && t.startsWith("(", open + 1 + name.length);
     if (k < i || !(argument || call)) continue;
     back += text.slice(i, k) + PASDEG;
     i = end;
