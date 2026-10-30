@@ -5,7 +5,7 @@
   import { FlickTracker, PAD_KEYS, REPEAT_KEYS, Repeat, Stepper, type Flick, type PadDir } from "./gestures.ts";
   import { fitLegends } from "./fit.ts";
   import { actionFor, gridPlace, keyboard, labelFor, type Key, type Layer } from "./keyboard.ts";
-  import { letterOf, sheetKey } from "../views/sheetKeys.ts";
+  import { sheetChunk } from "../views/sheetView.svelte.ts";
   import type { UserKeys } from "./userKeys.svelte.ts";
 
   let {
@@ -59,7 +59,7 @@
 
   /** A key that does nothing in the current layer (a key we don't have yet, or a layer it has no function in). */
   const dead = (k: Key): boolean => {
-    if (sheet) return sheetKey(k, sheet.filter).kind === "none";
+    if (sheet) return sheetChunk.keys?.sheetKey(k, sheet.filter).kind === "none"; // (not drawn dead before the sheet's code is in)
     const p = k.actions.primary;
     if (p?.kind === "special" && (p.name === "shift" || p.name === "alpha")) return false; // the modifiers work in every layer
     const a = actionFor(k, shift, alpha, false, cas);
@@ -126,7 +126,7 @@
       const named = lower !== cas;
       return alphaLock && capsLock === lower ? t("flick.unlock") : t(named ? "flick.lowerLock" : "flick.capsLock");
     }
-    if (sheet) return dir === "down" && sheet.filter ? (letterOf(k) ?? "") : "";
+    if (sheet) return dir === "down" && sheet.filter ? (sheetChunk.keys?.letterOf(k) ?? "") : "";
     const [sh, al] = dir === "up" ? [true, false] : [false, true];
     const a = actionFor(k, sh, al, false, cas);
     if (!a || (a.kind === "special" && a.name === "none")) return "";

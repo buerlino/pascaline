@@ -307,14 +307,13 @@ describe("keyboard spec", () => {
     const k = loadKeyboard(slim);
     const plain = (a: unknown) => JSON.parse(JSON.stringify(a, (key, v: unknown) => (["sample", "source", "check"].includes(key) ? undefined : v)));
     expect(plain(k.keys)).toEqual(plain(keyboard.keys));
-    expect(plain(k.palette)).toEqual(plain(keyboard.palette));
     expect(JSON.stringify(slim)).not.toMatch(/"desc"/);
-    // R18: the Shift palettes are not in the start chunk's copy; their own chunk's copy loads to the same cells
-    expect(JSON.stringify(slim)).not.toMatch(/"(relations|symbols)":/);
+    // R18, R91: the palettes (Tmpl, Shift + 6, Shift + 9) are not in the start chunk's copy; their own chunk's copy loads to the same cells
+    expect(JSON.stringify(slim)).not.toMatch(/"(templates|relations|symbols)":/);
     const pal = shippedPalettes(parse(spec)) as Record<string, unknown>;
-    expect(JSON.stringify(pal)).not.toMatch(/"(sample|source|check|desc|templates|keys)"/);
-    for (const s of ["relations", "symbols"] as const)
-      expect(plain(loadPalette(pal[s], s, keyboard.byId, true))).toEqual(plain(keyboard[s]));
+    expect(JSON.stringify(pal)).not.toMatch(/"(sample|source|check|desc|keys)"/);
+    for (const [s, name] of [["templates", "palette"], ["relations", "relations"], ["symbols", "symbols"]] as const)
+      expect(plain(loadPalette(pal[s], s, keyboard.byId, true))).toEqual(plain(keyboard[name]));
   });
 
   it("rejects broken palettes", () => {

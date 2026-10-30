@@ -36,7 +36,6 @@
     return (settingsUi = { C: v.default, SettingsPage: m.SettingsPage });
   };
 
-  import { paletteAction, paletteItems } from "./views/tmplSheet.ts";
   // Find (R4a) is its own chunk with the index beside it: both load when the browser is idle after the engine is ready
   // (docs/04 3.3), or on the first Math press.
   type FindCode = { m: typeof import("./find/finder.ts"); index: import("./find/finder.ts").FindIndex };
@@ -184,15 +183,20 @@
   /** Tmpl: the template palette (R10), a grid on the sheet; a pick inserts its template as its key would. A view
    *  without an entry line (Plot) has nothing to insert into. */
   function openTemplates(): void {
-    openPalette("tmpl", t("tmpl.title"), keyboard.palette);
+    const open = (m: NonNullable<typeof shiftPalettes>): void => openPalette("tmpl", t("tmpl.title"), m.tmpl);
+    if (shiftPalettes) open(shiftPalettes);
+    else void loadShiftPalettes().then(open);
   }
   /** Tmpl, Shift + 6 (relations and logic) and Shift + 9 (symbols and Greek, R18): a palette on the grid sheet. */
   function openPalette(id: PaletteId, title: string, p: Palette, name?: (id: string) => string): void {
     if (!shell.showsEntry) return dead();
+    // the cells' code comes with the sheet's view (R91); the Tmpl, Shift + 6 and Shift + 9 keys wait for it in the queue
+    const cells = sheetChunk.palette;
+    if (!cells) return void loadSheetView().then(() => openPalette(id, title, p, name), dead);
     picked = null;
-    shell.togglePalette(id, title, () => paletteItems(p.items, insertTemplate, name), p.columns);
+    shell.togglePalette(id, title, () => cells.paletteItems(p.items, insertTemplate, name), p.columns);
   }
-  /** The Shift palettes come in their own chunk, loaded with MathLive; until then the key waits for it. */
+  /** The palettes (Tmpl too, R91) come in their own chunk, loaded with MathLive; until then the key waits for it. */
   function openShiftPalette(id: "rel" | "sym"): void {
     const open = (m: NonNullable<typeof shiftPalettes>): void =>
       openPalette(id, m.paletteText(`${id}.title`), id === "rel" ? m.relations : m.symbols, (cell) => m.paletteText(`${id}.${cell}`));
@@ -221,7 +225,8 @@
     );
   }
   function insertTemplate(p: PaletteItem): void {
-    entry.run(paletteAction(p, session.settings.entry === "line"));
+    const cells = sheetChunk.palette;
+    if (cells) entry.run(cells.paletteAction(p, session.settings.entry === "line")); // (a pick is of an open palette, so it is loaded)
   }
 
   /** Mode's last row (or a user key that holds Settings): the Settings page over everything (R21b, docs/05 3.4). It
@@ -234,7 +239,7 @@
     };
     if (modeSheet && settingsUi) return show(modeSheet, settingsUi);
     // every key meanwhile waits in the queue (decisions.md R8), so none of them lands on the line before the page is there
-    sheetLoad = Promise.all([loadModeSheet(), loadSettingsUi()]).then(
+    sheetLoad = Promise.all([loadModeSheet(), loadSettingsUi(), loadSheetView()]).then(
       ([m, ui]) => {
         sheetLoad = null;
         show(m, ui);
