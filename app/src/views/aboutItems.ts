@@ -4,7 +4,7 @@
 // (aboutData.svelte.ts); a level reads it when it is drawn and shows "Loading…" until it arrives.
 import type { MenuItem, SubMenu } from "../apps/types.ts";
 import { aboutText as t } from "../i18n/enAbout.ts";
-import { aboutData, type AboutData } from "./aboutData.svelte.ts";
+import { aboutData, aboutLoading, type AboutData } from "./aboutData.svelte.ts";
 
 export const REPO_URL = "https://github.com/buerlino/pascaline";
 const LICENCE = "GPL-3.0-or-later";
@@ -21,6 +21,7 @@ function lazy(title: string, rows: (d: AboutData) => MenuItem[], extra?: Partial
       const d = aboutData();
       return d ? rows(d) : LOADING;
     },
+    loading: aboutLoading,
   } as SubMenu;
 }
 

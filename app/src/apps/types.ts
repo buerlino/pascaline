@@ -92,6 +92,8 @@ export interface SubMenu {
   readonly text?: string;
   /** The highlighted row's `preview` may take several lines (R87: a part's copyright and source), not one. */
   readonly longPreview?: boolean;
+  /** While the rows are still loading (R87's About data), the load: keys pressed meanwhile wait for it (R8). */
+  readonly loading?: () => Promise<void> | null;
 }
 
 export interface AppInstance {

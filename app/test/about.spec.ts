@@ -66,6 +66,17 @@ test.describe("by keys", () => {
     await expect(row(page, "licence")).toHaveAttribute("data-active", "true");
   });
 
+  test("a digit pressed while the About data loads waits for its rows (R8): 1 2 typed at once still opens the GPL text", async ({ page }) => {
+    // the full e2e run under load (pipeline run 349) lost the 2 on the level that still showed Loading…
+    await page.route(/virtual:about|about-[\w-]+\.js/, async (r) => {
+      await new Promise((done) => setTimeout(done, 800));
+      await r.continue();
+    });
+    await tap(page, ["d1", "d2"]);
+    await expect(text(page)).toContainText("GNU GENERAL PUBLIC LICENSE");
+    await expect(title(page)).toHaveText("Help and about › About › GPL-3.0-or-later");
+  });
+
   test("Parts we use: a row per part with its licence; Enter on MPFR shows the LGPL text, on GMP both of its licences", async ({ page }) => {
     await tap(page, ["d2"]);
     await expect(title(page)).toHaveText("Settings › Help and about › Parts");

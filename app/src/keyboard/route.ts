@@ -313,12 +313,22 @@ function sheetUndrawn(c: RouteCtx): boolean {
   return true;
 }
 
+/** The open level's rows are still loading (R87: About 1 2 typed fast, the 2 reached the Loading… row and was lost):
+ *  hold the keys until they are in (R8); Esc and the place keys act at once. */
+function rowsLoading(c: RouteCtx, key: Key): boolean {
+  const load = c.shell.sheet?.level.loading();
+  const p = key.actions.primary;
+  if (!load || (p?.kind === "special" && AT_ONCE.includes(p.name))) return false;
+  void holdKeys(c, load);
+  return true;
+}
+
 /** A key fires. `layer` overrides the Shift/Alpha state for this key only: a trackpad step ("primary"), a flick up
  *  ("shift") or down ("alpha"). */
 export function press(c: RouteCtx, key: Key, layer?: Layer): void {
   const p = key.actions.primary;
   if (p?.kind === "special" && (p.name === "shift" || p.name === "alpha")) return modifier(c, p.name, layer);
-  if (sheetUndrawn(c)) return wait(c, { key, mods: modsFor(c, layer), layer });
+  if (sheetUndrawn(c) || rowsLoading(c, key)) return wait(c, { key, mods: modsFor(c, layer), layer });
   if (c.shell.sheet && sheetPress(c, key, layer)) return;
   const mods = modsFor(c, layer);
   c.session.clearModifiers(); // a one-shot Shift or Alpha is used up by this key, a tap or a flick
