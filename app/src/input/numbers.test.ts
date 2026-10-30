@@ -61,6 +61,10 @@ describe("a number has one decimal point (F24)", () => {
     expect(giac("1{,}5\\emark-3\\div2", true)).toBe(giac("1.5\\emark-3\\div2"));
     expect(giac("3{,}+2", true)).toBe(giac("3.+2"));
   });
+  it("MathLive's {,} is the decimal mark in the point mode too, so an entry recalled after the setting changed parses (R57)", () => {
+    expect(giac("1{,}5\\times2")).toBe(giac("1.5\\times2"));
+    expect(giac("\\max\\left(1{,}5,2\\right)")).toBe("max(1.5,2)");
+  });
   it("with the decimal point, a comma after a decimal is the argument separator", () => {
     expect(giac("\\max\\left(2.5,3\\right)")).toBe("max(2.5,3)");
   });

@@ -54,10 +54,10 @@ type Confirmed = number | "exact";
 const shownDigits = (v: string): number => decimalFromString(v.replace("E", "e"))?.digits.length ?? 0;
 
 /** An equation typed on the entry line as Giac text, or why it does not parse. */
-export function compileEquation(latex: string, userFunctions: ReadonlySet<string> = DEFAULT_USER_FUNCTIONS): { giac: string; error: string } {
+export function compileEquation(latex: string, userFunctions: ReadonlySet<string> = DEFAULT_USER_FUNCTIONS, decimalComma = false): { giac: string; error: string } {
   if (latex.trim() === "") return { giac: "", error: "" };
   try {
-    return { giac: mathJsonToGiac(parseLatex(latex, { userFunctions }), { realOddRoots: true, userFunctions }), error: "" };
+    return { giac: mathJsonToGiac(parseLatex(latex, { userFunctions, ...(decimalComma ? { decimalComma: true } : {}) }), { realOddRoots: true, userFunctions }), error: "" };
   } catch (e) {
     return { giac: "", error: parseFailText(e) };
   }
@@ -240,7 +240,7 @@ export class SolveApp implements AppInstance {
 
   // ---- Symb
   define(i: number, latex: string): void {
-    const c = compileEquation(latex, this.userSet());
+    const c = compileEquation(latex, this.userSet(), this.host.decimalComma);
     this.slots.set(i, latex, c.error);
     const next = [...this.giac];
     next[i] = c.giac;
@@ -285,7 +285,7 @@ export class SolveApp implements AppInstance {
   /** Compile the equations again from their LaTeX, so a function defined (or read after a relaunch) since counts. */
   private recompile(): void {
     const user = this.userSet();
-    this.giac = this.slots.latex.map((l) => compileEquation(l, user).giac);
+    this.giac = this.slots.latex.map((l) => compileEquation(l, user, this.host.decimalComma).giac);
   }
 
   async refreshUnknowns(): Promise<void> {

@@ -243,7 +243,7 @@ export class FunctionApp implements AppInstance {
 
   // ---- Symb
   define(i: number, latex: string): void {
-    const c = compileDefinition(latex, this.host.settings.angle);
+    const c = compileDefinition(latex, this.host.settings.angle, this.host.decimalComma);
     this.slots.set(i, latex, c.error === "not a function of x" ? t("function.notFunction") : c.error);
     const next = [...this.compiled];
     next[i] = c;
@@ -256,7 +256,7 @@ export class FunctionApp implements AppInstance {
   syncAngle(): boolean {
     const angle = this.host.settings.angle;
     if (this.compiled.every((c) => c.angle === angle)) return false;
-    this.compiled = this.slots.latex.map((l) => compileDefinition(l, angle));
+    this.compiled = this.slots.latex.map((l) => compileDefinition(l, angle, this.host.decimalComma));
     return true;
   }
   select(i: number): void {
@@ -532,7 +532,7 @@ export class FunctionApp implements AppInstance {
     const s = await this.host.kv.get<Partial<Stored>>("app.function");
     if (!s) return;
     this.slots.fromJSON(s.slots);
-    this.compiled = this.slots.latex.map((l) => compileDefinition(l, this.host.settings.angle));
+    this.compiled = this.slots.latex.map((l) => compileDefinition(l, this.host.settings.angle, this.host.decimalComma));
     if (s.win && [s.win.xmin, s.win.xmax, s.win.ymin, s.win.ymax].every(Number.isFinite) && s.win.xmax > s.win.xmin && s.win.ymax > s.win.ymin)
       this.win = s.win;
     if (s.num && parseDec(s.num.start ?? "") && parseDec(s.num.step ?? "")?.m) {

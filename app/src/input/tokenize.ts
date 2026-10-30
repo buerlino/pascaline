@@ -41,10 +41,12 @@ function groupEnd(src: string, j: number): number {
   return -1;
 }
 
-/** The length of a decimal comma at `j` ("," or MathLive's "{,}"), 0 if there is none or the setting is off. */
+/** The length of a decimal comma at `j` ("," or MathLive's "{,}"), 0 if there is none or the setting is off. MathLive's
+ *  `{,}` is only ever typed as the decimal mark (R57), so it reads as one in the point mode too: an entry recalled
+ *  after the setting changed still parses. */
 function commaAt(src: string, j: number, decimalComma: boolean): number {
-  if (!decimalComma) return 0;
-  return src[j] === "," ? 1 : src.startsWith("{,}", j) ? 3 : 0;
+  if (src.startsWith("{,}", j)) return 3;
+  return decimalComma && src[j] === "," ? 1 : 0;
 }
 
 /** decimalComma (L6): "3,5" and MathLive's "3{,}5" are the number 3.5; use ";" between arguments then. */

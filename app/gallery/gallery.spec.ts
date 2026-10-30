@@ -13,7 +13,7 @@ const THEMES = ["light", "dark"] as const;
 function settingsShots(): Shot[] {
   const levels = [
     { id: "", title: "Mode › Settings (R49): the next level of the sheet, the top cluster live", keys: [] },
-    { id: "-numbers", title: "Settings › Numbers: the Fmt cycle (its hint under Standard) and Decimals in Fixed", keys: ["d1"] },
+    { id: "-numbers", title: "Settings › Numbers: the Decimal mark (R57), the Fmt cycle (its hint under Standard) and Decimals in Fixed", keys: ["d1"] },
     { id: "-vibration", title: "Settings › Key vibration, switched on (strength disabled with its reason), Try it", keys: ["d2", "d1"] },
     { id: "-counters", title: "Settings › Counters: the Shift and Alpha counts, since when, Reset", keys: ["d3"] },
     { id: "-help", title: "Settings › Help and about (R87): About Pascaline, Parts we use and their licences", keys: ["d4"] },
@@ -99,6 +99,17 @@ const shots: Shot[] = [
   { id: "layer-shift-alpha", group: "Keypad layers", title: "Shift then Alpha (lower case)", setup: (p) => tap(p, ["shift", "alpha"]) },
   // ---- Home
   { id: "home-history", group: "Home", title: "Home with history", setup: someHistory },
+  {
+    id: "home-comma",
+    group: "Home",
+    title: "Home with the decimal comma (R57): the . key shows , and the , key shows ;, the result 1,5 ÷ 2 = 0,75 drawn with the comma",
+    setup: async (p) => {
+      await p.evaluate(() => window.pascaline.session.setDecimalMark("comma"));
+      await tap(p, ["d1", "dot", "d5", "div", "d2", "enter"]);
+      await p.locator('[data-status="done"]').first().waitFor();
+      await tap(p, ["d3", "dot", "d2", "mul", "d4"]);
+    },
+  },
   {
     id: "home-typing",
     group: "Home",
