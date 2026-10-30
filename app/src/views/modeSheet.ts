@@ -10,6 +10,8 @@ import { t, type MessageKey } from "../i18n/index.ts";
 import { hasStrength, vibrate } from "../input/haptics.ts";
 import { NOTATION_MODES } from "../state/displayMode.ts";
 import { MAX_DIGITS, type EntryMode, type Session } from "../state/session.svelte.ts";
+import { aboutText } from "../i18n/enAbout.ts";
+import { helpItems } from "./aboutItems.ts";
 
 const ANGLES: readonly AngleUnit[] = ["rad", "deg"];
 const FORMATS: readonly NumberFormat[] = ["std", "sci", "eng", "pfx"];
@@ -168,7 +170,7 @@ export function settingsSections(session: Session): MenuItem[] {
       const c = session.taps.counts; // (a reset replaces the object)
       return t("settings.counters.value", { n: String(c.shift + c.alpha) });
     }),
-    // (Help and about: R87)
+    section("help", aboutText("help"), helpItems()),
   ];
 }
 

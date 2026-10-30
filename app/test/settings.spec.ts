@@ -12,8 +12,8 @@ const active = (page: Page) => sheet(page).locator('[data-active="true"]');
 const rowIds = (page: Page) => sheet(page).getByRole("menuitem").evaluateAll((els) => els.map((e) => e.getAttribute("data-id")));
 const historyLength = (page: Page) => page.evaluate(() => history.length);
 const back = (page: Page) => page.evaluate(() => history.back());
-/** The three sections built so far, in the fixed order (Appearance, Your keys, Data and Help and about come later). */
-const SECTIONS = ["numbers", "vibration", "counters"];
+/** The sections built so far, in the fixed order (Appearance, Your keys and Data come later). */
+const SECTIONS = ["numbers", "vibration", "counters", "help"];
 
 test.beforeEach(async ({ page }) => {
   await page.setViewportSize({ width: 412, height: 915 });

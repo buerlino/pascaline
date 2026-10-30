@@ -52,6 +52,12 @@ export class Level {
   /** Find (R4a): a typed query replaces the items with these hits, in their order, unnumbered (digits type then). */
   readonly search: ((query: string) => readonly MenuItem[]) | undefined;
   private found: { q: string; items: readonly MenuItem[] } | null = null;
+  /** A text to read in place of rows (R87, a licence). */
+  readonly text: string | undefined;
+  /** The preview under the list may take several lines. */
+  readonly longPreview: boolean;
+  /** A text level: ▲ ▼ asked for this many pages (signed, cleared by Sheet.svelte, which owns the scroll position). */
+  nudge = $state(0);
 
   /** Reopening starts on the last pick (false: always on the first row, for a sheet whose ◀ ▶ change values). */
   private readonly remember: boolean;
@@ -66,6 +72,8 @@ export class Level {
     this.remember = opts?.remember ?? true;
     this.columns = opts?.columns;
     this.search = opts?.search;
+    this.text = opts?.text;
+    this.longPreview = opts?.longPreview ?? false;
     this.filterable = this.columns === undefined && (this.search !== undefined || (opts?.filterable ?? source().length > FILTER_ABOVE));
     this.highlight = this.start(opts?.at);
   }
@@ -121,6 +129,10 @@ export class Level {
   /** ▲ ▼: the next row up or down, round the ends. Disabled rows can be highlighted (their reason is read there).
    *  In a grid: the cell above or below, round the ends of its column. */
   move(by: 1 | -1): void {
+    if (this.text !== undefined) {
+      this.nudge += by;
+      return;
+    }
     if (this.columns !== undefined) return this.gridMove(by * this.columns, true);
     const rows = this.rows;
     if (rows.length === 0) return;
@@ -180,6 +192,10 @@ export interface SheetOptions {
   icon?: IconId;
   /** Find (R4a): letters search with this instead of filtering the labels (see Level.search). */
   search?: (query: string) => readonly MenuItem[];
+  /** A text to read in place of rows (see Level.text). */
+  text?: string;
+  /** Several lines for the preview (see Level.longPreview). */
+  longPreview?: boolean;
 }
 
 /** What a pick did: opened a submenu or did nothing (the sheet stays), or chose an item to run (the sheet closes). */
@@ -210,9 +226,10 @@ export class Sheet {
   get depth(): number {
     return this.levels.length;
   }
-  /** The title with its path, e.g. `Menu › Intersection of F2(x) and`. */
+  /** The title with its path, e.g. `Menu › Intersection of F2(x) and`; the last three levels when deeper (the title
+   *  row is one line: `Help and about › Parts › GPL-3.0-or-later`). */
   get path(): string {
-    return this.levels.map((l) => l.title).join(" › ");
+    return this.levels.slice(-3).map((l) => l.title).join(" › ");
   }
 
   /** Digit keys and taps: the row numbered `n` (1…10) on screen. A grid has no numbers: a digit does nothing there. */
@@ -294,7 +311,8 @@ export class Sheet {
     }
     if (item.submenu) {
       const sub = item.submenu;
-      const opts = sub.search ? { search: sub.search, remember: false } : { remember: sub.remember ?? true };
+      const base: SheetOptions = sub.search ? { search: sub.search, remember: false } : { remember: sub.remember ?? true };
+      const opts: SheetOptions = { ...base, ...(sub.text === undefined ? {} : { text: sub.text }), ...(sub.longPreview ? { longPreview: true } : {}) };
       this.levels = [...this.levels, new Level(sub.title, () => sub.items, `${level.memo}/${item.id}`, opts)];
       return STAY;
     }
