@@ -7,24 +7,6 @@ pasn:=0:; pasfail:=0:;
 pc(id,v,e,tol):={ local d,g,ok; pasn:=pasn+1; ok:=0; try { g:=eval(v); d:=abs(evalf(g-e)); if (d<=tol && string(d)!="undef") { if (d>tol) { ok:=0; } else { ok:=1; } } } catch (err) { ok:=0; } if (ok==0) { pasfail:=pasfail+1; print("FAIL "+id); return 0; } return 1; }:;
 // g38-floor-sin1e60 (home.yaml, oracle): register row sign-at-digits (G38, G57): sin of 10^k at Digits 40 has too few digits of the argument reduction, so floor, trunc, sign and arg of it are wrong
 Digits:=40:; pc("g38-floor-sin1e60",'(floor(sin(10^60)*10^12))',830389765219,5/10^1);
-// g129-asin-cos-atan-2i (home.yaml, derived): register row atan-cut (G50, G60, G129): complex atan beyond ±i takes the other side of its cut, and Giac's exact cos(atan(z)) on the cut does too
-Digits:=40:; pc("g129-asin-cos-atan-2i",'(asin(cos(atan(2*i))))',-(549306144334/10^12)*i,5/10^13);
-// g129-cos-atan-2i (home.yaml, derived): register row atan-cut (G50, G60, G129): complex atan beyond ±i takes the other side of its cut, and Giac's exact cos(atan(z)) on the cut does too
-Digits:=40:; pc("g129-cos-atan-2i",'(cos(atan(2*i)))',-(57735026919/10^11)*i,5/10^13);
-// g129-cos-atan-3i (home.yaml, derived): register row atan-cut (G50, G60, G129): complex atan beyond ±i takes the other side of its cut, and Giac's exact cos(atan(z)) on the cut does too
-Digits:=40:; pc("g129-cos-atan-3i",'(cos(atan(3*i)))',-(353553390593/10^12)*i,5/10^13);
-// g129-cos-atan-neg2i (home.yaml, derived): register row atan-cut (G50, G60, G129): complex atan beyond ±i takes the other side of its cut, and Giac's exact cos(atan(z)) on the cut does too
-Digits:=40:; pc("g129-cos-atan-neg2i",'(cos(atan(-2*i)))',-(57735026919/10^11)*i,5/10^13);
-// g129-cos-atan-2.0i (home.yaml, derived): register row atan-cut (G50, G60, G129): complex atan beyond ±i takes the other side of its cut, and Giac's exact cos(atan(z)) on the cut does too
-Digits:=40:; pc("g129-cos-atan-2.0i",'(cos(atan((20/10^1)*i)))',-(57735026919/10^11)*i,5/10^13);
-// g129-atan-2i (home.yaml, oracle): register row atan-cut (G50, G60, G129): complex atan beyond ±i takes the other side of its cut, and Giac's exact cos(atan(z)) on the cut does too
-Digits:=40:; pc("g129-atan-2i",'(atan(2*i))',(157079632679/10^11)+(549306144334/10^12)*i,5/10^12+5/10^13);
-// g129-atan-2i-plus-0 (home.yaml, oracle): register row atan-cut (G50, G60, G129): complex atan beyond ±i takes the other side of its cut, and Giac's exact cos(atan(z)) on the cut does too
-Digits:=40:; pc("g129-atan-2i-plus-0",'(atan(2*i)+0)',(157079632679/10^11)+(549306144334/10^12)*i,5/10^12+5/10^13);
-// g129-tan-half-atan-2i (home.yaml, oracle): register row atan-cut (G50, G60, G129): complex atan beyond ±i takes the other side of its cut, and Giac's exact cos(atan(z)) on the cut does too
-Digits:=40:; pc("g129-tan-half-atan-2i",'(tan(atan(2*i)/2))',(866025403784/10^12)+(5/10^1)*i,5/10^13+5/10^13);
-// g129-tan-half-atan-2i-sum (home.yaml, oracle): register row atan-cut (G50, G60, G129): complex atan beyond ±i takes the other side of its cut, and Giac's exact cos(atan(z)) on the cut does too
-Digits:=40:; pc("g129-tan-half-atan-2i-sum",'(tan(atan(2*i)/2)+atan(2*i))',(243682173058/10^11)+(104930614433/10^11)*i,5/10^12+5/10^12);
 // prec-2-normald_icdf-value (precision.yaml, oracle): register row icdf-double (G44): the inverse distribution functions return a double at any Digits (or +infinity far in a tail)
 Digits:=40:; pc("prec-2-normald_icdf-value",'(normald_icdf(10^-10))',-(63613409024/10^10),5/10^12);
 // prec-g44-normald_icdf-0.025-30 (precision.yaml, oracle): register row icdf-double (G44): the inverse distribution functions return a double at any Digits (or +infinity far in a tail)
@@ -87,10 +69,6 @@ Digits:=40:; pc("prec-5-Airy_Ai(1)-12",'(Airy_Ai(1))',(135292416313/10^12),5/10^
 Digits:=40:; pc("prec-5-BesselJ(0,100)-12",'(BesselJ(0,100))',(199858503042/10^13),5/10^14);
 // prec-G23-sin-1e100 (precision.yaml, oracle): register row sign-at-digits (G38, G57): sin of 10^k at Digits 40 has too few digits of the argument reduction, so floor, trunc, sign and arg of it are wrong
 Digits:=40:; pc("prec-G23-sin-1e100",'(sin(10^100))',-(372376123661/10^12),5/10^13);
-// prec-g50-atan(2i)-12 (precision.yaml, oracle): register row atan-cut (G50, G60): complex atan beyond ±i takes the other side of its cut
-Digits:=40:; pc("prec-g50-atan(2i)-12",'(atan(2*i))',(157079632679/10^11)+(549306144334/10^12)*i,5/10^12+5/10^13);
-// prec-g50-atan(2i)-30 (precision.yaml, oracle): register row atan-cut (G50, G60): complex atan beyond ±i takes the other side of its cut
-Digits:=40:; pc("prec-g50-atan(2i)-30",'(atan(2*i))',(157079632679489661923132169164/10^29)+(549306144334054845697622618461/10^30)*i,5/10^30+5/10^31);
 // g71-trunc-sin1e70 (precision.yaml, oracle): register row sign-at-digits (G38, G57): sin of 10^k at Digits 40 has too few digits of the argument reduction, so floor, trunc, sign and arg of it are wrong
 Digits:=40:; pc("g71-trunc-sin1e70",'(trunc(sin(10^70)*10^12))',-148099131371,5/10^1);
 // g71-heaviside-sin1e70 (precision.yaml, oracle): register row sign-at-digits (G38, G57): sin of 10^k at Digits 40 has too few digits of the argument reduction, so floor, trunc, sign and arg of it are wrong

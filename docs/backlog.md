@@ -73,7 +73,6 @@ The one place for "where are we and what's left", one or two lines per open item
 - **F108, no package (Home fixed by G119).** CAS `fMin(x^2-2*x+1,x)` still shows Giac's `seq[1]` (census `cas fMin/0`, `cas fMax/0`); Home `op([])` shows `seq[]`. Family 5.
 - **F109, no package.** Home `DelAVars()` shows `DelAVars`, its own name: no answer and no refusal. Family 5.
 - **F122, no package (G116).** Home `(atan(ln(-π)+9007199254740993))^(sin(10^-300)-10^300)` kills the engine (stack overflow inside Giac's wasm); also `(asinh(∛0.5))^((π/2+10^-3)^((90+10^-3)/(π/2+10^-6)))` (G120). G94's kind.
-- **F126, G135 (G129's Not done).** Home `cos(w)` with `w:=atan(2*i)` stored in CAS, and `f(2*i)` with `f(x):=cos(atan(x))` defined in CAS, show 0.57735026919*i, right -0.57735026919*i: the exact pass evaluates a stored text with Giac's atan (G129 reads only the input's own atan through pasatanx). Family 8.
 - **F127, no package (G130's Not done).** A matrix inside a list keeps Giac's word: Home and CAS `[idn(2),1]` show `[matrix[[1,0],[0,1]],1]`, `list[idn(2)]` `{matrix[[1,0],[0,1]]}`; and Home `zeros(2,3)` costs 13 Giac calls per Enter (was 10; G130's bar was one more). Family 1.
 - **F134, no package (G132).** CAS `simplify(sqrt(acosh(-1/2)^3))` and `normal(…)` give the other root (right 2.14325044527-2.14325044527·i), before and after patch 0018: their own rewrite. Family 3.
 - **F135, no package (Opus pass 12).** Giac's `sqrt(exp(z))` = `exp(z/2)`, no branch check: `sqrt(exp(3*acosh(-2)))` evalf -7.20976852011·i, right +7.2097…·i. Home's mark not checked. Family 3.

@@ -19,8 +19,8 @@ const isError = (t) => t.startsWith("GIAC_ERROR");
 
 // [canary, Giac's behaviour, Digits, inputs, the check on their outputs (true: Giac still does it)]
 const ROWS = [
-  ["atan-cut", "complex atan beyond ±i takes the other side of its cut (mpmath atan(2i) = +1.5708+0.5493i)", 12,
-    ["evalf(atan(2*i))"], ([a]) => /^-1\.5707963267\d*\+0\.5493061443\d*\*i$/.test(a)],
+  ["atan-cut", "complex float atan beyond ±i takes the other side of its cut (mpmath atan(2i) = +1.5708+0.5493i; an exact 2*i is right since patch 0019)", 12,
+    ["atan(2.0*i)"], ([a]) => /^-1\.5707963267\d*\+0\.5493061443\d*\*i$/.test(a)],
   ["irem-rational", "irem is an error on a rational", 12,
     ["irem(15/2,2)"], ([a]) => isError(a)],
   ["median-lower", "median of an even list is the lower middle, as a float (right 2.5)", 12,

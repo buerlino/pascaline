@@ -407,15 +407,6 @@ describe("G50: complex arguments of the audited functions (pure)", () => {
     // atan2, asinh, atanh, a name ending in the function's name, a string, and our own names stay.
     expect(complexSafe('atan2(1,2)+asinh(i)+atanh(i)+mytanh(i)+"tanh(i)"+pastanh(i)', "typed")).toBe('atan2(1,2)+asinh(i)+atanh(i)+mytanh(i)+"tanh(i)"+pastanh(i)');
   });
-  it("G129: exactAtan reads every atan of the input through pasatanx, but the one tan takes (tan(atan(z)) = z on any branch)", async () => {
-    const { exactAtan } = await import("./complex.ts");
-    expect(exactAtan("asin(cos(atan(2*i)))+arctan(x)", "typed")).toBe("asin(cos(pasatanx(2*i)))+pasatanx(x)");
-    expect(exactAtan("tan(atan(2*i))+tan(arctan(3*i))+atan(tan(4*i))", "typed")).toBe("tan(atan(2*i))+tan(arctan(3*i))+pasatanx(tan(4*i))");
-    // only an atan that is the whole argument of tan keeps Giac's atan (audit, fix round 2)
-    expect(exactAtan("tan(atan(2*i)/2)+atan(2*i)", "typed")).toBe("tan(pasatanx(2*i)/2)+pasatanx(2*i)");
-    expect(exactAtan("tan(atan(2*i)+1)+tan(1+atan(2*i))+tan( atan(2*i) )", "typed")).toBe("tan(pasatanx(2*i)+1)+tan(1+pasatanx(2*i))+tan( atan(2*i) )");
-    expect(exactAtan('atan2(1,2)+atanh(i)+mytan(atan(i))+"atan(i)"', "typed")).toBe('atan2(1,2)+atanh(i)+mytan(pasatanx(i))+"atan(i)"');
-  });
   it("shortDigits: a part printed as a double where MPFR digits were asked confirms one digit fewer (source: derived)", async () => {
     const { shortDigits } = await import("./numeric.ts");
     // Giac's complex acos(1+i) at 40 digits printed its real part as a 14-digit double.
@@ -543,7 +534,8 @@ describe.skipIf(!giacAvailable())("G50: complex arguments of the audited functio
     const L = await loadNodeGiac();
     const giac = engineGiac(L);
     const own = new EngineHost(L.giac, L.bridge);
-    own.cas("w:=atan(2*i)", defaultCasSettings);
+    // G135: w holds an atan off the cut (patch 0019 stores atan(2*i) as pi/2+i*ln(3)/2, with no atan left to copy).
+    own.cas("w:=atan(1+2*i)", defaultCasSettings);
     own.cas("f(x):=atan(x)", defaultCasSettings);
     own.cas("g(x):=f(x)+w", defaultCasSettings);
     const r = complexReads(giac, "evalf(g(2*i))");
@@ -602,11 +594,6 @@ describe.skipIf(!giacAvailable())("G50: complex arguments of the audited functio
     const { giac, bridge } = await loadNodeGiac();
     const fresh = new EngineHost(giac, bridge);
     expect(giac.eval("pasatan")).toBe("pasatan");
-    expect(giac.eval("pasatanx")).toBe("pasatanx");
-    // G129: the exact pass's atan (pasatanx) with the first input that names atan; atan(2*i) is then exact
-    // (pi/2+i*ln(3)/2), so the value's pasatan comes with an atan Giac keeps (atan(1+i)).
-    fresh.home("atan(2*i)", defaultHomeSettings);
-    expect(giac.eval("pasatanx")).not.toBe("pasatanx");
     fresh.home("atan(1+i)", defaultHomeSettings);
     expect(giac.eval("pasatan")).not.toBe("pasatan");
   });

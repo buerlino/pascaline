@@ -125,8 +125,6 @@ export const KNOWN_RULES = [
   [/^(g47-)?(prec-g44f?\d?-)?(prec-2-)?(normald|student|chisquare|fisher)_icdf|^prec-g44f?\d?-(normald|student|chisquare|fisher)_icdf|^g47-normald_icdf/, "register row icdf-double (G44): the inverse distribution functions return a double at any Digits (or +infinity far in a tail)"],
   [/^prec-g44f1-(evalf-)?erf-|^prec-g44f1-(evalf-)?erfc|^prec-3-UTPN/, "register row erfc-as-1-erf (G44f1): erfc is 1-erf and cancels, a small erf argument returns the argument"],
   [/sin1e(50|60|70|100)|sin-1e100|^prec-G23/, "register row sign-at-digits (G38, G57): sin of 10^k at Digits 40 has too few digits of the argument reduction, so floor, trunc, sign and arg of it are wrong"],
-  [/atan\(2i\)/, "register row atan-cut (G50, G60): complex atan beyond ±i takes the other side of its cut"],
-  [/^g129-/, "register row atan-cut (G50, G60, G129): complex atan beyond ±i takes the other side of its cut, and Giac's exact cos(atan(z)) on the cut does too"],
   [/Bessel|Airy|besselj/, "register row no-mpfr-path (G4, G50): no MPFR path, an error at Digits above 14"],
   [/^prec-4-romberg/, "register row no-mpfr-path (G4, G50): romberg works in a double, 30 digits asked"],
 ];
@@ -164,18 +162,6 @@ export const KNOWN_IDS = new Set([
   "prec-5-Airy_Ai(1)-12",
   "prec-5-BesselJ(0,100)-12",
   "prec-G23-sin-1e100",
-  "prec-g50-atan(2i)-12",
-  "prec-g50-atan(2i)-30",
-  // G129: the guards g129-sin-atan-*, g129-cos-atan-i/2 and g129-cos-atan-1+i pass on stock and stay in the check file
-  "g129-asin-cos-atan-2i",
-  "g129-cos-atan-2i",
-  "g129-cos-atan-3i",
-  "g129-cos-atan-neg2i",
-  "g129-cos-atan-2.0i",
-  "g129-atan-2i",
-  "g129-atan-2i-plus-0",
-  "g129-tan-half-atan-2i",
-  "g129-tan-half-atan-2i-sum",
   "g71-trunc-sin1e70",
   "g71-heaviside-sin1e70",
   "g71-round-besselj-1e12",
@@ -189,7 +175,7 @@ export const KNOWN_IDS = new Set([
   "g71-census-tri-sin1e70",
 ]);
 // The ids that pass on our patched build and fail on stock giac_2.1.0-1 (found by matching the cases the tests and canaries of patches
-// 0003 and 0005 name (tanh-test.ts, mpfr-pi-test.ts, patch-canary.ts) and the ids of G75 and G60, G128's g128-* of patch 0005; G111's g111-* of patch 0007; G113's g113-* of patch 0009 (g113-poisson_cdf-2.5 passes on stock, a guard in the check file); G113f1's ties of patch 0010; G115's g115-* of patch 0011; G118's g118-* of patch 0012; G121's g116-* and g121-* and G125's g125-* of patch 0013; G122's g122-* of patch 0014; G126's g126-* and g116-acos-neg-1e20-half-12 of patch 0015; G127's g127-* of patch 0016; G132's g132-* of patch 0018 (G131's patch 0017 has a written line in build(), its cases are refusals). Each id was run on the stock build (engine/giac/_out/release) and fails there; ln(-pi)-30 passes on stock at these Digits, so it stays in the check file; the g60-f5 and g78-novalue lines seemed to pass on stock until G118 (their difference is an MPFR NaN, printed undef, that pc() took for a pass). g58-acos-5!^(2.5+5!)-30 has budgetMs, so it is left out as a time guard): [id, the patch file the line rests on]. They go to pascaline-patched.cas, not to the check file.
+// 0003 and 0005 name (tanh-test.ts, mpfr-pi-test.ts, patch-canary.ts) and the ids of G75 and G60, G128's g128-* of patch 0005; G111's g111-* of patch 0007; G113's g113-* of patch 0009 (g113-poisson_cdf-2.5 passes on stock, a guard in the check file); G113f1's ties of patch 0010; G115's g115-* of patch 0011; G118's g118-* of patch 0012; G121's g116-* and g121-* and G125's g125-* of patch 0013; G122's g122-* of patch 0014; G126's g126-* and g116-acos-neg-1e20-half-12 of patch 0015; G127's g127-* of patch 0016; G132's g132-* of patch 0018; G129's g129-* (known lines until then), prec-g50-atan(2i) and G135's g135-home-arg-atan-2i of patch 0019 (the g129 guards pass on stock and stay in the check file; G131's patch 0017 has a written line in build(), its cases are refusals). Each id was run on the stock build (engine/giac/_out/release) and fails there; ln(-pi)-30 passes on stock at these Digits, so it stays in the check file; the g60-f5 and g78-novalue lines seemed to pass on stock until G118 (their difference is an MPFR NaN, printed undef, that pc() took for a pass). g58-acos-5!^(2.5+5!)-30 has budgetMs, so it is left out as a time guard): [id, the patch file the line rests on]. They go to pascaline-patched.cas, not to the check file.
 export const PATCHED_IDS = new Map([
   ["prec-g50-tanh(i)-12", "0003-complex-tanh-mpfr.patch"],
   ["prec-g50-tanh(i)-30", "0003-complex-tanh-mpfr.patch"],
@@ -378,6 +364,18 @@ export const PATCHED_IDS = new Map([
   ["g132-sqrt-neg-pi-cubed-12", "0018-pow-of-pow-branch.patch"],
   ["g132-sqrt-acos-pi-cubed-12", "0018-pow-of-pow-branch.patch"],
   ["g132-sqrt-acos-pi-cubed-30", "0018-pow-of-pow-branch.patch"],
+  ["prec-g50-atan(2i)-12", "0019-atan-exact-cut.patch"],
+  ["prec-g50-atan(2i)-30", "0019-atan-exact-cut.patch"],
+  ["g129-asin-cos-atan-2i", "0019-atan-exact-cut.patch"],
+  ["g129-cos-atan-2i", "0019-atan-exact-cut.patch"],
+  ["g129-cos-atan-3i", "0019-atan-exact-cut.patch"],
+  ["g129-cos-atan-neg2i", "0019-atan-exact-cut.patch"],
+  ["g129-cos-atan-2.0i", "0019-atan-exact-cut.patch"],
+  ["g129-atan-2i", "0019-atan-exact-cut.patch"],
+  ["g129-atan-2i-plus-0", "0019-atan-exact-cut.patch"],
+  ["g129-tan-half-atan-2i", "0019-atan-exact-cut.patch"],
+  ["g129-tan-half-atan-2i-sum", "0019-atan-exact-cut.patch"],
+  ["g135-home-arg-atan-2i", "0019-atan-exact-cut.patch"],
 ]);
 // G122: Giac's exact answer is right (patch 0014), but pc()'s evalf of it at Digits 40 cancels the digits of a large k*pi
 // (asin(cos(30!)) = -pi/2+30!-k*pi with k of 32 digits keeps about 7, -pi/2+10^50-k*pi none); Home raises the precision
@@ -441,6 +439,26 @@ export function build(cases) {
   // complex number stays a NaN (stock Giac: the complex number, 1.41421356237*i, since is_one held for the NaN).
   patched.push("// patch 0017-mpfr-nan-not-zero.patch", "// g131-nan-times-complex (precision.yaml g120-acos-overflow-times-sqrt-neg2-12, derived)", 'Digits:=40:; pc("g131-nan-times-complex",\'when(string(evalf(acos(9007199254740993^9007199254740993)*sqrt(-2)))=="undef",1,0)\',1,1/10^30);');
   nPatched++;
+  // Patch 0019 (G135), raw Giac (no golden case reaches these: the app keeps Giac in radians, G46, and its angle rule puts
+  // /pasdeg inside a typed quote(atan(2*i))): the cos rule at a quoted atan(2*i), and atan's DEG and GRAD branch at angle_radian:=0
+  // and :=2: atan(2*i) = (pi/2+i*ln(3)/2)*180/pi, *200/pi, and cos(atan(2*i)) = -i/sqrt(3) in either (mpmath, 60 digits:
+  // atan(2j)*180/pi = 90+31.47292373094538001977241539068588825237j, *200/pi = 100+34.96991525660597779974712821187320916930j,
+  // cos(atan(2j)) = -0.57735026918962576450914878050195745564760j). Stock Giac keeps atan(2*i), whose evalf is -90+31.47…*i
+  // (DEG), and its cos rule gives i/sqrt(3). Giac's DEG and GRAD cos of a complex argument works in a double at any Digits
+  // (cos(60+i) at Digits 40: 0.50007615628813-0.015115762095421*i, stock too), so the cos lines take 1/10^12; stock's
+  // i/sqrt(3) is 1.15 away. They run last; the line after them sets radians again.
+  const negInvSqrt3 = "-(57735026918962576450914878050195745564760/10^41)*i";
+  patched.push("// patch 0019-atan-exact-cut.patch", "// g135-cos-quote-atan-2i (derived: cos(atan(2*i)) = 1/sqrt(-3) = -i/sqrt(3))", `Digits:=40:; pc("g135-cos-quote-atan-2i",'cos(quote(atan(2*i)))',${negInvSqrt3},1/10^35);`);
+  nPatched++;
+  for (const [mode, n, tag, value] of [
+    ["DEG", 0, "deg", "90+(3147292373094538001977241539068588825237/10^38)*i"],
+    ["GRAD", 2, "grad", "100+(3496991525660597779974712821187320916930/10^38)*i"],
+  ]) {
+    patched.push("// patch 0019-atan-exact-cut.patch", `// g135-${tag}-atan-2i (${mode}, oracle)`, `angle_radian:=${n}:; Digits:=40:; pc("g135-${tag}-atan-2i",'atan(2*i)',${value},1/10^35);`);
+    patched.push("// patch 0019-atan-exact-cut.patch", `// g135-${tag}-cos-atan-2i (${mode}, derived: -i/sqrt(3))`, `angle_radian:=${n}:; Digits:=40:; pc("g135-${tag}-cos-atan-2i",'cos(atan(2*i))',${negInvSqrt3},1/10^12);`);
+    nPatched += 2;
+  }
+  patched.push("angle_radian:=1:;");
   check.push('print("pascaline-check: "+pasfail+" of "+pasn+" failed");');
   known.push('print("pascaline-known: "+pasfail+" of "+pasn+" failed (all must fail)");');
   patched.push('print("pascaline-patched: "+pasfail+" of "+pasn+" failed (none may fail on our patched build)");');
