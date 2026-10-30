@@ -140,10 +140,12 @@ test("Tmpl, then Enter, typed before the palettes' chunk is in, inserts the frac
   await expect(sheet(page)).toBeHidden();
 });
 
+// (CAS: its result is always drawn from Giac's latex, so it needs the tidy-up; a Home number is drawn by our formatter and does not wait for it)
 test("an Enter typed before the result tidy-up's chunk is in finishes its job once it is", async ({ page }) => {
   const release = await hold(page, /\/src\/render\/tidy\.ts/);
   await open(page);
   await page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
+  await page.evaluate(() => window.pascaline.session.setView("cas"));
   await tap(page, ["d1", "add", "d2", "enter"]);
   expect(await entryValue(page)).toBe("");
   await expect(page.locator("article.item")).toHaveAttribute("data-status", "pending");
