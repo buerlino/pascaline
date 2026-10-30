@@ -23,7 +23,8 @@ const clipboard = (page: Page): Promise<string> => page.evaluate(() => navigator
 const setClipboard = (page: Page, text: string): Promise<void> => page.evaluate((s) => navigator.clipboard.writeText(s), text);
 const lastResult = (page: Page) => page.locator('[data-testid="result"]').last().locator(".result");
 const resultIs = async (page: Page, text: string, count: number): Promise<void> => {
-  await expect(page.locator('[data-status="done"]')).toHaveCount(count);
+  // 15 s: a result waits for the engine, which a full e2e run on a loaded machine starts slowly (run 340: 5 s was not enough)
+  await expect(page.locator('[data-status="done"]')).toHaveCount(count, { timeout: 15_000 });
   await expect(lastResult(page)).toHaveAttribute("data-text", text);
 };
 /** max( ) as Find puts it on the line (R4a: a function's name is reached through Find); the cursor is inside the brackets. */
