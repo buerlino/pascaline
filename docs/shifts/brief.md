@@ -13,7 +13,7 @@
 1. **Find:** R4a merged (`b9f0042`, 2026-10-28; R90 by day); R91 (`e80eda0`: start chunk 61.02 → 57.81 kB gzip, pin 58.5 kB; the Fairphone before/after waits for annabell), R15c3 (`6e43091`), R49 (`d60fbfb`), R87 (`56d017f`) merged; then R4b.
 2. **The Settings base** (owner, 2026-10-27; decisions.md "Settings in the Mode sheet, and presets"; [mockups/settings.html](../mockups/settings.html)): R85 (`1d35189`) and R49 merged, then R86, R57 (R4b sets the free keys in R49's levels; the comma is the owner's daily use), R50e; after the units: R70, R15c4, R38a → R38b, R59; R88 (after R4b, R57, R50e) → R89; R55 (after R15c4); R53; R12b → R12c → R41; R36, R33 → R37, R40.
 3. **The units** (owner, 2026-10-29: right after R86, R57, R50e): R24b → R24c → R24d, R60–R63, R71; G81 with them.
-4. **Lane B, to v0.1.0** (the APK and the website from one tag): A43 (an update keeps the data, on a device by day; A48 and A50 merged), A7 (signing, the owner's key made off this laptop), A49 (after R91), A45 (after R87, A49), A8 (the owner's test tag); A9 with the owner's phone by day (F41); then wrong numbers by reach, C4.
+4. **Lane B, to v0.1.0** (the APK and the website from one tag): A43 (an update keeps the data, on a device by day; A48 and A50 merged), A7 (signing, the owner's key made off this laptop), A49 (`c6447ff`) merged, A45 (after R87, A49), A8 (the owner's test tag); A9 with the owner's phone by day (F41); then wrong numbers by reach, C4.
 5. **Every morning:** the owner's check (MORNING.md, on the night's device when the night had one, about 10 minutes). The day session writes each failed step as a backlog bug line on phase-1 and logs one line in `.coord/log.md`: `- HH:MM morning <date>: clean` or `- HH:MM morning <date>: fails <ids>`.
 
 **The weekly extreme night** (owner, 2026-10-29; replaces the nightly fuzz of 2026-10-27): once a week lane B runs the extreme-input packages (G133, G134 now) and the fuzz, `node scripts/sweep.ts --nightly --edges` once with its triage, as a one-night package with a new ID written from G136's text (it uses A44's known-rows file); the Opus pass files the backlog lines. Wrong numbers of everyday or medium reach run any time, by reach.
@@ -51,7 +51,7 @@ Tonight's queue (one lane, to 07:00) comes first, then each lane's table; With t
 12. **No lanes in the morning** (A47c not merged, or a selftest failed): the owner starts `scripts/night.sh` without `--lane`, and henri runs lane B's rows 401–405, then lane A's from 301, as one queue.
 
 ### Tonight: 2026-10-30 17:00 to Saturday 09:00, both lanes on the Tab One (owner, 2026-10-30)
-`ANDROID_SERIAL=HA24BZ2Y` for both lanes, `--until 09:00`; CORE DEVICE after each pass. Tonight is lane B's weekly extreme night (rows 406–408 run). A step whose "After" is not merged is skipped. The FIX lines of Opus pass 18 (log, 17:52) run first in lane A, verbatim; lane B's A49f1 is row 403's package, not pass 17's FIX line.
+`ANDROID_SERIAL=HA24BZ2Y` for both lanes, `--until 09:00`; CORE DEVICE after each pass. Tonight is lane B's weekly extreme night (rows 406–408 run). A step whose "After" is not merged is skipped. The FIX lines of Opus pass 18 (log, 17:52) run first in lane A, verbatim.
 
 ### Lane A queue (ron's UI)
 Milestone reviews (section 0): after R50e; after R24d.
@@ -75,8 +75,6 @@ A43, A7, A8 and A9 run by day (section 0). Steps 406–408 run only on the weekl
 
 | Step | What | Agent, model | Branch | After |
 |---|---|---|---|---|
-| 401 | [A51](packages/A51.md) a timing check reruns on a quiet host | annabell, Sonnet | `p1/annabell-quietrerun` | — |
-| 403 | [A49f1](packages/A49f1.md) A49 under App.svelte's line limit (replaces pass 17's FIX) | ron, Sonnet (audit Opus) | `p1/annabell-pwaharden` | 401 run |
 | 405 | [A45](packages/A45.md) the web version on GitHub Pages | annabell, Sonnet (audit Opus) | `p1/annabell-pages` | R87, A49 |
 | 406 | [G133](packages/G133.md) asin of a tiny imaginary number (F132) | gorge, Opus | `p1/gorge-asintiny` | the weekly night |
 | 407 | [G134](packages/G134.md) asinh on its cut, ∛ of a tiny real (F131, F133) | gorge, Opus | `p1/gorge-cutsmall` | the weekly night |

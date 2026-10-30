@@ -41,6 +41,9 @@ if (import.meta.env.VITE_MEASURE === "1") {
   else if (new URLSearchParams(location.search).has("bench")) void import("./bench.ts").then((m) => m.runBench(session));
 }
 session.saveDelayMs = 400;
+// Settings › Appearance (R50e): the stored look goes on the page once the settings are read, and on every change; the
+// inline script of index.html has already shown it (lazy chunk, off the start).
+session.onLook = (look) => void import("./theme/lookApply.ts").then((m) => m.applyLook(look)).catch(() => {});
 const shell = new AppShell(calc, idbKv, entry, () => session.settings, () => session.userNames);
 const place = shell.restorePlace();
 const settingsRead = session.restoreSettings();

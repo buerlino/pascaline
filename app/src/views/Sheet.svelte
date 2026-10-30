@@ -224,7 +224,7 @@
             style:height={px(rowHeight(row, { reason: second, steps, options: options !== undefined }))}
             onclick={() => ontap(r.index)}
           >
-            <span class="n">{r.n === undefined ? "" : r.n % 10}</span>{#if r.item.glyph}<span class="tile math" class:small={"text" in r.item.glyph && r.item.glyph.text.length > 1} data-testid="row-glyph" aria-hidden="true">{@html "icon" in r.item.glyph ? ICONS.home : r.item.glyph.text}</span>{/if}<span class="text"><span class="label">{r.item.label}</span>{#if reason}<span class="reason">{r.item.reason}</span>{:else if r.item.hint}<span class="reason" data-testid="row-hint">{r.item.hint}</span>{/if}</span>{#if r.item.note}<span class="note" data-testid="row-note">{r.item.note}</span>{/if}{#if options}<span class="seg" data-testid="row-options">{#each options as o (o.id)}<button type="button" class="opt" data-option={o.id} aria-pressed={o.selected} disabled={r.item.disabled} onclick={(e) => { e.stopPropagation(); onoption(r.index, o.id); }}>{o.label}</button>{/each}</span>{/if}{#if steps}<button type="button" class="step" data-testid="step-down" aria-label={t("sheet.stepDown")} disabled={r.item.disabled} onclick={(e) => { e.stopPropagation(); sheet.adjustAt(r.index, -1); }}>◀</button>{/if}{#if r.item.value !== undefined}<span class="value" data-testid="sheet-value">{r.item.value}</span>{/if}{#if steps}<button type="button" class="step" data-testid="step-up" aria-label={t("sheet.stepUp")} disabled={r.item.disabled} onclick={(e) => { e.stopPropagation(); sheet.adjustAt(r.index, 1); }}>▶</button>{/if}{#if r.item.selected !== undefined}<span class="tick" aria-hidden="true">{r.item.selected ? "✓" : ""}</span>{/if}{#if r.item.submenu}<span class="more" aria-hidden="true">›</span>{/if}
+            <span class="n">{r.n === undefined ? "" : r.n % 10}</span>{#if r.item.glyph}<span class="tile math" class:small={"text" in r.item.glyph && r.item.glyph.text.length > 1} data-testid="row-glyph" aria-hidden="true">{@html "icon" in r.item.glyph ? ICONS.home : r.item.glyph.text}</span>{/if}<span class="text"><span class="label">{r.item.label}</span>{#if reason}<span class="reason">{r.item.reason}</span>{:else if r.item.hint}<span class="reason" data-testid="row-hint">{r.item.hint}</span>{:else if r.item.dots && steps}<span class="dots under" data-testid="row-dots" aria-hidden="true">{#each r.item.dots as c}<i style:background={c}></i>{/each}</span>{/if}</span>{#if r.item.dots && !steps}<span class="dots" data-testid="row-dots" aria-hidden="true">{#each r.item.dots as c}<i style:background={c}></i>{/each}</span>{/if}{#if r.item.note}<span class="note" data-testid="row-note">{r.item.note}</span>{/if}{#if options}<span class="seg" data-testid="row-options">{#each options as o (o.id)}<button type="button" class="opt" data-option={o.id} aria-pressed={o.selected} disabled={r.item.disabled} onclick={(e) => { e.stopPropagation(); onoption(r.index, o.id); }}>{o.label}</button>{/each}</span>{/if}{#if steps}<button type="button" class="step" data-testid="step-down" aria-label={t("sheet.stepDown")} disabled={r.item.disabled} onclick={(e) => { e.stopPropagation(); sheet.adjustAt(r.index, -1); }}>◀</button>{/if}{#if r.item.value !== undefined}<span class="value" data-testid="sheet-value">{r.item.value}</span>{/if}{#if steps}<button type="button" class="step" data-testid="step-up" aria-label={t("sheet.stepUp")} disabled={r.item.disabled} onclick={(e) => { e.stopPropagation(); sheet.adjustAt(r.index, 1); }}>▶</button>{/if}{#if r.item.selected !== undefined}<span class="tick" aria-hidden="true">{r.item.selected ? "✓" : ""}</span>{/if}{#if r.item.submenu}<span class="more" aria-hidden="true">›</span>{/if}
           </div>
         {/each}
         {#if rows.length === 0}<p class="empty" data-testid="sheet-empty">{t("sheet.noMatch")}</p>{/if}
@@ -485,6 +485,24 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+  /* a family's colours (Appearance, R50e) */
+  .dots {
+    display: flex;
+    flex: none;
+    gap: 2px;
+    margin: 0 -2px;
+  }
+  .dots.under {
+    margin: 2px 0 0;
+    height: 12px;
+    align-items: center;
+  }
+  .dots i {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    box-shadow: inset 0 0 0 1px var(--line);
   }
   .value {
     color: var(--shift);

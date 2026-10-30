@@ -52,8 +52,12 @@ export function showsReason(items: readonly MenuItem[], i: number): boolean {
   return !(next?.disabled && next.reason === item.reason);
 }
 
-/** The row has a second line: its reason (showsReason) or its hint (R49). */
-export const twoLines = (items: readonly MenuItem[], i: number): boolean => showsReason(items, i) || items[i]?.hint !== undefined;
+/** The row has a second line: its reason (showsReason), its hint (R49), or the colour dots of a row with ◀ ▶ buttons (R50e:
+ *  at 360 px the buttons and the name leave no room for them beside the label). */
+export const twoLines = (items: readonly MenuItem[], i: number): boolean => {
+  const item = items[i];
+  return showsReason(items, i) || item?.hint !== undefined || (item !== undefined && item.dots !== undefined && hasSteps(item));
+};
 
 /** The row draws a button per value (R86). */
 export const hasOptions = (item: MenuItem): boolean => item.options !== undefined;

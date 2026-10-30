@@ -259,7 +259,7 @@ test("the last row of the Mode sheet opens Settings as its next level, on its fi
   await page.getByTestId("chip-format").tap(); // by touch: a chip, then the last row
   await sheet(page).locator('[data-id="settings"]').tap();
   await expect(page.getByTestId("sheet-title")).toHaveText("Mode › Settings");
-  await expect(sheet(page).locator('[data-active="true"]')).toHaveAttribute("data-id", "numbers");
+  await expect(sheet(page).locator('[data-active="true"]')).toHaveAttribute("data-id", "appearance");
   // the status line's ☰ stays uncovered: it closes the sheet it did not open (as on Mode)
   await page.getByTestId("menu-button").tap();
   await expect(sheet(page)).toBeHidden();
