@@ -7,6 +7,9 @@ import type { AppShell } from "../apps/shell.svelte.ts";
 import type { MenuItem } from "../apps/types.ts";
 import type { EntryController } from "../entry/controller.ts";
 import { findText as t } from "../i18n/enFind.ts";
+import { constKey } from "../input/chips.ts";
+import type { Layer } from "../keyboard/keyboard.ts";
+import type { UserBinding, UserKeys } from "../keyboard/userKeys.svelte.ts";
 import { CATEGORIES, categoryItems } from "./categories.ts";
 import { prepare, search, type PreparedIndex } from "./rank.ts";
 import type { FindItem, IndexItem } from "./types.ts";
@@ -127,15 +130,33 @@ export function constChipOf(it: FindItem): { id: string; symbol: string; chip: {
   return { id: m[1] as string, symbol: m[2] as string, chip };
 }
 
+/** A Find item as a free key's slot (R4b, Settings › Your keys): the item's name as the legend, its insert as the
+ *  action; a constant carries its chip, so the key puts the value and uncertainty on the line as Find does. */
+export function bindingOf(it: FindItem): UserBinding {
+  const c = constChipOf(it);
+  const label = it.names[0] ?? it.id.slice(it.id.indexOf(":") + 1);
+  return { label, action: c ? { insert: it.insert, chip: { key: constKey(c.id), ...c.chip } } : { insert: it.insert } };
+}
+
+/** The slot a pick sets instead of inserting (Settings › Your keys, R4b). */
+export interface SlotTarget {
+  readonly id: string;
+  readonly layer: Layer;
+  readonly userKeys: UserKeys;
+}
+
 /** Math (R4a): Find over the history or view, as a list that takes letters (decisions.md R21). A pick (docs/04 3.6)
  *  puts a constant on the line as a chip with its value and uncertainty, anything else as its insert (a function
- *  with the cursor in its first argument). */
-export function showFind(shell: AppShell, entry: EntryController, index: FindIndex): void {
+ *  with the cursor in its first argument). With `slot` (R4b) a pick sets that free key's slot instead. */
+export function showFind(shell: AppShell, entry: EntryController, index: FindIndex, slot?: SlotTarget): void {
   const pick = (it: FindItem): void => {
+    if (slot) return slot.userKeys.set(slot.id, slot.layer, bindingOf(it));
     const c = constChipOf(it);
     if (c) entry.insertConst(c.id, c.symbol, c.chip);
     else entry.run({ kind: "insert", latex: it.insert });
   };
   const { categories, search } = findMenu(index, pick);
-  shell.showFind(t("title"), categories, search);
+  shell.showFind(slot ? t("slot.title") : t("title"), categories, search);
 }
+
+export { showNames } from "./names.svelte.ts";

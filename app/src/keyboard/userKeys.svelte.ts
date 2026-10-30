@@ -2,8 +2,8 @@
 // The free keys U1–U6 of the R3 cluster (R15b, R15c; decisions.md "R15c"). Each has three slots, its tap, its Shift
 // layer (a flick up) and its Alpha layer (a flick down, or Alpha + the key; R15c3), so eighteen actions. An empty Alpha
 // slot falls back to the tap, as every key's missing Alpha layer does. spec/keyboard.yaml gives the defaults (all empty); the user's
-// choice for a slot replaces its default and is kept in the stamped store under USER_KEYS (state/storage.ts). Setting a
-// slot from Find, in Settings › User keys, is R4b; this module is the model it calls.
+// choice for a slot replaces its default and is kept in the stamped store under USER_KEYS (state/storage.ts). Settings › Your
+// keys sets a slot from Find or from a place (R4b, views/yourKeys.ts); this module is the model it calls.
 import type { Kv } from "../state/storage.ts";
 import { USER_KEYS } from "../state/storage.ts";
 import { KeyboardSpecError, keyboard, parseAction, type Action, type Key, type Layer } from "./keyboard.ts";
@@ -83,6 +83,22 @@ export class UserKeys {
   isEmpty(key: Key): boolean {
     const p = this.resolve(key).actions.primary;
     return p?.kind === "special" && p.name === "none";
+  }
+
+  /** The legend a slot shows, undefined for an empty one (Settings › Your keys, R4b). */
+  labelOf(id: string, layer: UserLayer): string | undefined {
+    const k = keyboard.byId.get(id);
+    if (!k) return undefined;
+    const r = this.resolve(k);
+    const a = r.actions[layer];
+    return !a || (a.kind === "special" && a.name === "none") ? undefined : r.label[layer];
+  }
+
+  /** The special a slot holds (a place or a sheet), else undefined. */
+  placeOf(id: string, layer: UserLayer): string | undefined {
+    const k = keyboard.byId.get(id);
+    const a = k && this.resolve(k).actions[layer];
+    return a && a.kind === "special" ? a.name : undefined;
   }
 
   /** Put a binding on a slot (null: empty it). Throws KeyboardSpecError when the action is not a keyboard action. */
