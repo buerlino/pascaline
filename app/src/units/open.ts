@@ -24,6 +24,8 @@ import { UnitView, type ViewHost } from "./view.svelte.ts";
 export interface OpenUnitView {
   readonly view: UnitView;
   readonly field: MathfieldElement;
+  /** The view's own element: it holds the focus and takes the hardware keys (not editable: no system keyboard). */
+  readonly element: HTMLElement;
   /** Leave; the line keeps its slots. */
   close(): void;
 }
@@ -58,14 +60,15 @@ export async function openUnits(c: RouteCtx, row?: HistoryItem): Promise<void> {
     mf.addEventListener("mount", () => resolve(), { once: true });
     setTimeout(resolve, 1000);
   });
-  entryEl.querySelector(".unitview .formula")?.append(mf);
+  const element = entryEl.querySelector<HTMLElement>(".unitview") as HTMLElement;
+  element.querySelector(".formula")?.append(mf);
   await mounted;
   await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
-  setUp(mf, c);
+  setUp(mf, element, c);
   mf.value = view.formula.latex;
+  // locked: MathLive edits no prompt itself (and gives a tap on the field no focus); setPromptValue still writes
   for (const id of view.ids) mf.setPromptState(id, "undefined", true);
   view.start();
-  mf.focus();
 
   const close = (): void => {
     if (current?.view !== view) return;
@@ -80,9 +83,14 @@ export async function openUnits(c: RouteCtx, row?: HistoryItem): Promise<void> {
     window.pascaline.unitView = undefined;
     c.entry.focus();
   };
-  current = { view, field: mf, close };
+  current = { view, field: mf, element, close };
   window.pascaline.unitView = current;
-  unitPad.on = (e) => view.apply(e);
+  // every press keeps the focus on the view (as the entry line's keys keep it on the line), for the hardware keys
+  const keep = (): void => element.focus({ preventScroll: true });
+  unitPad.on = (e) => {
+    view.apply(e);
+    if (current?.view === view && e.do !== "find") keep();
+  };
   unitPad.other = (c2, key, mods) => {
     const a = actionFor(key, mods.shift, mods.alpha);
     if (a?.kind === "special" && PLACES.includes(a.name)) {
@@ -94,14 +102,19 @@ export async function openUnits(c: RouteCtx, row?: HistoryItem): Promise<void> {
     else if (a?.kind === "cmd" && a.name === "moveToNextChar") view.move(1);
     else if (a?.kind === "special" && a.name === "esc") close();
     else c2.dead();
+    if (current?.view === view) keep();
     return true;
   };
   unitPad.model = new pads.UnitPad();
+  element.focus();
 }
 
-/** The field: read-only, never MathLive's keyboard nor the system keyboard (inputmode none, as the entry line), the
- *  entry's macros (chips, ᴇ), and a capture keydown that sends a hardware key down the keypad's path. */
-function setUp(mf: MathfieldElement, c: RouteCtx): void {
+/** The field: read-only, never MathLive's keyboard nor the system keyboard (inputmode none, as the entry line), with
+ *  the entry's macros (chips, ᴇ). The view's element holds the focus (tabindex -1, nothing editable in it, so no system
+ *  keyboard) and its capture keydown sends a hardware key down the keypad's path, from the field too; a paste, a drop,
+ *  a cut and the browser's own text input (an IME) are stopped. MathLive's own beforeinput for setPromptValue is not
+ *  trusted and goes through (cancelling it would cancel the write). */
+function setUp(mf: MathfieldElement, element: HTMLElement, c: RouteCtx): void {
   mf.mathVirtualKeyboardPolicy = "manual";
   mf.menuItems = [];
   mf.inlineShortcuts = {};
@@ -115,7 +128,14 @@ function setUp(mf: MathfieldElement, c: RouteCtx): void {
   };
   enforce();
   mf.addEventListener("focusin", enforce);
-  mf.addEventListener("keydown", (ev) => hardwareKey(ev, c), { capture: true });
+  element.tabIndex = -1;
+  element.addEventListener("keydown", (ev) => hardwareKey(ev, c), { capture: true });
+  const stop = (ev: Event): void => {
+    if (ev.type === "beforeinput" && !ev.isTrusted) return;
+    ev.preventDefault();
+    ev.stopPropagation();
+  };
+  for (const type of ["paste", "drop", "cut", "beforeinput"]) element.addEventListener(type, stop, { capture: true });
 }
 
 const ARROWS: Readonly<Record<string, string>> = { ArrowLeft: "left", ArrowRight: "right", ArrowUp: "up", ArrowDown: "down" };

@@ -10,8 +10,9 @@ import { countPresses, keyIds, loadTasks, validate, withinBudget, type Step, typ
 const tasks = loadTasks();
 const rows: string[] = [];
 
-/** Press the steps in order and return the text of the last Home result. Steps that need a later feature throw. */
-async function replay(page: Page, steps: readonly Step[]): Promise<string> {
+/** Press the steps in order and return the text of the last Home result (in the unit view: its result, then " " and
+ *  its unit when `want` names one). Steps that need a later feature throw. */
+async function replay(page: Page, steps: readonly Step[], want?: string): Promise<string> {
   for (const s of steps) {
     if (typeof s === "string") {
       await page.locator(`[data-key="${s}"]`).tap();
@@ -22,6 +23,12 @@ async function replay(page: Page, steps: readonly Step[]): Promise<string> {
     } else {
       throw new Error(`cannot replay ${JSON.stringify(s)} yet: the feature it taps does not exist`);
     }
+  }
+  // a task in the unit view (R24c): its result as the view shows it, in the unit it names
+  if ((await page.getByTestId("unit-view").count()) > 0) {
+    const unit = page.getByTestId("unit-result");
+    await expect(unit).toHaveCount(1);
+    return `${(await unit.getAttribute("data-text")) ?? ""}${want === undefined ? "" : ` ${(await unit.getAttribute("data-unit")) ?? ""}`}`;
   }
   await expect(page.locator('[data-status="done"]')).toHaveCount(1);
   const text = await page.locator('[data-testid="result"]').last().locator(".result").getAttribute("data-text");
@@ -81,7 +88,8 @@ test.describe("replay", () => {
     if (t.status === "active") {
       test(`${t.id} (active) ${t.title}: result and budget`, async ({ page }) => {
         const steps = t.keys ?? [];
-        expect(await replay(page, steps)).toBe(t.expect.text);
+        const unit = typeof t.expect.unit === "string" ? t.expect.unit : undefined;
+        expect(await replay(page, steps, unit)).toBe(unit === undefined ? t.expect.text : `${t.expect.text} ${unit}`);
         const n = countPresses(steps);
         rows.push(`${t.id} | active  | ${t.baseline ? countPresses(t.baseline.keys) : "-"} | ${n} | ${t.budget}`);
         expect(n, `${t.id} takes ${n} presses, budget ${t.budget}`).toBeLessThanOrEqual(t.budget ?? 0);

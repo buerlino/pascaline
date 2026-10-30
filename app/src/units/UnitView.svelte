@@ -38,6 +38,7 @@
     display: flex;
     flex-direction: column;
     gap: 4px;
+    outline: none; /* it holds the focus for the hardware keys; the active slot is what shows where they go */
   }
   .reading,
   .why,
