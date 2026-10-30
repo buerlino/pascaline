@@ -12,8 +12,8 @@ const active = (page: Page) => sheet(page).locator('[data-active="true"]');
 const rowIds = (page: Page) => sheet(page).getByRole("menuitem").evaluateAll((els) => els.map((e) => e.getAttribute("data-id")));
 const historyLength = (page: Page) => page.evaluate(() => history.length);
 const back = (page: Page) => page.evaluate(() => history.back());
-/** The sections built so far, in the fixed order (Appearance and Data come later; Your keys is R4b). */
-const SECTIONS = ["numbers", "vibration", "keys", "counters", "help"];
+/** The sections built so far, in the fixed order (Data comes later; Appearance is R50e, Your keys R4b). */
+const SECTIONS = ["appearance", "numbers", "vibration", "keys", "counters", "help"];
 
 test.beforeEach(async ({ page }) => {
   await page.setViewportSize({ width: 412, height: 915 });
@@ -28,8 +28,8 @@ test.describe("by keys", () => {
     await expect(title(page)).toHaveText("Mode › Settings");
     await expect(page.getByTestId("settings")).toHaveCount(0); // no page over everything
     expect(await rowIds(page)).toEqual(SECTIONS);
-    await expect(active(page)).toHaveAttribute("data-id", "numbers");
-    await tap(page, ["d2"]);
+    await expect(active(page)).toHaveAttribute("data-id", "appearance");
+    await tap(page, ["d3"]);
     await expect(title(page)).toHaveText("Mode › Settings › Key vibration");
     await tap(page, ["esc"]);
     await expect(title(page)).toHaveText("Mode › Settings");
@@ -49,9 +49,9 @@ test.describe("by keys", () => {
     expect(await entryValue(page)).toBe(""); // no key reached the line
   });
 
-  test("the pill, 5, 1: Numbers holds the Fmt cycle's five ticks and Decimals in Fixed; the hint is a second line under Standard", async ({ page }) => {
+  test("the pill, 5, 2: Numbers holds the Fmt cycle's five ticks and Decimals in Fixed; the hint is a second line under Standard", async ({ page }) => {
     await page.getByTestId("chip-format").tap();
-    await tap(page, ["d5", "d1"]);
+    await tap(page, ["d5", "d2"]);
     await expect(title(page)).toHaveText("Mode › Settings › Numbers");
     expect(await rowIds(page)).toEqual(["std", "sci", "eng", "pfx", "fix", "decimals"]);
     await expect(row(page, "std").getByTestId("row-hint")).toBeVisible();
@@ -77,7 +77,7 @@ test.describe("by keys", () => {
     await tap(page, ["@mode"]);
     await page.keyboard.press("5");
     await expect(title(page)).toHaveText("Mode › Settings");
-    await page.keyboard.press("4");
+    await page.keyboard.press("5");
     await expect(title(page)).toHaveText("Mode › Settings › Counters");
     await page.keyboard.press("ArrowDown");
     await expect(active(page)).toHaveAttribute("data-id", "alpha");
@@ -122,7 +122,7 @@ test.describe("by touch", () => {
   });
 
   test("Key vibration: the switch, Strength, Length and Try it; switches keep the sheet open; Try it gives one pulse", async ({ page }) => {
-    await tap(page, ["@mode", "d5", "d2"]);
+    await tap(page, ["@mode", "d5", "d3"]);
     expect(await rowIds(page)).toEqual(["haptics", "strength", "ms", "try"]);
     await expect(row(page, "try")).toHaveAttribute("aria-disabled", "true"); // off: nothing to try
     await row(page, "haptics").tap();
@@ -140,7 +140,7 @@ test.describe("by touch", () => {
 
   test("Counters: the Shift and Alpha counts, since when, and Reset, which keeps the sheet open", async ({ page }) => {
     await tap(page, ["shift", "shift", "alpha", "alpha"]);
-    await tap(page, ["@mode", "d5", "d4"]);
+    await tap(page, ["@mode", "d5", "d5"]);
     expect(await rowIds(page)).toEqual(["shift", "alpha", "since", "reset"]);
     await expect(row(page, "shift").getByTestId("sheet-value")).toHaveText("2");
     await expect(row(page, "alpha").getByTestId("sheet-value")).toHaveText("2");
@@ -153,7 +153,7 @@ test.describe("by touch", () => {
 
 test.describe("Android back (history.back())", () => {
   test("back goes back one level, then closes; the next key works as before", async ({ page }) => {
-    await tap(page, ["@mode", "d5", "d1"]);
+    await tap(page, ["@mode", "d5", "d2"]);
     await expect(title(page)).toHaveText("Mode › Settings › Numbers");
     await back(page);
     await expect(title(page)).toHaveText("Mode › Settings");
@@ -191,7 +191,7 @@ test.describe("Android back (history.back())", () => {
       () => page.keyboard.press("Escape").then(() => page.keyboard.press("Escape")).then(() => page.keyboard.press("Escape")),
     ];
     for (const close of closes) {
-      await tap(page, ["@mode", "d5", "d1"]);
+      await tap(page, ["@mode", "d5", "d2"]);
       await expect(title(page)).toHaveText("Mode › Settings › Numbers");
       await close();
       await expect(sheet(page)).toHaveCount(0);
@@ -206,9 +206,11 @@ test.describe("Android back (history.back())", () => {
 // at 360 × 740, 372 × 767 (the Fairphone 6: 380 px over the maths rows) and 412 × 915 no level cuts a row
 const LEVELS: Record<string, string[]> = {
   "Mode › Settings": ["@mode", "d5"],
-  "Mode › Settings › Numbers": ["@mode", "d5", "d1"],
-  "Mode › Settings › Key vibration": ["@mode", "d5", "d2"],
-  "Mode › Settings › Counters": ["@mode", "d5", "d4"],
+  "Mode › Settings › Appearance": ["@mode", "d5", "d1"],
+  "Settings › Appearance › Theme": ["@mode", "d5", "d1", "enter"],
+  "Mode › Settings › Numbers": ["@mode", "d5", "d2"],
+  "Mode › Settings › Key vibration": ["@mode", "d5", "d3"],
+  "Mode › Settings › Counters": ["@mode", "d5", "d5"],
 };
 for (const [w, h] of [[360, 740], [372, 767], [412, 915]] as const)
   test(`fit at ${w} × ${h}: every Settings level shows all its rows, the top cluster uncovered`, async ({ page }) => {

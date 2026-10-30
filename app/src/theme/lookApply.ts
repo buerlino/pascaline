@@ -28,9 +28,21 @@ function mirror(look: Look, bg: string): void {
   }
 }
 
+/** The mirror's `bg` as it is: the values go in at once (a reload right after a change must find them), the screen
+ *  colour follows once the theme's CSS is in. */
+function mirroredBg(): string {
+  try {
+    return String((JSON.parse(localStorage.getItem(LOOK_KEY) ?? "{}") as { bg?: unknown }).bg ?? "");
+  } catch {
+    return "";
+  }
+}
+
 async function put(look: Look): Promise<void> {
   const root = document.documentElement;
+  mirror(look, mirroredBg());
   await applyTheme(themeOf(look, scheme()?.matches === true), root);
+  if (current !== look) return; // a newer look began meanwhile: applyTheme set nothing, and the newest one writes the mirror
   const bg = getComputedStyle(root).getPropertyValue("--bg").trim();
   if (bg) document.querySelector('meta[name="theme-color"]')?.setAttribute("content", bg);
   mirror(look, bg);
