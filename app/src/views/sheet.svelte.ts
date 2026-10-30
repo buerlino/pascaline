@@ -294,7 +294,7 @@ export class Sheet {
     }
     if (item.submenu) {
       const sub = item.submenu;
-      const opts = sub.search ? { search: sub.search, remember: false } : undefined;
+      const opts = sub.search ? { search: sub.search, remember: false } : { remember: sub.remember ?? true };
       this.levels = [...this.levels, new Level(sub.title, () => sub.items, `${level.memo}/${item.id}`, opts)];
       return STAY;
     }

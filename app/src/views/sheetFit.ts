@@ -48,5 +48,8 @@ export function showsReason(items: readonly MenuItem[], i: number): boolean {
   return !(next?.disabled && next.reason === item.reason);
 }
 
+/** The row has a second line: its reason (showsReason) or its hint (R49). */
+export const twoLines = (items: readonly MenuItem[], i: number): boolean => showsReason(items, i) || items[i]?.hint !== undefined;
+
 /** The row has a value that ◀ ▶ change in place (the Mode sheet, R21a). */
 export const hasSteps = (item: MenuItem): boolean => item.adjust !== undefined && item.value !== undefined;
