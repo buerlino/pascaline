@@ -9,6 +9,7 @@ The owner's other open items are in [backlog.md](backlog.md), "Needs the user". 
 
 - **A21, the F-Droid recipe's qalc build (P22):** `fdroid/README.md` names the open answer. Until F-Droid says whether checked-in derived data (`find/factors.yaml`) is acceptable, the recipe keeps its libxml2 and libqalculate builds, unchanged. Yes: before C4 it drops both. No: it runs `tools/find-index/refresh-factors.mjs` and fails on a diff.
 
+- **R50e, on the phone:** (1) the first frame reads the Android default (Dark) from `window.Capacitor` in the inline script; if the bridge is not there yet at that point, a first start with nothing stored shows System for one frame, then Dark (later starts read the mirror). Look at a first start after "clear data". (2) The start pin is 60 kB (was 59.5): the stored look is +0.48 kB gzip in the start chunk; docs/04 8.3 says so in the report. (3) Android's status and navigation bar colours stay open (not in R50e).
 
 ## Decided proposals
 

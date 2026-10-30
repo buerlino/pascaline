@@ -49,15 +49,55 @@ describe("migrateSettings", () => {
   });
 });
 
+describe("schema 3: the look (R50e)", () => {
+  const first = { family: "pascaline", brightness: "dark", contrast: true, plain: false } as const;
+  it("is schema 3, and every earlier schema gets the first-start look and is marked as migrated", () => {
+    expect(SETTINGS_SCHEMA).toBe(3);
+    for (const old of [{ digits: 9 }, { schema: 2, digits: 9 }]) {
+      const { settings, migrated } = migrateSettings(old, first);
+      expect(migrated).toBe(true);
+      expect(settings.digits).toBe(9);
+      expect(settings.look).toEqual(first);
+    }
+  });
+  it("a stored look wins over the first-start look, field by field", () => {
+    const stored = { schema: 3, look: { family: "nord", brightness: "light", contrast: false, plain: true } };
+    const { settings, migrated } = migrateSettings(stored, first);
+    expect(migrated).toBe(false);
+    expect(settings.look).toEqual(stored.look);
+    expect(migrateSettings({ schema: 3, look: { family: "bogus", brightness: 4, contrast: "yes", plain: true } }, first).settings.look).toEqual({ ...first, plain: true });
+    expect(migrateSettings({ schema: 3, look: 7 }, first).settings.look).toEqual(first);
+  });
+  it("the defaults are Pascaline, System, both switches off", () => {
+    expect(defaultSettings.look).toEqual({ family: "pascaline", brightness: "system", contrast: false, plain: false });
+  });
+  it("restoring tells the page the look it read", async () => {
+    const kv = memoryKv();
+    kv.data.set("settings", { schema: 3, look: { family: "nord", brightness: "light", contrast: false, plain: false } });
+    const s = new Session(new FakeCalc(), kv);
+    const seen: unknown[] = [];
+    s.onLook = (l) => seen.push(l);
+    await s.restoreSettings();
+    expect(seen).toEqual([{ family: "nord", brightness: "light", contrast: false, plain: false }]);
+  });
+  it("a start with nothing stored writes its look, so a later start does not ask the phone again", async () => {
+    const kv = memoryKv();
+    const s = new Session(new FakeCalc(), kv);
+    await s.restoreSettings();
+    expect((kv.data.get("settings") as { schema: number; look: unknown }).schema).toBe(SETTINGS_SCHEMA);
+    expect((kv.data.get("settings") as { look: unknown }).look).toEqual(defaultSettings.look);
+  });
+});
+
 describe("Session settings", () => {
-  it("restoring version-1 settings writes them back as schema 2", async () => {
+  it("restoring version-1 settings writes them back as the newest schema", async () => {
     const kv = memoryKv();
     kv.data.set("settings", { digits: 10, angle: "rad", format: "eng", entry: "textbook", fmtCycle: ["std"], fixDecimals: 4, haptics: { on: false, strength: 50, ms: 15 } });
     const s = new Session(new FakeCalc(), kv);
     await s.restoreSettings();
     expect(s.settings.digits).toBe(10);
     expect(s.settings.format).toBe("eng");
-    expect((kv.data.get("settings") as { schema: number }).schema).toBe(2);
+    expect((kv.data.get("settings") as { schema: number }).schema).toBe(SETTINGS_SCHEMA);
   });
   it("the digits setting takes 30 and nothing above", () => {
     const s = new Session(new FakeCalc(), memoryKv());

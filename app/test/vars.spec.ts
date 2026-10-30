@@ -151,7 +151,7 @@ test.describe("Memory", () => {
 test.describe("Your keys", () => {
   test("by keys: Settings lists the section, U3 goes to its row, a flick up to its Shift row", async ({ page }) => {
     await open(page);
-    await tap(page, ["@mode", "d5", "d3"]);
+    await tap(page, ["@mode", "d5", "d4"]);
     await expect(title(page)).toHaveText("Mode › Settings › Your keys");
     await expect(menu(page).getByRole("menuitem")).toHaveCount(19); // 18 slots and Reset all
     await expect(mrow(page, "u1:primary")).toContainText("Empty");
@@ -167,7 +167,7 @@ test.describe("Your keys", () => {
 
   test("by keys: a constant picked from Find sits on U1 and fires after a reload", async ({ page }) => {
     await start(page);
-    await tap(page, ["@mode", "d5", "d3", "d1", "d1"]); // Settings, Your keys, U1, Find…
+    await tap(page, ["@mode", "d5", "d4", "d1", "d1"]); // Settings, Your keys, U1, Find…
     await expect(find(page)).toBeVisible();
     await expect(title(page)).toHaveText("Your key");
     await tap(page, ["tmpl"]); // c
@@ -187,7 +187,7 @@ test.describe("Your keys", () => {
 
   test("by keys: a place sits on a tap slot and opens; a function sits on a Shift slot and fires with Shift", async ({ page }) => {
     await start(page);
-    await tap(page, ["@mode", "d5", "d3", "d4", "d3", "d3"]); // Your keys, U2, CAS (Find…, Home, CAS)
+    await tap(page, ["@mode", "d5", "d4", "d4", "d3", "d3"]); // Your keys, U2, CAS (Find…, Home, CAS)
     await expect(mrow(page, "cas")).toHaveAttribute("data-selected", "true");
     await tap(page, ["esc"]);
     await expect(mrow(page, "u2:primary")).toContainText("CAS");
@@ -196,7 +196,7 @@ test.describe("Your keys", () => {
     await tap(page, ["u2"]);
     await expect(page.getByTestId("place")).toHaveAttribute("data-view", "cas");
     // U2's Shift slot: abs by Find (a and b are the Vars and Math keys, s a flick down on 9)
-    await tap(page, ["@mode", "d5", "d3", "d5", "d1"]); // U2 ⇧, Find…
+    await tap(page, ["@mode", "d5", "d4", "d5", "d1"]); // U2 ⇧, Find…
     await expect(find(page)).toBeVisible();
     await tap(page, ["vars", "math"]);
     await flick(page, "d9", "down");
@@ -210,7 +210,7 @@ test.describe("Your keys", () => {
 
   test("by keys: Empty this slot and Reset all give the slots back", async ({ page }) => {
     await open(page);
-    await tap(page, ["@mode", "d5", "d3", "d1", "d3", "d2"]); // U1, Home (row 2)
+    await tap(page, ["@mode", "d5", "d4", "d1", "d3", "d2"]); // U1, Home (row 2)
     await expect(mrow(page, "home")).toHaveAttribute("data-selected", "true");
     await tap(page, ["d3", "d4"]); // CAS (row 3), then Apps (row 4): the tick moves
     await expect(mrow(page, "apps")).toHaveAttribute("data-selected", "true");

@@ -69,6 +69,8 @@ export interface MenuItem {
   readonly latex?: string;
   /** In a grid sheet: the key that picks this cell (its id) and its legend, shown on the cell (Shift + 6, R18). */
   readonly pick?: { readonly key: string; readonly legend: string };
+  /** Colour swatches drawn in the row, before its value (Appearance, R50e: a family's five colours); CSS colours. */
+  readonly dots?: readonly string[];
   /** A short mark drawn in the row (Find, R4a: a unit without an exact factor; already translated). */
   readonly note?: string;
   /** A second line under the label, drawn like `reason` but on an enabled row too (R49: the Fmt cycle's hint under its
