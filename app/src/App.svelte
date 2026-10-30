@@ -197,38 +197,22 @@
     withPalettes((m) => openPalette(id, m.paletteText(`${id}.title`), id === "rel" ? m.relations : m.symbols, (cell) => m.paletteText(`${id}.${cell}`)));
   }
   /** Math (R4a): Find (find/finder.ts). Until its code and the index are in, every key waits in the queue (decisions.md
-   *  R8). A view without an entry line has nothing to insert into. `slot` (R4b, Settings › Your keys): a pick sets that
-   *  free key's slot instead, so no entry line is needed. */
-  function openFind(slot?: { id: string; layer: Layer }): void {
+   *  R8). No entry line, nothing to insert into. `slot` (R4b, Settings › Your keys): a pick sets that free key's slot. */
+  function openFind(slot?: FindSlot): void {
     if (!slot && !shell.showsEntry) return dead();
     if (findCode && sheetChunk.C) return showFind(findCode, slot);
     if (findLoading) void import("./find/finder.ts").then((m) => m.loadIndex(true)).catch(() => {}); // hurry the idle load
     onFind(loadFind(true), (f) => showFind(f, slot));
   }
-  function showFind(f: FindCode, slot?: { id: string; layer: Layer }): void {
-    picked = null;
-    f.m.showFind(shell, entry, f.index, slot && { ...slot, userKeys });
-  }
-  /** Vars and Shift + Math (R4b): Find on the user's variables and functions, or Memory. They need the code only, not
-   *  the index. */
+  type FindSlot = { id: string; layer: Layer };
+  const showFind = (f: FindCode, slot?: FindSlot): void => { picked = null; f.m.showFind(shell, entry, f.index, slot && { ...slot, userKeys }); };
+  /** Vars and Shift + Math (R4b): Find on the user's variables and functions, or Memory (the code only, not the index). */
   function openNames(memory: boolean): void {
     if (!memory && !shell.showsEntry) return dead();
-    onFind(import("./find/finder.ts"), (m) => {
-      picked = null;
-      m.showNames(shell, entry, session, memory);
-    });
+    onFind(import("./find/finder.ts"), (m) => { picked = null; m.showNames(shell, entry, session, memory); });
   }
   function onFind<T>(load: Promise<T>, show: (t: T) => void): void {
-    sheetLoad = Promise.all([load, loadSheetView()]).then(
-      ([t]) => {
-        sheetLoad = null;
-        show(t);
-      },
-      () => {
-        sheetLoad = null; // the code or the index did not load: the queued keys run without the sheet
-        dead();
-      },
-    );
+    sheetLoad = Promise.all([load, loadSheetView()]).then(([t]) => { sheetLoad = null; show(t); }, () => { sheetLoad = null; dead(); }); // (a load that fails: the queued keys run without the sheet)
   }
   function insertTemplate(p: PaletteItem): void {
     const cells = sheetChunk.palette;
