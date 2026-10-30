@@ -3,7 +3,6 @@
 // DATA_VERSION and migrated on read. Every call survives a missing or blocked IndexedDB: the app then simply starts
 // with defaults.
 import { migrateAngleDefs, migrateAngleText } from "../engine/angleMigration.ts";
-import { askPersistOnce } from "./persist.ts";
 
 /** The store the session persists to; tests pass an in-memory one. */
 export interface Kv {
@@ -95,6 +94,8 @@ export async function kvGet<T>(key: string): Promise<T | undefined> {
   }
 }
 
+let persistAsked = false;
+
 /**
  * Stores `value` under today's stamp, unless the record there is from a newer version (A50): an older build (A49's kill
  * switch, an older APK) never writes over it, so the newer build never migrates its own data again. The session keeps
@@ -113,7 +114,10 @@ export async function kvSet(key: string, value: unknown): Promise<void> {
       tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error ?? new Error("indexedDB put failed"));
     });
-    askPersistOnce(); // after the first stored value (A49)
+    if (!persistAsked) {
+      persistAsked = true;
+      void import("./persist.ts").then((m) => m.askPersistOnce()); // after the first stored value (A49); a lazy chunk, off the start chunk
+    }
   } catch {
     /* not persisted; nothing else to do */
   }
