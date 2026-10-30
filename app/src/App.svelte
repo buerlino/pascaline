@@ -185,25 +185,16 @@
   function openTemplates(): void {
     withPalettes((m) => openPalette("tmpl", m.paletteText("tmpl.title"), m.tmpl, (cell) => m.paletteText(`tmpl.${cell}`)));
   }
-  /** Run `open` with the palettes' chunk (loaded with MathLive): at once when it is in, else after the load, with every
-   *  key meanwhile waiting in the queue (decisions.md R8), so none of them lands on the line before the sheet is there. */
+  /** Run `open` with the palettes' chunk (loaded with MathLive): at once when it is in, else after the load, with every key
+   *  meanwhile in the queue (decisions.md R8). If the chunk does not load, the queued keys run without the sheet. */
   function withPalettes(open: (m: NonNullable<typeof shiftPalettes>) => void): void {
     if (shiftPalettes) return open(shiftPalettes);
-    sheetLoad = loadShiftPalettes().then(
-      (m) => {
-        sheetLoad = null;
-        open(m);
-      },
-      () => {
-        sheetLoad = null; // the chunk did not load: the queued keys run without the sheet
-      },
-    );
+    sheetLoad = loadShiftPalettes().then(open, () => {}).finally(() => (sheetLoad = null));
   }
   /** Tmpl, Shift + 6 (relations and logic) and Shift + 9 (symbols and Greek, R18): a palette on the grid sheet. */
   function openPalette(id: PaletteId, title: string, p: Palette, name: (id: string) => string): void {
     if (!shell.showsEntry) return dead();
-    // the cells' code comes with the sheet's view (R91); the Tmpl, Shift + 6 and Shift + 9 keys wait for it in the queue
-    const cells = sheetChunk.palette;
+    const cells = sheetChunk.palette; // (R91: with the sheet's view; the palette keys wait for it in the queue)
     if (!cells) return void loadSheetView().then(() => openPalette(id, title, p, name), dead);
     picked = null;
     shell.togglePalette(id, title, () => cells.paletteItems(p.items, insertTemplate, name), p.columns);
