@@ -18,6 +18,7 @@
   import { resultToEntry } from "./render/insertable.ts";
   import type { UserKeys } from "./keyboard/userKeys.svelte.ts";
   import { noDigit } from "./state/displayMode.ts";
+  import { updateLine } from "./state/updateLine.svelte.ts";
   import type { HistoryItem, Session, View } from "./state/session.svelte.ts";
   import History from "./views/History.svelte";
   // The Mode and Settings lists load when idle after the keypad is drawn, or on the first open (R35: not in the start chunk).
@@ -396,6 +397,12 @@
   <div class="screen">
     <div class="stage">
       {#if session.engineState !== "ready"}<p class="enginenote" role="status" data-testid="engine-note">{t(session.engineState === "failed" ? "engine.error" : "engine.starting")}</p>{/if}
+      {#if updateLine.ready}
+        <p class="updatenote" role="status" data-testid="update-note">
+          {t("update.ready")}
+          <button type="button" data-testid="update-restart" onclick={() => updateLine.restart()}>{t("update.restart")}</button>
+        </p>
+      {/if}
       {#if shell.app === null}
         <History
           items={session.items}
@@ -666,6 +673,35 @@
     font-size: 14px;
     white-space: nowrap;
     pointer-events: none;
+  }
+  /* the update line (A49): under the engine note, with a button, so it takes taps */
+  .updatenote {
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1;
+    margin: 0;
+    padding: 4px 6px 4px 14px;
+    border-radius: 16px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    color: var(--muted);
+    font-size: 14px;
+    white-space: nowrap;
+  }
+  .enginenote ~ .updatenote {
+    top: 48px;
+  }
+  .updatenote button {
+    margin-left: 6px;
+    padding: 4px 12px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: transparent;
+    color: var(--shift);
+    font: inherit;
+    font-weight: 700;
   }
   .screen {
     position: relative;

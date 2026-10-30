@@ -19,7 +19,7 @@ const TYPES: Record<string, string> = {
 };
 
 export interface Site {
-  readonly url: string;
+  url: string;
   root: string;
   readonly tamper: Map<string, Buffer | null>;
   close(): Promise<void>;

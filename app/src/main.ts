@@ -18,6 +18,11 @@ import { idbKv } from "./state/storage.ts";
 import { UserKeys } from "./keyboard/userKeys.svelte.ts";
 import { loadNative } from "./input/haptics.ts";
 import { plotHook } from "./apps/function/plotHook.ts";
+import { reloadOnMissingChunk } from "./state/chunkReload.ts";
+import { updateLine } from "./state/updateLine.svelte.ts";
+
+// A lazy chunk missing after a deploy (A49): reload once for the new index.html; the half-typed line is kept on pagehide.
+addEventListener("vite:preloadError", () => void reloadOnMissingChunk(sessionStorage, Date.now(), () => location.reload()));
 
 const entry = new EntryController();
 // The engine worker starts at launch (D2): it compiles the wasm on another thread while the page paints.
@@ -83,10 +88,10 @@ mount(App, { target: document.getElementById("app") as HTMLElement, props: { ses
 // Test hook (desktop Playwright): read the entry line and the session without reaching into the DOM.
 declare global {
   interface Window {
-    pascaline: { entry: EntryController; session: Session; shell: AppShell; userKeys: UserKeys; calc: Calc; plot: typeof plotHook; renderStats: { count: number } };
+    pascaline: { entry: EntryController; session: Session; shell: AppShell; userKeys: UserKeys; calc: Calc; plot: typeof plotHook; update: typeof updateLine; renderStats: { count: number } };
   }
 }
-window.pascaline = { entry, session, shell, userKeys, calc, plot: plotHook, renderStats };
+window.pascaline = { entry, session, shell, userKeys, calc, plot: plotHook, update: updateLine, renderStats };
 
 // Offline support (web build only): after the engine is up and the browser is idle, so the install's downloads
 // (the whole build, ~10 MB with both wasm files) never compete with the first paint or the engine's own load.

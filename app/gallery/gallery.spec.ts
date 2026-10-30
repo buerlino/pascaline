@@ -406,6 +406,17 @@ for (const width of [360, 372])
       setup: (p) => barState(p, place, st),
     });
 
+// A49: the update line, in the stage under the status line (a new version of the web build waits for Restart).
+shots.push({
+  id: "home-update-line",
+  group: "Update line (A49)",
+  title: "Home, a new version is ready: the line with its Restart button",
+  setup: async (p) => {
+    await someHistory(p);
+    await p.evaluate(() => (window.pascaline.update.ready = true));
+  },
+});
+
 const done: { shot: Shot; files: Partial<Record<Theme, string>> }[] = [];
 
 test.beforeAll(() => {

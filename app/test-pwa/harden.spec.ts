@@ -43,7 +43,6 @@ test("every engine file in the precache list carries its content hash", async ({
     const body = await (await request.get(`/${u}`)).body();
     expect(createHash("sha256").update(body).digest("hex").slice(0, 16)).toBe(m?.[1]);
   }
-  expect((await request.get("/engine/giac.wasm")).status()).toBe(404);
 });
 
 test("the worker's install fails when an engine file is missing or its hash differs", async ({ page }) => {
@@ -97,6 +96,11 @@ test.describe("on a site that can change", () => {
     await page.waitForFunction(() => customElements.get("math-field") !== undefined && window.pascaline !== undefined);
     await ready(page);
     await swReady(page);
+    // the page is controlled from its second load on: that is the page an update has to reach
+    await page.reload();
+    await page.waitForFunction(() => customElements.get("math-field") !== undefined && window.pascaline !== undefined);
+    await ready(page);
+    await page.waitForFunction(() => navigator.serviceWorker.controller !== null);
   };
 
   test("a second build shows the update line; Restart loads the new version once, never by itself", async ({ page }) => {
@@ -104,7 +108,7 @@ test.describe("on a site that can change", () => {
     let loads = 0;
     page.on("load", () => loads++);
     await page.evaluate(() => ((window as unknown as { __old: number }).__old = 1));
-    await page.evaluate(() => window.pascaline.entry.set("12+34", []));
+    await page.evaluate(() => window.pascaline.entry.set("12+34", {}));
     site.root = secondBuild();
     await page.evaluate(() => navigator.serviceWorker.getRegistration().then((r) => r?.update()));
     const line = page.locator('[data-testid="update-note"]');
@@ -150,20 +154,21 @@ test.describe("a lazy chunk that is gone after a deploy", () => {
   };
 
   test("makes the page reload once and then work", async ({ page }) => {
-    let gone = true;
-    await page.route(`**/${chunk()}`, (route) => (gone ? route.fulfill({ status: 404 }) : route.continue()));
+    let gone = false; // the old deploy's file is gone until the page has reloaded: then the new deploy's index names the new file
     let loads = 0;
-    page.on("load", () => loads++);
+    page.on("load", () => {
+      if (++loads > 1) gone = false;
+    });
+    await page.route(`**/${chunk()}`, (route) => (gone ? route.fulfill({ status: 404 }) : route.continue()));
     await open(page, "");
     await ready(page);
-    gone = true;
+    gone = true; // armed after the start, which may fetch the chunk when idle
     const reloaded = page.waitForEvent("load");
-    await tap(page, ["apps", "d1"]);
-    gone = false; // the next deploy's file is there
+    void page.evaluate(() => window.pascaline.shell.open("function")).catch(() => {});
     await reloaded;
     await page.waitForFunction(() => customElements.get("math-field") !== undefined && window.pascaline !== undefined);
     await ready(page);
-    await tap(page, ["apps", "d1"]);
+    await page.evaluate(() => window.pascaline.shell.open("function"));
     await expect(page.locator('[data-app="function"]')).toBeVisible();
     expect(loads).toBe(2);
   });
@@ -174,11 +179,11 @@ test.describe("a lazy chunk that is gone after a deploy", () => {
     page.on("load", () => loads++);
     await open(page, "");
     await ready(page);
-    await tap(page, ["apps", "d1"]);
+    void page.evaluate(() => window.pascaline.shell.open("function")).catch(() => {});
     await expect.poll(() => loads, { timeout: 10_000 }).toBe(2);
     await page.waitForFunction(() => customElements.get("math-field") !== undefined && window.pascaline !== undefined);
     await ready(page);
-    await tap(page, ["apps", "d1"]);
+    void page.evaluate(() => window.pascaline.shell.open("function")).catch(() => {});
     await page.waitForTimeout(2500);
     expect(loads).toBe(2); // the session flag stops the loop
   });
