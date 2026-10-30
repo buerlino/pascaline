@@ -52,7 +52,8 @@ test.describe("by keys", () => {
 
   test("About › Licence opens the GPL text as a level that scrolls; ▼ pages down, ◀ goes back onto the same row", async ({ page }) => {
     await tap(page, ["d1", "d2"]);
-    await expect(text(page)).toContainText("GNU GENERAL PUBLIC LICENSE");
+    // the first licence text loads its lazy chunk; under the full run's load that took more than the default 5 s once (pipeline run 350)
+    await expect(text(page)).toContainText("GNU GENERAL PUBLIC LICENSE", { timeout: 20_000 });
     await expect(title(page)).toHaveText("Help and about › About › GPL-3.0-or-later");
     await expect(page.getByTestId("sheet-count")).toHaveCount(0); // a text has no item count
     const scrolls = await text(page).evaluate((e) => e.scrollHeight > e.clientHeight * 3);
