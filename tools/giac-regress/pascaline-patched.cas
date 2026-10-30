@@ -527,4 +527,20 @@ Digits:=40:; pc("g96-cas-im-2sqrt",'subst(im(2*sqrt(x)),x,-1)',2,1/10^30);
 // patch 0017-mpfr-nan-not-zero.patch
 // g131-nan-times-complex (precision.yaml g120-acos-overflow-times-sqrt-neg2-12, derived)
 Digits:=40:; pc("g131-nan-times-complex",'when(string(evalf(acos(9007199254740993^9007199254740993)*sqrt(-2)))=="undef",1,0)',1,1/10^30);
+// patch 0019-atan-exact-cut.patch
+// g135-cos-quote-atan-2i (derived: cos(atan(2*i)) = 1/sqrt(-3) = -i/sqrt(3))
+Digits:=40:; pc("g135-cos-quote-atan-2i",'cos(quote(atan(2*i)))',-(57735026918962576450914878050195745564760/10^41)*i,1/10^35);
+// patch 0019-atan-exact-cut.patch
+// g135-deg-atan-2i (DEG, oracle)
+angle_radian:=0:; Digits:=40:; pc("g135-deg-atan-2i",'atan(2*i)',90+(3147292373094538001977241539068588825237/10^38)*i,1/10^35);
+// patch 0019-atan-exact-cut.patch
+// g135-deg-cos-atan-2i (DEG, derived: -i/sqrt(3))
+angle_radian:=0:; Digits:=40:; pc("g135-deg-cos-atan-2i",'cos(atan(2*i))',-(57735026918962576450914878050195745564760/10^41)*i,1/10^12);
+// patch 0019-atan-exact-cut.patch
+// g135-grad-atan-2i (GRAD, oracle)
+angle_radian:=2:; Digits:=40:; pc("g135-grad-atan-2i",'atan(2*i)',100+(3496991525660597779974712821187320916930/10^38)*i,1/10^35);
+// patch 0019-atan-exact-cut.patch
+// g135-grad-cos-atan-2i (GRAD, derived: -i/sqrt(3))
+angle_radian:=2:; Digits:=40:; pc("g135-grad-cos-atan-2i",'cos(atan(2*i))',-(57735026918962576450914878050195745564760/10^41)*i,1/10^12);
+angle_radian:=1:;
 print("pascaline-patched: "+pasfail+" of "+pasn+" failed (none may fail on our patched build)");

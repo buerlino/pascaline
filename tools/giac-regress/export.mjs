@@ -439,6 +439,26 @@ export function build(cases) {
   // complex number stays a NaN (stock Giac: the complex number, 1.41421356237*i, since is_one held for the NaN).
   patched.push("// patch 0017-mpfr-nan-not-zero.patch", "// g131-nan-times-complex (precision.yaml g120-acos-overflow-times-sqrt-neg2-12, derived)", 'Digits:=40:; pc("g131-nan-times-complex",\'when(string(evalf(acos(9007199254740993^9007199254740993)*sqrt(-2)))=="undef",1,0)\',1,1/10^30);');
   nPatched++;
+  // Patch 0019 (G135), raw Giac (no golden case reaches these: the app keeps Giac in radians, G46, and its angle rule puts
+  // /pasdeg inside a typed quote(atan(2*i))): the cos rule at a quoted atan(2*i), and atan's DEG and GRAD branch at angle_radian:=0
+  // and :=2: atan(2*i) = (pi/2+i*ln(3)/2)*180/pi, *200/pi, and cos(atan(2*i)) = -i/sqrt(3) in either (mpmath, 60 digits:
+  // atan(2j)*180/pi = 90+31.47292373094538001977241539068588825237j, *200/pi = 100+34.96991525660597779974712821187320916930j,
+  // cos(atan(2j)) = -0.57735026918962576450914878050195745564760j). Stock Giac keeps atan(2*i), whose evalf is -90+31.47…*i
+  // (DEG), and its cos rule gives i/sqrt(3). Giac's DEG and GRAD cos of a complex argument works in a double at any Digits
+  // (cos(60+i) at Digits 40: 0.50007615628813-0.015115762095421*i, stock too), so the cos lines take 1/10^12; stock's
+  // i/sqrt(3) is 1.15 away. They run last; the line after them sets radians again.
+  const negInvSqrt3 = "-(57735026918962576450914878050195745564760/10^41)*i";
+  patched.push("// patch 0019-atan-exact-cut.patch", "// g135-cos-quote-atan-2i (derived: cos(atan(2*i)) = 1/sqrt(-3) = -i/sqrt(3))", `Digits:=40:; pc("g135-cos-quote-atan-2i",'cos(quote(atan(2*i)))',${negInvSqrt3},1/10^35);`);
+  nPatched++;
+  for (const [mode, n, tag, value] of [
+    ["DEG", 0, "deg", "90+(3147292373094538001977241539068588825237/10^38)*i"],
+    ["GRAD", 2, "grad", "100+(3496991525660597779974712821187320916930/10^38)*i"],
+  ]) {
+    patched.push("// patch 0019-atan-exact-cut.patch", `// g135-${tag}-atan-2i (${mode}, oracle)`, `angle_radian:=${n}:; Digits:=40:; pc("g135-${tag}-atan-2i",'atan(2*i)',${value},1/10^35);`);
+    patched.push("// patch 0019-atan-exact-cut.patch", `// g135-${tag}-cos-atan-2i (${mode}, derived: -i/sqrt(3))`, `angle_radian:=${n}:; Digits:=40:; pc("g135-${tag}-cos-atan-2i",'cos(atan(2*i))',${negInvSqrt3},1/10^12);`);
+    nPatched += 2;
+  }
+  patched.push("angle_radian:=1:;");
   check.push('print("pascaline-check: "+pasfail+" of "+pasn+" failed");');
   known.push('print("pascaline-known: "+pasfail+" of "+pasn+" failed (all must fail)");');
   patched.push('print("pascaline-patched: "+pasfail+" of "+pasn+" failed (none may fail on our patched build)");');

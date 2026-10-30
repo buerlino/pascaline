@@ -71,6 +71,8 @@ const CANARIES: [string, string, RegExp, string][] = [
   ["0018-pow-of-pow-branch.patch", "giac-2.1.0/src/gen.cc", /return inv\(pow\(base\._SYMBptr->feuille,exponent,contextptr\),contextptr\);\s*if \(u==at_pow && !has_i\(base\)\)\{/, "if (u==at_inv && base._SYMBptr->feuille.type==_SYMB"],
   // G135, patch 0019: atan keeps an exact argument on its cut symbolic (atan(2*i)), which Giac's cos rule reads on the other side
   ["0019-atan-exact-cut.patch", "giac-2.1.0/src/usual.cc", /atan\(b,contextptr\)\),_SEQ__VECT\)\);\s*gen tmp=evalf_double\(e,0,contextptr\);\s*if \(tmp\.type==_DOUBLE_\)\{/, "return symbolic(at_program,gen(makevecteur(a,0,atan(b,contextptr)),_SEQ__VECT));"],
+  // G135, patch 0019: cos(atan(f)) = sqrt(1/(f^2+1)) takes the other root where f^2+1 is a negative real (cos(quote(atan(2*i))) = i*sqrt(3)/3)
+  ["0019-atan-exact-cut.patch", "giac-2.1.0/src/usual.cc", /if \(u==at_atan\)\s*return sqrt\(inv\(pow\(f,2\)\+1,contextptr\),contextptr\);/, "return sqrt(1-pow(f,2),contextptr);\n      if (u==at_atan)"],
   // G96, patch 0006: symb_reim takes a non-integer power of a base of unknown sign as real (r=s, i=0)
   ["0006-reim-root-of-unknown-sign.patch", "giac-2.1.0/src/gen.cc", /is_positive\(-e,contextptr\)\)\{\s*r=pow\(-e,expo,contextptr\)\*cos\(cst_pi\*expo,contextptr\);\s*i=pow\(-e,expo,contextptr\)\*sin\(cst_pi\*expo,contextptr\);\s*\}\s*else \{\s*r=s;\s*i=0;/, "sommei.push_back(signei*(*it)*pow(r,n-j)*pow(i,j));"],
 ];

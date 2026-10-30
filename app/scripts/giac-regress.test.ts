@@ -65,10 +65,18 @@ describe("giac-regress exporter", () => {
     const c = { id: "g75-tanh(1+i)-30", input: "tanh(1+i)", settings: { digits: 30 }, expect: "1.08392332733869454347575206121+0.271752585319511716528843722499*i", mark: "≈", source: "oracle" };
     expect(PATCHED_IDS.get(c.id)).toBe("0003-complex-tanh-mpfr.patch");
     const r = build([["precision.yaml", c]]) as { check: string; patched: string; nCheck: number; nPatched: number };
-    expect([r.nCheck, r.nPatched]).toEqual([0, 3]); // the case, and the written lines of patch 0006 (im(2*sqrt(x))) and patch 0017 (NaN times a complex)
+    // the case, and the written lines of patch 0006 (im(2*sqrt(x))), patch 0017 (NaN times a complex) and patch 0019 (G135: the cos
+    // rule at a quoted atan(2*i), atan(2*i) and cos(atan(2*i)) in DEG and in GRAD)
+    expect([r.nCheck, r.nPatched]).toEqual([0, 8]);
     expect(r.patched).toContain('// patch 0003-complex-tanh-mpfr.patch\n// g75-tanh(1+i)-30 (precision.yaml, oracle)');
     expect(r.check).not.toContain("g75-tanh(1+i)-30");
     expect(r.patched).toContain("// patch 0017-mpfr-nan-not-zero.patch");
+    // G135: the DEG and GRAD lines set Giac's angle mode, so they run last and a plain line sets radians again after them
+    const lines = r.patched.split("\n");
+    const angled = lines.flatMap((l, k) => (/^angle_radian:=[02]:;/.test(l) ? [k] : []));
+    expect(angled.map((k) => /pc\("([^"]*)"/.exec(lines[k]!)?.[1])).toEqual(["g135-deg-atan-2i", "g135-deg-cos-atan-2i", "g135-grad-atan-2i", "g135-grad-cos-atan-2i"]);
+    expect(lines.indexOf("angle_radian:=1:;")).toBe(angled.at(-1)! + 1);
+    expect(lines.slice(angled.at(-1)! + 1).some((l) => l.includes('pc("'))).toBe(false);
   });
 
   it("explicitPrecision: only a second argument of approx or evalf", () => {

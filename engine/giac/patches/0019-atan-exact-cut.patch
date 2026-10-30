@@ -1,16 +1,21 @@
-# Upstream: giac 2.1.0 usual.cc atan and tan. An exact argument on atan's cut (re(z)=0, |im(z)|>1) stayed symbolic, and Giac's exact rules then read it on the other side of the cut from the principal value (mpmath, C99 catan: atan(2*i) = pi/2+0.549i, atan(-2*i) = -pi/2-0.549i): cos(atan(z)) = sqrt(1/(z^2+1)) gave i*sqrt(3)/3 for 2*i and for -2*i (right -i*sqrt(3)/3), so a stored w:=atan(2*i) or f(x):=cos(atan(x)) at 2*i showed the wrong sign; arg(atan(2*i)) added pi (atanasln's real part -pi/2). atan returns the principal value sign(t)*pi/2+i*atanh(1/t), t=im(z), exact; tan(b+(k+1/2)*pi) is -1/tan(b) where tan(b) or exp(2*i*b) has a closed form, so tan(atan(2*i)) stays 2*i. Off the cut, and for a float argument (atanasln), atan is unchanged.
+# Upstream: giac 2.1.0 usual.cc atan and tan. An exact argument on atan's cut (re(z)=0, |im(z)|>1) stayed symbolic, and Giac's exact rules then read it on the other side of the cut from the principal value (mpmath, C99 catan: atan(2*i) = pi/2+0.549i, atan(-2*i) = -pi/2-0.549i): cos(atan(z)) = sqrt(1/(z^2+1)) gave i*sqrt(3)/3 for 2*i and for -2*i (right -i*sqrt(3)/3), so a stored w:=atan(2*i) or f(x):=cos(atan(x)) at 2*i showed the wrong sign; arg(atan(2*i)) added pi (atanasln's real part -pi/2). atan returns the principal value sign(t)*pi/2+i*atanh(1/t), t=im(z), exact; tan(b+(k+1/2)*pi) is -1/tan(b) where tan(b) or exp(2*i*b) has a closed form, so tan(atan(2*i)) stays 2*i. An unsimplified zero real part (pi/2-1/2*pi) is read through ratnormal. cos(atan(z)) is 1/sqrt(z^2+1) where z^2+1 is a negative real (sqrt(1/w) took the other root there: cos(quote(atan(2*i))) gave i*sqrt(3)/3), sqrt(1/(z^2+1)) elsewhere as before. Off the cut, and for a float argument (atanasln), atan is unchanged.
 # Changed by Pascaline contributors, 2026-10-30
 --- a/src/usual.cc
 +++ b/src/usual.cc
-@@ -711,6 +711,20 @@
+@@ -711,6 +711,25 @@
      if (is_algebraic_program(e,a,b))
        return symbolic(at_program,gen(makevecteur(a,0,atan(b,contextptr)),_SEQ__VECT));
      gen tmp=evalf_double(e,0,contextptr);
 +    // Pascaline patch 0019 (G135): an exact argument on the cut (re(e)=0, |im(e)|>1) stayed symbolic, and Giac's rules
 +    // read it on the other side of the cut from the principal value (mpmath and C99 catan: atan(2*i) = pi/2+0.549i):
 +    // cos(atan(f)) = sqrt(1/(f^2+1)) gave i*sqrt(3)/3 for 2*i and -2*i (right -i*sqrt(3)/3), arg(atan(2*i)) added pi.
-+    // The principal value is sign(t)*pi/2+i*atanh(1/t), t=im(e), exact.
-+    if (tmp.type==_CPLX && is_exactly_zero(re(e,contextptr))){
++    // The principal value is sign(t)*pi/2+i*atanh(1/t), t=im(e), exact. A real part Giac keeps unsimplified
++    // (pi/2-1/2*pi, re(acos(2))) is read through ratnormal when its double is 0 next to the imaginary part.
++    gen r0=tmp.type==_CPLX?re(e,contextptr):gen(1);
++    if (tmp.type==_CPLX && !is_exactly_zero(r0) && tmp._CPLXptr->type==_DOUBLE_ && (tmp._CPLXptr+1)->type==_DOUBLE_
++	&& fabs(tmp._CPLXptr->_DOUBLE_val)<=1e-12*fabs((tmp._CPLXptr+1)->_DOUBLE_val))
++      r0=ratnormal(r0,contextptr);
++    if (tmp.type==_CPLX && is_exactly_zero(r0)){
 +      gen t=im(e,contextptr);
 +      if (is_strictly_greater(abs(t,contextptr),1,contextptr)){
 +	gen y=cst_i*atanh(inv(t,contextptr),contextptr);
@@ -23,7 +28,25 @@
      if (tmp.type==_DOUBLE_){
        double ed=tmp._DOUBLE_val;
        // detect if atan is a multiples of pi/10
-@@ -2051,6 +2065,17 @@
+@@ -1663,8 +1682,15 @@
+ 	return f;
+       if (u==at_asin)
+ 	return sqrt(1-pow(f,2),contextptr);
+-      if (u==at_atan)
+-	return sqrt(inv(pow(f,2)+1,contextptr),contextptr);
++      if (u==at_atan){
++	// Pascaline patch 0019 (G135): cos(atan(f)) = 1/sqrt(f^2+1) is the principal value for every f; sqrt(1/w) is the
++	// same but for a negative real w = f^2+1 (f on atan's cut), where it takes the other root: cos(quote(atan(2*i)))
++	// gave sqrt(-1/3) = i*sqrt(3)/3 (right -i*sqrt(3)/3).
++	gen w=pow(f,2)+1;
++	if (is_strictly_positive(-w,contextptr))
++	  return inv(sqrt(w,contextptr),contextptr);
++	return sqrt(inv(w,contextptr),contextptr);
++      }
+       int n=is_half_atrig(e,f);
+       if (n && has_evalf(e,e_,1,contextptr)){
+ 	if (n==2)
+@@ -2051,6 +2077,17 @@
  	    if (a!=0) // avoid recursion
  	      return tan(b,contextptr);
  	}
