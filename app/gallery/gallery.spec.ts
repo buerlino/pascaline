@@ -8,6 +8,32 @@ import { entryValue, open, tap } from "../test/helpers.ts";
 
 const OUT = new URL("../test/gallery/", import.meta.url).pathname;
 const THEMES = ["light", "dark"] as const;
+
+/** R49: Mode › Settings and each of its levels, at the small phone and the Fairphone 6 (380 px over the maths rows). */
+function settingsShots(): Shot[] {
+  const levels = [
+    { id: "", title: "Mode › Settings (R49): the next level of the sheet, the top cluster live", keys: [] },
+    { id: "-numbers", title: "Settings › Numbers: the Fmt cycle (its hint under Standard) and Decimals in Fixed", keys: ["d1"] },
+    { id: "-vibration", title: "Settings › Key vibration, switched on (strength disabled with its reason), Try it", keys: ["d2", "d1"] },
+    { id: "-counters", title: "Settings › Counters: the Shift and Alpha counts, since when, Reset", keys: ["d3"] },
+  ];
+  const sizes = [
+    { tag: "small", group: "Small phone (360 × 740)", viewport: { width: 360, height: 740 } },
+    { tag: "fp6", group: "Fairphone 6 (372 × 767)", viewport: { width: 372, height: 767 } },
+  ];
+  return sizes.flatMap((z) =>
+    levels.map((l) => ({
+      id: `home-settings${l.id}-${z.tag}`,
+      group: z.group,
+      title: l.title,
+      viewport: z.viewport,
+      setup: async (p: Page) => {
+        await someHistory(p);
+        await tap(p, ["@mode", "d5", ...l.keys]);
+      },
+    })),
+  );
+}
 type Theme = (typeof THEMES)[number];
 
 interface Shot {
@@ -164,36 +190,7 @@ const shots: Shot[] = [
       await tap(p, ["tmpl"]);
     },
   },
-  {
-    id: "home-settings",
-    group: "Home",
-    title: "Settings page (Mode's last row, R21b): over everything, a heading per section",
-    setup: async (p) => {
-      await someHistory(p);
-      await tap(p, ["@mode", "d5", "down", "down", "right"]);
-    },
-  },
-  {
-    id: "home-settings-vibration",
-    group: "Home",
-    title: "Settings page, scrolled to Vibration (switched on, strength disabled with its reason)",
-    setup: async (p) => {
-      await someHistory(p);
-      await tap(p, ["@mode", "d5"]);
-      await p.locator('[data-testid="settings"] [data-id="haptics"]').tap();
-      await p.locator('[data-testid="settings"] [data-id="strength"]').scrollIntoViewIfNeeded();
-    },
-  },
-  {
-    id: "home-settings-small",
-    group: "Small phone (360 × 740)",
-    title: "Settings page (R21b)",
-    viewport: { width: 360, height: 740 },
-    setup: async (p) => {
-      await someHistory(p);
-      await tap(p, ["@mode", "d5", "down", "down", "right"]);
-    },
-  },
+  ...settingsShots(),
   {
     id: "home-tmpl",
     group: "Home",
