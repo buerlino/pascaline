@@ -31,14 +31,22 @@ export function stageFlags(): void {
   // G96: reim-test.ts, 0006; G111: support-test.ts, 0007 and 0008;
   // A19: memcap-test.mjs (the 1 GB cap of build-wasm.sh; a hog job ends and a fresh instance works);
   // G77: canaries.mjs (S17's workaround rows on the engine) and fetch-test.mjs (the pin's .dsc check, no network)
-  const runs = ["flags-canary.ts", "ctx-canary.ts", "assume-canary.ts", "tanh-test.ts", "mpfr-pi-test.ts", "reim-test.ts", "support-test.ts", "patch-canary.ts", "canaries.mjs", "fetch-test.mjs", "memcap-test.mjs"].map((f) =>
-    spawnSync(process.execPath, [`${root}tests/engine/${f}`], { env: { ...process.env, GIAC_MJS: mjs }, encoding: "utf8", timeout: 120_000 }),
+  const runs = FLAGS_TESTS.map((f) =>
+    spawnSync(process.execPath, [`${root}tests/engine/${f}`], { env: { ...process.env, GIAC_MJS: mjs }, encoding: "utf8", timeout: FLAGS_TIMEOUT_MS }),
   );
-  const out = runs.map((r) => `${r.stdout}${r.stderr}`.trim().split("\n").slice(-3).join(" | ")).join(" | ");
-  report("flags", runs.every((r) => r.status === 0), out);
+  // A51: a failing sub-test is a segment "FAIL <file>: ..." (a timeout says so), which app/scripts/pipeline-logs.ts reads
+  const tails = runs.map((r, i) => {
+    const tail = `${r.stdout}${r.stderr}`.trim().split("\n").slice(-3).join(" | ");
+    if (r.status === 0) return tail;
+    const timedOut = (r.error as NodeJS.ErrnoException | undefined)?.code === "ETIMEDOUT";
+    return `FAIL ${FLAGS_TESTS[i]}: ${timedOut ? `timed out after ${FLAGS_TIMEOUT_MS / 1000} s` : tail}`;
+  });
+  report("flags", runs.every((r) => r.status === 0), tails.join(" | "));
   stageRegress();
   stageGiacCheck();
 }
+const FLAGS_TIMEOUT_MS = 120_000;
+const FLAGS_TESTS = ["flags-canary.ts", "ctx-canary.ts", "assume-canary.ts", "tanh-test.ts", "mpfr-pi-test.ts", "reim-test.ts", "support-test.ts", "patch-canary.ts", "canaries.mjs", "fetch-test.mjs", "memcap-test.mjs"];
 
 /** A19: Giac's own check/ suite (tools/probes/giac-check.mjs) on this build, against tests/golden/giaccheck-known.yaml.
  *  The release build runs the same stage: GIAC_OUT=engine/giac/_out/release npm run golden. */

@@ -47,13 +47,44 @@ export function failedItems(check: Check, log: string): Item[] {
   } else {
     for (const l of lines) {
       const m = /^FAIL\s+([^:\s]+):\s*(.*)$/.exec(l);
-      if (m) items.push({ file: m[1]!, title: m[2]! });
+      if (!m) continue;
+      const parts = m[1] === "steps" ? stepsItems(lines, m[2]!) : m[1] === "flags" ? flagsItems(m[2]!) : null;
+      if (parts) items.push(...parts); else items.push({ file: m[1]!, title: m[2]! });
     }
   }
   return items;
 }
 
-/** A wall-clock test: the Find 16 ms/key test, the golden units p95 bar, solve.spec.ts persistence, the clipboard poll, the G78 timing case, Home's acos deadline, the G83 library restore and first call, the Esc-before-Working test; FLAKES 1: G39's 3*int(1/x), the CAS -> Home budget, 10^1000000+7, the parser fuzz, Working… after 150 ms.
+/** A51: the golden `steps` stage fails with one line per new finding above its FAIL line ("  steps <stage> <id> [kind] ..."):
+ *  one item per finding (title "<stage>/<id>"). Null (the stage as one item) when its canary failed or the findings printed
+ *  are not the number the stage counted. */
+function stepsItems(lines: string[], title: string): Item[] | null {
+  const n = /: (\d+) new findings, \d+ known$/.exec(title);
+  if (!n || !title.startsWith("PASS step-budget-test")) return null;
+  const found = lines.flatMap((l) => {
+    const m = /^ {2}steps (?!known )(\S+) (\S+) \[/.exec(l);
+    return m ? [{ file: "steps", title: `${m[1]}/${m[2]}` }] : [];
+  });
+  return found.length === Number(n[1]) && found.length > 0 ? found : null;
+}
+
+/** A51: the golden `flags` stage joins the last lines of its sub-tests with " | "; a sub-test that failed is a segment
+ *  "FAIL <file>: ..." (app/scripts/golden/engine.ts). One item per such segment (title "<file>: ..."); null when none. */
+function flagsItems(title: string): Item[] | null {
+  const failed = title.split(" | ").flatMap((seg) => {
+    const m = /^FAIL (\S+?): (.*)$/.exec(seg);
+    return m ? [{ file: "flags", title: `${m[1]}: ${m[2]}` }] : [];
+  });
+  return failed.length > 0 ? failed : null;
+}
+
+/** Golden steps cases that differ between the real clock and the 8× fast one only under load: Home's 300 ms budget (the
+ *  agreement run of chisquare_icdf, the doubling of sin(10^2000)) is read from performance.now (A51, 3 runs at load 20-30). */
+const STEPS_LOAD_ITEMS = new Set(["precision/prec-g44f2f1-chisquare_icdf-1-0.95-12", "precision/prec-G23-sin-1e2000"]);
+/** Golden flags sub-tests that run out of golden/engine.ts's spawnSync timeout under load: 40 gunzips of the Giac tarball. */
+const FLAGS_LOAD_ITEMS = /^(?:patch-canary\.ts|canaries\.mjs): timed out after \d+ s$/;
+
+/** A wall-clock test: the Find 16 ms/key test, the golden units p95 bar, two golden steps cases and two flags sub-tests (A51), solve.spec.ts persistence, the clipboard poll, the G78 timing case, Home's acos deadline, the G83 library restore and first call, the Esc-before-Working test; FLAKES 1: G39's 3*int(1/x), the CAS -> Home budget, 10^1000000+7, the parser fuzz, Working… after 150 ms.
  *  Not the golden g58-factorial cases: the golden log names only the stage ("FAIL precision: n/m active match"), the case id is on a plain line above it. */
 export function isTiming(check: Check, item: Item): boolean {
   if (check === "vitest") {
@@ -74,6 +105,8 @@ export function isTiming(check: Check, item: Item): boolean {
       (item.file === "solve.spec.ts" && /equations and values are stored|kept across a reload/.test(item.title)) ||
       (item.file === "copy.spec.ts" && /copy → paste gives the value back/.test(item.title));
   }
+  if (item.file === "steps") return STEPS_LOAD_ITEMS.has(item.title);
+  if (item.file === "flags") return FLAGS_LOAD_ITEMS.test(item.title);
   // units: every case matched (n/n) and only the p95 bar was missed
   const m = /(\d+)\/(\d+) match/.exec(item.title);
   return item.file === "units" && !!m && m[1] === m[2] && /p95 [\d.]+ ms \(≤/.test(item.title);
