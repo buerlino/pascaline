@@ -6,6 +6,9 @@
 // goes through the keypad's gesture code and reaches `press` by key id and layer (keyboard/route.ts).
 import raw from "../../../spec/unit-pad.yaml";
 import { unitText } from "../i18n/enUnits.ts";
+import type { Key } from "../keyboard/keyboard.ts";
+import type { Mods, RouteCtx } from "../keyboard/route.ts";
+import { unitPad } from "./padView.svelte.ts";
 import type { PadAction } from "./slot.ts";
 
 /** What a pad press hands on: R24a's actions, plus the keys that are not the slot's: Find (Math), the next slot
@@ -136,6 +139,17 @@ export class UnitPad {
       dead: c[LEG[layer]] === undefined,
       ...(c.kind === "user" ? { user: empty ? ("empty" as const) : ("set" as const) } : {}),
     };
+  }
+
+  /** A key press while the pad is up (keyboard/route.ts): a cell emits its action in the layer it was pressed in and
+   *  uses up a one-shot Shift or Alpha, a cell with nothing there is a dead key; true when the key was a cell. */
+  route(c: RouteCtx, key: Key, mods: Mods): boolean {
+    const emit = this.press(key.id, mods.alpha ? "alpha" : mods.shift ? "shift" : "primary");
+    if (emit === undefined) return false;
+    c.session.clearModifiers();
+    if (emit === null) c.dead();
+    else unitPad.on(emit);
+    return true;
   }
 
   /** A press of `key` in `layer`: what it emits; null where the cell has nothing (a dead key); undefined where the key

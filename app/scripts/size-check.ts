@@ -117,8 +117,11 @@ export const LAZY_PARTS = ["src/views/sheetKeys.ts", "src/views/tmplSheet.ts", "
  *  validation, the schema-3 migration and the first-start default) is in the settings the session reads at start; the
  *  Appearance level, the family list and the theme files are lazy chunks.
  *  60 → 60.5 kB (R57): phase-1 59.90 kB, the branch 60.48 kB (+0.58 kB): the decimal mark setting, the two key faces,
- *  the drawn comma, the hardware keys, and the Paste and rows holds (keyboard/route.ts) are on the key path. */
-export const START_PIN_GZIP = 60.5 * KB;
+ *  the drawn comma, the hardware keys, and the Paste and rows holds (keyboard/route.ts) are on the key path.
+ *  60.5 → 60.65 kB (R24b): phase-1 60.48 kB, the branch 60.61 kB (+0.13 kB, raw +0.35 kB): the pad's state (units/padView),
+ *  its three reads in Keypad.svelte (a cell's face and legends, the bubble) and its hook in route.ts; the pad (units/pad.ts
+ *  with spec/unit-pad.yaml) is a lazy chunk. */
+export const START_PIN_GZIP = 60.65 * KB;
 
 /** Failures for the start chunk's row when it is over the pin. */
 export function checkStartPin(row: Row): string[] {

@@ -4,11 +4,7 @@
 // Keypad.svelte draws the keys from `model`; keyboard/route.ts hands a press to it and the result to `on`.
 import type { PadEmit, UnitPad } from "./pad.ts";
 
-export const unitPad: { model: UnitPad | null; on: (e: PadEmit) => void; log: PadEmit[] } = $state({
-  model: null,
-  on: () => {},
-  log: [],
-});
+export const unitPad: { model: UnitPad | null; on: (e: PadEmit) => void; log?: PadEmit[] } = $state({ model: null, on: () => {} });
 
 /** Load the pad and show it on the keys (the module objects stay whole: a $state holds the class instance as is). */
 export async function showUnitPad(): Promise<void> {
@@ -18,6 +14,7 @@ export async function showUnitPad(): Promise<void> {
 
 /** The dev switch (`?pad=1`): the pad is up and every press is logged (window.pascaline.unitPad.log). */
 export function devPad(): void {
-  unitPad.on = (e) => void unitPad.log.push(e);
+  unitPad.log = [];
+  unitPad.on = (e) => void unitPad.log?.push(e);
   void showUnitPad();
 }
