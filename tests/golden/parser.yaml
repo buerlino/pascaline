@@ -482,6 +482,7 @@ cases:
   - { id: "l6-comma-08", latex: "1{,}5\\times2", expect: "3", source: "derived", group: "l6", note: "R57: MathLive's {,} is the decimal mark in the point mode too (an entry recalled after the setting changed)" }
   - { id: "l6-comma-10", latex: "\\max\\left(0,x\\right)", expect: "max(0,x)", options: { decimalComma: true }, source: "derived", group: "l6", note: "R57: a bare comma after a digit is still the argument comma (only {,} is a decimal mark with no digit after it), as an entry stored in the point mode and recalled in the comma mode" }
   - { id: "l6-comma-09", latex: "\\max\\left(1;1\\emark3\\right)", expect: "1000", options: { decimalComma: true }, source: "derived", group: "l6" }
+  - { id: "l6-comma-11", latex: "\\max\\left(1,5\\right)", expect: "max(1,5)", options: { decimalComma: true }, source: "derived", group: "l6", note: "R57f1: a bare comma separates arguments in either mode; max(1,5) stored in the point mode and recalled in the comma mode is still 5" }
   - { id: "l6-fn-01", latex: "p\\left(x\\right):=x^{2}+1", expect: "p(x):=x^2+1", source: "derived", group: "l6" }
   - { id: "l6-fn-02", latex: "p\\left(3\\right)", expect: "p(3)", before: ["p\\left(x\\right):=x^{2}+1"], source: "derived", group: "l6" }
   - { id: "l6-fn-03", latex: "p\\left(3\\right)", expect: "p*3", source: "derived", group: "l6" }

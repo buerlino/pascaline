@@ -127,3 +127,25 @@ test("3 , ᴇ 3 types no 1 and gives what 3.ᴇ3 gives in point mode; max(1;ᴇ3
   await tap(page, ["enter"]);
   await resultIs(page, "1000", 3);
 });
+
+test("max(1,5) in point mode gives 5; after Settings › Numbers › Decimal mark: Comma, the recalled entry still gives 5 (R57f1: parsing never depends on the mark)", async ({ page }) => {
+  await page.evaluate(() => window.pascaline.session.setDecimalMark("point"));
+  await maxCall(page);
+  await tap(page, ["d1", "comma", "d5"]);
+  await tap(page, ["enter"]);
+  await resultIs(page, "5", 1);
+  await page.getByTestId("chip-format").tap();
+  await tap(page, ["d5", "d1"]);
+  const mark = page.getByTestId("menu").locator('[role="menuitem"][data-id="mark"]');
+  await expect(mark.getByTestId("sheet-value")).toHaveText("Point");
+  await tap(page, ["right"]);
+  await expect(mark.getByTestId("sheet-value")).toHaveText("Comma");
+  await tap(page, ["esc", "esc", "esc"]);
+  await expect(page.getByTestId("menu")).toHaveCount(0);
+  expect(await page.evaluate(() => window.pascaline.session.settings.decimalMark)).toBe("comma");
+  await tap(page, ["up"]);
+  await page.getByTestId("row-actions").getByRole("button", { name: "Recall" }).tap();
+  expect(await entryValue(page)).toMatch(/1,5/);
+  await tap(page, ["enter"]);
+  await resultIs(page, "5", 2);
+});
