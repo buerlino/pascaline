@@ -29,7 +29,7 @@ import { decimalFromRational, decimalFromString, formatConfirmed, isZero, tieRis
 import { askedDigits, DOUBLE_DIGITS, doubleFallback, exactFacts, floatFacts, floatPathFacts, integratedFacts, hasFloat, isAudited, doubleFormsIn, unauditedIn, numericDisagrees, notBuiltin, floatsShown, heavySplit, REGROUP_MAX, shapeOfValue, endsEarly, valuePrecision, whyOf, withDigits, type ElementFacts, type Giac, type Shape } from "./numeric.ts";
 import { bracesOf, functionsIn, LIST_TYPE, mapNumbers, matrixTyped, replaceLiteral, wordsOf, type Quoting } from "./giacPrint.ts";
 import { plainRows } from "./matrixType.ts";
-import { complexSafe, exactAtan, readsReplaced } from "./complex.ts";
+import { complexSafe, readsReplaced } from "./complex.ts";
 import { decidedAtDouble, decideTwice, decidingStored, restsOnDecision } from "./decisions.ts";
 import { PLAIN_FORM, type InputForm } from "./stores.ts";
 
@@ -203,9 +203,9 @@ export const ENGINE_DEFINITIONS: Readonly<Record<string, string>> = {
   [POLY_AT]: POLY_AT_ANY_DEPTH,
 };
 
-/** Definitions whose text is built engine-side (host.ts) to keep it out of the start chunk: G30 `eseries` (eseries.ts,
- *  IEC 60063) and G129 `pasatanx` (complex.ts EXACT_ATAN, for an input that names atan). Only the names are known here. */
-export const WORKER_DEFINITION_NAMES: readonly string[] = ["eseries", "pasatanx"];
+/** Definitions whose text is built engine-side (host.ts) so their tables stay out of the start chunk: G30 `eseries`
+ *  (IEC 60063 preferred value nearest to x in x's decade, eseries.ts). Only the names are known here. */
+export const WORKER_DEFINITION_NAMES: readonly string[] = ["eseries"];
 
 /** Set to 1 by an == or ≠ test that met a float (input/emit.ts equalityTest, which spells the same name). Purged, not
  *  set to 0, before an input runs: `sto` inside the test's function would read a value as the place to store to.
@@ -261,7 +261,6 @@ export function symbolicWhy(warn: PrecisionWarn | undefined, sides: string): Pre
 /** The names of our definitions that `input` mentions. */
 export function definitionsUsedBy(input: string): string[] {
   const words = new Set(wordsOf(input));
-  if (words.has("atan") || words.has("arctan")) words.add("pasatanx"); // G129: the exact pass's atan (exactAtan)
   return [...Object.keys(ENGINE_DEFINITIONS), ...WORKER_DEFINITION_NAMES].filter((name) => words.has(name));
 }
 
@@ -547,23 +546,16 @@ export function homeEval(
   // An input of audited functions alone (elementary ones, whose evalf is MPFR's and quick) asks for its value's digits
   // at P and P + 20 in the same call (exactFacts reads them); any other input asks when they are needed.
   const at = isAudited(exactBody, "typed") && complexSafe(exactBody, "typed") === exactBody ? [P, P + 20] : [];
-  // G129 (F124): every atan is the principal one (exactAtan), but in an input that runs once (a definition keeps its atan)
-  let runText = once ? exactBody : exactAtan(exactBody, "typed");
   // G130 (F125): Giac's matrix type becomes plain rows in Ans (matrixType.ts), in the run's Digits
   const exactRun = (): string =>
     withDigits(giac, P, s.digits, () => {
-      const first = giac.value(`${ans}:=(${runText})`, at);
+      const first = giac.value(`${ans}:=(${exactBody})`, at);
       ambiguous = giac.ambiguousPower?.();
       const v = plainRows(giac, ans, first, at);
       value = v;
       return v.cut ? giac.eval(ans) : v.text;
     });
   let exactOut = exactRun();
-  // A result that still holds our name (a program) is run with Giac's atan, so the name is not shown.
-  if (runText !== exactBody && exactOut.includes("pasatanx")) {
-    runText = exactBody;
-    exactOut = exactRun();
-  }
   // An == or ≠ test on a side with a float in it (input/emit.ts equalityTest): its true or false is approximate, and
   // decided by its own digits (R18f2): run once more with the verdict set.
   const inexactTest = test && giac.eval(EQ_INEXACT_FLAG) === "1";
@@ -581,7 +573,7 @@ export function homeEval(
   // G57: a decision the precisions do not agree on, or a tie Giac cannot prove, is refused (any value would be a guess).
   let refusedCut = false;
   if (!once && !inexactTest && !isError(exactOut) && !hasFloat(exactOut) && restsOnDecision(exactBody, "typed", exactOut, notBuiltin(giac))) {
-    const d = decideTwice(giac, runText, exactOut, s.digits, s.digits);
+    const d = decideTwice(giac, exactBody, exactOut, s.digits, s.digits);
     if ("undecided" in d) undecided = true;
     if ("undecided" in d && d.refused) refusedCut = true;
     if (!("undecided" in d) && d.from !== undefined) {
