@@ -5,7 +5,6 @@ import type { MathfieldElement } from "mathlive";
 import { constKey, pruneChips, resKey, type Chip, type ChipTable } from "../input/chips.ts";
 import type { ActionBody, Layer } from "../keyboard/keyboard.ts";
 import { mathlive } from "../render/mathlive.svelte.ts";
-import { numberRunStart } from "./numberRun.ts";
 import { ANS_CHIP, EMARK, ENTRY_MACROS, constChip, isChipLatex, resChip } from "./macros.ts";
 
 /** The literal caret of the one-line mode, as MathLive serialises it (the parser reads it as a power). */
@@ -78,6 +77,8 @@ export class EntryController {
   private deleteAt: typeof import("./delete.ts").deleteAtTemplate | undefined;
   /** Backspace, Delete and the printable keys of a hardware keyboard (entry/hwkeys.ts, R26b, R31): loaded with MathLive. */
   private hwKey: typeof import("./hwkeys.ts").hardwareKey | undefined;
+  /** Where a number's digits, points and decimal commas start (entry/numberRun.ts, R57): loaded with MathLive. */
+  private numberRunStart: typeof import("./numberRun.ts").numberRunStart | undefined;
   /** After an arrow step, step on to where a key types into a box (entry/stops.ts, R27b): loaded with MathLive. */
   private settle: typeof import("./stops.ts").settle | undefined;
   /** ▶ in a template: to the next empty box, or the end of the box it leaves (entry/stops.ts, R10, R43): loaded with MathLive. */
@@ -125,11 +126,12 @@ export class EntryController {
     if (this.started) return this.ready;
     this.started = true;
     const line = Promise.race([kept, new Promise<null>((resolve) => setTimeout(resolve, 1000, null))]).catch(() => null);
-    this.ready = Promise.all([mathlive.load(), import("./delete.ts"), import("./hwkeys.ts"), import("./stops.ts"), line]).then(([m, d, h, s, l]) => {
+    this.ready = Promise.all([mathlive.load(), import("./delete.ts"), import("./hwkeys.ts"), import("./stops.ts"), import("./numberRun.ts"), line]).then(([m, d, h, s, n, l]) => {
       this.deleteAt = d.deleteAtTemplate;
       this.hwKey = h.hardwareKey;
       this.settle = s.settle;
       this.nextBox = s.nextBox;
+      this.numberRunStart = n.numberRunStart;
       if (l !== null) this.touched = true;
       if (l && !this.keptStale) this.pendingValue = this.adopt(l.latex, l.chips) + (this.pendingValue ?? "");
       return this.create(m.MathfieldElement);
@@ -445,7 +447,7 @@ export class EntryController {
     k--;
     while (k > 0 && (mf.getElementInfo(k)?.depth ?? 0) > d) k--;
     const mantissa = k;
-    k = numberRunStart(mf, k, d); // digits, a point or the decimal comma `{,}` (R57)
+    k = this.numberRunStart?.(mf, k, d) ?? k; // digits, a point or the decimal comma `{,}` (R57)
     if (k === mantissa) return false;
     mf.selection = { ranges: [[k, end]] };
     return true;
