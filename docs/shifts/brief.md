@@ -64,9 +64,14 @@ Milestone reviews (section 0): after R50e; after R24d.
 | 309 | [R24b](packages/R24b.md) the pad drawn over the keys | ron, Sonnet | `p1/ron-m5-unitpad` | R86, R57, R50e |
 | 310 | [R24c](packages/R24c.md) the unit view entry | ron, Opus | `p1/ron-m5-unitview` | R24b |
 | 311 | [R24d](packages/R24d.md) Find in a slot and the user cells | ron, Sonnet | `p1/ron-m5-usercells` | R24c, R4b |
+| 312 | [R70](packages/R70.md) the tap counter counts every press | ron, Sonnet | `p1/ron-m4-presscount` | R49 |
+| 313 | [R38a](packages/R38a.md) the backup: export everything | ron, Sonnet | `p1/ron-m4-backup` | R49 |
+| 314 | [R38b](packages/R38b.md) the backup: restore from a file | ron, Opus | `p1/ron-m4-restore` | R38a |
+| 315 | [R88](packages/R88.md) presets, the model and the store | ron, Opus | `p1/ron-presets-model` | R57, R50e, R24d |
+| 316 | [R71](packages/R71.md) ± on Shift + `,` | ron, Sonnet | `p1/ron-m5-pmkey` | R24c |
 
 ### Lane B queue (the release, then the engine)
-A43, A7, A8 and A9 run by day (section 0). Steps 406–408 run only on the weekly extreme night the owner names (tonight).
+A43, A7, A8 and A9 run by day (section 0). Steps 406–408 run only on the weekly extreme night the owner names (tonight); 409–411 run every night.
 
 | Step | What | Agent, model | Branch | After |
 |---|---|---|---|---|
@@ -76,6 +81,9 @@ A43, A7, A8 and A9 run by day (section 0). Steps 406–408 run only on the weekl
 | 406 | [G133](packages/G133.md) asin of a tiny imaginary number (F132) | gorge, Opus | `p1/gorge-asintiny` | the weekly night |
 | 407 | [G134](packages/G134.md) asinh on its cut, ∛ of a tiny real (F131, F133) | gorge, Opus | `p1/gorge-cutsmall` | the weekly night |
 | 408 | [G137](packages/G137.md) the weekly fuzz and its triage | gorge, Opus | `p1/gorge-nightfuzz-1030` | the weekly night |
+| 409 | [G81](packages/G81.md) a constant's σ through its basis | gorge, Opus | `p1/gorge-m4-constcorr` | G80, G76 |
+| 410 | [R60](packages/R60.md) the unit result's alternatives as data | gorge, Opus | `p1/gorge-m5-unitalts` | R24c |
+| 411 | [R61](packages/R61.md) the chip from a unit result | gorge, Opus | `p1/gorge-m5-unitchip` | R24c, G81 |
 
 ### The commands henri replies with (one per decision; `scripts/night.sh` runs it)
 - `scripts/pipeline.sh <agent> "<ID>" --model <sonnet|opus> --audit-model auto`: the next queue step not done (the queue's skip rule above); `--audit-model opus` where its row says "audit Opus".
