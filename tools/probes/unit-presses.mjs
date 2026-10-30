@@ -1,29 +1,21 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Probe (S1, P11 "units after the formula"): how many key presses it takes to type a unit into a unit slot, from the
-// `unit_slot:` section of spec/keyboard.yaml and the keys' alpha letters. Prints the median over 50 common
-// engineering units (the gate of P8 rule 2: median <= 4), the worst ten, every symbol the layout cannot type, a few
-// whole tasks, and, when a qalc build is found, whether qalc reads each typed unit as meant and what it makes of the
-// same letters in the wrong case. Results and reasoning: docs/archive/r7-unit-slots.md.
+// Probe (S1, P14): how many key presses it takes to fill a unit slot on the unit pad (spec/unit-pad.yaml,
+// docs/archive/r9-unit-pad.md): prefix and unit cells on the keys. Prints the median over 50 common engineering units
+// (the gate of P8 rule 2: median <= 4), the worst ten, what is not on the pad, a few whole tasks, and, when a qalc build
+// is found, whether qalc reads each unit as meant. S1's letters (docs/archive/r7-unit-slots.md) left
+// spec/keyboard.yaml with R24c; their counts stay in r7 and in this file's history.
 //
-//   node tools/probes/unit-presses.mjs                 flicks (P11: flick down = lower case, flick up = capital)
-//   node tools/probes/unit-presses.mjs --taps          the G2 way only: Alpha, key = capital; Shift, Alpha, key = lower
-//   node tools/probes/unit-presses.mjs --lower-lock    no flicks, but a slot starts in a lower-case letter lock (a tap on
-//                                                      a letter key types its lower case, Alpha + key the capital; digit
-//                                                      keys type digits only in an exponent, as in every mode): the
-//                                                      fallback if flicks go
-//   node tools/probes/unit-presses.mjs --no-auto-leave an exponent needs ▶ before the next unit
-//   node tools/probes/unit-presses.mjs --pad           the unit pad of P14 (spec/unit-pad.yaml, docs/archive/r9-unit-pad.md):
-//                                                      prefix and unit cells instead of letters; add --taps for Shift or
-//                                                      Alpha + cell instead of flicks; the user cells U1-U6 count with
-//                                                      their defaults (`user:`), --no-user leaves them out
-//   node tools/probes/unit-presses.mjs --pad --weights tools/probes/unit-weights.yaml
+//   node tools/probes/unit-presses.mjs                 flicks (a cell's up and down items by a flick)
+//   node tools/probes/unit-presses.mjs --taps          the G2 way only: Shift or Alpha, then the cell
+//   node tools/probes/unit-presses.mjs --no-user       without the user cells U1-U6 (their defaults count otherwise)
+//   node tools/probes/unit-presses.mjs --weights tools/probes/unit-weights.yaml
 //                                                      also the weighted mean over the measured unit uses (S5,
 //                                                      unit-freq/count.mjs): a unit or prefix not on the pad costs its
-//                                                      Find trip (find-cost.mjs); without --pad, units the letters
-//                                                      cannot type are left out and their share is printed
+//                                                      Find trip (find-cost.mjs)
 //   node tools/probes/unit-presses.mjs --read BTU lbm  what qalc's own parser reads for each text, and nothing else
 //   QALC_OUT=<dir with qalc.mjs> node tools/probes/unit-presses.mjs   (default: engine/qalc/_out/dev of this checkout
 //                                                                    or of the main checkout; skipped if none)
+//   (--pad, the default since R24c, is still accepted.)
 //
 // Counting (docs/04 5.2): every press counts 1, a flick counts 1, Shift and Alpha count 1. The cursor starts in the
 // empty slot; moving between slots is counted only in the tasks. Needs app/node_modules (the `yaml` package).
@@ -38,10 +30,8 @@ const { parse: parseYaml } = createRequire(join(root, 'app/package.json'))('yaml
 const argv = process.argv.slice(2);
 const args = new Set(argv);
 const READ = argv[0] === '--read' ? argv.slice(1) : null;
-const LOCK = args.has('--lower-lock');
-const PAD = args.has('--pad');
-const FLICKS = !args.has('--taps') && !LOCK;
-const AUTO_LEAVE = !args.has('--no-auto-leave');
+const PAD = true; // R24c: the pad is the only entry of a slot
+const FLICKS = !args.has('--taps');
 const WEIGHTS = args.has('--weights') ? argv[argv.indexOf('--weights') + 1] : null;
 
 // ---- The list: 50 units an engineer types, each with why it is on the list. Sources:
@@ -131,83 +121,6 @@ const EXTRA = [
   { u: 'dB', parts: 'dB', src: 'SI8, D04' },
 ];
 
-// ---- The layout
-const kb = parseYaml(readFileSync(join(root, 'spec/keyboard.yaml'), 'utf8'));
-const slot = kb.unit_slot;
-if (!slot) throw new Error('spec/keyboard.yaml has no unit_slot: section');
-const letterKey = new Map(); // 'A'..'Z' -> key id
-const digitKey = new Map(); // '0'..'9' -> key id
-for (const k of kb.keys) {
-  const a = k.alpha?.type;
-  if (typeof a === 'string' && /^[A-Z]$/.test(a)) letterKey.set(a, k.id);
-  const p = k.primary?.type;
-  if (typeof p === 'string' && /^[0-9]$/.test(p)) digitKey.set(p, k.id);
-}
-const symbolKey = new Map(slot.symbols.map((s) => [s.tap, s.key]));
-const opKeys = new Map(slot.ops.map((o) => [o.text, o.keys]));
-const autoLeave = AUTO_LEAVE && slot.exponent_leave === 'auto';
-const SUP = { '²': '2', '³': '3', '⁴': '4' };
-
-// Turns a unit as written into presses (key ids, ↓ = flick down, ↑ = flick up) and the text qalc gets.
-function typeUnit(u) {
-  const presses = [];
-  const missing = [];
-  let qalc = '';
-  let inExp = false; // the cursor is in an exponent
-  let inRoot = false; // the cursor is in a √
-  let skipClose = 0; // parentheses after ÷ are not typed: the denominator collects the rest of the slot
-  const leave = () => {
-    if (inExp && !autoLeave) presses.push('right');
-    if (inRoot) { presses.push('right'); qalc += ')'; inRoot = false; }
-    inExp = false;
-  };
-  const chars = [...u];
-  for (let i = 0; i < chars.length; i++) {
-    const c = chars[i];
-    if (/[A-Za-z]/.test(c)) {
-      if (inExp) leave();
-      const key = letterKey.get(c.toUpperCase());
-      if (!key) { missing.push(c); continue; }
-      const lower = c !== c.toUpperCase();
-      if (FLICKS) presses.push((lower === (slot.letters.flick_down === 'lower') ? '↓' : '↑') + key);
-      else if (LOCK) presses.push(...(lower ? [key] : ['alpha', key]));
-      else presses.push(...(lower ? ['shift', 'alpha', key] : ['alpha', key]));
-      qalc += c;
-    } else if (symbolKey.has(c)) {
-      if (inExp) leave();
-      presses.push(symbolKey.get(c));
-      qalc += c;
-    } else if (c === '(' && skipClose > 0) {
-      qalc += c;
-    } else if (c === ')' && skipClose > 0) {
-      skipClose--;
-      qalc += c;
-    } else if (c === '/' || c === '·') {
-      if (inExp || inRoot) leave();
-      presses.push(...opKeys.get(c));
-      qalc += c === '/' ? '/' : '*';
-      if (c === '/' && chars[i + 1] === '(') skipClose++;
-    } else if (c in SUP) {
-      if (c === '²') presses.push(...opKeys.get('²'));
-      else presses.push(...opKeys.get('^'), digitKey.get(SUP[c]));
-      inExp = true;
-      qalc += '^' + SUP[c];
-    } else if (c === '⁻' && chars[i + 1] === '¹') {
-      presses.push(...opKeys.get('⁻¹'));
-      qalc += '^-1';
-      i++;
-    } else if (c === '√') {
-      presses.push(...opKeys.get('√'));
-      qalc += 'sqrt(';
-      inRoot = true;
-    } else {
-      missing.push(c);
-    }
-  }
-  if (inRoot) qalc += ')';
-  return { presses, missing, qalc };
-}
-
 // ---- The unit pad (P14, --pad): every unit, prefix and operator is a cell on a key (spec/unit-pad.yaml). A target
 // unit is typed from its `parts`: the factors with a positive exponent, then ÷ and the rest. A product that the pad
 // has as one cell (Wh = W·h) is typed as that cell. Units in a row multiply, so no × is needed.
@@ -225,16 +138,6 @@ const cellPress = ({ key, how }) =>
   how === 'tap' ? [key] : FLICKS ? [(how === 'up' ? '↑' : '↓') + key] : [how === 'up' ? 'shift' : 'alpha', key];
 const QALC_SYM = { u: 'µ', oC: '°C', oF: '°F', deg: '°', ohm: 'Ω' };
 const POWER_OP = { 2: 'square', 3: 'cube', 4: 'fourth' };
-// The written form of `parts` for the letters (typeUnit): k:W h → kW·h, W m^-1 K^-1 → W/(m·K), s^-1 → s⁻¹.
-const SUP_OF = { 2: '²', 3: '³', 4: '⁴' };
-function written(parts) {
-  const toks = parts.split(' ').map((p) => { const [n, e] = p.split('^'); const [pfx, unit] = n.includes(':') ? n.split(':') : [null, n]; return { pfx, unit, exp: e === undefined ? 1 : Number(e) }; });
-  const w = (t, e) => (t.pfx ? QALC_SYM[t.pfx] ?? t.pfx : '') + (QALC_SYM[t.unit] ?? t.unit) + (e === 1 ? '' : SUP_OF[e] ?? '?');
-  const num = toks.filter((t) => t.exp > 0).map((t) => w(t, t.exp)), den = toks.filter((t) => t.exp < 0).map((t) => w(t, -t.exp));
-  if (!num.length) return den.length === 1 ? den[0] + '⁻¹' : '?';
-  return num.join('·') + (den.length ? '/' + (den.length > 1 ? `(${den.join('·')})` : den[0]) : '');
-}
-
 function typePad(parts) {
   const toks = parts.split(' ').map((p) => {
     const [name, e] = p.split('^');
@@ -281,7 +184,7 @@ const median = (xs) => {
   const n = s.length;
   return n % 2 ? s[(n - 1) / 2] : (s[n / 2 - 1] + s[n / 2]) / 2;
 };
-const type = (x) => (PAD ? typePad(x.parts) : typeUnit(x.u));
+const type = (x) => typePad(x.parts);
 const rows = UNITS.map((x) => ({ ...x, ...type(x) }));
 const extra = EXTRA.map((x) => ({ ...x, ...type(x) }));
 const counts = rows.map((r) => r.presses.length);
@@ -289,8 +192,8 @@ const isCompound = (u) => /[/·²³⁻]/.test(u);
 const single = rows.filter((r) => !isCompound(r.u)).map((r) => r.presses.length);
 const compound = rows.filter((r) => isCompound(r.u)).map((r) => r.presses.length);
 
-const mode = FLICKS ? 'flicks' : LOCK ? 'no flicks, lower-case lock in the slot' : 'taps only, the G2 way';
-console.log(PAD ? `unit pad press count (P14; ${mode}${pad.user && !NO_USER ? '; with the user cells\' defaults' : ''})` : `unit slot press count (${mode}; exponent leave: ${autoLeave ? 'auto' : '▶'})`);
+const mode = FLICKS ? 'flicks' : 'taps only, the G2 way';
+console.log(`unit pad press count (P14; ${mode}${pad.user && !NO_USER ? '; with the user cells\' defaults' : ''})`);
 console.log(`  ${rows.length} units: median ${median(counts)}, mean ${(counts.reduce((a, b) => a + b, 0) / counts.length).toFixed(2)}, max ${Math.max(...counts)}`);
 console.log(`  ${single.length} single units: median ${median(single)}; ${compound.length} compound units: median ${median(compound)}`);
 console.log(`  gate (P8 rule 2, median <= 4): ${median(counts) <= 4 ? 'PASS' : 'FAIL'}`);
@@ -310,10 +213,6 @@ if (WEIGHTS) { // S5: the weighted mean over the measured unit uses, beside the 
       }
       if (r.missing.length) viaFind += x.weight;
       sum += x.weight * (r.presses.length + extra); wsum += x.weight;
-    } else {
-      const r = typeUnit(written(x.parts));
-      if (r.missing.length) { left += x.weight; continue; }
-      sum += x.weight * r.presses.length; wsum += x.weight;
     }
   }
   const tot = wsum + left;
@@ -343,7 +242,7 @@ const unitsKey = FLICKS ? ['↑tmpl'] : ['shift', 'tmpl'];
 const pi = FLICKS ? ['↑d3'] : ['shift', 'd3'];
 const t = (name, budget, seq) => console.log(`  ${String(seq.length).padStart(2)}  ${name}${budget ? `  (tasks.yaml plan: ${budget})` : ''}`);
 const byU = new Map([...UNITS, ...EXTRA].map((x) => [x.u, x]));
-const P = (u) => (PAD ? typePad(byU.get(u).parts) : typeUnit(u)).presses;
+const P = (u) => typePad(byU.get(u).parts).presses;
 // On the pad, Enter goes to the next slot and evaluates in the end slot; a flick up on Enter evaluates from any slot.
 const next = PAD ? ['enter'] : ['right'];
 const evalNow = PAD ? (FLICKS ? ['↑enter'] : ['shift', 'enter']) : ['enter'];
@@ -427,36 +326,4 @@ for (const r of [...rows, ...extra].filter((x) => !x.missing.length)) {
 }
 console.log(`  ${bad === 0 ? 'every typed unit reads as meant' : `${bad} misread (our whitelist must take these, not qalc's parser)`}`);
 
-// The same letters in another case (ASCII letters only): caught (not a unit), or silently another unit? "SAME DIM" is
-// the worst kind: the dimension matches, so neither the end slot nor a dimension check can see it; only the live
-// reading under the slot shows it.
-if (PAD) {
-  console.log('\nwrong case: not possible on the pad (no letters are typed); a slip to a neighbouring cell (M for m) is what the live reading must catch');
-  process.exit(0);
-}
-console.log('\nwrong case (single units of the list): caught = not a unit; silent = another valid unit, with its SI base dimension');
-const flip = (ch) => (ch === ch.toUpperCase() ? ch.toLowerCase() : ch.toUpperCase());
-const variants = (s) => {
-  const chars = [...s];
-  const ascii = (f) => chars.map((ch) => (/[A-Za-z]/.test(ch) ? f(ch) : ch)).join('');
-  const i = chars.findIndex((ch) => /[A-Za-z]/.test(ch));
-  const first = chars.map((ch, j) => (j === i ? flip(ch) : ch)).join('');
-  return [...new Set([ascii((c) => c.toLowerCase()), ascii((c) => c.toUpperCase()), first])].filter((v) => v !== s);
-};
-const seen = new Set();
-const tally = { caught: 0, silent: 0, same: 0 };
-for (const r of rows.filter((x) => !isCompound(x.u) && /[A-Za-z]/.test(x.u))) {
-  const dim = base(r.qalc);
-  for (const v of variants(r.qalc)) {
-    if (seen.has(v)) continue;
-    seen.add(v);
-    const got = reading(v);
-    if (got === canon(r.parts)) continue; // same unit (l = L): harmless
-    if (got.includes('?')) { tally.caught++; console.log(`  caught    ${r.u.padEnd(5)} typed ${v.padEnd(6)} reads ${got}`); continue; }
-    const d = base(v);
-    const kind = d === dim ? 'SAME DIM' : 'silent';
-    tally[d === dim ? 'same' : 'silent']++;
-    console.log(`  ${kind.padEnd(9)} ${r.u.padEnd(5)} typed ${v.padEnd(6)} reads ${got.padEnd(10)} dimension ${d || '1'}${d === dim ? '' : ` (meant ${dim})`}`);
-  }
-}
-console.log(`  ${tally.caught} caught, ${tally.silent} silently another dimension, ${tally.same} silently the same dimension`);
+console.log('\nwrong case: not possible on the pad (no letters are typed); a slip to a neighbouring cell (M for m) is what the live reading must catch');

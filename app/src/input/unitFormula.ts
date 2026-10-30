@@ -2,8 +2,8 @@
 // R24c: the unit view's formula (docs/04 4.3, docs/archive/r9-unit-pad.md 2.1): the entry line's LaTeX with an empty
 // unit slot (a MathLive prompt, `\placeholder[u<n>]{}`) after every number and the end slot "→ should be" at the end.
 // On an empty line: the quantity 1, its slot and the end slot. The slots' contents never come from here (R24a's model
-// holds them); the parser's units mode (R28) reads the prompts as pasu<n> and the end slot. Plain TS, loaded with the
-// unit view.
+// holds them); the parser's units mode (R28) reads the prompts as pasu<n> and the end slot. The entry's LaTeX, so it lives
+// beside the parser (input/), not under units/ (P20: no text reading there). Plain TS, loaded with the unit view.
 
 /** The end slot's prompt id. */
 export const END = "end";
@@ -66,7 +66,7 @@ export function slotFormula(latex: string): SlotFormula {
   let name = false;
   while (i < src.length) {
     const c = src[i] as string;
-    const letter = name;
+    const letter: boolean = name;
     name = /[A-Za-z]/.test(c) || (letter && /\d/.test(c)); // (x23: the digits stay the name's)
     if (c === "\\") {
       name = false;

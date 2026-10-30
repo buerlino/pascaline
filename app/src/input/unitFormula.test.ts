@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // R24c: the unit view's formula, a slot after every number (docs/04 4.3), read back by the parser's units mode (R28).
 import { describe, expect, it } from "vitest";
-import { latexToGiacInfo } from "../input/latex-to-giac.ts";
-import { slotFormula } from "./formula.ts";
+import { latexToGiacInfo } from "./latex-to-giac.ts";
+import { slotFormula } from "./unitFormula.ts";
 
 const giac = (latex: string): string => latexToGiacInfo(slotFormula(latex).latex, { units: true }).giac;
 

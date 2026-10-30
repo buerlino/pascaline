@@ -1,14 +1,22 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // R24b: the unit pad's switch, loaded with the unit view (never in the start chunk). The pad is up while
 // `sheetChunk.pad` holds its cells (views/sheetView.svelte.ts: the state the keypad already reads for the sheet's keys):
-// Keypad.svelte draws the keys through it, keyboard/route.ts hands it a press and `on` the result. Until R24c opens the
-// pad from the units key, `?pad=1` (dev only, main.ts) shows it.
+// Keypad.svelte draws the keys through it, keyboard/route.ts hands it a press and `on` the result, and `other` the keys
+// that are no cell. The unit view (units/open.ts, R24c) sets them; `?pad=1` (dev only, main.ts) shows the pad alone.
 import { tick } from "svelte";
 import { fitLegends } from "../keyboard/fit.ts";
 import { sheetChunk } from "../views/sheetView.svelte.ts";
+import type { Key } from "../keyboard/keyboard.ts";
+import type { Mods, RouteCtx } from "../keyboard/route.ts";
 import type { PadEmit, UnitPad } from "./pad.ts";
 
-export const unitPad: { model: UnitPad | null; on: (e: PadEmit) => void; log?: PadEmit[] } = {
+export const unitPad: {
+  model: UnitPad | null;
+  on: (e: PadEmit) => void;
+  /** R24c: a key that is no cell while the pad is up (◀ ▶, Esc, the place keys): the unit view's; true when it took it. */
+  other?: ((c: RouteCtx, key: Key, mods: Mods) => boolean) | undefined;
+  log?: PadEmit[];
+} = {
   get model() {
     return sheetChunk.pad;
   },

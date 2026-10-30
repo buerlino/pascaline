@@ -56,6 +56,11 @@ const ARROWS: Readonly<Record<string, string>> = { ArrowLeft: "left", ArrowRight
 /** The Shift palettes' symbols that are one ASCII character (spec/keyboard.yaml `relations` lt, gt; `symbols` fact). */
 const PALETTE = new Set(["<", ">", "!"]);
 
+/** The keypad key (and its layer) that types `ch` (R24c: the unit view's field takes the same path). */
+export function keypadKeyOf(ch: string, decimalComma: boolean): readonly [string, Layer] | undefined {
+  return KEYS[decimalComma && ch === "," ? "." : ch];
+}
+
 /** Handle a keydown on the entry line. True: handled, and the caller stops the event. */
 export function hardwareKey(ev: KeyboardEvent, t: HwTarget): boolean {
   const ch = ev.key;

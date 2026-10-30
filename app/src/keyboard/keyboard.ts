@@ -16,11 +16,13 @@ export type Special =
   | "find"
   /** Vars (R4b): Find on the user's variables and functions; Shift + Math, Memory: the same list with delete and clear all. */
   | "vars" | "memory"
+  /** The units key (R24c): the unit view on the line or the picked row (docs/04 4.3). */
+  | "units"
   /** A key whose function we don't have yet (it keeps its alpha letter): does nothing. */
   | "none";
 export const SPECIALS: readonly Special[] = [
   "shift", "alpha", "enter", "clear", "esc", "settings", "mode", "apps", "symb", "plot", "num", "menu", "fmt", "copy", "paste", "tmpl",
-  "home", "cas", "switch", "relations", "symbols", "find", "vars", "memory", "none",
+  "home", "cas", "switch", "relations", "symbols", "find", "vars", "memory", "units", "none",
 ];
 
 /** The first of the maths rows (3–9): a pick sheet is drawn over them, never over the top cluster (rows 0–2), whose
