@@ -72,7 +72,7 @@ describe("keyboard spec", () => {
     for (const key of keyboard.keys.filter((x) => x.row < MATHS_ROW)) expect(key.label.alpha ?? key.actions.alpha, key.id).toBeUndefined();
     // every new key is our choice
     for (const id of ["u1", "u2", "u3", "u4", "u5", "u6", "view", "undo", "copy", "lstart", "lend"]) expect(k(id).source, id).toBe("assumed");
-    // a user key may not take a letter, nor sit in a maths row
+    // a user key may take an Alpha layer (R15c3, the loader test is in userKeys.test.ts) but needs both its legend and action
     const bad = (extra: string) => () => loadKeyboard(parse(spec.replace("{ id: u1, row: 0, col: 0, cls: nav, user: true,", `{ id: u1, row: 0, col: 0, cls: nav, user: true, ${extra}`)));
     expect(bad("alpha: { type: Q },")).toThrow(KeyboardSpecError);
   });

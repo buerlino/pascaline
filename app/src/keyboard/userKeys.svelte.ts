@@ -1,14 +1,15 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// The free keys U1–U6 of the R3 cluster (R15b, R15c; decisions.md "R15c"). Each has two slots, its tap and its Shift
-// layer (a flick up), so twelve actions (R15c3 adds Alpha). spec/keyboard.yaml gives the defaults (all empty); the user's
+// The free keys U1–U6 of the R3 cluster (R15b, R15c; decisions.md "R15c"). Each has three slots, its tap, its Shift
+// layer (a flick up) and its Alpha layer (a flick down, or Alpha + the key; R15c3), so eighteen actions. An empty Alpha
+// slot falls back to the tap, as every key's missing Alpha layer does. spec/keyboard.yaml gives the defaults (all empty); the user's
 // choice for a slot replaces its default and is kept in the stamped store under USER_KEYS (state/storage.ts). Setting a
 // slot from Find, in Settings › User keys, is R4b; this module is the model it calls.
 import type { Kv } from "../state/storage.ts";
 import { USER_KEYS } from "../state/storage.ts";
-import { KeyboardSpecError, keyboard, parseAction, type Action, type Key } from "./keyboard.ts";
+import { KeyboardSpecError, keyboard, parseAction, type Action, type Key, type Layer } from "./keyboard.ts";
 
-export type UserLayer = "primary" | "shift";
-export const USER_LAYERS: readonly UserLayer[] = ["primary", "shift"];
+export type UserLayer = Layer;
+export const USER_LAYERS: readonly UserLayer[] = ["primary", "shift", "alpha"];
 
 /** What a slot holds: the legend drawn on the key and the action, in the yaml form of spec/keyboard.yaml (`{ insert:
  *  "\\sinh\\left(#0\\right)" }`, `{ special: "home" }`, `{ type: "x" }`, `{ cmd: "…" }`). */

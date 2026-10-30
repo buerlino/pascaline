@@ -3,8 +3,9 @@
 import { describe, expect, it } from "vitest";
 import { legend } from "../i18n/index.ts";
 import { stamp, unstamp, USER_KEYS, type Kv } from "../state/storage.ts";
-import { actionFor, KeyboardSpecError, keyboard, labelFor, type Key } from "./keyboard.ts";
-import { USER_KEY_IDS, UserKeys } from "./userKeys.svelte.ts";
+import { actionFor, KeyboardSpecError, keyboard, labelFor, loadKeyboard, type Key } from "./keyboard.ts";
+import { letterOf } from "../views/sheetKeys.ts";
+import { USER_KEY_IDS, USER_LAYERS, UserKeys } from "./userKeys.svelte.ts";
 
 function memKv(): Kv & { data: Map<string, unknown> } {
   const data = new Map<string, unknown>();
@@ -99,7 +100,7 @@ describe("user keys (R15b)", () => {
     expect(actionFor(u.resolve(key("u1")), false, false)).toEqual({ kind: "insert", latex: "\\sinh\\left(#0\\right)" });
     expect(u.resolve(key("u1")).actions.shift).toBeUndefined();
     expect(u.isEmpty(key("u2"))).toBe(true);
-    expect(u.resolve(key("u2")).actions.alpha).toBeUndefined(); // a free key has no alpha layer
+    expect(u.resolve(key("u2")).actions.alpha).toEqual({ kind: "type", text: "A" }); // a valid Alpha slot loads (R15c3)
     expect(u.resolve(key("u3"))).toBe(key("u3"));
     for (const bad of [null, "x", 7]) {
       const k = memKv();
@@ -130,5 +131,86 @@ describe("user keys (R15b)", () => {
   it("is a stamped record (docs/04 6.2): it comes back from the store's stamp unchanged", () => {
     const v = { u1: { primary: sinh } };
     expect(unstamp(USER_KEYS, stamp(v))).toEqual({ value: v, upgraded: false });
+  });
+});
+
+describe("user keys: the Alpha layer (R15c3)", () => {
+  const alphaB = { label: "x₀", action: { type: "x0" } };
+
+  it("have three layers: tap, Shift (a flick up) and Alpha (a flick down, or Alpha + the key)", async () => {
+    expect(USER_LAYERS).toEqual(["primary", "shift", "alpha"]);
+    const kv = memKv();
+    const u = new UserKeys(kv);
+    u.set("u1", "primary", sinh);
+    u.set("u1", "shift", { label: "π", action: { insert: "\\pi" } });
+    u.set("u1", "alpha", alphaB);
+    const k = u.resolve(key("u1"));
+    expect(actionFor(k, false, false)).toEqual({ kind: "insert", latex: "\\sinh\\left(#0\\right)" });
+    expect(actionFor(k, true, false)).toEqual({ kind: "insert", latex: "\\pi" });
+    expect(actionFor(k, false, true)).toEqual({ kind: "type", text: "x0" });
+    expect(legend(labelFor(k, false, true))).toBe("x₀"); // the face while Alpha is on
+    expect(kv.data.get(USER_KEYS)).toEqual({ u1: { primary: sinh, shift: { label: "π", action: { insert: "\\pi" } }, alpha: alphaB } });
+    const again = new UserKeys(kv);
+    await again.restore();
+    expect(actionFor(again.resolve(key("u1")), false, true)).toEqual({ kind: "type", text: "x0" });
+    // reset works per layer
+    again.reset("u1", "alpha");
+    expect(again.resolve(key("u1")).actions.alpha).toBeUndefined();
+    expect(actionFor(again.resolve(key("u1")), true, false)).toEqual({ kind: "insert", latex: "\\pi" });
+    again.set("u1", "alpha", alphaB);
+    again.reset("u1");
+    expect(again.resolve(key("u1"))).toBe(key("u1"));
+  });
+
+  it("a stored record of the old two-layer shape still loads, and its Alpha falls back to the tap", async () => {
+    const kv = memKv();
+    kv.data.set(USER_KEYS, { u1: { primary: sinh, shift: { label: "π", action: { insert: "\\pi" } } } });
+    const u = new UserKeys(kv);
+    await u.restore();
+    const k = u.resolve(key("u1"));
+    expect(actionFor(k, false, false)).toEqual({ kind: "insert", latex: "\\sinh\\left(#0\\right)" });
+    expect(actionFor(k, true, false)).toEqual({ kind: "insert", latex: "\\pi" });
+    expect(k.actions.alpha).toBeUndefined();
+    expect(actionFor(k, false, true)).toEqual(actionFor(k, false, false));
+  });
+
+  it("an empty Alpha slot falls back to the tap layer, as every key's missing Alpha layer does", () => {
+    const u = new UserKeys(memKv());
+    const empty = u.resolve(key("u1"));
+    expect(actionFor(empty, false, true)).toEqual({ kind: "special", name: "none" }); // nothing set at all: still dead
+    u.set("u1", "primary", sinh);
+    const tap = u.resolve(key("u1"));
+    expect(actionFor(tap, false, true)).toEqual(actionFor(tap, false, false));
+    expect(labelFor(tap, false, true)).toBe(labelFor(tap, false, false));
+    u.set("u1", "alpha", alphaB);
+    u.set("u1", "alpha", null); // emptied again
+    const back = u.resolve(key("u1"));
+    expect(back.actions.alpha).toBeUndefined();
+    expect(actionFor(back, false, true)).toEqual(actionFor(back, false, false));
+  });
+
+  it("the user's Alpha binding is exact: the letter-case rules (R58) do not touch it", () => {
+    const u = new UserKeys(memKv());
+    u.set("u1", "alpha", { label: "X", action: { type: "X" } });
+    const k = u.resolve(key("u1"));
+    for (const cas of [false, true])
+      for (const shift of [false, true]) {
+        expect(actionFor(k, shift, true, false, cas), `${cas} ${shift}`).toEqual({ kind: "type", text: "X" });
+        expect(labelFor(k, shift, true, cas)).toBe("X");
+      }
+  });
+
+  it("a free key's Alpha slot is no letter of a sheet's filter", () => {
+    const u = new UserKeys(memKv());
+    u.set("u1", "alpha", { label: "q", action: { type: "q" } });
+    expect(letterOf(key("sin"))).toBe("G");
+    expect(letterOf(u.resolve(key("u1")))).toBeUndefined();
+  });
+
+  it("the loader allows alpha on a user key in the cluster, still not in a maths row", () => {
+    const base = { schema: 1, columns: 1, shipped: true };
+    const k = (row: number, extra: object) => ({ ...base, keys: [{ id: "u", row, col: 0, cls: "nav", user: true, label: { primary: "U", alpha: "A" }, primary: { special: "none" }, alpha: { type: "A" }, ...extra }] });
+    expect(loadKeyboard(k(0, {})).byId.get("u")?.actions.alpha).toEqual({ kind: "type", text: "A" });
+    expect(() => loadKeyboard(k(3, {}))).toThrow(KeyboardSpecError);
   });
 });
