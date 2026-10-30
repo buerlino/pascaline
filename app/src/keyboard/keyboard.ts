@@ -351,6 +351,19 @@ export function labelFor(key: Key, shift: boolean, alpha: boolean, cas = false):
   return key.label.primary ?? "";
 }
 
+/** MathLive's decimal comma: a comma in its own group, so it never reads as a list comma (R57). */
+export const DECIMAL_COMMA = "{,}";
+
+/**
+ * R57: the keypad with the decimal comma. The `.` key shows and types the comma (`{,}`), the `,` key shows and types
+ * `;`, the argument separator. Only the two faces change (docs/03 rule 8); Shift and Alpha stay as they were.
+ */
+export function withDecimalMark(key: Key): Key {
+  if (key.id === "dot") return { ...key, label: { ...key.label, primary: "," }, actions: { ...key.actions, primary: { kind: "insert", latex: DECIMAL_COMMA } } };
+  if (key.id === "comma") return { ...key, label: { ...key.label, primary: ";" }, actions: { ...key.actions, primary: { kind: "type", text: ";" } } };
+  return key;
+}
+
 export interface Template {
   readonly keyId: string;
   readonly layer: Layer;

@@ -9,7 +9,7 @@ The owner's other open items are in [backlog.md](backlog.md), "Needs the user". 
 
 - **A21, the F-Droid recipe's qalc build (P22):** `fdroid/README.md` names the open answer. Until F-Droid says whether checked-in derived data (`find/factors.yaml`) is acceptable, the recipe keeps its libxml2 and libqalculate builds, unchanged. Yes: before C4 it drops both. No: it runs `tools/find-index/refresh-factors.mjs` and fails on a diff.
 
-- **R50e, on the phone:** (1) the first frame reads the Android default (Dark) from `window.Capacitor` in the inline script; if the bridge is not there yet at that point, a first start with nothing stored shows System for one frame, then Dark (later starts read the mirror). Look at a first start after "clear data". (2) The start pin is 60 kB (was 59.5): the stored look is +0.48 kB gzip in the start chunk; docs/04 8.3 says so in the report. (3) Android's status and navigation bar colours stay open (not in R50e).
+- **R50e, on the phone:** (1) the first frame reads the Android default (Dark) from `window.Capacitor` in the inline script; if the bridge is not there yet at that point, a first start with nothing stored shows System for one frame, then Dark (later starts read the mirror). Look at a first start after "clear data". (2) Android's status and navigation bar colours stay open (not in R50e).
 
 ## Decided proposals
 
@@ -30,6 +30,7 @@ Newest first within each group.
 - **Small packages (2026-10-14, the owner's rule).** One concern each, about a day or less, with its own reading list; placed by importance, then dependencies.
 
 ### Feel, keys and screen (milestone 4a)
+- **R4b's four defaults, as built (Opus pass 18):** Memory deletes a name on Enter or a tap without asking, and Clear all asks once; a pick from Find for a slot closes the sheets; a constant on a free key keeps the value and uncertainty it was set with; Vars is dead in a view without an entry line. Would change if: a lost name or a wiped key costs more than one more press.
 - **Settings in the Mode sheet, and presets (owner, 2026-10-27; replaces 2026-10-19's list of rows).** Settings is a level of the pick sheet, seven sections; Shift + Fmt opens Mode; buttons only where they save a press; no long presses. A preset snapshots any user settings, the free keys too. Rule: docs/05 3.4; R49, R85–R89. Would change if: presets are switched under 5 times in 4 weeks (they go).
 - **R15c1 menus (decided 2026-10-20, the owner): the Home menu (10 rows) and the Plot menu (9) scroll** over the keypad with the count in the title row (docs/05 3.1), since Settings is every ☰ menu's last row; fit.spec lists them as the cases that scroll. Would change if: the owner finds the scroll slow on the APK (then Share and Clear merge).
 - **M4-2 (decided 2026-10-20, the owner):** the budgets t02 9 presses, t04 12, t10 25, t05 4; t09 is the sample deviation (n−1) with the population one beside it; ± goes on Shift + `,` (the G2's Eval, which we omit; Shift + `−` stays EN6's Base; R71); the unit result view as its [mockup](mockups/unit-result.html) (R62). Your hand timing stays the gate.
@@ -51,7 +52,7 @@ Newest first within each group.
 - **The letters stay on the keys (2026-10-14).** Rule: docs/04 5.1 (the letters; the unassigned Shift cells). Would change if: Alpha taps near zero (P7 point 4); a function in the benchmark needs a key and no cell is free.
 - **The application id is `io.github.buerlino.pascaline` (2026-10-14); the web version lives at `https://pascaline-calc.org/` (2026-10-29).** The id never changes. The PWA is at the domain's root, `www` redirects; GitHub Pages deploys it from a release tag (A45); the docs stay on GitHub. Set up 2026-10-29: Infomaniak, paid to 2028-10-29, auto-renew and Renewal Warranty, transfer lock, DNSSEC, HTTPS enforced (Let's Encrypt), mail by Proton. Full text: archive. Would change if: the domain lapses.
 - **Stored data carries a version; one signing key (2026-10-14).** Rule: docs/04 6.2 (the stamp); the throwaway key lives in `~/.cache/pascaline/keys/` for every worktree, so an install over the last keeps its data.
-- **Start chunk: 175 kB raw, 61 kB gzip (owner, 2026-10-27), pinned at 59.5 kB (R4b: 58.50 to 59.42).** Rule: docs/04 8.3 (past the pin, the package raises `START_PIN_GZIP` with its reason). A measure build (`./build.sh --measure`) is exempt. Would change if: the Tab One's keyboard-usable time passes 738 ms (A4a's 688 ms + 50).
+- **Start chunk: 175 kB raw, 61 kB gzip (owner, 2026-10-27), pinned at 60.5 kB (R4b +0.92, R50e +0.48, R57 +0.58: 60.48).** Rule: docs/04 8.3 (past the pin, the package raises `START_PIN_GZIP` with its reason). `./build.sh --measure` is exempt. Would change if: the Tab One's keyboard-usable time passes 738 ms (A4a's 688 ms + 50).
 - **Owner answers of 2026-10-19 (feel).** R34: one shared entry line, as on the G2 (an unentered line follows you between views; after Enter it clears); R43, R7's defaults and A4a points 3 and 4 as built. Full text: archive.
 
 ### Precision, engine and parser
@@ -139,7 +140,7 @@ The defaults that bind code and tests, one line each. A default changes when its
 - **Time limits:** CAS 10 s soft budget (Cancel prominent), Giac's 600 s net; Solve and analysis 30 s; Cancel replays the definitions only (not Ans).
 - **Solve and Plot:** a root is accepted at relative residual ≤ 1e-15 at 30 digits, else ⚠ (systems: < 1e-6 with ⚠, else no solution); roots in ascending order, complex by real then imaginary part; Plot searches only the visible window; the signed area by Romberg, the exact `int`, then `gaussquad` with ⚠; names in Solve are case-sensitive and start at 0.
 - **Function app:** window x ∈ [-10, 10] square and centred; trace step 0.1 at the default window (1-2-5 rule elsewhere); Num from 0 by 0.1, `NaN` at a pole; Intersection asks for the second function.
-- **Parser (L6):** an odd root template is the real root; `{…}` is a list; the decimal-comma option reads `3,5` and separates arguments with `;`; after `p(x):=…` p is a function (R56: from the session's user names).
+- **Parser (L6):** odd root templates are real roots; `{…}` is a list; the decimal comma is MathLive's `3{,}5` in either mode; a bare comma, like `;`, separates arguments (R57); `p(x):=…` makes p a function (R56).
 - **Discrete distributions (G113, G113f1; patches 0009, 0010):** off the integers or below the support a pmf is an exact 0 and a cdf takes floor(k). Full text: archive.
 
 - **The deep check of 2026-10-19 (G38, G57, G48, G39):** a result resting on a numeric decision is decided again at P + 20 and P + 40, refused when undecided; a run-once store is ⚠ without a count; a divergent sum or integral is refused. Rule: docs/04 2.4. Full text: archive.

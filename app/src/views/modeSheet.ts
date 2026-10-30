@@ -9,7 +9,7 @@ import type { AngleUnit, NumberFormat } from "../calc/port.ts";
 import { t, type MessageKey } from "../i18n/index.ts";
 import { hasStrength, vibrate } from "../input/haptics.ts";
 import { NOTATION_MODES } from "../state/displayMode.ts";
-import { MAX_DIGITS, type EntryMode, type Session } from "../state/session.svelte.ts";
+import { MAX_DIGITS, type DecimalMark, type EntryMode, type Session } from "../state/session.svelte.ts";
 import { aboutText } from "../i18n/enAbout.ts";
 import { helpItems } from "./aboutItems.ts";
 import { findText } from "../i18n/enFind.ts";
@@ -20,6 +20,7 @@ import { yourKeysItems, yourKeysValue, type SettingsEnv } from "./yourKeys.ts";
 const ANGLES: readonly AngleUnit[] = ["rad", "deg"];
 const FORMATS: readonly NumberFormat[] = ["std", "sci", "eng", "pfx"];
 const ENTRIES: readonly EntryMode[] = ["textbook", "line"];
+const MARKS: readonly DecimalMark[] = ["point", "comma"];
 /** The values the digits and decimals rows offer when picked (◀ ▶ reach every other one). */
 const DIGITS_PRESETS: readonly number[] = [4, 6, 8, 10, 12, 15, 20, 25, MAX_DIGITS];
 
@@ -260,9 +261,23 @@ function appearanceItems(session: Session): MenuItem[] {
   ];
 }
 
-/** Numbers: the Fmt key's cycle (its hint a second line under the first tick) and the decimals Fixed shows, right
- *  under its tick (S2 I3). R57 adds the decimal mark above them. */
+/** Numbers: the decimal mark (R57: a value row, Point or Comma), the Fmt key's cycle (its hint a second line under the
+ *  first tick) and the decimals Fixed shows, right under its tick (S2 I3). */
 function numbersItems(session: Session): MenuItem[] {
+  const s = session.settings;
+  const mark: MenuItem = {
+    id: "mark",
+    label: t("settings.decimalMark"),
+    keep: true,
+    get value() {
+      return t(`settings.decimalMark.${s.decimalMark}`);
+    },
+    adjust: (by) => session.setDecimalMark(cycle(MARKS, s.decimalMark, by)),
+  };
+  return [mark, ...numbersRows(session)];
+}
+
+function numbersRows(session: Session): MenuItem[] {
   const s = session.settings;
   return NOTATION_MODES.flatMap((mode, i): MenuItem[] => {
     const tick: MenuItem = {

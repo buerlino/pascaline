@@ -41,14 +41,13 @@ function groupEnd(src: string, j: number): number {
   return -1;
 }
 
-/** The length of a decimal comma at `j` ("," or MathLive's "{,}"), 0 if there is none or the setting is off. */
-function commaAt(src: string, j: number, decimalComma: boolean): number {
-  if (!decimalComma) return 0;
-  return src[j] === "," ? 1 : src.startsWith("{,}", j) ? 3 : 0;
-}
+/** The length of a decimal comma at `j`: 3 for MathLive's "{,}", else 0. Parsing never depends on the decimal mark
+ *  setting (R57f1): `{,}` is the decimal mark in either mode and a bare comma, like the semicolon, separates arguments,
+ *  so an entry stored in one mode means the same after the switch. */
+const commaAt = (src: string, j: number): number => (src.startsWith("{,}", j) ? 3 : 0);
 
-/** decimalComma (L6): "3,5" and MathLive's "3{,}5" are the number 3.5; use ";" between arguments then. */
-export function tokenize(src: string, decimalComma = false): Tok[] {
+/** LaTeX text to tokens; "3.5" and MathLive's "3{,}5" are the number 3.5 (L6, R57f1). */
+export function tokenize(src: string): Tok[] {
   const out: Tok[] = [];
   let i = 0;
   const n = src.length;
@@ -135,7 +134,7 @@ export function tokenize(src: string, decimalComma = false): Tok[] {
     } else if (isDigit(c) || (c === "." && isDigit(src[i + 1]))) {
       let j = i;
       while (isDigit(src[j])) j++;
-      const comma = commaAt(src, j, decimalComma);
+      const comma = commaAt(src, j);
       let v: string;
       if (src[j] === "." && isDigit(src[j + 1])) {
         j++;
@@ -151,11 +150,16 @@ export function tokenize(src: string, decimalComma = false): Tok[] {
         // "5." alone: treat the dot as part of the number
         j++;
         v = src.slice(i, j);
+      } else if (comma === 3 && c !== ".") {
+        // R57: "5{,}" alone (MathLive's decimal comma and no digit after it, as 3,ᴇ3 types it): the same as "5."
+        const intPart = src.slice(i, j);
+        j += comma;
+        v = `${intPart}.`;
       } else v = src.slice(i, j);
-      // F24 (R29): a second decimal separator right after a number with one (2.5.3, 1..5, 2,5,3) is not a product
+      // F24 (R29): a second decimal separator right after a number with one (2.5.3, 1..5, 2{,}5{,}3) is not a product
       if (v.includes(".")) {
         if (src[j] === ".") throw parseError("parse.onePoint");
-        const c2 = commaAt(src, j, decimalComma);
+        const c2 = commaAt(src, j);
         if (c2 && isDigit(src[j + c2])) throw parseError("parse.oneComma");
       }
       // F43 (R51): the parser refuses a number after a number and spacing (2 3, 1\,000), never a silent product

@@ -7,7 +7,7 @@ import { parseLatexInfo, type UnitsInfo } from "./parse.ts";
 import type { UserName } from "../engine/defs.ts";
 
 export interface LatexToGiacOptions extends SerializeOptions {
-  /** L6 setting: decimal comma input ("3,5" = 3.5; ";" separates arguments). */
+  /** Not read (R57f1: parsing never depends on the decimal mark); kept for the golden rows' options. */
   decimalComma?: boolean;
   /** The entry's chip table (\res, \ans, \const); without it a chip is an error. */
   chips?: ChipTable;
@@ -53,7 +53,6 @@ export function latexToGiacInfo(
   const user = o.userFunctions ?? DEFAULT_USER_FUNCTIONS;
   const { json, inexact, named, units } = parseLatexInfo(latex, {
     userFunctions: user,
-    ...(o.decimalComma ? { decimalComma: true } : {}),
     ...(o.chips ? { chips: o.chips } : {}),
     ...(o.chipNames ? { chipNames: true } : {}),
     ...(o.units ? { units: true } : {}),

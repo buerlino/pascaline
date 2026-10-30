@@ -22,9 +22,9 @@ describe("parsePastedNumber", () => {
   });
   it("reads the decimal comma only when the setting is on", () => {
     expect(latex("1,5")).toBeUndefined();
-    expect(latex("1,5", { decimalComma: true })).toBe("1,5");
+    expect(latex("1,5", { decimalComma: true })).toBe("1{,}5"); // R57: MathLive's decimal comma, not an argument comma
     expect(latex("1.5", { decimalComma: true })).toBeUndefined();
-    expect(latex("1,5e-3", { decimalComma: true })).toBe("1,5\\emark-3");
+    expect(latex("1,5e-3", { decimalComma: true })).toBe("1{,}5\\emark-3");
   });
   it("reads complex numbers a+b*i", () => {
     expect(latex("1+2*i")).toBe("1+2\\imaginaryI");

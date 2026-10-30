@@ -769,7 +769,7 @@ export function parseLatex(latex: string, o: ParseOptions = {}): Json {
 }
 
 export function parseLatexInfo(latex: string, o: ParseOptions = {}): ParseInfo {
-  const p = new Parser(tokenize(latex, o.decimalComma), o);
+  const p = new Parser(tokenize(latex), o);
   const json = p.parseAll();
   return { json, inexact: p.inexact, ...(p.named && Object.keys(p.named).length ? { named: p.named } : {}), ...(p.units ? { units: p.units } : {}) };
 }

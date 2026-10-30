@@ -31,10 +31,8 @@ describe("a number has one decimal point (F24)", () => {
   });
   it.each([
     ["2{,}5.3", "a number has one decimal point"],
-    ["\\max\\left(2,5,3\\right)", "a number has one decimal comma"],
-    ["\\max\\left(2.5,3\\right)", "a number has one decimal comma"],
     ["2{,}5{,}3", "a number has one decimal comma"],
-    ["1,5{,}2", "a number has one decimal comma"],
+    ["1{,}5{,}2", "a number has one decimal comma"],
   ])("with the decimal comma, %s is an error", (latex, msg) => {
     expect(message(latex, true)).toMatch(new RegExp(`^${msg}`));
   });
@@ -53,6 +51,17 @@ describe("a number has one decimal point (F24)", () => {
   it("with the decimal comma, one comma and ; between arguments are kept", () => {
     expect(giac("\\max\\left(1{,}5;2\\right)", true)).toBe("max(1.5,2)");
     expect(giac("\\max\\left(2.5;3\\right)", true)).toBe("max(2.5,3)");
+  });
+  it("with the decimal comma, 3{,}ᴇ3 (R57: the mark and no digit after it) reads as 3.ᴇ3 does in point mode", () => {
+    expect(giac("3{,}\\emark3", true)).toBe(giac("3.\\emark3"));
+    expect(giac("3{,}\\emark3", true)).not.toBe(giac("3{,}1\\emark3", true));
+    expect(giac("\\max\\left(1;1\\emark3\\right)", true)).toBe("max(1,1e3)");
+    expect(giac("1{,}5\\emark-3\\div2", true)).toBe(giac("1.5\\emark-3\\div2"));
+    expect(giac("3{,}+2", true)).toBe(giac("3.+2"));
+  });
+  it("MathLive's {,} is the decimal mark in the point mode too, so an entry recalled after the setting changed parses (R57)", () => {
+    expect(giac("1{,}5\\times2")).toBe(giac("1.5\\times2"));
+    expect(giac("\\max\\left(1{,}5,2\\right)")).toBe("max(1.5,2)");
   });
   it("with the decimal point, a comma after a decimal is the argument separator", () => {
     expect(giac("\\max\\left(2.5,3\\right)")).toBe("max(2.5,3)");
@@ -127,5 +136,22 @@ describe("a space between two numbers (F43, R51)", () => {
     ["\\res{1}{1\\,000}\\times2", "(1/2)*2"],
   ])("%s is kept as %s", (latex, out) => {
     expect(giac(latex)).toBe(out);
+  });
+});
+
+describe("a bare comma is the argument comma in either mode (R57, R57f1)", () => {
+  it("with the decimal comma, max(0,x) typed in the point mode still has two arguments", () => {
+    expect(giac("\\max\\left(0,x\\right)", true)).toBe("max(0,x)");
+  });
+  it.each([
+    ["\\max\\left(1,5\\right)", "max(1,5)"],
+    ["\\max\\left(2,5,3\\right)", "max(2,5,3)"],
+    ["\\max\\left(2.5,3\\right)", "max(2.5,3)"],
+  ])("with the decimal comma, %s is %s, as in the point mode", (latex, out) => {
+    expect(giac(latex, true)).toBe(out);
+    expect(giac(latex)).toBe(out);
+  });
+  it("only MathLive's {,} is a decimal mark with no digit after it", () => {
+    expect(giac("3{,}\\emark3", true)).toBe(giac("3.\\emark3"));
   });
 });

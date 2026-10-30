@@ -15,11 +15,14 @@
 // Loaded with MathLive (EntryController.load), outside the start chunk. Ctrl, Alt and Meta combinations stay with
 // MathLive (copy, paste, select all); AltGr characters count as typed.
 import type { MathfieldElement } from "mathlive";
+import { numberRunStart } from "./numberRun.ts";
 import type { ActionBody, Layer } from "../keyboard/keyboard.ts";
 
 /** What the entry line (EntryController) lets the handler do. */
 export interface HwTarget {
   readonly field: MathfieldElement | undefined;
+  /** R57: the decimal comma is on. */
+  readonly decimalComma: boolean;
   /** The entry line's own path for an action. */
   run(a: ActionBody): void;
   /** Press a keypad key in a layer, as a tap would (the shell's path: Ans first, one-line forms, open sheets). */
@@ -83,7 +86,8 @@ export function hardwareKey(ev: KeyboardEvent, t: HwTarget): boolean {
     else t.onDead();
     return true;
   }
-  const k = KEYS[ch];
+  // R57: with the decimal comma both `.` and `,` type the decimal mark (the keypad's `.` key); `;` stays the separator
+  const k = KEYS[t.decimalComma && ch === "," ? "." : ch];
   if (k) t.onKey(k[0], k[1]);
   else if (PALETTE.has(ch)) t.run({ kind: "insert", latex: ch });
   else if (/^[A-Za-z]$/.test(ch)) t.onLetter(ch);
@@ -98,8 +102,7 @@ function afterNumber(mf: MathfieldElement): boolean {
   const d = mf.getElementInfo(p)?.depth ?? 0;
   const at = (o: number, re: RegExp): boolean =>
     o > 0 && (mf.getElementInfo(o)?.depth ?? 0) === d && re.test(mf.getElementInfo(o)?.latex ?? "");
-  let k = p;
-  while (at(k, /^[\d.]$/)) k--;
+  let k = numberRunStart(mf, p, d); // digits, a point or the decimal comma (R57)
   return k < p && !at(k, /^\p{L}$/u);
 }
 
