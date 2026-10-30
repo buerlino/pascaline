@@ -9,7 +9,7 @@ The one place for "where are we and what's left", one or two lines per open item
 |---|---|
 | Phase 0 spike; MVP milestones 1 (Home, CAS), 2 (Function, Solve), 3 (Python, removed by P11) | **Done** 2026-10-11 (reports in [archive/shifts/](archive/shifts/)) |
 | **The core freeze (P23)** | **Ended 2026-10-27** (owner). Its net stays: [tests/core/](../tests/core/README.md) (66 everyday tasks, all active) runs on every merge and on the night's device; a red case is a bug to fix. Order of the work: brief section 0. |
-| Milestone 4a: feel (P11) | **Next after Find.** Merged: the entry work (⌫, cursor, focus, hardware keys), sheets, flicks, the Settings page, history-row actions, R15b, R15c1, R15c2, the mockups (R12a). Waiting: R15c3, R15c4, Settings in one sheet, the palette, the visual pass, results mode, the trust features |
+| Milestone 4a: feel (P11) | **Next after Find.** Merged: the entry work (⌫, cursor, focus, hardware keys), sheets, flicks, the Settings page, history-row actions, R15b, R15c1, R15c2, R15c3, the mockups (R12a). Waiting: R15c4, Settings in one sheet, the palette, the visual pass, results mode, the trust features |
 | Milestone 4: Find and trust | Engine side done (marks, 30 digits, chips, copy, defs, the Find index, the size test, A4a); Find's UI: R4a merged; R91 (start-chunk split), R4b, A4b next by day |
 | Milestone 5: Units | The evaluator on Giac is done (P15: G15–G18, G25, G13, G7, G32, R28, R24a); the pad, the entry and the result view follow the Settings base |
 | Milestone 6: Structure | Not started (EN5–EN7, Help) |
