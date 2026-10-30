@@ -105,7 +105,6 @@ requestAnimationFrame(() =>
     const idle = (f: () => void): void => (typeof requestIdleCallback === "function" ? void requestIdleCallback(f) : void setTimeout(f, 200));
     idle(() => void loadNative());
     idle(() => void import("./views/modeSheet.ts")); // fetched when idle, so the first Mode or Settings open is not slower
-    idle(() => void Promise.all([import("./views/SettingsPage.svelte"), import("./views/settingsPage.svelte.ts")])); // the Settings page (R21b), likewise
     idle(() => void loadSheetView().catch(() => {})); // the sheet's view, likewise (R46)
     idle(() => void loadTidy().catch(() => {})); // the result tidy-up (R91), likewise
     // The history is read after the keypad is up, so it does not compete with the first paint. The kept line comes

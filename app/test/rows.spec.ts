@@ -80,7 +80,7 @@ test("Delete removes the picked row and only that one", async ({ page }) => {
 
 test("Menu is one list of ten (nine, then Settings), the same with or without a picked row", async ({ page }) => {
   await three(page);
-  const names = ["Insert", "Recall", "Copy", "Store ▶", "Delete", "Copy as›", "Paste", "Share session", "Clear history", "Settings"];
+  const names = ["Insert", "Recall", "Copy", "Store ▶", "Delete", "Copy as›", "Paste", "Share session", "Clear history", "Settings›"]; // R49: Settings opens a level, so it shows ›
   await tap(page, ["@menu"]);
   await expect(page.getByTestId("menu").getByRole("menuitem")).toHaveText(names.map((n, i) => `${(i + 1) % 10}${n}`));
   await tap(page, ["esc", "up", "@menu"]);

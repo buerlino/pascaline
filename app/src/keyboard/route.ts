@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Key routing (R15c2, split out of App.svelte): what a key press does in the place it lands in. An open Settings page or
-// sheet takes its keys first (docs/05 3.1), a picked history row takes the arrows, Enter, Esc, Copy and Menu (P4, R11),
+// Key routing (R15c2, split out of App.svelte): what a key press does in the place it lands in. An open sheet (Settings
+// too, a level of it since R49) takes its keys first (docs/05 3.1), a picked history row takes the arrows, Enter, Esc, Copy and Menu (P4, R11),
 // a key pressed while an app's or a sheet's code loads waits in the queue (decisions.md R8), and every other key runs
 // its action on the entry line, the app or the app shell. Plain functions over a context object (RouteCtx) that
 // App.svelte gives them; this module draws nothing and holds no state of its own.
@@ -12,7 +12,6 @@ import type { EntryController } from "../entry/controller.ts";
 import { ANS_CHIP } from "../entry/macros.ts";
 import { canPick, pickAfter, pickAtOrBefore } from "../state/pickRows.ts";
 import type { HistoryItem, Session, View } from "../state/session.svelte.ts";
-import type { SheetKey } from "../views/sheetKeys.ts";
 import { sheetChunk, loadSheetView } from "../views/sheetView.svelte.ts";
 import { actionFor, type ActionBody, type Key, type Layer, type Special } from "./keyboard.ts";
 
@@ -28,8 +27,6 @@ export interface RouteCtx {
   readonly entry: EntryController;
   /** The picked history row (P4), or null. */
   picked: number | null;
-  /** The open Settings page's key handler (R21b), or null when it is closed. */
-  readonly settingsPage: { key(k: SheetKey): "close" | "pass" | "stay" } | null;
   /** Set while the first Mode or Settings open (or the sheet's view) waits for its code. */
   sheetLoad: Promise<void> | null;
   /** The keys waiting for code to load (R8), in the order pressed. */
@@ -41,7 +38,6 @@ export interface RouteCtx {
   goTo(view: View): void;
   clearKey(): void;
   openSettings(): void;
-  closeSettings(): void;
   openMode(at?: string): void;
   openTemplates(): void;
   openShiftPalette(id: "rel" | "sym"): void;
@@ -65,10 +61,9 @@ const NAV: Record<string, NavDir> = {
   moveToNextChar: "right",
 };
 
-/** Esc (R15c point 3), once an open page, sheet or pick has had it: a running job stops, else the line clears. Also a
+/** Esc (R15c point 3), once an open sheet or pick has had it: a running job stops, else the line clears. Also a
  *  working row's own Cancel button. */
 export async function escape(c: RouteCtx): Promise<void> {
-  if (c.settingsPage) return c.closeSettings();
   if (await c.shell.cancel()) return;
   if (await c.session.cancel()) return;
   c.entry.clear();
@@ -254,22 +249,6 @@ export function sheetPress(c: RouteCtx, key: Key, layer: Layer | undefined): boo
   }
 }
 
-/** A key while the Settings page is open (R21b): ▲ ▼ move, ◀ ▶ step, Enter toggles, Esc closes; a control that
- *  changes place closes the page and goes there; no key goes through to the entry line. */
-export function settingsPress(c: RouteCtx, key: Key, layer: Layer | undefined): boolean {
-  const page = c.settingsPage;
-  if (!page) return false;
-  const k: SheetKey = layer === "alpha" || layer === "shift" ? { kind: "none" } : (sheetChunk.keys?.sheetKey(key, false) ?? { kind: "none" }); // (openSettings waits for the keys)
-  const what = page.key(k);
-  if (what === "close") c.closeSettings();
-  else if (what === "pass") {
-    const p = key.actions.primary;
-    c.closeSettings();
-    if (p?.kind === "special" && p.name !== "menu") special(c, p.name); // ☰ just closes the page
-  }
-  return true;
-}
-
 // Keys pressed while an app's code is loading wait for it, so nothing typed is lost (like MathLive's queue). Each
 // waits with the layer it was pressed in (Shift and Alpha act at once), so "Plot, Shift, ᴇ" typed fast stores as it
 // would after the load (decisions.md R8). A key whose action changes place, opens a sheet or stops a job runs at once:
@@ -287,7 +266,7 @@ function replay(c: RouteCtx): void {
   for (const w of keys)
     if (c.shell.loading !== null || c.sheetLoad !== null) wait(c, w); // another app started loading meanwhile
     else if ("letter" in w) typeLetter(c, w.letter);
-    else if (!((c.settingsPage && settingsPress(c, w.key, w.layer)) || (c.shell.sheet && sheetPress(c, w.key, w.layer)))) run(c, w.key, w.mods); // a page or sheet opened meanwhile takes its keys
+    else if (!(c.shell.sheet && sheetPress(c, w.key, w.layer))) run(c, w.key, w.mods); // a sheet opened meanwhile takes its keys
 }
 
 const SHEET_KEYS: readonly string[] = ["apps", "menu", "tmpl", "relations", "symbols", "find"];
@@ -315,7 +294,6 @@ function sheetUndrawn(c: RouteCtx): boolean {
 export function press(c: RouteCtx, key: Key, layer?: Layer): void {
   const p = key.actions.primary;
   if (p?.kind === "special" && (p.name === "shift" || p.name === "alpha")) return modifier(c, p.name, layer);
-  if (c.settingsPage && settingsPress(c, key, layer)) return;
   if (sheetUndrawn(c)) return wait(c, { key, mods: modsFor(c, layer), layer });
   if (c.shell.sheet && sheetPress(c, key, layer)) return;
   const mods = modsFor(c, layer);
@@ -335,7 +313,6 @@ export function press(c: RouteCtx, key: Key, layer?: Layer): void {
 
 /** A letter from a hardware keyboard (R45, F38): what the keypad's letter key does in this place. */
 export function typeLetter(c: RouteCtx, ch: string): void {
-  if (c.settingsPage) return; // the page takes no letters
   if (sheetUndrawn(c)) return wait(c, { letter: ch });
   const sheet = c.shell.sheet;
   if (sheet) {

@@ -10,7 +10,6 @@ const view = (page: Page) => page.evaluate(() => window.pascaline.session.view);
 const app = (page: Page) => page.evaluate(() => window.pascaline.shell.app);
 const sheet = (page: Page) => page.getByTestId("menu");
 const appsSheet = (page: Page) => page.getByTestId("apps");
-const settings = (page: Page) => page.getByTestId("settings");
 const angle = (page: Page) => page.evaluate(() => window.pascaline.session.settings.angle);
 const sinh = { label: "sinh", action: { insert: "\\sinh\\left(#0\\right)" } };
 
@@ -102,12 +101,12 @@ test("the angle: one tap on its chip; Mode from the format chip, ▲ to Angle, �
   await expect(sheet(page)).toBeHidden();
 });
 
-test("Settings: two taps (a chip, then Mode's last row); Esc closes it", async ({ page }) => {
+test("Settings: two taps (a chip, then Mode's last row); Esc goes back to Mode (R49)", async ({ page }) => {
   await page.getByTestId("chip-digits").tap();
   await sheet(page).locator('[data-id="settings"]').tap();
-  await expect(settings(page)).toBeVisible();
+  await expect(page.getByTestId("sheet-title")).toHaveText("Mode › Settings");
   await tap(page, ["esc"]);
-  await expect(settings(page)).toBeHidden();
+  await expect(page.getByTestId("sheet-title")).toHaveText("Mode");
 });
 
 test("Esc closes ☰'s menu, and clears the line; Undo brings it back", async ({ page }) => {

@@ -4,6 +4,7 @@
   import { ICONS } from "./views/icons.ts";
   import { APPS, placeGlyph } from "./apps/registry.ts";
   import type { AppShell, PaletteId } from "./apps/shell.svelte.ts";
+  import type { SubMenu } from "./apps/types.ts";
   import type { ClipActions } from "./clipboard/actions.svelte.ts";
   import type { EntryController } from "./entry/controller.ts";
   import { t, type MessageKey } from "./i18n/index.ts";
@@ -27,14 +28,6 @@
   // The sheet's view (Sheet.svelte with sheetFit.ts) is its own chunk, fetched when idle after the keypad is drawn (R46);
   // the model and the keys stay here. A key that opens a sheet before it is in waits in the queue.
   import { loadSheetView, sheetChunk } from "./views/sheetView.svelte.ts";
-  // The Settings page (R21b) is its own chunk: its code loads when idle, or on the first open.
-  type SettingsUi = { C: (typeof import("./views/SettingsPage.svelte"))["default"]; SettingsPage: (typeof import("./views/settingsPage.svelte.ts"))["SettingsPage"] };
-  let settingsUi: SettingsUi | null = null;
-  const loadSettingsUi = async (): Promise<SettingsUi> => {
-    if (settingsUi) return settingsUi;
-    const [v, m] = await Promise.all([import("./views/SettingsPage.svelte"), import("./views/settingsPage.svelte.ts")]);
-    return (settingsUi = { C: v.default, SettingsPage: m.SettingsPage });
-  };
 
   // Find (R4a) is its own chunk with the index beside it: both load when the browser is idle after the engine is ready
   // (docs/04 3.3), or on the first Math press.
@@ -55,16 +48,12 @@
 
   let { session, entry, shell, userKeys }: { session: Session; entry: EntryController; shell: AppShell; userKeys: UserKeys } = $props();
 
-  /** A status-line control as a key (R15b, R15c1): its tap takes the same path as a key press (an open sheet or the
-   *  Settings page gives way, it runs at once while an app loads, and waits while a sheet's code loads). */
+  /** A status-line control as a key (R15b, R15c1): its tap takes the same path as a key press (an open sheet gives way, it runs at once while an app loads, and waits while a sheet's code loads). */
   const statusKey = (id: string, name: "apps" | "symb" | "plot" | "num" | "menu"): Key => ({ id, row: 0, col: 0, span: 1, cls: "nav", label: { primary: "" }, actions: { primary: { kind: "special", name } } });
   const PLACE_KEY = statusKey("place", "apps");
   const MENU_KEY = statusKey("menu-status", "menu");
   const TABS = (["symb", "plot", "num"] as const).map((v) => ({ view: v, name: t(`view.${v}`), key: statusKey(`tab-${v}`, v) }));
 
-  /** The open Settings page and its model (null: closed). */
-  let settings = $state.raw<{ C: SettingsUi["C"]; page: InstanceType<SettingsUi["SettingsPage"]> } | null>(null);
-  const settingsOpen = $derived(settings !== null);
   const sheetOpen = $derived(shell.sheet !== null);
 
   // The shell paints first; main.ts then loads MathLive, which puts the field into this element.
@@ -76,7 +65,7 @@
       if (key) press(key, "primary");
       else enter();
     };
-    // R15c2: a hardware Escape is the Esc key (an open page, sheet or pick takes it first)
+    // R15c2: a hardware Escape is the Esc key (an open sheet or pick takes it first)
     entry.onEscape = () => {
       const key = keyboard.byId.get("esc");
       if (key) press(key, "primary");
@@ -89,6 +78,7 @@
     entry.onLetter = typeLetter;
     shell.goTo = goTo; // the Apps sheet's Home and CAS rows
     shell.openSettings = openSettings;
+    shell.settingsMenu = () => (modeSheet ? (settingsMenu ??= modeSheet.settingsMenu(session)) : undefined); // (R49)
     shell.homeView = () => (session.view === "cas" ? "cas" : "home"); // the last row of every Menu
     entry.onDead = dead;
   });
@@ -135,10 +125,12 @@
     });
     return clipLoading;
   }
-  /** Run now when loaded, else as soon as the code has arrived (a key pressed before the idle load). */
+  /** Run now when loaded, else as soon as the code has arrived (a key pressed before the idle load), with the keys
+   *  meanwhile in the queue (decisions.md R8). The Mode code comes too: every Menu's last row is Settings, its submenu (R49). */
   function withClip(run: (c: ClipActions) => void): void {
-    if (clip) run(clip);
-    else void loadClip().then(run);
+    if (clip && modeSheet) return run(clip);
+    const load = Promise.all([loadClip(), loadModeSheet().catch(() => null)]).then(([c]) => run(c));
+    if (sheetLoad === null) sheetLoad = load.catch(() => {}).finally(() => (sheetLoad = null));
   }
   $effect(() => {
     // (a browser without requestIdleCallback loads it on the first use)
@@ -229,45 +221,34 @@
     if (cells) entry.run(cells.paletteAction(p, session.settings.entry === "line")); // (a pick is of an open palette, so it is loaded)
   }
 
-  /** Mode's last row (or a user key that holds Settings): the Settings page over everything (R21b, docs/05 3.4). It
-   *  opens on its first row. */
+  /** Settings as the ☰ menus' last row opens it (R49): one per session, its rows read the settings on every draw. */
+  let settingsMenu: SubMenu | undefined;
+  /** A user key that holds Settings, or a ☰ menu's last row before the Mode code is in: Mode › Settings, on its first
+   *  row (R49, docs/05 3.4). */
   function openSettings(): void {
-    const show = (m: NonNullable<typeof modeSheet>, ui: NonNullable<typeof settingsUi>): void => {
+    onModeSheet((m) => {
       picked = null;
-      shell.closeSheet();
-      settings = { C: ui.C, page: new ui.SettingsPage(m.settingsSections(session)) };
-    };
-    // settingsPress reads its keys from sheetChunk.keys: a first open that failed only on the sheet chunk tries it again
-    if (modeSheet && settingsUi && sheetChunk.keys) return show(modeSheet, settingsUi);
-    // every key meanwhile waits in the queue (decisions.md R8), so none of them lands on the line before the page is there
-    sheetLoad = Promise.all([loadModeSheet(), loadSettingsUi(), loadSheetView()]).then(
-      ([m, ui]) => {
-        sheetLoad = null;
-        show(m, ui);
-      },
-      () => {
-        sheetLoad = null; // the chunk did not load: the queued keys run without the page
-      },
-    );
+      shell.showMenu(t("mode.title"), m.modeItems(session), { remember: false, at: "settings" });
+      shell.sheet?.enter(); // its submenu: a level on top
+    });
   }
-  function closeSettings(): void {
-    settings = null;
-  }
-  // Android back is Esc for the open layer (R21b): the page, or a pick sheet, owns one history entry while it is open.
+  // Android back is Esc for the open sheet (R21b, R49): it goes back one level, and the root closes. Each level it goes
+  // back takes a new history entry for the level now on top.
+  let backs = $state(0);
   $effect(() => {
-    if (!settingsOpen) return;
-    return openLayer(closeSettings);
-  });
-  $effect(() => {
+    void backs;
     if (!sheetOpen) return;
-    return openLayer(() => shell.closeSheet());
+    return openLayer(() => {
+      if (shell.sheet?.back()) backs++;
+      else shell.closeSheet();
+    });
   });
   /** A tap on a status chip (`at`: the row to start on), or a user key that holds Mode: the Mode sheet. Without `at`
    *  it starts on Angle, so Mode, ▶, Enter always switches the angle unit. */
   function openMode(at?: string): void {
     onModeSheet((m) => {
       picked = null;
-      shell.showMenu(t("mode.title"), m.modeItems(session, openSettings), { remember: false, at });
+      shell.showMenu(t("mode.title"), m.modeItems(session), { remember: false, at });
     });
   }
   /** Run `open` at once when the lists are loaded; else after the load, with every key meanwhile waiting in the queue
@@ -310,7 +291,6 @@
     get entry() { return entry; },
     get picked() { return picked; },
     set picked(v) { picked = v; },
-    get settingsPage() { return settings?.page ?? null; },
     get sheetLoad() { return sheetLoad; },
     set sheetLoad(v) { sheetLoad = v; },
     waiting: [],
@@ -320,7 +300,6 @@
     goTo,
     clearKey,
     openSettings,
-    closeSettings,
     openMode,
     openTemplates,
     openShiftPalette,
@@ -490,9 +469,6 @@
   </div>
 </main>
 
-{#if settings}
-  <settings.C page={settings.page} onclose={closeSettings} />
-{/if}
 
 {#snippet sheetView(sheet: NonNullable<typeof shell.sheet>, over: "keypad" | "view")}
   {#if sheetChunk.C}

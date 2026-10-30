@@ -28,7 +28,7 @@ test("Shift, Fmt, ▶, Enter switches RAD → DEG", async ({ page }) => {
 test("Shift, Fmt, 5 opens Settings", async ({ page }) => {
   await open(page);
   await tap(page, ["shift", "fmt", "d5"]);
-  await expect(page.getByTestId("settings-title")).toHaveText("Settings");
+  await expect(page.getByTestId("sheet-title")).toHaveText("Mode › Settings");
 });
 
 test("the Fmt key's Shift legend reads Mode and fits its face in every theme family", async ({ page }) => {

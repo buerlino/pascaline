@@ -45,6 +45,14 @@ const OPENERS: Record<string, (page: Page) => Promise<void>> = {
     await sheet(page).getByRole("menuitem", { name: "3 Significant digits" }).tap(); // the 3 key is under the sheet: its row is where it was
     await expect(page.getByTestId("sheet-title")).toHaveText("Mode › Significant digits");
   },
+  "mode settings": async (page) => {
+    await tap(page, ["@mode", "d5"]);
+    await expect(page.getByTestId("sheet-title")).toHaveText("Mode › Settings");
+  },
+  "mode settings numbers": async (page) => {
+    await tap(page, ["@mode", "d5", "d1"]);
+    await expect(page.getByTestId("sheet-title")).toHaveText("Mode › Settings › Numbers");
+  },
   tmpl: (page) => tap(page, ["tmpl"]),
   "shift 6": (page) => tap(page, ["shift", "d6"]),
   "shift 9": (page) => tap(page, ["shift", "d9"]),
@@ -65,13 +73,12 @@ test.describe("at 412 × 915", () => {
     await open(page);
   });
 
-  test("keys never move: Settings (a page over everything) open and closed again", async ({ page }) => {
+  test("keys never move: Settings (a level of the sheet, R49) open and closed again", async ({ page }) => {
     const before = await keyBoxes(page);
-    await tap(page, ["@mode", "d5"]);
-    await expect(page.getByTestId("settings")).toBeVisible();
+    await openSheet(page, "mode settings numbers");
     expect(await keyBoxes(page)).toEqual(before);
-    await tap(page, ["esc"]);
-    await expect(page.getByTestId("settings")).toBeHidden();
+    await tap(page, ["esc", "esc", "esc"]);
+    await expect(sheet(page)).toHaveCount(0);
     expect(await keyBoxes(page)).toEqual(before);
   });
 
@@ -203,7 +210,7 @@ test.describe("at 360 × 740", () => {
     await page.setViewportSize({ width: 360, height: 740 });
     await open(page);
   });
-  for (const name of ["tmpl", "shift 6", "shift 9", "mode"])
+  for (const name of ["tmpl", "shift 6", "shift 9", "mode", "mode settings", "mode settings numbers"])
     test(`fit: ${name} shows all its items without a scroll`, async ({ page }) => {
       await openSheet(page, name);
       const box = sheet(page).locator(".list, .grid");

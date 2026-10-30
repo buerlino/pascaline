@@ -7,7 +7,7 @@
 type SheetComponent = (typeof import("./Sheet.svelte"))["default"];
 
 /** `C` is null until the chunk is in. `keys` and `palette` (R91: the sheet's keys, sheetKeys.ts, and the palette cells,
- *  tmplSheet.ts) come with it and are set before it; a sheet or the Settings page is open only after that, but a long press
+ *  tmplSheet.ts) come with it and are set before it; a sheet is open only after that, but a long press
  *  can open a sheet before. (Module objects are not proxied by $state, so they stay whole.) */
 export const sheetChunk: { C: SheetComponent | null; keys: typeof import("./sheetKeys.ts") | null; palette: typeof import("./tmplSheet.ts") | null } = $state({
   C: null,

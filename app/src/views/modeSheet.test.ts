@@ -4,8 +4,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { FakeCalc } from "../calc/fake.ts";
 import { Session } from "../state/session.svelte.ts";
 import type { Kv } from "../state/storage.ts";
-import { modeItems, settingsSections } from "./modeSheet.ts";
-import { SettingsPage } from "./settingsPage.svelte.ts";
+import { modeItems } from "./modeSheet.ts";
 import { Sheet, forgetPicks } from "./sheet.svelte.ts";
 
 const memoryKv = (): Kv => {
@@ -13,14 +12,19 @@ const memoryKv = (): Kv => {
   return { get: <T>(k: string) => Promise.resolve(data.get(k) as T | undefined), set: (k, v) => (data.set(k, structuredClone(v)), Promise.resolve()) };
 };
 let session: Session;
-let opened = 0;
-const mode = (at?: string) => new Sheet("mode", "Mode", () => modeItems(session, () => opened++), { remember: false, at });
-const settings = () => new SettingsPage(settingsSections(session));
-const at = (p: SettingsPage, id: string) => p.rows.findIndex((r) => r.id === id);
+const mode = (at?: string) => new Sheet("mode", "Mode", () => modeItems(session), { remember: false, at });
+/** Mode, 5, then the section numbered `n` (none: the Settings level). */
+const settings = (n?: number): Sheet => {
+  const s = mode();
+  s.pickNumber(5);
+  if (n !== undefined) s.pickNumber(n);
+  return s;
+};
+const at = (s: Sheet, id: string) => s.level.items.findIndex((r) => r.id === id);
+const byId = (s: Sheet, id: string) => s.level.items.find((r) => r.id === id);
 
 beforeEach(() => {
   forgetPicks();
-  opened = 0;
   session = new Session(new FakeCalc(), memoryKv());
 });
 
@@ -70,78 +74,88 @@ describe("Mode sheet", () => {
     if (p.kind === "run") p.item.run?.();
     expect(session.settings.digits).toBe(20);
   });
-  it("Entry changes in place; the last row opens Settings; Decimals is no longer a Mode row", () => {
+  it("Entry changes in place; the last row opens Settings as its submenu (R49); Decimals is no longer a Mode row", () => {
     expect(mode().level.items.some((i) => i.id === "decimals")).toBe(false);
     const e = mode("entry");
     e.right();
     expect(session.settings.entry).toBe("line");
     e.right();
     expect(session.settings.entry).toBe("textbook");
-    const last = mode("settings").enter();
-    if (last.kind === "run") last.item.run?.();
-    expect(opened).toBe(1);
+    const s = mode("settings");
+    expect(s.level.current?.submenu).toBeDefined();
+    expect(s.enter()).toEqual({ kind: "stay" });
+    expect(s.path).toBe("Mode › Settings");
   });
 });
 
-describe("Settings page", () => {
-  it("has one section per block and every row on one page, no submenus", () => {
-    const p = settings();
-    expect(p.sections.map((x) => x.id)).toEqual(["fmtCycle", "vibration", "taps"]);
-    expect(p.rows.some((r) => r.submenu)).toBe(false);
-    expect(p.current?.id).toBe("std");
+describe("Settings, a level of the sheet (R49)", () => {
+  it("has the three sections built so far, in their fixed order, each with › and a value; it opens on its first row", () => {
+    const s = settings();
+    expect(s.level.items.map((x) => x.id)).toEqual(["numbers", "vibration", "counters"]);
+    expect(s.level.items.every((x) => x.submenu)).toBe(true);
+    expect(s.level.items.map((x) => x.value)).toEqual(["STD SCI ENG", "Off", "0 taps"]);
+    s.pickNumber(3);
+    s.back();
+    s.back();
+    expect(s.enter()).toEqual({ kind: "stay" });
+    expect(s.level.current?.id).toBe("numbers"); // not the last pick
   });
-  it("Format key cycle: the Decimals row sits under the Fixed tick and steps in place", () => {
-    const p = settings();
-    expect(at(p, "decimals")).toBe(at(p, "fix") + 1);
-    p.highlight = at(p, "decimals");
-    p.step(-1);
+  it("a digit opens a section with the path in its title; ◀ or Esc goes back onto the same row", () => {
+    const s = settings(2);
+    expect(s.path).toBe("Mode › Settings › Key vibration");
+    expect(s.left()).toBe(false); // the switch has no value to step: ◀ goes back
+    expect(s.back()).toBe(true);
+    expect(s.level.current?.id).toBe("vibration");
+    s.right();
+    expect(s.path).toBe("Mode › Settings › Key vibration");
+  });
+  it("Numbers: the cycle's five ticks, the hint under the first, and the Decimals row under the Fixed tick, stepped in place", () => {
+    const s = settings(1);
+    expect(s.level.items.map((x) => x.id)).toEqual(["std", "sci", "eng", "pfx", "fix", "decimals"]);
+    expect(s.level.items.filter((x) => x.hint).map((x) => x.id)).toEqual(["std"]);
+    s.level.highlight = at(s, "decimals");
+    expect(s.left()).toBe(true);
     expect(session.settings.fixDecimals).toBe(3);
+    expect(s.enter()).toEqual({ kind: "stay" }); // Enter on a value row stays in Settings
   });
-  it("key vibration: ▶ switches it on; strength (the browser cannot set it) and length follow", () => {
-    const p = settings();
-    const byId = (id: string) => p.rows.find((i) => i.id === id);
-    expect(byId("haptics")?.value).toBe("Off");
-    expect(byId("ms")?.disabled).toBe(true);
-    p.highlight = at(p, "haptics");
-    p.step(1);
-    expect(session.settings.haptics.on).toBe(true);
-    expect(byId("ms")?.disabled).toBe(false);
-    expect(byId("strength")?.disabled).toBe(true); // web build
-    p.highlight = at(p, "ms");
-    p.step(1);
-    expect(session.settings.haptics.ms).toBe(20);
-    expect(byId("ms")?.value).toBe("20 ms");
-    p.highlight = at(p, "strength");
-    expect(p.step(1)).toBe(false); // disabled: nothing happens
-  });
-  it("a tick toggles on Enter or a tap and the cycle is never empty", () => {
-    const p = settings();
-    const marked = () => p.rows.filter((i) => i.selected).map((i) => i.id);
+  it("a tick toggles on Enter or a pick, the sheet stays, and the cycle is never empty", () => {
+    const s = settings(1);
+    const marked = () => s.level.items.filter((i) => i.selected).map((i) => i.id);
     expect(marked()).toEqual(["std", "sci", "eng"]);
-    p.activate(at(p, "fix"));
-    p.activate(at(p, "sci")); // Scientific off
-    expect(marked()).toEqual(["std", "eng", "fix"]);
+    expect(s.activate(at(s, "fix"))).toEqual({ kind: "stay" });
+    s.activate(at(s, "sci")); // Scientific off
     expect(session.settings.fmtCycle).toEqual(["std", "eng", "fix"]);
-    for (const id of ["std", "eng", "fix"]) p.activate(at(p, id)); // all off: back to the default cycle
+    for (const id of ["std", "eng", "fix"]) s.activate(at(s, id)); // all off: back to the default cycle
     expect(session.settings.fmtCycle).toEqual(["std", "sci", "eng"]);
   });
-  it("▲ ▼ walk every row round the ends; an information row does nothing; Reset runs", () => {
-    const p = settings();
-    p.move(-1);
-    expect(p.current?.id).toBe("reset");
-    p.move(1);
-    expect(p.highlight).toBe(0);
-    p.activate(at(p, "since"));
-    expect(p.step(1)).toBe(false);
-    session.taps.counts.shift = 4;
-    p.activate(at(p, "reset"));
-    expect(session.taps.counts.shift).toBe(0);
+  it("Key vibration: the switch, then strength (the browser cannot set it), length and Try it follow", () => {
+    const s = settings(2);
+    expect(s.level.items.map((x) => x.id)).toEqual(["haptics", "strength", "ms", "try"]);
+    expect(byId(s, "ms")?.disabled).toBe(true);
+    expect(byId(s, "try")?.disabled).toBe(true);
+    expect(s.pickNumber(1)).toEqual({ kind: "stay" });
+    expect(session.settings.haptics.on).toBe(true);
+    expect(byId(s, "haptics")?.selected).toBe(true);
+    expect(byId(s, "ms")?.disabled).toBe(false);
+    expect(byId(s, "strength")?.disabled).toBe(true); // web build
+    s.level.highlight = at(s, "ms");
+    s.right();
+    expect(session.settings.haptics.ms).toBe(20);
+    expect(byId(s, "ms")?.value).toBe("20 ms");
+    s.level.highlight = at(s, "strength");
+    s.right();
+    expect(session.settings.haptics.strength).toBe(50); // disabled: nothing happens
+    expect(s.pickNumber(4)).toEqual({ kind: "stay" }); // Try it
   });
-  it("keys: Esc closes, Menu-like keys pass, digits and letters do nothing", () => {
-    const p = settings();
-    expect(p.key({ kind: "back" })).toBe("close");
-    expect(p.key({ kind: "pass" })).toBe("pass");
-    expect(p.key({ kind: "pick", n: 3 })).toBe("stay");
-    expect(p.key({ kind: "letter", ch: "a" })).toBe("stay");
+  it("Counters: ▲ ▼ walk round the ends; an information row does nothing; Reset runs and stays", () => {
+    const s = settings(3);
+    s.level.move(-1);
+    expect(s.level.current?.id).toBe("reset");
+    s.level.move(1);
+    expect(s.level.current?.id).toBe("shift");
+    expect(s.activate(at(s, "since"))).toEqual({ kind: "stay" });
+    session.taps.counts.shift = 4;
+    expect(s.activate(at(s, "reset"))).toEqual({ kind: "stay" });
+    expect(session.taps.counts.shift).toBe(0);
   });
 });
