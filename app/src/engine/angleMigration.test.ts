@@ -57,6 +57,25 @@ describe("the version-3 step of the stored log (pure)", () => {
     ]);
   });
 
+  it("a degree reading is never read as degrees again; a value Giac printed with pi/180 still is (A50)", () => {
+    const twice = (log: DefEntry[]): DefEntry[] => migrate(migrate(log));
+    const out = twice([
+      entry({ name: "D", kind: "var", cmds: ["D:=(sin(1))"], angle: "deg" }),
+      // resolveAngle's output for a flagged value read as degrees (G46 on the real engine, below)
+      entry({ name: "TH", kind: "var", cmds: ["TH:=((atan(3/4)/(pi/180)))"], angle: "deg" }),
+      // Giac's own prints (derived: the engine prints atan(x)/(pi/180) and pi/180*x so)
+      entry({ name: "B", kind: "var", cmds: ["B:=(atan(x)/(pi/180))"], angle: "deg" }),
+      entry({ name: "C", kind: "var", cmds: ["C:=(x^(pi/180)*sin(pi/180*x))"], angle: "deg" }),
+    ]);
+    expect(out.map((e) => e.cmds[0])).toEqual([
+      "D:=(sin((pi/180)*(1)))",
+      "TH:=((atan(3/4)/(pi/180)))",
+      "B:=((atan(x)/(pi/180))/(pi/180))",
+      "C:=(x^(pi/180)*sin((pi/180)*(pi/180*x)))",
+    ]);
+    expect(migrate(out.slice(2)).map((e) => e.cmds[0])).toEqual(out.slice(2).map((e) => e.cmds[0]));
+  });
+
   it("a version-2 library text loses pasexp only (its bodies get the factor on import)", () => {
     expect(migratedText("library", "f(x):=pasexp(i*x)+sin(x)", 2)).toBe("f(x):=exp(i*x)+sin(x)");
     // typed: the escaped quote keeps the string open, so the pasexp inside it is text (G105f2)

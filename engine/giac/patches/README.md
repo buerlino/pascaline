@@ -3,6 +3,7 @@
 
 `build-wasm.sh` applies every `*.patch` here (in name order, `patch -p1` in the Giac source root) after unpacking.
 Keep this list short; each patch should also be reported upstream (Giac forum / B. Parisse).
+Each patch header carries `# Changed by Pascaline contributors, <date>` (GPL-3.0 section 5a); a new patch gets the line with the date of its first commit (tests: `app/scripts/legal.test.ts`).
 
 | Patch | Why | Upstream status |
 |---|---|---|
