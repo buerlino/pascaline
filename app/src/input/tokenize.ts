@@ -153,8 +153,9 @@ export function tokenize(src: string, decimalComma = false): Tok[] {
         // "5." alone: treat the dot as part of the number
         j++;
         v = src.slice(i, j);
-      } else if (comma && c !== ".") {
-        // R57: "5," alone (the decimal comma and no digit after it, as 3,ᴇ3 types it): the same as "5."
+      } else if (comma === 3 && c !== ".") {
+        // R57: "5{,}" alone (MathLive's decimal comma and no digit after it, as 3,ᴇ3 types it): the same as "5.".
+        // Only {,} can be typed without a digit after it; a bare "," there is the argument comma (max(0,x)).
         const intPart = src.slice(i, j);
         j += comma;
         v = `${intPart}.`;

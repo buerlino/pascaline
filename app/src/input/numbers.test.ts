@@ -140,3 +140,12 @@ describe("a space between two numbers (F43, R51)", () => {
     expect(giac(latex)).toBe(out);
   });
 });
+
+describe("a bare comma after a digit is the argument comma (R57)", () => {
+  it("with the decimal comma, max(0,x) typed in the point mode still has two arguments", () => {
+    expect(giac("\\max\\left(0,x\\right)", true)).toBe("max(0,x)");
+  });
+  it("only MathLive's {,} is a decimal mark with no digit after it", () => {
+    expect(giac("3{,}\\emark3", true)).toBe(giac("3.\\emark3"));
+  });
+});
