@@ -12,7 +12,7 @@ import type { EntryController } from "../entry/controller.ts";
 import { ANS_CHIP } from "../entry/macros.ts";
 import { canPick, pickAfter, pickAtOrBefore } from "../state/pickRows.ts";
 import type { HistoryItem, Session, View } from "../state/session.svelte.ts";
-import { findKey, sheetFlick, sheetKey, type SheetKey } from "../views/sheetKeys.ts";
+import type { SheetKey } from "../views/sheetKeys.ts";
 import { sheetChunk, loadSheetView } from "../views/sheetView.svelte.ts";
 import { actionFor, type ActionBody, type Key, type Layer, type Special } from "./keyboard.ts";
 
@@ -205,11 +205,13 @@ export function sheetPress(c: RouteCtx, key: Key, layer: Layer | undefined): boo
     return true;
   }
   const find = sheet.id === FIND_SHEET;
+  const keys = sheetChunk.keys; // (an open sheet has it: sheetUndrawn above holds the keys until the chunk is in)
+  if (!keys) return false;
   const k = find
-    ? findKey(key, layer, c.session.shift, level.filter === "")
+    ? keys.findKey(key, layer, c.session.shift, level.filter === "")
     : layer === "alpha" || layer === "shift"
-      ? sheetFlick(key, layer === "alpha", level.filterable)
-      : sheetKey(key, level.filterable);
+      ? keys.sheetFlick(key, layer === "alpha", level.filterable)
+      : keys.sheetKey(key, level.filterable);
   // in Find a one-shot Shift is used up by the key it types (its lock stays); elsewhere a sheet leaves it as it is
   if (find && c.session.shift && !c.session.shiftLock) c.session.clearModifiers();
   switch (k.kind) {
@@ -257,7 +259,7 @@ export function sheetPress(c: RouteCtx, key: Key, layer: Layer | undefined): boo
 export function settingsPress(c: RouteCtx, key: Key, layer: Layer | undefined): boolean {
   const page = c.settingsPage;
   if (!page) return false;
-  const k = layer === "alpha" || layer === "shift" ? ({ kind: "none" } as const) : sheetKey(key, false);
+  const k: SheetKey = layer === "alpha" || layer === "shift" ? { kind: "none" } : (sheetChunk.keys?.sheetKey(key, false) ?? { kind: "none" }); // (openSettings waits for the keys)
   const what = page.key(k);
   if (what === "close") c.closeSettings();
   else if (what === "pass") {

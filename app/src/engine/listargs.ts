@@ -25,15 +25,16 @@ import { PROBED_LIST_AS_ARGUMENTS, PROBED_LIST_FORMS } from "./listargsTable.ts"
  *  f(list[a,b]) or f(list[a,b,c]) is not one value per element and equals f(a,b), or is one number. It holds G111's
  *  (LambertW, hermite …, range, randvector) and R80f1's (the distributions, igamma, ugamma). */
 export const LIST_AS_ARGUMENTS: readonly string[] = PROBED_LIST_AS_ARGUMENTS;
-const LIST_AS = new Set(LIST_AS_ARGUMENTS);
+let listAs: Set<string> | undefined;
+const LIST_AS = (): Set<string> => (listAs ??= new Set(LIST_AS_ARGUMENTS));
 
 /** G124: the names refused outside their documented one-list form: a typed list of exactly two integers of at least 1
  *  (dimensions; G124f1: zeros(list[2,3,4]) and zeros(list[5]) were [], zeros(list[-2,3]) one row, ranm(list[2,3,4]) 2×3)
  *  or a non-empty list of lists only (rows); a list held by a name stays refused. "any" names are never refused (f of one element alone is an
  *  error in Giac, and the probe checks a stored list too). */
-const FORMED: ReadonlyMap<string, "integers" | "rows"> = new Map(
-  Object.entries(PROBED_LIST_FORMS).flatMap(([n, f]) => (f === "any" ? [] : [[n, f] as const])),
-);
+let formed: ReadonlyMap<string, "integers" | "rows"> | undefined;
+const FORMED = (): ReadonlyMap<string, "integers" | "rows"> =>
+  (formed ??= new Map(Object.entries(PROBED_LIST_FORMS).flatMap(([n, f]) => (f === "any" ? [] : [[n, f] as const]))));
 /** Giac test of the evaluated argument: 1 when it is a list outside the name's form. */
 function outsideForm(a: string, form: "integers" | "rows"): string {
   if (form === "rows") {
@@ -52,14 +53,15 @@ function outsideForm(a: string, form: "integers" | "rows"): string {
 export const LIST_IN_ARGUMENTS: Readonly<Record<string, "any" | number>> = {
   negbinomial_icdf: "any", mlr_beta: 1, mlr_predict: 1,
 };
-const EITHER = new Set([...LIST_AS, ...FORMED.keys(), ...Object.keys(LIST_IN_ARGUMENTS)]);
+let either: Set<string> | undefined;
+const EITHER = (): Set<string> => (either ??= new Set([...LIST_AS(), ...FORMED().keys(), ...Object.keys(LIST_IN_ARGUMENTS)]));
 
 /** Which refusal a call earns: one list as its only argument, or (LIST_IN_ARGUMENTS) a list among its arguments. */
 export type ListRefusal = "listAsArguments" | "listInArgument";
 
 /** Cheap text test: `input` calls one of LIST_AS_ARGUMENTS. */
 export function mayListAsArguments(input: string): boolean {
-  return callsOf(input, EITHER, "typed").length > 0;
+  return callsOf(input, EITHER(), "typed").length > 0;
 }
 
 /** The argument text is one typed list, `[…]` or `list[…]` (only the latter when `listType`), as a whole (not `[1,2][0]`). */
@@ -81,7 +83,7 @@ export function listAsArguments(
   userFn: (name: string) => boolean,
   table: Readonly<Record<string, "any" | number>> = LIST_IN_ARGUMENTS,
 ): ListRefusal | null {
-  const names = table === LIST_IN_ARGUMENTS ? EITHER : new Set([...LIST_AS, ...FORMED.keys(), ...Object.keys(table)]);
+  const names = table === LIST_IN_ARGUMENTS ? EITHER() : new Set([...LIST_AS(), ...FORMED().keys(), ...Object.keys(table)]);
   const calls = callsOf(input, names, "typed");
   if (!calls.length) return null;
   const ask: { text: string; why: ListRefusal }[] = [];
@@ -92,7 +94,7 @@ export function listAsArguments(
     const why: ListRefusal = mode !== undefined ? "listInArgument" : "listAsArguments";
     if (mode === undefined && args.length !== 1) continue;
     const listType = typeof mode === "number";
-    const form = mode === undefined ? FORMED.get(c.name) : undefined;
+    const form = mode === undefined ? FORMED().get(c.name) : undefined;
     for (const [k, raw] of args.entries()) {
       if (listType && k !== mode) continue;
       const a = raw.trim();

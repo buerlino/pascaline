@@ -4,11 +4,11 @@
 import { expect, test, type Page } from "@playwright/test";
 import { entryValue, open, tap } from "./helpers.ts";
 
-/** Hold the Sheet chunk's requests back; returns the function that lets them through. */
-async function hold(page: Page): Promise<() => void> {
+/** Hold the Sheet chunk's requests back (or those of `what`); returns the function that lets them through. */
+async function hold(page: Page, what: RegExp = /\/src\/views\/(Sheet\.svelte|sheetFit\.ts)/): Promise<() => void> {
   let release = (): void => {};
   const gate = new Promise<void>((r) => (release = r));
-  await page.route(/\/src\/views\/(Sheet\.svelte|sheetFit\.ts)/, async (route) => {
+  await page.route(what, async (route) => {
     await gate;
     await route.continue();
   });
@@ -116,4 +116,60 @@ test("F42: a long press on a row before the chunk is in shows the menu once it i
   release();
   await expect(sheet(page).getByRole("menuitem")).toHaveCount(9);
   expect(await texts(page)).toEqual(["1", "2"]);
+});
+
+// R91: the sheet's keys and the palette cells, the palettes with their names (Tmpl too) and the result tidy-up are chunks
+// of their own; a key pressed before one of them is in waits in the same queue.
+test("Tmpl, then Enter, typed before the palette cells' and the sheet keys' code is in, inserts the fraction once it is", async ({ page }) => {
+  const release = await hold(page, /\/src\/views\/(tmplSheet|sheetKeys)\.ts/);
+  await open(page);
+  await tap(page, ["tmpl", "enter"]);
+  expect(await entryValue(page)).toBe("");
+  release();
+  await expect.poll(() => entryValue(page)).toContain("frac");
+  await expect(sheet(page)).toBeHidden();
+});
+
+test("Tmpl, then Enter, typed before the palettes' chunk is in, inserts the fraction once it is", async ({ page }) => {
+  const release = await hold(page, /\/src\/keyboard\/shiftPalettes\.ts/);
+  await open(page);
+  await tap(page, ["tmpl", "enter"]);
+  expect(await entryValue(page)).toBe("");
+  release();
+  await expect.poll(() => entryValue(page)).toContain("frac");
+  await expect(sheet(page)).toBeHidden();
+});
+
+// (CAS: its result is always drawn from Giac's latex, so it needs the tidy-up; a Home number is drawn by our formatter and does not wait for it)
+test("an Enter typed before the result tidy-up's chunk is in finishes its job once it is", async ({ page }) => {
+  const release = await hold(page, /\/src\/render\/tidy\.ts/);
+  await open(page);
+  await page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
+  await page.evaluate(() => window.pascaline.session.setView("cas"));
+  await tap(page, ["d1", "add", "d2", "enter"]);
+  expect(await entryValue(page)).toBe("");
+  await expect(page.locator("article.item")).toHaveAttribute("data-status", "pending");
+  release();
+  await expect(page.locator("article.item")).toHaveAttribute("data-status", "done");
+});
+
+// R91f1: a first Settings open that fails only on the sheet view chunk (the keys' code) leaves the Mode and Settings code
+// loaded; the next open tries the chunk again and the page answers its keys.
+test("Settings opened again after the sheet chunk failed once answers Down and Esc", async ({ page }) => {
+  let fail = true;
+  await page.route(/\/src\/views\/sheetKeys\.ts/, (route) => (fail ? route.abort() : route.continue()));
+  await open(page);
+  await page.evaluate(() => window.pascaline.shell.openSettings?.()); // Promise.all fails on the sheet chunk alone
+  await page.waitForTimeout(500);
+  await expect(page.getByTestId("settings")).toHaveCount(0);
+  fail = false;
+  await page.evaluate(() => window.pascaline.shell.openSettings?.());
+  const settings = page.getByTestId("settings");
+  await expect(settings).toBeVisible();
+  const active = settings.locator('[data-active="true"]');
+  await expect(active).toHaveAttribute("data-id", "std");
+  await tap(page, ["down"]); // the keypad's keys go through settingsPress, which reads them with the sheet chunk's keys
+  await expect(active).toHaveAttribute("data-id", "sci");
+  await tap(page, ["esc"]);
+  await expect(settings).toBeHidden();
 });
