@@ -36,11 +36,13 @@
 #                                  controls, R15c1, and what a user key may hold)
 # User keys (R15b, R15c): a key with `user: true` is a free key (U1-U6). Its layers here are only its defaults: the
 # user's own action for a layer (Settings > User keys, from Find, R4b) replaces the default, stored with a stamp in
-# IndexedDB (app/src/keyboard/userKeys.svelte.ts). A user key has no alpha layer.
+# IndexedDB (app/src/keyboard/userKeys.svelte.ts). A user key has three slots, tap, Shift and Alpha (R15c3), all empty
+# here; the Alpha slot is the user's own text, exempt from the letter-case rule below, and has no letter line in the cluster.
 # Missing layer: the key does nothing in that layer, except that alpha falls back to primary.
 # Empty line (docs/04 2.8, app/src/entry/ans.ts): in Home and CAS, + − × ÷ xʸ x², x⁻¹ and Store ▶ (Shift + ᴇ) on an empty
 # entry line insert Ans (the \ans chip) first, as on the reference; (−) stays negation. Only when the view has a result.
-# Letters: Alpha types the capital in the alpha layer, Shift + Alpha its lower case (as on the reference).
+# Letters: Alpha types the capital in the alpha layer, Shift + Alpha its lower case (as on the reference); in the CAS
+# view the case is swapped (R58): Alpha alone is lower case, Shift + Alpha the capital.
 # `label` entries starting with "$" are i18n keys (app/src/i18n), anything else is shown as is.
 #
 # Gestures (docs/decisions.md P7, P11; app/src/keyboard/gestures.ts and Keypad.svelte; tests app/test/gestures.spec.ts
@@ -52,7 +54,7 @@
 #     with a dashed hub ring at its centre: a drag may start there; a tap on it does nothing.
 #   Flicks (R9, P7 points 2 and 3): every other key fires when the finger lifts. A slide of 20 px up or down from
 #     the touch point (mostly vertical) arms a flick: up = the key's `shift` layer, down = its `alpha` layer (the
-#     capital), whatever Shift and Alpha are set to. Distance alone decides: no hold time and no dwell, so one fast
+#     capital; in the CAS view the lower case, R58), whatever Shift and Alpha are set to. Distance alone decides: no hold time and no dwell, so one fast
 #     press-slide-lift is a flick. While armed, a bubble above the key shows what the lift fires (✕ = nothing) and a
 #     haptic tick marks the threshold; sliding back within 12 px of the touch point cancels (nothing fires). A
 #     sideways slip or a long hold is still a tap. No left/right flicks; the trackpad and `bksp` have none.
