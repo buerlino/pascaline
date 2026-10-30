@@ -15,7 +15,7 @@ const load: GiacLoader = async (baseUrl) => {
   setGiacHostGlobals();
   const t0 = performance.now();
   // Absolute URL: Vite's dev server rewrites root-relative dynamic imports (adds ?import), which breaks public/ files.
-  const url = new URL(`${baseUrl}engine/giac.mjs`, self.location.href).href;
+  const url = new URL(`${baseUrl}engine/${__GIAC_MJS__}`, self.location.href).href;
   const mod = (await import(/* @vite-ignore */ url)) as { default: ModuleFactory };
   const out = messageBuffer();
   const M = await mod.default({ print: out.print, printErr: () => {} });

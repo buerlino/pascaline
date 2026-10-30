@@ -2,6 +2,7 @@
   "name": "Pascaline",
   "short_name": "Pascaline",
   "description": "Open-source graphing CAS calculator",
+  "id": "/",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
