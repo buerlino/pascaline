@@ -196,7 +196,7 @@
         {#if sheet.depth > 1}<button type="button" class="icon" aria-label={t("sheet.back")} onclick={onback}>‹</button>{/if}
         {#if sheet.icon}<span class="ticon" aria-hidden="true">{@html ICONS[sheet.icon]}</span>{/if}<span class="title" data-testid="sheet-title">{sheet.path}</span>
         {#if level.filter !== ""}<span class="filter" data-testid="sheet-filter">{level.filter}</span>{/if}
-        {#if cutTop || cutBottom}<span class="count" data-testid="sheet-count">{t("sheet.count", { n: String(rows.length) })}</span>{/if}
+        {#if (cutTop || cutBottom) && level.text === undefined}<span class="count" data-testid="sheet-count">{t("sheet.count", { n: String(rows.length) })}</span>{/if}
         <button type="button" class="icon" aria-label={t("apps.close")} onclick={onclose}>×</button>
       </div>
       {#if level.text !== undefined}

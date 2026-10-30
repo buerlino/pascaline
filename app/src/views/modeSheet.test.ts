@@ -173,7 +173,7 @@ describe("Help and about (R87)", () => {
   it("About: the version from package.json, the licence, the source URL; the licence opens its text", async () => {
     const s = settings(4);
     s.pickNumber(1);
-    expect(s.path).toBe("Settings › Help and about › About Pascaline"); // the last three levels
+    expect(s.path).toBe("Settings › Help and about › About"); // the last three levels
     await loaded(s);
     const { version } = (await import("../../package.json")).default;
     expect(byId(s, "version")?.value).toBe(version);

@@ -4,6 +4,7 @@
 export const enAbout = {
   "help": "Help and about",
   "title": "About Pascaline",
+  "aboutTitle": "About",
   "hint": "Version, source, GPL-3.0",
   "parts": "Parts we use and their licences",
   "partsTitle": "Parts",

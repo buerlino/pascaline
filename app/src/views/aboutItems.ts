@@ -70,7 +70,7 @@ function aboutRows(d: AboutData): MenuItem[] {
 /** The rows of the Help and about section. (R15c4 adds "Show the first-start tips" above them.) */
 export function helpItems(): MenuItem[] {
   return [
-    { id: "about", label: t("title"), hint: t("hint"), submenu: lazy(t("title"), aboutRows) },
+    { id: "about", label: t("title"), hint: t("hint"), submenu: lazy(t("aboutTitle"), aboutRows) },
     { id: "parts", label: t("parts"), hint: t("partsHint"), submenu: lazy(t("partsTitle"), partRows, { longPreview: true }) },
   ];
 }

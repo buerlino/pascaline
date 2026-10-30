@@ -41,7 +41,7 @@ test.describe("by keys", () => {
     await expect(row(page, "about")).toContainText("About Pascaline");
     await expect(row(page, "parts")).toContainText("Parts we use and their licences");
     await tap(page, ["d1"]);
-    await expect(title(page)).toHaveText("Settings › Help and about › About Pascaline");
+    await expect(title(page)).toHaveText("Settings › Help and about › About");
     await expect(row(page, "version")).toContainText(version);
     await expect(row(page, "licence")).toContainText("GPL-3.0-or-later");
     await expect(row(page, "source")).toContainText("https://github.com/buerlino/pascaline");
@@ -53,7 +53,8 @@ test.describe("by keys", () => {
   test("About › Licence opens the GPL text as a level that scrolls; ▼ pages down, ◀ goes back onto the same row", async ({ page }) => {
     await tap(page, ["d1", "d2"]);
     await expect(text(page)).toContainText("GNU GENERAL PUBLIC LICENSE");
-    await expect(title(page)).toHaveText("Help and about › About Pascaline › GPL-3.0-or-later");
+    await expect(title(page)).toHaveText("Help and about › About › GPL-3.0-or-later");
+    await expect(page.getByTestId("sheet-count")).toHaveCount(0); // a text has no item count
     const scrolls = await text(page).evaluate((e) => e.scrollHeight > e.clientHeight * 3);
     expect(scrolls).toBe(true);
     expect(await text(page).evaluate((e) => e.scrollTop)).toBe(0);
