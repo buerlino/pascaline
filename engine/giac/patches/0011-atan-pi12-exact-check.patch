@@ -1,4 +1,5 @@
 # Upstream: giac 2.1.0 usual.cc atan. Its test for a multiple of pi/12 accepts an argument whose double is a root of the pi/12 polynomial within 1e-7 and returns that multiple, with no exact check (the pi/10 and pi/8 tests beside it check normal(...)==0): atan(cos(pi/100000)), atan(1-1/10^9), atan(exp(10^-9)) gave pi/4, so DEG atan(cos(0.001)) showed = 45 (right 44.9999999956). Adds the exact check; a true multiple (2-sqrt(3), 2+sqrt(3)) still gives pi/12, 5*pi/12.
+# Changed by Pascaline contributors, 2026-10-28
 --- a/src/usual.cc
 +++ b/src/usual.cc
 @@ -722,7 +722,10 @@

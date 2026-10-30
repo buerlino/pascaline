@@ -1,4 +1,5 @@
 # Upstream: giac 2.1.0 moyal.cc (after patch 0009). negbinomial_icdf added the cdf in a long double and compared it with t, so a t equal to a cdf value that is no binary fraction landed one step high: negbinomial_icdf(3,1/3,1/27) = 1 (right 0, P(K<=0) = 1/27), (3,1/3,1/9) = 2 (right 1), (3,1/3,17/81) = 3 (right 2); t >= 1 returned 1 (right +infinity at t = 1, the support is unbounded). Now with r, p and t exact rationals the cdf is added exactly by the same recurrence (pmf(k+1) = pmf(k)*(1-p)*(k+r)/(k+1)), scaled to integers by b^(r+k) (p = a/b) so no step takes a gcd, and the least k with cdf(k) >= t is returned, under a cap of 100000 steps that refuses and a control_c check per step; t = 1 is +infinity and t outside [0,1] is refused on both paths; float arguments keep the long double sum.
+# Changed by Pascaline contributors, 2026-10-28
 --- a/src/moyal.cc
 +++ b/src/moyal.cc
 @@ -840,6 +840,14 @@

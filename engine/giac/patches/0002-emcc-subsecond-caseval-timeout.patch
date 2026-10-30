@@ -1,4 +1,5 @@
 # Upstream: giac 2.1.0 global.cc/gen.cc. EMCC builds compare whole seconds (time(0)) in the caseval timeout check, so 'timeout 0.3' fires only after 1-2 s. Record the start in ms (emscripten_get_now), compare in ms, and restart the ms clock after a timeout (as the seconds clock is) so the check doesn't fire again while Giac unwinds. Non-EMCC builds unchanged.
+# Changed by Pascaline contributors, 2026-10-11
 --- a/src/gen.cc
 +++ b/src/gen.cc
 @@ -17008,6 +17008,9 @@

@@ -15,6 +15,7 @@ tools/device_run.py start --mode first|cold|warm --runs 7         # launch timin
 tools/device_run.py bench --runs 5                                 # the benchmark cases of tests/golden/bench.yaml on the device
 tools/device_run.py page PATH [--wait MARK]                       # a measurement page; its results go to .coord/device-runs.jsonl
 tools/runs_summary.py                                             # medians from .coord/device-runs.jsonl
+tools/check-version.sh [vX.Y.Z]                                   # app/package.json, build.gradle and the F-Droid recipe agree (and equal the tag); test: check-version.test.sh, run by `npm run gate` (A48)
 ```
 
 They use `$ANDROID_SERIAL`: `core-device.sh` requires it, the Python tools default to the Tab One. Smaller helpers (usage in each file's header):

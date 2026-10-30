@@ -1,4 +1,5 @@
 # Upstream: giac 2.1.0 global.cc/gen.cc/global.h (G82). A step budget for caseval: control_c counts its own calls, and 'ckbudget N' (N>0) makes it interrupt after N calls since the evaluation started (or since the last interrupt), so a result does not depend on the speed of the device. 'ckbudget 0' (the default) turns it off: Giac behaves as before and 'timeout' stays a clock. 'ckcount' returns the number of calls the last evaluation made. Non-EMCC builds get it too (no clock involved).
+# Changed by Pascaline contributors, 2026-10-24
 --- a/src/gen.cc
 +++ b/src/gen.cc
 @@ -17004,10 +17004,28 @@
