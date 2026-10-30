@@ -242,7 +242,7 @@ Budgets: 8.3. Risks: alias quality (only the query test and real use show it); t
 There is no separate Units app (P11): units are added *after* the formula, in unit slots, in the unit view opened by the units key (decisions.md P11 and S1; layout and press counts in `docs/archive/r7-unit-slots.md` and `docs/archive/r9-unit-pad.md`). **P15 (decided 2026-10-14; G15's check passed 2026-10-15):** Giac does the unit arithmetic in the worker that is already loaded, with the Find index's exact factors; libqalculate is used only at build time, as the index's source. Our parser decides what reaches Giac, and the evaluator checks the result.
 
 ### 4.1 Evidence: units on Giac (G15's probe, 2026-10-15)
-G15's probe (`tools/probes/units-giac.mjs`) computed the spike's cases, the tasks and S1's 50 units exactly in Giac with the Find index's factors, in one call of median 0.5 ms on the desktop. It agreed with qalc 5.13.1 except where qalc is wrong (`hp`, `mmHg`: oracle) or gives no error (`1 m + 1 s`). The table and the units refused for want of an exact factor (`nofactor`): [research/r12-evidence.md](research/r12-evidence.md) section 2.
+G15's probe (`tools/probes/units-giac.mjs`): S1's 50 units and the tasks exact in Giac with the Find index's factors, median 0.5 ms; the table is [research/r12-evidence.md](research/r12-evidence.md) section 2. Full text: [archive](archive/04-architecture-2026-10.md).
 
 ### 4.2 Decision: the unit evaluator on the Giac worker (P15)
 There is no third worker. The unit view's arithmetic is a `units` request in worker 1, beside `home`, so Cancel works as in Home: terminate, respawn and replay the definitions. The factor table (units' `si` and `dim`, prefixes' powers of ten) comes from the Find index. It loads with the unit view, never in the start chunk.
@@ -329,17 +329,7 @@ Every key press counts 1, Shift and Alpha included; letters typed in Find count 
 
 ### 5.5 Decision: the entry line, one key path and one box model (architecture check, 2026-10-15)
 
-**State:** the key path step by step is [r6](research/r6-pipelines.md) section 1; the box model, its tests and the unit view's field as read on 2026-10-15 are [research/r12-evidence.md](research/r12-evidence.md) section 4.
-
-**Decision:**
-1. **One key path** (built, R45): every key, from the keypad or a hardware keyboard, goes through `press()`; `hwkeys.ts` only maps a character or key name to a keypad key id and layer, so an open sheet, a picked row, Find and the unit slots see hardware keys exactly as keypad keys.
-2. **One owner per key press.** `press()` hands the key to whatever owns it now: an open sheet, Find, a unit slot, a picked history row, or the entry line. Three exist (`settingsPress` until R49, `sheetPress`, `historyKey`; `keyboard/route.ts`); Find and the slots add two. The unit view never sends keys through `EntryController.run`: its slots change only through R24a's model and `setPromptValue`. The common seam is built with the second new owner (R24c), not before.
-3. **One box model** (built, R43): `entry/boxes.ts`, read by `delete.ts`, `stops.ts` and `nextBox`. The cursor grid checks, for every template, that ◀ visits every stop and nothing else, ▶ reaches the end, every stop is at the edge of a box, and ▶ from the end of an inner box stops at the end of the outer one (▶ cannot stop at every box while an empty box is ahead: R10 jumps to it).
-4. **A new template** brings, in its commit, a parser rule with its round trip (as before) and a recogniser in `boxes.ts` when its LaTeX shape is new; the grids read the yaml and need nothing.
-
-**Alternatives:** a template registry that describes each key's boxes as data (cleaner, but every recogniser would be rewritten at once, and the grids already catch a missing one); leave the three models (each new template and the unit view then add more copies that drift apart, as F34 shows; R29 added the parser's).
-**Risks:** the recognisers read MathLive's atom LaTeX (`\text{i}`, `\mathrm{d}`, `\,`), so a MathLive upgrade can break them without a type error; both grids are the guard and run before any upgrade merges.
-**Would change if:** a MathLive upgrade breaks the recognisers more than once; then the template registry of the alternatives replaces them.
+**Decision:** one key path: every key, keypad or hardware, goes through `press()` (R45). One owner per key press (`keyboard/route.ts`: an open sheet, Find, a unit slot, a picked history row or the entry line); the unit view's slots change only through R24a's model, and the common seam comes with R24c. One box model, `entry/boxes.ts` (R43), checked by the cursor and ⌫ grids before any MathLive upgrade merges; a new template brings its parser rule with its round trip and, for a new LaTeX shape, a recogniser. **Would change if:** a MathLive upgrade breaks the recognisers more than once (then a template registry). State, alternatives and risks: [archive](archive/04-architecture-2026-10.md).
 
 ---
 
@@ -442,7 +432,7 @@ The types live in the code; this is the map. Views see `Calc` (`app/src/calc/por
 
 | Item | Budget | State | Enforced by |
 |---|---|---|---|
-| Start chunk | ≤ 175 kB raw, ≤ 61 kB gzip; pin 58.5 kB gzip | 57.50 kB gzip on `56d017f` (R87; R91's split: 61.02 → 57.81). The pin `START_PIN_GZIP` holds: a package that grows the chunk past it raises it in the same diff, with the reason and the before and after in its report, never past 61 kB; `LAZY_PARTS` must stay dynamic chunks (R91). `tools/probes/start-chunk.mjs` lists the bytes per source; every UI package reports its delta | size test (`npm run size`) |
+| Start chunk | ≤ 175 kB raw, ≤ 61 kB gzip; pin 60 kB gzip | 59.89 kB gzip (R4b: phase-1 58.50 + 0.92; R57: + 0.47). The pin `START_PIN_GZIP` holds: a package that grows the chunk past it raises it in the same diff, with the reason and the before and after in its report, never past 61 kB; `LAZY_PARTS` must stay dynamic chunks (R91). `tools/probes/start-chunk.mjs` lists the bytes per source; every UI package reports its delta | size test (`npm run size`) |
 | MathLive chunk (after the keypad) | ≤ 830 kB raw | 807.74 kB (2026-10-18) | size test |
 | Find UI chunk | ≤ 30 kB raw | — | size test |
 | Find index asset | ≤ 400 kB raw, ≤ 100 kB gzip | 325.7 / 67.1 kB (2026-10-15) | size test (once Find loads it) |
@@ -475,7 +465,7 @@ The types live in the code; this is the map. Views see `Calc` (`app/src/calc/por
 ---
 
 ## Appendix A: probes
-The probes behind this document are in `tools/probes/` (its README says how to run each): `engine.ts` (Home and CAS paths through `EngineHost`, `FACTS=1` for the facts), `parse.ts` (the parser), `digits-cost.ts`, `units-giac.mjs` (G15), `find/` (the index prototype), `start-chunk.mjs`, `bound.ts`, `replay-cost.mjs`, `unit-presses.mjs`, `results-geometry.mjs`. What they found is in [research/r12-evidence.md](research/r12-evidence.md); oracle values come from mpmath in `tests/golden/.venv` (the expressions: r12 section 1).
+The probes are in `tools/probes/` (its README says how to run each); what they found is in [research/r12-evidence.md](research/r12-evidence.md), and oracle values come from mpmath in `tests/golden/.venv`. The list as it stood: [archive](archive/04-architecture-2026-10.md).
 
 ## Appendix C: open items (to verify), who, how
 

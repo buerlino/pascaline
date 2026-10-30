@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Keyboard model: types, validation and lookup for spec/keyboard.yaml (turned into JSON at build time).
 import raw from "../../../spec/keyboard.yaml";
+import type { Chip } from "../input/chips.ts";
 
 export type Special =
   | "shift" | "alpha" | "enter" | "clear" | "esc" | "settings" | "mode" | "fmt" | "copy" | "paste" | "tmpl"
@@ -13,11 +14,13 @@ export type Special =
   | "relations" | "symbols"
   /** Math (R4a): Find, everything (docs/04 3.5–3.7). */
   | "find"
+  /** Vars (R4b): Find on the user's variables and functions; Shift + Math, Memory: the same list with delete and clear all. */
+  | "vars" | "memory"
   /** A key whose function we don't have yet (it keeps its alpha letter): does nothing. */
   | "none";
 export const SPECIALS: readonly Special[] = [
   "shift", "alpha", "enter", "clear", "esc", "settings", "mode", "apps", "symb", "plot", "num", "menu", "fmt", "copy", "paste", "tmpl",
-  "home", "cas", "switch", "relations", "symbols", "find", "none",
+  "home", "cas", "switch", "relations", "symbols", "find", "vars", "memory", "none",
 ];
 
 /** The first of the maths rows (3–9): a pick sheet is drawn over them, never over the top cluster (rows 0–2), whose
@@ -33,11 +36,17 @@ export type ActionBody =
   /** Type characters as a physical keyboard would (smart fences, auto-subscript rules apply). */
   | { kind: "type"; text: string }
   /** Insert a LaTeX template; #? marks a placeholder, #@ the selection or what is before the cursor. */
-  | { kind: "insert"; latex: string; sample?: readonly [string, string] }
+  | { kind: "insert"; latex: string; sample?: readonly [string, string]; chip?: ConstChip }
   /** A MathLive editing command. */
   | { kind: "cmd"; name: string }
   /** Handled by the app (shift, alpha, enter, clear, esc, Home/CAS, settings, mode, apps and their views, menu). */
   | { kind: "special"; name: Special };
+
+/** A constant put on a free key (R4b): the chip table entry its `\const{ID}{symbol}` needs, set when the key inserts it. */
+export interface ConstChip {
+  readonly key: string;
+  readonly chip: Chip;
+}
 
 export type Layer = "primary" | "shift" | "alpha";
 export type KeyClass = "num" | "op" | "fn" | "ctl" | "enter" | "nav";
@@ -139,7 +148,7 @@ export function parseAction(v: unknown, where: string): Action {
 
 function parseBody(v: unknown, where: string): ActionBody {
   if (!isObj(v)) throw new KeyboardSpecError(`${where}: an action must be a mapping`);
-  const names = Object.keys(v).filter((k) => k !== "sample");
+  const names = Object.keys(v).filter((k) => k !== "sample" && k !== "chip");
   if (names.length !== 1) throw new KeyboardSpecError(`${where}: an action has exactly one of type/insert/cmd/special`);
   const name = names[0] as string;
   switch (name) {
@@ -155,6 +164,13 @@ function parseBody(v: unknown, where: string): ActionBody {
     case "insert": {
       const latex = str(v, "insert", where);
       const sample = v["sample"];
+      const c = v["chip"];
+      if (c !== undefined) {
+        if (!isObj(c) || typeof c["key"] !== "string" || typeof c["value"] !== "string" || typeof c["exact"] !== "boolean" || (c["unc"] !== undefined && typeof c["unc"] !== "string"))
+          throw new KeyboardSpecError(`${where}: 'chip' must be { key, value, exact, unc? }`);
+        const { key, ...chip } = c as unknown as { key: string } & Chip;
+        return { kind: "insert", latex, chip: { key, chip } };
+      }
       if (sample === undefined) return { kind: "insert", latex };
       if (!Array.isArray(sample) || sample.length !== 2 || sample.some((s) => typeof s !== "string"))
         throw new KeyboardSpecError(`${where}: 'sample' must be [latex, giac]`);

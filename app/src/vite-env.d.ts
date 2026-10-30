@@ -25,3 +25,5 @@ declare module "virtual:about" {
   const data: { readonly version: string; readonly parts: readonly AboutPart[]; readonly licences: Readonly<Record<string, string>> };
   export default data;
 }
+/** The engine's file name under engine/: `giac.mjs` in dev and tests, `giac.<hash>.mjs` in a production build (vite.config.ts, A49). */
+declare const __GIAC_MJS__: string;

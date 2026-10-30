@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { FakeCalc } from "../calc/fake.ts";
 import { Session } from "../state/session.svelte.ts";
 import type { Kv } from "../state/storage.ts";
+import { UserKeys } from "../keyboard/userKeys.svelte.ts";
 import { modeItems } from "./modeSheet.ts";
 import { Sheet, forgetPicks } from "./sheet.svelte.ts";
 
@@ -259,5 +260,61 @@ describe("Help and about (R87)", () => {
     expect(s.level.nudge).toBe(1);
     expect(s.left()).toBe(false); // nothing to step: ◀ goes back, as everywhere
     expect(s.back()).toBe(true);
+  });
+});
+
+describe("Settings › Your keys (R4b)", () => {
+  const withKeys = () => {
+    const userKeys = new UserKeys(memoryKv());
+    const chosen: string[] = [];
+    const s = new Sheet("mode", "Mode", () => modeItems(session, { userKeys, chooseFor: (id, layer) => void chosen.push(`${id}:${layer}`) }), { remember: false });
+    s.pickNumber(5);
+    return { s, userKeys, chosen };
+  };
+
+  it("is the third section, between Key vibration and Counters, only where the app gives the slots", () => {
+    expect(withKeys().s.level.items.map((x) => x.id)).toEqual(["numbers", "vibration", "keys", "counters", "help"]);
+    expect(settings().level.items.map((x) => x.id)).not.toContain("keys");
+  });
+
+  it("lists U1–U6 in three layers and Reset all; a place sets a slot, Empty this slot gives it back", () => {
+    const { s, userKeys } = withKeys();
+    expect(byId(s, "keys")?.value).toBe("None set");
+    s.pickNumber(3);
+    const ids = s.level.items.map((x) => x.id);
+    expect(ids).toHaveLength(19);
+    expect(ids.slice(0, 4)).toEqual(["u1:primary", "u1:shift", "u1:alpha", "u2:primary"]);
+    expect(byId(s, "u2:shift")?.label).toBe("U2 ⇧");
+    expect(byId(s, "u1:alpha")?.label).toBe("U1 α");
+    expect(byId(s, "u1:primary")?.value).toBe("Empty");
+    s.pickNumber(1); // U1's level: Find…, the six places, Empty this slot
+    expect(s.level.items.map((x) => x.id)).toEqual(["find", "home", "cas", "apps", "menu", "mode", "settings", "empty"]);
+    expect(s.pickNumber(3)).toEqual({ kind: "stay" }); // CAS: set, the sheet stays
+    expect(userKeys.placeOf("u1", "primary")).toBe("cas");
+    expect(byId(s, "cas")?.selected).toBe(true);
+    s.pickNumber(4);
+    expect(byId(s, "cas")?.selected).toBe(false);
+    s.pickNumber(8);
+    expect(userKeys.labelOf("u1", "primary")).toBeUndefined();
+  });
+
+  it("Find… hands the slot to the app", () => {
+    const { s, chosen } = withKeys();
+    s.pickNumber(3);
+    s.pickNumber(5); // U2 ⇧
+    const p = s.pickNumber(1);
+    if (p.kind === "run") p.item.run?.();
+    expect(chosen).toEqual(["u2:shift"]);
+  });
+
+  it("a free key pressed while the slots are listed goes to its row in its layer; elsewhere it does nothing", () => {
+    const { s } = withKeys();
+    expect(s.goKey("u3", "primary")).toBe(false); // the Settings level lists no slots
+    s.pickNumber(3);
+    expect(s.goKey("u3", "shift")).toBe(true);
+    expect(s.level.current?.id).toBe("u3:shift");
+    expect(s.goKey("u6", "alpha")).toBe(true);
+    expect(s.level.current?.id).toBe("u6:alpha");
+    expect(s.goKey("sin", "primary")).toBe(false);
   });
 });

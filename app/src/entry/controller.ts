@@ -341,6 +341,7 @@ export class EntryController {
    */
   run(a: ActionBody): void {
     if (a.kind === "special") return;
+    if (a.kind === "insert" && a.chip) this.table[a.chip.key] = a.chip.chip; // a constant on a free key (R4b)
     this.touched = true;
     if (!this.mf) {
       this.queue.push(a);

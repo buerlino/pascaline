@@ -15,7 +15,7 @@ test("after one online visit: reload offline, 1+1 in Home, the Function app open
     return { n: keys.length, urls };
   });
   expect(cached.n).toBe(1);
-  expect(cached.urls.some((u) => u.endsWith("/engine/giac.wasm"))).toBe(true);
+  expect(cached.urls.some((u) => /\/engine\/giac\.[0-9a-f]{16}\.wasm$/.test(u))).toBe(true);
 
   await context.setOffline(true);
   await page.reload();
@@ -29,6 +29,6 @@ test("after one online visit: reload offline, 1+1 in Home, the Function app open
   await expect(page.locator('[data-testid="result"] .result').last()).toHaveAttribute("data-text", "2");
 
   // The Function app (a lazy chunk, never fetched online in this test) opens from the precache.
-  await tap(page, ["apps", "d1"]);
+  await tap(page, ["@symb"]);
   await expect(page.locator('[data-app="function"]')).toBeVisible();
 });

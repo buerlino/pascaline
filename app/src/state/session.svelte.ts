@@ -310,6 +310,20 @@ export class Session {
     }
   }
 
+  /** Memory (R4b): purge these names from the engine and its definitions log. The list drops them at once, then reads
+   *  the log again (a purge that failed brings a name back). */
+  async forget(names: readonly string[]): Promise<void> {
+    if (names.length === 0) return;
+    const gone = new Set(names);
+    this.userNames = this.userNames.filter((u) => !gone.has(u.name));
+    try {
+      await this.calc.home(`purge(${names.join(",")})`, this.settings);
+    } catch {
+      /* cancelled or the engine restarted: the names are read again below */
+    }
+    await this.refreshNames();
+  }
+
   /** A function the engine just took (`p(x):=…`) counts for the next parse at once; the names read after the job
    *  (refreshNames) then replace this entry with the log's own (R56). */
   private noteFunction(name: string, view: View, preview: string): void {

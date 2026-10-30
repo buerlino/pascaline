@@ -25,6 +25,7 @@ export const en = {
   "key.del": "Del",
   "key.vars": "Vars",
   "key.math": "Math",
+  "key.memory": "Mem",
   "key.tmpl": "Tmpl",
   "key.enter": "Enter",
   "entry.label": "Entry line",
@@ -105,6 +106,9 @@ export const en = {
   "error.memory": "Out of memory: the engine was restarted",
   "engine.starting": "Starting the engine…",
   "engine.error": "The engine failed to start.",
+  /** The update line (A49): a new version of the web build is installed and waits for the user's Restart. */
+  "update.ready": "A new version is ready.",
+  "update.restart": "Restart",
   "engine.safeStart": "Your stored definitions were not loaded because they stopped the engine; Memory lists them.",
   "mode.title": "Mode",
   "mode.angle": "Angle",

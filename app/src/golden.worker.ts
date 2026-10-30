@@ -17,7 +17,7 @@ let pageBase = "";
 async function freshHost(): Promise<EngineHost> {
   setGiacHostGlobals();
   // The same file the engine worker loads; absolute URL as there.
-  const url = new URL(`${import.meta.env.BASE_URL}engine/giac.mjs`, pageBase).href;
+  const url = new URL(`${import.meta.env.BASE_URL}engine/${__GIAC_MJS__}`, pageBase).href;
   const mod = (await import(/* @vite-ignore */ url)) as { default: (o: object) => Promise<GiacModule> };
   const out = messageBuffer();
   const M = await mod.default({ print: out.print, printErr: () => {} });
