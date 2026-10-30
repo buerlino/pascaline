@@ -28,7 +28,7 @@ const STAMP = "@pascaline";
 
 /** Steps from version n to n+1, by key; a key without a step keeps its value. */
 type Migrations = Record<number, Record<string, (value: unknown) => unknown>>;
-const MIGRATIONS: Migrations = {
+export const MIGRATIONS: Migrations = {
   // 0 → 1: only the stamp is new.
   0: {},
   // 1 → 2: a definitions entry may carry `desc` (G33); nothing to rewrite.
