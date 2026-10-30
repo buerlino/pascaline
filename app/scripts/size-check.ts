@@ -105,18 +105,37 @@ function subjects(manifest: Record<string, ManifestChunk>, all: string[]): { pre
 /** Views that only draw an open sheet stay out of the start chunk (R46): each must be its own dynamic chunk, not in `startFiles`. */
 export const LAZY_VIEWS = ["src/views/Sheet.svelte"];
 
-/** Failures for lazy views that are missing as a dynamic chunk, or that are loaded at start. */
-export function checkSplits(dist: string): string[] {
+/** R91: code that only runs after a key press or once a result is in stays out of the start chunk too: the sheet's keys
+ *  and the palette cells (loaded with the sheet's view), the result tidy-up, the palettes with their names. */
+export const LAZY_PARTS = ["src/views/sheetKeys.ts", "src/views/tmplSheet.ts", "src/render/tidy.ts", "src/keyboard/shiftPalettes.ts"];
+
+/** R91's pin: the start chunk is at most this many bytes gzip, 2.5 kB under the budget of 61 kB, so the Settings base
+ *  (R49, R86, R57) has room. A package that needs more raises the pin with a reason, here and in docs/04 8.3. */
+export const START_PIN_GZIP = 58.5 * KB;
+
+/** Failures for the start chunk's row when it is over the pin. */
+export function checkStartPin(row: Row): string[] {
+  return row.gzip > START_PIN_GZIP ? [`${row.rule} is pinned at ${kB(START_PIN_GZIP)} gzip (R91), now ${kB(row.gzip)}: split more out of it, or raise START_PIN_GZIP in size-check.ts with a reason (it stays under the budget of ${kB(row.gzipMax ?? 0)})`] : [];
+}
+
+/** Failures for `srcs` that are missing as a dynamic chunk, or that are loaded at start. */
+function lazyFailures(dist: string, srcs: readonly string[]): string[] {
   const manifest = readManifest(dist);
   const start = new Set(startFiles(manifest));
   const failures: string[] = [];
-  for (const src of LAZY_VIEWS) {
+  for (const src of srcs) {
     const chunk = Object.values(manifest).find((c) => c.isDynamicEntry && normalSrc(c.src) === src);
     if (chunk === undefined) failures.push(`${src} is not a dynamic chunk: it is in the start chunk (import it with import())`);
     else if (start.has(chunk.file)) failures.push(`${src} (${chunk.file}) is loaded at start`);
   }
   return failures;
 }
+
+/** Failures for lazy views that are missing as a dynamic chunk, or that are loaded at start. */
+export const checkSplits = (dist: string): string[] => lazyFailures(dist, LAZY_VIEWS);
+
+/** Failures for the R91 parts, likewise. */
+export const checkLazyParts = (dist: string): string[] => lazyFailures(dist, LAZY_PARTS);
 
 /** The newest modification time (ms) of any file under `dir`; 0 when it does not exist. */
 function newestMtime(dir: string): number {
@@ -190,7 +209,9 @@ if (process.argv[1] !== undefined && resolve(process.argv[1]) === fileURLToPath(
   }
   try {
     const report = checkSizes(dist);
-    report.failures.push(...checkSplits(dist));
+    report.failures.push(...checkSplits(dist), ...checkLazyParts(dist));
+    const start = report.rows.find((r) => r.rule === "Start chunk");
+    if (start !== undefined) report.failures.push(...checkStartPin(start));
     console.log(`size-check: ${dist}\n${format(report)}`);
     if (report.failures.length > 0) {
       console.error(`\nsize-check FAILED:\n${report.failures.map((f) => `  ${f}`).join("\n")}\nA budget changes only together with docs/04-architecture.md section 8.3.`);

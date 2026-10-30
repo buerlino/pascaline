@@ -10,7 +10,6 @@ import { t, type MessageKey } from "../i18n/index.ts";
 import { EngineMemoryError, readValueFacts } from "../engine/types.ts";
 import { decimalToString, type ComplexValue, type MarkInfo, type PrecisionFacts } from "../engine/format.ts";
 import { homeResultToLatex } from "../render/home.ts";
-import { tidyGiacLatex } from "../render/tidy.ts";
 import {
   DEFAULT_FMT_CYCLE,
   factsOf,
@@ -122,6 +121,14 @@ function validUses(x: unknown): UsedValue[] | undefined {
 }
 
 const HISTORY_LIMIT = 200;
+/** R91: the tidy-up of Giac's latex (render/tidy.ts) is only needed once a result is in, so it is a chunk of its own: it
+ *  loads beside the first job (and when idle, main.ts), and a failed load is tried again by the next job. */
+let tidyChunk: Promise<typeof import("../render/tidy.ts")> | undefined;
+export const loadTidy = (): Promise<typeof import("../render/tidy.ts")> =>
+  (tidyChunk ??= import("../render/tidy.ts").catch((e: unknown) => {
+    tidyChunk = undefined;
+    throw e;
+  }));
 const errorText = (code: CalcError | undefined, fallback: string): string =>
   code ? t(`error.${code}` as MessageKey) : fallback;
 const clamp = (n: number, lo: number, hi: number): number => Math.min(hi, Math.max(lo, Math.round(n)));
@@ -474,7 +481,7 @@ export class Session {
     const s: CalcSettings = { digits: this.settings.digits, angle: this.settings.angle, format: this.settings.format };
     try {
       if (view === "home") {
-        const r = named ? await this.calc.home(giac, s, named) : await this.calc.home(giac, s);
+        const [r, { tidyGiacLatex }] = await Promise.all([named ? this.calc.home(giac, s, named) : this.calc.home(giac, s), loadTidy()]);
         if (live.status !== "pending") return;
         live.status = r.ok ? "done" : "error";
         live.text = r.ok ? r.display : errorText(r.error, r.display);
@@ -484,7 +491,7 @@ export class Session {
         // A result that is not a number is drawn from Giac's latex(), as in CAS (R18f3); numbers from our formatter.
         if (r.ok) live.resultLatex = r.latex !== undefined ? tidyGiacLatex(r.latex) : homeResultToLatex(r.display);
       } else {
-        const r = await this.calc.cas(giac, s);
+        const [r, { tidyGiacLatex }] = await Promise.all([this.calc.cas(giac, s), loadTidy()]);
         if (live.status !== "pending") return;
         live.status = r.ok ? "done" : "error";
         live.text = r.ok ? r.text : errorText(r.error, r.text);

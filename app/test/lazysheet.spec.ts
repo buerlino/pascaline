@@ -4,11 +4,11 @@
 import { expect, test, type Page } from "@playwright/test";
 import { entryValue, open, tap } from "./helpers.ts";
 
-/** Hold the Sheet chunk's requests back; returns the function that lets them through. */
-async function hold(page: Page): Promise<() => void> {
+/** Hold the Sheet chunk's requests back (or those of `what`); returns the function that lets them through. */
+async function hold(page: Page, what: RegExp = /\/src\/views\/(Sheet\.svelte|sheetFit\.ts)/): Promise<() => void> {
   let release = (): void => {};
   const gate = new Promise<void>((r) => (release = r));
-  await page.route(/\/src\/views\/(Sheet\.svelte|sheetFit\.ts)/, async (route) => {
+  await page.route(what, async (route) => {
     await gate;
     await route.continue();
   });
@@ -116,4 +116,37 @@ test("F42: a long press on a row before the chunk is in shows the menu once it i
   release();
   await expect(sheet(page).getByRole("menuitem")).toHaveCount(9);
   expect(await texts(page)).toEqual(["1", "2"]);
+});
+
+// R91: the sheet's keys and the palette cells, the palettes with their names (Tmpl too) and the result tidy-up are chunks
+// of their own; a key pressed before one of them is in waits in the same queue.
+test("Tmpl, then Enter, typed before the palette cells' and the sheet keys' code is in, inserts the fraction once it is", async ({ page }) => {
+  const release = await hold(page, /\/src\/views\/(tmplSheet|sheetKeys)\.ts/);
+  await open(page);
+  await tap(page, ["tmpl", "enter"]);
+  expect(await entryValue(page)).toBe("");
+  release();
+  await expect.poll(() => entryValue(page)).toContain("frac");
+  await expect(sheet(page)).toBeHidden();
+});
+
+test("Tmpl, then Enter, typed before the palettes' chunk is in, inserts the fraction once it is", async ({ page }) => {
+  const release = await hold(page, /\/src\/keyboard\/shiftPalettes\.ts/);
+  await open(page);
+  await tap(page, ["tmpl", "enter"]);
+  expect(await entryValue(page)).toBe("");
+  release();
+  await expect.poll(() => entryValue(page)).toContain("frac");
+  await expect(sheet(page)).toBeHidden();
+});
+
+test("an Enter typed before the result tidy-up's chunk is in finishes its job once it is", async ({ page }) => {
+  const release = await hold(page, /\/src\/render\/tidy\.ts/);
+  await open(page);
+  await page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
+  await tap(page, ["d1", "add", "d2", "enter"]);
+  expect(await entryValue(page)).toBe("");
+  await expect(page.locator("article.item")).toHaveAttribute("data-status", "pending");
+  release();
+  await expect(page.locator("article.item")).toHaveAttribute("data-status", "done");
 });

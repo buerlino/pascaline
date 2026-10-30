@@ -183,12 +183,24 @@
   /** Tmpl: the template palette (R10), a grid on the sheet; a pick inserts its template as its key would. A view
    *  without an entry line (Plot) has nothing to insert into. */
   function openTemplates(): void {
-    const open = (m: NonNullable<typeof shiftPalettes>): void => openPalette("tmpl", t("tmpl.title"), m.tmpl);
-    if (shiftPalettes) open(shiftPalettes);
-    else void loadShiftPalettes().then(open);
+    withPalettes((m) => openPalette("tmpl", m.paletteText("tmpl.title"), m.tmpl, (cell) => m.paletteText(`tmpl.${cell}`)));
+  }
+  /** Run `open` with the palettes' chunk (loaded with MathLive): at once when it is in, else after the load, with every
+   *  key meanwhile waiting in the queue (decisions.md R8), so none of them lands on the line before the sheet is there. */
+  function withPalettes(open: (m: NonNullable<typeof shiftPalettes>) => void): void {
+    if (shiftPalettes) return open(shiftPalettes);
+    sheetLoad = loadShiftPalettes().then(
+      (m) => {
+        sheetLoad = null;
+        open(m);
+      },
+      () => {
+        sheetLoad = null; // the chunk did not load: the queued keys run without the sheet
+      },
+    );
   }
   /** Tmpl, Shift + 6 (relations and logic) and Shift + 9 (symbols and Greek, R18): a palette on the grid sheet. */
-  function openPalette(id: PaletteId, title: string, p: Palette, name?: (id: string) => string): void {
+  function openPalette(id: PaletteId, title: string, p: Palette, name: (id: string) => string): void {
     if (!shell.showsEntry) return dead();
     // the cells' code comes with the sheet's view (R91); the Tmpl, Shift + 6 and Shift + 9 keys wait for it in the queue
     const cells = sheetChunk.palette;
@@ -198,10 +210,7 @@
   }
   /** The palettes (Tmpl too, R91) come in their own chunk, loaded with MathLive; until then the key waits for it. */
   function openShiftPalette(id: "rel" | "sym"): void {
-    const open = (m: NonNullable<typeof shiftPalettes>): void =>
-      openPalette(id, m.paletteText(`${id}.title`), id === "rel" ? m.relations : m.symbols, (cell) => m.paletteText(`${id}.${cell}`));
-    if (shiftPalettes) open(shiftPalettes);
-    else void loadShiftPalettes().then(open);
+    withPalettes((m) => openPalette(id, m.paletteText(`${id}.title`), id === "rel" ? m.relations : m.symbols, (cell) => m.paletteText(`${id}.${cell}`)));
   }
   /** Math (R4a): Find (find/finder.ts). Until its code and the index are in, every key waits in the queue (decisions.md
    *  R8). A view without an entry line has nothing to insert into. */
