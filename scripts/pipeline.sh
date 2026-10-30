@@ -576,7 +576,8 @@ timing_only() {  # <check> <log>
   local c; for c in "${TIMING_CHECKS[@]}"; do [[ "$c" == "$1" ]] && node "$wt/app/scripts/pipeline-logs.ts" timing "$1" "$2" && return 0; done
   return 1
 }
-rerun_timing() {  # <check> <log>: only the failing files, output appended to the log
+rerun_timing() {  # <check> <log>: only the failing files, output appended to the log; A51: after the host is quiet
+  quiet_wait | while IFS= read -r line; do runlog "$line"; done
   local files; mapfile -t files < <(node "$wt/app/scripts/pipeline-logs.ts" files "$1" "$2")
   case "$1" in
     vitest) (cd "$wt/app" && FORCE_COLOR=0 NO_COLOR=1 FIND_INDEX=required timeout 900 npx vitest run "${files[@]}") >> "$2" 2>&1;;

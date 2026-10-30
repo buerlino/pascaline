@@ -674,5 +674,34 @@ grep -oE 'Q[1-4]: integ released after [0-9]+ s in the queue' "$mq/.coord/log.md
 [[ "$(wc -l < "$tmp/serial")" -eq 5 ]] || fail "A47b: not every queue entry logs its serial time: $(cat "$tmp/serial")"
 echo "A47b serial times: $(sed 's/: integ released after / /; s/ s in the queue/ s/' "$tmp/serial" | paste -sd, - | sed 's/,/, /g')"
 
+# A51: a timing rerun waits for a quiet host: 1-minute load under half of nproc, checked every 15 s, at most 600 s, then reruns anyway
+declare -F quiet_wait >/dev/null || fail "A51: quiet_wait is not defined in pipeline-lib.sh"
+if declare -F quiet_wait >/dev/null; then
+  ql="$tmp/loadavg"; printf '9.50 8.00 7.00 3/900 12345\n' > "$ql"
+  qenv() { PASCALINE_NPROC=16 PASCALINE_LOADAVG_FILE="$ql" PASCALINE_QUIET_EVERY=1 PASCALINE_QUIET_MAX="$1" "${@:2}"; }
+  # already quiet: no wait, the load is logged
+  printf '3.10 5.00 6.00 1/900 1\n' > "$ql"
+  out="$(qenv 600 quiet_wait)"; rc=$?
+  [[ $rc -eq 0 ]] && grep -q 'load 3.10' <<<"$out" && ! grep -q 'waiting' <<<"$out" || fail "A51: a quiet host (3.10 of 16) is waited for: $out"
+  # exactly half is not under half
+  printf '8.00 5.00 6.00 1/900 1\n' > "$ql"
+  t0=$SECONDS; out="$(qenv 2 quiet_wait)"
+  grep -q 'rerunning anyway' <<<"$out" && grep -q 'load 8.00' <<<"$out" || fail "A51: a load of exactly nproc/2 counts as quiet: $out"
+  # busy at first, quiet after a moment: the wait ends early and logs the wait and the load
+  printf '12.00 9.00 7.00 5/900 1\n' > "$ql"; ( sleep 2; printf '2.00 9.00 7.00 1/900 1\n' > "$ql" ) &
+  t0=$SECONDS; out="$(qenv 30 quiet_wait)"; dt=$((SECONDS - t0)); wait
+  [[ $dt -lt 15 ]] && grep -q 'load 12.00' <<<"$out" && grep -q 'quiet after' <<<"$out" && grep -q 'load 2.00' <<<"$out" || fail "A51: the wait did not end when the load fell (${dt} s): $out"
+  # never quiet: gives up after the limit and reruns anyway
+  printf '14.00 9.00 7.00 5/900 1\n' > "$ql"
+  t0=$SECONDS; out="$(qenv 3 quiet_wait)"; rc=$?; dt=$((SECONDS - t0))
+  [[ $rc -eq 0 && $dt -ge 3 && $dt -lt 15 ]] && grep -q 'rerunning anyway' <<<"$out" || fail "A51: a busy host is not given up after the limit (rc $rc, ${dt} s): $out"
+  # an unreadable load file never blocks the rerun
+  out="$(PASCALINE_NPROC=16 PASCALINE_LOADAVG_FILE="$tmp/none" PASCALINE_QUIET_EVERY=1 PASCALINE_QUIET_MAX=3 quiet_wait)"; rc=$?
+  [[ $rc -eq 0 ]] || fail "A51: an unreadable load file fails quiet_wait: $out"
+fi
+# rerun_timing waits first (golden, vitest and e2e alike), and the wait goes to the run log
+sed -n '/^rerun_timing() {/,/^}/p' "$here/pipeline.sh" | grep -q 'quiet_wait' || fail "A51: rerun_timing does not call quiet_wait"
+grep -q 'runlog' <(sed -n '/^rerun_timing() {/,/^}/p' "$here/pipeline.sh") || fail "A51: rerun_timing does not log the wait to the run log"
+
 [[ $fails -eq 0 ]] || { echo "pipeline.test.sh: $fails failure(s) in $count packages" >&2; exit 1; }
 echo "pipeline.test.sh: ok ($count packages)"

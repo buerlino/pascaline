@@ -175,6 +175,26 @@ nodemods_drop() {
   [[ $nodemods_held -eq 1 ]] || return 0
   tools/devlock.sh release nodemods "$nodemods_owner" >/dev/null 2>&1 || true; nodemods_held=0
 }
+# quiet_wait (A51): before a timing rerun, wait until the 1-minute load average is under half of nproc (a check every 15 s, at most
+# 600 s), then return 0 whatever the load: a rerun under the same load that failed it proves nothing. It prints one line per
+# event (the caller sends them to the run log). Test hooks: PASCALINE_LOADAVG_FILE (read instead of /proc/loadavg), PASCALINE_NPROC,
+# PASCALINE_QUIET_EVERY, PASCALINE_QUIET_MAX.
+quiet_wait() {
+  local f="${PASCALINE_LOADAVG_FILE:-/proc/loadavg}" every="${PASCALINE_QUIET_EVERY:-15}" max="${PASCALINE_QUIET_MAX:-600}"
+  local cpus="${PASCALINE_NPROC:-$(nproc)}" t0=$SECONDS load="" first=1
+  while :; do
+    load="$(cut -d' ' -f1 "$f" 2>/dev/null || true)"
+    [[ "$load" =~ ^[0-9]+([.][0-9]+)?$ ]] || { echo "quiet wait: no load average in $f: rerunning at once"; return 0; }
+    if awk -v l="$load" -v n="$cpus" 'BEGIN { exit !(l < n / 2) }'; then
+      if [[ $first -eq 1 ]]; then echo "quiet wait: load $load (under $((cpus / 2)) of $cpus cpus): rerunning"
+      else echo "quiet wait: quiet after $((SECONDS - t0)) s (load $load)"; fi
+      return 0
+    fi
+    if (( SECONDS - t0 >= max )); then echo "quiet wait: load $load still not under $((cpus / 2)) after $((SECONDS - t0)) s: rerunning anyway"; return 0; fi
+    [[ $first -eq 0 ]] || echo "quiet wait: load $load (not under $((cpus / 2)) of $cpus cpus): waiting, a check every $every s for at most $max s"
+    first=0; sleep "$every"
+  done
+}
 _lib_log() { if declare -F log >/dev/null; then log "$*"; fi; }
 # The shell tests (A47a): run by `pipeline.sh selftest` and by the check `shell`. PASCALINE_SELFTEST_TESTS (absolute paths) overrides.
 SELFTESTS=(scripts/pipeline.test.sh scripts/night.test.sh scripts/gc.test.sh tools/devlock.test.sh)
