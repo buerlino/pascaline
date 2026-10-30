@@ -20,6 +20,7 @@ import {
   nextMode,
   normalizeCycle,
   renderNumeric,
+  commaResult,
   type FmtMode,
   type FormStep,
   type Polar,
@@ -43,8 +44,11 @@ export interface HapticsSettings {
 }
 export const HAPTIC_MS_RANGE = { min: 5, max: 100 } as const;
 
+/** The decimal mark (R57, docs/05 3.4): the point, or the comma (typed `{,}`, drawn `,`; `;` separates arguments). */
+export type DecimalMark = "point" | "comma";
 export interface Settings extends CalcSettings {
   entry: EntryMode;
+  decimalMark: DecimalMark;
   /** Notations the Format key (fmt) cycles through, in canonical order. */
   fmtCycle: FmtMode[];
   /** Decimals of the Fixed mode. */
@@ -54,8 +58,8 @@ export interface Settings extends CalcSettings {
   look: Look;
 }
 /** The stored settings' version (docs/04 6.2): 1 = no field (digits ≤ 15, formats std/sci/eng), 2 = digits ≤ 30, pfx,
- *  3 = `look` (R50e). */
-export const SETTINGS_SCHEMA = 3;
+ *  3 = `look` (R50e), 4 = the decimal mark (R57). */
+export const SETTINGS_SCHEMA = 4;
 /** Most significant digits the setting allows (docs/04 2.5). */
 export const MAX_DIGITS = 30;
 export const defaultSettings: Settings = {
@@ -63,6 +67,7 @@ export const defaultSettings: Settings = {
   angle: "rad",
   format: "std",
   entry: "textbook",
+  decimalMark: "point",
   fmtCycle: [...DEFAULT_FMT_CYCLE],
   fixDecimals: 4,
   haptics: { on: false, strength: 50, ms: 15 },
@@ -188,7 +193,8 @@ function validFacts(x: unknown): ResultFacts | undefined {
 /**
  * The settings from what was stored (docs/04 6.2): field by field, so a wrong or missing field keeps its default.
  * `schema` absent is version 1 (digits ≤ 15, formats std/sci/eng); version 2 allows digits ≤ 30 and `pfx`; version 3
- * adds `look`. Every older value stays valid, so the migration only has to write the data back with the new schema.
+ * adds `look`, version 4 `decimalMark`. Every older value stays valid and a missing mark is the point, so the
+ * migration only has to write the data back with the new schema.
  * `firstLook` is the look of a start with nothing stored (Android: Dark; High contrast when the system asks for it).
  */
 export function migrateSettings(saved: unknown, firstLook: Look = defaultSettings.look): { settings: Settings; migrated: boolean } {
@@ -198,6 +204,7 @@ export function migrateSettings(saved: unknown, firstLook: Look = defaultSetting
   if (x["angle"] === "rad" || x["angle"] === "deg") s.angle = x["angle"];
   if (x["format"] === "std" || x["format"] === "sci" || x["format"] === "eng" || x["format"] === "pfx") s.format = x["format"];
   if (x["entry"] === "textbook" || x["entry"] === "line") s.entry = x["entry"];
+  if (x["decimalMark"] === "point" || x["decimalMark"] === "comma") s.decimalMark = x["decimalMark"];
   if (typeof x["digits"] === "number" && Number.isFinite(x["digits"])) s.digits = clampDigits(x["digits"]);
   if (Array.isArray(x["fmtCycle"])) s.fmtCycle = normalizeCycle(x["fmtCycle"].filter(isFmtMode));
   if (typeof x["fixDecimals"] === "number" && Number.isFinite(x["fixDecimals"])) s.fixDecimals = clamp(x["fixDecimals"], 0, 12);
@@ -423,6 +430,14 @@ export class Session {
     this.settings.entry = m;
     this.save();
   }
+  setDecimalMark(m: DecimalMark): void {
+    this.settings.decimalMark = m;
+    this.save();
+  }
+  /** The comma is the decimal mark (R57): the keys, the parser, the drawn results and Copy read this. */
+  get decimalComma(): boolean {
+    return this.settings.decimalMark === "comma";
+  }
   setFmtMode(mode: FmtMode, on: boolean): void {
     const ticked = new Set(this.settings.fmtCycle);
     if (on) ticked.add(mode);
@@ -587,6 +602,8 @@ export class Session {
       const r = renderNumeric(item, this.modeOf(item), this.displayContext());
       if (r) return r;
     }
+    // (R57) what the engine wrote, with the decimal comma, is drawn as the numbers above
+    if (item.status === "done" && this.decimalComma) return { text: commaResult(item.text, false), latex: commaResult(item.resultLatex, true) };
     return { text: item.text, latex: item.resultLatex };
   }
 
@@ -601,9 +618,9 @@ export class Session {
     return markFor(item, this.modeOf(item), this.displayContext());
   }
 
-  displayContext(): { format: NumberFormat; digits: number; fixDecimals: number; angle: AngleUnit } {
+  displayContext(): { format: NumberFormat; digits: number; fixDecimals: number; angle: AngleUnit; decimalComma?: boolean } {
     const s = this.settings;
-    return { format: s.format, digits: s.digits, fixDecimals: s.fixDecimals, angle: s.angle };
+    return { format: s.format, digits: s.digits, fixDecimals: s.fixDecimals, angle: s.angle, ...(this.decimalComma ? { decimalComma: true } : {}) };
   }
 
   /**

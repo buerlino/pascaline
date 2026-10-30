@@ -51,11 +51,11 @@
 
   /** A status-line control as a key (R15b, R15c1): its tap takes the same path as a key press (an open sheet gives way, it runs at once while an app loads, and waits while a sheet's code loads). */
   const statusKey = (id: string, name: "apps" | "symb" | "plot" | "num" | "menu"): Key => ({ id, row: 0, col: 0, span: 1, cls: "nav", label: { primary: "" }, actions: { primary: { kind: "special", name } } });
-  const PLACE_KEY = statusKey("place", "apps");
-  const MENU_KEY = statusKey("menu-status", "menu");
+  const PLACE_KEY = statusKey("place", "apps"), MENU_KEY = statusKey("menu-status", "menu");
   const TABS = (["symb", "plot", "num"] as const).map((v) => ({ view: v, name: t(`view.${v}`), key: statusKey(`tab-${v}`, v) }));
 
   const sheetOpen = $derived(shell.sheet !== null);
+  $effect(() => void (userKeys.decimalComma = entry.decimalComma = session.decimalComma)); // R57: the `.` and `,` keys' faces (keypad, tap, hardware key)
 
   // The shell paints first; main.ts then loads MathLive, which puts the field into this element.
   onMount(() => {
@@ -128,8 +128,8 @@
   }
   /** Run now when loaded, else as soon as the code has arrived (a key pressed before the idle load), with the keys
    *  meanwhile in the queue (decisions.md R8). The Mode code comes too: every Menu's last row is Settings, its submenu (R49). */
-  function withClip(run: (c: ClipActions) => void): void {
-    if (clip && modeSheet) return run(clip);
+  function withClip(run: (c: ClipActions) => void | Promise<void>): void {
+    if (clip && modeSheet) return void run(clip);
     const load = Promise.all([loadClip(), loadModeSheet().catch(() => null)]).then(([c]) => run(c));
     if (sheetLoad === null) sheetLoad = load.catch(() => {}).finally(() => (sheetLoad = null));
   }

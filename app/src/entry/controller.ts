@@ -59,9 +59,10 @@ function isPlainTerm(latex: string): boolean {
 
 /**
  * R68: the atom before the cursor ends no number, so ᴇ starts one: a box's sentinel (""), + − × ÷ ·, a relation, an
- * opening bracket or a comma. The comma is the argument comma: the decimal comma (R57, not built) is MathLive's `{,}`.
+ * opening bracket or an argument separator, `,` or `;`. The decimal comma (R57) is MathLive's `{,}`, a group: it is not
+ * in the list, so `3,ᴇ3` types no 1.
  */
-const OPENS_TERM = /^(?:|[-+=<>,([]|\\(?:times|div|cdot|lt|gt|le|leq|ge|geq|ne|neq|lbrack|lbrace|\{)(?![A-Za-z]))$/;
+const OPENS_TERM = /^(?:|[-+=<>,;([]|\\(?:times|div|cdot|lt|gt|le|leq|ge|geq|ne|neq|lbrack|lbrace|\{)(?![A-Za-z]))$/;
 
 /** The exponent key (R14): the mark ᴇ, one token. */
 function isEMark(a: ActionBody): boolean {
@@ -76,6 +77,8 @@ export class EntryController {
   private deleteAt: typeof import("./delete.ts").deleteAtTemplate | undefined;
   /** Backspace, Delete and the printable keys of a hardware keyboard (entry/hwkeys.ts, R26b, R31): loaded with MathLive. */
   private hwKey: typeof import("./hwkeys.ts").hardwareKey | undefined;
+  /** Where a number's digits, points and decimal commas start (entry/numberRun.ts, R57): loaded with MathLive. */
+  private numberRunStart: typeof import("./numberRun.ts").numberRunStart | undefined;
   /** After an arrow step, step on to where a key types into a box (entry/stops.ts, R27b): loaded with MathLive. */
   private settle: typeof import("./stops.ts").settle | undefined;
   /** ▶ in a template: to the next empty box, or the end of the box it leaves (entry/stops.ts, R10, R43): loaded with MathLive. */
@@ -91,6 +94,8 @@ export class EntryController {
   /** The values of the chips on the line (docs/04 3.6); keys as in input/chips.ts. */
   private table: ChipTable = {};
   private nextRes = 1;
+  /** R57: the decimal comma is on; a hardware `,` or `.` types the decimal mark, and ᴇ reads `{,}` as part of a number. */
+  decimalComma = false;
   /** Called for a physical Enter / Escape (desktop convenience). */
   onEnter: () => void = () => {};
   onEscape: () => void = () => {};
@@ -121,11 +126,12 @@ export class EntryController {
     if (this.started) return this.ready;
     this.started = true;
     const line = Promise.race([kept, new Promise<null>((resolve) => setTimeout(resolve, 1000, null))]).catch(() => null);
-    this.ready = Promise.all([mathlive.load(), import("./delete.ts"), import("./hwkeys.ts"), import("./stops.ts"), line]).then(([m, d, h, s, l]) => {
+    this.ready = Promise.all([mathlive.load(), import("./delete.ts"), import("./hwkeys.ts"), import("./stops.ts"), import("./numberRun.ts"), line]).then(([m, d, h, s, n, l]) => {
       this.deleteAt = d.deleteAtTemplate;
       this.hwKey = h.hardwareKey;
       this.settle = s.settle;
       this.nextBox = s.nextBox;
+      this.numberRunStart = n.numberRunStart;
       if (l !== null) this.touched = true;
       if (l && !this.keptStale) this.pendingValue = this.adopt(l.latex, l.chips) + (this.pendingValue ?? "");
       return this.create(m.MathfieldElement);
@@ -416,11 +422,11 @@ export class EntryController {
     return o <= 0 || OPENS_TERM.test(mf.getElementInfo(o)?.latex ?? "");
   }
 
-  /** True if the atom before the cursor (or the selection) is a digit or a decimal point. */
+  /** True if the atom before the cursor (or the selection) is a digit or a decimal mark. */
   private afterDigit(mf: MathfieldElement): boolean {
     const [a, b] = mf.selection.ranges[0] ?? [mf.position, mf.position];
     const o = Math.min(a, b);
-    return o > 0 && /^[\d.]$/.test(mf.getElementInfo(o)?.latex ?? "");
+    return o > 0 && /^(?:[\d.]|\{,\})$/.test(mf.getElementInfo(o)?.latex ?? "");
   }
 
   /**
@@ -442,7 +448,7 @@ export class EntryController {
     k--;
     while (k > 0 && (mf.getElementInfo(k)?.depth ?? 0) > d) k--;
     const mantissa = k;
-    while (at(k, /^[\d.]$/)) k--;
+    k = this.numberRunStart?.(mf, k, d) ?? k; // digits, a point or the decimal comma `{,}` (R57)
     if (k === mantissa) return false;
     mf.selection = { ranges: [[k, end]] };
     return true;

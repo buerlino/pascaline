@@ -45,8 +45,8 @@ export interface RouteCtx {
   openFind(slot?: { id: string; layer: Layer }): void;
   /** Vars (R4b): Find on the user's variables and functions; Shift + Math, Memory: the same list with delete and clear all. */
   openNames(memory: boolean): void;
-  /** Run with the clipboard code, now or once it has loaded. */
-  withClip(run: (c: ClipActions) => void): void;
+  /** Run with the clipboard code, now or once it has loaded (a returned promise holds the keys queued for the load). */
+  withClip(run: (c: ClipActions) => void | Promise<void>): void;
   loadClip(): void;
   /** A key that does nothing here (docs/05 3.7): the double haptic. */
   dead(): void;
@@ -115,7 +115,7 @@ export function special(c: RouteCtx, name: Special): void {
       c.withClip((x) => void x.copyKey());
       break;
     case "paste":
-      c.withClip((x) => void x.paste());
+      c.withClip((x) => holdKeys(c, x.paste()));
       break;
     case "fmt":
       // Format key: Home and CAS show the last result in the next mode; the apps have no such result.
@@ -264,6 +264,22 @@ export function sheetPress(c: RouteCtx, key: Key, layer: Layer | undefined): boo
 // user key that holds anything else waits like the key it stands for.
 const AT_ONCE: readonly string[] = ["esc", "home", "cas", "switch", "apps", "symb", "plot", "num", "settings", "mode"];
 
+/** The keys pressed while `job` runs (Paste reads the clipboard asynchronously) wait for it, as for a load (R8), so
+ *  Paste then ÷ divides the pasted number; at most HOLD_MS, so a clipboard that never answers cannot stop the keypad.
+ *  Returns the hold for withClip, whose load (when the code is not in yet) waits for it. */
+const HOLD_MS = 2000;
+function holdKeys(c: RouteCtx, job: Promise<unknown>): Promise<void> {
+  const late = new Promise<void>((done) => setTimeout(done, HOLD_MS));
+  const capped = Promise.race([job.then(() => {}, () => {}), late]);
+  if (c.sheetLoad === null) {
+    const hold: Promise<void> = capped.finally(() => {
+      if (c.sheetLoad === hold) c.sheetLoad = null;
+    });
+    c.sheetLoad = hold;
+  }
+  return capped;
+}
+
 function wait(c: RouteCtx, w: Waiting): void {
   c.waiting.push(w);
   if (c.waiting.length === 1) void Promise.all([c.shell.opening, c.sheetLoad]).then(() => replay(c));
@@ -297,12 +313,22 @@ function sheetUndrawn(c: RouteCtx): boolean {
   return true;
 }
 
+/** The open level's rows are still loading (R87: About 1 2 typed fast, the 2 reached the Loading… row and was lost):
+ *  hold the keys until they are in (R8); Esc and the place keys act at once. */
+function rowsLoading(c: RouteCtx, key: Key): boolean {
+  const load = c.shell.sheet?.level.loading();
+  const p = key.actions.primary;
+  if (!load || (p?.kind === "special" && AT_ONCE.includes(p.name))) return false;
+  void holdKeys(c, load);
+  return true;
+}
+
 /** A key fires. `layer` overrides the Shift/Alpha state for this key only: a trackpad step ("primary"), a flick up
  *  ("shift") or down ("alpha"). */
 export function press(c: RouteCtx, key: Key, layer?: Layer): void {
   const p = key.actions.primary;
   if (p?.kind === "special" && (p.name === "shift" || p.name === "alpha")) return modifier(c, p.name, layer);
-  if (sheetUndrawn(c)) return wait(c, { key, mods: modsFor(c, layer), layer });
+  if (sheetUndrawn(c) || rowsLoading(c, key)) return wait(c, { key, mods: modsFor(c, layer), layer });
   if (c.shell.sheet && sheetPress(c, key, layer)) return;
   const mods = modsFor(c, layer);
   c.session.clearModifiers(); // a one-shot Shift or Alpha is used up by this key, a tap or a flick

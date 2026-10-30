@@ -194,3 +194,17 @@ test("Num: the table as CSV with full values, from Copy and from the Menu", asyn
   await expect(page.getByTestId("notice")).toHaveText("Copied the table as CSV");
   expect((await clipboard(page)).startsWith("x,F1\r\n")).toBe(true);
 });
+
+test("a key right after Paste waits for the pasted number: Paste, ÷ with a slow clipboard divides 1.5 (R8, R57f1)", async ({ page }) => {
+  await setClipboard(page, "1.5");
+  // the clipboard answers late, as on a loaded phone: ÷ is pressed before the read is back
+  await page.evaluate(() => {
+    const read = navigator.clipboard.readText.bind(navigator.clipboard);
+    navigator.clipboard.readText = () => new Promise((ok) => setTimeout(() => ok(read()), 400));
+  });
+  await tap(page, ["shift", "copy", "div", "d3"]);
+  await expect.poll(() => entryValue(page)).toBe("\\frac{1.5}{3}");
+  await tap(page, ["enter"]);
+  await done(page, 1);
+  await expect(lastResult(page)).toHaveAttribute("data-text", "0.5");
+});

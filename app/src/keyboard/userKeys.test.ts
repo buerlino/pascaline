@@ -215,6 +215,21 @@ describe("user keys: the Alpha layer (R15c3)", () => {
   });
 });
 
+describe("the decimal comma (R57)", () => {
+  it("resolve gives the . and , keys the other faces while it is on, and every other key as it was", () => {
+    const u = new UserKeys(memKv());
+    const dot = keyboard.byId.get("dot") as Key;
+    const sub = keyboard.byId.get("sub") as Key;
+    expect(u.resolve(dot)).toBe(dot);
+    u.decimalComma = true;
+    expect(u.resolve(dot).label.primary).toBe(",");
+    expect(u.resolve(keyboard.byId.get("comma") as Key).label.primary).toBe(";");
+    expect(u.resolve(sub)).toBe(sub);
+    u.decimalComma = false;
+    expect(u.resolve(dot)).toBe(dot);
+  });
+});
+
 describe("user keys: a constant and the slot legends (R4b)", () => {
   const c = { label: "c", action: { insert: "\\const{c}{c}", chip: { key: "const:c", value: "299792458", exact: true } } };
 

@@ -64,7 +64,7 @@ export const BASE_PREFIX: Record<string, RegExp> = { x: /^[0-9A-Fa-f]/, b: /^[0-
 export interface ParseOptions {
   /** Single letters that name functions when followed by parentheses. Default f, g, h. */
   userFunctions?: ReadonlySet<string>;
-  /** L6 setting: the decimal separator is a comma; arguments are then separated by ";". */
+  /** Not read (R57f1: parsing never depends on the decimal mark); kept for the golden rows' options. */
   decimalComma?: boolean;
   /** The entry's chip table: the values of its \res, \ans and \const chips (input/chips.ts). */
   chips?: ChipTable;

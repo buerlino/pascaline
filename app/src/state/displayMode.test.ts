@@ -12,6 +12,7 @@ import {
   markFor,
   markText,
   renderNumeric,
+  commaResult,
   type DisplayContext,
   type FmtMode,
   type NumericResult,
@@ -199,5 +200,26 @@ describe("digits the input asked for (CAS evalf(e,n), decisions M4-6)", () => {
     const fewer: NumericResult = { ...r, facts: { exact: false, reliableDigits: 20, digits: 50 } };
     expect(renderNumeric(fewer, undefined, ctx)?.text).toBe("3.1415926535897932385");
     expect(markText(markFor(fewer, undefined, ctx)!)).toBe("⚠ 20");
+  });
+});
+
+describe("the decimal comma (R57)", () => {
+  const comma: DisplayContext = { ...ctx, decimalComma: true };
+  it("draws the mark as {,} in LaTeX and as , in text, leaving the point mode as it was", () => {
+    const r: NumericResult = { value: real(3n, 4n) };
+    expect(renderNumeric(r, undefined, ctx)).toEqual({ text: "0.75", latex: "0.75" });
+    expect(renderNumeric(r, undefined, comma)).toEqual({ text: "0,75", latex: "0{,}75" });
+  });
+  it("keeps the exponent, the sign and an integer result", () => {
+    const small = renderNumeric({ value: real(-3n, 20000n) }, "sci", comma);
+    expect(small?.text).toBe("-1,50000000000E-4");
+    expect(small?.latex).toBe("-1{,}50000000000\\times10^{-4}");
+    expect(renderNumeric({ value: real(7n) }, undefined, comma)).toEqual({ text: "7", latex: "7" });
+  });
+  it("separates the elements of a list with ; so that 1,5 is never two numbers", () => {
+    expect(commaResult("{1.5,2,3.25}", false)).toBe("{1,5;2;3,25}");
+    expect(commaResult("\\left[1.5,2\\right]", true)).toBe("\\left[1{,}5;2\\right]");
+    expect(commaResult("a\\,\\mathrm{k}", true)).toBe("a\\,\\mathrm{k}"); // the thin space of a prefix is not a separator
+    expect(commaResult('"a, b 1.5"', false)).toBe('"a, b 1.5"'); // a string is drawn as it is
   });
 });

@@ -58,6 +58,8 @@ export class Level {
   readonly text: string | undefined;
   /** The preview under the list may take several lines. */
   readonly longPreview: boolean;
+  /** The load of rows that are not in yet (a lazy submenu, R87), else null: keys wait for it (route.ts, R8). */
+  readonly loading: () => Promise<void> | null;
   /** A text level: ▲ ▼ asked for this many pages (signed, cleared by Sheet.svelte, which owns the scroll position). */
   nudge = $state(0);
 
@@ -76,6 +78,7 @@ export class Level {
     this.search = opts?.search;
     this.text = opts?.text;
     this.longPreview = opts?.longPreview ?? false;
+    this.loading = opts?.loading ?? (() => null);
     this.filterable = this.columns === undefined && (this.search !== undefined || (opts?.filterable ?? source().length > FILTER_ABOVE));
     this.highlight = this.start(opts?.at);
   }
@@ -205,6 +208,8 @@ export interface SheetOptions {
   text?: string;
   /** Several lines for the preview (see Level.longPreview). */
   longPreview?: boolean;
+  /** The rows' load while they are not in (see Level.loading). */
+  loading?: () => Promise<void> | null;
 }
 
 /** What a pick did: opened a submenu or did nothing (the sheet stays), or chose an item to run (the sheet closes). */
@@ -340,7 +345,7 @@ export class Sheet {
     if (item.submenu) {
       const sub = item.submenu;
       const base: SheetOptions = sub.search ? { search: sub.search, remember: false } : { remember: sub.remember ?? true };
-      const opts: SheetOptions = { ...base, ...(sub.text === undefined ? {} : { text: sub.text }), ...(sub.longPreview ? { longPreview: true } : {}) };
+      const opts: SheetOptions = { ...base, ...(sub.text === undefined ? {} : { text: sub.text }), ...(sub.longPreview ? { longPreview: true } : {}), ...(sub.loading ? { loading: sub.loading } : {}) };
       this.levels = [...this.levels, new Level(sub.title, () => sub.items, `${level.memo}/${item.id}`, opts)];
       return STAY;
     }

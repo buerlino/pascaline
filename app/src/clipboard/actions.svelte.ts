@@ -40,8 +40,8 @@ export class ClipActions {
   private chosen: Promise<ClipboardPort> | undefined;
   private readonly decimalComma: () => boolean;
 
-  /** `decimalComma`: the decimal comma setting (docs/04 section 6.2); not a setting yet. */
-  constructor(session: Session, shell: AppShell, entry: EntryController, ops: RowOps, port?: ClipboardPort, decimalComma: () => boolean = () => false) {
+  /** `decimalComma`: the decimal mark setting (docs/04 section 6.2, R57); by default the session's. */
+  constructor(session: Session, shell: AppShell, entry: EntryController, ops: RowOps, port?: ClipboardPort, decimalComma: () => boolean = () => session.decimalComma) {
     this.session = session;
     this.shell = shell;
     this.entry = entry;

@@ -54,6 +54,14 @@ export interface Polar {
   angle: "rad" | "deg";
 }
 
+/** R57: a result's text (or its LaTeX, `{,}` for the mark) with the decimal comma: every decimal point between digits
+ *  becomes the mark and the commas that separated elements become `;`, so `1,5` is never read as two numbers. */
+export function commaResult(s: string, latex: boolean): string {
+  if (s.includes('"')) return s; // a string result is drawn as it is
+  const mark = latex ? "{,}" : ",";
+  return s.replace(/(?<!\\),/g, ";").replace(/(\d)\.(?=\d)/g, `$1${mark}`);
+}
+
 /** What the engine said about how far a result can be trusted (docs/04 2.4); `value` of a scalar is the item's own. */
 export interface ResultFacts extends ValueFacts {
   /** A numeric list or matrix: its elements, each with its own value and facts. */
@@ -151,6 +159,8 @@ export interface DisplayContext {
   digits: number;
   fixDecimals: number;
   angle: "rad" | "deg";
+  /** R57: the decimal comma is on; numbers are drawn `1,5` and list elements are separated by `;`. */
+  decimalComma?: boolean;
 }
 
 /** The mode an item is drawn in: the a b/c form when one is chosen, else the Format key's notation (`dec`: the notation,
@@ -195,6 +205,11 @@ export function renderNumeric(
   mode: FmtMode | undefined,
   ctx: DisplayContext,
 ): { text: string; latex: string } | undefined {
+  const out = renderPoint(r, mode, ctx);
+  return out && ctx.decimalComma ? { text: commaResult(out.text, false), latex: commaResult(out.latex, true) } : out;
+}
+
+function renderPoint(r: NumericResult, mode: FmtMode | undefined, ctx: DisplayContext): { text: string; latex: string } | undefined {
   const m = mode ?? ctx.format;
   const digits = r.facts?.digits ?? ctx.digits;
   const opts = (f: keyof typeof BASE): FormatOptions => ({ format: BASE[f], digits, fixed: ctx.fixDecimals });
