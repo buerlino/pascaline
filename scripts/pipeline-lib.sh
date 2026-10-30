@@ -159,8 +159,22 @@ lock_wait() {
 # host_cpu_acquire <owner> <log prefix>: the host-cpu lock, waiting up to 7200 s (PASCALINE_CPU_WAIT).
 host_cpu_acquire() { lock_wait host-cpu "$1" "$2" "${PASCALINE_CPU_WAIT:-7200}"; }
 # integ_acquire <owner> <log prefix>: the integ lock (the merge queue, A47b), waiting up to 7200 s (PASCALINE_INTEG_WAIT).
-# Lock order: integ before host-cpu; whoever holds host-cpu never waits for integ.
+# Lock order: integ, then nodemods, then host-cpu; whoever holds a later one never waits for an earlier one.
 integ_acquire() { lock_wait integ "$1" "$2" "${PASCALINE_INTEG_WAIT:-7200}"; }
+# nodemods_acquire <owner> <log prefix>: the nodemods lock (the phase-1 worktree's app/node_modules: a copy out of it, an npm ci in
+# it; A47bf1), waiting up to 7200 s (PASCALINE_NODEMODS_WAIT). Lock order: integ, then nodemods, then host-cpu.
+nodemods_acquire() { lock_wait nodemods "$1" "$2" "${PASCALINE_NODEMODS_WAIT:-7200}"; }
+# nodemods_take <owner> <log prefix> / nodemods_drop: the job's nodemods lock, held only around a copy or an npm ci (A47bf1).
+nodemods_held=0; nodemods_owner=""
+nodemods_take() {
+  [[ $nodemods_held -eq 0 ]] || return 0
+  nodemods_acquire "$1" "$2" || return 1
+  nodemods_held=1; nodemods_owner="$1"
+}
+nodemods_drop() {
+  [[ $nodemods_held -eq 1 ]] || return 0
+  tools/devlock.sh release nodemods "$nodemods_owner" >/dev/null 2>&1 || true; nodemods_held=0
+}
 _lib_log() { if declare -F log >/dev/null; then log "$*"; fi; }
 # The shell tests (A47a): run by `pipeline.sh selftest` and by the check `shell`. PASCALINE_SELFTEST_TESTS (absolute paths) overrides.
 SELFTESTS=(scripts/pipeline.test.sh scripts/night.test.sh scripts/gc.test.sh tools/devlock.test.sh)

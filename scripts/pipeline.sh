@@ -48,10 +48,11 @@
 # flock; PW_PORT=$((5200 + number % 100)) for every kind, exported to the worker, the fix rounds and the checks, so jobs alive
 # together never share a dev server. A run holds the lock branch-<branch> (its pid) for its whole life and writes <run>/pid
 # (gc leaves a live run alone). GIAC_OUT is always an immutable engine/giac/_out/key-<k>; gsl is a copy for people.
-# Locks: integ (waits up to 7200 s, logged) for the merge queue, the npm ci and node_modules copy of the phase-1 worktree, a
-# rebuild of phase-1's engine at a start, a whole pass, a whole report and a device step's APK build; host-cpu (waits up to
-# 7200 s, logged) around the checks and builds.
-# Lock order: integ before host-cpu, everywhere; nothing that holds host-cpu waits for integ (no deadlock between lanes).
+# Locks (each waits up to 7200 s, logged): integ for the merge queue, an npm ci of the phase-1 worktree, a rebuild of phase-1's
+# engine at a start, a whole pass, a whole report and a device step's APK build; nodemods (A47bf1) for every copy out of the
+# phase-1 worktree's app/node_modules and every npm ci in it (the device build's too), so a fresh start copies under nodemods
+# alone; host-cpu around the checks and builds.
+# Lock order: integ, then nodemods, then host-cpu, everywhere; nothing holding a later one waits for an earlier one.
 # Starts read the package and the brief from phase-1's commit (git show), so a dirty phase-1 worktree never stops a start.
 set -euo pipefail
 export PASCALINE_LOCK_PID=$$   # A35: locks taken here (and by the agents it starts) record this pid
@@ -120,11 +121,15 @@ queue_leave() {
   log "pipeline #$n $id: integ released after $((SECONDS - integ_t0)) s in the queue"
 }
 
-# Node modules: every worktree gets its own hard-link copy of the phase-1 worktree's, so an npm ci in one never empties another's
-# (A24); the main checkout may sit on an old branch (A34). A phase-1 copy that lacks a package of its lock is rebuilt first, under
-# integ, then host-cpu (A47b); a failing npm ci ends the run as a machine failure. The copy runs under integ too. A symlink left by an older run is replaced.
-refresh_integ_node_modules() {  # under integ (A47b): no copy reads it while npm ci rebuilds it
-  [[ ! -e "$integ/app/node_modules" ]] || node_modules_stale "$integ/app" || return 0
+# Node modules: each worktree gets its own hard-link copy of the phase-1 worktree's (A24, A34), under nodemods alone (A47bf1); a
+# phase-1 copy that lacks a package of its lock gets npm ci first, under integ, then nodemods, then host-cpu (a failure is a
+# machine failure). A symlink left by an older run is replaced.
+phase1_nm_stale() { [[ ! -e "$integ/app/node_modules" ]] || node_modules_stale "$integ/app"; }
+refresh_integ_node_modules() {  # under integ; takes nodemods (kept for the caller's copy): no copy reads it while npm ci rebuilds it
+  [[ $integ_held -eq 1 ]] || die "refresh_integ_node_modules without the integ lock"
+  phase1_nm_stale || return 0
+  nodemods_take "pipeline-$n" "pipeline #$n $id:" || die "nodemods lock busy for 7200 s (npm ci in phase-1)"
+  phase1_nm_stale || return 0
   runlog "node_modules of $integ/app are missing or stale: npm ci"
   host_cpu_acquire "pipeline-$n" "pipeline #$n $id:" || die "host-cpu lock busy for 7200 s"
   local rc=0; (cd "$integ/app" && timeout 1800 npm ci --prefer-offline) > "$run/npm-ci.log" 2>&1 || rc=1
@@ -138,30 +143,42 @@ setup_node_modules() {
   local wt="$1" t0=$SECONDS
   [[ ! -L "$wt/app/node_modules" ]] || rm -f "$wt/app/node_modules"
   [[ -e "$wt/app/node_modules" ]] && return 0
+  if ! phase1_nm_stale; then  # A47bf1: fresh: nodemods alone, so a start never waits for the other lane's queue
+    nodemods_take "pipeline-$n" "pipeline #$n $id:" || die "nodemods lock busy for 7200 s (node_modules)"
+    if ! phase1_nm_stale; then
+      copy_node_modules "$wt"; nodemods_drop
+      runlog "node_modules copied from $integ/app under nodemods ($((SECONDS - t0)) s)"; return 0
+    fi
+    nodemods_drop  # went stale while it waited (a failed npm ci, a new lock): never wait for integ holding nodemods
+  fi
   integ_take "pipeline-$n" "pipeline #$n $id:" || die "integ lock busy for 7200 s (node_modules)"
-  refresh_integ_node_modules
+  refresh_integ_node_modules  # takes nodemods, then host-cpu for the npm ci
+  nodemods_take "pipeline-$n" "pipeline #$n $id:" || die "nodemods lock busy for 7200 s (node_modules)"
   copy_node_modules "$wt"
-  integ_drop
-  runlog "node_modules copied from $integ/app ($((SECONDS - t0)) s)"
+  nodemods_drop; integ_drop
+  runlog "node_modules refreshed in $integ/app and copied under integ and nodemods ($((SECONDS - t0)) s)"
 }
-# copy_node_modules <wt>: <wt>/app/node_modules becomes a fresh hard-link copy of the phase-1 worktree's; integ must be held.
+# copy_node_modules <wt>: <wt>/app/node_modules becomes a fresh hard-link copy of the phase-1 worktree's; nodemods must be held.
 # Copied aside, then renamed: an interrupted copy never leaves a half-filled node_modules; an older copy is swapped out, then removed.
 copy_node_modules() {
   local d="$1/app/node_modules" tmp="$1/app/node_modules.tmp.$$" old="$1/app/node_modules.old.$$"
-  [[ $integ_held -eq 1 ]] || die "copy_node_modules without the integ lock"
+  [[ $nodemods_held -eq 1 ]] || die "copy_node_modules without the nodemods lock"
   rm -rf "$tmp" "$old"
   cp -al "$integ/app/node_modules" "$tmp" || { rm -rf "$tmp"; die "could not copy node_modules into $1"; }
   if [[ -e "$d" || -L "$d" ]]; then mv -T "$d" "$old"; fi
   mv -T "$tmp" "$d"; rm -rf "$old"
 }
 # queue_node_modules: in the queue (integ held), after phase-1 was merged into the branch: a branch whose node_modules lack a package
-# of its lock (another lane merged a dependency meanwhile) gets the phase-1 worktree's, refreshed first; a branch whose own lock
-# differs from phase-1's gets npm ci in its worktree (under host-cpu: integ before host-cpu). A failing npm ci is a machine failure.
+# of its lock (another lane merged a dependency meanwhile) gets the phase-1 worktree's, refreshed first (nodemods inside integ); a
+# branch whose own lock differs from phase-1's gets npm ci in its worktree (under host-cpu: integ before host-cpu). A failing npm ci
+# is a machine failure.
 queue_node_modules() {
   [[ -f "$wt/app/package-lock.json" ]] && node_modules_stale "$wt/app" || return 0
   local t0=$SECONDS rc=0
   if git -C "$wt" diff --quiet phase-1 HEAD -- app/package-lock.json; then
-    refresh_integ_node_modules; copy_node_modules "$wt"
+    refresh_integ_node_modules
+    nodemods_take "pipeline-$n" "pipeline #$n $id:" || queue_stop "nodemods lock busy for 7200 s (node_modules)"
+    copy_node_modules "$wt"; nodemods_drop
     log "pipeline #$n $id: node_modules refreshed from $integ/app after merging phase-1 ($((SECONDS - t0)) s)"; return 0
   fi
   host_cpu_acquire "pipeline-$n" "pipeline #$n $id:" || queue_stop "host-cpu lock busy for 7200 s (npm ci)"
@@ -215,7 +232,7 @@ if [[ "${1:-}" == "device" ]]; then
   if [[ "${3:-}" == "--dry-run" ]]; then
     integ="$(integ_dir)"; : "${integ:=$main/.claude/worktrees/phase-1}"
     echo "DRY RUN: device step $n on ${dev:-<ANDROID_SERIAL unset: DEVICE SKIPPED>}; output in $run; at most 30 minutes"
-    echo "1. under integ (device-$n, waits up to 7200 s): (cd $integ && tools/device-build.sh --test) = the test APK of phase-1's HEAD, built under the host-cpu lock (build.sh takes it); the APK copied to $run; integ released"
+    echo "1. under integ, then nodemods (device-$n, each waits up to 7200 s; build.sh runs npm ci in the phase-1 worktree): (cd $integ && tools/device-build.sh --test) = the test APK of phase-1's HEAD, built under the host-cpu lock (build.sh takes it); the APK copied to $run; nodemods and integ released"
     echo "2. tools/devlock.sh acquire ${dev:-<serial>} device-$n-install 600; adb -s ${dev:-<serial>} install -r $run/pascaline.apk (our app only); release"
     echo "3. ANDROID_SERIAL=${dev:-<serial>} tools/core-device.sh   (A32's runner; holds the device lock, stay-awake and restore)"
     echo "4. log: - HH:MM pipeline device $n: CORE DEVICE <p>/<a> (known <k>, new <ids or none>) on <sha>"
@@ -237,14 +254,16 @@ if [[ "${1:-}" == "device" ]]; then
   }
   locked && skip "screen locked"
   # A47b: integ while the APK is built (one HEAD, no merge meanwhile), released before the device run; build.sh takes host-cpu itself
-  trap integ_drop EXIT
+  trap 'nodemods_drop; integ_drop' EXIT
   integ_take "device-$n" "pipeline device $n:" || skip "integ lock busy"
   integ_clean "$integ" || skip "phase-1 worktree not clean"
+  # A47bf1: build.sh runs npm ci in the phase-1 worktree: nodemods (inside integ) keeps every start's copy out of it meanwhile
+  nodemods_take "device-$n" "pipeline device $n:" || skip "nodemods lock busy"
   sha="$(git -C "$integ" rev-parse --short HEAD)"
   t0=$SECONDS; rm -f "$run/pascaline.apk"
   rc=0; (cd "$integ" && timeout -k 60 1200 tools/device-build.sh --test) > "$run/build.log" 2>&1 || rc=$?
   [[ $rc -ne 0 || ! -f "$integ/dist/pascaline.apk" ]] || cp "$integ/dist/pascaline.apk" "$run/pascaline.apk" || rc=1
-  integ_drop
+  nodemods_drop; integ_drop
   [[ $rc -eq 0 && -f "$run/pascaline.apk" ]] || skip "build failed, rc=$rc; see $run/build.log"
   "$integ/tools/devlock.sh" acquire "$dev" "device-$n-install" 600 >/dev/null || skip "device lock busy"
   rc=0; timeout -k 30 300 adb -s "$dev" install -r "$run/pascaline.apk" > "$run/install.log" 2>&1 || rc=$?
@@ -381,7 +400,7 @@ slug="$(tr -cs 'a-z0-9' '-' <<<"${id,,}" | sed 's/^-//; s/-$//')"
 
 # A47a: one run per branch: the lock branch-<branch> with this pid, held to the end (a dead pid's lock is broken by the next run).
 branch_lock="branch-${branch//\//-}"
-cleanup() { queue_leave; rm -f "$spec_file" "$brief"; [[ "${branch_locked:-0}" -eq 0 ]] || tools/devlock.sh release "$branch_lock" "pipeline-$$" >/dev/null 2>&1 || true; }
+cleanup() { nodemods_drop; queue_leave; rm -f "$spec_file" "$brief"; [[ "${branch_locked:-0}" -eq 0 ]] || tools/devlock.sh release "$branch_lock" "pipeline-$$" >/dev/null 2>&1 || true; }
 trap cleanup EXIT
 if [[ $dry -eq 0 ]]; then
   if [[ $nowork -eq 1 ]]; then git show-ref --verify --quiet "refs/heads/$branch" || die "--no-worker: branch $branch does not exist"; fi
@@ -431,7 +450,7 @@ if [[ $dry -eq 1 ]]; then
   echo "DRY RUN: pipeline run $n, package $id, agent $agent ($model, $effort), branch $branch"
   echo "PASCALINE_QALC_DL_DIR=$PASCALINE_QALC_DL_DIR PASCALINE_DL_DIR=$PASCALINE_DL_DIR PW_PORT=$PW_PORT"
   echo "integration worktree: $integ"; echo "worker worktree: $wt"
-  echo "setup: cp -al $integ/app/node_modules $wt/app/node_modules   (own copy per worktree, from the phase-1 worktree; npm ci there first when it lacks a package of its lock; both under integ; a symlink is replaced)"
+  echo "setup: cp -al $integ/app/node_modules $wt/app/node_modules   (own copy per worktree, from the phase-1 worktree, under nodemods alone (waits up to 7200 s, logged); when it lacks a package of its lock, npm ci there first, under integ, then nodemods, then host-cpu; a symlink is replaced)"
   echo "machine failure: a check log with 'command not found', a missing node_modules or a missing bare module ends the run as NOT MERGED (machine: ...), no fix round"
   if [[ $engine_managed -eq 0 ]]; then echo "engine: GIAC_OUT=$GIAC_OUT set by the caller; no engine build"
   else
