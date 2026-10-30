@@ -6,6 +6,7 @@
 # the worker and the Units app that load it in the browser are milestone 5.
 #
 #   engine/qalc/build-wasm.sh [dev|release] [stage...]      (default: dev; stages: fetch gmp mpfr xml2 qalc link)
+#   fetch    only the SHA-256-checked source tarballs, no toolchain, no lock (the Pages workflow, A45; run engine/giac/build-wasm-release.sh or its stage_fetch first for GMP/MPFR)
 #   dev      local emsdk (~/emsdk, 6.0.12), fast iteration            -> engine/qalc/_out/dev/qalc.{mjs,wasm}
 #   release  Debian trixie's emscripten in the pinned container (P2)  -> engine/qalc/_out/release/qalc.{mjs,wasm} + SHA256SUMS
 #
@@ -168,6 +169,9 @@ case "$MODE" in
     build_here "$@"
     publish dev
     ;;
+  fetch)
+    stage_fetch >&2
+    ;;
   inner)
     # Used inside the release container only: build in the scratch copy, no lock, no publish.
     build_here "$@"
@@ -202,5 +206,5 @@ case "$MODE" in
     publish release
     echo "release qalc: emscripten $EMSCRIPTEN_PKG_VERSION, $IMAGE" >&2
     ;;
-  *) echo "usage: $0 [dev|release] [stage...]" >&2; exit 2 ;;
+  *) echo "usage: $0 [dev|release|fetch] [stage...]" >&2; exit 2 ;;
 esac
