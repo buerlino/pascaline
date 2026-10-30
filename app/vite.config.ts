@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 import { svelte } from "@sveltejs/vite-plugin-svelte";
 import { defineConfig } from "vitest/config";
+import { aboutPlugin } from "./vite-plugin-about.ts";
 import { pwaLite } from "./vite-plugin-pwa-lite.ts";
 import { yamlPlugin } from "./vite-plugin-yaml.ts";
 
 export default defineConfig({
   base: "./",
-  plugins: [yamlPlugin(), svelte(), pwaLite()],
+  plugins: [yamlPlugin(), aboutPlugin(), svelte(), pwaLite()],
   build: { target: "es2022", manifest: true },
   worker: { plugins: () => [yamlPlugin()] }, // golden.worker.ts reads the golden YAML files (A20)
   // spec/keyboard.yaml lives one level above app/

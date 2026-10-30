@@ -5,6 +5,9 @@ History only: read it when a decision is questioned. What still binds is in [../
 
 ## Decided proposals moved here later
 
+### Shortened 2026-10-30 (Opus pass 15) to make room for R87's default, as it stood
+- **Start chunk budget 175 kB raw, 60 kB gzip (2026-10-14; raised 2026-10-19 by the owner, set by A15; 61 kB gzip from R83, the owner, 2026-10-27).** Rule: docs/04 6.3 and 8.3. A package's own gate guards the budget, it is not a second budget (Opus pass, 2026-10-17). A measure build (`./build.sh --measure`) is exempt: its bench code put A16's at 61.19 kB (owner, 2026-10-27). Would change if: the Tab One's keyboard-usable time moves by more than 50 ms from A4a's 688 ms (cold median, 2026-10-16), so past 738 ms.
+
 ### Shortened 2026-10-29 (two lanes, evening) to make room for the lanes' decisions, as they stood
 - **P17 (2026-10-18): the pipeline is the only path** (`scripts/pipeline.sh`, brief 0c rules 1 and 5): by day one at a time, at night what needs no APK or eye on the UI (the night's device only as P23 allows); review-only merges `--no-worker`; the audit is Opus for Opus workers, input, engine and keyboard diffs and night gorge packages, Sonnet elsewhere with an Opus pass every three. Full text: archive. Would change if: two nights of Opus audits find nothing a Sonnet one missed.
 - **Owner answers of 2026-10-29 (after the day-night).** The start chunk is split (R91), its 61 kB budget stays; A44 gives the nightly sweep its own known-rows file.

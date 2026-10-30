@@ -10,8 +10,8 @@
 **The freeze ended** on 2026-10-27, before its count: repeated green runs added nothing, and the mornings' failures were UI (c46: F110, F117), not the engine. **The net stays:** every merge runs the core list (R74; [tests/core/core.yaml](../../tests/core/core.yaml), 66 cases, all active), night.sh runs the device's core list after each Opus pass when the night has a device (A33, A41), and the owner's [morning check](../../tests/core/MORNING.md) runs on the night's device. A red result is a bug to fix (a FIX of the next Opus pass, or a backlog bug line past a day of work), not a gate. **The pace** (owner, 2026-10-27): about two weeks of Claude Max are left (to about 2026-11-10). Each night carries about 9 hours of real work, the most important steps first, so a usage limit late costs the least; the day runs what needs the owner's eye.
 
 **Two lanes** (owner, 2026-10-29; decisions.md P17 and "Owner answers of 2026-10-29"): once A47a–A47c are merged, lane A (ron's UI) and lane B (the release, then the engine) run around the clock, each with its own table in section 0c, merged through one queue (A47b); until then one run at a time. ron's packages run at night too: the owner's look moves to three milestone reviews (after R87; after R86, R57, R50e; after R24d), and a package's "owner's eye" item joins the next review. Device steps and the owner's acts (a key, a tag, a phone) stay by day. The order:
-1. **Find:** R4a merged (`b9f0042`, 2026-10-28; R90 by day), then R91 (the start-chunk split: 60.99 of 61.00 kB gzip; the budget stays), R49, R87 (after A48), R15c3 (merged `6e43091`), R4b.
-2. **The Settings base** (owner, 2026-10-27; decisions.md "Settings in the Mode sheet, and presets"; [mockups/settings.html](../mockups/settings.html)): R85 merged (`1d35189`), R49, then R86, R57 (R4b sets the free keys in R49's levels; the comma is the owner's daily use), R50e; after the units: R70, R15c4, R38a → R38b, R59; R88 (after R4b, R57, R50e) → R89; R55 (after R15c4); R53; R12b → R12c → R41; R36, R33 → R37, R40.
+1. **Find:** R4a merged (`b9f0042`, 2026-10-28; R90 by day); R91 (`e80eda0`: start chunk 61.02 → 57.81 kB gzip, pin 58.5 kB; the Fairphone before/after waits for annabell), R15c3 (`6e43091`), R49 (`d60fbfb`), R87 (`56d017f`) merged; then R4b.
+2. **The Settings base** (owner, 2026-10-27; decisions.md "Settings in the Mode sheet, and presets"; [mockups/settings.html](../mockups/settings.html)): R85 (`1d35189`) and R49 merged, then R86, R57 (R4b sets the free keys in R49's levels; the comma is the owner's daily use), R50e; after the units: R70, R15c4, R38a → R38b, R59; R88 (after R4b, R57, R50e) → R89; R55 (after R15c4); R53; R12b → R12c → R41; R36, R33 → R37, R40.
 3. **The units** (owner, 2026-10-29: right after R86, R57, R50e): R24b → R24c → R24d, R60–R63, R71; G81 with them.
 4. **Lane B, to v0.1.0** (the APK and the website from one tag): A48 (the licences, one version), A50 → A43 (no older build overwrites newer data; an update keeps it, on a device by day), A7 (signing, the owner's key made off this laptop), A49 (after R91), A45 (after R87, A49), A8 (the owner's test tag); A9 with the owner's phone by day (F41); then wrong numbers by reach (G135 first, medium reach), C4.
 5. **Every morning:** the owner's check (MORNING.md, on the night's device when the night had one, about 10 minutes). The day session writes each failed step as a backlog bug line on phase-1 and logs one line in `.coord/log.md`: `- HH:MM morning <date>: clean` or `- HH:MM morning <date>: fails <ids>`.
@@ -58,13 +58,10 @@ A step whose "After" is not merged, or whose selftest did not pass, is skipped; 
 | 220 | Shift report, then stop | — | — | — | 10 min |
 
 ### Lane A queue (ron's UI; from the owner's first two-lane start; not tonight's)
-Milestone reviews (section 0): after R87; after R50e; after R24d.
+Milestone reviews (section 0): after R87 (due: R91's first screen, R49's Mode › Settings and pad, R87's Parts we use, on the Fairphone); after R50e; after R24d.
 
 | Step | What | Agent, model | Branch | After |
 |---|---|---|---|---|
-| 301 | [R91](packages/R91.md) split the start chunk | ron, Sonnet (audit Opus) | `p1/ron-startsplit` | — |
-| 302 | [R49](packages/R49.md) Settings as levels of the Mode sheet | ron, Opus | `p1/ron-m4a-settings` | R91 |
-| 303 | [R87](packages/R87.md) Help and about: version, source and licences | ron, Sonnet | `p1/ron-about` | R49, A48 |
 | 305 | [R4b](packages/R4b.md) Vars, Memory and the user keys from Find | ron, Sonnet | `p1/ron-m4-vars` | R15c3, R49 |
 | 306 | [R86](packages/R86.md) Mode's values in sight | ron, Sonnet | `p1/ron-modebuttons` | R49 |
 | 307 | [R57](packages/R57.md) the decimal comma as a setting | ron, Sonnet | `p1/ron-m4a-decimalcomma` | R49 |
