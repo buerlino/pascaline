@@ -28,6 +28,17 @@ export interface AppHost {
 /** A place's glyph on the status line's tile (R82f2) and in the apps list (R84): maths-font text, or a drawn icon (Home's house). */
 export type Glyph = { readonly text: string } | { readonly icon: "home" };
 
+/** One value of a setting drawn as a button in its row (R86: Mode's Angle, Format and Entry). */
+export interface ValueOption {
+  readonly id: string;
+  /** Already translated. */
+  readonly label: string;
+  /** This is the current value (the button is marked). */
+  readonly selected: boolean;
+  /** Set this value. A tap on the button runs it and closes the sheet, like a pick. */
+  run(): void;
+}
+
 export interface MenuItem {
   readonly id: string;
   /** Already translated. */
@@ -43,6 +54,10 @@ export interface MenuItem {
   /** A setting changed in place: ◀ ▶ step it (-1, +1), and a digit key or a tap steps it forward (docs/05 3.4). Enter
    *  does not step it: it picks the item, which closes the sheet (or opens its submenu). */
   adjust?(by: 1 | -1): void;
+  /** A setting with few values, drawn as one button each in a 52 px row (R86: only where it saves a press). Read on every
+   *  draw. A tap on a button sets that value and closes the sheet; the row keeps `adjust` for ◀ ▶ (the mark moves, the
+   *  sheet stays) and for its digit and a tap on its name. It has no `value`: the buttons show it. */
+  readonly options?: readonly ValueOption[];
   /** Picking the item runs it and the sheet stays open (a switch in a list of switches). */
   readonly keep?: boolean;
   /** Picking the item runs it, or opens this follow-up list in place of the menu (e.g. Intersection: with which?). */

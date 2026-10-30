@@ -85,7 +85,7 @@ test.describe("by keys", () => {
 test.describe("by touch", () => {
   test.beforeEach(async ({ page }) => {
     await open(page);
-    await page.getByTestId("chip-digits").tap();
+    await page.getByTestId("chip-format").tap();
     await row(page, "settings").tap();
     await row(page, "help").tap();
   });

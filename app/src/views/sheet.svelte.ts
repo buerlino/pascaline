@@ -286,6 +286,16 @@ export class Sheet {
     item.adjust(by);
   }
 
+  /** A tap on one of a row's value buttons (R86): the value is set and the sheet closes, as a pick of that value. */
+  pickOption(index: number, optionId: string): Picked {
+    const item = this.level.items[index];
+    const option = item?.options?.find((o) => o.id === optionId);
+    if (!item || item.disabled || !option) return STAY;
+    this.level.highlight = index;
+    lastPicks.set(this.level.memo, item.id);
+    return { kind: "run", item: { id: option.id, label: option.label, run: () => option.run() } };
+  }
+
   /** ◀ and Esc: back one level. False at the root: the caller closes the sheet. */
   back(): boolean {
     if (this.levels.length <= 1) return false;

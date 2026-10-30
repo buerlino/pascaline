@@ -10,12 +10,13 @@
   import { ICONS } from "./icons.ts";
   import MathView from "../render/Math.svelte";
   import type { Sheet } from "./sheet.svelte.ts";
-  import { fitCell, fitRow, hasSteps, ROW, rowHeight, showsReason, twoLines } from "./sheetFit.ts";
+  import { fitCell, fitRow, hasOptions, hasSteps, ROW, rowHeight, showsReason, twoLines } from "./sheetFit.ts";
 
   let {
     sheet,
     testid,
     ontap,
+    onoption,
     onback,
     onclose,
     over = "view",
@@ -26,6 +27,8 @@
     testid: string;
     /** A row was tapped (its index in the level's full list). */
     ontap: (index: number) => void;
+    /** A value button of a row was tapped (R86): the row's index and the option's id. */
+    onoption: (index: number, option: string) => void;
     onback: () => void;
     onclose: () => void;
     /** Over the keypad (a pick sheet) or above it, over the history or view (a list that takes letters). */
@@ -76,7 +79,7 @@
     placed = null;
     const room = overlay.clientHeight - (panel.offsetHeight - list.offsetHeight);
     if (columns !== undefined) cell = fitCell(room, Math.ceil(items.length / columns), normalCell);
-    else row = fitRow(room, items.map((item, i) => ({ reason: twoLines(items, i), steps: hasSteps(item) })));
+    else row = fitRow(room, items.map((item, i) => ({ reason: twoLines(items, i), steps: hasSteps(item), options: hasOptions(item) })));
   }
   $effect(() => {
     void items;
@@ -206,6 +209,7 @@
       <div class="list" class:cut-top={cutTop} class:cut-bottom={cutBottom} style:--row={px(row)} bind:this={list} onscroll={measure}>
         {#each rows as r, i (r.index)}
           {@const steps = hasSteps(r.item)}
+          {@const options = r.item.options}
           {@const reason = showsReason(items, i)}
           {@const second = twoLines(items, i)}
           <!-- svelte-ignore a11y_click_events_have_key_events, a11y_interactive_supports_focus (the keypad drives the rows; nothing in a sheet takes focus) -->
@@ -217,10 +221,10 @@
             data-selected={r.item.selected}
             data-active={r.index === level.highlight}
             data-id={r.item.id}
-            style:height={px(rowHeight(row, { reason: second, steps }))}
+            style:height={px(rowHeight(row, { reason: second, steps, options: options !== undefined }))}
             onclick={() => ontap(r.index)}
           >
-            <span class="n">{r.n === undefined ? "" : r.n % 10}</span>{#if r.item.glyph}<span class="tile math" class:small={"text" in r.item.glyph && r.item.glyph.text.length > 1} data-testid="row-glyph" aria-hidden="true">{@html "icon" in r.item.glyph ? ICONS.home : r.item.glyph.text}</span>{/if}<span class="text"><span class="label">{r.item.label}</span>{#if reason}<span class="reason">{r.item.reason}</span>{:else if r.item.hint}<span class="reason" data-testid="row-hint">{r.item.hint}</span>{/if}</span>{#if r.item.note}<span class="note" data-testid="row-note">{r.item.note}</span>{/if}{#if steps}<button type="button" class="step" data-testid="step-down" aria-label={t("sheet.stepDown")} disabled={r.item.disabled} onclick={(e) => { e.stopPropagation(); sheet.adjustAt(r.index, -1); }}>◀</button>{/if}{#if r.item.value !== undefined}<span class="value" data-testid="sheet-value">{r.item.value}</span>{/if}{#if steps}<button type="button" class="step" data-testid="step-up" aria-label={t("sheet.stepUp")} disabled={r.item.disabled} onclick={(e) => { e.stopPropagation(); sheet.adjustAt(r.index, 1); }}>▶</button>{/if}{#if r.item.selected !== undefined}<span class="tick" aria-hidden="true">{r.item.selected ? "✓" : ""}</span>{/if}{#if r.item.submenu}<span class="more" aria-hidden="true">›</span>{/if}
+            <span class="n">{r.n === undefined ? "" : r.n % 10}</span>{#if r.item.glyph}<span class="tile math" class:small={"text" in r.item.glyph && r.item.glyph.text.length > 1} data-testid="row-glyph" aria-hidden="true">{@html "icon" in r.item.glyph ? ICONS.home : r.item.glyph.text}</span>{/if}<span class="text"><span class="label">{r.item.label}</span>{#if reason}<span class="reason">{r.item.reason}</span>{:else if r.item.hint}<span class="reason" data-testid="row-hint">{r.item.hint}</span>{/if}</span>{#if r.item.note}<span class="note" data-testid="row-note">{r.item.note}</span>{/if}{#if options}<span class="seg" data-testid="row-options">{#each options as o (o.id)}<button type="button" class="opt" data-option={o.id} aria-pressed={o.selected} disabled={r.item.disabled} onclick={(e) => { e.stopPropagation(); onoption(r.index, o.id); }}>{o.label}</button>{/each}</span>{/if}{#if steps}<button type="button" class="step" data-testid="step-down" aria-label={t("sheet.stepDown")} disabled={r.item.disabled} onclick={(e) => { e.stopPropagation(); sheet.adjustAt(r.index, -1); }}>◀</button>{/if}{#if r.item.value !== undefined}<span class="value" data-testid="sheet-value">{r.item.value}</span>{/if}{#if steps}<button type="button" class="step" data-testid="step-up" aria-label={t("sheet.stepUp")} disabled={r.item.disabled} onclick={(e) => { e.stopPropagation(); sheet.adjustAt(r.index, 1); }}>▶</button>{/if}{#if r.item.selected !== undefined}<span class="tick" aria-hidden="true">{r.item.selected ? "✓" : ""}</span>{/if}{#if r.item.submenu}<span class="more" aria-hidden="true">›</span>{/if}
           </div>
         {/each}
         {#if rows.length === 0}<p class="empty" data-testid="sheet-empty">{t("sheet.noMatch")}</p>{/if}
@@ -509,6 +513,44 @@
     color: var(--shift);
   }
   .step:disabled {
+    color: var(--text-dead);
+    cursor: default;
+  }
+  /* a button per value (R86): the current one marked, each at least 44 × 44 px */
+  .seg {
+    display: flex;
+    flex: none;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-right: -4px;
+  }
+  .opt {
+    all: unset;
+    box-sizing: border-box;
+    min-width: 44px;
+    height: 44px;
+    padding: 0 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    color: var(--muted);
+    white-space: nowrap;
+    cursor: pointer;
+  }
+  .opt + .opt {
+    border-left: 1px solid var(--line);
+  }
+  .opt[aria-pressed="true"] {
+    background: var(--chip-bg);
+    color: var(--text);
+    font-weight: 700;
+  }
+  .opt:active {
+    color: var(--shift);
+  }
+  .opt:disabled {
     color: var(--text-dead);
     cursor: default;
   }
