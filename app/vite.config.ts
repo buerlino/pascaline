@@ -2,10 +2,12 @@
 import { svelte } from "@sveltejs/vite-plugin-svelte";
 import { defineConfig } from "vitest/config";
 import { aboutPlugin } from "./vite-plugin-about.ts";
-import { pwaLite } from "./vite-plugin-pwa-lite.ts";
+import { engineFiles, pwaLite } from "./vite-plugin-pwa-lite.ts";
 import { yamlPlugin } from "./vite-plugin-yaml.ts";
 
-export default defineConfig({
+// The engine worker loads the engine by its hashed name in a production build (A49); the dev server and the tests use the plain one.
+export default defineConfig(({ command }) => ({
+  define: { __GIAC_MJS__: JSON.stringify((command === "build" && engineFiles("public/engine")?.mjs) || "giac.mjs") },
   base: "./",
   plugins: [yamlPlugin(), aboutPlugin(), svelte(), pwaLite()],
   build: { target: "es2022", manifest: true },
@@ -13,4 +15,4 @@ export default defineConfig({
   // spec/keyboard.yaml lives one level above app/
   server: { host: true, fs: { allow: [".."] } },
   test: { include: ["src/**/*.test.ts", "scripts/**/*.test.ts"], environment: "node" },
-});
+}));

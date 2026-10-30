@@ -19,6 +19,7 @@
   import type { UserKeys } from "./keyboard/userKeys.svelte.ts";
   import { noDigit } from "./state/displayMode.ts";
   import type { HistoryItem, Session, View } from "./state/session.svelte.ts";
+  import { updateOffer } from "./state/updateOffer.svelte.ts";
   import History from "./views/History.svelte";
   // The Mode and Settings lists load when idle after the keypad is drawn, or on the first open (R35: not in the start chunk).
   let modeSheet: typeof import("./views/modeSheet.ts") | null = null;
@@ -386,6 +387,10 @@
         {/each}
       </span>
     {/if}
+    {#if updateOffer.restart}
+      <button type="button" class="update" data-testid="update-note" title={t("update.ready")}
+        onclick={updateOffer.restart}>{t("update.restart")}</button>
+    {/if}
     <span class="slot" data-testid="mod-slot">
       <span
         class="mod"
@@ -632,6 +637,23 @@
   }
   .mod[data-lock="true"] {
     box-shadow: inset 0 -2px 0 currentColor;
+  }
+  .update {
+    flex: none;
+    margin-left: auto;
+    padding: 0 6px;
+    display: flex;
+    align-items: center;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+    color: var(--shift);
+  }
+  .update:active {
+    background: var(--key-nav);
+  }
+  .update + .slot {
+    margin-left: 0;
   }
   .menubtn {
     flex: none;

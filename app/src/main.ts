@@ -18,6 +18,10 @@ import { idbKv } from "./state/storage.ts";
 import { UserKeys } from "./keyboard/userKeys.svelte.ts";
 import { loadNative } from "./input/haptics.ts";
 import { plotHook } from "./apps/function/plotHook.ts";
+import { reloadOnMissingChunk } from "./state/chunkReload.ts";
+
+// A lazy chunk missing after a deploy (A49): reload once for the new index.html; the half-typed line is kept on pagehide.
+addEventListener("vite:preloadError", () => void reloadOnMissingChunk(sessionStorage, Date.now(), () => location.reload()));
 
 const entry = new EntryController();
 // The engine worker starts at launch (D2): it compiles the wasm on another thread while the page paints.
