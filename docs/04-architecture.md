@@ -182,7 +182,7 @@ Every Giac path (exp, the hyperbolics, complex trig, inverse trig, integration, 
 ## 3. Find (EN1)
 
 ### 3.1 State
-- Vars and Math do nothing until R4a and R4b; Tmpl opens the template palette (R10). Lists open on the sheet (`app/src/views/Sheet.svelte`; docs/05 3.1).
+- Math opens Find (R4a), Vars Find on the user's names, Shift + Math Memory (R4b: `app/src/find/names.svelte.ts`); Tmpl opens the template palette (R10). Lists open on the sheet (`app/src/views/Sheet.svelte`; docs/05 3.1).
 - Any `\operatorname{name}\left(…\right)` reaches Giac as `name(…)`, so inserting a function needs no new parser rule.
 - **The index exists** (G4; generator `tools/find-index/generate.mjs`, sources and schema in 3.3; ranking `app/src/find/rank.ts`, `prepare()` and `search()`): its size and the query score are in 8.3, the item counts and the prototype's timing in [research/r12-evidence.md](research/r12-evidence.md) section 6.
 
@@ -226,7 +226,7 @@ No usage boost (P11), so the same query always gives the same order (docs/03 rul
 - Functions insert `\operatorname{name}\left(#0\right)` (`#0`: a selection becomes the argument, R17); templates insert their LaTeX, each with a parser rule and round-trip case.
 
 ### 3.7 Keys inside Find
-Every key types its Alpha letter in lower case (no Alpha press); Shift + key types the key's primary character (digits, `.`); the space key types a space; ⌫ deletes; ▲▼ and the trackpad move the selection; Enter inserts; Esc closes. Vars opens Find filtered to variables; ⌫ on an empty query removes the filter. Digits do not pick, unlike the other sheets, because queries need them (`g0`, `log10`, `e24`).
+Every key types its Alpha letter in lower case (no Alpha press); Shift + key types the key's primary character (digits, `.`); the space key types a space; ⌫ deletes; ▲▼ and the trackpad move the selection; Enter inserts; Esc closes. Vars opens the same sheet on the user's variables and functions (no index needed); Shift + Math, Memory, deletes the highlighted name with Enter and clears all with Enter twice. Digits do not pick, unlike the other sheets, because queries need them (`g0`, `log10`, `e24`).
 **Keystroke budget:** an item used before: Math, first letter, Enter (3 presses); a new one: Math, the letters, Enter. Benchmark task 5 checks it.
 
 ### 3.8 The query test
@@ -284,8 +284,8 @@ Positions use our rows and columns (`spec/keyboard.yaml`); the reference's id is
 | Key | Decided | Source and why |
 |---|---|---|
 | Math (row 3, col 1) [r4c2] | Find, everything (R4a) | P8 |
-| Shift + Math | Memory: Find on variables and user functions, with delete and "clear all" (R4b) | reference: Mem |
-| Vars (row 3, col 0) [r4c1] | Find, filtered to variables (R4b); Shift + Vars unassigned (Find covers named symbols) | P8 |
+| Shift + Math | Memory: Find on variables and user functions, with delete and "clear all" (built, R4b) | reference: Mem |
+| Vars (row 3, col 0) [r4c1] | Find, filtered to variables (built, R4b); Shift + Vars unassigned (Find covers named symbols) | P8 |
 | Tmpl (row 3, col 2) [r4c3] | the 6 × 3 template palette, picked by arrows, Enter or a tap (built, R10; r8 rule M1) | P8, P11 |
 | Shift + Tmpl | the unit view (unit slots) | P11; reference: Units |
 | The letters A–Z, `#`, `:`, `;` (Alpha layer, flick down) | **stay**: Find's keyboard (3.7), names, CAS symbols, hex digits A–F (5.4); not the unit slots (P14) | decisions.md "The letters stay" |
@@ -302,7 +302,7 @@ Positions use our rows and columns (`spec/keyboard.yaml`); the reference's id is
 | Copy (row 1, col 5) | Copy, Shift = Paste (built, A3; on its own key since R15c2): the picked row's or the last result's full value | reference; R15c |
 | ☰ on the status line (the G2's Menu key [r3c4]) | app menus; Home/CAS: one numbered list of nine on the picked row, else the last result (built, R11; decisions.md S2); R53 makes item 6 Plot | P8, S2, S9 |
 | Shift + View (Help) | context help: the Find preview of the function before the cursor; with none there, Find (milestone 6) | ours; P8 left Help free |
-| User keys | U1–U6, all empty, with tap, Shift and Alpha (built, R15c2, R15c3; an empty Alpha slot is the tap; stored slots of U1–U3 and two-layer records stay valid); set from Find (R4b) | R15b, R15c |
+| User keys | U1–U6, all empty, with tap, Shift and Alpha (built, R15c2, R15c3; an empty Alpha slot is the tap; stored slots of U1–U3 and two-layer records stay valid); set in Settings › Your keys from Find, a place or a sheet (built, R4b) | R15b, R15c |
 | Shift + `+` [r10c5] | Ans (`\ans`, built, R2) | reference |
 | Shift + `−` [r9c5] | Base: the last result in HEX, BIN, OCT, DEC; word size (EN6) | reference: Base |
 | Shift + 5 [r8c3]; Shift + 8 [r7c3] | `[ ]` vector or matrix template (EN5); `{ }` list (built, R54) | reference |
@@ -434,7 +434,7 @@ The types live in the code; this is the map. Views see `Calc` (`app/src/calc/por
 
 | Item | Budget | State | Enforced by |
 |---|---|---|---|
-| Start chunk | ≤ 175 kB raw, ≤ 61 kB gzip; pin 59.5 kB gzip | 59.42 kB gzip (R4b: phase-1 58.50 + 0.92). The pin `START_PIN_GZIP` holds: a package that grows the chunk past it raises it in the same diff, with the reason and the before and after in its report, never past 61 kB; `LAZY_PARTS` must stay dynamic chunks (R91). `tools/probes/start-chunk.mjs` lists the bytes per source; every UI package reports its delta | size test (`npm run size`) |
+| Start chunk | ≤ 175 kB raw, ≤ 61 kB gzip; pin 60 kB gzip | 59.90 kB gzip (R50e: phase-1 59.42 + 0.48; R4b before: 58.50 + 0.92). The pin `START_PIN_GZIP` holds: a package that grows the chunk past it raises it in the same diff, with the reason and the before and after in its report, never past 61 kB; `LAZY_PARTS` must stay dynamic chunks (R91). `tools/probes/start-chunk.mjs` lists the bytes per source; every UI package reports its delta | size test (`npm run size`) |
 | MathLive chunk (after the keypad) | ≤ 830 kB raw | 807.74 kB (2026-10-18) | size test |
 | Find UI chunk | ≤ 30 kB raw | — | size test |
 | Find index asset | ≤ 400 kB raw, ≤ 100 kB gzip | 325.7 / 67.1 kB (2026-10-15) | size test (once Find loads it) |
