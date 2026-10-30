@@ -105,3 +105,54 @@ describe("golden and e2e logs", () => {
     expect(onlyTiming("e2e", `${one}\n  3 failed\n`)).toBe(false);
   });
 });
+
+// A51: golden `steps` and `flags` failed at load about 10 and passed alone at load 1.7 (pass 16, 2026-10-30). The load-only
+// items, from three runs at load 20-30 beside a quiet one (stage and item, never a whole stage):
+//   steps: precision/prec-g44f2f1-chisquare_icdf-1-0.95-12 (Home's 300 ms budget ends the agreement run) and
+//          precision/prec-G23-sin-1e2000 (the digit the doubling reached before the same budget); each is a finding of the
+//          real clock against the 8× fast one, printed on its own line above the stage line
+//   flags: patch-canary.ts and canaries.mjs (which runs it): 40 gunzips of the Giac tarball, 100 s of CPU, against spawnSync's
+//          120 s timeout
+describe("golden steps and flags under load (A51)", () => {
+  const canary = "PASS step-budget-test: 6 runs interrupted at 506 checks (budget 500, clock ×1 and ×8); with ckbudget 0 the 0.2 s clock interrupts";
+  const known = "  steps known (HOME_DEADLINE_MS): precision g58-factorial-1e6-12 [display] input factorial(10^6): desktop \"8.26E5565708\", device \"error: Stopped: it took too long\"\n";
+  const finding = (id: string, kind = "mark") => `  steps precision ${id} [${kind}] input chisquare_icdf(1,0.95): desktop "≈", device "⚠"\n`;
+  const steps = (n: number, lines: string, head = canary) => `${known}${lines}FAIL steps: ${head} | 1292 cases, clock ×1 and ×8: ${n} new findings, 2 known\n`;
+  it("steps: a finding of the two load-only cases is timing, by case", () => {
+    const one = steps(1, finding("prec-g44f2f1-chisquare_icdf-1-0.95-12"));
+    expect(failedItems("golden", one)).toEqual([{ file: "steps", title: "precision/prec-g44f2f1-chisquare_icdf-1-0.95-12" }]);
+    expect(onlyTiming("golden", one)).toBe(true);
+    expect(onlyTiming("golden", steps(1, finding("prec-G23-sin-1e2000", "display")))).toBe(true);
+    expect(onlyTiming("golden", steps(2, finding("prec-G23-sin-1e2000", "display") + finding("prec-g44f2f1-chisquare_icdf-1-0.95-12")))).toBe(true);
+  });
+  it("steps: any other case, a mix, a failed canary or a count that does not match is not timing", () => {
+    expect(onlyTiming("golden", steps(1, finding("prec-3-UTPN-30")))).toBe(false);
+    expect(onlyTiming("golden", steps(2, finding("prec-G23-sin-1e2000", "display") + finding("prec-3-UTPN-30")))).toBe(false);
+    expect(onlyTiming("golden", steps(1, finding("prec-G23-sin-1e2000", "display"), "FAIL step-budget-test 1 | the count differs between runs"))).toBe(false);
+    expect(onlyTiming("golden", steps(2, finding("prec-G23-sin-1e2000", "display")))).toBe(false);
+    expect(onlyTiming("golden", steps(1, ""))).toBe(false);
+  });
+  const ok = "PASS: 78 context fields | PASS tanh-test: 4 complex tanh values match mpmath";
+  const timedOut = (f: string) => `FAIL ${f}: timed out after 120 s`;
+  const flags = (...segments: string[]) => `FAIL flags: ${segments.join(" | ")}\nPASS regress: ok\n`;
+  it("flags: the tarball canaries that ran out of the spawn timeout are timing, by sub-test", () => {
+    const both = flags(ok, timedOut("patch-canary.ts"), timedOut("canaries.mjs"), "PASS fetch-test: 4 fetches");
+    expect(failedItems("golden", both)).toEqual([
+      { file: "flags", title: "patch-canary.ts: timed out after 120 s" },
+      { file: "flags", title: "canaries.mjs: timed out after 120 s" },
+    ]);
+    expect(onlyTiming("golden", both)).toBe(true);
+    expect(onlyTiming("golden", flags(ok, timedOut("canaries.mjs")))).toBe(true);
+  });
+  it("flags: a wrong value in the same stage, or another sub-test out of time, is not timing", () => {
+    const wrong = "FAIL tanh-test.ts: FAIL tanh-test 1 | tanh(1+i) at 30 digits: got 0.8 expect 0.9";
+    expect(onlyTiming("golden", flags(ok, timedOut("patch-canary.ts"), wrong))).toBe(false);
+    expect(onlyTiming("golden", flags(ok, wrong))).toBe(false);
+    expect(onlyTiming("golden", flags(ok, timedOut("tanh-test.ts")))).toBe(false);
+    expect(onlyTiming("golden", flags(ok, "FAIL canaries.mjs: FLIPPED 1 of 19 workaround canaries"))).toBe(false);
+    expect(onlyTiming("golden", flags(ok))).toBe(false);
+  });
+  it("a timing item next to a real failure of another stage stays a real failure", () => {
+    expect(onlyTiming("golden", flags(ok, timedOut("canaries.mjs")) + "FAIL home: 12/13 match\n")).toBe(false);
+  });
+});

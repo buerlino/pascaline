@@ -569,8 +569,9 @@ excerpt() {  # the failing lines of a check log, capped
   [[ -s "$1" ]] && { echo "--- tail ---"; tail -n 30 "$1"; }
 }
 # Wall-clock tests: the Find 16 ms/key test, the golden units p95 bar, the solve.spec.ts persistence test, the clipboard
-# poll of copy.spec.ts (the patterns are in app/scripts/pipeline-logs.ts). When every failing item of a check is one of
-# them the check runs once more; a second failure is a fix round.
+# poll of copy.spec.ts, two golden steps cases and two golden flags sub-tests (the patterns are in app/scripts/pipeline-logs.ts).
+# When every failing item of a check is one of them the check runs once more, after the host is quiet (A51: quiet_wait); a
+# second failure is a fix round.
 TIMING_CHECKS=(vitest e2e golden)
 timing_only() {  # <check> <log>
   local c; for c in "${TIMING_CHECKS[@]}"; do [[ "$c" == "$1" ]] && node "$wt/app/scripts/pipeline-logs.ts" timing "$1" "$2" && return 0; done
