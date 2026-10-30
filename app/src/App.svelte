@@ -125,11 +125,12 @@
     });
     return clipLoading;
   }
-  /** Run now when loaded, else as soon as the code has arrived (a key pressed before the idle load). The Mode code comes
-   *  too: every Menu's last row is Settings, its submenu (R49). */
+  /** Run now when loaded, else as soon as the code has arrived (a key pressed before the idle load), with the keys
+   *  meanwhile in the queue (decisions.md R8). The Mode code comes too: every Menu's last row is Settings, its submenu (R49). */
   function withClip(run: (c: ClipActions) => void): void {
-    if (clip && modeSheet) run(clip);
-    else void Promise.all([loadClip(), loadModeSheet().catch(() => null)]).then(([c]) => run(c));
+    if (clip && modeSheet) return run(clip);
+    const load = Promise.all([loadClip(), loadModeSheet().catch(() => null)]).then(([c]) => run(c));
+    if (sheetLoad === null) sheetLoad = load.catch(() => {}).finally(() => (sheetLoad = null));
   }
   $effect(() => {
     // (a browser without requestIdleCallback loads it on the first use)

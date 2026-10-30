@@ -281,9 +281,9 @@ const screens: Record<string, (page: Page) => Promise<void>> = {
     await tap(page, ["d1", "@mode"]);
     await sheet(page, "Mode");
   },
-  "Settings page": async (page) => {
+  "Settings level": async (page) => {
     await tap(page, ["d1", "@mode", "d5"]);
-    await expect(page.getByTestId("settings")).toBeVisible();
+    await sheet(page, "Mode › Settings");
   },
   "Solve Num after an edit (c44)": async (page) => {
     await tap(page, ["@place", "d4", "@symb", "x", "shift", "ln", "x", "right", "shift", "dot", "d5", "enter", "@num"]);
@@ -299,13 +299,13 @@ const screens: Record<string, (page: Page) => Promise<void>> = {
   },
 };
 
-/** The keys after the last return: a 3 into the entry. Over a sheet or the Settings page Esc closes it first (a digit
+/** The keys after the last return: a 3 into the entry. Over a sheet Esc closes it first, one Esc a level (a digit
  *  there picks a row); the Plot has no entry line, so Home first. */
 const resume: Record<string, string[]> = {
   "Tmpl sheet open": ["esc", "d3"],
   "Menu sheet open": ["esc", "d3"],
   "Mode sheet open": ["esc", "d3"],
-  "Settings page": ["esc", "d3"],
+  "Settings level": ["esc", "esc", "d3"],
   "Function Plot": ["@home", "d3"],
 };
 

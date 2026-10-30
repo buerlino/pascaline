@@ -86,12 +86,14 @@ test("Esc: stops a running job, goes back a sheet level, drops a pick, closes Se
   await expect(page.locator('[data-selected="true"]')).toHaveCount(1);
   await tap(page, ["esc"]);
   await expect(page.locator('[data-selected="true"]')).toHaveCount(0);
-  // Settings: Esc closes the page
+  // Settings (R49, a level of the sheet): Esc goes back one level, the root closes
   await page.getByTestId("chip-digits").tap();
   await page.getByTestId("menu").locator('[data-id="settings"]').tap();
-  await expect(page.getByTestId("settings")).toBeVisible();
+  await expect(page.getByTestId("sheet-title")).toHaveText("Mode › Settings");
   await tap(page, ["esc"]);
-  await expect(page.getByTestId("settings")).toBeHidden();
+  await expect(page.getByTestId("sheet-title")).toHaveText("Mode");
+  await tap(page, ["esc"]);
+  await expect(page.getByTestId("menu")).toHaveCount(0);
   // otherwise it clears the line; a hardware Escape is the same key
   await tap(page, ["d7", "esc"]);
   expect(await entryValue(page)).toBe("");

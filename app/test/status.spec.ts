@@ -91,14 +91,14 @@ test("☰ opens the view's menu and Settings is its last row, key 0 in Home (R15
   await page.getByTestId("menu-button").tap(); // closes again
   await expect(sheet(page)).toBeHidden();
   await tap(page, ["@menu", "d0"]); // the Menu key still works; 0 picks item 10
-  await expect(page.getByTestId("settings")).toBeVisible();
-  await tap(page, ["esc"]);
+  await expect(page.getByTestId("sheet-title")).toHaveText("Home menu › Settings");
+  await tap(page, ["esc", "esc"]);
   await tap(page, ["@plot"]);
   await page.waitForFunction(() => window.pascaline.shell.app === "function" && window.pascaline.shell.loading === null);
   await page.getByTestId("menu-button").tap();
   await expect(rows.last()).toContainText("Settings");
   await rows.last().tap();
-  await expect(page.getByTestId("settings")).toBeVisible();
+  await expect(page.getByTestId("sheet-title")).toHaveText("Plot menu › Settings");
 });
 
 test("☰ on a picked history row opens the row's menu (R15c1)", async ({ page }) => {
@@ -246,22 +246,21 @@ test("Shift and Alpha do nothing while the Mode sheet is open, and Esc goes back
   await expect(sheet(page)).toBeHidden();
 });
 
-test("the last row of the Mode sheet opens the Settings page, on its first row; Esc, or a user key that holds Menu, closes it", async ({ page }) => {
+test("the last row of the Mode sheet opens Settings as its next level, on its first row; Esc goes back, ☰ closes it", async ({ page }) => {
   await open(page);
-  const settings = page.getByTestId("settings");
   await tap(page, ["@mode", "d5"]);
-  await expect(settings).toBeVisible();
-  await expect(sheet(page)).toBeHidden(); // the Mode sheet gave way to the page
+  await expect(page.getByTestId("sheet-title")).toHaveText("Mode › Settings"); // R49: a level of the same sheet
   await tap(page, ["esc"]);
-  await expect(settings).toBeHidden();
+  await expect(page.getByTestId("sheet-title")).toHaveText("Mode");
+  await tap(page, ["esc"]);
+  await expect(sheet(page)).toBeHidden();
   await page.getByTestId("chip-format").tap(); // by touch: a chip, then the last row
   await sheet(page).locator('[data-id="settings"]').tap();
-  await expect(page.getByTestId("settings-title")).toHaveText("Settings");
-  await expect(settings.locator('[data-active="true"]')).toHaveAttribute("data-id", "std");
-  // the page covers the status line's ☰; a user key that holds Menu just closes it (R21b)
-  await page.evaluate(() => window.pascaline.userKeys.set("u1", "primary", { label: "Menu", action: { special: "menu" } }));
-  await tap(page, ["u1"]);
-  await expect(settings).toBeHidden();
+  await expect(page.getByTestId("sheet-title")).toHaveText("Mode › Settings");
+  await expect(sheet(page).locator('[data-active="true"]')).toHaveAttribute("data-id", "numbers");
+  // the status line's ☰ stays uncovered: it closes the sheet it did not open (as on Mode)
+  await page.getByTestId("menu-button").tap();
+  await expect(sheet(page)).toBeHidden();
 });
 
 test("the sheets work inside an app, and the angle unit set there is the one the app uses", async ({ page }) => {
