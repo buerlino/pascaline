@@ -534,7 +534,8 @@ describe.skipIf(!giacAvailable())("G50: complex arguments of the audited functio
     const L = await loadNodeGiac();
     const giac = engineGiac(L);
     const own = new EngineHost(L.giac, L.bridge);
-    own.cas("w:=atan(2*i)", defaultCasSettings);
+    // G135: w holds an atan off the cut (patch 0019 stores atan(2*i) as pi/2+i*ln(3)/2, with no atan left to copy).
+    own.cas("w:=atan(1+2*i)", defaultCasSettings);
     own.cas("f(x):=atan(x)", defaultCasSettings);
     own.cas("g(x):=f(x)+w", defaultCasSettings);
     const r = complexReads(giac, "evalf(g(2*i))");
