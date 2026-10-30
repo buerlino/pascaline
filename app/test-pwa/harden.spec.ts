@@ -18,9 +18,9 @@ const copyOf = (): string => {
   return dir;
 };
 /** A second deploy: one changed file, the worker rewritten from it. */
-function secondBuild(): string {
+function secondBuild(marker = "v2-marker"): string {
   const dir = copyOf();
-  writeFileSync(join(dir, "index.html"), `${readFileSync(join(dir, "index.html"), "utf8")}<!-- v2-marker -->`);
+  writeFileSync(join(dir, "index.html"), `${readFileSync(join(dir, "index.html"), "utf8")}<!-- ${marker} -->`);
   writeServiceWorker(APP, dir);
   return dir;
 }
@@ -113,19 +113,41 @@ test.describe("on a site that can change", () => {
     await page.evaluate(() => navigator.serviceWorker.getRegistration().then((r) => r?.update()));
     const line = page.locator('[data-testid="update-note"]');
     await expect(line).toBeVisible({ timeout: 20_000 });
-    await expect(line).toContainText("new version");
+    await expect(line).toHaveAttribute("title", /new version/);
+    expect(await line.evaluate((el) => el.closest('[data-testid="status"]') !== null)).toBe(true); // in the status line, not over the stage
     await page.waitForTimeout(1500);
     expect(loads).toBe(0); // nothing reloaded on its own; the user's line is still there
     expect(await page.evaluate(() => (window as unknown as { __old?: number }).__old)).toBe(1);
     expect(await page.evaluate(() => window.pascaline.entry.value)).toBe("12+34");
 
-    await page.locator('[data-testid="update-restart"]').click();
+    await line.click();
     await page.waitForFunction(() => (window as unknown as { __old?: number }).__old === undefined);
     await page.waitForFunction(() => customElements.get("math-field") !== undefined && window.pascaline !== undefined);
     await page.waitForTimeout(1500);
     expect(loads).toBe(1);
     expect(await page.evaluate(() => fetch("/index.html").then((r) => r.text()))).toContain("v2-marker");
     expect(await page.evaluate(() => caches.keys().then((k) => k.length))).toBe(1);
+    await expect(line).toHaveCount(0);
+  });
+
+  test("two deploys while the tab stays open: Restart acts on the newest worker and loads the second version", async ({ page }) => {
+    await visit(page);
+    const update = (): Promise<unknown> => page.evaluate(() => navigator.serviceWorker.getRegistration().then((r) => r?.update()));
+    site.root = secondBuild("v2-marker");
+    await update();
+    const line = page.locator('[data-testid="update-note"]');
+    await expect(line).toBeVisible({ timeout: 20_000 });
+    await page.evaluate(() => navigator.serviceWorker.getRegistration().then((r) => ((window as unknown as { __w1: ServiceWorker }).__w1 = r?.waiting as ServiceWorker)));
+    site.root = secondBuild("v3-marker");
+    await update();
+    // the first waiting worker is gone (redundant); the line stays up and now belongs to the second
+    await page.waitForFunction(() => (window as unknown as { __w1: ServiceWorker }).__w1.state === "redundant", undefined, { timeout: 20_000 });
+    await page.waitForFunction(() => navigator.serviceWorker.getRegistration().then((r) => r?.waiting?.state === "installed"));
+    await expect(line).toBeVisible();
+    await Promise.all([page.waitForEvent("load", { timeout: 20_000 }), line.click()]);
+    await page.waitForFunction(() => customElements.get("math-field") !== undefined && window.pascaline !== undefined);
+    expect(await page.evaluate(() => fetch("/index.html").then((r) => r.text()))).toContain("v3-marker");
+    await page.waitForFunction(() => customElements.get("math-field") !== undefined && window.pascaline !== undefined);
     await expect(line).toHaveCount(0);
   });
 

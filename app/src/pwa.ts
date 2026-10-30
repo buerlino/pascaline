@@ -3,10 +3,9 @@
 // Loaded lazily from main.ts after the engine is ready, so it never delays the keypad or the first paint.
 // Updates (A49): a new worker that installs while an old one controls the page waits; the update line (App.svelte) offers
 // Restart, which posts "skipWaiting" to it and reloads on `controllerchange`. Nothing reloads the page by itself.
-// The line is drawn from here (a lazy chunk, with its component) so it costs the start chunk nothing.
+// The offer is a button in the status line (App.svelte, from updateOffer); this lazy chunk only sets it.
 
-import { mount } from "svelte";
-import UpdateLine from "./views/UpdateLine.svelte";
+import { updateOffer } from "./state/updateOffer.svelte.ts";
 
 export interface PwaEnv {
   prod: boolean;
@@ -43,13 +42,6 @@ export function registerServiceWorker(): void {
     });
 }
 
-/** The update line in the stage (App.svelte's `.stage`), under the engine's start note when that is on screen. */
-export function showUpdateLine(restart: () => void): void {
-  const stage = document.querySelector(".stage");
-  if (!stage || stage.querySelector('[data-testid="update-note"]')) return;
-  mount(UpdateLine, { target: stage, props: { restart, lower: stage.querySelector('[data-testid="engine-note"]') !== null } });
-}
-
 /** Offer the update when a new worker waits; look for one whenever the page comes back to the front. */
 function watch(reg: ServiceWorkerRegistration): void {
   const sw = navigator.serviceWorker;
@@ -59,15 +51,17 @@ function watch(reg: ServiceWorkerRegistration): void {
     reloaded = true;
   };
   const offer = (waiting: ServiceWorker): void => {
-    showUpdateLine(() => {
+    // A later deploy can make this worker redundant while the line is up: the tap acts on the worker that waits then.
+    updateOffer.restart = () => {
+      const w = reg.waiting ?? waiting;
       // only this tap reloads; another tab's restart leaves this page to its own code until the user chooses.
       // A page the old worker never controlled (it registered it in this visit) gets no controllerchange: the new
       // worker's own activation is the sign too.
-      if (waiting.state === "activated") return reload(); // the browser let it through: nothing used the old one
+      if (w.state === "activated") return reload(); // the browser let it through: nothing used the old one
       sw.addEventListener("controllerchange", reload);
-      waiting.addEventListener("statechange", () => waiting.state === "activated" && reload());
-      waiting.postMessage("skipWaiting");
-    });
+      w.addEventListener("statechange", () => w.state === "activated" && reload());
+      w.postMessage("skipWaiting");
+    };
   };
   // a worker that waits behind an active one is an update; the first install has none and activates at once
   if (reg.waiting && reg.active) offer(reg.waiting);
