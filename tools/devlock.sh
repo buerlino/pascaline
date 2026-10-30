@@ -7,7 +7,7 @@
 #   tools/devlock.sh status
 #   tools/devlock.sh break <resource>     # coordinator only, for a lock whose owner is gone
 #
-# <resource> is an adb serial, "host-cpu", or "integ" (the phase-1 worktree: merges and interactive edits). Locks are directories (mkdir is atomic).
+# <resource> is an adb serial, "host-cpu", "integ" (the phase-1 worktree: merges and interactive edits), or "nodemods" (its app/node_modules: a copy out, an npm ci in; A47bf1). Locks are directories (mkdir is atomic).
 # Locks live in the main checkout's .coord (shared by every git worktree); PASCALINE_COORD overrides.
 set -euo pipefail
 
