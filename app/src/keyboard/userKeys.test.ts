@@ -214,3 +214,37 @@ describe("user keys: the Alpha layer (R15c3)", () => {
     expect(() => loadKeyboard(k(3, {}))).toThrow(KeyboardSpecError);
   });
 });
+
+describe("user keys: a constant and the slot legends (R4b)", () => {
+  const c = { label: "c", action: { insert: "\\const{c}{c}", chip: { key: "const:c", value: "299792458", exact: true } } };
+
+  it("a constant carries its chip into the key's action, and it survives the store", async () => {
+    const kv = memKv();
+    const u = new UserKeys(kv);
+    u.set("u1", "primary", c);
+    const a = actionFor(u.resolve(key("u1")), false, false);
+    expect(a).toEqual({ kind: "insert", latex: "\\const{c}{c}", chip: { key: "const:c", chip: { value: "299792458", exact: true } } });
+    const again = new UserKeys(kv);
+    await again.restore();
+    expect(actionFor(again.resolve(key("u1")), false, false)).toEqual(a);
+  });
+
+  it("refuses a chip that is not { key, value, exact }", () => {
+    const u = new UserKeys(memKv());
+    expect(() => u.set("u1", "primary", { label: "c", action: { insert: "x", chip: { key: "const:c", value: 1, exact: true } } })).toThrow(KeyboardSpecError);
+    expect(() => u.set("u1", "primary", { label: "c", action: { insert: "x", chip: "no" } })).toThrow(KeyboardSpecError);
+  });
+
+  it("labelOf and placeOf tell what a slot holds: nothing, a function, a place", () => {
+    const u = new UserKeys(memKv());
+    for (const l of USER_LAYERS) expect(u.labelOf("u1", l)).toBeUndefined();
+    u.set("u1", "primary", sinh);
+    u.set("u1", "shift", { label: "Mode", action: { special: "mode" } });
+    expect(u.labelOf("u1", "primary")).toBe("sinh");
+    expect(u.placeOf("u1", "primary")).toBeUndefined();
+    expect(u.placeOf("u1", "shift")).toBe("mode");
+    expect(u.labelOf("u1", "alpha")).toBeUndefined();
+    u.reset("u1", "primary");
+    expect(u.labelOf("u1", "primary")).toBeUndefined();
+  });
+});

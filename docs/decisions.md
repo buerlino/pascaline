@@ -9,6 +9,7 @@ The owner's other open items are in [backlog.md](backlog.md), "Needs the user". 
 
 - **A21, the F-Droid recipe's qalc build (P22):** `fdroid/README.md` names the open answer. Until F-Droid says whether checked-in derived data (`find/factors.yaml`) is acceptable, the recipe keeps its libxml2 and libqalculate builds, unchanged. Yes: before C4 it drops both. No: it runs `tools/find-index/refresh-factors.mjs` and fails on a diff.
 
+- **R4b, four defaults to confirm:** (1) Memory deletes a name on Enter or a tap with no confirmation; Clear all asks once (the row reads "Enter again clears N"); Reset all your keys has no ask. (2) A pick from Find for a slot closes the sheets, so the next slot starts again at Settings › Your keys; the key's new face shows at once above. (3) A constant on a free key stores its value and uncertainty with the slot (as a chip does in history), so it keeps the value it was set with; a unit or prefix is stored as its chip, which Home refuses until R24c, as R4a's point 1. (4) Vars is dead in a view without an entry line; Memory opens everywhere. Would change if: a lost name or a wiped key costs more than one more press.
 
 ## Decided proposals
 

@@ -10,7 +10,7 @@ The one place for "where are we and what's left", one or two lines per open item
 | Phase 0 spike; MVP milestones 1 (Home, CAS), 2 (Function, Solve), 3 (Python, removed by P11) | **Done** 2026-10-11 (reports in [archive/shifts/](archive/shifts/)) |
 | **The core freeze (P23)** | **Ended 2026-10-27** (owner). Its net stays: [tests/core/](../tests/core/README.md) (66 everyday tasks, all active) runs on every merge and on the night's device; a red case is a bug to fix. Order of the work: brief section 0. |
 | Milestone 4a: feel (P11) | **Next after Find.** Merged: the entry work (⌫, cursor, focus, hardware keys), sheets, flicks, Settings as levels of the Mode sheet (R49) with Help and about (R87), history-row actions, R15b, R15c1, R15c2, R15c3, the mockups (R12a). Waiting: R15c4, the palette, the visual pass, results mode, the trust features |
-| Milestone 4: Find and trust | Engine side done (marks, 30 digits, chips, copy, defs, the Find index, the size test, A4a); Find's UI: R4a merged; R4b, A4b next |
+| Milestone 4: Find and trust | Engine side done (marks, 30 digits, chips, copy, defs, the Find index, the size test, A4a); Find's UI: R4a, R4b built; A4b next |
 | Milestone 5: Units | The evaluator on Giac is done (P15: G15–G18, G25, G13, G7, G32, R28, R24a); the pad, the entry and the result view follow the Settings base |
 | Milestone 6: Structure | Not started (EN5–EN7, Help) |
 | MVP release | v0.1.0, the APK and the website from one tag: lane B (brief section 0) |
@@ -84,7 +84,7 @@ The one place for "where are we and what's left", one or two lines per open item
 - **The hardening without a bug line:** A31 (a gate stage for the shell tests in `tools/` and `scripts/`, not drafted); r16's end mark, a 50,000-input sweep with no new false mark, is not met (Opus pass 82; G94 stops the view sweep at volume); G116 (merged `b812262`): `node scripts/sweep.ts --nightly --edges`, about 7 min per 5,000 trees; its first two seeds gave F119–F123 (triage: `.tasks/sweep-2026-10-28-g116-triage.md`); G120 (seed 1793285778): F129–F133 and 20 hangs of acos/acosh at huge or tiny reals (`.tasks/sweep-2026-10-29-g120-triage.md`); A44 (merged `e5f0efa`): `tests/golden/sweep-nightly-known.yaml` holds the nightly sweep's open rows (F122, F129–F133); the gate never reads it.
 
 ### Next (packages and order: brief section 0)
-- **Find (milestone 4, EN1):** R4a built (Math = Find; task 5 active at 4 presses; c38, c39, c43 keyed through it); R4b and A4b next, brief section 0.
+- **Find (milestone 4, EN1):** R4a built (Math = Find; task 5 active at 4 presses; c38, c39, c43 keyed through it); R4b built (Vars, Shift + Math = Memory, Settings › Your keys); A4b next, brief section 0.
 - **Units (milestone 5; docs/04 section 4):** packages and order in brief section 0; the first unit result on the Tab One and the Fairphone 6 (< 1 s). Gate: tasks 1–4 and 10; a unit in ≤ 4 presses at the median; `units.yaml`; the owner's hand timing.
 - **Settings and looks (milestone 4a), the trust features, the backup and libraries:** packages and order in brief section 0 ("What waits").
 - **Milestone 6, Structure** (not packaged): EN5 matrices with Shift + 5 and the editor on Shift + 4 (§5.3; the Tmpl matrices work today), EN6 number bases, EN7 everyday functions, Help as context help; EN4, copying one element of a list or matrix.
