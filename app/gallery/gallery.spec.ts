@@ -413,7 +413,7 @@ shots.push({
   title: "Home, a new version is ready: the line with its Restart button",
   setup: async (p) => {
     await someHistory(p);
-    await p.evaluate(() => (window.pascaline.update.ready = true));
+    await p.evaluate(() => import(/* @vite-ignore */ "/src/pwa.ts").then((m) => m.showUpdateLine(() => {})));
   },
 });
 
