@@ -40,8 +40,9 @@ function parseReal(s: string, re: RegExp): Real | null {
 
 const isZeroReal = (r: Real): boolean => !/[1-9]/.test(r.int + r.frac);
 
+/** The number as the keys type it: the decimal comma is MathLive's `{,}` (R57), never a bare comma, which is an argument comma. */
 function latexOf(r: Real, comma: boolean): string {
-  const body = `${r.int}${r.frac ? `${comma ? "," : "."}${r.frac}` : ""}`;
+  const body = `${r.int}${r.frac ? `${comma ? "{,}" : "."}${r.frac}` : ""}`;
   // the exponent as the exponent key types it (R14): 1.5ᴇ-3
   const exp = r.exp !== 0 && !isZeroReal(r) ? `${EMARK}${r.exp}` : "";
   return `${r.neg ? "-" : ""}${body}${exp}`;
