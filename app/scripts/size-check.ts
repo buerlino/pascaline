@@ -111,8 +111,8 @@ export const LAZY_PARTS = ["src/views/sheetKeys.ts", "src/views/tmplSheet.ts", "
 
 /** R91's pin: the start chunk is at most this many bytes gzip, 1.75 kB under the budget of 61 kB, so the Settings base
  *  (R49, R86, R57) has room. A package that needs more raises the pin with a reason, here and in docs/04 8.3.
- *  58.5 → 59.25 kB (R4b): the Vars and Memory keys, the Your keys level and the free keys' three layers are on the
- *  key path (+0.87 kB); the rest of the climb came with the merged phase-1. */
+ *  58.5 → 59.25 kB (R4b): phase-1 measures 58.22 kB gzip, the branch 59.15 kB (+0.93 kB): the Vars and Memory keys,
+ *  the Your keys level and the free keys' three layers are on the key path. */
 export const START_PIN_GZIP = 59.25 * KB;
 
 /** Failures for the start chunk's row when it is over the pin. */
