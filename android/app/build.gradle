@@ -12,7 +12,7 @@ android {
         // checks them against app/package.json and the recipe). A measurement build says so in a suffix, so tools/device_run.py
         // can report the build type (its versionName ends in "-measure").
         versionName "0.1.0"
-        versionNameSuffix (System.getenv('PASCALINE_MEASURE') == '1') ? "-measure" : ""
+        versionNameSuffix = (System.getenv('PASCALINE_MEASURE') == '1') ? "-measure" : ""
         // Measurement builds (PASCALINE_MEASURE=1) log timing marks to logcat; normal builds never do.
         buildConfigField "boolean", "MEASURE", (System.getenv('PASCALINE_MEASURE') == '1') ? "true" : "false"
         aaptOptions {

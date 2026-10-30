@@ -1,4 +1,5 @@
 # Upstream: giac 2.1.0 usual.cc _fracmod (and its alias iratrecon). fracmod(41,-2) reaches gen.cc in_fracmod, which calls mpz_sqrt on modulus/2 = -1; GMP aborts on the square root of a negative number, so the wasm trapped (unreachable) and the engine had to restart. A modulus that is an integer <= 0 is refused with a message (fracmod(41,0) already was: Reconstructed denominator is not prime with modulo; fracmod(41,-1) gave 0).
+# Changed by Pascaline contributors, 2026-10-26
 --- a/src/usual.cc
 +++ b/src/usual.cc
 @@ -7683,6 +7683,10 @@

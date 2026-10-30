@@ -61,7 +61,7 @@ function thirdPartyRows(): Row[] {
 function ships(r: Row): boolean {
   if (r.section.startsWith("Maths engine") || r.section.startsWith("Theme colours")) return true;
   if (r.section.startsWith("Units and constants data")) return (r.cells["Notes"] ?? "").includes("ships in the Find index");
-  if (r.section.startsWith("App") || r.section.startsWith("Android")) return (r.cells["Use"] ?? "").includes("shipped");
+  if (r.section.startsWith("App") || r.section.startsWith("Android")) return /\(shipped\b/.test(r.cells["Use"] ?? "");
   return false;
 }
 

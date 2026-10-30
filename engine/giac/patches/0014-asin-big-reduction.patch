@@ -1,4 +1,5 @@
 # Upstream: giac 2.1.0 usual.cc asin. asin(sin(a)) = +-(a-n*pi) with n = round(a/pi) (and asin(cos(a)), acos(sin(a)), acos(cos(a)) through it) took a at the current Digits and tested the parity of n only for an _INT_: an even _ZINT n (|n| >= 2^31) took the odd branch, so asin(sin(20!)) gave -0.41282992951 (right 0.41282992951) and asin(cos(30!)) = -pi/2+30!-k*pi gave 0.221312219023 (right -0.221312219023); and once n has about Digits digits its last ones are noise: asin(sin(10^50)) at Digits 40 gave 13683667953.0 (right -0.910275005727), in degrees an exact wrong integer. The parity test now reads a _ZINT too; an n of 2^20 or more is taken again from a/pi at Digits plus its own digits plus 20, and an a/pi within 1e-12 of a half-integer there keeps asin unevaluated (evalf then gives the principal value). A small n keeps its exact answer (asin(cos(10)) = -pi/2+10-3*pi).
+# Changed by Pascaline contributors, 2026-10-28
 --- a/src/usual.cc
 +++ b/src/usual.cc
 @@ -2348,7 +2348,31 @@

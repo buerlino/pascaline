@@ -68,7 +68,7 @@ Bug reports and ideas are very welcome. Open an issue. For code, see [CONTRIBUTI
 
 ## License
 
-[GPL-3.0-or-later](LICENSE).
+Copyright © 2026 Pascaline contributors. [GPL-3.0-or-later](LICENSE); the licence texts of the parts it ships are in [LICENSES/](LICENSES/) and their notices in [THIRD_PARTY.md](THIRD_PARTY.md). What the app stores and sends (nothing leaves the device): [PRIVACY.md](PRIVACY.md).
 
 ---
 
