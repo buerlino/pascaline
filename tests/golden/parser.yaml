@@ -469,18 +469,18 @@ cases:
   - { id: "l6-list-03", latex: "\\{1,\\frac{1}{2}\\}", expect: "list[1,1/2]", source: "derived", group: "l6" }
   - { id: "l6-list-04", latex: "\\left\\{\\left\\{1,2\\right\\},\\left\\{3\\right\\}\\right\\}", expect: "list[list[1,2],list[3]]", source: "derived", group: "l6" }
   - { id: "l6-comma-01", latex: "3{,}5+1", expect: "3.5+1", options: { decimalComma: true }, source: "derived", group: "l6" }
-  - { id: "l6-comma-02", latex: "3,5\\times2", expect: "3.5*2", options: { decimalComma: true }, source: "derived", group: "l6" }
+  - { id: "l6-comma-02", latex: "3,5\\times2", error: true, options: { decimalComma: true }, source: "derived", group: "l6", note: "R57f1: a bare comma separates arguments in either mode, as in the point mode; the decimal comma is {,}" }
   - { id: "l6-comma-03", latex: "\\max\\left(1{,}5;2\\right)", expect: "max(1.5,2)", options: { decimalComma: true }, source: "derived", group: "l6" }
   - { id: "l6-comma-04", latex: "\\left\\{0{,}25;3\\right\\}", expect: "list[0.25,3]", options: { decimalComma: true }, source: "derived", group: "l6" }
   - { id: "l6-comma-05", latex: "\\max\\left(1,5\\right)", expect: "max(1,5)", source: "derived", group: "l6" }
-  - { id: "l6-comma-e01", latex: "\\max\\left(2,5,3\\right)", error: true, options: { decimalComma: true }, source: "derived", group: "l6", note: "two decimal commas (R29, F24): was max(2.5,3)" }
+  - { id: "l6-comma-e01", latex: "\\max\\left(2,5,3\\right)", expect: "max(2,5,3)", options: { decimalComma: true }, source: "derived", group: "l6", note: "R57f1: three arguments, as in the point mode (was refused as two decimal commas)" }
   - { id: "l6-comma-e02", latex: "2{,}5.3", error: true, options: { decimalComma: true }, source: "derived", group: "l6", note: "a comma, then a point: was 2.5*.3" }
-  - { id: "l6-comma-e03", latex: "\\max\\left(2.5,3\\right)", error: true, options: { decimalComma: true }, source: "derived", group: "l6", note: "a point, then a comma: was max(2.5,3)" }
+  - { id: "l6-comma-e03", latex: "\\max\\left(2.5,3\\right)", expect: "max(5/2,3)", options: { decimalComma: true }, source: "derived", group: "l6", note: "R57f1: two arguments, as in the point mode (was refused as a point, then a comma)" }
   - { id: "l6-comma-e04", latex: "2{,}5{,}3", error: true, options: { decimalComma: true }, source: "derived", group: "l6", note: "two decimal commas as MathLive writes them" }
   - { id: "l6-comma-06", latex: "\\max\\left(2.5;3\\right)", expect: "max(5/2,3)", options: { decimalComma: true }, source: "derived", group: "l6", note: "with the decimal comma, ; separates the arguments" }
   - { id: "l6-comma-07", latex: "3{,}\\emark3", expect: "3000", options: { decimalComma: true }, source: "derived", group: "l6", note: "R57: the mark and no digit after it, as 3,ᴇ3 types it: the same as 3.ᴇ3" }
   - { id: "l6-comma-08", latex: "1{,}5\\times2", expect: "3", source: "derived", group: "l6", note: "R57: MathLive's {,} is the decimal mark in the point mode too (an entry recalled after the setting changed)" }
-  - { id: "l6-comma-10", latex: "\\max\\left(0,x\\right)", expect: "max(0,x)", options: { decimalComma: true }, source: "derived", group: "l6", note: "R57: a bare comma after a digit is still the argument comma (only {,} is a decimal mark with no digit after it), as an entry stored in the point mode and recalled in the comma mode" }
+  - { id: "l6-comma-10", latex: "\\max\\left(0,x\\right)", expect: "max(0,x)", options: { decimalComma: true }, source: "derived", group: "l6", note: "R57: a bare comma is the argument comma in either mode (R57f1), as an entry stored in the point mode and recalled in the comma mode" }
   - { id: "l6-comma-09", latex: "\\max\\left(1;1\\emark3\\right)", expect: "1000", options: { decimalComma: true }, source: "derived", group: "l6" }
   - { id: "l6-comma-11", latex: "\\max\\left(1,5\\right)", expect: "max(1,5)", options: { decimalComma: true }, source: "derived", group: "l6", note: "R57f1: a bare comma separates arguments in either mode; max(1,5) stored in the point mode and recalled in the comma mode is still 5" }
   - { id: "l6-fn-01", latex: "p\\left(x\\right):=x^{2}+1", expect: "p(x):=x^2+1", source: "derived", group: "l6" }

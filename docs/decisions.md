@@ -138,7 +138,7 @@ The defaults that bind code and tests, one line each. A default changes when its
 - **Time limits:** CAS 10 s soft budget (Cancel prominent), Giac's 600 s net; Solve and analysis 30 s; Cancel replays the definitions only (not Ans).
 - **Solve and Plot:** a root is accepted at relative residual ≤ 1e-15 at 30 digits, else ⚠ (systems: < 1e-6 with ⚠, else no solution); roots in ascending order, complex by real then imaginary part; Plot searches only the visible window; the signed area by Romberg, the exact `int`, then `gaussquad` with ⚠; names in Solve are case-sensitive and start at 0.
 - **Function app:** window x ∈ [-10, 10] square and centred; trace step 0.1 at the default window (1-2-5 rule elsewhere); Num from 0 by 0.1, `NaN` at a pole; Intersection asks for the second function.
-- **Parser (L6):** an odd root template is the real root; `{…}` is a list; the decimal-comma option reads `3,5` and separates arguments with `;`; after `p(x):=…` p is a function (R56: from the session's user names).
+- **Parser (L6):** odd root templates are real roots; `{…}` is a list; the decimal comma is MathLive's `3{,}5` in either mode; a bare comma, like `;`, separates arguments (R57); `p(x):=…` makes p a function (R56).
 - **Discrete distributions (G113, G113f1; patches 0009, 0010):** off the integers or below the support a pmf is an exact 0 and a cdf takes floor(k). Full text: archive.
 
 - **The deep check of 2026-10-19 (G38, G57, G48, G39):** a result resting on a numeric decision is decided again at P + 20 and P + 40, refused when undecided; a run-once store is ⚠ without a count; a divergent sum or integral is refused. Rule: docs/04 2.4. Full text: archive.

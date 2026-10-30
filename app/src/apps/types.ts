@@ -16,8 +16,6 @@ export interface AppHost {
   readonly calc: Calc;
   /** The calculator settings (digits, angle, format); reactive. */
   readonly settings: CalcSettings;
-  /** The decimal comma is on (R57): an entry line typed with `{,}` and `;` is parsed with it; reactive. */
-  readonly decimalComma: boolean;
   readonly kv: Kv;
   /** The user's variables and functions (the stored ones included); reactive. Apps pick the functions out for the parser (R56b). */
   readonly userNames: readonly UserName[];

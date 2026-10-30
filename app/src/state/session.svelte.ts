@@ -516,7 +516,7 @@ export class Session {
         // R56: single letters are calls when the user's names (Home and CAS share them) hold them as functions
         const userFunctions = parser.userFunctionsOf(this.userNames);
         // R65: Home sends a chip that is not exact by name. A power keeps Giac's principal root here, as in CAS (R66)
-        const p = entry.giacOfEntry(latex, view, { chips, userFunctions, ...(this.decimalComma ? { decimalComma: true } : {}) });
+        const p = entry.giacOfEntry(latex, view, { chips, userFunctions });
         giac = p.giac;
         defines = p.defines;
         if (p.inexact) live.inexactInput = true;

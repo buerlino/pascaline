@@ -53,19 +53,17 @@ export class AppShell {
   private readonly kv: Kv;
   private readonly entry: EntryLine;
   private readonly settings: () => CalcSettings;
-  private readonly decimalComma: () => boolean;
   private readonly userNames: () => readonly UserName[];
   /** What the app last put on the entry line (to tell "edited" from "as loaded"). */
   private entryBase = "";
   private pending = new Map<AppId, Promise<LoadedApp>>();
 
-  constructor(calc: Calc, kv: Kv, entry: EntryLine, settings: () => CalcSettings, userNames: () => readonly UserName[] = () => [], decimalComma: () => boolean = () => false) {
+  constructor(calc: Calc, kv: Kv, entry: EntryLine, settings: () => CalcSettings, userNames: () => readonly UserName[] = () => []) {
     this.calc = calc;
     this.kv = kv;
     this.entry = entry;
     this.settings = settings;
     this.userNames = userNames;
-    this.decimalComma = decimalComma;
   }
 
   get current(): LoadedApp | undefined {
@@ -103,9 +101,6 @@ export class AppShell {
       },
       get userNames() {
         return self.userNames();
-      },
-      get decimalComma() {
-        return self.decimalComma();
       },
       setEntry: (latex: string) => {
         this.entryBase = latex;

@@ -24,12 +24,12 @@ function renameX(e: Json): Json {
   return e;
 }
 
-export function compileDefinition(latex: string, angle: "rad" | "deg" = "rad", decimalComma = false): Compiled {
+export function compileDefinition(latex: string, angle: "rad" | "deg" = "rad"): Compiled {
   if (latex.trim() === "") return { giac: "", error: "", angle };
   let json: Json;
   let giac: string;
   try {
-    json = renameX(parseLatex(latex, decimalComma ? { decimalComma: true } : {}));
+    json = renameX(parseLatex(latex));
     giac = mathJsonToGiac(json, { realOddRoots: true }); // P5 (b), R39
   } catch (e) {
     return { giac: "", error: parseFailText(e), angle };
