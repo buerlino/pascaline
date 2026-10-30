@@ -138,6 +138,9 @@ test("max(1,5) in point mode gives 5; after Settings › Numbers › Decimal mar
   await tap(page, ["d5", "d1"]);
   const mark = page.getByTestId("menu").locator('[role="menuitem"][data-id="mark"]');
   await expect(mark.getByTestId("sheet-value")).toHaveText("Point");
+  const active = page.getByTestId("menu").locator('[data-active="true"]');
+  for (let n = 0; n < 8 && (await active.getAttribute("data-id")) !== "mark"; n++) await tap(page, ["up"]);
+  await expect(active).toHaveAttribute("data-id", "mark");
   await tap(page, ["right"]);
   await expect(mark.getByTestId("sheet-value")).toHaveText("Comma");
   await tap(page, ["esc", "esc", "esc"]);
