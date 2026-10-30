@@ -63,7 +63,6 @@ Milestone reviews (section 0): after R87 (due: R91's first screen, R49's Mode â€
 | Step | What | Agent, model | Branch | After |
 |---|---|---|---|---|
 | 305 | [R4b](packages/R4b.md) Vars, Memory and the user keys from Find | ron, Sonnet | `p1/ron-m4-vars` | R15c3, R49 |
-| 306 | [R86](packages/R86.md) Mode's values in sight | ron, Sonnet | `p1/ron-modebuttons` | R49 |
 | 307 | [R57](packages/R57.md) the decimal comma as a setting | ron, Sonnet | `p1/ron-m4a-decimalcomma` | R49 |
 | 308 | [R50e](packages/R50e.md) Settings â€º Appearance | ron, Sonnet | `p1/ron-m4a-appearance` | R49 |
 | 309 | [R24b](packages/R24b.md) the pad drawn over the keys | ron, Sonnet | `p1/ron-m5-unitpad` | R86, R57, R50e |

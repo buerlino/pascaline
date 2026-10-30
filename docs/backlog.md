@@ -35,6 +35,7 @@ The one place for "where are we and what's left", one or two lines per open item
 - A11: Share session, Paste of `1.5e-3`; a chip tapped right after a flick (R15c2); the ~8 px strip right of an inner fraction (R42); "Working…" on the WebView and a taller CAS result growing its row (F8); the trackpad's `touch-action: none` (K1).
 - The memory cap on the Tab One: `makemat(1,30000,30000)` in CAS gives "Out of memory" and the app stays up (G24).
 - R85 (merged `1d35189`): on the Fairphone, Shift, Fmt opens Mode on Angle; ▶, Enter gives DEG (the owner).
+- R86 (merged `cf087b9`): on the Fairphone, the pill then SCI sets it and closes; the digits chip then 20; ◀ goes up to Mode (the owner).
 - R81 (F99, merged `a956ede`): the system keyboard stays closed after a return to the app, on the Fairphone (`tools/probes/ime-return.py`, annabell).
 - Removal tests to read: the "stored in Home" line under CAS results (R32), the angle check (R37), library imports (S4), Undo (P13).
 
@@ -46,7 +47,7 @@ The one place for "where are we and what's left", one or two lines per open item
 ## Tasks
 
 ### Open bugs (everyday reach; order: brief section 0; family n: [bug-patterns.md](research/bug-patterns.md) section 3; each line names its package, which holds the evidence)
-- **F136, no package (device only; annabell by day).** CORE DEVICE 13 and 14 (Tab One): c25, c26, c27, c63 fail since `6f0f27f`, green at `35b6dc6`; desktop passes. After `@mode, right, enter` the keys land in the still open Mode sheet (`.tasks/device-14/core.log`). Between the runs only R85 and A46 touched the app. Family 7.
+- **F136 (device only).** c25–c27 and c63 failed on the device from `6f0f27f` (CORE DEVICE 13–16), pass at `cf087b9` (17, after R86); the line goes if the next run is green. Family 7.
 - **F85, no package (G102's Not done; cost only).** A Home input with chips is parsed twice per Enter (G100); the parse is its own bridge-2 call, so G102 could not fold it. Can start (G104 merged).
 - **F80, no package (G99's Not done; probed: `tools/probes/bridge-forms.ts`).** After Home `(BesselJ(1,2))=>y`, `int(y^2,y,0,1)` shows `⚠ 0.333333333333` (right `≈`): Home stores at Digits 40, where `=>` keeps y as `BesselJ(1,2)` unevaluated, and Giac's int with that y errors (Bad Argument Value). `y:=` keeps the float. Test: `boundNames.test.ts` (`it.fails`), seqsweep `12 bound: int…`. Family 8.
 - **F73, no package (it waited for the end of the freeze; owner, 2026-10-24; G103 reads the doubles).** A double in a list shows Giac's text (`[BesselJ(1,2),1/3]`), not numbers with ⚠; no wrong value reaches the screen. Left: `hasFloat` (reads `1..3` and strings). Families 5, 6.
