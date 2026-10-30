@@ -302,7 +302,7 @@ Positions use our rows and columns (`spec/keyboard.yaml`); the reference's id is
 | Copy (row 1, col 5) | Copy, Shift = Paste (built, A3; on its own key since R15c2): the picked row's or the last result's full value | reference; R15c |
 | ☰ on the status line (the G2's Menu key [r3c4]) | app menus; Home/CAS: one numbered list of nine on the picked row, else the last result (built, R11; decisions.md S2); R53 makes item 6 Plot | P8, S2, S9 |
 | Shift + View (Help) | context help: the Find preview of the function before the cursor; with none there, Find (milestone 6) | ours; P8 left Help free |
-| User keys | U1–U6, all empty, with tap and Shift (built, R15c2; stored slots of U1–U3 stay valid); Alpha with R15c3; set from Find (R4b) | R15b, R15c |
+| User keys | U1–U6, all empty, with tap, Shift and Alpha (built, R15c2, R15c3; an empty Alpha slot is the tap; stored slots of U1–U3 and two-layer records stay valid); set from Find (R4b) | R15b, R15c |
 | Shift + `+` [r10c5] | Ans (`\ans`, built, R2) | reference |
 | Shift + `−` [r9c5] | Base: the last result in HEX, BIN, OCT, DEC; word size (EN6) | reference: Base |
 | Shift + 5 [r8c3]; Shift + 8 [r7c3] | `[ ]` vector or matrix template (EN5); `{ }` list (built, R54) | reference |
