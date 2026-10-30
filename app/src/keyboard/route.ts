@@ -45,8 +45,8 @@ export interface RouteCtx {
   openFind(slot?: { id: string; layer: Layer }): void;
   /** Vars (R4b): Find on the user's variables and functions; Shift + Math, Memory: the same list with delete and clear all. */
   openNames(memory: boolean): void;
-  /** Run with the clipboard code, now or once it has loaded. */
-  withClip(run: (c: ClipActions) => void): void;
+  /** Run with the clipboard code, now or once it has loaded (a returned promise holds the keys queued for the load). */
+  withClip(run: (c: ClipActions) => void | Promise<void>): void;
   loadClip(): void;
   /** A key that does nothing here (docs/05 3.7): the double haptic. */
   dead(): void;
@@ -115,7 +115,7 @@ export function special(c: RouteCtx, name: Special): void {
       c.withClip((x) => void x.copyKey());
       break;
     case "paste":
-      c.withClip((x) => void x.paste());
+      c.withClip((x) => holdKeys(c, x.paste()));
       break;
     case "fmt":
       // Format key: Home and CAS show the last result in the next mode; the apps have no such result.
@@ -263,6 +263,22 @@ export function sheetPress(c: RouteCtx, key: Key, layer: Layer | undefined): boo
 // the status line's controls too (they go through press(), R15b, R15c1), and a user key while it holds Home or CAS; a
 // user key that holds anything else waits like the key it stands for.
 const AT_ONCE: readonly string[] = ["esc", "home", "cas", "switch", "apps", "symb", "plot", "num", "settings", "mode"];
+
+/** The keys pressed while `job` runs (Paste reads the clipboard asynchronously) wait for it, as for a load (R8), so
+ *  Paste then ÷ divides the pasted number; at most HOLD_MS, so a clipboard that never answers cannot stop the keypad.
+ *  Returns the hold for withClip, whose load (when the code is not in yet) waits for it. */
+const HOLD_MS = 2000;
+function holdKeys(c: RouteCtx, job: Promise<unknown>): Promise<void> {
+  const late = new Promise<void>((done) => setTimeout(done, HOLD_MS));
+  const capped = Promise.race([job.then(() => {}, () => {}), late]);
+  if (c.sheetLoad === null) {
+    const hold: Promise<void> = capped.finally(() => {
+      if (c.sheetLoad === hold) c.sheetLoad = null;
+    });
+    c.sheetLoad = hold;
+  }
+  return capped;
+}
 
 function wait(c: RouteCtx, w: Waiting): void {
   c.waiting.push(w);
