@@ -56,6 +56,9 @@ export interface MenuItem {
   readonly pick?: { readonly key: string; readonly legend: string };
   /** A short mark drawn in the row (Find, R4a: a unit without an exact factor; already translated). */
   readonly note?: string;
+  /** A second line under the label, drawn like `reason` but on an enabled row too (R49: the Fmt cycle's hint under its
+   *  first tick; already translated). */
+  readonly hint?: string;
   /** Find (R4a): the highlighted item's details, drawn under the list (already translated). */
   readonly preview?: string;
 }
@@ -64,6 +67,8 @@ export interface SubMenu {
   /** Already translated. */
   readonly title: string;
   readonly items: readonly MenuItem[];
+  /** False: the level always opens on its first row (Settings, decisions.md "Sheets"); default true, on the last pick. */
+  readonly remember?: boolean;
   /** Find's categories (R4a): letters typed in this level search with this (views/sheet.svelte.ts Level.search). */
   readonly search?: (query: string) => readonly MenuItem[];
 }

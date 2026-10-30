@@ -8,7 +8,7 @@ import type { Kv } from "../state/storage.ts";
 import type { IconId } from "../views/icons.ts";
 import { Sheet, type Picked } from "../views/sheet.svelte.ts";
 import { APPS, appEntry, isAppId, placeGlyph } from "./registry.ts";
-import { VIEW_IDS, type AppHost, type AppId, type AppInstance, type LoadedApp, type MenuItem, type NavDir, type ViewId } from "./types.ts";
+import { VIEW_IDS, type AppHost, type AppId, type AppInstance, type LoadedApp, type MenuItem, type NavDir, type SubMenu, type ViewId } from "./types.ts";
 
 /** The entry line as the shell sees it (EntryController in the app, a stub in tests). */
 export interface EntryLine {
@@ -41,7 +41,10 @@ export class AppShell {
   clip: { copyRaw(text: string | undefined, notice?: string): Promise<boolean> } | undefined;
   /** The Menu of Home and CAS (set by App.svelte); the apps bring their own. */
   homeMenu: (() => MenuItem[]) | undefined;
-  /** Opens the Settings page (set by App.svelte); the last row of every Menu (R15c1). */
+  /** Settings as a level of the sheet (set by App.svelte once the Mode code is in; R49): the last row of every Menu
+   *  (R15c1) opens it as its submenu. Undefined until then: the row then opens Mode › Settings (openSettings). */
+  settingsMenu: (() => SubMenu | undefined) | undefined;
+  /** Opens Mode › Settings (set by App.svelte): a user key that holds Settings, or a Menu's last row before the code is in. */
   openSettings: (() => void) | undefined;
   /** Which of Home and CAS is under the keys (set by App.svelte); names the Menu there (R83). */
   homeView: (() => "home" | "cas") | undefined;
@@ -217,9 +220,10 @@ export class AppShell {
     const v = this.app === null ? (this.homeView?.() ?? "home") : this.view;
     return { text: t("menu.title", { view: t(`view.${v}`) }), icon: v };
   }
-  /** A Menu list with Settings as its last row. */
+  /** A Menu list with Settings as its last row: the same level as Mode's last row opens, as a submenu (R49). */
   withSettings(own: readonly MenuItem[]): MenuItem[] {
-    return [...own, { id: "settings", label: t("mode.settings"), run: () => this.openSettings?.() }];
+    const settings = this.settingsMenu?.();
+    return [...own, { id: "settings", label: t("mode.settings"), ...(settings ? { submenu: settings } : { run: () => this.openSettings?.() }) }];
   }
   /** What the Copy key takes from the open app view; undefined when it has nothing to copy. */
   copyText(): Promise<string | undefined> | string | undefined {

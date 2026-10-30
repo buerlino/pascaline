@@ -7,26 +7,27 @@ const lastText = (page: Page) => page.locator('[data-testid="result"] .result').
 const ready = (page: Page) => page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
 
 const sheet = (page: Page) => page.getByTestId("menu");
-const settingsPage = (page: Page) => page.getByTestId("settings");
-/** The Mode sheet (format chip, ▲), 5: the Settings page (the last row of Mode). */
-async function openSettings(page: Page): Promise<void> {
-  await tap(page, ["@mode", "d5"]);
-  await expect(settingsPage(page)).toBeVisible();
-  await expect(page.getByTestId("settings-title")).toHaveText("Settings");
+/** The Mode sheet (format chip, ▲), 5, then a section of Settings (R49: 1 Numbers, 2 Key vibration). */
+async function openSettings(page: Page, section: "d1" | "d2"): Promise<void> {
+  await tap(page, ["@mode", "d5", section]);
+  await expect(page.getByTestId("sheet-title")).toHaveText(section === "d1" ? "Mode › Settings › Numbers" : "Mode › Settings › Key vibration");
 }
 /** The Mode sheet (format chip, ▲; Shift + Apps before R15c2). */
 async function openMode(page: Page): Promise<void> {
   await tap(page, ["@mode"]);
   await expect(page.getByTestId("sheet-title")).toHaveText("Mode");
 }
-const closeSheet = (page: Page) => tap(page, ["esc"]);
-const row = (page: Page, id: string) => settingsPage(page).locator(`[data-id="${id}"]`);
-/** Tick (or untick) notations of the Format key cycle: Settings, a tap per notation, Esc. */
+/** Settings is three levels deep: Esc goes back one each. */
+const closeSettings = async (page: Page) => {
+  await tap(page, ["esc", "esc", "esc"]);
+  await expect(sheet(page)).toBeHidden();
+};
+const row = (page: Page, id: string) => sheet(page).locator(`[data-id="${id}"]`);
+/** Tick (or untick) notations of the Format key cycle: Settings › Numbers, a tap per notation, then closed. */
 async function toggleCycle(page: Page, modes: string[]): Promise<void> {
-  await openSettings(page);
+  await openSettings(page, "d1");
   for (const m of modes) await row(page, m).tap();
-  await closeSheet(page);
-  await expect(settingsPage(page)).toBeHidden();
+  await closeSettings(page);
 }
 async function pickDigits(page: Page, valueKey: string): Promise<void> {
   await openMode(page);
@@ -70,21 +71,23 @@ test("the Format key cycle and the vibration settings persist across a reload", 
   await ready(page);
   await toggleCycle(page, ["eng", "fix"]);
   // key vibration: a tap switches it on, ▶ ×5 sets the length from 15 to 40 ms
-  await openSettings(page);
+  await openSettings(page, "d2");
   await row(page, "haptics").tap();
   for (let i = 0; i < 5; i++) await row(page, "ms").getByTestId("step-up").tap();
-  await closeSheet(page);
+  await closeSettings(page);
   await page.waitForTimeout(500);
   await page.reload();
   await page.waitForFunction(() => window.pascaline !== undefined);
   await page.waitForFunction(() => window.pascaline.session.settings.haptics.on === true);
-  await openSettings(page);
-  await expect(row(page, "haptics").getByTestId("settings-value")).toHaveText("On");
-  await expect(row(page, "ms").getByTestId("settings-value")).toHaveText("40 ms");
+  await openSettings(page, "d2");
+  await expect(row(page, "haptics")).toHaveAttribute("data-selected", "true");
+  await expect(row(page, "ms").getByTestId("sheet-value")).toHaveText("40 ms");
   // the web build cannot set the strength, and the row says why
   await expect(row(page, "strength")).toHaveAttribute("aria-disabled", "true");
-  await expect(row(page, "strength").getByTestId("settings-reason")).toHaveText(/browser/);
-  const marked = await settingsPage(page).locator('[aria-checked="true"]').evaluateAll((els) => els.map((e) => e.getAttribute("data-id")));
+  await expect(row(page, "strength").locator(".reason")).toHaveText("The Android app only");
+  await closeSettings(page);
+  await openSettings(page, "d1");
+  const marked = await sheet(page).locator('[data-selected="true"]').evaluateAll((els) => els.map((e) => e.getAttribute("data-id")));
   expect(marked).toEqual(["std", "sci", "fix"]);
   expect(await page.evaluate(() => window.pascaline.session.settings.haptics)).toEqual({ on: true, strength: 50, ms: 40 });
 });
@@ -99,11 +102,12 @@ test("key vibration: off by default, and on it calls navigator.vibrate on key-do
   await open(page);
   await tap(page, ["d1", "d2"]);
   expect(await vib()).toEqual([]);
-  await openSettings(page);
+  await openSettings(page, "d2");
   await row(page, "haptics").tap();
-  expect(await vib()).toEqual([]); // switched on from the page, where no key goes down
-  await closeSheet(page);
-  expect(await vib()).toEqual([]); // Esc is under the page: a hardware-style press, no touch
+  expect(await vib()).toEqual([]); // switched on from the sheet's row, where no key goes down
+  await page.locator(".screen").click({ position: { x: 20, y: 20 } }); // a tap above the sheet closes it: no key either
+  await expect(sheet(page)).toBeHidden();
+  expect(await vib()).toEqual([]);
   await tap(page, ["d3"]);
   expect(await vib()).toEqual([15]); // the default length, one call per key
   await page.locator('[data-key="d4"]').dispatchEvent("pointerdown");

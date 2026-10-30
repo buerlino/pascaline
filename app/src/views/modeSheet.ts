@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// The Mode sheet's list and the Settings page's sections (docs/05 3.4 with section 7). Mode (one sheet, sheet.svelte.ts) holds
-// what changes in a session: angle, format, digits, decimals, entry. Settings holds what is set once: the Format key's
-// cycle and the key vibration. A row with a value is changed in place: ◀ ▶ step it, a digit key or a tap steps it
-// forward, Enter closes. No native <select> or number input: the keypad drives all of it.
-import type { MenuItem } from "../apps/types.ts";
+// The Mode sheet's list and Settings, its next level (docs/05 3.4 with section 7; R49). Mode (one sheet, sheet.svelte.ts)
+// holds what changes in a session: angle, format, digits, entry. Settings holds what is set once, in sections: the
+// Format key's cycle, the key vibration, the counters. A row with a value is changed in place: ◀ ▶ step it, a digit key
+// or a tap steps it forward; in Mode Enter closes, in Settings it stays. No native <select> or number input: the keypad
+// drives all of it.
+import type { MenuItem, SubMenu } from "../apps/types.ts";
 import type { AngleUnit, NumberFormat } from "../calc/port.ts";
 import { t, type MessageKey } from "../i18n/index.ts";
-import { hasStrength } from "../input/haptics.ts";
+import { hasStrength, vibrate } from "../input/haptics.ts";
 import { NOTATION_MODES } from "../state/displayMode.ts";
 import { MAX_DIGITS, type EntryMode, type Session } from "../state/session.svelte.ts";
 
@@ -35,7 +36,7 @@ function presets(values: readonly number[], get: () => number, set: (n: number) 
 }
 
 /** The Mode sheet's rows. The ids are what `at` of the sheet asks for (a tap on a status chip). */
-export function modeItems(session: Session, openSettings: () => void): MenuItem[] {
+export function modeItems(session: Session): MenuItem[] {
   const s = session.settings;
   return [
     {
@@ -71,68 +72,56 @@ export function modeItems(session: Session, openSettings: () => void): MenuItem[
       },
       adjust: (by) => session.setEntry(cycle(ENTRIES, s.entry, by)),
     },
-    { id: "settings", label: t("mode.settings"), run: openSettings },
+    { id: "settings", label: t("mode.settings"), submenu: settingsMenu(session) },
   ];
 }
 
-/** One headed block of the Settings page. */
-export interface SettingsSection {
-  readonly id: string;
-  readonly title: string;
-  readonly hint?: string;
-  readonly items: MenuItem[];
+/** Settings (R49, docs/05 3.4): the next level of the pick sheet, from Mode's last row and every ☰ menu's last row
+ *  (AppShell.withSettings). Its title joins the path (`Mode › Settings › Numbers`); each section opens on its first row. */
+export function settingsMenu(session: Session): SubMenu {
+  return { title: t("mode.settings"), items: settingsSections(session), remember: false };
 }
 
-/** The Settings page's sections (R21b): one scrolling page with headings instead of submenus. A tick (`selected` with
- *  `run`) is a switch; a row with `adjust` steps with ◀ ▶; a row with a value only is information. Theme (R12c), User
- *  keys (R4b) and About (R21b leaves the places) are added here as sections when their packages come. */
-export function settingsSections(session: Session): SettingsSection[] {
+/** A section: a row with › that opens its own level. */
+function section(id: string, title: string, items: MenuItem[], value?: () => string): MenuItem {
+  return {
+    id,
+    label: title,
+    get value() {
+      return value?.();
+    },
+    submenu: { title, items, remember: false },
+  };
+}
+
+/** Settings' sections, in their fixed order, each at most seven rows: Appearance (R50e), Numbers, Key vibration, Your
+ *  keys (R4b), Data (R38a), Counters, Help and about (R87). A section whose package has not landed is left out; each
+ *  of those packages adds its own in its place, so a section's digit moves until the first release. A tick (`selected`
+ *  with `run`) is a switch and stays; a row with `adjust` steps with ◀ ▶ and stays on Enter; a row with a value only is
+ *  information. */
+export function settingsSections(session: Session): MenuItem[] {
   const s = session.settings;
   const off = () => !s.haptics.on;
   return [
-    {
-      id: "fmtCycle",
-      title: t("settings.fmtCycle"),
-      hint: t("settings.fmtCycle.hint"),
-      items: NOTATION_MODES.flatMap((mode): MenuItem[] => {
-        const tick: MenuItem = {
-          id: mode,
-          label: t(`settings.fmt.${mode}` as MessageKey),
-          keep: true,
-          get selected() {
-            return s.fmtCycle.includes(mode);
-          },
-          run: () => session.setFmtMode(mode, !s.fmtCycle.includes(mode)),
-        };
-        if (mode !== "fix") return [tick];
-        // the decimals Fixed shows, right under its tick (S2 I3): changed in place with ◀ ▶
-        const decimals: MenuItem = {
-          id: "decimals",
-          label: t("mode.decimals"),
-          keep: true,
-          get value() {
-            return String(s.fixDecimals);
-          },
-          adjust: (by) => session.setFixDecimals(s.fixDecimals + by),
-        };
-        return [tick, decimals];
-      }),
-    },
-    {
-      id: "vibration",
-      title: t("settings.vibration"),
-      items: [
+    // (Appearance: R50e)
+    section("numbers", t("settings.numbers"), numbersItems(session), () => s.fmtCycle.map((m) => m.toUpperCase()).join(" ")),
+    section(
+      "vibration",
+      t("settings.vibration"),
+      [
         {
           id: "haptics",
           label: t("settings.haptics"),
-          get value() {
-            return t(s.haptics.on ? "settings.on" : "settings.off");
+          keep: true,
+          get selected() {
+            return s.haptics.on;
           },
-          adjust: () => session.setHaptics({ on: !s.haptics.on }),
+          run: () => session.setHaptics({ on: !s.haptics.on }),
         },
         {
           id: "strength",
           label: t("settings.haptics.strength"),
+          keep: true,
           get value() {
             return `${s.haptics.strength} %`;
           },
@@ -147,6 +136,7 @@ export function settingsSections(session: Session): SettingsSection[] {
         {
           id: "ms",
           label: t("settings.haptics.ms"),
+          keep: true,
           get value() {
             return `${s.haptics.ms} ms`;
           },
@@ -158,10 +148,57 @@ export function settingsSections(session: Session): SettingsSection[] {
           },
           adjust: (by) => session.setHaptics({ ms: s.haptics.ms + 5 * by }),
         },
+        {
+          id: "try",
+          label: t("settings.haptics.try"),
+          keep: true,
+          get disabled() {
+            return off();
+          },
+          get reason() {
+            return t("settings.haptics.off");
+          },
+          run: () => vibrate(s.haptics.strength / 100, s.haptics.ms), // one key-down pulse, as set
+        },
       ],
-    },
-    { id: "taps", title: t("settings.taps"), items: tapsItems(session) },
+      () => t(s.haptics.on ? "settings.on" : "settings.off"),
+    ),
+    // (Your keys: R4b; Data: R38a)
+    section("counters", t("settings.counters"), tapsItems(session), () => {
+      const c = session.taps.counts; // (a reset replaces the object)
+      return t("settings.counters.value", { n: String(c.shift + c.alpha) });
+    }),
+    // (Help and about: R87)
   ];
+}
+
+/** Numbers: the Fmt key's cycle (its hint a second line under the first tick) and the decimals Fixed shows, right
+ *  under its tick (S2 I3). R57 adds the decimal mark above them. */
+function numbersItems(session: Session): MenuItem[] {
+  const s = session.settings;
+  return NOTATION_MODES.flatMap((mode, i): MenuItem[] => {
+    const tick: MenuItem = {
+      id: mode,
+      label: t(`settings.fmt.${mode}` as MessageKey),
+      ...(i === 0 ? { hint: t("settings.fmtCycle.hint") } : {}),
+      keep: true,
+      get selected() {
+        return s.fmtCycle.includes(mode);
+      },
+      run: () => session.setFmtMode(mode, !s.fmtCycle.includes(mode)),
+    };
+    if (mode !== "fix") return [tick];
+    const decimals: MenuItem = {
+      id: "decimals",
+      label: t("mode.decimals"),
+      keep: true,
+      get value() {
+        return String(s.fixDecimals);
+      },
+      adjust: (by) => session.setFixDecimals(s.fixDecimals + by),
+    };
+    return [tick, decimals];
+  });
 }
 
 /** The Shift and Alpha tap counter (R9, P7 point 4): the counts, since when, and a reset. Counted on this device only,

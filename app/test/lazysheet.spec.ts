@@ -154,22 +154,22 @@ test("an Enter typed before the result tidy-up's chunk is in finishes its job on
 });
 
 // R91f1: a first Settings open that fails only on the sheet view chunk (the keys' code) leaves the Mode and Settings code
-// loaded; the next open tries the chunk again and the page answers its keys.
+// loaded; the next open tries the chunk again and Settings (a level of the sheet since R49) answers its keys.
 test("Settings opened again after the sheet chunk failed once answers Down and Esc", async ({ page }) => {
   let fail = true;
   await page.route(/\/src\/views\/sheetKeys\.ts/, (route) => (fail ? route.abort() : route.continue()));
   await open(page);
   await page.evaluate(() => window.pascaline.shell.openSettings?.()); // Promise.all fails on the sheet chunk alone
   await page.waitForTimeout(500);
-  await expect(page.getByTestId("settings")).toHaveCount(0);
+  await expect(page.getByTestId("menu")).toHaveCount(0);
   fail = false;
   await page.evaluate(() => window.pascaline.shell.openSettings?.());
-  const settings = page.getByTestId("settings");
-  await expect(settings).toBeVisible();
+  const settings = page.getByTestId("menu");
+  await expect(page.getByTestId("sheet-title")).toHaveText("Mode › Settings");
   const active = settings.locator('[data-active="true"]');
-  await expect(active).toHaveAttribute("data-id", "std");
-  await tap(page, ["down"]); // the keypad's keys go through settingsPress, which reads them with the sheet chunk's keys
-  await expect(active).toHaveAttribute("data-id", "sci");
-  await tap(page, ["esc"]);
+  await expect(active).toHaveAttribute("data-id", "numbers");
+  await tap(page, ["down"]); // the keypad's keys go through sheetPress, which reads them with the sheet chunk's keys
+  await expect(active).toHaveAttribute("data-id", "vibration");
+  await tap(page, ["esc", "esc"]);
   await expect(settings).toBeHidden();
 });

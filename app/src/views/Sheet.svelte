@@ -10,7 +10,7 @@
   import { ICONS } from "./icons.ts";
   import MathView from "../render/Math.svelte";
   import type { Sheet } from "./sheet.svelte.ts";
-  import { fitCell, fitRow, hasSteps, ROW, rowHeight, showsReason } from "./sheetFit.ts";
+  import { fitCell, fitRow, hasSteps, ROW, rowHeight, showsReason, twoLines } from "./sheetFit.ts";
 
   let {
     sheet,
@@ -76,7 +76,7 @@
     placed = null;
     const room = overlay.clientHeight - (panel.offsetHeight - list.offsetHeight);
     if (columns !== undefined) cell = fitCell(room, Math.ceil(items.length / columns), normalCell);
-    else row = fitRow(room, items.map((item, i) => ({ reason: showsReason(items, i), steps: hasSteps(item) })));
+    else row = fitRow(room, items.map((item, i) => ({ reason: twoLines(items, i), steps: hasSteps(item) })));
   }
   $effect(() => {
     void items;
@@ -196,6 +196,7 @@
         {#each rows as r, i (r.index)}
           {@const steps = hasSteps(r.item)}
           {@const reason = showsReason(items, i)}
+          {@const second = twoLines(items, i)}
           <!-- svelte-ignore a11y_click_events_have_key_events, a11y_interactive_supports_focus (the keypad drives the rows; nothing in a sheet takes focus) -->
           <div
             role="menuitem"
@@ -205,10 +206,10 @@
             data-selected={r.item.selected}
             data-active={r.index === level.highlight}
             data-id={r.item.id}
-            style:height={px(rowHeight(row, { reason, steps }))}
+            style:height={px(rowHeight(row, { reason: second, steps }))}
             onclick={() => ontap(r.index)}
           >
-            <span class="n">{r.n === undefined ? "" : r.n % 10}</span>{#if r.item.glyph}<span class="tile math" class:small={"text" in r.item.glyph && r.item.glyph.text.length > 1} data-testid="row-glyph" aria-hidden="true">{@html "icon" in r.item.glyph ? ICONS.home : r.item.glyph.text}</span>{/if}<span class="text"><span class="label">{r.item.label}</span>{#if reason}<span class="reason">{r.item.reason}</span>{/if}</span>{#if r.item.note}<span class="note" data-testid="row-note">{r.item.note}</span>{/if}{#if steps}<button type="button" class="step" data-testid="step-down" aria-label={t("sheet.stepDown")} disabled={r.item.disabled} onclick={(e) => { e.stopPropagation(); sheet.adjustAt(r.index, -1); }}>◀</button>{/if}{#if r.item.value !== undefined}<span class="value" data-testid="sheet-value">{r.item.value}</span>{/if}{#if steps}<button type="button" class="step" data-testid="step-up" aria-label={t("sheet.stepUp")} disabled={r.item.disabled} onclick={(e) => { e.stopPropagation(); sheet.adjustAt(r.index, 1); }}>▶</button>{/if}{#if r.item.selected !== undefined}<span class="tick" aria-hidden="true">{r.item.selected ? "✓" : ""}</span>{/if}{#if r.item.submenu}<span class="more" aria-hidden="true">›</span>{/if}
+            <span class="n">{r.n === undefined ? "" : r.n % 10}</span>{#if r.item.glyph}<span class="tile math" class:small={"text" in r.item.glyph && r.item.glyph.text.length > 1} data-testid="row-glyph" aria-hidden="true">{@html "icon" in r.item.glyph ? ICONS.home : r.item.glyph.text}</span>{/if}<span class="text"><span class="label">{r.item.label}</span>{#if reason}<span class="reason">{r.item.reason}</span>{:else if r.item.hint}<span class="reason" data-testid="row-hint">{r.item.hint}</span>{/if}</span>{#if r.item.note}<span class="note" data-testid="row-note">{r.item.note}</span>{/if}{#if steps}<button type="button" class="step" data-testid="step-down" aria-label={t("sheet.stepDown")} disabled={r.item.disabled} onclick={(e) => { e.stopPropagation(); sheet.adjustAt(r.index, -1); }}>◀</button>{/if}{#if r.item.value !== undefined}<span class="value" data-testid="sheet-value">{r.item.value}</span>{/if}{#if steps}<button type="button" class="step" data-testid="step-up" aria-label={t("sheet.stepUp")} disabled={r.item.disabled} onclick={(e) => { e.stopPropagation(); sheet.adjustAt(r.index, 1); }}>▶</button>{/if}{#if r.item.selected !== undefined}<span class="tick" aria-hidden="true">{r.item.selected ? "✓" : ""}</span>{/if}{#if r.item.submenu}<span class="more" aria-hidden="true">›</span>{/if}
           </div>
         {/each}
         {#if rows.length === 0}<p class="empty" data-testid="sheet-empty">{t("sheet.noMatch")}</p>{/if}

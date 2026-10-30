@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Android back as Esc for the open layer (R21b, backlog C8). A layer (the Settings page, a pick sheet, Find later) pushes
+// Android back as Esc for the open layer (R21b, backlog C8). A layer (a pick sheet, Settings in it since R49) pushes
 // one history entry when it opens; the platform's back (the Android WebView's goBack(), a browser's back button,
 // `history.back()`) pops it and closes the layer. A layer closed any other way (Esc, ×, a pick, a tap in the viewport)
 // takes its entry back, so the history never grows and back with nothing open leaves the app. No dependency.
@@ -14,7 +14,7 @@ let ownPops = 0;
 /** Layers that opened while one of our own pops was pending: pushed when it arrives (a push before it would be undone). */
 const waiting: Layer[] = [];
 /** Layers opened in this task, pushed at its end: a layer that gives way to another in the same update (the Mode sheet
- *  to the Settings page, R15b) is then taken back first, whatever order the two are seen in. */
+ *  to another sheet) is then taken back first, whatever order the two are seen in. */
 const opening: Layer[] = [];
 
 function settle(): void {
