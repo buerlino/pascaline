@@ -79,7 +79,7 @@
     entry.onLetter = typeLetter;
     shell.goTo = goTo; // the Apps sheet's Home and CAS rows
     shell.openSettings = openSettings;
-    shell.settingsMenu = () => (modeSheet ? (settingsMenu ??= modeSheet.settingsMenu(session)) : undefined); // (R49)
+    shell.settingsMenu = () => (modeSheet ? (settingsMenu ??= modeSheet.settingsMenu(session, settingsEnv)) : undefined); // (R49)
     shell.homeView = () => (session.view === "cas" ? "cas" : "home"); // the last row of every Menu
     entry.onDead = dead;
   });
@@ -197,31 +197,30 @@
     withPalettes((m) => openPalette(id, m.paletteText(`${id}.title`), id === "rel" ? m.relations : m.symbols, (cell) => m.paletteText(`${id}.${cell}`)));
   }
   /** Math (R4a): Find (find/finder.ts). Until its code and the index are in, every key waits in the queue (decisions.md
-   *  R8). A view without an entry line has nothing to insert into. */
-  function openFind(): void {
-    if (!shell.showsEntry) return dead();
-    const show = (f: FindCode): void => {
-      picked = null;
-      f.m.showFind(shell, entry, f.index);
-    };
-    if (findCode && sheetChunk.C) return show(findCode);
+   *  R8). No entry line, nothing to insert into. `slot` (R4b, Settings › Your keys): a pick sets that free key's slot. */
+  function openFind(slot?: FindSlot): void {
+    if (!slot && !shell.showsEntry) return dead();
+    if (findCode && sheetChunk.C) return showFind(findCode, slot);
     if (findLoading) void import("./find/finder.ts").then((m) => m.loadIndex(true)).catch(() => {}); // hurry the idle load
-    sheetLoad = Promise.all([loadFind(true), loadSheetView()]).then(
-      ([f]) => {
-        sheetLoad = null;
-        show(f);
-      },
-      () => {
-        sheetLoad = null; // the code or the index did not load: the queued keys run without Find
-        dead();
-      },
-    );
+    onFind(loadFind(true), (f) => showFind(f, slot));
+  }
+  type FindSlot = { id: string; layer: Layer };
+  const showFind = (f: FindCode, slot?: FindSlot): void => { picked = null; f.m.showFind(shell, entry, f.index, slot && { ...slot, userKeys }); };
+  /** Vars and Shift + Math (R4b): Find on the user's variables and functions, or Memory (the code only, not the index). */
+  function openNames(memory: boolean): void {
+    if (!memory && !shell.showsEntry) return dead();
+    onFind(import("./find/finder.ts"), (m) => { picked = null; m.showNames(shell, entry, session, memory); });
+  }
+  function onFind<T>(load: Promise<T>, show: (t: T) => void): void {
+    sheetLoad = Promise.all([load, loadSheetView()]).then(([t]) => { sheetLoad = null; show(t); }, () => { sheetLoad = null; dead(); }); // (a load that fails: the queued keys run without the sheet)
   }
   function insertTemplate(p: PaletteItem): void {
     const cells = sheetChunk.palette;
     if (cells) entry.run(cells.paletteAction(p, session.settings.entry === "line")); // (a pick is of an open palette, so it is loaded)
   }
 
+  /** What Settings › Your keys needs (R4b): the slots, and Find to pick a slot's content from. */
+  const settingsEnv = { get userKeys() { return userKeys; }, chooseFor: (id: string, layer: Layer): void => openFind({ id, layer }) };
   /** Settings as the ☰ menus' last row opens it (R49): one per session, its rows read the settings on every draw. */
   let settingsMenu: SubMenu | undefined;
   /** A user key that holds Settings, or a ☰ menu's last row before the Mode code is in: Mode › Settings, on its first
@@ -229,7 +228,7 @@
   function openSettings(): void {
     onModeSheet((m) => {
       picked = null;
-      shell.showMenu(t("mode.title"), m.modeItems(session), { remember: false, at: "settings" });
+      shell.showMenu(t("mode.title"), m.modeItems(session, settingsEnv), { remember: false, at: "settings" });
       shell.sheet?.enter(); // its submenu: a level on top
     });
   }
@@ -249,7 +248,7 @@
   function openMode(at?: string): void {
     onModeSheet((m) => {
       picked = null;
-      shell.showMenu(t("mode.title"), m.modeItems(session), { remember: false, at });
+      shell.showMenu(t("mode.title"), m.modeItems(session, settingsEnv), { remember: false, at });
       if (at === "digits") shell.sheet?.enter(); // R86: the digits chip opens the list itself, Mode under it
     });
   }
@@ -306,6 +305,7 @@
     openTemplates,
     openShiftPalette,
     openFind,
+    openNames,
     withClip,
     loadClip: () => void loadClip(),
     dead,

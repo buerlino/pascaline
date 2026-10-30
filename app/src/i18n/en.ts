@@ -25,6 +25,7 @@ export const en = {
   "key.del": "Del",
   "key.vars": "Vars",
   "key.math": "Math",
+  "key.memory": "Mem",
   "key.tmpl": "Tmpl",
   "key.enter": "Enter",
   "entry.label": "Entry line",

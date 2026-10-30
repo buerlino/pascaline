@@ -52,6 +52,8 @@ export class Level {
   /** Find (R4a): a typed query replaces the items with these hits, in their order, unnumbered (digits type then). */
   readonly search: ((query: string) => readonly MenuItem[]) | undefined;
   private found: { q: string; items: readonly MenuItem[] } | null = null;
+  /** Counts the times the hits were dropped (refresh), so a view that shows them draws again. */
+  private dropped = $state(0);
   /** A text to read in place of rows (R87, a licence). */
   readonly text: string | undefined;
   /** The preview under the list may take several lines. */
@@ -80,6 +82,7 @@ export class Level {
 
   get items(): readonly MenuItem[] {
     const q = this.filter;
+    void this.dropped;
     if (!this.search || q === "") return this.source();
     if (this.found?.q !== q) this.found = { q, items: this.search(q) };
     return this.found.items;
@@ -165,6 +168,12 @@ export class Level {
     this.highlight = next;
   }
 
+  /** A search's hits are read again (Memory: a name was deleted). */
+  refresh(): void {
+    this.found = null;
+    this.dropped++;
+  }
+
   /** A letter typed into the filter (false: this level has no filter). */
   type(ch: string): boolean {
     if (!this.filterable) return false;
@@ -245,6 +254,15 @@ export class Sheet {
     if (this.level.columns === undefined) return undefined;
     const i = this.level.items.findIndex((x) => x.pick?.key === keyId);
     return i < 0 ? undefined : this.activate(i);
+  }
+
+  /** A free key pressed while its slots are listed (Settings › Your keys, R4b): the highlight goes to that key's row in
+   *  that layer. False when the open level lists no such slot, so the key does its usual sheet job. */
+  goKey(keyId: string, layer: string): boolean {
+    const i = this.level.items.findIndex((x) => x.slot?.key === keyId && x.slot.layer === layer);
+    if (i < 0) return false;
+    this.level.highlight = i;
+    return true;
   }
 
   /** Enter: the highlighted item. A setting changed in place (`adjust`) is picked as it stands: the sheet closes. */

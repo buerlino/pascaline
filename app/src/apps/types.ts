@@ -74,6 +74,8 @@ export interface MenuItem {
   /** A second line under the label, drawn like `reason` but on an enabled row too (R49: the Fmt cycle's hint under its
    *  first tick; already translated). */
   readonly hint?: string;
+  /** In Settings › Your keys (R4b): the free key and layer this row sets; pressing that key goes to the row. */
+  readonly slot?: { readonly key: string; readonly layer: string };
   /** Find (R4a): the highlighted item's details, drawn under the list (already translated). */
   readonly preview?: string;
 }

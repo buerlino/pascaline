@@ -42,7 +42,9 @@ export interface RouteCtx {
   openTemplates(): void;
   openShiftPalette(id: "rel" | "sym"): void;
   /** Math (R4a): open Find (inside Find, Math types b; docs/04 3.7). */
-  openFind(): void;
+  openFind(slot?: { id: string; layer: Layer }): void;
+  /** Vars (R4b): Find on the user's variables and functions; Shift + Math, Memory: the same list with delete and clear all. */
+  openNames(memory: boolean): void;
   /** Run with the clipboard code, now or once it has loaded. */
   withClip(run: (c: ClipActions) => void): void;
   loadClip(): void;
@@ -132,6 +134,10 @@ export function special(c: RouteCtx, name: Special): void {
     case "find":
       c.openFind();
       break;
+    case "vars":
+    case "memory":
+      c.openNames(name === "memory");
+      break;
     case "shift":
     case "alpha":
     case "none":
@@ -193,6 +199,8 @@ export function sheetPress(c: RouteCtx, key: Key, layer: Layer | undefined): boo
   const sheet = shell.sheet;
   if (!sheet) return false;
   const level = sheet.level;
+  // R4b: while Your keys is open, a free key goes to its own slot's row (the cluster stays live above the sheet)
+  if (key.user && sheet.goKey(key.id, layerOf(modsFor(c, layer)))) return true;
   // a grid whose cells show keys (Shift + 6, R18): a tap on such a key picks its cell, before its usual sheet job
   const byPlace = layer === "alpha" || layer === "shift" ? undefined : sheet.pickKey(key.id);
   if (byPlace) {
@@ -269,7 +277,7 @@ function replay(c: RouteCtx): void {
     else if (!(c.shell.sheet && sheetPress(c, w.key, w.layer))) run(c, w.key, w.mods); // a sheet opened meanwhile takes its keys
 }
 
-const SHEET_KEYS: readonly string[] = ["apps", "menu", "tmpl", "relations", "symbols", "find"];
+const SHEET_KEYS: readonly string[] = ["apps", "menu", "tmpl", "relations", "symbols", "find", "vars", "memory"];
 /** The open sheet is Find (R4a): its keys follow docs/04 3.7 (sheetKeys.ts findKey). */
 export const FIND_SHEET = "find";
 /** Does this key open a sheet? (Mode and Settings load the view with their lists.) */

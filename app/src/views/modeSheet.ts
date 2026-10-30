@@ -12,6 +12,8 @@ import { NOTATION_MODES } from "../state/displayMode.ts";
 import { MAX_DIGITS, type EntryMode, type Session } from "../state/session.svelte.ts";
 import { aboutText } from "../i18n/enAbout.ts";
 import { helpItems } from "./aboutItems.ts";
+import { findText } from "../i18n/enFind.ts";
+import { yourKeysItems, yourKeysValue, type SettingsEnv } from "./yourKeys.ts";
 
 const ANGLES: readonly AngleUnit[] = ["rad", "deg"];
 const FORMATS: readonly NumberFormat[] = ["std", "sci", "eng", "pfx"];
@@ -50,7 +52,7 @@ function presets(values: readonly number[], get: () => number, set: (n: number) 
 }
 
 /** The Mode sheet's rows. The ids are what `at` of the sheet asks for (a tap on a status chip). */
-export function modeItems(session: Session): MenuItem[] {
+export function modeItems(session: Session, env: SettingsEnv = {}): MenuItem[] {
   const s = session.settings;
   return [
     {
@@ -86,14 +88,14 @@ export function modeItems(session: Session): MenuItem[] {
       },
       adjust: (by) => session.setEntry(cycle(ENTRIES, s.entry, by)),
     },
-    { id: "settings", label: t("mode.settings"), submenu: settingsMenu(session) },
+    { id: "settings", label: t("mode.settings"), submenu: settingsMenu(session, env) },
   ];
 }
 
 /** Settings (R49, docs/05 3.4): the next level of the pick sheet, from Mode's last row and every ☰ menu's last row
  *  (AppShell.withSettings). Its title joins the path (`Mode › Settings › Numbers`); each section opens on its first row. */
-export function settingsMenu(session: Session): SubMenu {
-  return { title: t("mode.settings"), items: settingsSections(session), remember: false };
+export function settingsMenu(session: Session, env: SettingsEnv = {}): SubMenu {
+  return { title: t("mode.settings"), items: settingsSections(session, env), remember: false };
 }
 
 /** A section: a row with › that opens its own level. */
@@ -113,7 +115,7 @@ function section(id: string, title: string, items: MenuItem[], value?: () => str
  *  of those packages adds its own in its place, so a section's digit moves until the first release. A tick (`selected`
  *  with `run`) is a switch and stays; a row with `adjust` steps with ◀ ▶ and stays on Enter; a row with a value only is
  *  information. */
-export function settingsSections(session: Session): MenuItem[] {
+export function settingsSections(session: Session, env: SettingsEnv = {}): MenuItem[] {
   const s = session.settings;
   const off = () => !s.haptics.on;
   return [
@@ -177,7 +179,8 @@ export function settingsSections(session: Session): MenuItem[] {
       ],
       () => t(s.haptics.on ? "settings.on" : "settings.off"),
     ),
-    // (Your keys: R4b; Data: R38a)
+    // Your keys (R4b, views/yourKeys.ts): only where the app gives the slots; (Data: R38a)
+    ...(env.userKeys ? [section("keys", findText("keys.title"), yourKeysItems(env), () => yourKeysValue(env))] : []),
     section("counters", t("settings.counters"), tapsItems(session), () => {
       const c = session.taps.counts; // (a reset replaces the object)
       return t("settings.counters.value", { n: String(c.shift + c.alpha) });

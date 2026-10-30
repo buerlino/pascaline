@@ -108,11 +108,11 @@ keys:
   - { id: lend, row: 2, col: 5, cls: nav, label: { primary: "⇥", shift: "□⇥" },
       primary: { cmd: moveToMathfieldEnd }, shift: { cmd: moveToGroupEnd }, source: assumed }
 
-  # ---- row 3 (r4). Planned (P8, docs/04 section 5.1): Vars = Find on variables, Math = Find, shift Math = Memory,
-  # shift Tmpl = the unit view. Not built yet, so `special: none`; the Alpha letters stay. Tmpl opens the template
-  # palette (R10, `templates:` below).
-  - { id: vars, row: 3, col: 0, cls: fn, label: { primary: "$key.vars", alpha: A }, primary: { special: none }, alpha: { type: A }, source: virtual-calc }  # r4c1 (menu not ours yet)
-  - { id: math, row: 3, col: 1, cls: fn, label: { primary: "$key.math", alpha: B }, primary: { special: find }, alpha: { type: B }, source: virtual-calc }  # r4c2; Find, everything (R4a, docs/04 5.1)
+  # ---- row 3 (r4). P8, docs/04 section 5.1: Vars = Find on variables (R4b), Math = Find (R4a), shift Math = Memory
+  # (R4b); shift Tmpl = the unit view (not built yet). The Alpha letters stay. Tmpl opens the template palette (R10,
+  # `templates:` below).
+  - { id: vars, row: 3, col: 0, cls: fn, label: { primary: "$key.vars", alpha: A }, primary: { special: vars }, alpha: { type: A }, source: virtual-calc }  # r4c1; Find on the user's variables and functions (R4b, docs/04 5.1)
+  - { id: math, row: 3, col: 1, cls: fn, label: { primary: "$key.math", shift: "$key.memory", alpha: B }, primary: { special: find }, shift: { special: memory }, alpha: { type: B }, source: virtual-calc }  # r4c2; Find, everything (R4a); Shift = Memory, the reference's Mem (R4b, docs/04 5.1)
   - { id: tmpl, row: 3, col: 2, cls: fn, label: { primary: "$key.tmpl", alpha: C }, primary: { special: tmpl }, alpha: { type: C }, source: virtual-calc }  # r4c3 (the palette: seen on a G2, 2026-10-13)
   # The variable key types x (the reference types the current app's variable, X in its Function app); shift y is
   # ours (the reference's shift is a Define dialog).
