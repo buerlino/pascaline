@@ -621,8 +621,54 @@ printf '#!/bin/sh\nowner > "%s/core-owner"; echo "CORE DEVICE 3/3 (known 0, need
 chmod +x "$mq/bin/adb" "$p1q/tools/device-build.sh" "$p1q/tools/core-device.sh"
 out="$(mqrun env ANDROID_SERIAL=TESTSERIAL "$script" device 6 2>&1)"
 [[ "$(cat "$mq/build-owner" 2>/dev/null)" == device-6 && "$(cat "$mq/core-owner" 2>/dev/null)" == free ]] || fail "A47b: the device step does not hold integ for the build only: build $(cat "$mq/build-owner" 2>&1), core $(cat "$mq/core-owner" 2>&1): $out"
+# A47bf1: a start copies the phase-1 node_modules under nodemods only; a stale one takes integ, then nodemods, then host-cpu (npm ci);
+# an npm ci of the phase-1 worktree (the queue's, the device build's) and a copy never overlap
+node_modules_stale "$p1q/app" && fail "A47bf1: precondition: the phase-1 node_modules are stale after Q5"
+(cd "$mq" && unset PASCALINE_LOCK_PID && tools/devlock.sh acquire integ owner-y 0 >/dev/null)
+out="$(mqrun env PASCALINE_INTEG_WAIT=2 "$script" ron "queue task" --id N1 --branch p1/n1 --checks typecheck 2>&1)"
+git -C "$mq" log p1/n1 --format=%s 2>/dev/null | grep -q '^work p1-n1$' || fail "A47bf1: a start with fresh phase-1 node_modules does not start its worker while integ is held: $out"
+[[ -f "$mq/.claude/worktrees/pl-$(sed -n 's/^RESULT #\([0-9]*\) .*/\1/p' <<<"$out" | xargs printf '%03d')-n1/app/node_modules/newdep/package.json" ]] || fail "A47bf1: the fresh start did not copy phase-1's node_modules: $out"
+grep -q 'N1: waiting for integ (owner-y)' "$mq/.coord/log.md" && ! grep -q 'NOT MERGED (integ lock busy for 7200 s (node_modules))' <<<"$out" || fail "A47bf1: the fresh start did not reach the queue: $out"
+(cd "$mq" && tools/devlock.sh release integ owner-y >/dev/null)
+grep -q 'N1: waiting for nodemods' "$mq/.coord/log.md" && fail "A47bf1: a free nodemods lock was waited for"
+# nodemods held by another: a fresh start waits for it (logged) and copies nothing meanwhile
+(cd "$mq" && unset PASCALINE_LOCK_PID && tools/devlock.sh acquire nodemods owner-z 0 >/dev/null)
+out="$(mqrun env PASCALINE_NODEMODS_WAIT=2 "$script" ron "queue task" --id N2 --branch p1/n2 --checks typecheck 2>&1)"
+git -C "$mq" log --all --format=%s | grep -q "^work p1-n2$" && fail "A47bf1: a start copied node_modules while another held nodemods: $out"
+grep -q 'N2: waiting for nodemods (owner-z)' "$mq/.coord/log.md" && grep -q 'nodemods lock busy' <<<"$out" || fail "A47bf1: the nodemods wait is not logged or not named: $out"
+(cd "$mq" && tools/devlock.sh release nodemods owner-z >/dev/null)
+# the device step's build (build.sh runs npm ci in the phase-1 worktree) and a start's copy: one after the other
+ev="$tmp/nm-events"; : > "$ev"; realcp="$(command -v cp)"
+printf '#!/bin/sh\ncat "%s/.coord/locks/nodemods/owner" > "%s/build-nodemods" 2>/dev/null || echo free > "%s/build-nodemods"\necho ci-start >> "%s"; sleep 3; echo ci-end >> "%s"\nmkdir -p dist; echo apk > dist/pascaline.apk\n' "$mq" "$mq" "$mq" "$ev" "$ev" > "$p1q/tools/device-build.sh"
+printf '#!/bin/sh\n[ "$1" = -al ] || exec "%s" "$@"\necho copy-start >> "%s"; "%s" "$@"; rc=$?; echo copy-end >> "%s"; exit $rc\n' "$realcp" "$ev" "$realcp" "$ev" > "$mq/bin/cp"; chmod +x "$mq/bin/cp"
+mqrun env ANDROID_SERIAL=TESTSERIAL "$script" device 7 > "$tmp/d7.out" 2>&1 & d7=$!
+for _ in $(seq 1 150); do grep -q ci-start "$ev" && break; sleep 0.2; done
+mqrun "$script" ron "queue task" --id N3 --branch p1/n3 --checks typecheck > "$tmp/n3.out" 2>&1
+wait "$d7"; rm -f "$mq/bin/cp"
+[[ "$(paste -sd' ' "$ev")" == "ci-start ci-end copy-start copy-end" ]] || fail "A47bf1: the device build's npm ci and a start's copy overlap: $(paste -sd' ' "$ev"): $(cat "$tmp/d7.out" "$tmp/n3.out")"
+[[ "$(cat "$mq/build-nodemods" 2>/dev/null)" == device-7 ]] || fail "A47bf1: the device build runs without nodemods: $(cat "$mq/build-nodemods" 2>&1)"
+grep -q '^RESULT #[0-9]* N3: MERGED' "$tmp/n3.out" || fail "A47bf1: the start that waited for the device build did not merge: $(cat "$tmp/n3.out")"
+# stale phase-1 node_modules: the start waits for integ (the npm ci path), not just nodemods
+rm -f "$p1q/app/node_modules/.package-lock.json"
+(cd "$mq" && unset PASCALINE_LOCK_PID && tools/devlock.sh acquire integ owner-y 0 >/dev/null)
+n0="$(wc -l < "$mq/npmci-owner")"
+out="$(mqrun env PASCALINE_INTEG_WAIT=2 "$script" ron "queue task" --id N4 --branch p1/n4 --checks typecheck 2>&1)"
+git -C "$mq" log --all --format=%s | grep -q "^work p1-n4$" && fail "A47bf1: a start with stale phase-1 node_modules started its worker without integ: $out"
+grep -q 'N4: waiting for integ (owner-y)' "$mq/.coord/log.md" && grep -q 'integ lock busy' <<<"$out" || fail "A47bf1: a stale start does not wait for integ: $out"
+(cd "$mq" && tools/devlock.sh release integ owner-y >/dev/null)
+[[ "$(wc -l < "$mq/npmci-owner")" -eq "$n0" ]] || fail "A47bf1: npm ci ran in the phase-1 worktree without integ"
+# stale, integ free, nodemods held by a copy: the npm ci waits for nodemods; it never runs under another's copy
+(cd "$mq" && unset PASCALINE_LOCK_PID && tools/devlock.sh acquire nodemods owner-z 0 >/dev/null)
+out="$(mqrun env PASCALINE_NODEMODS_WAIT=2 "$script" ron "queue task" --id N5 --branch p1/n5 --checks typecheck 2>&1)"
+[[ "$(wc -l < "$mq/npmci-owner")" -eq "$n0" ]] || fail "A47bf1: npm ci in the phase-1 worktree ran while another held nodemods: $out"
+grep -q 'N5: waiting for nodemods (owner-z)' "$mq/.coord/log.md" && grep -q 'nodemods lock busy' <<<"$out" || fail "A47bf1: the npm ci path does not wait for nodemods: $out"
+(cd "$mq" && tools/devlock.sh release nodemods owner-z >/dev/null)
+[[ ! -e "$mq/.coord/locks/nodemods" && ! -e "$mq/.coord/locks/integ" ]] || fail "A47bf1: a run left nodemods or integ held"
+# the copy checks for nodemods; the order is in the header and the dry run's setup line
+grep -q 'copy_node_modules without the nodemods lock' "$here/pipeline.sh" || fail "A47bf1: copy_node_modules does not check for nodemods"
+grep -q '^# Lock order: integ, then nodemods, then host-cpu' "$here/pipeline.sh" || fail "A47bf1: the header does not state the lock order integ, nodemods, host-cpu"
+grep -q '^setup: .*under nodemods.*integ, then nodemods, then host-cpu' <<<"$("$script" ron "$ron_pkg" --dry-run 2>&1)" || fail "A47bf1: the dry run's setup line does not state the nodemods lock and the order"
 # the lock order is stated in the header; the serial time (queue entry to release) of each run is logged
-grep -q '^# Lock order: integ before host-cpu' "$here/pipeline.sh" || fail "A47b: the header does not state the lock order"
 grep -oE 'Q[1-4]: integ released after [0-9]+ s in the queue' "$mq/.coord/log.md" > "$tmp/serial" || true
 [[ "$(wc -l < "$tmp/serial")" -eq 5 ]] || fail "A47b: not every queue entry logs its serial time: $(cat "$tmp/serial")"
 echo "A47b serial times: $(sed 's/: integ released after / /; s/ s in the queue/ s/' "$tmp/serial" | paste -sd, - | sed 's/,/, /g')"
