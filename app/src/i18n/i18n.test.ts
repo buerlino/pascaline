@@ -9,10 +9,8 @@ describe("i18n", () => {
     for (const k of keyboard.keys) for (const l of Object.values(k.label)) expect(() => legend(l)).not.toThrow();
   });
   it("names every palette cell and title (Tmpl, Shift + 6, Shift + 9)", () => {
-    expect(() => legend("$tmpl.title")).not.toThrow();
-    for (const it of keyboard.palette.items) expect(() => legend(`$tmpl.${it.id}`), `tmpl.${it.id}`).not.toThrow();
-    // R18: the Shift palettes' names live in their own table, loaded with them
-    for (const [prefix, p] of [["rel", keyboard.relations], ["sym", keyboard.symbols]] as const) {
+    // R18, R91: the palettes' names live in their own table, loaded with them
+    for (const [prefix, p] of [["tmpl", keyboard.palette], ["rel", keyboard.relations], ["sym", keyboard.symbols]] as const) {
       expect(() => paletteText(`${prefix}.title`)).not.toThrow();
       for (const it of p.items) expect(() => paletteText(`${prefix}.${it.id}`), `${prefix}.${it.id}`).not.toThrow();
     }

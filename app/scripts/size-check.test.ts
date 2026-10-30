@@ -5,7 +5,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { checkSizes, checkSplits, startFiles } from "./size-check.ts";
+import { checkLazyParts, checkSizes, checkSplits, checkStartPin, LAZY_PARTS, startFiles } from "./size-check.ts";
 
 const dirs: string[] = [];
 afterEach(() => {
@@ -142,5 +142,24 @@ describe("size-check", () => {
     expect(checkSplits(fakeDist({ ...manifest, ...lazy }, { ...files, "assets/sheet.js": 1000 }))).toEqual([]);
     const atStart = { ...manifest, "index.html": { ...manifest["index.html"], imports: ["src/views/Sheet.svelte"] }, ...lazy };
     expect(checkSplits(fakeDist(atStart, { ...files, "assets/sheet.js": 1000 }))[0]).toContain("loaded at start");
+  });
+
+  it("pins the start chunk at 58.5 kB gzip, below the 61 kB budget (R91: the room for the Settings base)", () => {
+    const { manifest } = base(0);
+    const over = checkSizes(fakeDist(manifest, { "assets/index.js": { random: 59_000 }, "assets/mathlive.js": 1000 }));
+    expect(over.failures).toEqual([]); // inside the budget of 61 kB ...
+    expect(checkStartPin(over.rows[0]!)[0]).toContain("pinned"); // ... and over the pin
+    const inside = checkSizes(fakeDist(manifest, { "assets/index.js": { random: 58_400 }, "assets/mathlive.js": 1000 }));
+    expect(checkStartPin(inside.rows[0]!)).toEqual([]);
+  });
+
+  it("fails when a part that only runs after a key press or a result is loaded at start, or is not its own chunk (R91)", () => {
+    const { manifest, files } = base(1000);
+    expect(checkLazyParts(fakeDist(manifest, files)).map((f) => f.split(" ")[0])).toEqual(LAZY_PARTS);
+    const lazy = Object.fromEntries(LAZY_PARTS.map((src, n) => [src, { file: `assets/p${n}.js`, src, isDynamicEntry: true }]));
+    const sizes = Object.fromEntries(LAZY_PARTS.map((_, n) => [`assets/p${n}.js`, 1000]));
+    expect(checkLazyParts(fakeDist({ ...manifest, ...lazy }, { ...files, ...sizes }))).toEqual([]);
+    const atStart = { ...manifest, "index.html": { ...manifest["index.html"], imports: [LAZY_PARTS[0]] }, ...lazy };
+    expect(checkLazyParts(fakeDist(atStart, { ...files, ...sizes }))[0]).toContain("loaded at start");
   });
 });

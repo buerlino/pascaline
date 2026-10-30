@@ -30,7 +30,7 @@ The legend is missing on the keytop only because the feature is not built; the k
 | Undo, Shift + Redo on their own key (the G2: Shift + Esc is Clear, no Redo) | the entry line's history (P13, R16) deserves a key; Redo is new (R15c point 2) |
 | Copy, Shift + Paste on their own key (the G2: Shift + View and Shift + Menu) | Menu left the keypad, so Paste needs a new place; the pair stays on one key (R15c point 2) |
 | ⇤ ⇥, Shift: the start and end of the box the cursor is in | long one-line entries need the jumps (section 3 point 8's removal test); the box ends reach a numerator's or exponent's edge (R15c point 2) |
-| Six user keys U1–U6, all empty, where the G2 has Apps, Symb, Plot, Num, Home and CAS | each key a slot of the user's (tap, Shift; Alpha with R15c3); Home and CAS are the place name's first two rows (R15c point 5) |
+| Six user keys U1–U6, all empty, where the G2 has Apps, Symb, Plot, Num, Home and CAS | each key a slot of the user's (tap, Shift, Alpha); Home and CAS are the place name's first two rows (R15c point 5) |
 | Shift + Symb, Plot, Num (Setup) omitted | the same settings sit in the Mode sheet and in the Plot and Num menus (Window, Start, Step); nothing is lost |
 | Shift + Vars (Chars) omitted | Find covers named symbols (docs/04 5.1) |
 | Shift + 1 (Program) omitted | no PPL and no Python (P11); programs are Giac definitions |

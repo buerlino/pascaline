@@ -19,12 +19,12 @@ export function paletteAction(p: PaletteItem, oneLine: boolean): ActionBody {
   return oneLine && a.line ? a.line : a;
 }
 
-/** The palette's cells, in reading order; `insert` runs the picked one. `name`: a cell's name by its id (default: the
- *  Tmpl names, `tmpl.<id>`; the Shift palettes bring theirs, i18n/enPalettes.ts). */
+/** The palette's cells, in reading order; `insert` runs the picked one. `name`: a cell's name by its id (the palettes'
+ *  names are in i18n/enPalettes.ts, loaded with the palettes). */
 export function paletteItems(
   cells: readonly PaletteItem[],
   insert: (p: PaletteItem) => void,
-  name: (id: string) => string = (id) => legend(`$tmpl.${id}`),
+  name: (id: string) => string,
 ): MenuItem[] {
   return cells.map((p) => {
     const key = p.pick === undefined ? undefined : keyboard.byId.get(p.pick);

@@ -3,7 +3,7 @@
 // table, by touch and by keys; the place name and its hit area; the free keys U1–U6. The editing wing's own jobs are in
 // editwing.spec.ts. Fake engine.
 import { expect, test, type Page } from "@playwright/test";
-import { entryValue, flick, open, recordVibrations, tap, vibrations } from "./helpers.ts";
+import { entryValue, flick, open, recordVibrations, tap, touch, vibrations } from "./helpers.ts";
 
 const place = (page: Page) => page.getByTestId("place");
 const view = (page: Page) => page.evaluate(() => window.pascaline.session.view);
@@ -145,6 +145,53 @@ test("your own function: one press on a free key, one flick for its Shift slot; 
   // reset gives every slot its default back: empty
   await page.evaluate(() => window.pascaline.userKeys.reset());
   await expect(page.locator('[data-key="u1"]')).toHaveAttribute("data-user", "empty");
+});
+
+// R15c3: the third slot. No letter line in the cluster: the face shows the Alpha binding while Alpha is on, the bubble
+// while a flick down is armed; an empty Alpha slot is the tap.
+test("a free key's Alpha slot: a flick down and Alpha + tap fire it, the face and the bubble show it; it survives a reload", async ({ page }) => {
+  const cosh = { label: "cosh", action: { insert: "\\cosh\\left(#0\\right)" } };
+  const wanted = "\\cosh\\left(\\placeholder{}\\right)";
+  await page.evaluate(([a, b]) => {
+    window.pascaline.userKeys.set("u1", "primary", a!);
+    window.pascaline.userKeys.set("u1", "alpha", b!);
+    window.pascaline.userKeys.set("u2", "primary", a!); // no Alpha slot: its Alpha is the tap
+  }, [sinh, cosh] as const);
+  const main = page.locator('[data-key="u1"] .main');
+  await expect(main).toHaveText("sinh");
+  await expect(page.locator('[data-key="u1"] .alphalegend')).toHaveCount(0); // the cluster keeps no letter line
+  // Alpha + the key; the face shows the binding while Alpha is on
+  await tap(page, ["alpha"]);
+  await expect(main).toHaveText("cosh");
+  await expect(page.locator('[data-key="u2"] .main')).toHaveText("sinh");
+  await tap(page, ["u1"]);
+  expect(await entryValue(page)).toBe(wanted);
+  await expect(main).toHaveText("sinh");
+  await page.evaluate(() => window.pascaline.entry.clear());
+  // a flick down: the bubble names the binding while armed, the lift fires it
+  const f = await touch(page, "u1");
+  await f.move(0, 35);
+  await expect(page.getByTestId("flick-bubble")).toHaveText("cosh");
+  await f.end();
+  expect(await entryValue(page)).toBe(wanted);
+  await page.evaluate(() => window.pascaline.entry.clear());
+  // the empty slot falls back to the tap, by Alpha and by flick
+  await tap(page, ["alpha", "u2"]);
+  expect(await entryValue(page)).toBe("\\sinh\\left(\\placeholder{}\\right)");
+  await page.evaluate(() => window.pascaline.entry.clear());
+  await flick(page, "u2", "down");
+  expect(await entryValue(page)).toBe("\\sinh\\left(\\placeholder{}\\right)");
+  await page.evaluate(() => window.pascaline.entry.clear());
+  // stored with the stamp: back after a relaunch
+  await page.waitForTimeout(300);
+  await page.reload();
+  await page.waitForFunction(() => window.pascaline !== undefined && customElements.get("math-field") !== undefined);
+  await page.evaluate(() => window.pascaline.entry.ready);
+  await flick(page, "u1", "down");
+  expect(await entryValue(page)).toBe(wanted);
+  await page.evaluate(() => window.pascaline.entry.clear());
+  await tap(page, ["alpha", "u1"]);
+  expect(await entryValue(page)).toBe(wanted);
 });
 
 test("an empty free key and View give the dead-key haptic and type nothing", async ({ page }) => {

@@ -36,7 +36,6 @@
     return (settingsUi = { C: v.default, SettingsPage: m.SettingsPage });
   };
 
-  import { paletteAction, paletteItems } from "./views/tmplSheet.ts";
   // Find (R4a) is its own chunk with the index beside it: both load when the browser is idle after the engine is ready
   // (docs/04 3.3), or on the first Math press.
   type FindCode = { m: typeof import("./find/finder.ts"); index: import("./find/finder.ts").FindIndex };
@@ -184,20 +183,25 @@
   /** Tmpl: the template palette (R10), a grid on the sheet; a pick inserts its template as its key would. A view
    *  without an entry line (Plot) has nothing to insert into. */
   function openTemplates(): void {
-    openPalette("tmpl", t("tmpl.title"), keyboard.palette);
+    withPalettes((m) => openPalette("tmpl", m.paletteText("tmpl.title"), m.tmpl, (cell) => m.paletteText(`tmpl.${cell}`)));
+  }
+  /** Run `open` with the palettes' chunk (loaded with MathLive): at once when it is in, else after the load, with every key
+   *  meanwhile in the queue (decisions.md R8). If the chunk does not load, the queued keys run without the sheet. */
+  function withPalettes(open: (m: NonNullable<typeof shiftPalettes>) => void): void {
+    if (shiftPalettes) return open(shiftPalettes);
+    sheetLoad = loadShiftPalettes().then(open, () => {}).finally(() => (sheetLoad = null));
   }
   /** Tmpl, Shift + 6 (relations and logic) and Shift + 9 (symbols and Greek, R18): a palette on the grid sheet. */
-  function openPalette(id: PaletteId, title: string, p: Palette, name?: (id: string) => string): void {
+  function openPalette(id: PaletteId, title: string, p: Palette, name: (id: string) => string): void {
     if (!shell.showsEntry) return dead();
+    const cells = sheetChunk.palette; // (R91: with the sheet's view; the palette keys wait for it in the queue)
+    if (!cells) return void loadSheetView().then(() => openPalette(id, title, p, name), dead);
     picked = null;
-    shell.togglePalette(id, title, () => paletteItems(p.items, insertTemplate, name), p.columns);
+    shell.togglePalette(id, title, () => cells.paletteItems(p.items, insertTemplate, name), p.columns);
   }
-  /** The Shift palettes come in their own chunk, loaded with MathLive; until then the key waits for it. */
+  /** The palettes (Tmpl too, R91) come in their own chunk, loaded with MathLive; until then the key waits for it. */
   function openShiftPalette(id: "rel" | "sym"): void {
-    const open = (m: NonNullable<typeof shiftPalettes>): void =>
-      openPalette(id, m.paletteText(`${id}.title`), id === "rel" ? m.relations : m.symbols, (cell) => m.paletteText(`${id}.${cell}`));
-    if (shiftPalettes) open(shiftPalettes);
-    else void loadShiftPalettes().then(open);
+    withPalettes((m) => openPalette(id, m.paletteText(`${id}.title`), id === "rel" ? m.relations : m.symbols, (cell) => m.paletteText(`${id}.${cell}`)));
   }
   /** Math (R4a): Find (find/finder.ts). Until its code and the index are in, every key waits in the queue (decisions.md
    *  R8). A view without an entry line has nothing to insert into. */
@@ -221,7 +225,8 @@
     );
   }
   function insertTemplate(p: PaletteItem): void {
-    entry.run(paletteAction(p, session.settings.entry === "line"));
+    const cells = sheetChunk.palette;
+    if (cells) entry.run(cells.paletteAction(p, session.settings.entry === "line")); // (a pick is of an open palette, so it is loaded)
   }
 
   /** Mode's last row (or a user key that holds Settings): the Settings page over everything (R21b, docs/05 3.4). It
@@ -232,9 +237,10 @@
       shell.closeSheet();
       settings = { C: ui.C, page: new ui.SettingsPage(m.settingsSections(session)) };
     };
-    if (modeSheet && settingsUi) return show(modeSheet, settingsUi);
+    // settingsPress reads its keys from sheetChunk.keys: a first open that failed only on the sheet chunk tries it again
+    if (modeSheet && settingsUi && sheetChunk.keys) return show(modeSheet, settingsUi);
     // every key meanwhile waits in the queue (decisions.md R8), so none of them lands on the line before the page is there
-    sheetLoad = Promise.all([loadModeSheet(), loadSettingsUi()]).then(
+    sheetLoad = Promise.all([loadModeSheet(), loadSettingsUi(), loadSheetView()]).then(
       ([m, ui]) => {
         sheetLoad = null;
         show(m, ui);

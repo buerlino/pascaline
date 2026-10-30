@@ -224,7 +224,7 @@ export function loadKeyboard(doc: unknown): Keyboard {
         throw new KeyboardSpecError(`${where}: ${layer} needs both a label and an action`);
     }
     const user = item["user"] === true;
-    if (user && (actions.alpha !== undefined || row >= MATHS_ROW)) throw new KeyboardSpecError(`${where}: a user key sits in the top cluster and has no alpha layer`);
+    if (user && row >= MATHS_ROW) throw new KeyboardSpecError(`${where}: a user key sits in the top cluster`);
     const key: Key = { id, row, col, span, cls, label, actions, ...(source ? { source } : {}), ...(user ? { user: true as const } : {}) };
     keys.push(key);
     byId.set(id, key);
@@ -309,9 +309,10 @@ export function actionFor(key: Key, shift: boolean, alpha: boolean, oneLine = fa
 }
 
 /** Shift + Alpha on a key whose Alpha action is its own letter: lower case; in the CAS view (`cas`, R58) the case is
- *  swapped: Alpha alone is lower case, Shift + Alpha the capital. Shared by the action and the legend. */
+ *  swapped: Alpha alone is lower case, Shift + Alpha the capital. Shared by the action and the legend. A free key's
+ *  Alpha slot is the user's own text (R15c3): the case rule does not touch it. */
 const lowerCase = (key: Key, shift: boolean, alpha: boolean, cas: boolean): boolean =>
-  alpha && shift !== cas && key.actions.alpha?.kind === "type";
+  alpha && shift !== cas && !key.user && key.actions.alpha?.kind === "type";
 
 function layerAction(key: Key, shift: boolean, alpha: boolean, cas: boolean): Action | undefined {
   if (alpha) {

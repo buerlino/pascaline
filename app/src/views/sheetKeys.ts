@@ -36,9 +36,10 @@ const BY_ID: Readonly<Record<string, SheetKey>> = {
 };
 const PASS: readonly string[] = ["shift", "alpha", "menu", "apps", "tmpl", "home", "cas", "switch", "symb", "plot", "num"];
 
-/** The key's letter: its Alpha layer when that types one letter (A on Vars … Z on 2). */
+/** The key's letter: its Alpha layer when that types one letter (A on Vars … Z on 2). A free key has none: its Alpha
+ *  slot is the user's own (R15c3), and the letters of the sheet's filter stay where they are. */
 export function letterOf(key: Key): string | undefined {
-  const a = key.actions.alpha;
+  const a = key.user ? undefined : key.actions.alpha;
   return a?.kind === "type" && /^\p{L}$/u.test(a.text) ? a.text : undefined;
 }
 
