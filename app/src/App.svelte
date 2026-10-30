@@ -372,12 +372,7 @@
       </span>
     {/if}
     {#if updateOffer.restart}
-      <!-- A49: a new version of the web build waits; only this tap reloads the page -->
-      <button
-        type="button"
-        class="update"
-        data-testid="update-note"
-        title={t("update.ready")}
+      <button type="button" class="update" data-testid="update-note" title={t("update.ready")}
         onclick={updateOffer.restart}>{t("update.restart")}</button>
     {/if}
     <span class="slot" data-testid="mod-slot">
