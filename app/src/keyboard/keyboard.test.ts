@@ -8,7 +8,7 @@ import { latexToGiac } from "../input/latex-to-giac.ts";
 import { parse } from "yaml";
 import { shippedKeyboard, shippedPalettes } from "./shipped.ts";
 import { en } from "../i18n/en.ts";
-import { actionFor, cellsIn, gridPlace, type Key, KeyboardSpecError, keyboard, labelFor, loadKeyboard, loadPalette, MATHS_ROW, templates } from "./keyboard.ts";
+import { actionFor, cellsIn, gridPlace, type Key, KeyboardSpecError, keyboard, labelFor, loadKeyboard, loadPalette, MATHS_ROW, templates, withDecimalMark, DECIMAL_COMMA } from "./keyboard.ts";
 
 const spec = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "../../../spec/keyboard.yaml"), "utf8");
 
@@ -354,5 +354,31 @@ describe("keyboard spec", () => {
     expect(() => loadKeyboard(doc([{ ...key, cls: "huge" }]))).toThrow(/cls/);
     expect(() => loadKeyboard(doc([{ ...key, source: "guess" }]))).toThrow(/source/);
     expect(() => loadKeyboard(doc([{ ...key, shift: { type: "2" } }]))).toThrow(/shift needs both/);
+  });
+});
+
+describe("the decimal comma on the keypad (R57)", () => {
+  const dot = keyboard.byId.get("dot") as Key;
+  const comma = keyboard.byId.get("comma") as Key;
+  it("the . key shows and types MathLive's decimal comma, the , key shows and types ;", () => {
+    expect(labelFor(withDecimalMark(dot), false, false)).toBe(",");
+    expect(actionFor(withDecimalMark(dot), false, false)).toEqual({ kind: "insert", latex: "{,}" });
+    expect(labelFor(withDecimalMark(comma), false, false)).toBe(";");
+    expect(actionFor(withDecimalMark(comma), false, false)).toEqual({ kind: "type", text: ";" });
+  });
+  it("only those two faces change: every other key, position and layer is the same (rule 8)", () => {
+    for (const k of keyboard.keys.filter((x) => x.id !== "dot" && x.id !== "comma")) expect(withDecimalMark(k)).toBe(k);
+    for (const k of [dot, comma]) {
+      const m = withDecimalMark(k);
+      expect([m.row, m.col, m.span, m.cls]).toEqual([k.row, k.col, k.span, k.cls]);
+      expect(m.actions.shift).toEqual(k.actions.shift);
+      expect(m.actions.alpha).toEqual(k.actions.alpha);
+      expect(m.label.shift).toBe(k.label.shift);
+      expect(m.label.alpha).toBe(k.label.alpha);
+    }
+  });
+  it("what the two keys type is read by the parser as the decimal mark and the argument separator", () => {
+    const typed = `\\max\\left(1${DECIMAL_COMMA}5;2\\right)`;
+    expect(latexToGiac(typed, { decimalComma: true })).toBe("max(1.5,2)");
   });
 });

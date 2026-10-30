@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Settings schema 2 (docs/04 6.2): digits up to 30 and the PFX format, with field-by-field validation of old data.
+// Settings schemas (docs/04 6.2): 2 = digits up to 30 and the PFX format, 3 = the decimal mark (R57), with field-by-field
+// validation of old data.
 import { describe, expect, it } from "vitest";
 import { FakeCalc } from "../calc/fake.ts";
 import { defaultSettings, migrateSettings, MAX_DIGITS, Session, SETTINGS_SCHEMA } from "./session.svelte.ts";
@@ -25,11 +26,23 @@ describe("migrateSettings", () => {
     expect(settings).toMatchObject({ digits: 15, angle: "deg", format: "sci", entry: "line", fixDecimals: 6, haptics: { on: true, strength: 80, ms: 20 } });
     expect(settings.fmtCycle).toEqual(["std", "eng"]);
   });
-  it("version 2 allows digits up to 30 and the pfx format, and needs no migration", () => {
-    const { settings, migrated } = migrateSettings({ schema: SETTINGS_SCHEMA, digits: 30, format: "pfx" });
+  it("version 2 allows digits up to 30 and the pfx format, and keeps the point as the decimal mark", () => {
+    const { settings, migrated } = migrateSettings({ schema: 2, digits: 30, format: "pfx" });
+    expect(migrated).toBe(true);
+    expect(settings).toMatchObject({ digits: 30, format: "pfx", decimalMark: "point" });
+  });
+  it("version 3 holds the decimal mark and needs no migration", () => {
+    const { settings, migrated } = migrateSettings({ schema: SETTINGS_SCHEMA, digits: 30, format: "pfx", decimalMark: "comma" });
+    expect(SETTINGS_SCHEMA).toBe(3);
+    expect(settings.decimalMark).toBe("comma");
     expect(migrated).toBe(false);
     expect(settings.digits).toBe(30);
     expect(settings.format).toBe("pfx");
+  });
+  it("every earlier schema, stored with or without a mark, reads as the point unless it holds a valid mark", () => {
+    for (const schema of [undefined, 1, 2]) expect(migrateSettings({ schema, digits: 9 }).settings.decimalMark).toBe("point");
+    for (const bad of ["dot", 1, null, true]) expect(migrateSettings({ schema: SETTINGS_SCHEMA, decimalMark: bad }).settings.decimalMark).toBe("point");
+    expect(migrateSettings({ decimalMark: "comma" }).settings.decimalMark).toBe("comma");
   });
   it("digits are clamped to 1…30 and rounded", () => {
     expect(migrateSettings({ digits: 99 }).settings.digits).toBe(MAX_DIGITS);
@@ -50,14 +63,27 @@ describe("migrateSettings", () => {
 });
 
 describe("Session settings", () => {
-  it("restoring version-1 settings writes them back as schema 2", async () => {
+  it("restoring version-1 settings writes them back as the current schema, with the point", async () => {
     const kv = memoryKv();
     kv.data.set("settings", { digits: 10, angle: "rad", format: "eng", entry: "textbook", fmtCycle: ["std"], fixDecimals: 4, haptics: { on: false, strength: 50, ms: 15 } });
     const s = new Session(new FakeCalc(), kv);
     await s.restoreSettings();
     expect(s.settings.digits).toBe(10);
     expect(s.settings.format).toBe("eng");
-    expect((kv.data.get("settings") as { schema: number }).schema).toBe(2);
+    expect((kv.data.get("settings") as { schema: number }).schema).toBe(SETTINGS_SCHEMA);
+    expect(s.settings.decimalMark).toBe("point");
+    expect(s.decimalComma).toBe(false);
+  });
+  it("the decimal mark is set, kept and restored", async () => {
+    const kv = memoryKv();
+    const s = new Session(new FakeCalc(), kv);
+    s.setDecimalMark("comma");
+    expect(s.decimalComma).toBe(true);
+    expect(kv.data.get("settings")).toMatchObject({ schema: SETTINGS_SCHEMA, decimalMark: "comma" });
+    const again = new Session(new FakeCalc(), kv);
+    await again.restoreSettings();
+    expect(again.settings.decimalMark).toBe("comma");
+    expect(again.displayContext().decimalComma).toBe(true);
   });
   it("the digits setting takes 30 and nothing above", () => {
     const s = new Session(new FakeCalc(), memoryKv());

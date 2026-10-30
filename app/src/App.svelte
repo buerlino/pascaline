@@ -55,6 +55,11 @@
   const TABS = (["symb", "plot", "num"] as const).map((v) => ({ view: v, name: t(`view.${v}`), key: statusKey(`tab-${v}`, v) }));
 
   const sheetOpen = $derived(shell.sheet !== null);
+  // R57: the decimal mark changes the faces of the `.` and `,` keys, in the keypad, a tap and a hardware key
+  $effect(() => {
+    userKeys.decimalComma = session.decimalComma;
+    entry.decimalComma = session.decimalComma;
+  });
 
   // The shell paints first; main.ts then loads MathLive, which puts the field into this element.
   onMount(() => {

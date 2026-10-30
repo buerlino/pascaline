@@ -132,14 +132,35 @@ describe("Settings, a level of the sheet (R49)", () => {
     s.right();
     expect(s.path).toBe("Mode › Settings › Key vibration");
   });
-  it("Numbers: the cycle's five ticks, the hint under the first, and the Decimals row under the Fixed tick, stepped in place", () => {
+  it("Numbers: the Decimal mark row first (R57), then the cycle's five ticks with the hint under the first, and the Decimals row under the Fixed tick, stepped in place", () => {
     const s = settings(1);
-    expect(s.level.items.map((x) => x.id)).toEqual(["std", "sci", "eng", "pfx", "fix", "decimals"]);
+    expect(s.level.items.map((x) => x.id)).toEqual(["mark", "std", "sci", "eng", "pfx", "fix", "decimals"]);
     expect(s.level.items.filter((x) => x.hint).map((x) => x.id)).toEqual(["std"]);
     s.level.highlight = at(s, "decimals");
     expect(s.left()).toBe(true);
     expect(session.settings.fixDecimals).toBe(3);
     expect(s.enter()).toEqual({ kind: "stay" }); // Enter on a value row stays in Settings
+  });
+  it("Decimal mark is a value row: Point by default; ◀ ▶ or a tap step it between Point and Comma, and the sheet stays (R57)", () => {
+    const s = settings(1);
+    expect(s.level.items[0]?.id).toBe("mark"); // the level's first row (the sheet opens on the first ticked row)
+    s.level.highlight = at(s, "mark");
+    expect(byId(s, "mark")?.value).toBe("Point");
+    expect(session.settings.decimalMark).toBe("point");
+    s.right();
+    expect(session.settings.decimalMark).toBe("comma");
+    expect(byId(s, "mark")?.value).toBe("Comma");
+    expect(s.left()).toBe(true);
+    expect(session.settings.decimalMark).toBe("point");
+    expect(s.enter()).toEqual({ kind: "stay" }); // Enter stays in Settings and changes nothing
+    expect(session.settings.decimalMark).toBe("point");
+    expect(s.activate(at(s, "mark"))).toEqual({ kind: "stay" }); // a tap steps it on
+    expect(session.settings.decimalMark).toBe("comma");
+  });
+  it("a digit key on the Decimal mark row steps it and stays (Shift Fmt 5 1 1 reaches it by keys)", () => {
+    const s = settings(1);
+    expect(s.pickNumber(1)).toEqual({ kind: "stay" });
+    expect(session.settings.decimalMark).toBe("comma");
   });
   it("a tick toggles on Enter or a pick, the sheet stays, and the cycle is never empty", () => {
     const s = settings(1);

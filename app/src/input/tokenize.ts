@@ -151,6 +151,11 @@ export function tokenize(src: string, decimalComma = false): Tok[] {
         // "5." alone: treat the dot as part of the number
         j++;
         v = src.slice(i, j);
+      } else if (comma && c !== ".") {
+        // R57: "5," alone (the decimal comma and no digit after it, as 3,ᴇ3 types it): the same as "5."
+        const intPart = src.slice(i, j);
+        j += comma;
+        v = `${intPart}.`;
       } else v = src.slice(i, j);
       // F24 (R29): a second decimal separator right after a number with one (2.5.3, 1..5, 2,5,3) is not a product
       if (v.includes(".")) {

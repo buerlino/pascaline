@@ -15,7 +15,7 @@ import {
 } from "../engine/format.ts";
 import type { ValueFacts } from "../engine/types.ts";
 import type { ChipTable } from "../input/chips.ts";
-import { markFor, modeOf, type DisplayContext, type FmtMode, type FormStep, type Rational } from "../state/displayMode.ts";
+import { commaResult, markFor, modeOf, type DisplayContext, type FmtMode, type FormStep, type Rational } from "../state/displayMode.ts";
 
 /** The part of a history item that Copy reads (HistoryItem in state/session.svelte.ts has all of it). */
 export interface CopySource {
@@ -103,7 +103,8 @@ export function copyFull(i: CopySource, o: TextOptions = {}): string | undefined
     return realText(q, DECIMAL_KEEP, o);
   }
   if (i.value) return complexText(i.value, copyDigits(i), o);
-  return f ?? i.text;
+  const rest = f ?? i.text;
+  return o.decimalComma ? commaResult(rest, false) : rest; // (R57) a list or an expression the engine wrote
 }
 
 export { copyExact } from "./exact.ts";

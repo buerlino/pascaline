@@ -54,6 +54,13 @@ describe("a number has one decimal point (F24)", () => {
     expect(giac("\\max\\left(1{,}5;2\\right)", true)).toBe("max(1.5,2)");
     expect(giac("\\max\\left(2.5;3\\right)", true)).toBe("max(2.5,3)");
   });
+  it("with the decimal comma, 3{,}ᴇ3 (R57: the mark and no digit after it) reads as 3.ᴇ3 does in point mode", () => {
+    expect(giac("3{,}\\emark3", true)).toBe(giac("3.\\emark3"));
+    expect(giac("3{,}\\emark3", true)).not.toBe(giac("3{,}1\\emark3", true));
+    expect(giac("\\max\\left(1;1\\emark3\\right)", true)).toBe("max(1,1e3)");
+    expect(giac("1{,}5\\emark-3\\div2", true)).toBe(giac("1.5\\emark-3\\div2"));
+    expect(giac("3{,}+2", true)).toBe(giac("3.+2"));
+  });
   it("with the decimal point, a comma after a decimal is the argument separator", () => {
     expect(giac("\\max\\left(2.5,3\\right)")).toBe("max(2.5,3)");
   });

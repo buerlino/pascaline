@@ -6,7 +6,7 @@
 // slot from Find, in Settings › User keys, is R4b; this module is the model it calls.
 import type { Kv } from "../state/storage.ts";
 import { USER_KEYS } from "../state/storage.ts";
-import { KeyboardSpecError, keyboard, parseAction, type Action, type Key, type Layer } from "./keyboard.ts";
+import { KeyboardSpecError, keyboard, parseAction, withDecimalMark, type Action, type Key, type Layer } from "./keyboard.ts";
 
 export type UserLayer = Layer;
 export const USER_LAYERS: readonly UserLayer[] = ["primary", "shift", "alpha"];
@@ -42,6 +42,8 @@ export class UserKeys {
   /** The user's slots (only the ones that differ from the defaults are stored); each is checked when it is used. */
   private stored = $state<StoredUserKeys>({});
   private readonly kv: Kv;
+  /** R57: the decimal comma is on, so the `.` and `,` keys carry the other mark (set from the session's setting). */
+  decimalComma = $state(false);
 
   constructor(kv: Kv) {
     this.kv = kv;
@@ -53,9 +55,10 @@ export class UserKeys {
     if (typeof v === "object" && v !== null) this.stored = v as StoredUserKeys;
   }
 
-  /** The key as it is drawn and fires: a free key with the user's slots over its defaults; any other key unchanged. */
+  /** The key as it is drawn and fires: a free key with the user's slots over its defaults; the `.` and `,` keys with the
+   *  decimal comma (R57); any other key unchanged. */
   resolve(key: Key): Key {
-    if (!key.user) return key;
+    if (!key.user) return this.decimalComma ? withDecimalMark(key) : key;
     const slots = this.slots(key.id);
     if (Object.keys(slots).length === 0) return key;
     const label = { ...key.label };
