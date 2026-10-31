@@ -197,12 +197,12 @@ describe("size-check", () => {
     expect(checkSplits(fakeDist(atStart, { ...files, "assets/sheet.js": 1000 }))[0]).toContain("loaded at start");
   });
 
-  it("pins the start chunk at 59.13 kB gzip, below the 61 kB budget (R91: the room for the Settings base; R70f1: the split; G81, R24d, R38a: 59.11 kB + 0.02; R38af1 measured 59.09 kB)", () => {
-    expect(START_PIN_GZIP).toBe(59_130);
+  it("pins the start chunk at 59.11 kB gzip, below the 61 kB budget (R91: the room for the Settings base; R70f1: the split; G81, R24d: measured 59.06 kB + 0.05)", () => {
+    expect(START_PIN_GZIP).toBe(59_110);
     const { manifest } = base(0);
-    const over = checkSizes(fakeDist(manifest, { ...FINDER_FILE, "assets/index.js": { random: 59_140 }, "assets/mathlive.js": 1000 }));
+    const over = checkSizes(fakeDist(manifest, { ...FINDER_FILE, "assets/index.js": { random: 59_120 }, "assets/mathlive.js": 1000 }));
     expect(over.failures).toEqual([]); // inside the budget of 61 kB ...
-    expect(over.rows[0]!.gzip).toBeGreaterThan(59_130);
+    expect(over.rows[0]!.gzip).toBeGreaterThan(59_110);
     expect(checkStartPin(over.rows[0]!)[0]).toContain("pinned"); // ... and over the pin
     const inside = checkSizes(fakeDist(manifest, { ...FINDER_FILE, "assets/index.js": { random: 58_800 }, "assets/mathlive.js": 1000 }));
     expect(checkStartPin(inside.rows[0]!)).toEqual([]);
