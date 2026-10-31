@@ -10,13 +10,22 @@ const repo = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const text = readFileSync(join(repo, ".github/workflows/pages.yml"), "utf8");
 
 interface Step {
+  name?: string;
+  if?: string;
   uses?: string;
   run?: string;
+  with?: Record<string, unknown>;
+}
+interface Job {
+  needs?: string;
+  environment?: unknown;
+  permissions?: Record<string, string>;
+  steps?: Step[];
 }
 interface Workflow {
   on: Record<string, unknown>;
   permissions: Record<string, string>;
-  jobs: Record<string, { needs?: string; environment?: unknown; steps?: Step[] }>;
+  jobs: Record<string, Job>;
 }
 const wf = parse(text) as Workflow;
 const steps = (job: string): Step[] => wf.jobs[job]?.steps ?? [];
@@ -33,9 +42,57 @@ describe(".github/workflows/pages.yml", () => {
     expect(wf.on["push"]).toEqual({ tags: ["v*"] });
   });
 
-  it("asks for contents: read, pages: write, id-token: write and nothing else", () => {
-    expect(wf.permissions).toEqual({ contents: "read", pages: "write", "id-token": "write" });
-    for (const j of Object.values(wf.jobs)) expect(j).not.toHaveProperty("permissions");
+  it("A52: the kill switch is a boolean dispatch input, default false", () => {
+    const d = wf.on["workflow_dispatch"] as { inputs?: Record<string, { type?: string; default?: unknown; required?: boolean }> } | null;
+    const kill = d?.inputs?.["kill"];
+    expect(kill?.type).toBe("boolean");
+    expect(kill?.default).toBe(false);
+  });
+
+  it("A52: a step after the build copies the kill worker over dist/sw.js, only when kill is true, before the upload", () => {
+    const s = steps("build");
+    const i = s.findIndex((x) => (x.run ?? "").includes("app/pwa/kill/sw.js"));
+    expect(i).toBeGreaterThan(-1);
+    const step = s[i] as Step;
+    expect(step.run).toMatch(/cp\s+app\/pwa\/kill\/sw\.js\s+app\/dist\/sw\.js/);
+    expect(step.if).toMatch(/inputs\.kill/);
+    expect(step.if).toMatch(/true/);
+    const build = s.findIndex((x) => /\.\/build\.sh --web/.test(x.run ?? ""));
+    const upload = s.findIndex((x) => (x.uses ?? "").startsWith("actions/upload-pages-artifact@"));
+    expect(build).toBeGreaterThan(-1);
+    expect(i).toBeGreaterThan(build);
+    expect(i).toBeLessThan(upload);
+    // no other step may mention the kill worker or the input
+    expect(s.filter((x) => /kill/.test(`${x.run ?? ""}${x.if ?? ""}`)).length).toBe(1);
+  });
+
+  it("A52: top-level permissions are contents: read only; only the deploy job has pages: write and id-token: write", () => {
+    expect(wf.permissions).toEqual({ contents: "read" });
+    expect(wf.jobs["build"]).not.toHaveProperty("permissions");
+    expect(wf.jobs["deploy"]?.permissions).toEqual({ pages: "write", "id-token": "write" });
+    expect(Object.keys(wf.jobs).sort()).toEqual(["build", "deploy"]);
+  });
+
+  it("A52: every checkout drops its token (persist-credentials: false)", () => {
+    const checkouts = Object.values(wf.jobs).flatMap((j) => j.steps ?? []).filter((s) => (s.uses ?? "").startsWith("actions/checkout@"));
+    expect(checkouts.length).toBeGreaterThanOrEqual(1);
+    for (const c of checkouts) expect(c.with?.["persist-credentials"]).toBe(false);
+  });
+
+  it("A52: check-version and the golden gate run in the build job after the build, before the upload", () => {
+    const s = steps("build");
+    const build = s.findIndex((x) => /\.\/build\.sh --web/.test(x.run ?? ""));
+    const upload = s.findIndex((x) => (x.uses ?? "").startsWith("actions/upload-pages-artifact@"));
+    const ver = s.findIndex((x) => (x.run ?? "").includes("tools/check-version.sh"));
+    const gold = s.findIndex((x) => /npm run golden/.test(x.run ?? ""));
+    for (const i of [ver, gold]) {
+      expect(i).toBeGreaterThan(build);
+      expect(i).toBeLessThan(upload);
+    }
+    expect(s[gold]?.run).toMatch(/GIAC_OUT=\S*engine\/giac\/_out\/release/);
+    // a tag run also checks the tag against the version
+    expect(s[ver]?.run).toMatch(/GITHUB_REF_TYPE/);
+    expect(s[ver]?.run).toMatch(/GITHUB_REF_NAME/);
   });
 
   it("builds with ./build.sh --web, uploads app/dist and deploys in the github-pages environment", () => {
