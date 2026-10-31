@@ -65,4 +65,12 @@ test.describe("± on Shift + ,", () => {
     await expect(result).toContainText("2.5");
     await expect(result).toContainText("± 0.1");
   });
+
+  test("Enter on 2.5 ± 0.1 in Home says where ± is read, and adds no result", async ({ page }) => {
+    await open(page, "engine=fake");
+    await tap(page, ["d2", "dot", "d5", "shift", "comma", "d0", "dot", "d1", "enter"]);
+    const row = page.getByTestId("result").last();
+    await expect(row.locator(".error")).toHaveText("± is read in the unit view: press the units key");
+    await expect(row.locator(".result")).toHaveCount(0);
+  });
 });

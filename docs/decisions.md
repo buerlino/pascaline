@@ -7,8 +7,6 @@ Phase 0 decisions (D1–D9, P1, P2): [spike/DECISIONS.md](../spike/DECISIONS.md)
 
 The owner's other open items are in [backlog.md](backlog.md), "Needs the user". Once decided, an entry moves to "Decided proposals".
 
-- **R71:** ± types on the Home and CAS line, dimmed in apps. Confirm.
-
 - **A21, the F-Droid recipe's qalc build (P22):** `fdroid/README.md` names the open answer. Until F-Droid says whether checked-in derived data (`find/factors.yaml`) is acceptable, the recipe keeps its libxml2 and libqalculate builds, unchanged. Yes: before C4 it drops both. No: it runs `tools/find-index/refresh-factors.mjs` and fails on a diff.
 
 - **R50e, on the phone:** (1) the first frame reads the Android default (Dark) from `window.Capacitor` in the inline script; if the bridge is not there yet at that point, a first start with nothing stored shows System for one frame, then Dark (later starts read the mirror). Look at a first start after "clear data". (2) Android's status and navigation bar colours stay open (not in R50e).
@@ -16,8 +14,6 @@ The owner's other open items are in [backlog.md](backlog.md), "Needs the user". 
 - **A52, the kill run's gate:** recommendation: a kill run skips the golden step (check-version stays), because its tag already passed the gate and the golden units stage fails past p95 5 ms on a slow runner, which would block the emergency switch-off. Yes: a FIX for annabell. No: as built.
 
 ## Decided proposals
-
-Newest first within each group.
 
 ### Pipeline and process
 - **Owner answers of 2026-10-31 (night review 2026-10-30, [its note](research/night-review-2026-10-31.md) section 6).** The website deploys only a gated build: check-version and the golden gate in `pages.yml` until A8's `release.yml` (A52). A package's "Done when" names no start-chunk allowance (Start chunk); R103, trimmed, measures the inline script. R90 is dropped: R24c brought the unit view. The docs budgets stay; the one-time phone checks live in `tests/core/ONE-TIME.md`. Would change if: A8 gates both deploys.
@@ -58,7 +54,7 @@ Newest first within each group.
 - **The letters stay on the keys (2026-10-14).** Rule: docs/04 5.1 (the letters; the unassigned Shift cells). Would change if: Alpha taps near zero (P7 point 4); a function in the benchmark needs a key and no cell is free.
 - **The application id is `io.github.buerlino.pascaline` (2026-10-14); the web version lives at `https://pascaline-calc.org/` (2026-10-29).** The id never changes. The PWA is at the domain's root, `www` redirects; GitHub Pages deploys it from a release tag (A45); the docs stay on GitHub. Full text: archive. Would change if: the domain lapses.
 - **Stored data carries a version; one signing key (2026-10-14).** Rule: docs/04 6.2 (the stamp); the throwaway key lives in `~/.cache/pascaline/keys/` for every worktree, so an install over the last keeps its data.
-- **Start chunk: 175 kB raw, 61 kB gzip (owner, 2026-10-27; kept 2026-10-31), pinned at 59.30 kB, measured 59.24 kB** (R71 +0.08, R4b +0.92, R50e +0.48, R57 +0.58, R24b +0.02, R24c +0.16, R70 +0.27, R70f1 −2.01: the field code loads with MathLive, G81 +0.02, R24d with R24df1 and R24df2 +0.09 (pin +0.14), R38a +0.03 under the pin, R61 +0.06 (pin +0.10)). Rule: docs/04 8.3 (past the pin, a package raises `START_PIN_GZIP` to its size measured after merging phase-1, plus 0.05 kB for build noise and merges in flight; Opus pass 26). A package's "Done when" names no allowance; its report gives the measured delta, and the pin is the only rule: an older "Done when" that says "the start chunk is unchanged" (R38a) is met under the pin (owner, 2026-10-31; Opus pass 27). `./build.sh --measure` is exempt. Would change if: the Tab One's keyboard-usable time passes 738 ms (A4a's 688 ms + 50).
+- **Start chunk: 175 kB raw, 61 kB gzip (owner, 2026-10-27, kept 2026-10-31), pinned at 59.30 kB, measured 59.24 kB** (R71 +0.08, R4b +0.92, R50e +0.48, R57 +0.58, R24b +0.02, R24c +0.16, R70 +0.27, R70f1 −2.01, G81 +0.02, R24d with R24df1 and R24df2 +0.09 (pin +0.14), R38a +0.03 under the pin, R61 +0.06 (pin +0.10)). Rule: docs/04 8.3 (past the pin, a package raises `START_PIN_GZIP` to its size measured after merging phase-1, plus 0.05 kB for build noise and merges in flight; Opus pass 26). A package's "Done when" names no allowance; its report gives the measured delta, and the pin is the only rule: an older "Done when" that says "the start chunk is unchanged" (R38a) is met under the pin (owner, 2026-10-31; Opus pass 27). `./build.sh --measure` is exempt. Would change if: the Tab One's keyboard-usable time passes 738 ms.
 - **Owner answers of 2026-10-19 (feel).** R34: one shared entry line, as on the G2 (an unentered line follows you between views; after Enter it clears); R43, R7's defaults and A4a points 3 and 4 as built. Full text: archive.
 
 ### Precision, engine and parser
@@ -121,6 +117,7 @@ The defaults that bind code and tests, one line each. A default changes when its
 **Entry and keys**
 - **⌫ and Del keep a template whole** (R23–R26h, R47; it includes ⌫ at a bracket): never half a template or a lost box; an emptied box shows □; inside a template ⌫ steps to the box before (exceptions: an empty exponent goes alone, ⌫ at a denominator's start joins the fraction, a #@ argument goes alone); ⌫ at the first box removes the template, keeps the main box, or selects first when another box holds something; ⌫ right after a template steps in; every way in (keys, Del, repeat, hardware) takes this path. Would change if: G2 items 44, 46, 49 or 51 differ (the G2 way wins unless it leaves half a template).
 - **The cursor stops only at a box** (R27b): ◀ ▶ ▲ ▼ skip names, a function's name-bracket gap and template marks; the parser refuses `sin 7(2)`. **The cursor goes where the user aims** (R42, R43): a finger tap places once; ▶ leaving a template stops at the end of its box. Would change if: G2 items 50 or 57 differ.
+- **R71 (Opus pass 30):** ± types on the Home and CAS line for the units key to read, and is dimmed in an app; rule: docs/06 row 15.
 - **Hardware keys** (R31, R45): docs/04 5.5 point 1; `e` after digits is ᴇ; characters no key types do nothing.
 - **Nothing takes focus while the app is away** (R25a–c) and **Focus on return:** MathLive's own restore is off (R22). Would change if: a desktop browser loses the caret after switching windows (the owner's check, backlog).
 - **Flicks** (R9): arm at 20 px, cancel within 12 px, a cancelled touch stays cancelled; one lock at a time. **⌫ auto-repeat:** fires on touch, repeats after 400 ms, then every 60 ms. **Alpha lock:** Alpha twice locks capitals, Shift Alpha Alpha lower case. Would change if: the owner's hands say otherwise.

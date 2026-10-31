@@ -33,7 +33,7 @@ describe("units mode (R28)", () => {
     expect(latexToGiacInfo("x\\to x^2").giac).toBe("(x)->x^2");
     expect(latexToGiacInfo("2\\const{c}{c}", { chips: { "const:c": { value: "299792458", exact: true } } })).toEqual({ giac: "2*(299792458)", inexact: false });
     expect(() => latexToGiacInfo("72\\placeholder[u1]{}")).toThrow(/unexpected token at 'placeholder'/);
-    expect(() => latexToGiacInfo("12.34\\pm0.05")).toThrow(/unexpected token at 'pm'/);
+    expect(() => latexToGiacInfo("12.34\\pm0.05")).toThrow("± is read in the unit view: press the units key");
   });
   it("says why a slot, a ± or a → is refused", () => {
     expect(() => units("x\\placeholder[u1]{}")).toThrow("a unit slot goes right after a number");
@@ -48,6 +48,6 @@ describe("units mode (R28)", () => {
     const a = actionFor(comma, true, false);
     expect(a).toMatchObject({ kind: "insert", latex: "\\pm", units: true });
     expect(units(`12.34${(a as { latex: string }).latex}0.05\\placeholder[u1]{}`).giac).toBe("pasupm(12.34,0.05)*pasu1");
-    expect(() => latexToGiacInfo("12.34\\pm0.05")).toThrow(/unexpected token at 'pm'/);
+    expect(() => latexToGiacInfo("12.34\\pm0.05")).toThrow("± is read in the unit view: press the units key");
   });
 });

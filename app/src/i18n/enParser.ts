@@ -87,6 +87,7 @@ export const enParser = {
   "parse.slotTwice": "unit slot {id} appears twice",
   "parse.toNeedsEndSlot": "→ needs the end slot after it, at the end of the line",
   "parse.pmNeedsNumber": "± goes right after a number: 12.3 ± 0.1",
+  "parse.pmUnitView": "± is read in the unit view: press the units key",
   "parse.pmNeedsSigma": "± needs a plain number after it: 12.3 ± 0.1",
 } as const satisfies Record<string, string>;
 
