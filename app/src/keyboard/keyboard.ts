@@ -67,6 +67,8 @@ export interface Key {
   readonly source?: Source;
   /** A free key (U1–U6, R15b, R15c): its layers are defaults the user can replace (userKeys.svelte.ts). */
   readonly user?: true;
+  /** Set only on a key drawn as a unit pad cell (R24b, units/pad.ts): its kind, "empty" for an unset user cell. */
+  readonly pad?: "prefix" | "unit" | "op" | "keep" | "user" | "empty";
 }
 
 /** A template action (and its one-line form, if any). */

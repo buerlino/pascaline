@@ -163,6 +163,24 @@ export function plain(t: Palette, dark: boolean): Palette {
   return o;
 }
 
+/**
+ * The unit pad's prefix cells (R24b) get their own key colour, derived last from the final key colours: the Enter
+ * colour in the digit key's, as much as the legends allow (34 % down); where the Enter colour leaves no room (a dark
+ * theme with a bright Enter), the digit key moved toward --bg. Either way text, Shift, Alpha and a dead face keep the
+ * floors of every other key, so no theme can fall below them; --key-num itself is the last resort.
+ */
+function withPfx(t: Palette, hc: boolean): Palette {
+  const [floor, dead] = hc ? [7, 4.5] : [4.5, 3];
+  const ok = (c: string): boolean =>
+    ["text", "shift", "alpha"].every((f) => cr(get(t, f), c) >= floor) && cr(get(t, "text-dead"), c) >= dead && cr(get(t, "text-dead"), c) <= cr(get(t, "text"), c) - 1;
+  for (const to of ["key-enter", "bg"])
+    for (let share = to === "bg" ? 0.5 : 0.34; share > 0.05; share -= 0.02) {
+      const c = mix(get(t, "key-num"), get(t, to), share);
+      if (ok(c)) return { ...t, "key-pfx": c };
+    }
+  return { ...t, "key-pfx": get(t, "key-num") };
+}
+
 /** The label on an --error ground (Cancel and the like): the family's --bg in dark, white in light. Set last, from the final --bg. */
 function withOnError(t: Palette, dark: boolean): Palette {
   return { ...t, "on-error": dark ? get(t, "bg") : "#ffffff" };
@@ -189,7 +207,7 @@ export function theme(c: Combo): { t: Palette; fixes: [string, string, string][]
   let o = t;
   if (c.plain) o = plain(o, dark);
   if (c.high) o = highContrast(o, dark);
-  return { t: withOnError(o, dark), fixes };
+  return { t: withOnError(withPfx(o, c.high), dark), fixes };
 }
 
 // --- the audit: every pair the app draws (docs/shifts/2026-10-18-themes-report.md section 2) ---
@@ -218,7 +236,7 @@ export function checks(t: Palette, hc: boolean): Check[] {
   add("Screen", "text on the status line", "text", "panel", T);
   add("Screen", "text on a chip", "text", "chip-bg", T);
   add("Screen", "focus and cursor on screen (non-text)", "focus", "bg", 3);
-  for (const k of KEYS) {
+  for (const k of [...KEYS, "key-pfx"]) {
     for (const f of ["text", "shift", "alpha"]) add("Keys", `${f} on ${k}`, f, k, T);
     add("Keys", `dead face on ${k}`, "text-dead", k, D);
   }
@@ -234,7 +252,7 @@ export function checks(t: Palette, hc: boolean): Check[] {
 }
 /** A dimmed face is at least 1 below a live one on every key. */
 export function dimmedOk(t: Palette): boolean {
-  return KEYS.every((k) => cr(get(t, "text-dead"), get(t, k)) <= cr(get(t, "text"), get(t, k)) - 1);
+  return [...KEYS, "key-pfx"].every((k) => cr(get(t, "text-dead"), get(t, k)) <= cr(get(t, "text"), get(t, k)) - 1);
 }
 
 // --- the files ---------------------------------------------------------------------------------

@@ -24,6 +24,7 @@
   --focus: #b58900;
   --key-on: #b58900;
   --on-key-on: #002b36;
+  --key-pfx: #053541;
   --on-error: #002b36;
   color-scheme: dark;
 }
@@ -51,6 +52,7 @@
   --focus: #c8cfc8;
   --key-on: #c8cfc8;
   --on-key-on: #002b36;
+  --key-pfx: #293b40;
   --on-error: #002b36;
   color-scheme: dark;
 }
@@ -78,6 +80,7 @@
   --focus: #b58900;
   --key-on: #e0aa00;
   --on-key-on: #002b36;
+  --key-pfx: #03191f;
   --on-error: #000f13;
   color-scheme: dark;
 }
@@ -105,6 +108,7 @@
   --focus: #c8cfc8;
   --key-on: #c8cfc8;
   --on-key-on: #002b36;
+  --key-pfx: #091619;
   --on-error: #000f13;
   color-scheme: dark;
 }
@@ -132,6 +136,7 @@
   --focus: #268bd2;
   --key-on: #073642;
   --on-key-on: #fdf6e3;
+  --key-pfx: #e4eae7;
   --on-error: #ffffff;
   color-scheme: light;
 }
@@ -159,6 +164,7 @@
   --focus: #073642;
   --key-on: #073642;
   --on-key-on: #fdf6e3;
+  --key-pfx: #e7e9e7;
   --on-error: #ffffff;
   color-scheme: light;
 }
@@ -186,6 +192,7 @@
   --focus: #2074af;
   --key-on: #073642;
   --on-key-on: #fdf6e3;
+  --key-pfx: #fffdf7;
   --on-error: #ffffff;
   color-scheme: light;
 }
@@ -213,6 +220,7 @@
   --focus: #073642;
   --key-on: #073642;
   --on-key-on: #fdf6e3;
+  --key-pfx: #fefdf8;
   --on-error: #ffffff;
   color-scheme: light;
 }

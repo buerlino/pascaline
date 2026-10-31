@@ -331,6 +331,7 @@ export function press(c: RouteCtx, key: Key, layer?: Layer): void {
   if (sheetUndrawn(c) || rowsLoading(c, key)) return wait(c, { key, mods: modsFor(c, layer), layer });
   if (c.shell.sheet && sheetPress(c, key, layer)) return;
   const mods = modsFor(c, layer);
+  if (sheetChunk.pad?.route(c, key, mods)) return; // the unit pad's cell (R24b)
   c.session.clearModifiers(); // a one-shot Shift or Alpha is used up by this key, a tap or a flick
   if (c.sheetLoad === null && sheetChunk.C === null && opensSheet(key, mods)) {
     c.sheetLoad = loadSheetView()
