@@ -14,8 +14,8 @@
 
 | # | Package | Agent, model | Lane | Starts when merged | Size |
 |---|---|---|---|---|---|
-| [R60](../../shifts/packages/R60.md) | The unit result's alternatives as data (UI-free) | gorge, **Opus** | night | R24c | ~0.75 d |
-| [R61](../../shifts/packages/R61.md) | The chip from a unit result, with its facts and σ (UI-free) | gorge, **Opus** | night | R24c | ~0.75 d |
+| R60 (merged `377811a`) | The unit result's alternatives as data (UI-free) | gorge, **Opus** | night | R24c | ~0.75 d |
+| R61 (merged `c07a8a0`) | The chip from a unit result, with its facts and σ (UI-free) | gorge, **Opus** | night | R24c | ~0.75 d |
 | [R62](../../shifts/packages/R62.md) | The unit result view drawn | ron, Sonnet | day (gallery) | R60, and the owner has seen the mockup (M4-2 point 6) | ~1 d |
 | [R63](../../shifts/packages/R63.md) | The way back from the unit view; t02, t04 and t10 active | ron, **Opus** | day | R61 and R62 | ~1 d |
 

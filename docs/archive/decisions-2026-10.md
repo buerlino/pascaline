@@ -5,6 +5,12 @@ History only: read it when a decision is questioned. What still binds is in [../
 
 ## Decided proposals moved here later
 
+### Shortened 2026-10-31 (Opus pass 28) to make room for R61's default and A52's question, as they stood
+From "Pipeline and process":
+- **Owner answers of 2026-10-29.** The start chunk is split (R91), its 61 kB budget stays; A44 gives the nightly sweep its own known-rows file. **Evening (the two-lane plan and its review):** ron runs at night too; the owner reviews at three milestones (after R87; after R86, R57, R50e; after R24d), not after each package; device steps stay by day. Extreme inputs and the fuzz with its triage run one night a week (replaces the nightly fuzz of 2026-10-27); wrong numbers of everyday or medium reach any time (G135 first in lane B). `--effort high` for workers, audits and passes; tripwire: the owner reads the usage meter at the morning check and at each lane start, and past 85 % of the week projected, lane B's Sonnet workers go back to medium first. Workers keep ticking backlog.md. The units (R24b–R24d) come right after R86, R57, R50e; the rest of the Settings list after them. Would change if: the tripwire fires twice in a week, or backlog conflicts cost more than one resolve round a day.
+From "Feel, keys and screen (milestone 4a)":
+- **The application id is `io.github.buerlino.pascaline` (2026-10-14); the web version lives at `https://pascaline-calc.org/` (2026-10-29).** The id never changes. The PWA is at the domain's root, `www` redirects; GitHub Pages deploys it from a release tag (A45); the docs stay on GitHub. Set up 2026-10-29: Infomaniak, paid to 2028-10-29, auto-renew and Renewal Warranty, transfer lock, DNSSEC, HTTPS enforced (Let's Encrypt), mail by Proton. Full text: archive. Would change if: the domain lapses.
+
 ### Shortened 2026-10-31 (night review, step 8) to make room for the owner's answers, as they stood
 From "Pipeline and process":
 - **Owner answers of 2026-10-28 (after the day shift).** Home shows a one-element `seq[…]` as its value, a longer sequence as a list in braces (G119, F108); after R4a (`b9f0042`): until R24c, units show disabled in Find ("units come with the unit view"), no chip Enter refuses (R90, dropped 2026-10-31: R24c brought the unit view); Find's ten categories stay.
