@@ -91,7 +91,7 @@ The one place for "where are we and what's left", one or two lines per open item
 - **C3. CI** (needs your OK); **C4. F-Droid recipe:** untested end to end; `npm ci` after `prebuild` needs an offline rework; two drifts from build.sh in `fdroid/README.md`.
 
 ### MVP release (docs/02 section 8; not scheduled)
-- **R1. v0.1.0, the APK and the website from one tag** (A43, A7, A45, A8; decisions.md "The release path"; A48, A50 and A49 merged). **R2. Play testing track:** never published without your OK. **R3. Screenshots and store graphics.** **R4. The help pass** (About: R87; one APK hash from two `./build.sh --unsigned` runs: annabell, A7).
+- **R1. v0.1.0, the APK and the website from one tag** (A43, A7, A45, A8; decisions.md "The release path"; A48, A50, A49 and A45 merged). **R2. Play testing track:** never published without your OK. **R3. Screenshots and store graphics.** **R4. The help pass** (About: R87; one APK hash from two `./build.sh --unsigned` runs: annabell, A7).
 
 ### v1 and later
 In docs/02 section 8; P8 defers most of v1 behind the engineer core. v1: Statistics, Inference, Parametric/Polar/Sequence, Spreadsheet, Finance, Linear/Triangle solvers, RPN. v2: Geometry, Advanced Graphing, 3D, Explorers.
