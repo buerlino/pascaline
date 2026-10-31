@@ -27,6 +27,7 @@ export const en = {
   "key.math": "Math",
   "key.memory": "Mem",
   "key.tmpl": "Tmpl",
+  "key.units": "Units",
   "key.enter": "Enter",
   "entry.label": "Entry line",
   "app.function": "Function",

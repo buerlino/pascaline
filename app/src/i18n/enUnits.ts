@@ -44,6 +44,8 @@ export const enUnits = {
   "units.pad.find": "Find",
   "units.pad.enter": "Enter",
   "units.pad.evaluate": "Eval",
+  // R24c: the unit view while Calc.units() runs.
+  "units.view.working": "Working…",
 } as const satisfies Record<string, string>;
 
 export type UnitMessageKey = keyof typeof enUnits;

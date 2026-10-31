@@ -139,7 +139,7 @@ export class UnitPad {
   route(c: RouteCtx, key: Key, mods: Mods): boolean {
     if (c.shell.sheet) return false; // (a sheet over the keys takes them)
     const emit = this.press(key.id, mods.alpha ? "alpha" : mods.shift ? "shift" : "primary");
-    if (emit === undefined) return false;
+    if (emit === undefined) return unitPad.other?.(c, key, mods) ?? false; // no cell: the unit view's (R24c)
     c.session.clearModifiers();
     if (emit === null) c.dead();
     else unitPad.on(emit);
