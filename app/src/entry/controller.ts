@@ -37,8 +37,10 @@ export class EntryController {
   onKey: (id: string, layer: Layer, repeat: boolean) => void = () => {};
   /** A letter typed on a hardware keyboard (R45): the shell's checks first, then the line. */
   onLetter: (ch: string, repeat: boolean) => void = () => {};
-  /** A hardware key that does nothing (R31): the shell's dead-key feedback. */
-  onDead: () => void = () => {};
+  /** A hardware `<`, `>` or `!` (R107): the symbol goes on the line; App.svelte counts it as a press. */
+  onSymbol: (ch: string, repeat: boolean) => void = (ch) => this.run({ kind: "insert", latex: ch });
+  /** A hardware key that does nothing (R31): the shell's dead-key feedback (a press all the same, R107). */
+  onDead: (repeat: boolean) => void = () => {};
   /** The line was emptied (Enter, Esc, an app view): main.ts clears the kept line (R34). */
   onClear: () => void = () => {};
 

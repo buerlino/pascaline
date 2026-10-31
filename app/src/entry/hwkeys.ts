@@ -16,22 +16,22 @@
 // MathLive (copy, paste, select all); AltGr characters count as typed.
 import type { MathfieldElement } from "mathlive";
 import { numberRunStart } from "./numberRun.ts";
-import type { ActionBody, Layer } from "../keyboard/keyboard.ts";
+import type { Layer } from "../keyboard/keyboard.ts";
 
 /** What the entry line (EntryController) lets the handler do. */
 export interface HwTarget {
   readonly field: MathfieldElement | undefined;
   /** R57: the decimal comma is on. */
   readonly decimalComma: boolean;
-  /** The entry line's own path for an action. */
-  run(a: ActionBody): void;
+  /** A palette symbol typed on the hardware keyboard (`<`, `>`, `!`): inserted as the Shift palettes' own symbol. */
+  onSymbol(ch: string, repeat: boolean): void;
   /** Press a keypad key in a layer, as a tap would (the shell's path: Ans first, one-line forms, open sheets). `repeat`
    *  is the event's KeyboardEvent.repeat: a held key's auto-repeat acts again but is no new press (docs/04 5.2). */
   onKey(id: string, layer: Layer, repeat: boolean): void;
   /** A typed letter, through the shell's checks (open sheet, picked row, apps) before it reaches the line. */
   onLetter(ch: string, repeat: boolean): void;
-  /** A key that does nothing here (docs/05 3.7). */
-  onDead(): void;
+  /** A key that does nothing here (docs/05 3.7); it is a press all the same (R107). */
+  onDead(repeat: boolean): void;
 }
 
 /** The keypad key that types each character, and its layer. */
@@ -97,15 +97,15 @@ export function hardwareKey(ev: KeyboardEvent, t: HwTarget): boolean {
   if (ch === ")" || ch === "|") {
     if (leave(mf, ch === ")" ? "(" : "|")) mf.focus();
     else if (ch === "|") t.onKey("neg", "shift", ev.repeat);
-    else t.onDead();
+    else t.onDead(ev.repeat);
     return true;
   }
   // R57: with the decimal comma both `.` and `,` type the decimal mark (the keypad's `.` key); `;` stays the separator
   const k = KEYS[t.decimalComma && ch === "," ? "." : ch];
   if (k) t.onKey(k[0], k[1], ev.repeat);
-  else if (PALETTE.has(ch)) t.run({ kind: "insert", latex: ch });
+  else if (PALETTE.has(ch)) t.onSymbol(ch, ev.repeat);
   else if (/^[A-Za-z]$/.test(ch)) t.onLetter(ch, ev.repeat);
-  else t.onDead();
+  else t.onDead(ev.repeat);
   return true;
 }
 
