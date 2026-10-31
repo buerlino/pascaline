@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // What counts as one press (R70; docs/04 section 5.2): a key tap, a flick, a drag on the trackpad, a tap on the screen.
 import { describe, expect, it } from "vitest";
-import { isScreenTap, touchPresses } from "./pressCount.ts";
+import { counted, isScreenTap, touchPresses } from "./pressCount.ts";
 
 const key = {};
 /** A stand-in element that answers `closest` for the selectors it is given. */
@@ -34,5 +34,37 @@ describe("a tap on the screen (docs/04 5.2)", () => {
   it("text, or nothing, is not a press", () => {
     expect(isScreenTap(el())).toBe(false);
     expect(isScreenTap(null)).toBe(false);
+  });
+});
+
+describe("a hardware key (docs/04 5.2, R70f1)", () => {
+  /** A counted handler, as App.svelte sets entry.onKey, with what it counted and what it ran. */
+  const hook = () => {
+    let presses = 0;
+    const ran: [string, string][] = [];
+    const onKey = counted(() => presses++, (id: string, layer: string) => void ran.push([id, layer]));
+    return { onKey, ran, presses: () => presses };
+  };
+  it("a press (KeyboardEvent.repeat false) counts 1 and runs the key", () => {
+    const h = hook();
+    h.onKey("d7", "primary", false);
+    expect(h.presses()).toBe(1);
+    expect(h.ran).toEqual([["d7", "primary"]]);
+  });
+  it("a held key's auto-repeats (repeat true) run the key again but count nothing: a held key counts once", () => {
+    const h = hook();
+    h.onKey("bksp", "primary", false);
+    h.onKey("bksp", "primary", true);
+    h.onKey("bksp", "primary", true);
+    expect(h.presses()).toBe(1);
+    expect(h.ran).toEqual([["bksp", "primary"], ["bksp", "primary"], ["bksp", "primary"]]);
+  });
+  it("Enter and Escape alike: the handler takes only the repeat flag", () => {
+    let presses = 0;
+    let runs = 0;
+    const onEnter = counted(() => presses++, () => void runs++);
+    onEnter(false);
+    onEnter(true);
+    expect([presses, runs]).toEqual([1, 2]);
   });
 });

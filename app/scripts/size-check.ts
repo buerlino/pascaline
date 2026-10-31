@@ -107,8 +107,9 @@ function subjects(manifest: Record<string, ManifestChunk>, all: string[]): { pre
 export const LAZY_VIEWS = ["src/views/Sheet.svelte"];
 
 /** R91: code that only runs after a key press or once a result is in stays out of the start chunk too: the sheet's keys
- *  and the palette cells (loaded with the sheet's view), the result tidy-up, the palettes with their names. */
-export const LAZY_PARTS = ["src/views/sheetKeys.ts", "src/views/tmplSheet.ts", "src/render/tidy.ts", "src/keyboard/shiftPalettes.ts", "src/units/open.ts"];
+ *  and the palette cells (loaded with the sheet's view), the result tidy-up, the palettes with their names. R70f1: how a
+ *  key acts on the entry line's field, and the field's set-up (entry/field.ts, loaded with MathLive). */
+export const LAZY_PARTS = ["src/views/sheetKeys.ts", "src/views/tmplSheet.ts", "src/render/tidy.ts", "src/keyboard/shiftPalettes.ts", "src/units/open.ts", "src/entry/field.ts"];
 
 /** R91's pin: the start chunk is at most this many bytes gzip, 1 kB under the budget of 61 kB, so the Settings base
  *  (R49, R86, R57) has room. A package that needs more raises the pin with a reason, here and in docs/04 8.3.
@@ -132,10 +133,13 @@ export const LAZY_PARTS = ["src/views/sheetKeys.ts", "src/views/tmplSheet.ts", "
  *  state/pressCount.ts, the counter's field); the Settings row is in the lazy sheet chunk.
  *  60.95 → 60.97 kB (R70f1): the pipeline's build of the branch measures 60.96 kB, 0.03 kB over the 60.93 kB of the first run
  *  (same sources; the order of the chunk's strings, as in G133f1); 0.01 kB of room is left under the pin.
- *  60.97 → 60.99 kB (G81): phase-1 60.96 kB, the branch 60.99 kB (raw +0.07 kB): a stored constant chip keeps its basis
- *  and leaves (validChips, read back at start); their check is in basisOf, in the lazy chunks. 0.01 kB is left under the
- *  budget of 61.00 kB. */
-export const START_PIN_GZIP = 60.99 * KB;
+ *  60.97 → 58.96 kB (R70f1, Opus pass 23): phase-1 60.96 kB gzip (172.46 kB raw), the branch 58.95 kB (166.61 kB raw;
+ *  −2.01 kB): the entry line's work on the field (its set-up and listeners, ⌫ and Del at a template, ᴇ, 10ˣ, a power's
+ *  base, the stops) runs only once MathLive is up, so it is entry/field.ts, loaded beside MathLive; keys pressed before
+ *  it is there are queued as before. The room is for R24d, R38a, R71, R15c4 and R88 under the 61 kB budget.
+ *  58.96 → 58.97 kB (G81): phase-1 58.95 kB, the branch 58.963 kB (166.66 kB raw, +0.05 kB): a stored constant chip keeps
+ *  its basis and leaves (validChips, read back at start); their check is in basisOf, in the lazy chunks. */
+export const START_PIN_GZIP = 58.97 * KB;
 
 /** Failures for the start chunk's row when it is over the pin. */
 export function checkStartPin(row: Row): string[] {

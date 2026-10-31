@@ -22,7 +22,7 @@ export async function runFindBench(shell: AppShell, entry: EntryController): Pro
   let open = 0;
   for (const q of queries) {
     const t0 = performance.now();
-    entry.onKey("math", "primary");
+    entry.onKey("math", "primary", false);
     while (shell.sheet?.id !== "find") await new Promise((r) => setTimeout(r, 5));
     await frames();
     open = Math.max(open, performance.now() - t0);
