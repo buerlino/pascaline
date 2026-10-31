@@ -94,8 +94,10 @@ function subjects(manifest: Record<string, ManifestChunk>, all: string[]): { pre
   add("MathLive chunk", chunks.filter((c) => /(^|\/)mathlive\/mathlive\.min\.m?js$/.test(normalSrc(c.src))).map((c) => c.file), { rawMax: 830 * KB });
   add("Find UI chunk", dynamic("src/find/"), { rawMax: 30 * KB });
   // The unit view (G16, R24c): one rule over src/units/, so it covers the UI chunk (units/open.ts, 23.33 kB raw) and the
-  // builder that Calc.units() loads with the factor table on its first call (units/calc.ts, 9.72 kB): 34 kB (Opus pass 22).
-  add("Unit view chunk", dynamic("src/units/"), { rawMax: 34 * KB });
+  // builder that Calc.units() loads with the factor table on its first call (units/calc.ts, 9.72 kB): 34 kB (Opus pass 22);
+  // 38 kB (Opus pass 24): G81's correlated constants measure 34.04 kB, and R24d and R60–R63 still add; the bar that counts
+  // is the first unit result < 1 s on the Tab One (decisions.md, Units: G81, R24b and R24c).
+  add("Unit view chunk", dynamic("src/units/"), { rawMax: 38 * KB });
   // The index and qalc have no fixed place yet (G4 and A2 decide); these match by location and name, so they apply wherever they land.
   add("Find index asset", all.filter((f) => f.startsWith("find/") || /(^|\/)find-index[^/]*$/.test(f)), { rawMax: 400 * KB, gzipMax: 100 * KB });
   add("qalc wasm + glue", all.filter((f) => /(^|\/)qalc[^/]*\.(wasm|mjs|js)$/.test(f)), { brotliMax: 1 * MB });
@@ -137,10 +139,12 @@ export const LAZY_PARTS = ["src/views/sheetKeys.ts", "src/views/tmplSheet.ts", "
  *  −2.01 kB): the entry line's work on the field (its set-up and listeners, ⌫ and Del at a template, ᴇ, 10ˣ, a power's
  *  base, the stops) runs only once MathLive is up, so it is entry/field.ts, loaded beside MathLive; keys pressed before
  *  it is there are queued as before. The room is for R24d, R38a, R71, R15c4 and R88 under the 61 kB budget.
- *  58.96 → 58.99 kB (R38a): phase-1 58.96 kB, the branch 58.98 kB (+0.02 kB, raw +0.04 kB): Settings › Data › Save a backup
- *  needs one line in App.svelte (the Settings env's `saveBackup`); the raw read, BACKUP_KEYS, the file port and the words
- *  are in lazy modules (state/backup.ts, storageRaw.ts, i18n/enData.ts). */
-export const START_PIN_GZIP = 58.99 * KB;
+ *  58.96 → 58.97 kB (G81): phase-1 58.95 kB, the branch 58.963 kB (166.66 kB raw, +0.05 kB): a stored constant chip keeps
+ *  its basis and leaves (validChips, read back at start); their check is in basisOf, in the lazy chunks.
+ *  58.97 → 59.00 kB (R38a): phase-1 58.96 kB, the branch 58.98 kB (+0.02 kB, raw +0.04 kB) before G81; Settings › Data › Save a
+ *  backup needs one line in App.svelte (the Settings env's `saveBackup`); the raw read, BACKUP_KEYS, the file port and the
+ *  words are in lazy modules (state/backup.ts, storageRaw.ts, i18n/enData.ts). */
+export const START_PIN_GZIP = 59.0 * KB;
 
 /** Failures for the start chunk's row when it is over the pin. */
 export function checkStartPin(row: Row): string[] {
