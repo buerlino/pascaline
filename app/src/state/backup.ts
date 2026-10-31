@@ -2,7 +2,8 @@
 // The backup (R11 section 3, docs/04 6.2): one JSON file with each stored key's record as stored, stamp included. Loaded
 // only when the user saves one (never in the start chunk).
 import { dataText } from "../i18n/enData.ts";
-import { DATA_VERSION, kvGetRaw, type RawRecord } from "./storage.ts";
+import { DATA_VERSION } from "./storage.ts";
+import { kvGetRaw, type RawRecord } from "./storageRaw.ts";
 
 /** The keys a backup holds (docs/04 6.2). A new key joins by being added here; the unit test fails until it is here or
  *  in LEFT_OUT. */

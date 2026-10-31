@@ -2,7 +2,8 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { backupName, BACKUP_KEYS, LEFT_OUT, makeBackup } from "./backup.ts";
-import { DATA_VERSION, type RawRecord } from "./storage.ts";
+import { DATA_VERSION } from "./storage.ts";
+import type { RawRecord } from "./storageRaw.ts";
 
 /** The keys in the first column of docs/04 section 6.2's table. */
 function documentedKeys(): string[] {

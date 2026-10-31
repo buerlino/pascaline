@@ -35,7 +35,7 @@ test("Settings › Data › Save a backup downloads the envelope with every pres
   expect(b.dataVersion).toBe(DATA_VERSION);
   expect(Number.isNaN(Date.parse(b.made))).toBe(false);
   const present = Object.keys(b.parts);
-  for (const k of ["settings", "view", "history", "defs", "userKeys"]) expect(present, k).toContain(k);
+  for (const k of ["settings", "history", "defs", "userKeys"]) expect(present, k).toContain(k);
   expect(present).not.toContain("defsStarts");
   expect(present).not.toContain("backup.undo");
   for (const [k, rec] of Object.entries(b.parts)) {

@@ -136,8 +136,11 @@ export const LAZY_PARTS = ["src/views/sheetKeys.ts", "src/views/tmplSheet.ts", "
  *  60.97 → 58.96 kB (R70f1, Opus pass 23): phase-1 60.96 kB gzip (172.46 kB raw), the branch 58.95 kB (166.61 kB raw;
  *  −2.01 kB): the entry line's work on the field (its set-up and listeners, ⌫ and Del at a template, ᴇ, 10ˣ, a power's
  *  base, the stops) runs only once MathLive is up, so it is entry/field.ts, loaded beside MathLive; keys pressed before
- *  it is there are queued as before. The room is for R24d, R38a, R71, R15c4 and R88 under the 61 kB budget. */
-export const START_PIN_GZIP = 58.96 * KB;
+ *  it is there are queued as before. The room is for R24d, R38a, R71, R15c4 and R88 under the 61 kB budget.
+ *  58.96 → 58.99 kB (R38a): phase-1 58.96 kB, the branch 58.98 kB (+0.02 kB, raw +0.04 kB): Settings › Data › Save a backup
+ *  needs one line in App.svelte (the Settings env's `saveBackup`); the raw read, BACKUP_KEYS, the file port and the words
+ *  are in lazy modules (state/backup.ts, storageRaw.ts, i18n/enData.ts). */
+export const START_PIN_GZIP = 58.99 * KB;
 
 /** Failures for the start chunk's row when it is over the pin. */
 export function checkStartPin(row: Row): string[] {

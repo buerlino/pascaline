@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // The version stamp on stored values (R18f2 verification, 2026-10-14): old records are told apart and migrated.
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { kvGetRaw } from "./storageRaw.ts";
 import { fakeIndexedDb, type FakeIdb } from "./fakeIdb.ts";
-import { DATA_VERSION, kvGet, kvGetRaw, kvSet, MIGRATIONS, stamp, unstamp } from "./storage.ts";
+import { DATA_VERSION, kvGet, kvSet, MIGRATIONS, stamp, unstamp } from "./storage.ts";
 
 describe("stored values carry a version", () => {
   it("round-trips a stamped value without a write-back", () => {

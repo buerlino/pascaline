@@ -223,12 +223,7 @@
   }
 
   /** What Settings › Your keys needs (R4b): the slots, and Find to pick a slot's content from. */
-  const settingsEnv = {
-    get userKeys() { return userKeys; },
-    chooseFor: (id: string, layer: Layer): void => openFind({ id, layer }),
-    // R38a: the backup code loads on the press; its result is the notice in the stage (the status line has no room)
-    saveBackup: (): void => void Promise.all([loadClip(), import("./state/backup.ts")]).then(async ([c, m]) => c.say(await m.saveBackup())),
-  };
+  const settingsEnv = { get userKeys() { return userKeys; }, chooseFor: (id: string, layer: Layer): void => openFind({ id, layer }), saveBackup: (): void => void clip?.saveBackup() }; // saveBackup: R38a (the clipboard code is there once a sheet has opened, withClip)
   /** Settings as the ☰ menus' last row opens it (R49): one per session, its rows read the settings on every draw. */
   let settingsMenu: SubMenu | undefined;
   /** A user key that holds Settings, or a ☰ menu's last row before the Mode code is in: Mode › Settings, on its first
