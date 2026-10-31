@@ -194,6 +194,16 @@ describe("G38: which inputs get a second decision (pure)", () => {
     expect(rationalOnly("trunc(-7/2)", "typed")).toBe(true);
   });
 
+  it("G139: sigfig cuts |x|·10^k at a half-integer, eseries at the sign of its helper's v; both decide exactly on rationals", async () => {
+    const { decisionCuts, restsOnDecision, rationalOnly } = await import("./decisions.ts");
+    expect(decisionCuts("sigfig(a,2)")).toEqual([{ q: "sign(a)*(a)*10^((2)-1-floor(log10(sign(a)*(a))))", kind: "half" }]);
+    expect(decisionCuts("eseries(6,a)")).toEqual([{ q: "pasesb(6,a)[4]", kind: "zero" }]);
+    expect(restsOnDecision("eseries(6,sqrt(33/10)+sin(10^-50))", "typed", "3/2")).toBe(true);
+    expect(restsOnDecision("sigfig(1.25-sin(10^-50),2)", "typed", "13/10")).toBe(true);
+    expect(rationalOnly("eseries(24,3870)", "typed")).toBe(true);
+    expect(rationalOnly("sigfig(1/3,3)", "typed")).toBe(true);
+  });
+
   it("G71: two-argument round and trunc are not audited (Giac works in a double); one-argument round is", async () => {
     const { doubleFormsIn, isAudited, unauditedIn } = await import("./numeric.ts");
     expect(doubleFormsIn("round(sin(x),5)+trunc(y,0)", "typed")).toEqual(["round", "trunc"]);
