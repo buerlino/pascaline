@@ -4,6 +4,7 @@
 // sheet (Home, CAS, Apps, Menu, Mode, Settings), or empty. Pressing a free key while the list is open highlights its
 // row (route.ts, Sheet.goKey). The slots are in the stamped store under USER_KEYS (keyboard/userKeys.svelte.ts).
 import type { MenuItem } from "../apps/types.ts";
+import type { ClipActions } from "../clipboard/actions.svelte.ts";
 import { findText as t } from "../i18n/enFind.ts";
 import { legend, t as tr } from "../i18n/index.ts";
 import type { Layer, Special } from "../keyboard/keyboard.ts";
@@ -14,8 +15,9 @@ import { CELL_KEYS, LEG_OF, unitCells } from "../units/userCells.svelte.ts";
 export interface SettingsEnv {
   readonly userKeys?: UserKeys;
   chooseFor?(id: string, layer: Layer): void;
-  /** Settings › Data › Save a backup (R38a): makes the file and shows the result as a notice (App.svelte). */
-  saveBackup?(): void;
+  /** Settings › Data (R38a, R38b): runs a backup action on the clipboard code, which shows its notice and opens the
+   *  restore sheet (App.svelte's withClip: it waits for that code when the sheet opened before it came). */
+  data?(run: (c: ClipActions) => void | Promise<void>): void;
 }
 
 /** The places and sheets a slot can hold. */
