@@ -158,6 +158,7 @@ The defaults that bind code and tests, one line each. A default changes when its
 - **G13:** the 13 CODATA overrides and the hp, mmHg, inHg factors stay in `find/factors.yaml` until qalc agrees (`refresh-factors.mjs` shows the change, P22). **G7:** `rev`, `revolution`, `cycle` name `rev`; StdT 273.15 K and StdP 101325 Pa.
 - **R28:** rule: docs/04 4.3 (`pasu<n>` in the order written, the end slot after `\to`); a slot only right after a number literal; σ is a number literal; a product with a slot keeps its brackets.
 - **R24a, R24af1:** ⁻¹ turns the power's sign, ², ³, ⁴ set its size; √ arms like a prefix; ÷ on an empty slot becomes negated powers; the reading goes by sign and Find's titles; a prefixed pair counts only when its factor and dimension match, and a unit without an exact factor never pairs.
+- **R60:** the alternatives row (units/alternatives.ts) takes a temperature's three units (absolute K, °C, °F; interval K, Δ°C, Δ°F) and no target; Δ°C is K's Find alias, so its tap shows K. Would change if: R62 labels the alias.
 
 - **The check of 2026-10-19:** a zero term keeps its dimension for the unit check (G35 rewrites G16's "an exact 0 loses its dimension" and the known gap of cancelling terms). Would change if: the per-term check costs more than the 5 ms p95 bar.
 
