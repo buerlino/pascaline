@@ -13,7 +13,7 @@ import { MAX_DIGITS, type DecimalMark, type EntryMode, type Session } from "../s
 import { aboutText } from "../i18n/enAbout.ts";
 import { helpItems } from "./aboutItems.ts";
 import { findText } from "../i18n/enFind.ts";
-import { dataText } from "../i18n/enData.ts";
+import { dataSection } from "./dataSection.svelte.ts";
 import { BRIGHTNESS, validLook, type Look } from "../theme/look.ts";
 import { familyOf, FAMILIES, stepped } from "../theme/lookView.ts";
 import { yourKeysItems, yourKeysValue, type SettingsEnv } from "./yourKeys.ts";
@@ -185,18 +185,13 @@ export function settingsSections(session: Session, env: SettingsEnv = {}): MenuI
     ),
     // Your keys (R4b, views/yourKeys.ts): only where the app gives the slots
     ...(env.userKeys ? [section("keys", findText("keys.title"), yourKeysItems(env), () => yourKeysValue(env))] : []),
-    // Data (R38a; R38b adds Restore and Undo, R59 the library): only where the app gives the backup
-    ...(env.saveBackup ? [section("data", dataText("data"), dataItems(env), () => dataText("data.value"))] : []),
+    // Data (R38a, R38b: views/dataSection.svelte.ts; R59 adds the library): only where the app gives the backup
+    ...(env.data ? [dataSection(env)] : []),
     section("counters", t("settings.counters"), tapsItems(session), () => {
       return t("settings.counters.value", { n: String(session.taps.counts.presses) }); // (a reset replaces the object)
     }),
     section("help", aboutText("help"), helpItems()),
   ];
-}
-
-/** Data: the rows run and close the sheet, so the notice shows in the stage. */
-function dataItems(env: SettingsEnv): MenuItem[] {
-  return [{ id: "backup", label: dataText("backup.save"), run: () => env.saveBackup?.() }];
 }
 
 /** Appearance (R50e): the theme (◀ ▶ step through the five families; a tap, a digit or Enter lists them, and a pick

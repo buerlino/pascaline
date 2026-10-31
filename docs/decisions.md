@@ -13,6 +13,8 @@ The owner's other open items are in [backlog.md](backlog.md), "Needs the user". 
 
 - **R50e, on the phone:** (1) the first frame reads the Android default (Dark) from `window.Capacitor` in the inline script; if the bridge is not there yet at that point, a first start with nothing stored shows System for one frame, then Dark (later starts read the mirror). Look at a first start after "clear data". (2) Android's status and navigation bar colours stay open (not in R50e).
 
+- **R38b, the restore's validators:** an import of `session.svelte.ts` or `userKeys.svelte.ts` from lazy code splits the start chunk into six files (59.09 → 60.62 kB gzip, Rolldown 1.2.13), so `state/backup.ts` repeats `migrateSettings`' field rules, `restoreHistory`'s filter and the key layers, and `restore.test.ts` runs both on the same values. Keep that (as `storageRaw.ts`), or pin those modules to the start chunk in `vite.config.ts` (annabell) and call the readers directly?
+
 ## Decided proposals
 
 Newest first within each group.

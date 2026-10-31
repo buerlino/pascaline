@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// A50: the smallest IndexedDB stand-in storage.ts needs (open, one store, get and put in a transaction), for tests in
+// A50: the smallest IndexedDB stand-in storage.ts needs (open, one store, get, put and delete in a transaction), for tests in
 // node; no dependency. Requests finish on a later task, and a transaction completes once its last request has run its
 // callback, so a put issued from a get's onsuccess belongs to the same transaction, as in a browser.
 
@@ -54,6 +54,7 @@ export function fakeIndexedDb(): FakeIdb {
       return {
         get: (key: string) => request(() => (store.has(key) ? structuredClone(store.get(key)) : undefined), failGets.has(key)),
         put: (value: unknown, key: string) => request(() => void store.set(key, structuredClone(value))),
+        delete: (key: string) => request(() => void store.delete(key)),
       };
     }
     if (!stores.has(name)) throw new Error(`no store ${name}`);
