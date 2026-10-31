@@ -6,7 +6,7 @@
 // Main thread, synchronous, no Giac; loaded with the unit view only. Only erasable TypeScript syntax (the golden gate).
 import type { Kv } from "../state/storage.ts";
 import { shownUnits, slotText } from "./build.ts";
-import { isExponent, powerText, siSlot } from "./dims.ts";
+import { BASES, dimKeyOf, isExponent, parseDimKey, powerText, siSlot } from "./dims.ts";
 import type { FactorTable } from "./factors.ts";
 import { cellText, type PadLegUnit, type PadUnitCell } from "./padCells.ts";
 import type { Quantity, ShownUnit, UnitRequest, UnitSlot, UnitToken } from "./types.ts";
@@ -83,14 +83,9 @@ function legDim(leg: PadLegUnit, table: FactorTable): string | null {
 
 /** The dimension key `dim` divided by n, when every exponent is an integer multiple of n. */
 function root(dim: string, n: number): string | null {
-  const parts = [...dim.matchAll(/([A-Za-z]+?)(-?\d+(?:\/\d+)?)/g)];
-  if (!parts.length) return null;
-  let out = "";
-  for (const m of parts) {
-    if (!/^-?\d+$/.test(m[2]!) || Number(m[2]) % n !== 0) return null;
-    out += `${m[1]}${Number(m[2]) / n}`;
-  }
-  return out;
+  const exps = parseDimKey(dim);
+  const out = BASES.map((b) => Number(exps.get(b.key) ?? "0"));
+  return out.every((e) => Number.isInteger(e) && e % n === 0) ? dimKeyOf(out.map((e) => `${e / n}`)) : null;
 }
 
 /** The pad's legs for `dim`: the cells of that dimension in the pad's order (each cell's tap, ↑, ↓); when there is none,
