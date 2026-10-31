@@ -302,11 +302,17 @@ golden_selected() { grep -qE "$GOLDEN_RE"; }
 
 # behaviour_selected: succeeds when a changed file (one per line, on stdin) is engine, input or units code (A18).
 behaviour_selected() { grep -qE '^(engine/|app/src/engine/|app/src/input/|app/src/units/)'; }
-# behaviour_section <integ> <wt> <outfile>: A18, the "## Behaviour changes" section of the audit's input: G55's behaviour-diff.ts between
-# the phase-1 worktree and the worker's, once per call, at most 20 minutes, never retried. PASCALINE_BEHAVIOUR_TOOL overrides the script.
+# behaviour_section <integ> <wt> <outfile> [<phase-1 engine dir> <branch engine dir>]: A18, the "## Behaviour changes" section of the
+# audit's input: G55's behaviour-diff.ts between the phase-1 worktree and the worker's, once per call, at most 20 minutes, never
+# retried. A53: phase-1's tree runs <phase-1 engine dir>/giac.mjs and the branch's tree <branch engine dir>/giac.mjs (GIAC_MJS_A,
+# GIAC_MJS_B), so a Giac patch's own effect shows; without them both run $GIAC_OUT's. A tool that exits non-zero (more than half
+# the runs of a tree throw) gives "failed to run" with its last lines, never "none". PASCALINE_BEHAVIOUR_TOOL overrides the script.
 behaviour_section() {
-  local integ="$1" wt="$2" out="$3" tool="${PASCALINE_BEHAVIOUR_TOOL:-$1/app/scripts/behaviour-diff.ts}" body rc=0
-  body="$(cd "$wt/app" && timeout -k 30 "${PASCALINE_BEHAVIOUR_SECONDS:-1200}" node "$tool" "$integ" "$wt" 2>&1)" || rc=$?
+  local integ="$1" wt="$2" out="$3" ea="${4:-}" eb="${5:-}" tool="${PASCALINE_BEHAVIOUR_TOOL:-$1/app/scripts/behaviour-diff.ts}" body rc=0
+  local -a engines=()
+  [[ -z "$ea" ]] || engines+=("GIAC_MJS_A=$ea/giac.mjs")
+  [[ -z "$eb" ]] || engines+=("GIAC_MJS_B=$eb/giac.mjs")
+  body="$(cd "$wt/app" && env "${engines[@]}" timeout -k 30 "${PASCALINE_BEHAVIOUR_SECONDS:-1200}" node "$tool" "$integ" "$wt" 2>&1)" || rc=$?
   {
     echo "## Behaviour changes (behaviour-diff.ts: phase-1 against $(basename "$wt"))"
     if [[ $rc -eq 124 || $rc -eq 137 ]]; then echo "timed out after 20 min (judge the diff without it)"
