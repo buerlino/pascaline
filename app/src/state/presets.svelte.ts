@@ -4,12 +4,13 @@
 // fixed keys never change. Nothing saves by itself: after a change to a held setting the preset is `modified` until
 // Update or another preset. Stored under the stamped key `presets` (docs/04 6.2). Loaded with the Mode sheet's chunk
 // (views/modeSheet.ts), never in the start chunk.
-import { USER_KEY_IDS, type UserKeys, type StoredUserKeys } from "../keyboard/userKeys.svelte.ts";
+import { keyboard } from "../keyboard/keyboard.ts";
+import type { UserKeys, StoredUserKeys } from "../keyboard/userKeys.svelte.ts";
 import { unitCells, UNIT_PAD_CELLS, type StoredCells, type UnitCells } from "../units/userCells.svelte.ts";
 import { GROUP_FIELDS, nameKey, PRESET_GROUPS, PRESETS_KEY, readPresets, type GroupValues, type Preset, type PresetGroup, type StoredPresets } from "./presetRecord.ts";
 import type { Look } from "../theme/look.ts";
-import { migrateSettings, type Session, type Settings } from "./session.svelte.ts";
-import { DATA_VERSION, kvSet, MIGRATIONS, unstamp, USER_KEYS } from "./storage.ts";
+import type { Session, Settings } from "./session.svelte.ts";
+import { DATA_VERSION, idbKv, unstamp, type MIGRATIONS } from "./storage.ts";
 import type { RawRecord } from "./storageRaw.ts";
 
 export { PRESET_GROUPS, PRESETS_KEY, type GroupValues, type Preset, type PresetGroup, type StoredPresets };
@@ -34,7 +35,7 @@ export const idbPresetStore: PresetStore = {
   // storageRaw.ts is a chunk of its own (the backup's): a static import would add it to the preload list of the Mode
   // sheet's chunk, which the start chunk carries
   read: () => import("./storageRaw.ts").then((m) => m.kvGetRaw(PRESETS_KEY)),
-  write: (value) => kvSet(PRESETS_KEY, value),
+  write: (value) => idbKv.set(PRESETS_KEY, value),
 };
 
 export interface PresetEnv {
@@ -50,6 +51,15 @@ export interface PresetEnv {
 }
 
 const applyLook = (look: Look): Promise<void> => import("../theme/lookApply.ts").then((m) => m.applyLook(look));
+
+// The start chunk's modules export to this chunk only what they already export to others (each new export costs the
+// start chunk bytes): the free keys' ids come from the spec as in backup.ts, the stored keys' names are written out.
+/** keyboard/userKeys.svelte.ts USER_KEY_IDS. */
+const USER_KEY_IDS: readonly string[] = keyboard.keys.filter((k) => k.user).map((k) => k.id);
+/** state/storage.ts USER_KEYS. */
+const USER_KEYS = "userKeys";
+/** For presets.test.ts, which checks them against the originals. */
+export const START_COPIES = { USER_KEY_IDS, USER_KEYS };
 
 /** JSON with sorted keys: two values are the same data whatever order their fields were written in. */
 const canon = (v: unknown): string =>
@@ -67,15 +77,13 @@ function settingsGroup(s: Settings, g: PresetGroup): GroupValues {
   return Object.fromEntries(GROUP_FIELDS[g].map((f) => [f, structuredClone(from[f])]));
 }
 
-/** `s` with one field set, through the settings' own reader: the field as read, or undefined when the reader would not
- *  keep `v` as it is (a value this version cannot read; applying it leaves the setting alone). */
-function withField(s: Settings, g: PresetGroup, f: string, v: unknown): Settings | undefined {
-  const raw: Record<string, unknown> = { ...structuredClone(s) };
-  if (PLACE[g] === "look") raw["look"] = { ...s.look, [f]: v };
-  else if (PLACE[g] === "haptics") raw["haptics"] = { ...s.haptics, [f]: v };
-  else raw[f] = v;
-  const next = migrateSettings(raw, s.look).settings;
-  return canon(settingsGroup(next, g)[f]) === canon(v) ? next : undefined;
+/** `s` with one field set, or undefined when the settings' reader would not keep `v` as it is (a value this version
+ *  cannot read: applying it leaves the setting alone). `rules` is backup.ts's SETTING_RULES, the values `migrateSettings`
+ *  keeps (restore.test.ts holds the two together); taken from there, since an import of `migrateSettings` from this
+ *  chunk would cost the start chunk an export. */
+function withField(s: Settings, g: PresetGroup, f: string, v: unknown, rules: Readonly<Record<string, (x: unknown) => boolean>>): Settings | undefined {
+  const [key, value] = PLACE[g] === "look" ? ["look", { ...s.look, [f]: v }] : PLACE[g] === "haptics" ? ["haptics", { ...s.haptics, [f]: v }] : [f, v];
+  return rules[key]?.(value) ? { ...s, [key]: structuredClone(value) } : undefined;
 }
 
 /** The free keys' stored slots, the keys without any left out (Your keys' record as UserKeys keeps it). */
@@ -121,15 +129,15 @@ export class Presets {
       p.refused = true;
       return p;
     }
-    const steps = env.steps ?? MIGRATIONS;
+    const up = (key: string, stored: unknown): unknown => (env.steps ? unstamp(key, stored, env.steps) : unstamp(key, stored)).value;
     const from = rec["@pascaline"];
-    const { record } = readPresets(unstamp(PRESETS_KEY, rec, steps).value);
+    const { record } = readPresets(up(PRESETS_KEY, rec));
     // The keys a preset holds are the records of USER_KEYS and UNIT_PAD_CELLS: their own steps run on them too.
     for (const preset of record.presets) {
       const keys = preset.groups.keys;
       if (!keys) continue;
-      if ("userKeys" in keys) keys["userKeys"] = unstamp(USER_KEYS, { "@pascaline": from, value: keys["userKeys"] }, steps).value;
-      if ("unitPadCells" in keys) keys["unitPadCells"] = unstamp(UNIT_PAD_CELLS, { "@pascaline": from, value: keys["unitPadCells"] }, steps).value;
+      if ("userKeys" in keys) keys["userKeys"] = up(USER_KEYS, { "@pascaline": from, value: keys["userKeys"] });
+      if ("unitPadCells" in keys) keys["unitPadCells"] = up(UNIT_PAD_CELLS, { "@pascaline": from, value: keys["unitPadCells"] });
     }
     p.list = record.presets;
     p.active = record.active;
@@ -192,13 +200,14 @@ export class Presets {
   }
 
   private async run(id: number): Promise<void> {
+    const { SETTING_RULES } = await import("./backup.ts");
     const p = $state.snapshot(this.find(id)) as Preset; // (the list is a proxy: structuredClone cannot copy it)
     const { session, userKeys, cells } = this.env;
     let s = $state.snapshot(session.settings) as Settings;
     for (const g of PRESET_GROUPS) {
       const held = p.groups[g];
       if (!held || g === "keys") continue;
-      for (const f of GROUP_FIELDS[g]) if (f in held) s = withField(s, g, f, held[f]) ?? s;
+      for (const f of GROUP_FIELDS[g]) if (f in held) s = withField(s, g, f, held[f], SETTING_RULES) ?? s;
     }
     const lookChanged = canon(s.look) !== canon($state.snapshot(session.settings.look));
     Object.assign(session.settings, s);

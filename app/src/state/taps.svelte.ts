@@ -20,6 +20,7 @@ export const TAPS_KEY = "taps";
 /** Writes wait this long, so a burst of taps is one IndexedDB write. */
 const SAVE_MS = 1000;
 
+const COUNTS = ["shift", "alpha", "presses", "presets"] as const;
 const isCount = (n: unknown): n is number => typeof n === "number" && Number.isInteger(n) && n >= 0;
 
 export class TapCounter {
@@ -39,8 +40,9 @@ export class TapCounter {
       if (this.wasReset || typeof v !== "object" || v === null) return;
       const o = v as Record<string, unknown>;
       if (!isCount(o["shift"]) || !isCount(o["alpha"]) || typeof o["since"] !== "string") return;
-      const n = (k: "shift" | "alpha" | "presses" | "presets"): number => (isCount(o[k]) ? o[k] : 0) + this.counts[k]; // (presses absent before R70, presets before R88)
-      this.counts = { shift: n("shift"), alpha: n("alpha"), presses: n("presses"), presets: n("presets"), since: o["since"] || this.counts.since };
+      const c = { ...this.counts, since: o["since"] || this.counts.since };
+      for (const k of COUNTS) if (isCount(o[k])) c[k] += o[k]; // (presses absent before R70, presets before R88)
+      this.counts = c;
     });
   }
 

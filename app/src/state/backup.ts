@@ -117,8 +117,9 @@ const whole = (x: unknown, lo: number, hi: number): boolean => typeof x === "num
 export const HISTORY_ROWS = 200;
 /** keyboard/userKeys.svelte.ts USER_LAYERS. */
 export const KEY_LAYERS: readonly string[] = ["primary", "shift", "alpha"];
-/** The settings fields `migrateSettings` reads and the values it keeps as they are; any other value it resets. */
-const SETTING_RULES: Readonly<Record<string, (x: unknown) => boolean>> = {
+/** The settings fields `migrateSettings` reads and the values it keeps as they are; any other value it resets. A
+ *  preset's apply checks each field it holds with them too (R88, state/presets.svelte.ts). */
+export const SETTING_RULES: Readonly<Record<string, (x: unknown) => boolean>> = {
   angle: (x) => x === "rad" || x === "deg",
   format: (x) => x === "std" || x === "sci" || x === "eng" || x === "pfx",
   entry: (x) => x === "textbook" || x === "line",

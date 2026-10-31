@@ -9,9 +9,9 @@ import type { Look } from "../theme/look.ts";
 import { CELL_KEYS, UnitCells } from "../units/userCells.svelte.ts";
 import { BACKUP_KEYS, VALIDATORS } from "./backup.ts";
 import { readPresets } from "./presetRecord.ts";
-import { PRESET_GROUPS, PRESETS_KEY, PresetError, Presets, type PresetStore, type StoredPresets } from "./presets.svelte.ts";
+import { PRESET_GROUPS, PRESETS_KEY, PresetError, Presets, START_COPIES, type PresetStore, type StoredPresets } from "./presets.svelte.ts";
 import { Session } from "./session.svelte.ts";
-import { DATA_VERSION, type Kv } from "./storage.ts";
+import { DATA_VERSION, USER_KEYS, type Kv } from "./storage.ts";
 import type { RawRecord } from "./storageRaw.ts";
 
 const isObject = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
@@ -61,6 +61,10 @@ async function setup(rec?: RawRecord) {
 }
 
 describe("presets (R88)", () => {
+  it("the model's copies of the start chunk's constants agree with them", () => {
+    expect(START_COPIES).toEqual({ USER_KEY_IDS, USER_KEYS });
+  });
+
   it("capture holds exactly the ticked groups", async () => {
     const { session, userKeys, presets } = await setup();
     session.setAngle("deg");
