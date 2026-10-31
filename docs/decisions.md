@@ -15,6 +15,8 @@ The owner's other open items are in [backlog.md](backlog.md), "Needs the user". 
 
 - **The start chunk's last 0.3 kB:** after R24c it is 60.69 of the 61 kB budget, and R70, R15c4, R38a, R88 and the rest of the Settings list still come. Recommendation: before R88, a split package like R91 moves about 1 kB of code that runs only after a press out of the start chunk, and the 61 kB budget stays.
 
+- **Night review 2026-10-30, seven questions** (the why: [its note](research/night-review-2026-10-31.md) section 6). Recommended: two tabs: one writer per browser profile (R95 waits for it); in comma mode a recalled input's argument commas shown as `;`; the website deploys only a gated build until A8 (A52); newer stored data: a one-time note (R94); drop the start-chunk allowances; drop docs/04 2.7's prefix-chip benchmark clause; drop R90 (R24c merged). R103 can be the split package of the entry above.
+
 ## Decided proposals
 
 Newest first within each group.
@@ -66,7 +68,7 @@ Newest first within each group.
 - **G58, G59 (Opus pass 45):** a Giac call deaf to its interrupt gets a `control_c()` patch at its cause (P19), `HOME_DEADLINE_MS` = 2 s until then; when the exact and numeric answers disagree Home shows ⚠ "the exact and numeric answers differ". Would change if: Parisse fixes the loops first.
 - **A20 (decided 2026-10-20, the owner): Home's budget counts steps, not milliseconds** (G82); CAS and Solve keep clocks. Full text: archive.
 - **A12 (2026-10-20, by "G33 and R56"): the user's functions load on first use (G83) before R59.** Tab One: 200 definitions replay at p50 158 ms; a 200-program library at p50 403 ms (p95 about 440), against 50 ms. annabell measures the library again after G83. Would change if: that run is still over 50 ms (Needs the user).
-- **A16 after G53 (decided 2026-10-20, the owner): Enter p95 on the Tab One is under the 150 ms bar** (145–147 ms at 12 digits, 2026-10-27, `777120e`). Full text: archive; [reports/A16-enter-p95.md](shifts/reports/A16-enter-p95.md).
+- **A16 after G53 (decided 2026-10-20, the owner): Enter p95 on the Tab One is under the 150 ms bar** (145–147 ms at 12 digits, 2026-10-27, `777120e`). Full text: archive; [archive/shifts/A16-enter-p95.md](archive/shifts/A16-enter-p95.md).
 - **S13, G57 (decided 2026-10-20, the owner; built by G65, names now from the bridge, P20): names from Giac's state.** A run-once store (`sto`, `=>`, `[a,b]:=`) of an undecided value runs its right side alone, is decided, and is refused as `a:=` is. Would change if: A16's RAD Enter p95 > 150 ms. Full text: archive.
 - **P18 (2026-10-20): Giac evaluates, our layer decides** what is shown (`app/src/engine/`: mark, confirmed digits, refusal, a stored value's facts). No other engine answers at run time; typed input reaches Giac only through our parser, every other way in is Giac text for one reader (P20); our `pas*` definitions are registered workarounds (P19). Rule: docs/04 6.1. Would change if: a feature needs a second engine at run time; the checks push the Tab One's Enter p95 past 150 ms.
 - **P19 (2026-10-20): a Giac bug is fixed at its cause:** a local cause gets a patch (numbered by arrival), a canary in `tests/engine/` and a commit link to B. Parisse; a TypeScript workaround needs a cause that is not local, a written reason and a row in the register (S17). 0003 is complex `tanh` (G75). Rule: `docs/rules-core.md`. Would change if: Parisse declines a fix (we carry it); a patch fails at two re-pins.

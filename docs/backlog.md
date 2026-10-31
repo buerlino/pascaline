@@ -40,7 +40,7 @@ The one place for "where are we and what's left", one or two lines per open item
 
 ### Upstream reports (owner; drafts in `../outreach/upstream-reports.md`)
 - **MathLive**, filed 2026-10-19: [#3122](https://github.com/arnog/mathlive/issues/3122) (⌫ at `\left…\right`), [#3123](https://github.com/arnog/mathlive/issues/3123) (touch caret), [#3124](https://github.com/arnog/mathlive/issues/3124) (focus restore); [#3125](https://github.com/arnog/mathlive/issues/3125) (Redo after ⌫, 2026-10-20); M5 (`isImplicitArg` takes no matrix, F68) drafted by R75.
-- **Giac**, not filed yet. Regression files: `tools/giac-regress/` (G89; check, known and patched: `pascaline-patched.cas` holds the lines that fail on stock giac_2.1.0-1 and pass with our patches; the golden gate runs them since G108). Parisse takes email, forum or commit links: 0003–0012 sent (email 4), 0013–0016 in email 5 (item 2 above); the rest as four forum threads; new since: `simplify`'s assume leak (G92: subst.cc:2419, 2802), `restart(1)` clearing nothing (G93: VARS(1) lists equations, usual.cc:251), a typed string ending in a backslash refused inside brackets (G105f1), the laplace VARS() garbage (F89).
+- **Giac**, not filed yet. Regression files: `tools/giac-regress/` (G89; check, known and patched: `pascaline-patched.cas` holds the lines that fail on stock giac_2.1.0-1 and pass with our patches; the golden gate runs them since G108). Parisse takes email, forum or commit links: 0003–0012 sent (email 4), 0013–0016 in email 5 (item 2 above), 0017–0023 next; the rest as four forum threads; new since: `simplify`'s assume leak (G92: subst.cc:2419, 2802), `restart(1)` clearing nothing (G93: VARS(1) lists equations, usual.cc:251), a typed string ending in a backslash refused inside brackets (G105f1), the laplace VARS() garbage (F89).
 
 ## Tasks
 
@@ -49,6 +49,13 @@ The one place for "where are we and what's left", one or two lines per open item
 - **F80, no package (G99's Not done; probed: `tools/probes/bridge-forms.ts`).** After Home `(BesselJ(1,2))=>y`, `int(y^2,y,0,1)` shows `⚠ 0.333333333333` (right `≈`): Home stores at Digits 40, where `=>` keeps y as `BesselJ(1,2)` unevaluated, and Giac's int with that y errors (Bad Argument Value). `y:=` keeps the float. Test: `boundNames.test.ts` (`it.fails`), seqsweep `12 bound: int…`. Family 8.
 - **F73, no package (it waited for the end of the freeze; owner, 2026-10-24; G103 reads the doubles).** A double in a list shows Giac's text (`[BesselJ(1,2),1/3]`), not numbers with ⚠; no wrong value reaches the screen. Left: `hasFloat` (reads `1..3` and strings). Families 5, 6.
 - **R57 comma display in Solve and Num, no package:** in comma mode, Solve's roots and the Function and Solve Num tables still show their values with a point (R57 changed Home, CAS, Copy and Paste only).
+- **F139, R92 (night review bu-1).** An early hide empties the history. Rerun: `cd app && npx vitest run --dir ../tools/probes/review-1030` (red at `0fc50d2`). Reach: a quick leave.
+- **F140, G139 (night review be-10).** `eseries(6,√(1500·2200))` = 1500, right 2200. Rerun (`bb90a5e`): `node tools/probes/engine.ts 'eseries(6,sqrt(1500*2200))'`. Reach: Find.
+- **F141, G140 (night review be-9).** `Zeta(1/2+i)` ≈, wrong from digit 15. Rerun (`bb90a5e`): `DIGITS=30 node tools/probes/engine.ts 'Zeta(1/2+i)'`. Reach: Find.
+- **F145, G143 (night review be-2; reachable once R24d and R71 merge).** σ through `floor` is `± 0`, no ⚠. Rerun (`bb90a5e`): `node tools/probes/unit-result.ts 'floor(pasupm(2.95,0.1))'`. Reach: the unit view.
+- **F146, R93 (night review ca-1; latent).** A failed read counts as empty; the next write replaces it. Rerun: `node tools/probes/review-1030/failed-read.mts` (red at `0fc50d2`).
+- **F147, R95 (night review fh-2; web only).** Two tabs overwrite each other's data. Rerun (`bb90a5e`): `grep -rn "navigator.locks" app/src` (none). Reach: web.
+- **Night review 2026-10-30:** the rest in [research/night-review-2026-10-31.md](research/night-review-2026-10-31.md).
 
 ### Background stream (extreme inputs; at night, by reach)
 - **F87, no package (G93's report).** CAS `restart(0)`, `restart_vars(0)`, `restart(1)` and Home `restart(1)` show "pcasans: recursive definition" (pasans in Home): the answer lists our Ans slot's own name. The command took effect. Our name on screen (family 9); not reachable by keys until Find.
@@ -75,19 +82,22 @@ The one place for "where are we and what's left", one or two lines per open item
 - **F138, no package (G135).** CAS in DEG, `evalf(cos(atan(2*i)))` shows -1.37121078136E-60-0.57735026919·i, right -0.57735026919·i: pasdeg's round trip leaves noise. Family 8.
 - **F134, no package (G132).** CAS `simplify(sqrt(acosh(-1/2)^3))` and `normal(…)` give the other root (right 2.14325044527-2.14325044527·i), before and after patch 0018: their own rewrite. Family 3.
 - **F135, no package (Opus pass 12).** Giac's `sqrt(exp(z))` = `exp(z/2)`, no branch check: `sqrt(exp(3*acosh(-2)))` evalf -7.20976852011·i, right +7.2097…·i. Home's mark not checked. Family 3.
+- **F142, G141 (night review be-1).** `(1+10^-100)^(10^100)` ≈ 1, right e. Rerun (`bb90a5e`): `node tools/probes/engine.ts '(1+10^-100)^(10^100)'`. Reach: keys.
+- **F143, G138 (night review vg-3).** `approx(exp(10^20))`: unmarked +infinity. Rerun (`bb90a5e`): `node tools/probes/engine.ts 'approx(exp(10^20))'`. Reach: Shift+Enter.
+- **F144, G142 (night review vg-1).** Complex `acosh` near 0: ≈, Im wrong from digit 13. Rerun (`bb90a5e`): `DIGITS=30 node tools/probes/engine.ts 'acosh(10^-6/ln(-1.000001))'`. Reach: keys.
 - **G94, no package.** Depth-3 generated trees in the view sweep crash the in-process engine (wasm memory out of bounds; also the nightly view sweep at count 300, seed 20752); raw output: `../drafts/2026-10-21-packages/g94-raw`.
-- **The hardening without a bug line:** A31 (a gate stage for the shell tests in `tools/` and `scripts/`, not drafted); r16's end mark, a 50,000-input sweep with no new false mark, is not met (Opus pass 82; G94 stops the view sweep at volume); G116: `node scripts/sweep.ts --nightly --edges`; its first two seeds gave F119–F123 (triage: `.tasks/sweep-2026-10-28-g116-triage.md`); G120 (seed 1793285778): F129–F133 and 20 hangs of acos/acosh at huge or tiny reals (`.tasks/sweep-2026-10-29-g120-triage.md`); A44: `tests/golden/sweep-nightly-known.yaml` holds the nightly sweep's open rows (F122, F129, F130); the gate never reads it.
+- **The hardening without a bug line:** A31 (two shell tests left: A55); r16's end mark, a 50,000-input sweep with no new false mark, is not met (Opus pass 82; G94 stops the view sweep at volume); G116: `node scripts/sweep.ts --nightly --edges`; its first two seeds gave F119–F123 (triage: `.tasks/sweep-2026-10-28-g116-triage.md`); G120 (seed 1793285778): F129–F133 and 20 acos/acosh hangs (`.tasks/sweep-2026-10-29-g120-triage.md`; vg-2, night review note); A44: `tests/golden/sweep-nightly-known.yaml` holds the nightly sweep's open rows (F122, F129, F130); the gate never reads it.
 
 ### Next (packages and order: brief section 0)
 - **Find (milestone 4, EN1):** R4a built (Math = Find; task 5 active at 4 presses; c38, c39, c43 keyed through it); R4b built; A4b next, brief section 0.
 - **Units (milestone 5; docs/04 section 4):** packages and order in brief section 0; the first unit result on the Tab One and the Fairphone 6 (< 1 s). Gate: tasks 1–4 and 10; a unit in ≤ 4 presses at the median; `units.yaml`; the owner's hand timing.
-- **Settings and looks (milestone 4a), the trust features, the backup and libraries:** packages and order in brief section 0 ("What waits").
+- **Settings and looks (milestone 4a), the trust features, the backup and libraries:** packages and order in brief section 0.
 - **Milestone 6, Structure** (not packaged): EN5 matrices with Shift + 5 and the editor on Shift + 4 (§5.3; the Tmpl matrices work today), EN6 number bases, EN7 everyday functions, Help as context help; EN4, copying one element of a list or matrix.
 
 ### Without a package yet
 - The Function app and plots of user functions wait for your word (R56b covers Solve); **R58b** Alpha letters are always names in CAS (G2 item 62 can reverse it).
 - **G9. Number formats against the G2** (item 15): decide in the settings and help pass. **K1:** a pending one-shot Shift is used up by the first drag step. **K5:** the gestures in the help texts.
-- **`tieRisk`** (`format.ts:130`, set in `homeEval.ts:422`) has no reader (docs/04 2.4 rule 2 already drops a digit at a tie): drop it when `homeEval.ts` is next touched outside the freeze.
+- **`tieRisk`** has no reader (`format.ts:130`): G146 drops it.
 - **The pipeline:** `resolve_audit_model` is tested only through dry-run echo lines (Opus pass 20; `want_checks` has its own test since A36); the size test does not cover CSS (25.8 kB raw at 2026-10-12). `tests/engine/patch-canary.ts` unpacks the Giac tarball once per canary (40 times, `member()` of `tools/find-index/state.mjs`), 100 s of CPU alone, so the golden `flags` stage times out under load (A51 counts it as timing): unpack it once.
 - **C3. CI** (needs your OK); **C4. F-Droid recipe:** untested end to end; `npm ci` after `prebuild` needs an offline rework; two drifts from build.sh in `fdroid/README.md`.
 

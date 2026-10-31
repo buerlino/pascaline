@@ -20,6 +20,8 @@
 
 **No package yet** (backlog, by reach): F73 (it waited for the end of the freeze), F80, F85, F70, F71; the background stream F62, G94, F106; what G116 finds. S20 (the MPFI spike) by day.
 
+**The night review of 2026-10-30** ([its note](../research/night-review-2026-10-31.md) section 2): 28 packages (R92–R105, G138–G147, A52–A55), S1 lines F139–F147; section 0c takes its order a few rows at a time.
+
 **Why this order:** the lanes first (A47a–A47c): every later run uses them; silent wrong numbers by reach; R91 before R49 and A49 (room in the start chunk; A49 handles its chunks); A43 → A7 (stored data safe before the first signed release); R87 and A49 before A45 (owner, 2026-10-29); R15c3 and R49 before R4b (R4b fills the user keys in R49's levels); the units right after R86, R57, R50e (owner, 2026-10-29).
 
 ### The day's packages (a device or an owner's act; the rest is in section 0c's tables)
@@ -65,6 +67,9 @@ Milestone reviews (section 0): after R50e; after R24d.
 | 314 | [R38b](packages/R38b.md) the backup: restore from a file | ron, Opus | `p1/ron-m4-restore` | R38a |
 | 315 | [R88](packages/R88.md) presets, the model and the store | ron, Opus | `p1/ron-presets-model` | R57, R50e, R24d |
 | 316 | [R71](packages/R71.md) ± on Shift + `,` | ron, Sonnet | `p1/ron-m5-pmkey` | R24c |
+| 317 | [R92](packages/R92.md) the history is written only after it was read | ron, Opus | `p1/ron-historyread` | – |
+| 318 | [R93](packages/R93.md) a failed store read is not "nothing stored" | ron, Opus | `p1/ron-failedread` | R92, R88 |
+| 319 | [R94](packages/R94.md) an older build never writes back a newer settings schema | ron, Opus | `p1/ron-settingsguard` | R88 |
 
 ### Lane B queue (the release, then the engine)
 A43, A7, A8 and A9 run by day (section 0). Step 408 runs only on the weekly extreme night the owner names (tonight); 409–411 run every night.
@@ -75,6 +80,9 @@ A43, A7, A8 and A9 run by day (section 0). Step 408 runs only on the weekly extr
 | 409 | [G81](packages/G81.md) a constant's σ through its basis | gorge, Opus | `p1/gorge-m4-constcorr` | G80, G76 |
 | 410 | [R60](packages/R60.md) the unit result's alternatives as data | gorge, Opus | `p1/gorge-m5-unitalts` | R24c |
 | 411 | [R61](packages/R61.md) the chip from a unit result | gorge, Opus | `p1/gorge-m5-unitchip` | R24c, G81 |
+| 412 | [A52](packages/A52.md) the web version's kill switch as a workflow input | annabell, Sonnet, audit Opus | `p1/annabell-pageskill` | – |
+| 413 | [A53](packages/A53.md) the audit's behaviour diff compares something | annabell, Opus | `p1/annabell-behaviourdiff` | A52 |
+| 414 | [G139](packages/G139.md) `eseries` and `sigfig` decide on the exact value | gorge, Opus | `p1/gorge-eseriesexact` | – |
 
 ### The commands henri replies with (one per decision; `scripts/night.sh` runs it)
 - `scripts/pipeline.sh <agent> "<ID>" --model <sonnet|opus> --audit-model auto`: the next queue step not done (the queue's skip rule above); `--audit-model opus` where its row says "audit Opus".
