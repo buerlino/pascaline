@@ -4,6 +4,18 @@
 // second argument is only what the chip shows. The value lives in the entry's chip table, which each history
 // item stores beside its entry LaTeX, so the parser never waits for an engine or the Find index.
 import type { ValueFacts } from "../engine/types.ts";
+import type { UnitSlot } from "../units/types.ts";
+
+/** R61: the unit a result chip from the unit view was shown in. Home has no units (P8): the unit is the chip's label
+ *  ("unit dropped") and the slot the units key fills in again; it never reaches Home's arithmetic. */
+export interface ChipUnit {
+  /** The unit as shown ("km/h", "m²"), at most 40 characters. */
+  text: string;
+  /** Its dimension key, as the index writes it ("m1s-1"). */
+  dim: string;
+  /** Its tokens (Find unit and prefix ids), as Quantity.shownSlot (R60). */
+  slot: UnitSlot;
+}
 
 /** The chip's facts are ValueFacts (G76): `exact` false when `value` is not the exact value (a rounded decimal, a
  *  constant with an uncertainty), so a result computed from it is never "="; a result chip that is not exact keeps the
@@ -12,8 +24,11 @@ import type { ValueFacts } from "../engine/types.ts";
 export interface Chip extends Omit<ValueFacts, "reliableDigits">, Partial<Pick<ValueFacts, "reliableDigits">> {
   /** Giac text the parser puts in place of the chip: an exact text (`1/3`, `sqrt(2)`) or a decimal with every confirmed digit. */
   value: string;
-  /** A constant's standard uncertainty (CODATA), absent when it is exact. */
+  /** A constant's standard uncertainty (CODATA), or a unit result's σ in the unit shown (R61); absent when exact. */
   unc?: string;
+  /** R61: a unit result's unit (label and slot); absent on every other chip. A stored one is kept as read back, unchecked
+   *  (the check is not in the start chunk, as G81's basis): read it through chipUnit (input/chipUnit.ts), which checks it. */
+  unit?: ChipUnit;
   /** G81: an inexact constant's basis (Find's item, G80): its value over `pasl_<leaf>` names; absent on a chip
    *  stored before G81, which keeps its own value and σ. */
   basis?: string;
@@ -56,14 +71,19 @@ export function validChips(x: unknown): ChipTable | undefined {
   const out: ChipTable = {};
   for (const [k, c] of Object.entries(x as Record<string, unknown>)) {
     if (!/^(res:\d+|const:[A-Za-z0-9_]+)$/.test(k) || !c || typeof c !== "object") continue;
-    const { value, exact, unc, reliableDigits: rd, warn, basis, basisLeaves } = c as Record<string, unknown>;
+    const { value, exact, unc, reliableDigits: rd, warn, basis, basisLeaves, unit } = c as Record<string, unknown>;
     if (typeof value !== "string" || typeof exact !== "boolean") continue;
+    // R61: a value with an uncertainty is never exact (decisions M4-4); such an entry is not ours
+    if (exact && typeof unc === "string") continue;
     // G81: a constant's basis and leaves as stored, unchecked: basisOf (constBasis.ts) checks their types and each
     // leaf the basis names before any use, so a malformed or absent one keeps today's path (the check is not in the
     // start chunk)
-    const chip: Chip = typeof unc === "string" ? ({ value, exact, unc, basis, basisLeaves } as Chip) : { value, exact };
+    const chip: Chip = { value, exact };
+    if (typeof unc === "string") Object.assign(chip, { unc }, basis !== undefined ? { basis } : {}, basisLeaves !== undefined ? { basisLeaves } : {});
     if (rd === null || (typeof rd === "number" && Number.isInteger(rd) && rd >= 0 && rd <= 1000)) chip.reliableDigits = rd;
     if (warn === "unaudited" || warn === "unchecked") chip.warn = warn;
+    // R61: a result chip's unit as stored; chipUnit (chipUnit.ts, off the start chunk) checks its shape before any use
+    if (k.startsWith("res:") && unit && typeof unit === "object") chip.unit = unit as ChipUnit;
     out[k] = chip;
   }
   return Object.keys(out).length ? out : undefined;

@@ -12,7 +12,8 @@ test("Settings › Data › Save a backup downloads the envelope with every pres
   // history (two rows), a definition (5▶A), a setting and a user key
   await tap(page, ["d1", "div", "d3", "enter"]);
   await tap(page, ["d5", "shift", "emark", "alpha", "vars", "enter"]);
-  await expect(page.locator('[data-status="done"]')).toHaveCount(2);
+  // the engine's first rows at the start of the full run, under every worker's load (run 392: one row at 5 s), as decimalcomma.spec.ts waits
+  await expect(page.locator('[data-status="done"]')).toHaveCount(2, { timeout: 15_000 });
   await page.evaluate(() => window.pascaline.session.setDigits(9));
   await page.evaluate(() => window.pascaline.userKeys.set("u1", "primary", { label: "Home", action: { special: "home" } }));
   await page.waitForTimeout(900); // the writes are debounced and asynchronous

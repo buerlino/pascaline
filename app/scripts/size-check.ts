@@ -153,8 +153,12 @@ export const LAZY_PARTS = ["src/views/sheetKeys.ts", "src/views/tmplSheet.ts", "
  *  preload list of the dynamic imports that reach it.
  *  59.05 → 59.11 kB (R24df2, Opus pass 26): the branch merged with phase-1 3718a40 (G81) measures 59.06 kB gzip (59,059 B,
  *  166.87 kB raw), 0.01 kB over the pin; the new pin is that rounded up to the next 0.01 kB (59.06) plus 0.05 kB for build
- *  noise and merges in flight (decisions.md, Start chunk). Under the budget of 61 kB. */
-export const START_PIN_GZIP = 59_110;
+ *  noise and merges in flight (decisions.md, Start chunk). Under the budget of 61 kB.
+ *  59.11 → 59.21 kB (R61): phase-1 dc0f77e measures 59.10 kB gzip (166.97 kB raw), the branch merged with it 59.16 kB
+ *  (167.12 kB raw, +0.06 kB): a stored result chip keeps its unit and σ (validChips, read back at start: the unit kept
+ *  as stored, a value with σ never exact) and a σ chip passes its σ to Home (chipFactsOf); the unit's check (chipUnit)
+ *  is in input/chipUnit.ts, off the start chunk (it alone measured +0.21 kB there). The pin is 59.16 + 0.05 kB. */
+export const START_PIN_GZIP = 59_210;
 
 /** Failures for the start chunk's row when it is over the pin. */
 export function checkStartPin(row: Row): string[] {

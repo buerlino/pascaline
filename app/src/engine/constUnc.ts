@@ -83,8 +83,8 @@ export function inexactConstsIn(input: string, table: ConstTable): string[] {
   return ids;
 }
 
-/** An independent input of σ: a Giac name, its value and its standard uncertainty. */
-interface SigmaInput {
+/** An independent input of σ: a Giac name, its value and its standard uncertainty (R61: a chip's too, chipFacts.ts). */
+export interface SigmaInput {
   name: string;
   value: string;
   unc: string;
@@ -115,9 +115,11 @@ function sigmaInputs(table: ConstTable, ids: readonly string[]): { keep: Set<str
 }
 
 /** The Giac text of the first-order σ of `body` over the inexact constants `ids` (decimals as exact rationals): over
- *  the constants themselves, or over their leaves where they share one (G81). `ids` are `body`'s (inexactConstsIn). */
-export function sigmaExpr(body: string, table: ConstTable, ids: readonly string[]): string {
-  const { keep, inputs } = sigmaInputs(table, ids);
+ *  the constants themselves, or over their leaves where they share one (G81). `ids` are `body`'s (inexactConstsIn).
+ *  `extra` (R61): more independent inputs whose names `body` holds (a chip's σ). */
+export function sigmaExpr(body: string, table: ConstTable, ids: readonly string[], extra: readonly SigmaInput[] = []): string {
+  const { keep, inputs: own } = sigmaInputs(table, ids);
+  const inputs = [...own, ...extra];
   if (!inputs.length) return "0";
   const f = toExactLiterals(withConstValues(body, table, keep, "names"));
   const at = `[${inputs.map((v) => `${v.name}=(${toExactLiterals(v.value)})`).join(",")}]`;
@@ -135,13 +137,13 @@ export function uncDigitsOf(value: DecimalValue, sigma: DecimalValue, digits: nu
 
 /**
  * The `uncDigits` of a Home result computed from `body` (the input with its constants as names): absent when no
- * inexact constant of `table` is in it, when the result is not one real number, or when σ cannot be computed (a
- * function Giac cannot differentiate, the budget ran out).
+ * inexact constant of `table` is in it (nor an `extra` input, R61), when the result is not one real number, or when σ
+ * cannot be computed (a function Giac cannot differentiate, the budget ran out).
  */
-export function constUncDigits(giac: Giac, body: string, table: ConstTable, r: HomeResult, digits: number): number | undefined {
+export function constUncDigits(giac: Giac, body: string, table: ConstTable, r: HomeResult, digits: number, extra: readonly SigmaInput[] = []): number | undefined {
   const ids = inexactConstsIn(body, table);
-  if (!ids.length || !r.ok || !r.value || r.items || !isZero(r.value.im)) return undefined;
-  const out = giac.eval(`evalf(${sigmaExpr(body, table, ids)},20)`);
+  if ((!ids.length && !extra.length) || !r.ok || !r.value || r.items || !isZero(r.value.im)) return undefined;
+  const out = giac.eval(`evalf(${sigmaExpr(body, table, ids, extra)},20)`);
   if (out.startsWith("GIAC_ERROR")) return undefined;
   const sigma = decimalFromString(out);
   if (!sigma) return undefined;
