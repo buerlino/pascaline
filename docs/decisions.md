@@ -11,6 +11,8 @@ The owner's other open items are in [backlog.md](backlog.md), "Needs the user". 
 
 - **R50e, on the phone:** (1) the first frame reads the Android default (Dark) from `window.Capacitor` in the inline script; if the bridge is not there yet at that point, a first start with nothing stored shows System for one frame, then Dark (later starts read the mirror). Look at a first start after "clear data". (2) Android's status and navigation bar colours stay open (not in R50e).
 
+- **G133f1 (patch 0023): Home calls an exact 0 it cannot prove "Underflow".** `novalue.ts` `underflow` takes a value whose evalf is an MPFR zero at P and at MAX_EVAL_DIGITS, and that `normal` does not prove 0, for an underflow. Already on phase-1 for `re(asinh(i/5))`, `re(asinh(i/7))` (true value 0); with patch 0023 also `re(asin(i))`, `re(asinh(i/1000))`, `re(asinh(i/10))` (were ⚠ 0, unchecked) and `re(asin(i/10))`, `re(asin(i/3))` (were ⚠ -3E-686, 2E-680). No wrong number, a wrong reason. Proposal: a gorge package that tells the two apart (an underflow's value has an exponent past MPFR's range; a true 0 has none), with these inputs as cases.
+
 - **The start chunk's last 0.3 kB:** after R24c it is 60.69 of the 61 kB budget, and R70, R15c4, R38a, R88 and the rest of the Settings list still come. Recommendation: before R88, a split package like R91 moves about 1 kB of code that runs only after a press out of the start chunk, and the 61 kB budget stays.
 
 ## Decided proposals

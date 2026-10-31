@@ -434,7 +434,7 @@ The types live in the code; this is the map. Views see `Calc` (`app/src/calc/por
 
 | Item | Budget | State | Enforced by |
 |---|---|---|---|
-| Start chunk | ≤ 175 kB raw, ≤ 61 kB gzip; pin 60.68 kB gzip | 60.68 kB gzip (58.50 + R4b 0.92 + R50e 0.48 + R57 0.58 + R24b 0.02 + R24c 0.16). The pin `START_PIN_GZIP` holds: a package growing the chunk past it raises it in its diff, with the reason, and reports both sizes, never past 61 kB; `LAZY_PARTS` must stay dynamic chunks (R91). `tools/probes/start-chunk.mjs` lists bytes per source; every UI package reports its delta | size test (`npm run size`) |
+| Start chunk | ≤ 175 kB raw, ≤ 61 kB gzip; pin 60.70 kB gzip | 60.68 kB gzip (58.50 + R4b 0.92 + R50e 0.48 + R57 0.58 + R24b 0.02 + R24c 0.16); 60.69 kB with an engine key whose hashed file name compresses worse (G133f1: the pin 60.70 kB holds that noise). The pin `START_PIN_GZIP` holds: a package growing the chunk past it raises it in its diff, with the reason, and reports both sizes, never past 61 kB; `LAZY_PARTS` must stay dynamic chunks (R91). `tools/probes/start-chunk.mjs` lists bytes per source; every UI package reports its delta | size test (`npm run size`) |
 | MathLive chunk (after the keypad) | ≤ 830 kB raw | 807.74 kB (2026-10-18) | size test |
 | Find UI chunk | ≤ 30 kB raw | — | size test |
 | Find index asset | ≤ 400 kB raw, ≤ 100 kB gzip | 325.7 / 67.1 kB (2026-10-15) | size test (once Find loads it) |

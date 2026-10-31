@@ -81,6 +81,10 @@ const CANARIES: [string, string, RegExp, string][] = [
   // both parts below 1e-12 give undef (ln, powers) and one beside a negative real part is 0 (arg(-1-1e-20*i) = +pi)
   ["0022-arg-mpfr-tiny-parts.patch", "giac-2.1.0/src/gen.cc", /if \(is_zero_or_contains\(realpart,contextptr\)\)\{\s*if \(is_zero_or_contains\(imagpart,contextptr\)\)\s*return undef;/, "gen arg_CPLX(const gen & a,GIAC_CONTEXT){"],
   ["0022-arg-mpfr-tiny-parts.patch", "giac-2.1.0/src/gen.cc", /case _REAL:\s*return fabs\(evalf_double\(a,1,contextptr\)\._DOUBLE_val\)<=epsilon\(contextptr\);/, "bool is_zero(const gen & a,GIAC_CONTEXT){"],
+  // G133f1, patch 0023: asin's and asinh's ln forms leave their rounding in the real part of asin(i*y), asinh(i*y) (|y| <= 1),
+  // which are purely imaginary (CAS evalf(asinh(i/10)) = -1.2E-66+0.100167421162*i)
+  ["0023-asin-imaginary-real-part.patch", "giac-2.1.0/src/usual.cc", /^static gen asinasln\(const gen & x,GIAC_CONTEXT\)\{\s*return -cst_i\*ln\(cst_i\*x\+sqrt\(1-x\*x,contextptr\),contextptr\);/, "static gen asinasln(const gen & x,GIAC_CONTEXT){"],
+  ["0023-asin-imaginary-real-part.patch", "giac-2.1.0/src/usual.cc", /^static gen asinhasln\(const gen & x,GIAC_CONTEXT\)\{\s*return ln\(x\+sqrt\(x\*x\+1,contextptr\),contextptr\);/, "static gen asinhasln(const gen & x,GIAC_CONTEXT){"],
   // G135, patch 0019: atan keeps an exact argument on its cut symbolic (atan(2*i)), which Giac's cos rule reads on the other side
   ["0019-atan-exact-cut.patch", "giac-2.1.0/src/usual.cc", /atan\(b,contextptr\)\),_SEQ__VECT\)\);\s*gen tmp=evalf_double\(e,0,contextptr\);\s*if \(tmp\.type==_DOUBLE_\)\{/, "return symbolic(at_program,gen(makevecteur(a,0,atan(b,contextptr)),_SEQ__VECT));"],
   // G135, patch 0019: cos(atan(f)) = sqrt(1/(f^2+1)) takes the other root where f^2+1 is a negative real (cos(quote(atan(2*i))) = i*sqrt(3)/3)
