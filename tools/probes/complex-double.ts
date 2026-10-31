@@ -7,7 +7,8 @@ import { EngineHost } from "../../app/src/engine/host.ts";
 import { loadNodeGiac } from "../../app/src/engine/nodeGiac.ts";
 import { defaultHomeSettings, precisionFacts } from "../../app/src/engine/homeEval.ts";
 import { markOf } from "../../app/src/engine/format.ts";
-import { binary64Of } from "../../app/src/engine/numeric.ts";
+import { binary64Of } from "../../app/src/engine/binary64.ts";
+import { decimalFromString } from "../../app/src/engine/format.ts";
 
 const INPUTS = process.argv.length > 2 ? process.argv.slice(2) : [
   "Zeta(1/2+i)", "Gamma(1+i)", "Psi(1+i)", "Beta(1+i,2)", "erf(1+i)", "erfc(1+i)", "Ei(1+i)", "Si(1+i)", "Ci(1+i)",
@@ -25,6 +26,6 @@ for (const input of INPUTS) {
   giac.eval("Digits:=40");
   const v = bridge.value(input, [P, P + 20, P + 60]);
   const at = v.at?.[String(P + 60)]?.[0];
-  const dyadic = at ? at.map((t) => (binary64Of(t) !== null ? "binary64" : "mpfr")).join("/") : "none";
+  const dyadic = at ? at.map((t) => { const d = decimalFromString(t, P + 60); return d && binary64Of(d, P + 60) !== null ? "binary64" : "mpfr"; }).join("/") : "none";
   console.log(`   kind=${v.kind} doubles=${JSON.stringify(v.doubles)} P+60: ${dyadic} ${at ? at.join(" | ").slice(0, 160) : ""}`);
 }

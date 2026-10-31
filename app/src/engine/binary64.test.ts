@@ -5,7 +5,8 @@
 import { describe, expect, it } from "vitest";
 import type { GiacValue } from "./bridge.ts";
 import { decimalFromString } from "./format.ts";
-import { atParts, binary64Of, isDouble, type Parts } from "./numeric.ts";
+import { binary64Of } from "./binary64.ts";
+import { atParts, isDouble, type Parts } from "./numeric.ts";
 
 /** binary64Of of a print, read with its own significant digits, as atParts reads a part at the precision asked. */
 const of = (t: string): number | null => {
