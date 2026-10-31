@@ -7,7 +7,11 @@
 // leg; the unit pad reads `userSet()`. Loaded with the unit view and with the Settings sheet, never in the start chunk.
 import raw from "../../../spec/unit-pad.yaml";
 import type { Layer } from "../keyboard/keyboard.ts";
-import { idbKv, UNIT_PAD_CELLS, type Kv } from "../state/storage.ts";
+import { idbKv, type Kv } from "../state/storage.ts";
+
+/** The key of the stamped store (state/storage.ts stamps every value with DATA_VERSION and migrates it on read) that holds
+ *  the user's legs, beside USER_KEYS (the free keys' slots). Here, not in storage.ts: the start chunk does not carry it. */
+export const UNIT_PAD_CELLS = "unitPadCells";
 
 export type CellLeg = "tap" | "up" | "down";
 export const CELL_LEGS: readonly CellLeg[] = ["tap", "up", "down"];

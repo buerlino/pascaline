@@ -2,9 +2,9 @@
 // R24d: the user cells of the unit pad: defaults from spec/unit-pad.yaml `user:`, the user's units over them in the
 // stamped store, a restart, a reset, a pair (MPa), an emptied leg, and a damaged record.
 import { describe, expect, it } from "vitest";
-import { stamp, UNIT_PAD_CELLS, unstamp, type Kv } from "../state/storage.ts";
+import { stamp, unstamp, type Kv } from "../state/storage.ts";
 import { UnitPad } from "./pad.ts";
-import { CELL_KEYS, UnitCells } from "./userCells.svelte.ts";
+import { CELL_KEYS, UNIT_PAD_CELLS, UnitCells } from "./userCells.svelte.ts";
 
 function memKv(): Kv & { data: Map<string, unknown> } {
   const data = new Map<string, unknown>();

@@ -17,11 +17,6 @@ const STORE = "kv";
  *  slot the user emptied; a slot that is absent has its default from spec/keyboard.yaml (keyboard/userKeys.svelte.ts). */
 export const USER_KEYS = "userKeys";
 
-/** The user cells U1–U6 of the unit pad (R24d): per key id and leg (`tap`, `up`, `down`), one Find unit with or without a
- *  prefix, or null for a leg the user emptied; a leg that is absent has its default from spec/unit-pad.yaml `user:`
- *  (units/userCells.svelte.ts). Stored apart from USER_KEYS: a function means nothing in a unit slot. */
-export const UNIT_PAD_CELLS = "unitPadCells";
-
 /**
  * The format version of every stored value. Raise it, with a step in MIGRATIONS, whenever a stored shape or the meaning
  * of stored text changes: definitions are Giac text that holds our internal names (R18f1 renamed Φ and Ψ to Phi_ and

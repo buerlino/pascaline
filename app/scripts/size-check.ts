@@ -123,8 +123,12 @@ export const LAZY_PARTS = ["src/views/sheetKeys.ts", "src/views/tmplSheet.ts", "
  *  keypad's own seams (the sheet's state, sheetChunk.pad; Keypad's key list and its row of legends; one hook in
  *  keyboard/route.ts), and everything else (units/pad.ts, units/padView, spec/unit-pad.yaml) is a lazy chunk.
  *  60.52 → 60.68 kB (R24c): phase-1 60.52 kB, the branch 60.68 kB (+0.16 kB): the units key is on the key path (P11),
- *  and the key alone measures 60.58 kB; the unit view itself is a lazy chunk (Opus pass 22: at most 60.70 kB). */
-export const START_PIN_GZIP = 60.68 * KB;
+ *  and the key alone measures 60.58 kB; the unit view itself is a lazy chunk (Opus pass 22: at most 60.70 kB).
+ *  60.68 → 60.80 kB (R24d): phase-1 60.69 kB, the branch 60.79 kB (+0.10 kB gzip, raw +0.2 kB). Four lines of start-chunk
+ *  source changed (`Sheet.right()` runs a row's second job, 0.02 kB); the rest is the start chunk's own map of lazy chunks:
+ *  the cells' store, Find in a slot and the units menu are three new lazy files (units/userCells.svelte.ts, find.ts,
+ *  menu.ts), each named in the preload list of the dynamic imports that reach it. */
+export const START_PIN_GZIP = 60.8 * KB;
 
 /** Failures for the start chunk's row when it is over the pin. */
 export function checkStartPin(row: Row): string[] {
