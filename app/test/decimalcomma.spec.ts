@@ -89,8 +89,10 @@ test("a pasted 1,5e-3 evaluates to 0,0015; a pasted 1.5 is refused", async ({ pa
 
 test("selectENumber reads the comma: after a pasted 1,5ᴇ-3, ÷ takes the whole number", async ({ page }) => {
   await setClipboard(page, "1,5e-3");
-  await tap(page, ["shift", "copy", "div"]);
-  expect(await entryValue(page)).toBe("\\frac{1{,}5\\emark-3}{\\placeholder{}}");
+  await tap(page, ["shift", "copy"]);
+  await expect.poll(() => entryValue(page)).toBe("1{,}5\\emark-3"); // the paste is async: wait for the number before ÷ takes it
+  await tap(page, ["div"]);
+  await expect.poll(() => entryValue(page)).toBe("\\frac{1{,}5\\emark-3}{\\placeholder{}}");
   await tap(page, ["d2", "enter"]);
   await resultIs(page, "0,00075", 1);
 });
