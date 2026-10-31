@@ -6,9 +6,9 @@ import { FakeCalc } from "../calc/fake.ts";
 import { keyboard } from "../keyboard/keyboard.ts";
 import { USER_KEY_IDS, UserKeys } from "../keyboard/userKeys.svelte.ts";
 import type { Look } from "../theme/look.ts";
-import { CELL_KEYS, UnitCells } from "../units/userCells.svelte.ts";
-import { BACKUP_KEYS, VALIDATORS } from "./backup.ts";
-import { readPresets } from "./presetRecord.ts";
+import { CELL_KEYS, UNIT_PAD_CELLS, UnitCells } from "../units/userCells.svelte.ts";
+import { BACKUP_KEYS, checkBackup, VALIDATORS, type CheckedBackup } from "./backup.ts";
+import { GROUP_FIELDS, readPresets } from "./presetRecord.ts";
 import { PRESET_GROUPS, PRESETS_KEY, PresetError, Presets, START_COPIES, type PresetStore, type StoredPresets } from "./presets.svelte.ts";
 import { Session } from "./session.svelte.ts";
 import { DATA_VERSION, USER_KEYS, type Kv } from "./storage.ts";
@@ -63,6 +63,8 @@ async function setup(rec?: RawRecord) {
 describe("presets (R88)", () => {
   it("the model's copies of the start chunk's constants agree with them", () => {
     expect(START_COPIES).toEqual({ USER_KEY_IDS, USER_KEYS });
+    // migratePresetKeys runs each key's steps under the field's name: the fields are the stored keys' names
+    expect(GROUP_FIELDS.keys).toEqual([USER_KEYS, UNIT_PAD_CELLS]);
   });
 
   it("capture holds exactly the ticked groups", async () => {
@@ -212,6 +214,50 @@ describe("presets (R88)", () => {
     // a record from before versions (no stamp) reads too
     const { presets: p0 } = await setup({ "@pascaline": 0, value: older });
     expect(p0.list.map((p) => p.name)).toEqual(["Old"]);
+  });
+
+  // R88f1: a restore writes the part stamped DATA_VERSION, so the keys' steps must run in the backup's check
+  const keysStep = {
+    [DATA_VERSION - 1]: {
+      userKeys: (v: unknown) => ({ ...(v as object), [U2]: { primary: mol } }),
+      unitPadCells: (v: unknown) => ({ ...(v as object), [C1]: { tap: { unit: "mol" } } }),
+    },
+  };
+  const olderKeys: StoredPresets = {
+    presets: [
+      { id: 2, name: "Keys", groups: { keys: { userKeys: { [U1]: { primary: sinh } }, unitPadCells: {} } } },
+      { id: 5, name: "Mode", groups: { mode: { angle: "deg" } } },
+    ],
+    active: 2,
+    next: 6,
+  };
+  const backupOf = (rec: RawRecord): Uint8Array =>
+    new TextEncoder().encode(JSON.stringify({ "pascaline-backup": 1, dataVersion: DATA_VERSION, made: "", parts: { [PRESETS_KEY]: rec } }));
+  async function openWith(rec: RawRecord): Promise<Presets> {
+    const kv = memoryKv();
+    return Presets.open({ session: new Session(new FakeCalc(), kv), userKeys: new UserKeys(kv), cells: new UnitCells(kv), store: memoryStore(rec), steps: keysStep });
+  }
+
+  it("the backup's check runs the steps of the keys a preset holds, from the part's own stamp", () => {
+    const checked = checkBackup(backupOf({ "@pascaline": DATA_VERSION - 1, value: olderKeys }), VALIDATORS, keysStep) as CheckedBackup;
+    expect(checked.ok).toBe(true);
+    const [keys, mode] = (checked.parts[PRESETS_KEY] as StoredPresets).presets;
+    expect(keys?.groups.keys).toEqual({ userKeys: { [U1]: { primary: sinh }, [U2]: { primary: mol } }, unitPadCells: { [C1]: { tap: { unit: "mol" } } } });
+    expect(mode?.groups).toEqual({ mode: { angle: "deg" } });
+    // a current part runs none
+    const current = checkBackup(backupOf({ "@pascaline": DATA_VERSION, value: olderKeys }), VALIDATORS, keysStep) as CheckedBackup;
+    expect(current.parts[PRESETS_KEY]).toEqual(olderKeys);
+  });
+
+  it("an older record gives the same presets read by the model and restored from a backup", async () => {
+    const older: RawRecord = { "@pascaline": DATA_VERSION - 1, value: olderKeys };
+    const read = await openWith(older);
+    const checked = checkBackup(backupOf(older), VALIDATORS, keysStep) as CheckedBackup;
+    // restoreParts writes the checked part stamped DATA_VERSION; the model then reads it as current
+    const restored = await openWith({ "@pascaline": DATA_VERSION, value: checked.parts[PRESETS_KEY] });
+    expect(restored.list).toEqual(read.list);
+    expect([restored.active, read.active]).toEqual([2, 2]);
+    expect(read.list[0]?.groups.keys?.["userKeys"]).toEqual({ [U1]: { primary: sinh }, [U2]: { primary: mol } });
   });
 
   it("a damaged record holds no presets and breaks nothing", async () => {
