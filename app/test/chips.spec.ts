@@ -122,6 +122,7 @@ test("a short exact result still gives an exact chip (1/3 × 3 = 1)", async ({ p
   await open(page, "");
   await ready(page);
   await tap(page, ["d1", "div", "d3", "enter"]);
+  await expect(page.locator('[data-status="done"]')).toHaveCount(1);
   await lastResult(page).tap();
   await tap(page, ["mul", "d3", "enter"]);
   await expect(lastResult(page)).toHaveAttribute("data-text", "1");

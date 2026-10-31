@@ -198,9 +198,11 @@ test("Greek letters are variables, β too (Giac's Beta name is kept free): 3 ▶
   await tap(page, ["d4", "shift", "emark"]);
   await tapCell(page, "d9", "mu");
   await tap(page, ["enter"]);
+  await expect(page.locator('[data-status="done"]')).toHaveCount(3); // Enter is ignored while a row runs
   await tap(page, ["d5", "shift", "emark"]);
   await tapCell(page, "d9", "Omega");
   await tap(page, ["enter"]);
+  await expect(page.locator('[data-status="done"]')).toHaveCount(4);
   await tapCell(page, "d9", "mu");
   await tap(page, ["mul"]);
   await tapCell(page, "d9", "Omega");
