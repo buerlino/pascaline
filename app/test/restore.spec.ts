@@ -46,6 +46,7 @@ test("a backup restores into an empty store as the same state, and Undo gives ba
   await open(page, "");
   await ready(page);
   await tap(page, ["d1", "div", "d3", "enter"]);
+  await expect(page.locator('[data-status="done"]')).toHaveCount(1); // Enter is ignored while a row runs
   await tap(page, ["d5", "shift", "emark", "alpha", "vars", "enter"]); // 5▶A
   await expect(page.locator('[data-status="done"]')).toHaveCount(2);
   await page.evaluate(() => window.pascaline.session.setDigits(9));

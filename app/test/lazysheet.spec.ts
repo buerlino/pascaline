@@ -87,7 +87,9 @@ async function longPressFirstRow(page: Page): Promise<void> {
 async function twoRows(page: Page): Promise<void> {
   await open(page);
   await page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
-  await tap(page, ["d1", "enter", "d2", "enter"]);
+  await tap(page, ["d1", "enter"]);
+  await expect(page.locator('[data-status="done"]')).toHaveCount(1); // Enter is ignored while a row runs
+  await tap(page, ["d2", "enter"]);
   await expect(page.locator('[data-status="done"]')).toHaveCount(2);
 }
 const texts = (page: Page) => page.locator('[data-testid="result"] .result').evaluateAll((els) => els.map((e) => e.getAttribute("data-text")));
