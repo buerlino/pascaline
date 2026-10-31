@@ -13,6 +13,8 @@
 //                                                      unit-freq/count.mjs): a unit or prefix not on the pad costs its
 //                                                      Find trip (find-cost.mjs)
 //   node tools/probes/unit-presses.mjs --read BTU lbm  what qalc's own parser reads for each text, and nothing else
+//   node tools/probes/unit-presses.mjs --json [--taps] the 50 units' press sequences, counts and meanings as JSON, and
+//                                                      nothing else (app/test/unitpad.spec.ts replays them)
 //   QALC_OUT=<dir with qalc.mjs> node tools/probes/unit-presses.mjs   (default: engine/qalc/_out/dev of this checkout
 //                                                                    or of the main checkout; skipped if none)
 //   (--pad, the default since R24c, is still accepted.)
@@ -187,6 +189,12 @@ const median = (xs) => {
 const type = (x) => typePad(x.parts);
 const rows = UNITS.map((x) => ({ ...x, ...type(x) }));
 const extra = EXTRA.map((x) => ({ ...x, ...type(x) }));
+// --json: the 50 units as the pad types them, for app/test/unitpad.spec.ts (R24c), which replays each sequence on the
+// app and checks that it means the unit within the probe's count; nothing else is printed.
+if (args.has('--json')) {
+  console.log(JSON.stringify(rows.map(({ u, presses, meant, missing }) => ({ u, presses, count: presses.length, meant, missing }))));
+  process.exit(0);
+}
 const counts = rows.map((r) => r.presses.length);
 const isCompound = (u) => /[/·²³⁻]/.test(u);
 const single = rows.filter((r) => !isCompound(r.u)).map((r) => r.presses.length);

@@ -4,16 +4,16 @@
 // keys (R24b). Key owners while it is up (docs/04 5.5): an open sheet (Find on units), then the pad's cells
 // (UnitPad.route), then this view for the keys that are no cell (◀ ▶ between slots, Esc leaves and the line keeps its
 // slots, a key that changes place leaves first; any other key is dead). A hardware key on the field takes the keypad's
-// path (`press`), so it reaches the pad's actions or does nothing. The view writes a slot only with setPromptValue.
+// path through the entry line's own map (entry/hwkeys.ts, `onKey`), so it reaches the pad's actions or does nothing, and
+// does on the field what it does on the line. The view writes a slot only with setPromptValue. What it takes from the
+// start chunk is the route context `c` alone, so the start chunk holds only the units key's import (R24c).
 // A lazy chunk: route.ts imports it on the first press of the units key. units/pad.ts is in it (a static import: as a
 // chunk of its own beside this one, the two imported each other through units/padView, and Rolldown then split Svelte's
 // runtime out of the start chunk, +1.1 kB gzip at start).
 import type { MathfieldElement } from "mathlive";
-import { ENTRY_MACROS } from "../entry/macros.ts";
-import { keypadKeyOf } from "../entry/hwkeys.ts";
-import { findText } from "../i18n/enFind.ts";
-import { actionFor, keyboard, type Layer } from "../keyboard/keyboard.ts";
-import { press, type RouteCtx } from "../keyboard/route.ts";
+import { unitText } from "../i18n/enUnits.ts";
+import type { Key } from "../keyboard/keyboard.ts";
+import type { Mods, RouteCtx } from "../keyboard/route.ts";
 import type { HistoryItem } from "../state/session.svelte.ts";
 import { UnitPad } from "./pad.ts";
 import { unitPad } from "./padView.svelte.ts";
@@ -45,7 +45,7 @@ export async function openUnits(c: RouteCtx, row?: HistoryItem): Promise<void> {
   const line = c.entry.value;
   const chips = c.entry.chips;
   // MathLive comes with the entry line (its field is up once `ready`): the class is taken from the element registry
-  const [, index] = await Promise.all([c.entry.ready, import("../find/finder.ts").then((m) => m.loadIndex(true))]);
+  const [, index, hw] = await Promise.all([c.entry.ready, import("../find/finder.ts").then((m) => m.loadIndex(true)), import("../entry/hwkeys.ts")]);
   const Field = customElements.get("math-field") as typeof MathfieldElement | undefined;
   if (!Field) return c.dead();
   const mf = new Field();
@@ -73,7 +73,7 @@ export async function openUnits(c: RouteCtx, row?: HistoryItem): Promise<void> {
   panel.formula.append(mf);
   await mounted;
   await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
-  setUp(mf, element, c);
+  setUp(mf, element, c, hw);
   mf.value = view.formula.latex;
   // locked: MathLive edits no prompt itself (and gives a tap on the field no focus); setPromptValue still writes
   for (const id of view.ids) mf.setPromptState(id, "undefined", true);
@@ -100,7 +100,7 @@ export async function openUnits(c: RouteCtx, row?: HistoryItem): Promise<void> {
     if (current?.view === view && e.do !== "find") keep();
   };
   unitPad.other = (c2, key, mods) => {
-    const a = actionFor(key, mods.shift, mods.alpha);
+    const a = layerAction(key, mods);
     if (a?.kind === "special" && PLACES.includes(a.name)) {
       close();
       return false; // the key does its job
@@ -117,16 +117,22 @@ export async function openUnits(c: RouteCtx, row?: HistoryItem): Promise<void> {
   element.focus();
 }
 
+/** The action of a key that is no cell, in the layer it was pressed in (keyboard.ts actionFor, for the keys the view
+ *  reads: ◀ ▶, Esc and the place keys; Alpha falls back to the tap). */
+function layerAction(key: Key, mods: Mods): Key["actions"]["primary"] {
+  return mods.alpha ? (key.actions.alpha ?? key.actions.primary) : mods.shift ? key.actions.shift : key.actions.primary;
+}
+
 /** The field: read-only, never MathLive's keyboard nor the system keyboard (inputmode none, as the entry line), with
- *  the entry's macros (chips, ᴇ). The view's element holds the focus (tabindex -1, nothing editable in it, so no system
+ *  the entry line's macros (chips, ᴇ). The view's element holds the focus (tabindex -1, nothing editable in it, so no system
  *  keyboard) and its capture keydown sends a hardware key down the keypad's path, from the field too; a paste, a drop,
  *  a cut and the browser's own text input (an IME) are stopped. MathLive's own beforeinput for setPromptValue is not
  *  trusted and goes through (cancelling it would cancel the write). */
-function setUp(mf: MathfieldElement, element: HTMLElement, c: RouteCtx): void {
+function setUp(mf: MathfieldElement, element: HTMLElement, c: RouteCtx, hw: Hw): void {
   mf.mathVirtualKeyboardPolicy = "manual";
   mf.menuItems = [];
   mf.inlineShortcuts = {};
-  mf.macros = { ...mf.macros, ...ENTRY_MACROS };
+  mf.macros = c.entry.field?.macros ?? mf.macros; // the entry line's, with ENTRY_MACROS (it is up: entry.ready)
   mf.readOnly = true;
   const enforce = (): void => {
     for (const el of mf.shadowRoot?.querySelectorAll("[inputmode], textarea") ?? []) {
@@ -136,7 +142,7 @@ function setUp(mf: MathfieldElement, element: HTMLElement, c: RouteCtx): void {
   };
   enforce();
   mf.addEventListener("focusin", enforce);
-  element.addEventListener("keydown", (ev) => hardwareKey(ev, c), { capture: true });
+  element.addEventListener("keydown", (ev) => hardwareKey(ev, c, hw), { capture: true });
   const stop = (ev: Event): void => {
     if (ev.type === "beforeinput" && !ev.isTrusted) return;
     ev.preventDefault();
@@ -145,32 +151,22 @@ function setUp(mf: MathfieldElement, element: HTMLElement, c: RouteCtx): void {
   for (const type of ["paste", "drop", "cut", "beforeinput"]) element.addEventListener(type, stop, { capture: true });
 }
 
-const ARROWS: Readonly<Record<string, string>> = { ArrowLeft: "left", ArrowRight: "right", ArrowUp: "up", ArrowDown: "down" };
+type Hw = typeof import("../entry/hwkeys.ts");
 
-/** A hardware key on the unit view's field: the keypad key it stands for, pressed as a tap (Enter, Esc, ⌫, the
- *  arrows, and the characters a keypad key types: a digit is its prefix cell); anything else does nothing. Copy and
- *  select all stay MathLive's. */
-function hardwareKey(ev: KeyboardEvent, c: RouteCtx): void {
+/** A hardware key on the unit view's field: the keypad key it stands for, pressed as a tap through the entry line's
+ *  own path (`onKey`) and map (entry/hwkeys.ts: ⌫, Del, the arrows, Enter, Esc, and the characters a keypad key types:
+ *  a digit is its prefix cell); anything else does nothing. Copy and select all stay MathLive's. */
+function hardwareKey(ev: KeyboardEvent, c: RouteCtx, hw: Hw): void {
   if (ev.isComposing) return;
   const mod = (ev.ctrlKey || ev.metaKey || ev.altKey) && !ev.getModifierState("AltGraph");
   if (mod && (ev.key === "c" || ev.key === "a")) return;
   if (ev.key === "Tab" || ev.key === "Shift" || ev.key === "Control" || ev.key === "Alt" || ev.key === "Meta") return;
   ev.preventDefault();
   ev.stopPropagation();
-  const hit = (id: string, layer: Layer = "primary"): void => {
-    const key = keyboard.keys.find((k) => k.id === id);
-    if (key) press(c, key, layer);
-  };
   if (mod) return c.dead();
-  if (ev.key === "Enter") hit("enter", ev.shiftKey ? "shift" : "primary");
-  else if (ev.key === "Escape") hit("esc");
-  else if (ev.key === "Backspace" || ev.key === "Delete") hit("bksp");
-  else if (ARROWS[ev.key]) hit(ARROWS[ev.key] as string);
-  else {
-    const k = ev.key.length === 1 ? keypadKeyOf(ev.key, c.session.decimalComma) : undefined;
-    if (k) hit(k[0], k[1]);
-    else c.dead();
-  }
+  const k = hw.controlKey(ev) ?? (ev.key.length === 1 ? hw.keypadKeyOf(ev.key, c.entry.decimalComma) : undefined);
+  if (k) c.entry.onKey(k[0], k[1]);
+  else c.dead();
 }
 
 /** Math in a slot: Find on units (its Units category; docs/archive/r9-unit-pad.md 2.9). A unit's pick goes into the
@@ -186,5 +182,5 @@ async function showUnitFind(c: RouteCtx, view: UnitView): Promise<void> {
   });
   const units = categories.find((x) => x.id === "cat:units")?.submenu;
   if (!units) return c.dead();
-  c.shell.showFind(findText("title"), units.items, units.search ?? (() => []));
+  c.shell.showFind(unitText("units.pad.find"), units.items, units.search ?? (() => []));
 }

@@ -4,6 +4,8 @@
 // its slots and the pad up; pad presses fill the active slot and the reading follows; Enter goes on and evaluates in
 // the end slot, a flick up on Enter evaluates at once; ◀ ▶ move between slots; Esc leaves and the line keeps its
 // slots. Then the probe's 50 units replayed on the pad, and the check of 2026-10-19 (Part 2 point 5) on the engine.
+import { execFileSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 import { expect, test, type Page } from "@playwright/test";
 import { flick, open, tap } from "./helpers.ts";
 
@@ -134,6 +136,43 @@ test.describe("the unit view from the keys", () => {
     expect(await page.evaluate(() => window.pascaline.entry.value)).toBe("72");
   });
 
+  test("Delete, Backspace, the arrows, Enter and Escape press the same keys on the unit view as on the entry line (one map)", async ({ page }) => {
+    // every hardware key the entry line or the unit view hands to the keypad goes through entry.onKey: record them
+    await page.evaluate(() => {
+      const e = window.pascaline.entry;
+      const on = e.onKey;
+      const log: [string, string][] = [];
+      (window as unknown as { keyLog: [string, string][] }).keyLog = log;
+      e.onKey = (id, layer) => {
+        log.push([id, layer]);
+        on(id, layer);
+      };
+    });
+    const pressed = async (k: string): Promise<[string, string][]> => {
+      await page.evaluate(() => ((window as unknown as { keyLog: unknown[] }).keyLog.length = 0));
+      await page.keyboard.press(k);
+      return page.evaluate(() => (window as unknown as { keyLog: [string, string][] }).keyLog);
+    };
+    await tap(page, ["d7", "d2"]);
+    expect(await pressed("Delete"), "Delete on the entry line").toEqual([["bksp", "shift"]]);
+    await tap(page, ["d2"]);
+    await unitsKey(page);
+    await tap(page, ["d4", "d9"]);
+    expect(await pressed("Delete"), "Delete on the unit view: Shift + ⌫ (Del), as on the entry line").toEqual([["bksp", "shift"]]);
+    expect(meant(await tokens(page, "u1")), "Del is no pad cell: the slot keeps its unit").toBe("k:m");
+    expect(await pressed("Backspace")).toEqual([["bksp", "primary"]]);
+    expect(meant(await tokens(page, "u1")), "⌫ removes the unit and arms its prefix again").toBe("");
+    await tap(page, ["bksp"]); // and the armed k (a prefix alone cannot leave its slot)
+    expect(await pressed("ArrowRight")).toEqual([["right", "primary"]]);
+    expect(await activeId(page)).toBe("end");
+    expect(await pressed("ArrowLeft")).toEqual([["left", "primary"]]);
+    expect(await activeId(page)).toBe("u1");
+    expect(await pressed("Enter")).toEqual([["enter", "primary"]]);
+    expect(await activeId(page)).toBe("end");
+    expect(await pressed("Escape")).toEqual([["esc", "primary"]]);
+    await expect(shown(page)).toBeHidden();
+  });
+
   test("Math opens Find on units; a pick goes into the slot, and the pad is back", async ({ page }) => {
     await unitsKey(page);
     await tap(page, ["math"]);
@@ -146,38 +185,37 @@ test.describe("the unit view from the keys", () => {
   });
 });
 
-// The probe's 50 units (tools/probes/unit-presses.mjs, flicks), each as the probe presses it and what it means.
-const PROBE: readonly [string, string, string][] = [
-  ["m", "d9", "m"], ["mm", "d1 d9", "m:m"], ["km", "d4 d9", "k:m"], ["µm", "d2 d9", "u:m"], ["nm", "d0 d9", "n:m"],
-  ["in", "↓d9", "in"], ["ft", "↑d9", "ft"], ["kg", "d4 d6", "k:g"], ["g", "d6", "g"], ["s", "d3", "s"], ["ms", "d1 d3", "m:s"],
-  ["min", "↓d3", "min"], ["h", "↑d3", "h"], ["A", "sin", "A"], ["mA", "d1 sin", "m:A"], ["K", "space", "K"], ["°C", "↑space", "oC"],
-  ["°F", "↓space", "oF"], ["N", "sub", "N"], ["kN", "d4 sub", "k:N"], ["Pa", "add", "Pa"], ["kPa", "d4 add", "k:Pa"],
-  ["MPa", "d8 add", "M:Pa"], ["bar", "↑add", "bar"], ["psi", "↓add", "psi"], ["J", "neg", "J"], ["kWh", "d4 ↑neg", "k:Wh"],
-  ["W", "paren", "W"], ["kW", "d4 paren", "k:W"], ["V", "cos", "V"], ["Ω", "tan", "ohm"], ["kΩ", "d4 tan", "k:ohm"],
-  ["µF", "d2 ln", "u:F"], ["Hz", "x", "Hz"], ["°", "frac", "deg"], ["L", "comma", "L"], ["m/s", "d9 div d3", "m s^-1"],
-  ["km/h", "d4 d9 div ↑d3", "h^-1 k:m"], ["m/s²", "d9 div d3 sq", "m s^-2"], ["N·m", "sub d9", "N m"],
-  ["kg/m³", "d4 d6 div d9 pow", "k:g m^-3"], ["m²", "d9 sq", "m^2"], ["m³", "d9 pow", "m^3"], ["Pa·s", "add d3", "Pa s"],
-  ["W/(m·K)", "paren div d9 space", "K^-1 W m^-1"], ["J/(kg·K)", "neg div d4 d6 space", "J K^-1 k:g^-1"],
-  ["W/m²", "paren div d9 sq", "W m^-2"], ["rad/s", "↑frac div d3", "rad s^-1"], ["L/min", "comma div ↓d3", "L min^-1"],
-  ["kg·m²/s³", "d4 d6 d9 sq div d3 pow", "k:g m^2 s^-3"],
-];
+// The probe's 50 units, as the probe itself types them (tools/probes/unit-presses.mjs --json, flicks): each sequence,
+// its count and what the slot must mean, so a change to the probe's typePad or to the pad changes this replay too.
+type ProbeRow = { u: string; presses: string[]; count: number; meant: string; missing: string[] };
+const PROBE = JSON.parse(
+  execFileSync(process.execPath, [fileURLToPath(new URL("../../tools/probes/unit-presses.mjs", import.meta.url)), "--json"], { encoding: "utf8" }),
+) as ProbeRow[];
 
 test("the probe's 50 units replayed on the pad, each within the probe's count and meaning what the probe means", async ({ page }) => {
   test.setTimeout(180_000);
+  expect(PROBE.length, "the probe's 50 units").toBe(50);
   await open(page, "engine=fake");
   await unitsKey(page);
   await expect(shown(page)).toBeVisible();
   const wrong: string[] = [];
-  for (const [u, presses, want] of PROBE) {
-    const seq = presses.split(" ");
-    for (const s of seq) await step(page, s);
+  let replayed = 0;
+  for (const r of PROBE) {
+    if (r.missing.length) continue; // not on the pad: the probe counts a Find trip it does not type
+    let pressed = 0;
+    for (const s of r.presses) {
+      await step(page, s);
+      pressed++; // a tap or a flick is one press (docs/04 5.2), as the probe counts
+    }
     const got = meant(await tokens(page, "u1"));
-    if (got !== want) wrong.push(`${u}: ${got} (pressed ${presses})`);
+    if (got !== r.meant) wrong.push(`${r.u}: ${got} (pressed ${r.presses.join(" ")})`);
+    else if (pressed > r.count) wrong.push(`${r.u}: ${pressed} presses, the probe counts ${r.count}`);
+    else replayed++;
     // empty the slot again (⌫ until empty; the count is the probe's, so this is not counted)
     for (let i = 0; i < 12 && !(await page.evaluate(() => window.pascaline.unitView?.view.model("u1")?.empty)); i++) await tap(page, ["bksp"]);
   }
-  expect(wrong, "units that did not mean what the probe means").toEqual([]);
-  expect(PROBE.length - wrong.length).toBeGreaterThanOrEqual(44);
+  expect(wrong, "units that did not mean what the probe means within its count").toEqual([]);
+  expect(replayed, "units of the probe's 50 on the pad and replayed").toBeGreaterThanOrEqual(44);
 });
 
 test.describe("on the engine (check 2026-10-19, Part 2 point 5)", () => {

@@ -85,7 +85,8 @@ export type PortChecks = [
 ];
 
 export interface EngineCalcOptions {
-  /** The Find index's items, for the unit view's factor table (docs/04 4.2); read on the first units() call. */
+  /** The Find index's items, for the unit view's factor table (docs/04 4.2); read on the first units() call. Absent:
+   *  Find's own index, loaded by the lazy units/calc.ts (R24c: so the start chunk holds no loader). */
   findIndex?: () => Promise<readonly IndexItem[]>;
 }
 
