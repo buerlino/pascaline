@@ -3,7 +3,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { kvGetRaw } from "./storageRaw.ts";
 import { fakeIndexedDb, type FakeIdb } from "./fakeIdb.ts";
-import { DATA_VERSION, kvGet, kvSet, MIGRATIONS, stamp, unstamp } from "./storage.ts";
+import { SETTINGS_SCHEMA } from "./session.svelte.ts";
+import { DATA_VERSION, kvGet, kvSet, MIGRATIONS, SETTINGS_SINCE, stamp, unstamp } from "./storage.ts";
 
 describe("stored values carry a version", () => {
   it("round-trips a stamped value without a write-back", () => {
@@ -112,6 +113,21 @@ const SAMPLES: Record<string, unknown> = {
 };
 
 // R38a: the backup reads each record as stored, with its true stamp.
+describe("each settings schema raises DATA_VERSION (R94)", () => {
+  // A build that knows only the stamp (kvSet's A50 guard) refuses to write over a newer settings schema only when that
+  // schema came with a newer stamp: a schema raised alone would be written back without the fields it added.
+  it("the current settings schema has its data version, at most DATA_VERSION", () => {
+    expect(SETTINGS_SINCE[SETTINGS_SCHEMA]).toBeDefined();
+    expect(SETTINGS_SINCE[SETTINGS_SCHEMA]).toBeLessThanOrEqual(DATA_VERSION);
+    expect(Math.max(...Object.keys(SETTINGS_SINCE).map(Number))).toBe(SETTINGS_SCHEMA);
+  });
+  it("no two settings schemas share a data version, and every one has a step in MIGRATIONS", () => {
+    const pairs = Object.entries(SETTINGS_SINCE).map(([s, v]) => [Number(s), v] as const).sort((a, b) => a[0] - b[0]);
+    for (let k = 1; k < pairs.length; k++) expect(pairs[k]![1], `schema ${pairs[k]![0]}`).toBeGreaterThan(pairs[k - 1]![1]);
+    for (const [, v] of pairs) if (v > 0) expect(MIGRATIONS[v - 1], `step ${v - 1} → ${v}`).toBeDefined();
+  });
+});
+
 describe("kvGetRaw returns the record as stored (R38a)", () => {
   let idb: FakeIdb;
   beforeEach(() => {

@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 import { FakeCalc } from "../calc/fake.ts";
 import { defaultSettings, migrateSettings, MAX_DIGITS, Session, SETTINGS_SCHEMA } from "./session.svelte.ts";
 import type { Kv } from "./storage.ts";
+import { t } from "../i18n/index.ts";
 
 function memoryKv(): Kv & { data: Map<string, unknown> } {
   const data = new Map<string, unknown>();
@@ -106,6 +107,50 @@ describe("the look (R50e, schema 3)", () => {
     await s.restoreSettings();
     expect((kv.data.get("settings") as { schema: number; look: unknown }).schema).toBe(SETTINGS_SCHEMA);
     expect((kv.data.get("settings") as { look: unknown }).look).toEqual(defaultSettings.look);
+  });
+});
+
+describe("a record from a newer settings schema (R94)", () => {
+  const newer = { schema: SETTINGS_SCHEMA + 1, digits: 9, angle: "deg", decimalMark: "comma", future: { kept: true } };
+  it("is not marked as migrated, and says it is newer", () => {
+    const { settings, migrated, newer: isNewer } = migrateSettings(newer);
+    expect(migrated).toBe(false);
+    expect(isNewer).toBe(true);
+    expect(settings).toMatchObject({ digits: 9, angle: "deg", decimalMark: "comma" });
+    expect(migrateSettings({ schema: SETTINGS_SCHEMA }).newer).toBe(false);
+    expect(migrateSettings({ schema: "9" }).newer).toBe(false);
+  });
+  it("restore applies what it knows and writes nothing: the record and its unknown field stay, after changes too", async () => {
+    const kv = memoryKv();
+    kv.data.set("settings", structuredClone(newer));
+    const s = new Session(new FakeCalc(), kv);
+    await s.restoreSettings();
+    expect(s.settings).toMatchObject({ digits: 9, angle: "deg", decimalMark: "comma" });
+    s.setDigits(20);
+    s.setDecimalMark("point");
+    s.save();
+    expect(s.settings.digits).toBe(20); // kept in memory for the session
+    expect(kv.data.get("settings")).toEqual(newer);
+  });
+  it("says once, as a note in both views, that changes are not kept", async () => {
+    const kv = memoryKv();
+    kv.data.set("settings", structuredClone(newer));
+    const s = new Session(new FakeCalc(), kv);
+    await s.restoreSettings();
+    await s.restoreSettings();
+    const notes = (xs: { status: string; text: string }[]): string[] => xs.filter((i) => i.status === "note").map((i) => i.text);
+    expect(notes(s.home)).toEqual([t("settings.newer")]);
+    expect(notes(s.cas)).toEqual([t("settings.newer")]);
+  });
+  it("an older schema still migrates and is written back, with no note", async () => {
+    const kv = memoryKv();
+    kv.data.set("settings", { schema: SETTINGS_SCHEMA - 1, digits: 9, future: 1 });
+    const s = new Session(new FakeCalc(), kv);
+    await s.restoreSettings();
+    expect(kv.data.get("settings")).toMatchObject({ schema: SETTINGS_SCHEMA, digits: 9, decimalMark: "point" });
+    expect(s.home.some((i) => i.status === "note")).toBe(false);
+    s.setDigits(11);
+    expect(kv.data.get("settings")).toMatchObject({ digits: 11 });
   });
 });
 
