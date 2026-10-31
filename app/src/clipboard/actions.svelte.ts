@@ -73,6 +73,12 @@ export class ClipActions {
     this.timer = setTimeout(() => (this.notice = null), NOTICE_MS);
   }
 
+  /** Settings › Data › Save a backup (R38a): the backup code loads on the press; the result is the notice in the stage
+   *  (the status line has no room). */
+  async saveBackup(): Promise<void> {
+    this.say(await (await import("../state/backup.ts")).saveBackup());
+  }
+
   /** The row an action means: the given one, else the newest finished result of the open view. */
   target(item?: HistoryItem): HistoryItem | undefined {
     if (item) return item.status === "done" ? item : undefined;

@@ -12,8 +12,8 @@ const active = (page: Page) => sheet(page).locator('[data-active="true"]');
 const rowIds = (page: Page) => sheet(page).getByRole("menuitem").evaluateAll((els) => els.map((e) => e.getAttribute("data-id")));
 const historyLength = (page: Page) => page.evaluate(() => history.length);
 const back = (page: Page) => page.evaluate(() => history.back());
-/** The sections built so far, in the fixed order (Data comes later; Appearance is R50e, Your keys R4b). */
-const SECTIONS = ["appearance", "numbers", "vibration", "keys", "counters", "help"];
+/** The sections built so far, in the fixed order (Appearance is R50e, Your keys R4b, Data R38a). */
+const SECTIONS = ["appearance", "numbers", "vibration", "keys", "data", "counters", "help"];
 
 test.beforeEach(async ({ page }) => {
   await page.setViewportSize({ width: 412, height: 915 });
@@ -84,7 +84,7 @@ test.describe("by keys", () => {
     await tap(page, ["@mode"]);
     await page.keyboard.press("5");
     await expect(title(page)).toHaveText("Mode › Settings");
-    await page.keyboard.press("5");
+    await page.keyboard.press("6");
     await expect(title(page)).toHaveText("Mode › Settings › Counters");
     await page.keyboard.press("ArrowDown");
     await expect(active(page)).toHaveAttribute("data-id", "shift"); // the key presses (R70) come first
@@ -147,9 +147,9 @@ test.describe("by touch", () => {
 
   test("Counters: the Shift and Alpha counts, since when, and Reset, which keeps the sheet open", async ({ page }) => {
     await tap(page, ["shift", "shift", "alpha", "alpha"]);
-    await tap(page, ["@mode", "d5", "d5"]);
+    await tap(page, ["@mode", "d5", "d6"]);
     expect(await rowIds(page)).toEqual(["presses", "shift", "alpha", "since", "reset"]);
-    await expect(row(page, "presses").getByTestId("sheet-value")).toHaveText("8"); // R70: Shift Shift Alpha Alpha, the format chip, ▲, 5, 5
+    await expect(row(page, "presses").getByTestId("sheet-value")).toHaveText("8"); // R70: Shift Shift Alpha Alpha, the format chip, ▲, 5, 6
     await expect(row(page, "shift").getByTestId("sheet-value")).toHaveText("2");
     await expect(row(page, "alpha").getByTestId("sheet-value")).toHaveText("2");
     await expect(row(page, "since").getByTestId("sheet-value")).toHaveText(/^\d{4}-\d\d-\d\d$/);
@@ -218,7 +218,8 @@ const LEVELS: Record<string, string[]> = {
   "Settings › Appearance › Theme": ["@mode", "d5", "d1", "enter"],
   "Mode › Settings › Numbers": ["@mode", "d5", "d2"],
   "Mode › Settings › Key vibration": ["@mode", "d5", "d3"],
-  "Mode › Settings › Counters": ["@mode", "d5", "d5"],
+  "Mode › Settings › Data": ["@mode", "d5", "d5"],
+  "Mode › Settings › Counters": ["@mode", "d5", "d6"],
 };
 for (const [w, h] of [[360, 740], [372, 767], [412, 915]] as const)
   test(`fit at ${w} × ${h}: every Settings level shows all its rows, the top cluster uncovered`, async ({ page }) => {

@@ -22,7 +22,7 @@ test("start fetches no About data; opening Help and about does not either, About
   const urls: string[] = [];
   page.on("request", (r) => urls.push(r.url()));
   await open(page);
-  await tap(page, ["@mode", "d5", "d6"]);
+  await tap(page, ["@mode", "d5", "d7"]);
   await expect(title(page)).toHaveText("Mode › Settings › Help and about");
   expect(urls.filter((u) => /virtual:about|about-[\w-]+\.js/.test(u))).toEqual([]);
   await tap(page, ["d1"]);
@@ -33,7 +33,7 @@ test("start fetches no About data; opening Help and about does not either, About
 test.describe("by keys", () => {
   test.beforeEach(async ({ page }) => {
     await open(page);
-    await tap(page, ["@mode", "d5", "d6"]);
+    await tap(page, ["@mode", "d5", "d7"]);
   });
 
   test("Help and about: About Pascaline and Parts we use; digit 1 shows the name, the version, GPL-3.0-or-later and the source URL", async ({ page }) => {
