@@ -725,5 +725,48 @@ fi
 sed -n '/^rerun_timing() {/,/^}/p' "$here/pipeline.sh" | grep -q 'quiet_wait' || fail "A51: rerun_timing does not call quiet_wait"
 grep -q 'runlog' <(sed -n '/^rerun_timing() {/,/^}/p' "$here/pipeline.sh") || fail "A51: rerun_timing does not log the wait to the run log"
 
+# A56: the device runner reads its own tree (the built sha's files, node_modules hard-linked under nodemods), never the phase-1 worktree
+out="$(ANDROID_SERIAL=TESTSERIAL "$script" device 7 --dry-run 2>&1)"
+grep -qF 'cp -al '"$integ"'/app/node_modules ' <<<"$out" && grep -qE '\.tasks/device-7/tree/app/node_modules' <<<"$out" || fail "A56: the dry run does not name the run's own node_modules copy: $out"
+grep -E 'core-device\.sh' <<<"$out" | grep -qE '\.tasks/device-7/tree/tools/core-device\.sh' || fail "A56: the dry run's runner is not the run's own tree: $out"
+sb7="$tmp/sb7"; mkdir -p "$sb7/bin" "$sb7/tools" "$sb7/docs/shifts"; git init -q -b main "$sb7"
+cp "$sb/tools/devlock.sh" "$sb7/tools/"; : > "$sb7/docs/shifts/brief.md"; printf 'node_modules/\ndist/\n' > "$sb7/.gitignore"
+printf '#!/bin/sh\nmkdir -p app/node_modules/x dist && echo apk > dist/pascaline.apk\n' > "$sb7/tools/device-build.sh"
+cat > "$sb7/tools/core-device.sh" <<'STUB'
+#!/bin/sh
+d="$(cd "$(dirname "$0")/.." && pwd)"; echo "$d" > "$SB7/runner-dir"
+[ -d "$d/app/node_modules/x" ] || { echo "no node_modules in $d/app"; exit 1; }
+[ -z "$SB7_FAIL" ] || exit 1
+echo "CORE DEVICE 1/1 (known 0, needs 0)"
+STUB
+cat > "$sb7/bin/adb" <<'STUB'
+#!/bin/sh
+case "$*" in
+  *get-state*) echo device;;
+  *"dumpsys battery"*) echo "  level: 80";;
+  *"dumpsys window"*) echo "  isKeyguardShowing=false";;
+  *install*) rm -rf "$SB7/.claude/worktrees/phase-1/app/node_modules";;   # the other lane's npm ci, mid-step
+esac
+exit 0
+STUB
+chmod +x "$sb7/bin/adb" "$sb7/tools/"*; git -C "$sb7" add -A; gc "$sb7" init; git -C "$sb7" branch phase-1
+sb7run() { (cd "$sb7" && env -u PASCALINE_COORD SB7="$sb7" ANDROID_SERIAL=TESTSERIAL PATH="$sb7/bin:$PATH" "$script" device "$@" 2>&1); }
+out="$(sb7run 7)"
+grep -q '^RESULT device 7: CORE DEVICE 1/1 ' <<<"$out" || fail "A56: node_modules removed from the phase-1 worktree after the build: the runner did not get its modules: $out"
+[[ "$(cat "$sb7/runner-dir" 2>/dev/null)" == "$sb7/.tasks/device-7/tree" ]] || fail "A56: the runner ran from $(cat "$sb7/runner-dir" 2>/dev/null), not .tasks/device-7/tree"
+[[ ! -e "$sb7/.tasks/device-7/tree" ]] || fail "A56: the runner's tree is left after a CORE DEVICE line"
+out="$(SB7_FAIL=1 sb7run 8)"
+grep -q 'DEVICE SKIPPED (runner gave no CORE DEVICE line' <<<"$out" && [[ -d "$sb7/.tasks/device-8/tree/app/node_modules/x" ]] || fail "A56: a failed runner does not keep its tree: $out"
+# core-device.sh never downloads: npx --no-install, and a missing Playwright stops at once with a clear line
+cd8="$tmp/cd8"; mkdir -p "$cd8/tools" "$cd8/app/node_modules/.bin" "$cd8/bin"; cp "$here/../tools/core-device.sh" "$cd8/tools/"
+printf '#!/bin/sh\nexit 0\n' > "$cd8/tools/devlock.sh"; cp "$cd8/tools/devlock.sh" "$cd8/tools/stay-awake.sh"; cp "$cd8/tools/devlock.sh" "$cd8/app/node_modules/.bin/playwright"
+cp "$sb7/bin/adb" "$cd8/bin/"; printf '#!/bin/sh\necho "$*" > "%s/npx-args"\necho "CORE DEVICE 1/1 (known 0, needs 0)"\n' "$cd8" > "$cd8/bin/npx"; printf '#!/bin/sh\nexit 0\n' > "$cd8/bin/python3"
+chmod +x "$cd8/tools/"* "$cd8/bin/"* "$cd8/app/node_modules/.bin/playwright"
+ANDROID_SERIAL=TESTSERIAL PATH="$cd8/bin:$PATH" "$cd8/tools/core-device.sh" >/dev/null 2>&1
+grep -q '^--no-install playwright test ' "$cd8/npx-args" 2>/dev/null || fail "A56: core-device.sh calls npx without --no-install: $(cat "$cd8/npx-args" 2>/dev/null)"
+rm -f "$cd8/npx-args" "$cd8/app/node_modules/.bin/playwright"
+out="$(ANDROID_SERIAL=TESTSERIAL PATH="$cd8/bin:$PATH" "$cd8/tools/core-device.sh" 2>&1)"; rc=$?
+[[ $rc -ne 0 && ! -e "$cd8/npx-args" ]] && grep -q 'no Playwright in .*app/node_modules' <<<"$out" || fail "A56: a missing Playwright does not stop core-device.sh at once (rc $rc): $out"
+
 [[ $fails -eq 0 ]] || { echo "pipeline.test.sh: $fails failure(s) in $count packages" >&2; exit 1; }
 echo "pipeline.test.sh: ok ($count packages)"
