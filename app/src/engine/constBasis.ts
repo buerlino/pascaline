@@ -34,3 +34,25 @@ export function basisOf(e: BasisCarrier): string | undefined {
 export function mapLeaves(basis: string, f: (leaf: string) => string | null): string {
   return mapNames(basis, ({ name }) => (name.startsWith(LEAF_PREFIX) && name.length > LEAF_PREFIX.length ? f(name.slice(LEAF_PREFIX.length)) : null), "typed");
 }
+
+/** The leaf ids `basis` names. */
+function leavesOf(basis: string): Set<string> {
+  const out = new Set<string>();
+  mapLeaves(basis, (l) => (out.add(l), null));
+  return out;
+}
+
+/**
+ * G81: the constants of `entries` (id, entry; the inexact constants of one input) that enter through their basis: those
+ * sharing a leaf with another one's basis, the only case where the correlation changes value or σ. Any other constant
+ * keeps its own value and σ, the index's curated CODATA ones (G13: Z₀'s 5.9E-8 where the leaves give 5.8E-8).
+ */
+export function correlated(entries: Iterable<readonly [string, BasisCarrier]>): Set<string> {
+  const withBasis = [...entries].flatMap(([id, e]) => {
+    const b = basisOf(e);
+    return b === undefined ? [] : [{ id, leaves: leavesOf(b) }];
+  });
+  const out = new Set<string>();
+  for (const a of withBasis) if (withBasis.some((b) => b.id !== a.id && [...a.leaves].some((l) => b.leaves.has(l)))) out.add(a.id);
+  return out;
+}

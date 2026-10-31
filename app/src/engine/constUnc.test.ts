@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // G26: the pure parts of constUnc.ts (no engine).
 import { describe, expect, it } from "vitest";
-import { basisOf } from "./constBasis.ts";
+import { basisOf, correlated } from "./constBasis.ts";
 import { constFacts, constTable, inexactConstsIn, sigmaExpr, uncDigitsOf, withConstValues } from "./constUnc.ts";
 import { decimalFromString } from "./format.ts";
 
@@ -70,9 +70,17 @@ describe("a constant enters through its basis (G81)", () => {
     expect(basisOf({ unc: "2E-16" })).toBeUndefined();
     expect(basisOf({ ...mu, unc: "0" })).toBeUndefined();
   });
-  it("the value goes in through the basis; a chip without one keeps its value", () => {
-    expect(withConstValues("pasc_mu*pasc_G", { mu, G })).toBe("(2*(7.3E-3)/3)*(6.67430E-11)");
-    expect(withConstValues("pasc_mu", { mu }, undefined, "names")).toBe("(2*pasl_fine_structure/3)");
+  it("constants sharing a leaf go in through their bases; any other keeps its own value", () => {
+    expect(withConstValues("pasc_mu*pasc_eps*pasc_G", { mu, eps, G })).toBe("(2*(7.3E-3)/3)*(5/(7.3E-3))*(6.67430E-11)");
+    expect(withConstValues("pasc_mu*pasc_eps", { mu, eps }, undefined, "names")).toBe("(2*pasl_fine_structure/3)*(5/pasl_fine_structure)");
+    // alone, or beside a constant without a basis, the index's curated value (G13), not the leaves' (G81)
+    expect(withConstValues("pasc_mu*pasc_G", { mu, G })).toBe("(1.2E-6)*(6.67430E-11)");
+    expect(withConstValues("pasc_mu*pasc_eps", { mu, eps: { value: eps.value, unc: eps.unc } })).toBe("(1.2E-6)*(8.8E-12)");
+  });
+  it("correlated: only the constants whose bases share a leaf", () => {
+    const g = { unc: "1", basis: "pasl_newtonian", basisLeaves: { newtonian: { value: "6", unc: "1" } } };
+    expect([...correlated([["mu", mu], ["eps", eps], ["g", g]])]).toEqual(["mu", "eps"]);
+    expect([...correlated([["mu", mu], ["g", g]])]).toEqual([]);
   });
   it("σ is taken over the shared leaf once, and over a constant without a basis as before", () => {
     expect(sigmaExpr("pasc_mu*pasc_eps*pasc_G", { mu, eps, G }, ["mu", "eps", "G"])).toBe(

@@ -2,17 +2,17 @@
 // G26 (deep-dive item 17): the digits a constant's uncertainty leaves. A Home input may hold constants as names
 // (`pasc_<id>`, R40's parser switch) with a table of their values and CODATA standard uncertainties. The values are
 // put in and the input evaluates as before; then the first-order σ of the result (G18's rule, units/evaluate.ts):
-// σ = sqrt(Σ (∂f/∂xᵢ · σᵢ)²) over independent inputs, exactly with Giac's diff at their values. G81: an inexact
-// constant with a basis (G80: its value over the measured leaves it is computed from, `pasl_<leaf>`) enters as that
-// basis, so constants sharing a leaf (μ₀, ε₀ and Z₀ share α) are correlated: the value is evaluated through the basis
-// (μ₀·ε₀·c² is exactly 1) and σ is taken over the leaves; a constant without one is an input of its own, as before.
+// σ = sqrt(Σ (∂f/∂xᵢ · σᵢ)²) over independent inputs, exactly with Giac's diff at their values. G81: inexact
+// constants whose bases (G80: the value over the measured leaves it is computed from, `pasl_<leaf>`) share a leaf are
+// correlated (μ₀, ε₀ and Z₀ share α): they enter as their bases, the value is evaluated through them (μ₀·ε₀·c² is
+// exactly 1) and σ is taken over the leaves; any other constant is an input of its own with its value, as before.
 // `uncDigits` is the number of significant digits of the shown value before the digit position of σ's first digit:
 // the digits from there on are uncertain. Synchronous, UI-free. Only erasable TypeScript syntax.
 import { decimalFromString, isZero, roundSignificant, type DecimalValue } from "./format.ts";
 import { toExactLiterals, type HomeResult } from "./homeEval.ts";
 import type { Giac } from "./numeric.ts";
 import { mapNames, names } from "./giacPrint.ts";
-import { basisOf, isZeroText, LEAF_PREFIX, mapLeaves } from "./constBasis.ts";
+import { basisOf, correlated, isZeroText, LEAF_PREFIX, mapLeaves } from "./constBasis.ts";
 import type { ValueFacts } from "./types.ts";
 
 /** A constant the input holds by name: its value as Giac text (`6.67430E-11`), and its standard uncertainty in the
@@ -50,17 +50,23 @@ export function constTable(entries: Readonly<Record<string, ConstEntry>>): Const
   return Object.fromEntries(Object.entries(entries).map(([id, e]) => [id, { ...e, facts: constFacts(e) }]));
 }
 
+/** G81: the inexact constants `ids` of `table` that enter through their basis (they share a leaf, constBasis.ts). */
+function throughBasis(table: ConstTable, ids: readonly string[]): Set<string> {
+  return correlated(ids.map((id) => [id, table[id]!] as const));
+}
+
 /**
  * `input` with every constant of `table` replaced by its value in brackets; when `keep` is given, the constants it
- * holds stay names. Names not in the table are left alone. G81: a constant with a basis is replaced by its basis, its
- * leaves as their values, or as `pasl_<leaf>` names when `leaves` is "names" (for σ).
+ * holds stay names. Names not in the table are left alone. G81: a constant that shares a leaf with another of the
+ * input is replaced by its basis, its leaves as their values, or as `pasl_<leaf>` names when `leaves` is "names" (σ).
  */
 export function withConstValues(input: string, table: ConstTable, keep?: ReadonlySet<string>, leaves: "values" | "names" = "values"): string {
+  const through = throughBasis(table, inexactConstsIn(input, table));
   return mapNames(input, ({ name }) => {
     const id = name.slice(CONST_PREFIX.length);
     const e = name.startsWith(CONST_PREFIX) && id !== "" && Object.hasOwn(table, id) ? table[id] : undefined;
     if (!e || keep?.has(id)) return null;
-    const b = basisOf(e);
+    const b = through.has(id) ? basisOf(e) : undefined;
     if (b === undefined) return `(${e.value})`;
     return `(${leaves === "names" ? b : mapLeaves(b, (l) => `(${e.basisLeaves![l]!.value})`)})`;
   }, "typed");
@@ -83,15 +89,16 @@ interface SigmaInput {
   unc: string;
 }
 
-/** G81: the independent inputs of the inexact constants `ids`: a constant without a basis is one (`keep` gets its id);
- *  one with a basis brings its uncertain leaves, each once (the first constant that names a leaf gives its numbers;
- *  every basis comes from the same index). */
+/** G81: the independent inputs of the inexact constants `ids`: a constant that enters through its basis brings its
+ *  uncertain leaves, each once (the first constant that names a leaf gives its numbers; every basis comes from the
+ *  same index); any other is one input (`keep` gets its id). */
 function sigmaInputs(table: ConstTable, ids: readonly string[]): { keep: Set<string>; inputs: SigmaInput[] } {
   const keep = new Set<string>();
   const inputs: SigmaInput[] = [];
+  const through = throughBasis(table, ids);
   for (const id of ids) {
     const e = table[id]!;
-    const b = basisOf(e);
+    const b = through.has(id) ? basisOf(e) : undefined;
     if (b === undefined) {
       keep.add(id);
       inputs.push({ name: `${CONST_PREFIX}${id}`, value: e.value, unc: e.unc! });
@@ -108,7 +115,7 @@ function sigmaInputs(table: ConstTable, ids: readonly string[]): { keep: Set<str
 }
 
 /** The Giac text of the first-order σ of `body` over the inexact constants `ids` (decimals as exact rationals): over
- *  the constants themselves, or over their leaves where they have a basis (G81). */
+ *  the constants themselves, or over their leaves where they share one (G81). `ids` are `body`'s (inexactConstsIn). */
 export function sigmaExpr(body: string, table: ConstTable, ids: readonly string[]): string {
   const { keep, inputs } = sigmaInputs(table, ids);
   if (!inputs.length) return "0";

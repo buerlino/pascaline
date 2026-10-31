@@ -88,6 +88,14 @@ describe.skipIf(!giacAvailable())("a constant's σ through its basis (G81, real 
     expect(home("pasc_m_e*2", broken).display).toBe(home("pasc_m_e*2", WITHOUT).display);
   });
 
+  it("a constant whose leaves no other constant of the input uses keeps its own value and σ (Z₀ alone: 5.9E-8, CODATA)", () => {
+    const Z_0 = { value: "376.730313412", unc: "5.9E-8", basis: `(2*${H}*pasl_fine_structure)/(${E}^2)`, basisLeaves: ALPHA };
+    // the leaves would give 376.730313411941 ± 5.83E-8 (libqalculate's α); golden q03 checks NIST's 376.730313412(59)
+    expect(sigma("pasc_Z_0", { Z_0 })).toBeCloseTo(5.9e-8, 20);
+    // 376.730313412·1000 = 376730313412/10^6 = 94182578353/250000 (derived)
+    expect(home("pasc_Z_0*1000", { Z_0 }).exact).toBe("94182578353/250000");
+  });
+
   it("constants that share no leaf combine as before: G·m_e", () => {
     const G = { value: "6.67430E-11", unc: "1.5E-15", basis: "pasl_newtonian_constant", basisLeaves: { newtonian_constant: { value: "6.67430E-11", unc: "1.5E-15" } } };
     // σ/v = sqrt((1.5E-15/6.6743E-11)² + (2.8E-40/9.1093837139E-31)²) = 2.2474E-5: the basis changes neither value nor σ
