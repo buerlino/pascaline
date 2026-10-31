@@ -1,0 +1,190 @@
+{
+  "build": "ef857a6",
+  "records": {
+    "defs": {
+      "@pascaline": 1,
+      "value": [
+        {
+          "name": "A",
+          "kind": "var",
+          "cmds": [
+            "A:=(5)"
+          ],
+          "preview": "5",
+          "view": "home",
+          "time": 1793448006685
+        },
+        {
+          "name": "p",
+          "kind": "fn",
+          "cmds": [
+            "p(x):=x^2"
+          ],
+          "preview": "(x)->x^2",
+          "view": "home",
+          "time": 1793448006765
+        },
+        {
+          "name": "h",
+          "kind": "fn",
+          "cmds": [
+            "h(x):=sin(x)"
+          ],
+          "preview": "(x)->sin(x)",
+          "view": "cas",
+          "time": 1793448006985
+        }
+      ]
+    },
+    "history": {
+      "@pascaline": 1,
+      "value": {
+        "home": [
+          {
+            "id": 1,
+            "view": "home",
+            "latex": "5\\blacktriangleright A",
+            "status": "done",
+            "resultLatex": "5",
+            "text": "5",
+            "approximate": false,
+            "startedAt": 2002,
+            "value": {
+              "re": {
+                "neg": false,
+                "digits": "5",
+                "exp": 0,
+                "sticky": false
+              },
+              "im": {
+                "neg": false,
+                "digits": "",
+                "exp": 0,
+                "sticky": false
+              }
+            },
+            "facts": {
+              "exactRational": true,
+              "reliableDigits": null
+            },
+            "rational": {
+              "n": "5",
+              "d": "1"
+            },
+            "full": "5",
+            "fullExact": true
+          },
+          {
+            "id": 2,
+            "view": "home",
+            "latex": "p\\left(x\\right):=x^2",
+            "status": "done",
+            "resultLatex": "(x)->x^2",
+            "text": " (x)->x^2",
+            "approximate": false,
+            "startedAt": 2085.400000035763,
+            "facts": {
+              "exactRational": false,
+              "reliableDigits": null
+            },
+            "full": " (x)->x^2",
+            "fullExact": true
+          },
+          {
+            "id": 3,
+            "view": "home",
+            "latex": "1+2",
+            "status": "done",
+            "resultLatex": "3",
+            "text": "3",
+            "approximate": false,
+            "startedAt": 2168.199999988079,
+            "value": {
+              "re": {
+                "neg": false,
+                "digits": "3",
+                "exp": 0,
+                "sticky": false
+              },
+              "im": {
+                "neg": false,
+                "digits": "",
+                "exp": 0,
+                "sticky": false
+              }
+            },
+            "facts": {
+              "exactRational": true,
+              "reliableDigits": null
+            },
+            "rational": {
+              "n": "3",
+              "d": "1"
+            },
+            "full": "3",
+            "fullExact": true
+          }
+        ],
+        "cas": [
+          {
+            "id": 4,
+            "view": "cas",
+            "latex": "h\\left(x\\right):=\\sin\\left(x\\right)",
+            "status": "done",
+            "resultLatex": "x \\rightarrow \\sin\\left(x\\right)",
+            "text": " (x)->sin(x)",
+            "approximate": false,
+            "startedAt": 2317.900000035763,
+            "full": " (x)->sin(x)",
+            "fullExact": true
+          },
+          {
+            "id": 5,
+            "view": "cas",
+            "latex": "\\frac{d}{dx}x^3",
+            "status": "done",
+            "resultLatex": "3x^{2}",
+            "text": "3*x^2",
+            "approximate": false,
+            "startedAt": 2401.900000035763,
+            "full": "3*x^2",
+            "fullExact": true
+          }
+        ]
+      }
+    },
+    "settings": {
+      "@pascaline": 1,
+      "value": {
+        "schema": 2,
+        "digits": 12,
+        "angle": "deg",
+        "format": "std",
+        "entry": "textbook",
+        "fmtCycle": [
+          "std",
+          "sci",
+          "eng"
+        ],
+        "fixDecimals": 4,
+        "haptics": {
+          "on": false,
+          "strength": 50,
+          "ms": 15
+        }
+      }
+    },
+    "taps": {
+      "@pascaline": 1,
+      "value": {
+        "shift": 1,
+        "alpha": 1,
+        "since": "2026-10-31"
+      }
+    },
+    "view": {
+      "@pascaline": 1,
+      "value": "cas"
+    }
+  }
+}
