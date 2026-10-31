@@ -226,8 +226,8 @@ test.describe("on the engine (check 2026-10-19, Part 2 point 5)", () => {
   });
   const message = (page: Page) => page.getByTestId("unit-message");
   const result = (page: Page) => page.getByTestId("unit-result");
-  /** ± has no key until R71 (Shift + `,`): it goes on the line as the key will put it. */
-  const pm = (page: Page): Promise<void> => page.evaluate(() => window.pascaline.entry.insert("\\pm"));
+  /** ± is Shift + `,` (R71). */
+  const pm = (page: Page): Promise<void> => tap(page, ["shift", "comma"]);
 
   test("0 m + 1 s is refused (G35), not 1 s", async ({ page }) => {
     await tap(page, ["d0", "add", "d1"]);

@@ -2,6 +2,7 @@
 // R28: the parser's units mode (docs/04 4.3). The formulas and their Giac text through G16's builder are golden cases
 // (tests/golden/parser.yaml, group units); this file checks what the mode reports besides the text.
 import { describe, expect, it } from "vitest";
+import { actionFor, keyboard } from "../keyboard/keyboard.ts";
 import { latexToGiacInfo } from "./latex-to-giac.ts";
 
 const units = (latex: string) => latexToGiacInfo(latex, { units: true });
@@ -40,5 +41,13 @@ describe("units mode (R28)", () => {
     expect(() => units("5\\pm x")).toThrow("± needs a plain number after it");
     expect(() => units("5\\placeholder[u1]{}\\to")).toThrow("→ needs the end slot after it");
     expect(() => units("5\\placeholder[u1]{}+6\\placeholder[u1]{}")).toThrow("unit slot u1 appears twice");
+  });
+  it("R71: the ± key (Shift + `,`) inserts \\pm, which units mode reads as pasupm and every other mode refuses", () => {
+    const comma = keyboard.byId.get("comma");
+    if (!comma) throw new Error("comma key missing");
+    const a = actionFor(comma, true, false);
+    expect(a).toMatchObject({ kind: "insert", latex: "\\pm", units: true });
+    expect(units(`12.34${(a as { latex: string }).latex}0.05\\placeholder[u1]{}`).giac).toBe("pasupm(12.34,0.05)*pasu1");
+    expect(() => latexToGiacInfo("12.34\\pm0.05")).toThrow(/unexpected token at 'pm'/);
   });
 });

@@ -177,7 +177,7 @@ describe("keyboard spec", () => {
     for (const t of all) {
       const id = `${t.keyId}/${t.layer}/${t.variant}`;
       expect(t.sample, `${id} needs a sample`).toBeDefined();
-      const run = () => latexToGiac((t.sample as readonly [string, string])[0], { chips: SAMPLE_CHIPS });
+      const run = () => latexToGiac((t.sample as readonly [string, string])[0], { chips: SAMPLE_CHIPS, ...(t.units ? { units: true } : {}) });
       if (t.refused) expect(run, `${id} is refused: the parser must say why`).toThrow();
       else expect(run, id).not.toThrow();
     }
@@ -206,6 +206,7 @@ describe("keyboard spec", () => {
     "d2/shift/normal": "i: a constant",
     "d3/shift/normal": "π: a constant",
     "add/shift/normal": "Ans: a value",
+    "comma/shift/normal": "±: an operator between two numbers (R71)",
     "mul/primary/normal": "×: an operator",
     "mul/shift/normal": "∡: an operator (polar form)",
     "div/primary/line": "÷ in one-line entry: an operator",
