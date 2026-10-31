@@ -97,7 +97,8 @@ declare global {
   }
 }
 // R88: the presets' model, loaded with the Mode sheet's chunk once the settings are read
-const presets = (): Promise<Presets> => settingsRead.then(() => import("./views/modeSheet.ts")).then((m) => m.presetsFor(session, userKeys));
+const modeChunk = () => import("./views/modeSheet.ts");
+const presets = (): Promise<Presets> => settingsRead.then(modeChunk).then((m) => m.presetsFor(session, userKeys));
 window.pascaline = { entry, session, shell, userKeys, calc, plot: plotHook, renderStats, presets };
 if (import.meta.env.DEV && new URLSearchParams(location.search).has("pad")) void import("./units/padView.svelte.ts").then((m) => { window.pascaline.unitPad = m.unitPad; m.devPad(); }); // R24b: the unit pad alone on the keys (the units key opens it with the unit view, R24c)
 
@@ -117,7 +118,7 @@ requestAnimationFrame(() =>
     // Key vibration with strength needs @capacitor/core, which stays out of the start chunk (R35): load it when idle.
     const idle = (f: () => void): void => (typeof requestIdleCallback === "function" ? void requestIdleCallback(f) : void setTimeout(f, 200));
     idle(() => void loadNative());
-    idle(() => void import("./views/modeSheet.ts")); // fetched when idle, so the first Mode or Settings open is not slower
+    idle(() => void modeChunk()); // fetched when idle, so the first Mode or Settings open is not slower
     idle(() => void loadSheetView().catch(() => {})); // the sheet's view, likewise (R46)
     idle(() => void loadTidy().catch(() => {})); // the result tidy-up (R91), likewise
     // The history is read after the keypad is up, so it does not compete with the first paint. The kept line comes

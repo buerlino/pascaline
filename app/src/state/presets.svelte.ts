@@ -174,7 +174,7 @@ export class Presets {
   }
 
   private async run(id: number): Promise<void> {
-    const p = this.find(id);
+    const p = $state.snapshot(this.find(id)) as Preset; // (the list is a proxy: structuredClone cannot copy it)
     const { session, userKeys, cells } = this.env;
     let s = $state.snapshot(session.settings) as Settings;
     for (const g of PRESET_GROUPS) {
