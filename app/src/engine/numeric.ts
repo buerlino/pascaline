@@ -306,7 +306,72 @@ export function withDigits<T>(giac: Giac, d: number, restore: number, fn: () => 
   }
 }
 
-type Parts = { re: DecimalValue; im: DecimalValue; short?: number };
+/** G140: `double`, a nonzero part is a C double at a precision above a double's (bridge-3's `doubles`); `binary64`, the
+ *  double each part's MPFR print equals (binary64Of; NaN where none), read at such a precision. */
+export type Parts = { re: DecimalValue; im: DecimalValue; short?: number; double?: true; binary64?: readonly [number, number] };
+
+/** G140: element `a` is a double, by bridge-3's flag or by the same binary64 in a part of `a` and of `b` (two
+ *  precisions): an MPFR value left with few bits by a cancellation is a binary64 too (acosh(-1/2)'s real part at 60
+ *  digits, -6.2E-62), but not the same one at the next precision. */
+export function isDouble(a: Parts, b: Parts): boolean {
+  const x = a.binary64;
+  const y = b.binary64;
+  return a.double === true || (x !== undefined && y !== undefined && [0, 1].some((i) => !Number.isNaN(x[i]!) && x[i] === y[i]));
+}
+
+/** G140: a print with fewer significant digits than this says nothing about a double (a double prints 17 at most). */
+const BINARY64_PRINT_MIN = DOUBLE_DIGITS + 10;
+/** G140: a double whose exact decimal expansion is this short or shorter (0.5, 2.25) is also a short MPFR value. */
+const BINARY64_SHORT = 20;
+
+/** The exact decimal expansion of a finite nonzero double `x` (its absolute value), trailing zeros dropped. */
+function binary64Expansion(x: number): { digits: string; exp: number } {
+  const bits = new BigUint64Array(new Float64Array([Math.abs(x)]).buffer)[0]!;
+  const biased = Number((bits >> 52n) & 0x7ffn);
+  const frac = bits & ((1n << 52n) - 1n);
+  const m = biased === 0 ? frac : frac | (1n << 52n);
+  const e2 = (biased === 0 ? 1 : biased) - 1075;
+  const k = e2 < 0 ? -e2 : 0;
+  const s = (e2 >= 0 ? m << BigInt(e2) : m * 5n ** BigInt(k)).toString();
+  return { digits: s.replace(/0+$/, ""), exp: s.length - 1 - k };
+}
+
+/** The double next to `x` towards +∞ (`up`) or −∞. */
+function nextDouble(x: number, up: boolean): number {
+  const f = new Float64Array([x]);
+  const b = new BigInt64Array(f.buffer);
+  b[0] = b[0]! + ((x > 0) === up ? 1n : -1n);
+  return f[0]!;
+}
+
+/**
+ * G140 (be-9): `text`, a float Giac printed with more digits than a double holds, is exactly a binary64 rounded to the
+ * digits printed: Giac's MPFR value of Zeta((1+2*i)/2) at 60 digits is the double's exact binary expansion, then zeros,
+ * so its two precisions agree with each other and confirm nothing. Exact BigInt arithmetic on the double nearest the
+ * print (and its two neighbours): a plain dyadic test misses magnitudes below about 1E-3 or above 1E60, whose expansion
+ * is longer than the print. The double, or null for a zero, a short print, or a double with a short expansion (0.5,
+ * 2.25), which an MPFR value may hold exactly.
+ */
+export function binary64Of(text: string): number | null {
+  const m = /^\s*-?(\d*)\.?(\d*)(?:e([+-]?\d+))?\s*$/.exec(text);
+  if (!m || (m[1] === "" && m[2] === "")) return null;
+  const all = m[1]! + m[2]!;
+  const lead = all.search(/[1-9]/);
+  if (lead < 0) return null;
+  const sig = all.slice(lead);
+  if (sig.length < BINARY64_PRINT_MIN) return null;
+  const exp = m[1]!.length - 1 - lead + Number(m[3] ?? 0);
+  const x = Number(text.trim());
+  if (!Number.isFinite(x) || x === 0) return null;
+  const found = [x, nextDouble(x, true), nextDouble(x, false)].find((c) => {
+    if (!Number.isFinite(c) || c === 0) return false;
+    const e = binary64Expansion(c);
+    if (e.digits.length <= BINARY64_SHORT) return false;
+    const r = roundSignificant({ neg: false, digits: e.digits, exp: e.exp, sticky: false }, sig.length);
+    return r.digits === sig && r.exp === exp;
+  });
+  return found ?? null;
+}
 
 /** A part bridge-3 gave (api.cc partText: an integer or `p/q` in base 10, a float as Giac prints it) as a DecimalValue
  *  of `keep` digits; null if it is not one. */
@@ -338,9 +403,19 @@ export function atParts(v: GiacValue, prec: number, keep: number, n: number): Pa
     if (!a || !b) return null;
     const d = dbl[k] ?? 0;
     const kind = v.kinds?.[k] ?? v.kind;
-    if (d && prec > DOUBLE_DIGITS + 1 && kind !== "float" && kind !== "complex") return "double";
+    const mpfr = prec > DOUBLE_DIGITS + 1;
+    if (d && mpfr && kind !== "float" && kind !== "complex") return "double";
     const short = [d & 1 ? shortDigits(reT, prec) : undefined, d & 2 ? shortDigits(imT, prec) : undefined].filter((x): x is number => x !== undefined);
-    out.push(short.length ? { re: a, im: b, short: Math.min(...short) } : { re: a, im: b });
+    // a part that is 0 has no digits a double could get wrong (DEG cosh(90*i)'s imaginary part)
+    const double = mpfr && ((d & 1 && !isZero(a)) || (d & 2 && !isZero(b)));
+    const b64 = mpfr ? ([binary64Of(reT) ?? NaN, binary64Of(imT) ?? NaN] as const) : undefined;
+    out.push({
+      re: a,
+      im: b,
+      ...(short.length ? { short: Math.min(...short) } : {}),
+      ...(double ? { double: true as const } : {}),
+      ...(b64 && b64.some((x) => !Number.isNaN(x)) ? { binary64: b64 } : {}),
+    });
   }
   return out;
 }
@@ -635,6 +710,9 @@ function agreedFacts(facts: readonly (ElementFacts | null)[], digits: number, P:
   const under = underflowAt !== undefined && leadingZero.some((z, k) => z && underflowAt(k));
   return facts.map((f, k) => {
     if (f) return f;
+    // G140: a double at P or P + 20 (Giac's evalf of Zeta((1+2*i)/2) is one at any Digits) agrees with itself, so its
+    // two precisions confirm nothing: the facts of an unaudited double, as Giac's numeric integration has them.
+    if (isDouble(A[k]!, B[k]!) || B[k]!.double) return integratedFacts([{ value: { re: A[k]!.re, im: A[k]!.im }, exact: false, reliableDigits: null, big: false }])[0]!;
     let leading = leadingZero[k]! && !under;
     let reliable = leadingZero[k] ? (leading ? 0 : digits) : confirmedComplex(A[k]!, B[k]!, P, P);
     let value = denoised(A[k]!, B[k]!, P);
@@ -769,12 +847,12 @@ function floatFactsOf(
     slot: string,
     asked: (n: number) => number = (n) => Math.max(n, d),
     text: string | null = run,
-  ): { re: DecimalValue; im: DecimalValue; short?: number }[] | null =>
+  ): Parts[] | null =>
     withDigits(giac, d, restoreDigits, () => valueAt(giac, text === null ? name : `${slot}:=(${withAskedPrecision(text, asked)})`, shape, d, P).parts);
   // A non-real value that rests on a replaced function not read through our definitions (DEG, complexReads' hidden).
   const hidden = reads !== null && reads.hidden.length > 0 && nonReal(giac, name) ? reads.hidden : [];
   const unaudited = expr === null || !isAudited(expr, "typed") || hidden.length > 0;
-  const facts = (v: { re: DecimalValue; im: DecimalValue; short?: number }[], reliable: (k: number) => number, warn?: PrecisionWarn): ElementFacts[] =>
+  const facts = (v: Parts[], reliable: (k: number) => number, warn?: PrecisionWarn): ElementFacts[] =>
     v.map((value, k) =>
       zeroUnconfirmed({
         value: { re: value.re, im: value.im },
@@ -933,6 +1011,8 @@ function floatPathFactsOf(
   return {
     facts: B.map((b, k) => {
       const value = denoised(A[k]!, b, W);
+      // G140: a double at W or W + 20 agrees with itself (agreedFacts)
+      if (isDouble(A[k]!, b) || b.double) return integratedFacts([{ value: { re: value.re, im: value.im }, exact: false, reliableDigits: null, big: false }])[0]!;
       return zeroUnconfirmed({
         value: { re: value.re, im: value.im },
         exact: false,
