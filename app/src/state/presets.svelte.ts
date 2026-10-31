@@ -112,11 +112,12 @@ export class Presets {
     this.env = env;
   }
 
-  /** The model with its stored record read (migrated and written back when older; refused when newer), once the free
-   *  keys' and the unit cells' own records are in (a capture before them would hold their defaults). */
+  /** The model with its stored record read (migrated and written back when older; refused when newer), once the unit
+   *  cells' own record is in (a capture before it would hold their defaults). The free keys are read at launch (main.ts,
+   *  before the keypad mounts) and not again here: a second read could land after a slot set meanwhile and undo it. */
   static async open(env: PresetEnv): Promise<Presets> {
     const p = new Presets(env);
-    await Promise.all([env.userKeys.restore(), env.cells.restore()]);
+    await env.cells.restore();
     let rec: RawRecord | undefined;
     try {
       rec = await env.store.read();
