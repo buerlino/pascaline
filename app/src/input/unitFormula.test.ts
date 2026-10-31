@@ -21,7 +21,7 @@ describe("slotFormula (R24c)", () => {
     expect(slotFormula("-\\left(20\\pm0.5\\right)").slots).toEqual(["u1"]);
   });
   it("no slot inside a power, a subscript, a name, a chip or a root's index", () => {
-    expect(slotFormula("5^{2}").latex).toBe("5^{2}\\placeholder[u1]{}\\to\\placeholder[end]{}");
+    expect(slotFormula("5^{2}").latex).toBe("5\\placeholder[u1]{}^{2}\\to\\placeholder[end]{}"); // (5 u)²: the parser reads a slot only right after a number (R28)
     expect(slotFormula("x^{3}+x_{2}").slots).toEqual([]);
     expect(slotFormula("x23").slots).toEqual([]);
     expect(slotFormula("\\res{3}{42}\\times2").latex).toBe("\\res{3}{42}\\times2\\placeholder[u1]{}\\to\\placeholder[end]{}");
@@ -31,6 +31,17 @@ describe("slotFormula (R24c)", () => {
   it("an ᴇ number and a decimal comma are one number", () => {
     expect(slotFormula("1.5\\emark-3").slots).toEqual(["u1"]);
     expect(slotFormula("3{,}25").latex).toBe("3{,}25\\placeholder[u1]{}\\to\\placeholder[end]{}");
+  });
+  it("R24cf1: bare arguments, mixed numbers, DMS, \\left., the one-line ^ and the ᴇ character, as the parser reads them", () => {
+    expect(slotFormula("\\frac12").latex).toBe("\\frac{1\\placeholder[u1]{}}{2\\placeholder[u2]{}}\\to\\placeholder[end]{}");
+    expect(slotFormula("\\sqrt9").latex).toBe("\\sqrt{9\\placeholder[u1]{}}\\to\\placeholder[end]{}");
+    expect(slotFormula("2\\tfrac12").latex).toBe("2\\tfrac12\\placeholder[u1]{}\\to\\placeholder[end]{}");
+    expect(slotFormula("30\\degree15\\prime36\\doubleprime").slots).toEqual([]);
+    expect(slotFormula("\\left.x^2\\right|_{x=3}").latex).toBe("\\left.x^2\\right|_{x=3}\\to\\placeholder[end]{}");
+    expect(slotFormula('1\\div2\\char"5E 3x').latex).toBe('1\\placeholder[u1]{}\\div2\\placeholder[u2]{}\\char"5E 3x\\to\\placeholder[end]{}');
+    expect(slotFormula("1.5ᴇ-3").slots).toEqual(["u1"]);
+    expect(slotFormula("1.5\\emark+3").slots).toEqual(["u1"]);
+    expect(giac("1.5\\times10^{3}")).toBe("(1.5*pasu1)*(10*pasu2)^3");
   });
   it("the parser's units mode reads every slot as pasu<n> in the order written", () => {
     expect(giac("72")).toBe("72*pasu1");
