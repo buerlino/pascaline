@@ -13,6 +13,8 @@ The owner's other open items are in [backlog.md](backlog.md), "Needs the user". 
 
 - **G133f1 (patch 0023): Home calls an exact 0 it cannot prove "Underflow".** `novalue.ts` `underflow` takes a value whose evalf is an MPFR zero at P and at MAX_EVAL_DIGITS, and that `normal` does not prove 0, for an underflow. Already on phase-1 for `re(asinh(i/5))`, `re(asinh(i/7))` (true value 0); with patch 0023 also `re(asin(i))`, `re(asinh(i/1000))`, `re(asinh(i/10))` (were ⚠ 0, unchecked) and `re(asin(i/10))`, `re(asin(i/3))` (were ⚠ -3E-686, 2E-680). No wrong number, a wrong reason. Proposal: a gorge package that tells the two apart (an underflow's value has an exponent past MPFR's range; a true 0 has none), with these inputs as cases.
 
+- **The start chunk's last 0.3 kB:** after R24c it is 60.69 of the 61 kB budget, and R70, R15c4, R38a, R88 and the rest of the Settings list still come. Recommendation: before R88, a split package like R91 moves about 1 kB of code that runs only after a press out of the start chunk, and the 61 kB budget stays.
+
 ## Decided proposals
 
 Newest first within each group.
@@ -54,7 +56,7 @@ Newest first within each group.
 - **The letters stay on the keys (2026-10-14).** Rule: docs/04 5.1 (the letters; the unassigned Shift cells). Would change if: Alpha taps near zero (P7 point 4); a function in the benchmark needs a key and no cell is free.
 - **The application id is `io.github.buerlino.pascaline` (2026-10-14); the web version lives at `https://pascaline-calc.org/` (2026-10-29).** The id never changes. The PWA is at the domain's root, `www` redirects; GitHub Pages deploys it from a release tag (A45); the docs stay on GitHub. Set up 2026-10-29: Infomaniak, paid to 2028-10-29, auto-renew and Renewal Warranty, transfer lock, DNSSEC, HTTPS enforced (Let's Encrypt), mail by Proton. Full text: archive. Would change if: the domain lapses.
 - **Stored data carries a version; one signing key (2026-10-14).** Rule: docs/04 6.2 (the stamp); the throwaway key lives in `~/.cache/pascaline/keys/` for every worktree, so an install over the last keeps its data.
-- **Start chunk: 175 kB raw, 61 kB gzip (owner, 2026-10-27), pinned at 60.5 kB (R4b +0.92, R50e +0.48, R57 +0.58: 60.48).** Rule: docs/04 8.3 (past the pin, the package raises `START_PIN_GZIP` with its reason). `./build.sh --measure` is exempt. Would change if: the Tab One's keyboard-usable time passes 738 ms (A4a's 688 ms + 50).
+- **Start chunk: 175 kB raw, 61 kB gzip (owner, 2026-10-27), pinned at 60.52 kB (R4b +0.92, R50e +0.48, R57 +0.58, R24b +0.02: 60.51).** Rule: docs/04 8.3 (past the pin, the package raises `START_PIN_GZIP` with its reason). `./build.sh --measure` is exempt. Would change if: the Tab One's keyboard-usable time passes 738 ms (A4a's 688 ms + 50).
 - **Owner answers of 2026-10-19 (feel).** R34: one shared entry line, as on the G2 (an unentered line follows you between views; after Enter it clears); R43, R7's defaults and A4a points 3 and 4 as built. Full text: archive.
 
 ### Precision, engine and parser
@@ -92,6 +94,7 @@ Newest first within each group.
 - **User requests (2026-10-11):** the Format key, ∡ polar entry, key vibration, a tap places the cursor, E-notation formats.
 
 ### Units (milestone 5)
+- **R24b and R24c (Opus pass 22): the unit pad and the unit view's entry, as built.** The pad is drawn in the keys through the keypad's own seams, not on R21's layer (one geometry; App.svelte is at 800 lines). Alpha then a cell with no flick-down item is a dead key; ⌫ keeps its touch-and-repeat. R24c may raise the start pin to its measured size, at most 60.70 kB (the units key alone measures 60.58: P11 puts it on the key path). The unit view's chunks, UI and builder, keep one rule on `src/units/` at 34 kB raw (31.98 measured; the bar that counts is the first result < 1 s on the Tab One). t02 and t04 keep the plans' 15 and 14 presses until R62's one-tap alternative, then M4-2's 9 and 12. Kept slots live per line text, in memory only. Would change if: the Tab One's first unit result passes 1 s; the owner's thumbs want Alpha then a cell to act as its tap.
 - **P22 (2026-10-20): libqalculate leaves the build;** its numbers are checked in (`find/factors.yaml`, each with its source) and refreshed only by a developer tool that prints the diff; built by A21 (the F-Droid recipe's qalc build: "Needs the user"). Would change if: F-Droid refuses checked-in derived data; the unit view needs qalc at run time.
 - **Angles in the unit view (decided 2026-10-19, the owner; built by G40):** an angle is a quantity both ways; an end slot may drop one rad when no cycle unit is on either side, with a note; rpm or rev times a length keeps its value, with a note naming 2π·r·n. Full text: archive, "Shortened 2026-10-21 (P23)". Would change if: G2 item 68 shows the G2 refusing both.
 - **G37 (decided 2026-10-19, the owner; built): °C and °F inside a compound unit are a temperature interval** (1 °C = 1 K, 1 °F = 5/9 K), read "per degree Celsius (difference)"; alone they keep their offset; without an end slot such a result shows in SI (Opus pass 33). Would change if: you want the K spelling forced.

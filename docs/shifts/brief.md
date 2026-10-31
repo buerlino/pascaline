@@ -11,8 +11,8 @@
 
 **Two lanes** (owner, 2026-10-29; decisions.md P17 and "Owner answers of 2026-10-29"): once A47a–A47c are merged, lane A (ron's UI) and lane B (the release, then the engine) run around the clock, each with its own table in section 0c, merged through one queue (A47b); until then one run at a time. ron's packages run at night too: the owner's look moves to three milestone reviews (after R87; after R86, R57, R50e; after R24d), and a package's "owner's eye" item joins the next review. Device steps and the owner's acts (a key, a tag, a phone) stay by day. The order:
 1. **Find:** R4a merged (`b9f0042`, 2026-10-28; R90 by day); R91 (`e80eda0`: start chunk 61.02 → 57.81 kB gzip, pin 58.5 kB; the Fairphone before/after waits for annabell), R15c3 (`6e43091`), R49 (`d60fbfb`), R87 (`56d017f`) merged; R4b (`c682e3e`) merged.
-2. **The Settings base** (owner, 2026-10-27; decisions.md "Settings in the Mode sheet, and presets"; [mockups/settings.html](../mockups/settings.html)): R85 (`1d35189`), R49, R86, R50e (`e4d6085`) merged, then R57 (the comma is the owner's daily use); after the units: R70, R15c4, R38a → R38b, R59; R88 (after R4b, R57, R50e) → R89; R55 (after R15c4); R53; R12b → R12c → R41; R36, R33 → R37, R40.
-3. **The units** (owner, 2026-10-29: right after R86, R57, R50e): R24b → R24c → R24d, R60–R63, R71; G81 with them.
+2. **The Settings base** (owner, 2026-10-27; decisions.md "Settings in the Mode sheet, and presets"; [mockups/settings.html](../mockups/settings.html)): R85 (`1d35189`), R49, R86, R50e (`e4d6085`), R57 (`bb90a5e`) merged; after the units: R70, R15c4, R38a → R38b, R59; R88 (after R4b, R57, R50e) → R89; R55 (after R15c4); R53; R12b → R12c → R41; R36, R33 → R37, R40.
+3. **The units** (owner, 2026-10-29: right after R86, R57, R50e): R24b (`bca10d5`) merged → R24c → R24d, R60–R63, R71; G81 with them.
 4. **Lane B, to v0.1.0** (the APK and the website from one tag): A43 (an update keeps the data, on a device by day; A48 and A50 merged), A7 (signing, the owner's key made off this laptop), A49 (`c6447ff`) and A45 (`01a0e93`) merged, A8 (the owner's test tag); A9 with the owner's phone by day (F41); then wrong numbers by reach, C4.
 5. **Every morning:** the owner's check (MORNING.md, on the night's device when the night had one, about 10 minutes). The day session writes each failed step as a backlog bug line on phase-1 and logs one line in `.coord/log.md`: `- HH:MM morning <date>: clean` or `- HH:MM morning <date>: fails <ids>`.
 
@@ -58,8 +58,7 @@ Milestone reviews (section 0): after R50e; after R24d.
 
 | Step | What | Agent, model | Branch | After |
 |---|---|---|---|---|
-| 309 | [R24b](packages/R24b.md) the pad drawn over the keys | ron, Sonnet | `p1/ron-m5-unitpad` | R86, R57, R50e |
-| 310 | [R24c](packages/R24c.md) the unit view entry | ron, Opus | `p1/ron-m5-unitview` | R24b |
+| 310 | [R24c](packages/R24c.md) the unit view entry (finished by R24cf1, Opus pass 22; R24c itself does not run again) | ron, Opus | `p1/ron-m5-unitview` | R24b |
 | 311 | [R24d](packages/R24d.md) Find in a slot and the user cells | ron, Sonnet | `p1/ron-m5-usercells` | R24c, R4b |
 | 312 | [R70](packages/R70.md) the tap counter counts every press | ron, Sonnet | `p1/ron-m4-presscount` | R49 |
 | 313 | [R38a](packages/R38a.md) the backup: export everything | ron, Sonnet | `p1/ron-m4-backup` | R49 |

@@ -346,7 +346,7 @@ One IndexedDB database `pascaline`, store `kv` (`state/storage.ts`). Keys:
 
 | Key | Holds |
 |---|---|
-| `settings` | `schema: 2`, digits ≤ 30, format (`std`, `sci`, `eng`, `fix`, `pfx`), fixDecimals, fmtCycle, entry, haptics; later the decimal comma (R57, schema 3) and the base word size; each field validated on restore (`migrateSettings`, `state/session.svelte.ts`) |
+| `settings` | `schema: 4`, digits ≤ 30, format (`std`, `sci`, `eng`, `fix`, `pfx`), fixDecimals, fmtCycle, entry, haptics, look (schema 3, R50e); schema 4 adds decimalMark ("point" or "comma"); a missing or invalid mark is the point (R57); later the base word size; each field validated on restore (`migrateSettings`, `state/session.svelte.ts`) |
 | `view`, `place`, `entry` | the open view and app; the half-typed line (R34) |
 | `history` | ≤ 200 items per view, with `full` (≤ 2 kB) and the mark facts |
 | `defs` | the definitions log (`engine/defs.ts`; `:=`, ▶, `purge`): per name its kind, commands, mark facts, preview, view, time; ≤ 500 lines. `restore()` replays values, assumptions and typed inputs; a function (one balanced command) stays pending until `need()` loads it (G83): pending names that are words in the input, then, transitively, those in each loaded body or stored value it reads, in one batch (G29's fall-back); `VARS`, `expr`, `rm_all_vars`, `restart` load all; redefining or purging a pending name drops it. **Variables are kept as their value**, not their command (G3): `B:=romberg(…)` is stored as `B:=(evalf(<exact>,k))`; functions and `assume` keep their command; symbolic values replay first; a library function keeps its `desc` (G33 raised `DATA_VERSION` to 2; it is 3 since G46) |
@@ -434,7 +434,7 @@ The types live in the code; this is the map. Views see `Calc` (`app/src/calc/por
 
 | Item | Budget | State | Enforced by |
 |---|---|---|---|
-| Start chunk | ≤ 175 kB raw, ≤ 61 kB gzip; pin 60.5 kB gzip | 60.48 kB gzip (58.50 + R4b 0.92 + R50e 0.48 + R57 0.58). The pin `START_PIN_GZIP` holds: a package that grows the chunk past it raises it in the same diff, with the reason and the before and after in its report, never past 61 kB; `LAZY_PARTS` must stay dynamic chunks (R91). `tools/probes/start-chunk.mjs` lists the bytes per source; every UI package reports its delta | size test (`npm run size`) |
+| Start chunk | ≤ 175 kB raw, ≤ 61 kB gzip; pin 60.52 kB gzip | 60.51 kB gzip (58.50 + R4b 0.92 + R50e 0.48 + R57 0.58 + R24b 0.02). The pin `START_PIN_GZIP` holds: a package that grows the chunk past it raises it in the same diff, with the reason and the before and after in its report, never past 61 kB; `LAZY_PARTS` must stay dynamic chunks (R91). `tools/probes/start-chunk.mjs` lists the bytes per source; every UI package reports its delta | size test (`npm run size`) |
 | MathLive chunk (after the keypad) | ≤ 830 kB raw | 807.74 kB (2026-10-18) | size test |
 | Find UI chunk | ≤ 30 kB raw | — | size test |
 | Find index asset | ≤ 400 kB raw, ≤ 100 kB gzip | 325.7 / 67.1 kB (2026-10-15) | size test (once Find loads it) |
