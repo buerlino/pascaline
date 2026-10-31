@@ -7,6 +7,7 @@ import { chipToGiac } from "./chip-giac.ts";
 import { pruneChips, validChips, type ChipTable } from "./chips.ts";
 import { EQ_INEXACT_FLAG, SerializeError } from "./emit.ts";
 import { latexToGiac, latexToGiacInfo } from "./latex-to-giac.ts";
+import { chipUnit } from "./chipUnit.ts";
 
 /** Exact SI 2019 constants (derived: exact by definition) and G with an uncertainty: a stand-in until G4's index. */
 const SI: ChipTable = {
@@ -144,8 +145,19 @@ describe("chip table", () => {
       { text: "km/h", dim: "m1s-1", slot: { tokens: [{ unit: "m" }], per: 5 } },
       { text: "km/h", dim: "m1s-1", slot: { tokens: [{ unit: "m{}" }] } },
     ];
-    for (const unit of bad)
-      expect(validChips({ "res:2": { ...KMH, unit }, "res:3": KMH }), JSON.stringify(unit)).toStrictEqual({ "res:2": { value: "72", exact: true }, "res:3": KMH });
+    // the loader keeps the chip and its unit as stored (no check at start, R91's pin); chipUnit drops a bad one
+    for (const unit of bad) {
+      const back = validChips({ "res:2": { ...KMH, unit }, "res:3": KMH })!;
+      expect(back["res:2"], JSON.stringify(unit)).toMatchObject({ value: "72", exact: true });
+      expect(chipUnit(back["res:2"]), JSON.stringify(unit)).toBeUndefined();
+      expect(back["res:3"]).toStrictEqual(KMH);
+      expect(chipUnit(back["res:3"])).toStrictEqual(KMH.unit);
+    }
+    // a unit that is no object is not kept; a constant chip has none
+    for (const unit of ["km/h", null, 3]) expect(validChips({ "res:2": { ...KMH, unit } })).toStrictEqual({ "res:2": { value: "72", exact: true } });
+    expect(validChips({ "const:G": { value: "1", exact: true, unit: KMH.unit } })).toStrictEqual({ "const:G": { value: "1", exact: true } });
+    // a token's other keys are not read
+    expect(chipUnit({ ...KMH, unit: { ...KMH.unit, slot: { tokens: [{ unit: "m", x: 1 } as never] } } })).toStrictEqual({ ...KMH.unit, slot: { tokens: [{ unit: "m" }] } });
   });
   it("R61: an exact chip with an uncertainty is refused", () => {
     expect(validChips({ "res:1": { ...T10, exact: true } })).toBeUndefined();

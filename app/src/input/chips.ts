@@ -26,7 +26,8 @@ export interface Chip extends Omit<ValueFacts, "reliableDigits">, Partial<Pick<V
   value: string;
   /** A constant's standard uncertainty (CODATA), or a unit result's σ in the unit shown (R61); absent when exact. */
   unc?: string;
-  /** R61: a unit result's unit (label and slot); absent on every other chip. */
+  /** R61: a unit result's unit (label and slot); absent on every other chip. A stored one is kept as read back, unchecked
+   *  (the check is not in the start chunk, as G81's basis): read it through chipUnit (input/chipUnit.ts), which checks it. */
   unit?: ChipUnit;
   /** G81: an inexact constant's basis (Find's item, G80): its value over `pasl_<leaf>` names; absent on a chip
    *  stored before G81, which keeps its own value and σ. */
@@ -64,26 +65,6 @@ export function pruneChips(table: ChipTable, latex: string): ChipTable {
   return out;
 }
 
-const isText = (x: unknown, max: number, re = /^[^\s{}\\]+$/): x is string => typeof x === "string" && x.length <= max && re.test(x);
-
-/** R61: a stored chip unit with its shape (text ≤ 40 characters, a dimension key, a slot of Find ids), else undefined. */
-function validUnit(x: unknown): ChipUnit | undefined {
-  if (!x || typeof x !== "object") return undefined;
-  const { text, dim, slot } = x as Record<string, unknown>;
-  if (typeof text !== "string" || text === "" || text.length > 40 || !isText(dim, 64, /^(?:[A-Za-z]+-?\d+)+$/)) return undefined;
-  if (!slot || typeof slot !== "object") return undefined;
-  const { tokens, per } = slot as Record<string, unknown>;
-  if (!Array.isArray(tokens) || tokens.length === 0 || tokens.length > 16) return undefined;
-  if (per !== undefined && !(typeof per === "number" && Number.isInteger(per) && per >= 0 && per <= tokens.length)) return undefined;
-  const out: UnitSlot["tokens"] = [];
-  for (const t of tokens as unknown[]) {
-    const { unit, prefix, power } = (t && typeof t === "object" ? t : {}) as Record<string, unknown>;
-    if (!isText(unit, 32) || (prefix !== undefined && !isText(prefix, 8)) || (power !== undefined && !isText(power, 16, /^-?\d+(?:\/\d+)?$/))) return undefined;
-    out.push({ ...(prefix !== undefined ? { prefix } : {}), unit, ...(power !== undefined ? { power } : {}) });
-  }
-  return { text, dim, slot: { tokens: out, ...(per !== undefined ? { per } : {}) } };
-}
-
 /** A stored chip table read back from IndexedDB: keep the well-formed entries only. */
 export function validChips(x: unknown): ChipTable | undefined {
   if (!x || typeof x !== "object") return undefined;
@@ -101,8 +82,8 @@ export function validChips(x: unknown): ChipTable | undefined {
     if (typeof unc === "string") Object.assign(chip, { unc }, basis !== undefined ? { basis } : {}, basisLeaves !== undefined ? { basisLeaves } : {});
     if (rd === null || (typeof rd === "number" && Number.isInteger(rd) && rd >= 0 && rd <= 1000)) chip.reliableDigits = rd;
     if (warn === "unaudited" || warn === "unchecked") chip.warn = warn;
-    const u = k.startsWith("res:") ? validUnit(unit) : undefined;
-    if (u) chip.unit = u;
+    // R61: a result chip's unit as stored; chipUnit (chipUnit.ts, off the start chunk) checks its shape before any use
+    if (k.startsWith("res:") && unit && typeof unit === "object") chip.unit = unit as ChipUnit;
     out[k] = chip;
   }
   return Object.keys(out).length ? out : undefined;
