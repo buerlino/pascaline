@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // A behaviour diff between two source trees (G55, night check 2026-10-19 section 2.4): the same fixed inputs run through
-// each tree's own EngineHost on ONE engine build, and every input whose display, mark, warn or why differs is printed.
-// It reports and does not judge: it always exits 0.
+// each tree's own EngineHost (built as its nodeGiac.ts builds it: giac and bridge, A53), and every input whose display, mark,
+// warn or why differs is printed. It reports and does not judge: it exits 0, unless more than half the runs of a tree throw
+// (A53: a host that cannot run compares nothing; then it exits 1 with the first message rather than say "none").
 //   node scripts/behaviour-diff.ts <treeA> <treeB>      # tree = a checkout/worktree root (its app/src/engine is imported)
-// A tree needs its own app/node_modules reachable (link it into a scratch worktree). Engine: $GIAC_MJS, else
-// $GIAC_OUT/giac.mjs, else this repo's engine/giac/_out/gsl (a scratch worktree has no engine build of its own).
+// A tree needs its own app/node_modules reachable (link it into a scratch worktree). Engine of tree A: $GIAC_MJS_A, of tree
+// B: $GIAC_MJS_B (A53: a Giac patch shows only when the branch's tree runs the branch's engine); each falls back to
+// $GIAC_MJS, else $GIAC_OUT/giac.mjs, else this repo's engine/giac/_out/gsl (a scratch worktree has no engine build).
 // Inputs: the single-input cases of home.yaml, precision.yaml and bench.yaml (read from THIS repo), tests/golden/corpus.yaml,
 // each in Home and CAS, at 12 and 30 digits, in RAD and DEG; then corpus.yaml's sequences in Home. Each configuration gets
 // a fresh engine per tree, so stored names carry over only within it.
@@ -19,7 +21,9 @@ if (!ta || !tb) {
   process.exit(0);
 }
 const here = fileURLToPath(new URL("../../", import.meta.url));
-const mjs = process.env.GIAC_MJS ?? (process.env.GIAC_OUT ? `${process.env.GIAC_OUT}/giac.mjs` : `${here}engine/giac/_out/gsl/giac.mjs`);
+const env = (k: string): string | undefined => process.env[k] || undefined;
+const shared = env("GIAC_MJS") ?? (env("GIAC_OUT") ? `${env("GIAC_OUT")}/giac.mjs` : `${here}engine/giac/_out/gsl/giac.mjs`);
+const mjs = [env("GIAC_MJS_A") ?? shared, env("GIAC_MJS_B") ?? shared] as const;
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Mod = Record<string, any>;
@@ -62,11 +66,12 @@ interface Row {
   why: string;
 }
 
-/** A fresh EngineHost on the shared engine build, in this tree's code. */
-async function freshHost(t: Tree): Promise<Mod> {
-  const g = (await t.node.loadNodeGiac(mjs)).giac;
-  if (typeof t.home.pasdegCommand === "function") g.eval(t.home.pasdegCommand("rad"));
-  return new t.host.EngineHost(g);
+/** A fresh EngineHost on the tree's engine build, in this tree's code, built as its nodeGiac.ts builds one (G99: giac
+ *  and bridge; the host without a bridge throws on every call, A53). */
+async function freshHost(t: Tree, engine: string): Promise<Mod> {
+  const L = await t.node.loadNodeGiac(engine);
+  if (typeof t.home.pasdegCommand === "function") L.giac.eval(t.home.pasdegCommand("rad"));
+  return new t.host.EngineHost(L.giac, L.bridge);
 }
 
 function run(t: Tree, host: Mod, view: "home" | "cas", input: string, digits: number, angle: Angle): Row {
@@ -107,6 +112,18 @@ const t0 = performance.now();
 const trees = [await loadTree(ta), await loadTree(tb)] as const;
 const rows: string[][] = [];
 let compared = 0;
+/** A53: the runs of each tree, and how many threw (with the first message). */
+const runs = [0, 0];
+const threw = [0, 0];
+const firstThrow: (string | undefined)[] = [undefined, undefined];
+const tally = (k: 0 | 1, r: Row): Row => {
+  runs[k]!++;
+  if (r.mark === "!") {
+    threw[k]!++;
+    firstThrow[k] ??= r.display;
+  }
+  return r;
+};
 const same = (a: Row, b: Row): boolean => a.display === b.display && a.mark === b.mark && a.warn === b.warn && a.why === b.why;
 const fmtRow = (r: Row): string => `${r.mark} ${r.display}${r.warn ? ` warn=${r.warn}` : ""}${r.why ? ` why=${r.why}` : ""}`;
 const clip = (s: string): string => (s.length > 90 ? `${s.slice(0, 87)}...` : s);
@@ -114,10 +131,10 @@ const clip = (s: string): string => (s.length > 90 ? `${s.slice(0, 87)}...` : s)
 for (const view of ["home", "cas"] as const) {
   for (const digits of [12, 30]) {
     for (const angle of ["rad", "deg"] as const) {
-      const hosts = [await freshHost(trees[0]), await freshHost(trees[1])];
+      const hosts = [await freshHost(trees[0], mjs[0]), await freshHost(trees[1], mjs[1])];
       for (const input of inputs) {
-        const a = run(trees[0], hosts[0]!, view, input, digits, angle);
-        const b = run(trees[1], hosts[1]!, view, input, digits, angle);
+        const a = tally(0, run(trees[0], hosts[0]!, view, input, digits, angle));
+        const b = tally(1, run(trees[1], hosts[1]!, view, input, digits, angle));
         compared++;
         if (!same(a, b)) rows.push([`${view} ${digits} ${angle}`, input, clip(fmtRow(a)), clip(fmtRow(b))]);
       }
@@ -127,10 +144,10 @@ for (const view of ["home", "cas"] as const) {
 for (const digits of [12, 30]) {
   for (const angle of ["rad", "deg"] as const) {
     for (const seq of sequences) {
-      const hosts = [await freshHost(trees[0]), await freshHost(trees[1])];
+      const hosts = [await freshHost(trees[0], mjs[0]), await freshHost(trees[1], mjs[1])];
       for (const [k, step] of seq.steps.entries()) {
-        const a = run(trees[0], hosts[0]!, "home", step, digits, angle);
-        const b = run(trees[1], hosts[1]!, "home", step, digits, angle);
+        const a = tally(0, run(trees[0], hosts[0]!, "home", step, digits, angle));
+        const b = tally(1, run(trees[1], hosts[1]!, "home", step, digits, angle));
         compared++;
         if (!same(a, b)) rows.push([`seq ${seq.id} ${digits} ${angle}`, `#${k + 1} ${step}`, clip(fmtRow(a)), clip(fmtRow(b))]);
       }
@@ -138,7 +155,14 @@ for (const digits of [12, 30]) {
   }
 }
 
-console.log(`A = ${ta}\nB = ${tb}\nengine ${mjs}\n${inputs.length} inputs x 8 settings + ${sequences.length} sequences x 4, ${compared} runs compared`);
+console.log(`A = ${ta}\nB = ${tb}\nengine A ${mjs[0]}\nengine B ${mjs[1]}${mjs[0] === mjs[1] ? " (the same build)" : ""}\n${inputs.length} inputs x 8 settings + ${sequences.length} sequences x 4, ${compared} runs compared`);
+const broken = ([0, 1] as const).filter((k) => threw[k]! * 2 > runs[k]!);
+if (broken.length) {
+  for (const k of broken) console.log(`tree ${"AB"[k]}: ${threw[k]} of ${runs[k]} runs throw; the first: ${firstThrow[k]}`);
+  console.log("the diff compares nothing (A53): not \"none\"");
+  console.log(`${((performance.now() - t0) / 1000).toFixed(1)} s`);
+  process.exit(1);
+}
 if (rows.length === 0) console.log("none");
 else {
   console.log("| where | input | A | B |\n|---|---|---|---|");
