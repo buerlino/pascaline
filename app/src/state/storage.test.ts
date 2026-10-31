@@ -47,7 +47,7 @@ describe("an older build never overwrites newer data (A50)", () => {
   it("a record stamped DATA_VERSION + 1 survives a save of the same key from today's code", async () => {
     const newer = { "@pascaline": DATA_VERSION + 1, value: { home: ["from a newer build"] } };
     await seed("history", newer);
-    expect(await kvGet("history")).toEqual({ home: ["from a newer build"] });
+    expect(await kvGet("history")).toEqual({ kind: "value", value: { home: ["from a newer build"] } });
     await kvSet("history", { home: ["today's session"] });
     expect(stored("history")).toEqual(newer);
   });
@@ -85,11 +85,12 @@ describe("an older build never overwrites newer data (A50)", () => {
     expect(ran).toHaveLength(DATA_VERSION);
     // through the store: read (migrated, written back), saved by the session, read again: the value is migrated once
     await seed("defs", SAMPLES["defs"]);
-    const first = await kvGet("defs");
+    const read = await kvGet("defs");
+    const first = read.kind === "value" ? read.value : undefined;
     await settle();
     expect(stored("defs")).toEqual(stamp(first));
     await kvSet("defs", first);
-    expect(await kvGet("defs")).toEqual(first);
+    expect(await kvGet("defs")).toEqual({ kind: "value", value: first });
     expect(JSON.stringify(first)).toContain("D:=(sin((pi/180)*(1)))");
   });
 });
