@@ -11,7 +11,7 @@ The one place for "where are we and what's left", one or two lines per open item
 | **The core freeze (P23)** | **Ended 2026-10-27** (owner). Its net stays: [tests/core/](../tests/core/README.md) (66 everyday tasks, all active) runs on every merge and on the night's device; a red case is a bug to fix. Order of the work: brief section 0. |
 | Milestone 4a: feel (P11) | **Next after Find.** Merged: the entry work (⌫, cursor, focus, hardware keys), sheets, flicks, Settings as levels of the Mode sheet (R49) with Help and about (R87), history-row actions, R15b, R15c1, R15c2, R15c3, the mockups (R12a). Waiting: R15c4, the palette, the visual pass, results mode, the trust features |
 | Milestone 4: Find and trust | Engine side done (marks, 30 digits, chips, copy, defs, the Find index, the size test, A4a); Find's UI: R4a, R4b built; A4b next |
-| Milestone 5: Units | The evaluator on Giac is done (P15: G15–G18, G25, G13, G7, G32, R28, R24a); the pad (R24b) and the unit view's entry (R24c) are built, the units key opens it; next R24d, the result view (R60–R63), ± on Shift + `,` (R71), then R92 (the units menu's Tools and Const tabs) |
+| Milestone 5: Units | The evaluator on Giac is done (P15: G15–G18, G25, G13, G7, G32, R28, R24a); the pad (R24b), the unit view's entry (R24c) and Find in a slot with the user cells (R24d) are built, the units key opens it; next the result view (R60–R63), ± on Shift + `,` (R71), then R92 (the units menu's Tools and Const tabs) |
 | Milestone 6: Structure | Not started (EN5–EN7, Help) |
 | MVP release | v0.1.0, the APK and the website from one tag: lane B (brief section 0) |
 

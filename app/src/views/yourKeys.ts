@@ -8,6 +8,7 @@ import { findText as t } from "../i18n/enFind.ts";
 import { legend, t as tr } from "../i18n/index.ts";
 import type { Layer, Special } from "../keyboard/keyboard.ts";
 import { USER_KEY_IDS, USER_LAYERS, type UserKeys } from "../keyboard/userKeys.svelte.ts";
+import { CELL_KEYS, LEG_OF, unitCells } from "../units/userCells.svelte.ts";
 
 /** What Settings › Your keys needs from the app: the slots, and Find to pick a slot's content from (App.svelte). */
 export interface SettingsEnv {
@@ -66,6 +67,7 @@ export function yourKeysItems(env: SettingsEnv): MenuItem[] {
   };
   return [
     ...USER_KEY_IDS.flatMap((id, i) => USER_LAYERS.map((layer) => slot(id, i + 1, layer))),
+    unitCellsItem(env),
     { id: "reset", label: t("keys.reset"), keep: true, run: () => u.reset() },
   ];
 }
@@ -75,3 +77,48 @@ export function yourKeysValue(env: SettingsEnv): string {
   const n = env.userKeys ? slotsSet(env.userKeys) : 0;
   return n === 0 ? t("keys.none") : t("keys.some", { n: String(n) });
 }
+
+/** Settings › Your keys › Unit pad cells (R24d): the user cells of the unit pad, U1–U6 with a tap, a flick up (Shift) and a
+ *  flick down (Alpha), eighteen legs. A leg's level: Find on units (the pick sets it), back to its default, or empty.
+ *  The legs are in the stamped store under UNIT_PAD_CELLS (units/userCells.svelte.ts); pressing a free key goes to its row. */
+function unitCellsItem(env: SettingsEnv): MenuItem {
+  const leg = (key: string, n: number, layer: Layer): MenuItem => {
+    const name = `U${n}${MARK[layer]}`;
+    const l = LEG_OF[layer];
+    return {
+      id: `${key}:${layer}`,
+      label: name,
+      get value() {
+        return unitCells.textOf(key, l) ?? t("keys.empty");
+      },
+      slot: { key, layer },
+      submenu: {
+        title: name,
+        items: [
+          { id: "find", label: t("keys.find"), run: () => env.chooseFor?.(`${CELL_PREFIX}${key}`, layer) },
+          { id: "default", label: t("keys.default"), keep: true, run: () => unitCells.reset(key, l) },
+          { id: "empty", label: t("keys.emptyDo"), keep: true, run: () => unitCells.set(key, l, null) },
+        ],
+      },
+    };
+  };
+  let loaded = false;
+  return {
+    id: "unitcells",
+    label: t("keys.unitCells"),
+    get value() {
+      return unitCells.count() === 0 ? t("keys.none") : t("keys.some", { n: String(unitCells.count()) });
+    },
+    submenu: {
+      title: t("keys.unitCells"),
+      loading: () => (loaded ? null : unitCells.restore().then(() => void (loaded = true))),
+      items: [
+        ...CELL_KEYS.flatMap((key, i) => (["primary", "shift", "alpha"] as const).map((layer) => leg(key, i + 1, layer))),
+        { id: "reset", label: t("keys.resetCells"), keep: true, run: () => unitCells.reset() },
+      ],
+    },
+  };
+}
+
+/** `chooseFor`'s id for a unit pad cell: "cell:u1" (the free keys' own ids are "u1" …). */
+export const CELL_PREFIX = "cell:";

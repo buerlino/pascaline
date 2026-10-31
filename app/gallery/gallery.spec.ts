@@ -2,8 +2,9 @@
 // The UI gallery (docs/05 section 4, U0): one screenshot per screen state, in light and dark, at phone size, then
 // test/gallery/index.html with every state side by side. Needs the real engine (GIAC_OUT when not built here).
 // Run: npm run gallery   (PW_PORT=<port> to avoid a server of another checkout)
-import { mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { test, type Page } from "@playwright/test";
+import { parse } from "yaml";
 import { entryValue, open, tap } from "../test/helpers.ts";
 
 const OUT = new URL("../test/gallery/", import.meta.url).pathname;
@@ -64,6 +65,49 @@ function padShots(): Shot[] {
         await tap(p, keys as string[]);
       },
     })),
+  );
+}
+
+/** R24d: Find in a unit slot (the units menu of the empty query, a typed query with "Put on the unit pad"), a user cell being
+ *  set (which cell, then which tap), and Settings › Your keys › Unit pad cells, at both sizes. */
+function unitFindShots(): Shot[] {
+  const letters = new Map<string, string>();
+  for (const k of (parse(readFileSync(new URL("../../spec/keyboard.yaml", import.meta.url), "utf8")) as { keys: { id: string; alpha?: { type?: string } }[] }).keys) {
+    const t = k.alpha?.type;
+    if (t !== undefined && /^[A-Za-z]$/.test(t) && !/^d\d$/.test(k.id) && !letters.has(t.toLowerCase())) letters.set(t.toLowerCase(), k.id);
+  }
+  const type = (q: string): string[] => [...q].map((c) => letters.get(c) as string);
+  const inSlot = async (p: Page, keys: string[]): Promise<void> => {
+    await tap(p, ["d7", "d2", "shift", "tmpl"]); // 72, then the units key
+    await p.waitForFunction(() => window.pascaline.unitView !== undefined && document.querySelector('[data-pad="unit"]') !== null);
+    await tap(p, keys);
+  };
+  const sizes = [
+    { tag: "360", group: "Find in a slot and the user cells (R24d), 360 × 740", viewport: { width: 360, height: 740 } },
+    { tag: "412", group: "Find in a slot and the user cells (R24d), 412 × 915", viewport: { width: 412, height: 915 } },
+  ];
+  const cases: { id: string; title: string; setup: (p: Page) => Promise<void> }[] = [
+    { id: "menu", title: "Math in a unit slot: Find on units, the empty query shows the units menu by category (Prefixes first)", setup: (p) => inSlot(p, ["math"]) },
+    { id: "category", title: "Find in a slot › Length: the category's units in the file's order", setup: (p) => inSlot(p, ["math", "d2"]) },
+    { id: "typed", title: "Find in a slot, mpa typed: the row with its preview and 'Put on the unit pad' under the list", setup: (p) => inSlot(p, ["math", ...type("mpa")]) },
+    { id: "cell", title: "A user cell being set: which cell, with its three legs as the value", setup: (p) => inSlot(p, ["math", ...type("mpa"), "right"]) },
+    { id: "leg", title: "A user cell being set: U1's tap, flick up and flick down", setup: (p) => inSlot(p, ["math", ...type("mpa"), "right", "d1"]) },
+    { id: "set", title: "The unit pad with MPa put on U1's flick up (the legend) and the slot unchanged", setup: (p) => inSlot(p, ["math", ...type("mpa"), "right", "d1", "d2"]) },
+    { id: "empty", title: "An empty user cell opens Find (U1's tap emptied in Settings first)", setup: async (p) => {
+      await tap(p, ["@mode", "d5", "d4"]);
+      await p.locator('[data-id="unitcells"]').tap();
+      await p.locator('[data-id="u1:primary"]').tap();
+      await p.locator('[data-id="empty"]').tap();
+      await p.evaluate(() => window.pascaline.shell.closeSheet());
+      await inSlot(p, ["u1"]);
+    } },
+    { id: "settings", title: "Settings › Your keys › Unit pad cells: U1–U6 with a tap, a flick up (⇧) and a flick down (α)", setup: async (p) => {
+      await tap(p, ["@mode", "d5", "d4"]);
+      await p.locator('[data-id="unitcells"]').tap();
+    } },
+  ];
+  return sizes.flatMap((z) =>
+    cases.map((c) => ({ id: `unitfind-${c.id}-${z.tag}`, group: z.group, title: c.title, viewport: z.viewport, setup: c.setup })),
   );
 }
 
@@ -260,6 +304,7 @@ const shots: Shot[] = [
   },
   ...settingsShots(),
   ...padShots(),
+  ...unitFindShots(),
   ...lookShots(),
   {
     id: "home-tmpl",

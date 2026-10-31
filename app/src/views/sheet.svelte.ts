@@ -282,6 +282,10 @@ export class Sheet {
       return STAY;
     }
     const item = this.level.current;
+    if (item?.put && !item.disabled) {
+      item.put.run();
+      return STAY;
+    }
     if (item && !item.disabled && item.adjust) {
       item.adjust(1);
       return STAY;
