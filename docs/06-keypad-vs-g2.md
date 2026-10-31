@@ -12,7 +12,7 @@ The legend is missing on the keytop only because the feature is not built; the k
 | View | results mode: the keypad collapses to a slice (R53) | P16, S9 |
 | Math | Find, everything (a G2-style Math menu) | P8, P11 |
 | Vars | Find filtered to variables | P8 |
-| Shift + `,` | ± in the unit view (R71) | decisions.md "M4-2" |
+| Shift + `,` | ± on the Home and CAS line, for the units key to read; dimmed in an app (R71) | decisions.md "M4-2" |
 | Shift + Fmt | Mode (R85) | decisions.md "Settings in the Mode sheet, and presets" |
 | Shift + Math | Memory (Find on variables and functions, with delete) | docs/04 5.1 |
 | Shift + Tmpl | the unit view (milestone 5) | P11, S1 |
@@ -34,7 +34,7 @@ The legend is missing on the keytop only because the feature is not built; the k
 | Shift + Symb, Plot, Num (Setup) omitted | the same settings sit in the Mode sheet and in the Plot and Num menus (Window, Start, Step); nothing is lost |
 | Shift + Vars (Chars) omitted | Find covers named symbols (docs/04 5.1) |
 | Shift + 1 (Program) omitted | no PPL and no Python (P11); programs are Giac definitions |
-| Shift + `,` (Eval) and Shift + `( )` (tick marks) omitted | Shift + `,` becomes ± (R71, section 1); "evaluate at" comes with the Tmpl palette; quoting is not used for engineering work |
+| Shift + `,` (Eval) and Shift + `( )` (tick marks) omitted | Shift + `,` becomes ± (R71, section 1): no free key nearer the digits, and Shift + − is EN6's Base; "evaluate at" comes with the Tmpl palette; quoting is not used for engineering work |
 | Shift + 0 (Notes) and Shift + Help (User) omitted | no notes feature; the User keyboard is a parked idea (feedback #17) |
 | `(−)` where the G2 prints `+/−` | behaviour is identical: the G2 key inserts a minus sign and does not toggle (keys.yaml r6c2). The label is the honest one |
 | Shift + x = y, where the G2 has Define | kept for now (owner, 2026-10-13). Revisit when typing `f(x):=…` shows up as a friction |

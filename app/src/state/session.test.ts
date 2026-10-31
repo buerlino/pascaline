@@ -43,6 +43,7 @@ describe("Session history", () => {
   it("stores finished entries of both views and restores them without calling the engine", async () => {
     const kv = memoryKv();
     const a = new Session(new ValueCalc(), kv);
+    await a.restoreHistory(); // the history is written only after it was read (R106)
     await a.submit("\\frac13");
     a.setView("cas");
     await a.submit("\\frac12");
@@ -70,6 +71,7 @@ describe("Session history", () => {
     const kv = memoryKv();
     const slow = new FakeCalc(10_000);
     const a = new Session(slow, kv);
+    await a.restoreHistory();
     const job = a.submit("1+1");
     expect(a.busy).toBe(true);
     await a.cancel();
@@ -79,6 +81,7 @@ describe("Session history", () => {
     expect(stored.home).toHaveLength(0);
 
     const done = new Session(new ValueCalc(), kv);
+    await done.restoreHistory();
     await done.submit("2");
     const again = new Session(new ValueCalc(), kv);
     await again.restore();
@@ -91,6 +94,7 @@ describe("Session history", () => {
   it("an entry typed while the history is still loading is kept, stored with it, and ids stay unique", async () => {
     const kv = memoryKv();
     const old = new Session(new ValueCalc(), kv);
+    await old.restoreHistory();
     for (const x of ["1", "2", "3"]) await old.submit(x);
     const s = new Session(new ValueCalc(), kv);
     const restoring = s.restoreHistory();
@@ -106,6 +110,7 @@ describe("Session history", () => {
   it("clearing the history clears the store", async () => {
     const kv = memoryKv();
     const a = new Session(new ValueCalc(), kv);
+    await a.restoreHistory();
     await a.submit("2");
     a.clearHistory();
     expect((kv.data.get("history") as { home: unknown[] }).home).toHaveLength(0);
@@ -116,6 +121,7 @@ describe("deleting a row (R11)", () => {
   it("removes that row only, in the open view, and writes the store", async () => {
     const kv = memoryKv();
     const s = new Session(new ValueCalc(), kv);
+    await s.restoreHistory();
     for (const e of ["1", "2", "3"]) await s.submit(e);
     const second = s.home[1];
     if (!second) throw new Error("no second row");
@@ -282,6 +288,7 @@ describe("Session safe start (G19, F31)", () => {
   it("says it once, as a history line in the i18n table (not a header note), and does not store it", async () => {
     const kv = memoryKv();
     const s = new Session(new SafeCalc(), kv);
+    await s.restoreHistory();
     await tick();
     for (const list of [s.home, s.cas]) {
       expect(list).toHaveLength(1);
