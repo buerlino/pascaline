@@ -131,8 +131,11 @@ export const LAZY_PARTS = ["src/views/sheetKeys.ts", "src/views/tmplSheet.ts", "
  *  the key path (Keypad's count at each lift, the screen-tap listener and the hardware-key hooks in App.svelte,
  *  state/pressCount.ts, the counter's field); the Settings row is in the lazy sheet chunk.
  *  60.95 → 60.97 kB (R70f1): the pipeline's build of the branch measures 60.96 kB, 0.03 kB over the 60.93 kB of the first run
- *  (same sources; the order of the chunk's strings, as in G133f1); 0.01 kB of room is left under the pin. */
-export const START_PIN_GZIP = 60.97 * KB;
+ *  (same sources; the order of the chunk's strings, as in G133f1); 0.01 kB of room is left under the pin.
+ *  60.97 → 60.99 kB (G81): phase-1 60.96 kB, the branch 60.99 kB (raw +0.07 kB): a stored constant chip keeps its basis
+ *  and leaves (validChips, read back at start); their check is in basisOf, in the lazy chunks. 0.01 kB is left under the
+ *  budget of 61.00 kB. */
+export const START_PIN_GZIP = 60.99 * KB;
 
 /** Failures for the start chunk's row when it is over the pin. */
 export function checkStartPin(row: Row): string[] {

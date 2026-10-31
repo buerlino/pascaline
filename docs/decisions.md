@@ -13,8 +13,6 @@ The owner's other open items are in [backlog.md](backlog.md), "Needs the user". 
 
 - **G133f1 (patch 0023): Home calls an exact 0 it cannot prove "Underflow".** `novalue.ts` `underflow` takes a value whose evalf is an MPFR zero at P and at MAX_EVAL_DIGITS, and that `normal` does not prove 0, for an underflow. Already on phase-1 for `re(asinh(i/5))`, `re(asinh(i/7))` (true value 0); with patch 0023 also `re(asin(i))`, `re(asinh(i/1000))`, `re(asinh(i/10))` (were ⚠ 0, unchecked) and `re(asin(i/10))`, `re(asin(i/3))` (were ⚠ -3E-686, 2E-680). No wrong number, a wrong reason. Proposal: a gorge package that tells the two apart (an underflow's value has an exponent past MPFR's range; a true 0 has none), with these inputs as cases.
 
-- **G81: a result whose every leaf cancels (σ = 0) still shows `≈`.** With constants entering through their basis, `μ₀·ε₀·c²` is exactly 1 with σ exactly 0 (Home: no `uncDigits`; the unit view: `1 ± 0`), but the input holds constants with an uncertainty, so decisions M4-4 keeps `≈`. Recommendation: keep `≈` (an identity of constants is rare, and `=` would rest on libqalculate's formulas being exact definitions, which only holds for the SI 2019 ones); if `=` is wanted, a package lets an exact result with a σ of exactly 0 over the leaves drop the `inexact` fact.
-
 - **The start chunk's room:** after R70 it is 60.96 of the 61 kB budget (pin 60.97), and R24d (+0.10), R38a, R71, R15c4 and R88 still come. Opus pass 23 runs the split now, as R70f1: about 1 kB of code that runs only after a press leaves the start chunk, and the 61 kB budget stays. Recommendation: keep the budget; say so if you would rather raise it.
 
 ## Decided proposals

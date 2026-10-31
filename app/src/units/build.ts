@@ -386,7 +386,7 @@ export function buildJob(req: UnitRequest, table: FactorTable): UnitJob | UnitEr
     const vars: UncVar[] = [];
     const formula = uncertainValues(req.formula, vars);
     const seen = new Map<string, string>();
-    const through = correlated((req.consts ?? []).flatMap((id) => (table.consts.has(id) ? [[id, table.consts.get(id)!] as const] : [])));
+    const through = correlated((req.consts ?? []).map((id) => [id, table.consts.get(id) ?? {}] as const));
     const consts = (req.consts ?? []).map((id) => constGiac(id, table, vars, seen, through));
     const used = new Set<string>();
     const sym = formula.replace(PLACEHOLDER, (all, kind: string, n: string) => {

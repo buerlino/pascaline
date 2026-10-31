@@ -21,18 +21,6 @@ export interface Chip extends Omit<ValueFacts, "reliableDigits">, Partial<Pick<V
   basisLeaves?: Record<string, { value: string; unc: string }>;
 }
 
-/** G81: a stored basis's leaves when every one is `{ value, unc }` of strings, else undefined. */
-function validLeaves(x: unknown): Record<string, { value: string; unc: string }> | undefined {
-  if (!x || typeof x !== "object") return undefined;
-  const out: Record<string, { value: string; unc: string }> = {};
-  for (const [k, l] of Object.entries(x as Record<string, unknown>)) {
-    const { value, unc } = (l ?? {}) as Record<string, unknown>;
-    if (!/^[A-Za-z0-9_]+$/.test(k) || typeof value !== "string" || typeof unc !== "string") return undefined;
-    out[k] = { value, unc };
-  }
-  return Object.keys(out).length ? out : undefined;
-}
-
 /** Keys: `res:<k>` for `\res{k}{…}`, `const:<ID>` for `\const{ID}{…}`, `ans` for `\ans` (filled at Enter). */
 export type ChipTable = Record<string, Chip>;
 
@@ -70,10 +58,10 @@ export function validChips(x: unknown): ChipTable | undefined {
     if (!/^(res:\d+|const:[A-Za-z0-9_]+)$/.test(k) || !c || typeof c !== "object") continue;
     const { value, exact, unc, reliableDigits: rd, warn, basis, basisLeaves } = c as Record<string, unknown>;
     if (typeof value !== "string" || typeof exact !== "boolean") continue;
-    const chip: Chip = typeof unc === "string" ? { value, exact, unc } : { value, exact };
-    // G81: a constant's basis only whole, with its leaves; a chip without them keeps today's path
-    const leaves = typeof unc === "string" && typeof basis === "string" ? validLeaves(basisLeaves) : undefined;
-    if (leaves) Object.assign(chip, { basis, basisLeaves: leaves });
+    // G81: a constant's basis and leaves as stored, unchecked: basisOf (constBasis.ts) checks their types and each
+    // leaf the basis names before any use, so a malformed or absent one keeps today's path (the check is not in the
+    // start chunk)
+    const chip: Chip = typeof unc === "string" ? ({ value, exact, unc, basis, basisLeaves } as Chip) : { value, exact };
     if (rd === null || (typeof rd === "number" && Number.isInteger(rd) && rd >= 0 && rd <= 1000)) chip.reliableDigits = rd;
     if (warn === "unaudited" || warn === "unchecked") chip.warn = warn;
     out[k] = chip;

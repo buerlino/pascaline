@@ -51,7 +51,9 @@ export function factorTable(items: readonly IndexItem[]): FactorTable {
       consts.set(bare(it.id), {
         value: it.value,
         ...(it.unc ? { unc: it.unc } : {}),
-        ...(it.unc && it.basis !== undefined && it.basisLeaves !== undefined ? { basis: it.basis, basisLeaves: it.basisLeaves } : {}),
+        // G81: basisOf (engine/constBasis.ts) reads them only for an inexact constant with every leaf it names
+        basis: it.basis,
+        basisLeaves: it.basisLeaves,
         ...(it.dim !== undefined ? { dim: it.dim } : {}),
         symbol: symbolOf(it),
       });
