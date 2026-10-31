@@ -401,6 +401,9 @@ export const PATCHED_IDS = new Map([
   // G134 fix round 1: the exact sqrt of z = (1/2+i/10^20)^2-1 cancelled in a+rho (a < 0, b tiny): its evalf at Digits 40
   // was a wrong root, so G133 left the line out as cancelling (CANCELS_IDS); with patch 0021 it holds at Digits 40
   ["g133-acosh-half-tiny-i-30", "0021-complex-sqrt-unproved-zero.patch"],
+  // G133f1: asinh(i/10) with no real part, so asinh of 10^20 times it is on its cut's documented side (patch 0023)
+  ["g133f1-asinh-1e20asinh-i/10-12", "0023-asin-imaginary-real-part.patch"],
+  ["g133f1-asinh-1e20asinh-i/10-30", "0023-asin-imaginary-real-part.patch"],
 ]);
 // G122: Giac's exact answer is right (patch 0014), but pc()'s evalf of it at Digits 40 cancels the digits of a large k*pi
 // (asin(cos(30!)) = -pi/2+30!-k*pi with k of 32 digits keeps about 7, -pi/2+10^50-k*pi none); Home raises the precision
