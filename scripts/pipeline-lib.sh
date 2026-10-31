@@ -175,6 +175,18 @@ nodemods_drop() {
   [[ $nodemods_held -eq 1 ]] || return 0
   tools/devlock.sh release nodemods "$nodemods_owner" >/dev/null 2>&1 || true; nodemods_held=0
 }
+# device_tree <phase-1 worktree> <sha> <dir> (A56): the device runner's own tree, so nothing it reads moves under it: the files
+# tracked at <sha> (git archive) and a hard-link copy of the worktree's app/node_modules; nodemods must be held (the copy reads
+# the phase-1 worktree's node_modules, as a worker start does). Prints "<size of the files> in <s> s"; 1 on a failure.
+device_tree() {
+  local src="$1" sha="$2" d="$3" t0=$SECONDS
+  [[ $nodemods_held -eq 1 ]] || { echo "device_tree without the nodemods lock" >&2; return 1; }
+  [[ -d "$src/app/node_modules" ]] || { echo "no node_modules in $src/app" >&2; return 1; }
+  rm -rf "$d" && mkdir -p "$d" || return 1
+  git -C "$src" archive "$sha" | tar -x -C "$d" || return 1
+  mkdir -p "$d/app" && cp -al "$src/app/node_modules" "$d/app/node_modules" || return 1
+  echo "$(du -sh --exclude=node_modules "$d" | cut -f1) in $((SECONDS - t0)) s"
+}
 # quiet_wait (A51): before a timing rerun, wait until the 1-minute load average is under half of nproc (a check every 15 s, at most
 # 600 s), then return 0 whatever the load: a rerun under the same load that failed it proves nothing. It prints one line per
 # event (the caller sends them to the run log). Test hooks: PASCALINE_LOADAVG_FILE (read instead of /proc/loadavg), PASCALINE_NPROC,

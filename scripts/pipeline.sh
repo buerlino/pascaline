@@ -50,7 +50,7 @@
 # (gc leaves a live run alone). GIAC_OUT is always an immutable engine/giac/_out/key-<k>; gsl is a copy for people.
 # Locks (each waits up to 7200 s, logged): integ for the merge queue, an npm ci of the phase-1 worktree, a rebuild of phase-1's
 # engine at a start, a whole pass, a whole report and a device step's APK build; nodemods (A47bf1) for every copy out of the
-# phase-1 worktree's app/node_modules and every npm ci in it (the device build's too), so a fresh start copies under nodemods
+# phase-1 worktree's app/node_modules and every npm ci in it (the device build's and its runner's tree, A56), so a fresh start copies under nodemods
 # alone; host-cpu around the checks and builds.
 # Lock order: integ, then nodemods, then host-cpu, everywhere; nothing holding a later one waits for an earlier one.
 # Starts read the package and the brief from phase-1's commit (git show), so a dirty phase-1 worktree never stops a start.
@@ -232,9 +232,9 @@ if [[ "${1:-}" == "device" ]]; then
   if [[ "${3:-}" == "--dry-run" ]]; then
     integ="$(integ_dir)"; : "${integ:=$main/.claude/worktrees/phase-1}"
     echo "DRY RUN: device step $n on ${dev:-<ANDROID_SERIAL unset: DEVICE SKIPPED>}; output in $run; at most 30 minutes"
-    echo "1. under integ, then nodemods (device-$n, each waits up to 7200 s; build.sh runs npm ci in the phase-1 worktree): (cd $integ && tools/device-build.sh --test) = the test APK of phase-1's HEAD, built under the host-cpu lock (build.sh takes it); the APK copied to $run; nodemods and integ released"
-    echo "2. tools/devlock.sh acquire ${dev:-<serial>} device-$n-install 600; adb -s ${dev:-<serial>} install -r $run/pascaline.apk (our app only); release"
-    echo "3. ANDROID_SERIAL=${dev:-<serial>} tools/core-device.sh   (A32's runner; holds the device lock, stay-awake and restore)"
+    echo "1. under integ, then nodemods (device-$n, each waits up to 7200 s; build.sh runs npm ci in the phase-1 worktree): (cd $integ && tools/device-build.sh --test) = the test APK of phase-1's HEAD, built under the host-cpu lock (build.sh takes it); the APK copied to $run; the runner's own tree (A56): git archive <sha> into $run/tree, cp -al $integ/app/node_modules $run/tree/app/node_modules; nodemods and integ released"
+    echo "2. $run/tree/tools/devlock.sh acquire ${dev:-<serial>} device-$n-install 600; adb -s ${dev:-<serial>} install -r $run/pascaline.apk (our app only); release"
+    echo "3. ANDROID_SERIAL=${dev:-<serial>} $run/tree/tools/core-device.sh   (A32's runner from the run's tree, no lock held: npx --no-install; holds the device lock, stay-awake and restore); the tree removed after a CORE DEVICE line, kept on a skip"
     echo "4. log: - HH:MM pipeline device $n: CORE DEVICE <p>/<a> (known <k>, new <ids or none>) on <sha>"
     echo "skipped, never failed (exit 0): integ busy for 7200 s, a dirty phase-1 worktree, no device or unauthorized, battery under 10 %, screen locked (KEYCODE_WAKEUP, dumpsys window isKeyguardShowing=true; checked before the build and again before the runner), a build failure -> DEVICE SKIPPED (<why>)"
     echo "RESULT device $n: DRY RUN"; exit 0
@@ -255,31 +255,31 @@ if [[ "${1:-}" == "device" ]]; then
   locked && skip "screen locked"
   # A47b: integ while the APK is built (one HEAD, no merge meanwhile), released before the device run; build.sh takes host-cpu itself
   trap 'nodemods_drop; integ_drop' EXIT
-  integ_take "device-$n" "pipeline device $n:" || skip "integ lock busy"
-  integ_clean "$integ" || skip "phase-1 worktree not clean"
-  # A47bf1: build.sh runs npm ci in the phase-1 worktree: nodemods (inside integ) keeps every start's copy out of it meanwhile
-  nodemods_take "device-$n" "pipeline device $n:" || skip "nodemods lock busy"
-  sha="$(git -C "$integ" rev-parse --short HEAD)"
+  integ_take "device-$n" "pipeline device $n:" || skip "integ lock busy"; integ_clean "$integ" || skip "phase-1 worktree not clean"
+  # nodemods inside integ: build.sh's npm ci (A47bf1) and the runner's own tree (A56): no start's copy, other npm ci or merge meets them
+  nodemods_take "device-$n" "pipeline device $n:" || skip "nodemods lock busy"; sha="$(git -C "$integ" rev-parse --short HEAD)"
   t0=$SECONDS; rm -f "$run/pascaline.apk"
   rc=0; (cd "$integ" && timeout -k 60 1200 tools/device-build.sh --test) > "$run/build.log" 2>&1 || rc=$?
   [[ $rc -ne 0 || ! -f "$integ/dist/pascaline.apk" ]] || cp "$integ/dist/pascaline.apk" "$run/pascaline.apk" || rc=1
+  tree="$run/tree"; tinfo=""; [[ $rc -ne 0 ]] || tinfo="$(device_tree "$integ" "$sha" "$tree" 2> "$run/tree.log")" || tinfo=""
   nodemods_drop; integ_drop
   [[ $rc -eq 0 && -f "$run/pascaline.apk" ]] || skip "build failed, rc=$rc; see $run/build.log"
-  "$integ/tools/devlock.sh" acquire "$dev" "device-$n-install" 600 >/dev/null || skip "device lock busy"
+  [[ -n "$tinfo" ]] || skip "no runner tree; see $run/tree.log"; runlog "runner tree $tree: $tinfo, node_modules hard-linked"
+  "$tree/tools/devlock.sh" acquire "$dev" "device-$n-install" 600 >/dev/null || skip "device lock busy"
   rc=0; timeout -k 30 300 adb -s "$dev" install -r "$run/pascaline.apk" > "$run/install.log" 2>&1 || rc=$?
-  "$integ/tools/devlock.sh" release "$dev" "device-$n-install" >/dev/null || true
+  "$tree/tools/devlock.sh" release "$dev" "device-$n-install" >/dev/null || true
   [[ $rc -eq 0 ]] || skip "install failed, rc=$rc; see $run/install.log"
   before=0; [[ -f "$coord/device-runs.jsonl" ]] && before="$(wc -l < "$coord/device-runs.jsonl")"
   left=$((1800 - (SECONDS - t0))); (( left > 120 )) || skip "no time left after the build"
   locked && skip "screen locked (after the build)"
-  rc=0; ANDROID_SERIAL="$dev" PASCALINE_COORD="$coord" timeout -k 60 "$left" "$integ/tools/core-device.sh" > "$run/core.log" 2>&1 || rc=$?
+  rc=0; ANDROID_SERIAL="$dev" PASCALINE_COORD="$coord" timeout -k 60 "$left" "$tree/tools/core-device.sh" > "$run/core.log" 2>&1 || rc=$?
   line="$(grep -E '^CORE DEVICE ' "$run/core.log" | tail -n1 || true)"
-  [[ -n "$line" ]] || skip "runner gave no CORE DEVICE line, rc=$rc; see $run/core.log"
+  [[ -n "$line" ]] || skip "runner gave no CORE DEVICE line, rc=$rc; see $run/core.log"; rm -rf "$tree"  # kept on a skip, for a look
   new="$(tail -n +"$((before + 1))" "$coord/device-runs.jsonl" 2>/dev/null | grep '"kind":"core"' | grep '"ok":false' | grep -o '"case":"c[0-9]*"' | cut -d'"' -f4 | sort -u | paste -sd, - || true)"
   known="$(grep -oE 'known [0-9]+' <<<"$line" | cut -d' ' -f2)"; needs="$(grep -oE 'needs [0-9]+' <<<"$line" | cut -d' ' -f2)"
   counts="$(grep -oE '[0-9]+/[0-9]+' <<<"$line" | head -n1)"
   log "pipeline device $n: CORE DEVICE $counts (known $known, new ${new:-none}) on $sha"
-  echo "RESULT device $n: CORE DEVICE $counts (known $known, needs $needs, new ${new:-none}) on $sha ($((SECONDS - t0)) s)"; exit 0
+  echo "RESULT device $n: CORE DEVICE $counts (known $known, needs $needs, new ${new:-none}) on $sha ($((SECONDS - t0)) s; runner tree $tinfo)"; exit 0
 fi
 
 # ---------- subcommand: flakes ----------

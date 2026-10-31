@@ -22,7 +22,9 @@ if grep -q 'isKeyguardShowing=true' <<<"$win"; then
 fi
 python3 "$REPO/tools/device_run.py" status >&2 || true
 GREP=(); [[ -n "$ONLY" ]] && GREP=(--grep "\b(${ONLY//,/|}) ")
-cd "$REPO/app" && timeout 3000 npx playwright test -c playwright.device.config.ts "${GREP[@]}"
+# A56: never a download: a missing Playwright stops here (npx would fetch an unpinned one from the registry)
+[[ -x "$REPO/app/node_modules/.bin/playwright" ]] || { echo "no Playwright in $REPO/app/node_modules: npm ci there first" >&2; exit 5; }
+cd "$REPO/app" && timeout 3000 npx --no-install playwright test -c playwright.device.config.ts "${GREP[@]}"
 rc=$?
 python3 "$REPO/tools/device_run.py" status >&2 || true
 exit $rc
