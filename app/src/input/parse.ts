@@ -273,8 +273,9 @@ class Parser implements CalcParser {
         return !(this.noDiff > 0 && this.diffLen() > 0);
       case "cmd":
         if (t.v === "mathrm" && this.noDiff > 0 && this.diffLen() > 0) return false;
-        // R28: in units mode a prompt or ± with no number before it reaches atom(), which says why it is refused
-        if (this.units && (t.id !== undefined || t.v === "pm")) return true;
+        // R28: in units mode a prompt or ± with no number before it reaches atom(), which says why it is refused;
+        // R71f1: outside units mode ± reaches atom() too, which sends the user to the unit view
+        if (t.v === "pm" || (this.units && t.id !== undefined)) return true;
         // the exponent mark after something that is not a number: atom() refuses it with a message
         // Å and & (R18) too, so that 5Å reaches the message that says why it is refused
         return FACTOR_CMDS.has(t.v) || t.v in FUNCS || t.v in CONSTS || t.v in GREEK || t.v === EMARK || t.v === ARING || t.v === "&";
@@ -599,6 +600,7 @@ class Parser implements CalcParser {
     if (name === EMARK) throw parseError("parse.typeTheNumber");
     if (this.units && promptId(this.peek()) !== undefined) throw parseError("parse.slotNeedsNumber");
     if (this.units && name === "pm") throw parseError("parse.pmNeedsNumber");
+    if (name === "pm") throw parseError("parse.pmUnitView");
     if (name in CONSTS) {
       this.pos++;
       return CONSTS[name] as string;

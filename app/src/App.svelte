@@ -465,7 +465,7 @@
       alphaLock={session.alphaLock}
       capsLock={session.capsLock}
       shiftLock={session.shiftLock}
-      cas={casKeys}
+      cas={casKeys} app={shell.app !== null}
       sheet={shell.sheet ? { filter: shell.sheet.level.filterable } : undefined}
       onpress={press}
       oncount={() => session.taps.press()}

@@ -38,7 +38,7 @@ export type ActionBody =
   /** Type characters as a physical keyboard would (smart fences, auto-subscript rules apply). */
   | { kind: "type"; text: string }
   /** Insert a LaTeX template; #? marks a placeholder, #@ the selection or what is before the cursor. */
-  | { kind: "insert"; latex: string; sample?: readonly [string, string]; chip?: ConstChip }
+  | { kind: "insert"; latex: string; sample?: readonly [string, string]; chip?: ConstChip; units?: true }
   /** A MathLive editing command. */
   | { kind: "cmd"; name: string }
   /** Handled by the app (shift, alpha, enter, clear, esc, Home/CAS, settings, mode, apps and their views, menu). */
@@ -152,7 +152,7 @@ export function parseAction(v: unknown, where: string): Action {
 
 function parseBody(v: unknown, where: string): ActionBody {
   if (!isObj(v)) throw new KeyboardSpecError(`${where}: an action must be a mapping`);
-  const names = Object.keys(v).filter((k) => k !== "sample" && k !== "chip");
+  const names = Object.keys(v).filter((k) => k !== "sample" && k !== "chip" && k !== "units");
   if (names.length !== 1) throw new KeyboardSpecError(`${where}: an action has exactly one of type/insert/cmd/special`);
   const name = names[0] as string;
   switch (name) {
@@ -175,10 +175,12 @@ function parseBody(v: unknown, where: string): ActionBody {
         const { key, ...chip } = c as unknown as { key: string } & Chip;
         return { kind: "insert", latex, chip: { key, chip } };
       }
-      if (sample === undefined) return { kind: "insert", latex };
+      // R71: `units: true` = the unit view's line alone reads it (±): its sample is read in units mode, and an app dims the key
+      const units = v["units"] === true ? { units: true as const } : {};
+      if (sample === undefined) return { kind: "insert", latex, ...units };
       if (!Array.isArray(sample) || sample.length !== 2 || sample.some((s) => typeof s !== "string"))
         throw new KeyboardSpecError(`${where}: 'sample' must be [latex, giac]`);
-      return { kind: "insert", latex, sample: [sample[0] as string, sample[1] as string] };
+      return { kind: "insert", latex, sample: [sample[0] as string, sample[1] as string], ...units };
     }
     default:
       throw new KeyboardSpecError(`${where}: unknown action '${name}'`);
@@ -374,6 +376,8 @@ export interface Template {
   readonly variant: "normal" | "line";
   readonly latex: string;
   readonly sample?: readonly [string, string];
+  /** R71: read in units mode (±): the unit view's formula alone has a meaning for it. */
+  readonly units?: boolean;
   /** The parser must refuse the sample (a palette cell whose meaning is not settled). */
   readonly refused?: boolean;
 }
@@ -395,7 +399,7 @@ export function templates(kb: Keyboard): Template[] {
       if (!a) continue;
       for (const [variant, body] of [["normal", a], ["line", a.line]] as const)
         if (body?.kind === "insert")
-          out.push({ keyId: key.id, layer, variant, latex: body.latex, ...(body.sample ? { sample: body.sample } : {}) });
+          out.push({ keyId: key.id, layer, variant, latex: body.latex, ...(body.sample ? { sample: body.sample } : {}), ...(body.units ? { units: true } : {}) });
     }
   return out;
 }

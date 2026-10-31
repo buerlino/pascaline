@@ -17,6 +17,7 @@
     capsLock = false,
     shiftLock = false,
     cas = false,
+    app = false,
     sheet,
     onpress,
     oncount = () => {},
@@ -32,6 +33,8 @@
     shiftLock?: boolean;
     /** The CAS view is under the keys: the letter layer's case is swapped (R58). */
     cas?: boolean;
+    /** An app is under the keys (R71): ±, which only the unit view's line reads, is dimmed. */
+    app?: boolean;
     /** A sheet is open (docs/05 3.1): keys are read by sheetKeys.ts, and the ones that do nothing there look dead.
      *  `filter`: the open list takes letters. */
     sheet?: { filter: boolean } | undefined;
@@ -68,7 +71,7 @@
     const p = k.actions.primary;
     if (p?.kind === "special" && (p.name === "shift" || p.name === "alpha")) return false; // the modifiers work in every layer
     const a = actionFor(k, shift, alpha, false, cas);
-    return !a || (a.kind === "special" && a.name === "none");
+    return !a || (a.kind === "special" && a.name === "none") || (app && a.kind === "insert" && a.units === true);
   };
 
   // Every face and legend is shrunk until it fits its key: never cut, never overlapping (U0, docs/05 3.7).
