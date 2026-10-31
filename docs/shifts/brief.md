@@ -69,7 +69,7 @@ A43, A7, A8 and A9 run by day (section 0). Step 408 runs only on the weekly extr
 
 | Step | What | Agent, model | Branch | After |
 |---|---|---|---|---|
-| 408 | [G137](packages/G137.md) the weekly fuzz and its triage | gorge, Opus | `p1/gorge-nightfuzz-1030` | the weekly night |
+| 408 | [G138](packages/G138.md) the weekly fuzz and its triage | gorge, Opus | `p1/gorge-nightfuzz-1106` | the weekly night |
 | 409 | [G81](packages/G81.md) a constant's σ through its basis | gorge, Opus | `p1/gorge-m4-constcorr` | G80, G76 |
 | 410 | [R60](packages/R60.md) the unit result's alternatives as data | gorge, Opus | `p1/gorge-m5-unitalts` | R24c |
 | 411 | [R61](packages/R61.md) the chip from a unit result | gorge, Opus | `p1/gorge-m5-unitchip` | R24c, G81 |
