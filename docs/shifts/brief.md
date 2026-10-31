@@ -60,7 +60,6 @@ Milestone reviews (section 0): after R50e; after R24d.
 | Step | What | Agent, model | Branch | After |
 |---|---|---|---|---|
 | 316 | [R71](packages/R71.md) ± on Shift + `,` | ron, Sonnet | `p1/ron-m5-pmkey` | R24c |
-| 317 | [R106](packages/R106.md) the history is written only after it was read | ron, Opus | `p1/ron-historyread` | – |
 | 318 | [R93](packages/R93.md) a failed store read is not "nothing stored" | ron, Opus | `p1/ron-failedread` | R106, R88 |
 | 319 | [R94](packages/R94.md) an older build never writes back a newer settings schema | ron, Opus | `p1/ron-settingsguard` | R88 |
 | 320 | [R95](packages/R95.md) one writer per browser profile (web) | ron, Opus | `p1/ron-onewriter` | R106, R93 |
