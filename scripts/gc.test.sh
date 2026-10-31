@@ -40,6 +40,10 @@ sleep 300 & live=$!; trap 'kill "$live" 2>/dev/null; rm -rf "$tmp"' EXIT
 mkdir "$T/002-live" "$T/003-dead"; echo "### y on branch p1/notyet" > "$T/002-live/spec.md"; echo "$live" > "$T/002-live/pid"
 echo "### z on branch p1/gone2" > "$T/003-dead/spec.md"; echo 999999 > "$T/003-dead/pid"
 
+# A56f1: a device step's runner tree kept after a skip: an old device-N loses its tree and moves, logs kept; a fresh one stays whole
+for n in 5 6; do mkdir -p "$T/device-$n/tree/app/node_modules"; head -c 200000 /dev/zero > "$T/device-$n/tree/app/node_modules/big.bin"; echo c > "$T/device-$n/core.log"; done
+old "$T/device-5/tree/app/node_modules/big.bin" "$T/device-5/tree/app/node_modules" "$T/device-5/tree/app" "$T/device-5/tree" "$T/device-5/core.log" "$T/device-5"
+
 snap() { { find "$T" "$C" engine -type f -printf '%p %s %T@\n'; find "$T" "$C" engine -type d -printf 'd %p\n'; } | grep -v 'gc-.*-dry.md' | sort | md5sum; }
 before="$(snap)"
 out="$(bash scripts/gc.sh 2>&1)"; echo "$out" > "${GC_TEST_OUT:-/dev/null}"
@@ -48,6 +52,9 @@ ok "dry run changes nothing" "$(snap)" "$before"
 [[ ! -e "$T/archive/$(date +%F)" ]] || fail "dry run made today's archive folder"
 [[ ! -d "$T/archive/$(date +%F)/001-old" ]] || fail "dry run moved a run"
 for w in pass-7 report-2026-01-01 night-1.log a.png a.apk "key-dead" "archive/2026-01-01" "big.log" "done.md" "checked out in $tmp/wt"; do grep -qF "$w" <<<"$out" || fail "dry run does not list $w"; done
+grep -qF "$T/device-5/tree" <<<"$out" || fail "A56f1: dry run does not list the old device tree"
+grep -qE 'device-5/tree .*[0-9]+ kB' <<<"$out" || fail "A56f1: the device tree is listed without its size"
+grep -qF "device-6" <<<"$out" && fail "A56f1: dry run lists a fresh device step"
 grep -qF "key-$kx" <<<"$out" && fail "dry run lists a used key"
 grep -qF open.md <<<"$out" && fail "lists an open note"
 grep -qE 'space freed' <<<"$out" || fail "no space freed line"
@@ -62,6 +69,8 @@ grep -qF "NOT pruned" <<<"$sout" || fail "unreadable key: no NOT pruned line"
 bash scripts/gc.sh --apply >/dev/null 2>&1
 d="$T/archive/$(date +%F)"
 [[ -d "$d/pass-7" && -d "$d/report-2026-01-01" && ( -f "$d/night-1.log.gz" || -f "$d/night-1.log" ) ]] || fail "old clutter not archived"
+[[ ( -f "$d/device-5/core.log.gz" || -f "$d/device-5/core.log" ) && ! -e "$d/device-5/tree" && ! -e "$T/device-5" ]] || fail "A56f1: old device-5 not archived without its tree, or its log lost"
+[[ -f "$T/device-6/core.log" && -d "$T/device-6/tree" && ! -e "$d/device-6" ]] || fail "A56f1: a fresh device step was touched"
 [[ -d "$T/pass-9" && -f "$T/night-2.log" && -f "$C/new.png" ]] || fail "new clutter moved"
 [[ -f "$d/a.png" && -f "$d/a.apk" && ! -f "$C/a.png" ]] || fail "coord png/apk not archived"
 [[ -f "$C/log.md" && -f "$C/device-runs.jsonl" && -d "$C/locks" && -d "$C/devices" ]] || fail "protected coord files touched"
