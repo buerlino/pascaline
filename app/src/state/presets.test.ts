@@ -8,10 +8,13 @@ import { USER_KEY_IDS, UserKeys } from "../keyboard/userKeys.svelte.ts";
 import type { Look } from "../theme/look.ts";
 import { CELL_KEYS, UnitCells } from "../units/userCells.svelte.ts";
 import { BACKUP_KEYS, VALIDATORS } from "./backup.ts";
+import { readPresets } from "./presetRecord.ts";
 import { PRESET_GROUPS, PRESETS_KEY, PresetError, Presets, type PresetStore, type StoredPresets } from "./presets.svelte.ts";
 import { Session } from "./session.svelte.ts";
 import { DATA_VERSION, type Kv } from "./storage.ts";
 import type { RawRecord } from "./storageRaw.ts";
+
+const isObject = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
 
 function memoryKv(): Kv & { data: Map<string, unknown> } {
   const data = new Map<string, unknown>();
@@ -49,14 +52,12 @@ async function setup(rec?: RawRecord) {
   const kv = memoryKv();
   const session = new Session(new FakeCalc(), kv);
   const looks: Look[] = [];
-  session.onLook = (look) => {
-    looks.push(look);
-  };
+  const env = { showLook: (look: Look): Promise<void> => (looks.push(look), Promise.resolve()) };
   const userKeys = new UserKeys(kv);
   const cells = new UnitCells(kv);
   const store = memoryStore(rec);
-  const presets = await Presets.open({ session, userKeys, cells, store });
-  return { kv, session, userKeys, cells, store, presets, looks };
+  const presets = await Presets.open({ session, userKeys, cells, store, showLook: (l) => env.showLook(l) });
+  return { kv, session, userKeys, cells, store, presets, looks, env };
 }
 
 describe("presets (R88)", () => {
@@ -170,7 +171,8 @@ describe("presets (R88)", () => {
     await p2.apply(a);
     expect(k2.resolve(fixed)).toBe(fixed);
     expect(k2.labelOf(U1, "primary")).toBe("sinh");
-    expect(Object.keys(k2.snapshot())).toEqual([U1]);
+    expect(USER_KEY_IDS.filter((id) => Object.keys(k2.slots(id)).length > 0)).toEqual([U1]);
+    expect(k2.slots(fixed.id)).toEqual({});
   });
 
   it("a record stamped newer than DATA_VERSION is refused, and never written over", async () => {
@@ -251,10 +253,10 @@ describe("presets (R88)", () => {
   });
 
   it("two applies in a row end in the second, the theme's loads awaited", async () => {
-    const { session, presets } = await setup();
+    const { session, presets, env } = await setup();
     const shown: string[] = [];
     let loads = 0;
-    session.onLook = (look) => {
+    env.showLook = (look) => {
       loads++;
       // the first load is the slow one: it ends after the second apply began
       return new Promise<void>((r) => setTimeout(() => (shown.push(look.family), r()), loads === 1 ? 30 : 1));
@@ -302,8 +304,26 @@ describe("presets (R88)", () => {
     presets.capture("Bench", ["mode"]);
     expect(VALIDATORS[PRESETS_KEY]?.(store.rec?.value)).toBe(true);
     const v = store.rec?.value as StoredPresets;
-    for (const bad of [null, [], { ...v, presets: [...v.presets, { id: 1, name: "Twice", groups: { mode: {} } }] }, { ...v, presets: [{ id: 9, name: "", groups: { mode: {} } }] }, { ...v, active: 77 }])
-      expect(VALIDATORS[PRESETS_KEY]?.(bad), JSON.stringify(bad).slice(0, 60)).toBe(false);
+    const bad = [
+      null,
+      [],
+      {},
+      { ...v, presets: [...v.presets, { id: 1, name: "Twice", groups: { mode: {} } }] },
+      { ...v, presets: [...v.presets, { id: 7, name: " LAB ", groups: { mode: {} } }] },
+      { ...v, presets: [{ id: 9, name: "", groups: { mode: {} } }], next: 10 },
+      { ...v, presets: [{ id: 9, name: "  ", groups: { mode: {} } }], next: 10 },
+      { ...v, presets: [{ id: 9, name: "X", groups: {} }], next: 10 },
+      { ...v, presets: [{ id: 9, name: "X", groups: { mode: 3 } }], next: 10 },
+      { ...v, presets: [{ id: 1.5, name: "X", groups: { mode: {} } }] },
+      { ...v, active: 77 },
+      { ...v, active: "1" },
+      { ...v, next: 1 },
+      { ...v, next: undefined },
+    ];
+    for (const b of bad) expect(VALIDATORS[PRESETS_KEY]?.(b), JSON.stringify(b).slice(0, 80)).toBe(false);
+    // backup.ts repeats the model's load check (no import, see there): both agree on every value above
+    for (const x of [v, { ...v, active: null }, { presets: [], active: null, next: 1 }, ...bad])
+      expect(VALIDATORS[PRESETS_KEY]?.(x), JSON.stringify(x).slice(0, 80)).toBe(isObject(x) && Array.isArray(x["presets"]) && readPresets(x).dropped === 0);
     expect(VALIDATORS["taps"]?.({ shift: 0, alpha: 0, presses: 1, presets: 3, since: "" })).toBe(true);
     expect(VALIDATORS["taps"]?.({ shift: 0, alpha: 0, presses: 1, presets: -1, since: "" })).toBe(false);
   });

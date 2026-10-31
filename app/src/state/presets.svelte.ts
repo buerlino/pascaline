@@ -4,12 +4,13 @@
 // fixed keys never change. Nothing saves by itself: after a change to a held setting the preset is `modified` until
 // Update or another preset. Stored under the stamped key `presets` (docs/04 6.2). Loaded with the Mode sheet's chunk
 // (views/modeSheet.ts), never in the start chunk.
-import type { UserKeys, StoredUserKeys } from "../keyboard/userKeys.svelte.ts";
+import { USER_KEY_IDS, type UserKeys, type StoredUserKeys } from "../keyboard/userKeys.svelte.ts";
 import { unitCells, UNIT_PAD_CELLS, type StoredCells, type UnitCells } from "../units/userCells.svelte.ts";
 import { GROUP_FIELDS, nameKey, PRESET_GROUPS, PRESETS_KEY, readPresets, type GroupValues, type Preset, type PresetGroup, type StoredPresets } from "./presetRecord.ts";
+import type { Look } from "../theme/look.ts";
 import { migrateSettings, type Session, type Settings } from "./session.svelte.ts";
 import { DATA_VERSION, kvSet, MIGRATIONS, unstamp, USER_KEYS } from "./storage.ts";
-import { kvGetRaw, type RawRecord } from "./storageRaw.ts";
+import type { RawRecord } from "./storageRaw.ts";
 
 export { PRESET_GROUPS, PRESETS_KEY, type GroupValues, type Preset, type PresetGroup, type StoredPresets };
 
@@ -30,7 +31,9 @@ export interface PresetStore {
   write(value: StoredPresets): Promise<void>;
 }
 export const idbPresetStore: PresetStore = {
-  read: () => kvGetRaw(PRESETS_KEY),
+  // storageRaw.ts is a chunk of its own (the backup's): a static import would add it to the preload list of the Mode
+  // sheet's chunk, which the start chunk carries
+  read: () => import("./storageRaw.ts").then((m) => m.kvGetRaw(PRESETS_KEY)),
   write: (value) => kvSet(PRESETS_KEY, value),
 };
 
@@ -41,7 +44,12 @@ export interface PresetEnv {
   readonly store: PresetStore;
   /** The migration steps (tests); MIGRATIONS by default. */
   readonly steps?: typeof MIGRATIONS;
+  /** Put a look on the page and settle once the theme's files are in (theme/lookApply.ts applyLook, as main.ts's
+   *  session.onLook does, but awaited, so a second apply starts after the first one's look is on the page). */
+  readonly showLook?: (look: Look) => Promise<void>;
 }
+
+const applyLook = (look: Look): Promise<void> => import("../theme/lookApply.ts").then((m) => m.applyLook(look));
 
 /** JSON with sorted keys: two values are the same data whatever order their fields were written in. */
 const canon = (v: unknown): string =>
@@ -68,6 +76,16 @@ function withField(s: Settings, g: PresetGroup, f: string, v: unknown): Settings
   else raw[f] = v;
   const next = migrateSettings(raw, s.look).settings;
   return canon(settingsGroup(next, g)[f]) === canon(v) ? next : undefined;
+}
+
+/** The free keys' stored slots, the keys without any left out (Your keys' record as UserKeys keeps it). */
+function freeKeys(keys: UserKeys): StoredUserKeys {
+  const out: StoredUserKeys = {};
+  for (const id of USER_KEY_IDS) {
+    const s = $state.snapshot(keys.slots(id));
+    if (Object.keys(s).length > 0) out[id] = s;
+  }
+  return out;
 }
 
 export class Presets {
@@ -122,7 +140,7 @@ export class Presets {
 
   /** The current setup's values of each group. */
   private current(g: PresetGroup): GroupValues {
-    if (g === "keys") return { userKeys: this.env.userKeys.snapshot(), unitPadCells: this.env.cells.snapshot() };
+    if (g === "keys") return { userKeys: freeKeys(this.env.userKeys), unitPadCells: this.env.cells.snapshot() };
     return settingsGroup($state.snapshot(this.env.session.settings) as Settings, g);
   }
 
@@ -186,12 +204,14 @@ export class Presets {
     Object.assign(session.settings, s);
     session.save();
     const keys = p.groups.keys;
-    if (keys && isObject(keys["userKeys"])) userKeys.replace(keys["userKeys"] as StoredUserKeys);
+    // only the free keys' entries: a record that names a fixed key never reaches it (each slot is checked when used)
+    if (keys && isObject(keys["userKeys"]))
+      userKeys.write(Object.fromEntries(Object.entries(keys["userKeys"]).filter(([id, v]) => USER_KEY_IDS.includes(id) && isObject(v))) as StoredUserKeys);
     if (keys && isObject(keys["unitPadCells"])) cells.replace(keys["unitPadCells"] as StoredCells);
-    session.taps.preset();
+    session.taps.tap("presets");
     this.active = id;
     if (!this.refused) this.save();
-    if (p.groups.look && lookChanged) await session.onLook?.({ ...s.look });
+    if (p.groups.look && lookChanged) await (this.env.showLook ?? applyLook)({ ...s.look }).catch(() => {}); // (a theme that will not load leaves the old one)
   }
 
   /** The held groups take the current setup's values (Update from the current setup); it becomes the active one. */

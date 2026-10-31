@@ -275,9 +275,8 @@ export class Session {
   private readonly namesRead: Promise<void>;
 
   private readonly kv: Kv;
-  /** Put a look on the page (main.ts: theme/lookApply.ts); called when it changes and once the settings are read. It
-   *  settles once the theme's files are in, so a preset's apply (R88) can wait for it. */
-  onLook: ((look: Look) => void | Promise<void>) | undefined;
+  /** Put a look on the page (main.ts: theme/lookApply.ts); called when it changes and once the settings are read. */
+  onLook: ((look: Look) => void) | undefined;
   /** 0 = write the history at once (tests); the app sets a delay so Enter does not wait for the store. */
   saveDelayMs = 0;
   private saveTimer: ReturnType<typeof setTimeout> | undefined;
@@ -710,7 +709,7 @@ export class Session {
     // docs/04 6.2: write the settings back as the newest schema. A start with nothing stored writes its look too, so
     // High contrast from `prefers-contrast: more` is only the first start's default (R50e).
     if (saved ? migrated : true) this.save();
-    void this.onLook?.($state.snapshot(this.settings.look));
+    this.onLook?.($state.snapshot(this.settings.look));
     const view = await this.kv.get<View>("view");
     if (view === "home" || view === "cas") this.view = view;
   }

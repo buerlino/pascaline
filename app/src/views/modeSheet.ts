@@ -203,7 +203,7 @@ function appearanceItems(session: Session): MenuItem[] {
   const setLook = (patch: Partial<Look>): void => {
     session.settings.look = validLook({ ...look(), ...patch }, look());
     session.save();
-    void session.onLook?.({ ...session.settings.look });
+    session.onLook?.({ ...session.settings.look });
   };
   const ids = FAMILIES.map((f) => f.id);
   const brightness = (b: (typeof BRIGHTNESS)[number]) => t(`appearance.brightness.${b}` as MessageKey);

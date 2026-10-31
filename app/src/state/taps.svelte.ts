@@ -39,17 +39,13 @@ export class TapCounter {
       if (this.wasReset || typeof v !== "object" || v === null) return;
       const o = v as Record<string, unknown>;
       if (!isCount(o["shift"]) || !isCount(o["alpha"]) || typeof o["since"] !== "string") return;
-      this.counts = {
-        shift: o["shift"] + this.counts.shift,
-        alpha: o["alpha"] + this.counts.alpha,
-        presses: (isCount(o["presses"]) ? o["presses"] : 0) + this.counts.presses, // (absent before R70)
-        presets: (isCount(o["presets"]) ? o["presets"] : 0) + this.counts.presets, // (absent before R88)
-        since: o["since"] || this.counts.since,
-      };
+      const n = (k: "shift" | "alpha" | "presses" | "presets"): number => (isCount(o[k]) ? o[k] : 0) + this.counts[k]; // (presses absent before R70, presets before R88)
+      this.counts = { shift: n("shift"), alpha: n("alpha"), presses: n("presses"), presets: n("presets"), since: o["since"] || this.counts.since };
     });
   }
 
-  tap(key: "shift" | "alpha"): void {
+  /** One Shift or Alpha tap, or one preset applied (R88). */
+  tap(key: "shift" | "alpha" | "presets"): void {
     const c = this.counts;
     this.counts = { ...c, [key]: c[key] + 1, since: c.since || this.today() };
     this.schedule();
@@ -59,13 +55,6 @@ export class TapCounter {
   press(): void {
     const c = this.counts;
     this.counts = { ...c, presses: c.presses + 1, since: c.since || this.today() };
-    this.schedule();
-  }
-
-  /** A preset applied (R88). */
-  preset(): void {
-    const c = this.counts;
-    this.counts = { ...c, presets: c.presets + 1, since: c.since || this.today() };
     this.schedule();
   }
 

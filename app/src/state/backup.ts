@@ -8,7 +8,6 @@ import { KeyboardSpecError, keyboard, parseAction } from "../keyboard/keyboard.t
 import { defaultLook, validLook } from "../theme/look.ts";
 import { CELL_KEYS } from "../units/userCells.svelte.ts";
 import { isFmtMode, normalizeCycle } from "./displayMode.ts";
-import { readPresets } from "./presetRecord.ts";
 import { DATA_VERSION, unstamp } from "./storage.ts";
 import { kvGetRaw, type RawRecord } from "./storageRaw.ts";
 
@@ -132,6 +131,25 @@ const SETTING_RULES: Readonly<Record<string, (x: unknown) => boolean>> = {
   look: (x) => isObject(x) && canon(validLook(x, defaultLook())) === canon(x),
 };
 
+/** state/presetRecord.ts readPresets, strict: the record keeps every preset (a whole id, a name, groups as a non-empty
+ *  object of objects; no id or name, by nameKey, twice), `active` names one of them or is null, `next` is past every id.
+ *  (An import of presetRecord.ts would make it a chunk of its own on the Mode sheet's preload list in the start chunk;
+ *  presets.test.ts runs both on the same values.) */
+function presetsOk(v: unknown): boolean {
+  if (!isObject(v) || !Array.isArray(v["presets"])) return false;
+  const ids = new Set<number>();
+  const names = new Set<string>();
+  for (const p of v["presets"] as unknown[]) {
+    if (!isObject(p) || !whole(p["id"], 1, Number.MAX_SAFE_INTEGER) || !text(p["name"]) || !isObject(p["groups"])) return false;
+    const groups = Object.values(p["groups"]);
+    const name = String(p["name"]).trim().toLocaleLowerCase();
+    if (name === "" || groups.length === 0 || !groups.every(isObject) || ids.has(p["id"] as number) || names.has(name)) return false;
+    ids.add(p["id"] as number);
+    names.add(name);
+  }
+  return (v["active"] === null || ids.has(v["active"] as number)) && whole(v["next"], Math.max(0, ...ids) + 1, Number.MAX_SAFE_INTEGER);
+}
+
 /** Each key's validator. */
 export type Validators = Readonly<Record<string, (value: unknown) => boolean>>;
 
@@ -171,7 +189,7 @@ export const VALIDATORS: Validators = {
   unitPadCells: (v) =>
     slotsOk(v, CELL_KEYS, ["tap", "up", "down"], (b) => text(b["unit"]) && (b["prefix"] === undefined || text(b["prefix"])) && (b["label"] === undefined || text(b["label"]))),
   taps: (v) => isObject(v) && isCount(v["shift"]) && isCount(v["alpha"]) && typeof v["since"] === "string" && (v["presses"] === undefined || isCount(v["presses"])) && (v["presets"] === undefined || isCount(v["presets"])),
-  presets: (v) => isObject(v) && readPresets(v).dropped === 0,
+  presets: presetsOk,
   "app.function": isObject,
   "app.solve": isObject,
   "units.targets": (v) => typeof v === "object" && v !== null,
