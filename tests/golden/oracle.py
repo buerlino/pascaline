@@ -46,7 +46,7 @@ DIGITS = 12  # default significant digits; --digits N changes it, settings.digit
 MARK_FILES = {"home.yaml", "precision.yaml", "units.yaml"}
 MARKS = {"=", "≈", "⚠"}
 SOURCES = {"oracle", "derived", "device", "virtual-calc", "reference", "assumed"}
-KEYS = ["id", "kind", "input", "to", "latex", "eq", "var", "guess", "f", "g", "x0", "lo", "hi", "a", "b", "xs", "settings", "budgetMs", "oracle",
+KEYS = ["id", "kind", "input", "to", "tap", "target", "latex", "eq", "var", "guess", "f", "g", "x0", "lo", "hi", "a", "b", "xs", "settings", "budgetMs", "oracle",
         "options", "formula", "slots", "before", "beforeCas", "beforeHome", "relaunch", "uses", "steps", "consts", "code", "file", "home", "expect", "error", "chips",
         "deg", "mark", "exact", "dim", "unit", "dimtext", "si", "si_oracle", "unc", "unc_oracle", "shown", "unc_why", "notice", "message", "source", "g2",
         "status", "group", "cat", "note"]

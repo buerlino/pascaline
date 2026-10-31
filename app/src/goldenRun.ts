@@ -75,6 +75,11 @@ export interface Case {
   /** units.yaml: the end slot; the exact text, the dimension key (a result 0 keeps its terms' one, G35), the SI value's exact text with
    *  an end slot (si_oracle checks it in oracle.py) and a refusal's message. */
   to?: string;
+  /** units.yaml, R60: the case is a tap: `input` is evaluated without an end slot, and the alternative whose text this is
+   *  (units/alternatives.ts) becomes the end slot; `target` is `units.targets` for the result's dimension (unit-case.ts
+   *  slot syntax). */
+  tap?: string;
+  target?: string;
   exact?: string;
   dim?: string | null;
   /** units.yaml, G25: the unit the value is shown in ("" for a pure number) and the dimension as text. */
