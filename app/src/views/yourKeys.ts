@@ -13,6 +13,8 @@ import { USER_KEY_IDS, USER_LAYERS, type UserKeys } from "../keyboard/userKeys.s
 export interface SettingsEnv {
   readonly userKeys?: UserKeys;
   chooseFor?(id: string, layer: Layer): void;
+  /** Settings › Data › Save a backup (R38a): makes the file and shows the result as a notice (App.svelte). */
+  saveBackup?(): void;
 }
 
 /** The places and sheets a slot can hold. */

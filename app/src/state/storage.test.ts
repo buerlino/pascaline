@@ -2,7 +2,7 @@
 // The version stamp on stored values (R18f2 verification, 2026-10-14): old records are told apart and migrated.
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fakeIndexedDb, type FakeIdb } from "./fakeIdb.ts";
-import { DATA_VERSION, kvGet, kvSet, MIGRATIONS, stamp, unstamp } from "./storage.ts";
+import { DATA_VERSION, kvGet, kvGetRaw, kvSet, MIGRATIONS, stamp, unstamp } from "./storage.ts";
 
 describe("stored values carry a version", () => {
   it("round-trips a stamped value without a write-back", () => {
@@ -108,3 +108,28 @@ const SAMPLES: Record<string, unknown> = {
   ],
   library: "f(x):=pasexp(i*x)+sin(x)",
 };
+
+// R38a: the backup reads each record as stored, with its true stamp.
+describe("kvGetRaw returns the record as stored (R38a)", () => {
+  let idb: FakeIdb;
+  beforeEach(() => {
+    idb = fakeIndexedDb();
+    vi.stubGlobal("indexedDB", idb.factory);
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+  it("tells version 0, the current and a newer version apart, and writes nothing back", async () => {
+    await kvSet("seed", 0);
+    const store = idb.stores.get("kv")!;
+    store.set("old", [{ name: "a" }]);
+    store.set("now", stamp({ home: [1] }));
+    store.set("newer", { "@pascaline": DATA_VERSION + 1, value: "from a newer build" });
+    expect(await kvGetRaw("old")).toEqual({ "@pascaline": 0, value: [{ name: "a" }] });
+    expect(await kvGetRaw("now")).toEqual({ "@pascaline": DATA_VERSION, value: { home: [1] } });
+    expect(await kvGetRaw("newer")).toEqual({ "@pascaline": DATA_VERSION + 1, value: "from a newer build" });
+    expect(await kvGetRaw("missing")).toBeUndefined();
+    await new Promise((r) => setTimeout(r, 20));
+    expect(store.get("old")).toEqual([{ name: "a" }]); // no migration write-back
+  });
+});
