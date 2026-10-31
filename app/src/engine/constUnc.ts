@@ -2,8 +2,10 @@
 // G26 (deep-dive item 17): the digits a constant's uncertainty leaves. A Home input may hold constants as names
 // (`pasc_<id>`, R40's parser switch) with a table of their values and CODATA standard uncertainties. The values are
 // put in and the input evaluates as before; then the first-order σ of the result (G18's rule, units/evaluate.ts):
-// σ = sqrt(Σ (∂f/∂cᵢ · σᵢ)²) over the inexact constants, taken as independent, exactly with Giac's diff at the
-// constants' values. `uncDigits` is the number of significant digits of the shown value before the digit position of
+// σ = sqrt(Σ (∂f/∂xᵢ · σᵢ)²) over independent inputs, exactly with Giac's diff at their values. G81: an inexact
+// constant with a basis (G80: its value over the measured leaves it is computed from, `pasl_<leaf>`) enters as that
+// basis, so constants sharing a leaf (μ₀, ε₀ and Z₀ share α) are correlated: the value is evaluated through the basis
+// (μ₀·ε₀·c² is exactly 1) and σ is taken over the leaves; a constant without one is an input of its own, as before. `uncDigits` is the number of significant digits of the shown value before the digit position of
 // σ's first digit: the digits from there on are uncertain. Synchronous, UI-free. Only erasable TypeScript syntax.
 import { decimalFromString, isZero, roundSignificant, type DecimalValue } from "./format.ts";
 import { toExactLiterals, type HomeResult } from "./homeEval.ts";
@@ -19,11 +21,17 @@ export interface ConstEntry {
   /** G86: the facts the constant carries (R69 reads them), set only by `constTable` (from `constFacts`). `unc` alone
    *  decides whether the constant is inexact; these facts are read, never trusted over it. */
   facts?: ValueFacts;
+  /** G81 (from Find's item, G80): the value over `pasl_<leaf>` names and exact numbers; inexact constants only. */
+  basis?: string;
+  /** G81: the leaves `basis` uses, each with its value and standard uncertainty. */
+  basisLeaves?: Readonly<Record<string, { value: string; unc: string }>>;
 }
 export type ConstTable = Readonly<Record<string, ConstEntry>>;
 
 /** The prefix of a constant sent by name. */
 export const CONST_PREFIX = "pasc_";
+/** The prefix of a basis leaf (G80, G81). */
+export const LEAF_PREFIX = "pasl_";
 
 
 /** A decimal or integer text that is exactly zero ("0", "0.0", "0E-11"). */
@@ -47,13 +55,36 @@ export function constTable(entries: Readonly<Record<string, ConstEntry>>): Const
   return Object.fromEntries(Object.entries(entries).map(([id, e]) => [id, { ...e, facts: constFacts(e) }]));
 }
 
-/** `input` with every constant of `table` replaced by its value in brackets; when `keep` is given, the constants it
- *  holds stay names. Names not in the table are left alone. */
-export function withConstValues(input: string, table: ConstTable, keep?: ReadonlySet<string>): string {
+/** G81: the basis an inexact constant enters through, when it has one whose every leaf it carries with a value and an
+ *  uncertainty; else undefined (an exact constant, or a chip stored before G81: its own value, as before). */
+export function basisOf(e: Pick<ConstEntry, "unc" | "basis" | "basisLeaves">): string | undefined {
+  const leaves = e.basisLeaves;
+  if (!inexact({ value: "", ...e }) || !e.basis || !leaves) return undefined;
+  for (const { name } of names(e.basis, "typed")) {
+    const l = name.slice(LEAF_PREFIX.length);
+    if (name.startsWith(LEAF_PREFIX) && !(Object.hasOwn(leaves, l) && typeof leaves[l]?.value === "string" && typeof leaves[l]?.unc === "string")) return undefined;
+  }
+  return e.basis;
+}
+
+/** `basis` with each leaf name replaced by `f` of its leaf id (null keeps the name). */
+export function mapLeaves(basis: string, f: (leaf: string) => string | null): string {
+  return mapNames(basis, ({ name }) => (name.startsWith(LEAF_PREFIX) && name.length > LEAF_PREFIX.length ? f(name.slice(LEAF_PREFIX.length)) : null), "typed");
+}
+
+/**
+ * `input` with every constant of `table` replaced by its value in brackets; when `keep` is given, the constants it
+ * holds stay names. Names not in the table are left alone. G81: a constant with a basis is replaced by its basis, its
+ * leaves as their values, or as `pasl_<leaf>` names when `leaves` is "names" (for σ).
+ */
+export function withConstValues(input: string, table: ConstTable, keep?: ReadonlySet<string>, leaves: "values" | "names" = "values"): string {
   return mapNames(input, ({ name }) => {
     const id = name.slice(CONST_PREFIX.length);
     const e = name.startsWith(CONST_PREFIX) && id !== "" && Object.hasOwn(table, id) ? table[id] : undefined;
-    return e && !keep?.has(id) ? `(${e.value})` : null;
+    if (!e || keep?.has(id)) return null;
+    const b = basisOf(e);
+    if (b === undefined) return `(${e.value})`;
+    return `(${leaves === "names" ? b : mapLeaves(b, (l) => `(${e.basisLeaves![l]!.value})`)})`;
   }, "typed");
 }
 
@@ -67,12 +98,45 @@ export function inexactConstsIn(input: string, table: ConstTable): string[] {
   return ids;
 }
 
-/** The Giac text of the first-order σ of `body` over the inexact constants `ids` (decimals as exact rationals). */
+/** An independent input of σ: a Giac name, its value and its standard uncertainty. */
+interface SigmaInput {
+  name: string;
+  value: string;
+  unc: string;
+}
+
+/** G81: the independent inputs of the inexact constants `ids`: a constant without a basis is one (`keep` gets its id);
+ *  one with a basis brings its uncertain leaves, each once (the first constant that names a leaf gives its numbers;
+ *  every basis comes from the same index). */
+function sigmaInputs(table: ConstTable, ids: readonly string[]): { keep: Set<string>; inputs: SigmaInput[] } {
+  const keep = new Set<string>();
+  const inputs: SigmaInput[] = [];
+  for (const id of ids) {
+    const e = table[id]!;
+    const b = basisOf(e);
+    if (b === undefined) {
+      keep.add(id);
+      inputs.push({ name: `${CONST_PREFIX}${id}`, value: e.value, unc: e.unc! });
+      continue;
+    }
+    mapLeaves(b, (l) => {
+      const leaf = e.basisLeaves![l]!;
+      const name = `${LEAF_PREFIX}${l}`;
+      if (!isZeroText(leaf.unc) && !inputs.some((v) => v.name === name)) inputs.push({ name, value: leaf.value, unc: leaf.unc });
+      return null;
+    });
+  }
+  return { keep, inputs };
+}
+
+/** The Giac text of the first-order σ of `body` over the inexact constants `ids` (decimals as exact rationals): over
+ *  the constants themselves, or over their leaves where they have a basis (G81). */
 export function sigmaExpr(body: string, table: ConstTable, ids: readonly string[]): string {
-  const keep = new Set(ids);
-  const f = toExactLiterals(withConstValues(body, table, keep));
-  const at = `[${ids.map((id) => `${CONST_PREFIX}${id}=(${toExactLiterals(table[id]!.value)})`).join(",")}]`;
-  const terms = ids.map((id) => `(subst(diff(${f},${CONST_PREFIX}${id}),${at})*(${toExactLiterals(table[id]!.unc!)}))^2`);
+  const { keep, inputs } = sigmaInputs(table, ids);
+  if (!inputs.length) return "0";
+  const f = toExactLiterals(withConstValues(body, table, keep, "names"));
+  const at = `[${inputs.map((v) => `${v.name}=(${toExactLiterals(v.value)})`).join(",")}]`;
+  const terms = inputs.map((v) => `(subst(diff(${f},${v.name}),${at})*(${toExactLiterals(v.unc)}))^2`);
   return `sqrt(${terms.join("+")})`;
 }
 

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // G26: the pure parts of constUnc.ts (no engine).
 import { describe, expect, it } from "vitest";
-import { constFacts, constTable, inexactConstsIn, sigmaExpr, uncDigitsOf, withConstValues } from "./constUnc.ts";
+import { basisOf, constFacts, constTable, inexactConstsIn, sigmaExpr, uncDigitsOf, withConstValues } from "./constUnc.ts";
 import { decimalFromString } from "./format.ts";
 
 const G = { value: "6.67430E-11", unc: "0.00015E-11" };
@@ -56,5 +56,27 @@ describe("ConstEntry carries its facts (G86)", () => {
     expect(inexactConstsIn("pasc_c", c)).toEqual([]);
     const G = { G: { value: "6.67430E-11", unc: "0.00015E-11", facts: { exact: true, reliableDigits: null } } };
     expect(inexactConstsIn("pasc_G", G)).toEqual(["G"]);
+  });
+});
+
+describe("a constant enters through its basis (G81)", () => {
+  const a = { fine_structure: { value: "7.3E-3", unc: "1E-12" } };
+  const mu = { value: "1.2E-6", unc: "2E-16", basis: "2*pasl_fine_structure/3", basisLeaves: a };
+  const eps = { value: "8.8E-12", unc: "1E-21", basis: "5/pasl_fine_structure", basisLeaves: a };
+  it("the basis is used only when every leaf is carried and the constant is inexact", () => {
+    expect(basisOf(mu)).toBe("2*pasl_fine_structure/3");
+    expect(basisOf({ ...mu, basisLeaves: {} })).toBeUndefined();
+    expect(basisOf({ value: "1.2E-6", unc: "2E-16" })).toBeUndefined();
+    expect(basisOf({ ...mu, unc: "0" })).toBeUndefined();
+  });
+  it("the value goes in through the basis; a chip without one keeps its value", () => {
+    expect(withConstValues("pasc_mu*pasc_G", { mu, G })).toBe("(2*(7.3E-3)/3)*(6.67430E-11)");
+    expect(withConstValues("pasc_mu", { mu }, undefined, "names")).toBe("(2*pasl_fine_structure/3)");
+  });
+  it("σ is taken over the shared leaf once, and over a constant without a basis as before", () => {
+    expect(sigmaExpr("pasc_mu*pasc_eps*pasc_G", { mu, eps, G }, ["mu", "eps", "G"])).toBe(
+      "sqrt((subst(diff((2*pasl_fine_structure/3)*(5/pasl_fine_structure)*pasc_G,pasl_fine_structure),[pasl_fine_structure=((73/10^4)),pasc_G=((667430/10^16))])*((1/10^12)))^2" +
+        "+(subst(diff((2*pasl_fine_structure/3)*(5/pasl_fine_structure)*pasc_G,pasc_G),[pasl_fine_structure=((73/10^4)),pasc_G=((667430/10^16))])*((15/10^16)))^2)",
+    );
   });
 });
