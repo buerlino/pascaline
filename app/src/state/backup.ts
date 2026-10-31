@@ -8,7 +8,8 @@ import { KeyboardSpecError, keyboard, parseAction } from "../keyboard/keyboard.t
 import { defaultLook, validLook } from "../theme/look.ts";
 import { CELL_KEYS } from "../units/userCells.svelte.ts";
 import { isFmtMode, normalizeCycle } from "./displayMode.ts";
-import { DATA_VERSION, unstamp } from "./storage.ts";
+import { migratePresetKeys, PRESETS_KEY } from "./presetRecord.ts";
+import { DATA_VERSION, unstamp, type MIGRATIONS } from "./storage.ts";
 import { kvGetRaw, type RawRecord } from "./storageRaw.ts";
 
 /** The keys a backup holds (docs/04 6.2). A new key joins by being added here; the unit test fails until it is here or
@@ -134,8 +135,8 @@ export const SETTING_RULES: Readonly<Record<string, (x: unknown) => boolean>> = 
 
 /** state/presetRecord.ts readPresets, strict: the record keeps every preset (a whole id, a name, groups as a non-empty
  *  object of objects; no id or name, by nameKey, twice), `active` names one of them or is null, `next` is past every id.
- *  (An import of presetRecord.ts would make it a chunk of its own on the Mode sheet's preload list in the start chunk;
- *  presets.test.ts runs both on the same values.) */
+ *  (Written before checkBackup imported presetRecord.ts for migratePresetKeys, R88f1, which made it a chunk of its own
+ *  on the Mode sheet's preload list in the start chunk; presets.test.ts runs both on the same values.) */
 function presetsOk(v: unknown): boolean {
   if (!isObject(v) || !Array.isArray(v["presets"])) return false;
   const ids = new Set<number>();
@@ -217,9 +218,11 @@ export const partName = (key: string): string => (`part.${key}` in enData ? data
 /**
  * r11 section 3.4, in order: the first fault refuses the whole file, with its message and the part it names, and
  * nothing is written. The probe's `check` (tools/probes/backup-file.mjs) plus step 5: each part through `unstamp` and
- * its key's validator (VALIDATORS; a key without one is refused).
+ * its key's validator (VALIDATORS; a key without one is refused). The presets part's keys groups go through the steps
+ * of their own keys from the part's stamp too (migratePresetKeys, as the model's open does): restored, the part is
+ * stamped as current, and nothing runs those steps later. `steps`: the migration steps (tests); MIGRATIONS by default.
  */
-export function checkBackup(bytes: Uint8Array, validators: Validators = VALIDATORS): CheckedBackup | RefusedBackup {
+export function checkBackup(bytes: Uint8Array, validators: Validators = VALIDATORS, steps?: typeof MIGRATIONS): CheckedBackup | RefusedBackup {
   const no = (key: DataKey, part?: string, vars: Record<string, string | number> = {}): RefusedBackup => ({
     ok: false,
     message: dataText(key, { ...vars, ...(part === undefined ? {} : { part: partName(part) }) }),
@@ -251,11 +254,14 @@ export function checkBackup(bytes: Uint8Array, validators: Validators = VALIDATO
     if (typeof v !== "number" || !Number.isInteger(v) || v < 0) return no("refuse.stamp", key);
     if (v > DATA_VERSION) return no("refuse.newer", key, { v, max: DATA_VERSION });
   }
+  const up = (k: string, stored: unknown): unknown => (steps ? unstamp(k, stored, steps) : unstamp(k, stored)).value;
   const values: Record<string, unknown> = {};
   for (const [key, rec] of Object.entries(parts)) {
     let value: unknown;
     try {
-      value = unstamp(key, rec).value;
+      value = up(key, rec);
+      const from = (rec as Record<string, unknown>)[STAMP] as number;
+      if (key === PRESETS_KEY) value = migratePresetKeys(value, from, (k, v, at) => up(k, { [STAMP]: at, value: v }));
     } catch {
       return no("refuse.invalid", key); // a migration step that cannot read the value
     }
