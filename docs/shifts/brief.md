@@ -12,7 +12,7 @@
 **Two lanes** (owner, 2026-10-29; decisions.md P17 and "Owner answers of 2026-10-29"): once A47a–A47c are merged, lane A (ron's UI) and lane B (the release, then the engine) run around the clock, each with its own table in section 0c, merged through one queue (A47b); until then one run at a time. ron's packages run at night too: the owner's look moves to three milestone reviews (after R87; after R86, R57, R50e; after R24d), and a package's "owner's eye" item joins the next review. Device steps and the owner's acts (a key, a tag, a phone) stay by day. The order:
 1. **Find:** R4a merged (`b9f0042`, 2026-10-28; R90 by day); R91 (`e80eda0`: start chunk 61.02 → 57.81 kB gzip, pin 58.5 kB; the Fairphone before/after waits for annabell), R15c3 (`6e43091`), R49 (`d60fbfb`), R87 (`56d017f`) merged; R4b (`c682e3e`) merged.
 2. **The Settings base** (owner, 2026-10-27; decisions.md "Settings in the Mode sheet, and presets"; [mockups/settings.html](../mockups/settings.html)): R85 (`1d35189`), R49, R86, R50e (`e4d6085`), R57 (`bb90a5e`) merged; after the units: R70, R15c4, R38a → R38b, R59; R88 (after R4b, R57, R50e) → R89; R55 (after R15c4); R53; R12b → R12c → R41; R36, R33 → R37, R40.
-3. **The units** (owner, 2026-10-29: right after R86, R57, R50e): R24b (`bca10d5`) and R24c (`bfc6e4e`, by R24cf1) merged → R24d, R60–R63, R71; G81 with them.
+3. **The units** (owner, 2026-10-29: right after R86, R57, R50e): R24b (`bca10d5`) and R24c (`bfc6e4e`, by R24cf1) merged → R24d, R60–R63, R71; G81 merged (`a1158a4`).
 4. **Lane B, to v0.1.0** (the APK and the website from one tag): A43 (an update keeps the data, on a device by day; A48 and A50 merged), A7 (signing, the owner's key made off this laptop), A49 (`c6447ff`) and A45 (`01a0e93`) merged, A8 (the owner's test tag); A9 with the owner's phone by day (F41); then wrong numbers by reach, C4.
 5. **Every morning:** the owner's check (MORNING.md, on the night's device when the night had one, about 10 minutes). The day session writes each failed step as a backlog bug line on phase-1 and logs one line in `.coord/log.md`: `- HH:MM morning <date>: clean` or `- HH:MM morning <date>: fails <ids>`.
 
@@ -65,12 +65,11 @@ Milestone reviews (section 0): after R50e; after R24d.
 | 316 | [R71](packages/R71.md) ± on Shift + `,` | ron, Sonnet | `p1/ron-m5-pmkey` | R24c |
 
 ### Lane B queue (the release, then the engine)
-A43, A7, A8 and A9 run by day (section 0). Step 408 runs only on the weekly extreme night the owner names (tonight); 409–411 run every night.
+A43, A7, A8 and A9 run by day (section 0). Step 408 runs only on the weekly extreme night the owner names (tonight); 410 and 411 run every night.
 
 | Step | What | Agent, model | Branch | After |
 |---|---|---|---|---|
 | 408 | [G138](packages/G138.md) the weekly fuzz and its triage | gorge, Opus | `p1/gorge-nightfuzz-1106` | the weekly night |
-| 409 | [G81](packages/G81.md) a constant's σ through its basis | gorge, Opus | `p1/gorge-m4-constcorr` | G80, G76 |
 | 410 | [R60](packages/R60.md) the unit result's alternatives as data | gorge, Opus | `p1/gorge-m5-unitalts` | R24c |
 | 411 | [R61](packages/R61.md) the chip from a unit result | gorge, Opus | `p1/gorge-m5-unitchip` | R24c, G81 |
 

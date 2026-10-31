@@ -267,7 +267,7 @@ sin, cos and tan take an angle or a pure number; the angle dimension is dropped 
 - **The way back:** the result inserted into Home is a `\res` chip with the number in the unit shown; the chip's label says the unit was dropped. The line itself keeps its slots, so the units key shows them again.
 
 ### 4.4 Budgets and gates
-No engine chunk: the unit view's UI and builder chunks (≤ 34 kB raw) and its factor table from the Find index load on the units key's first press, never at start; a Playwright test asserts that a session without it requests neither. First result < 1 s on the Tab One; desktop p95 ≤ 5 ms per evaluation (G15: 1.5–3.2 ms). Also: `units.yaml` in the golden gate; **a unit in ≤ 4 presses at the median** (`tools/probes/unit-presses.mjs`, then the same list as an e2e replay); benchmark tasks 1–4 and 10 within budget (decisions.md "M4-2"); the owner's hand timing (rule 2).
+No engine chunk: the unit view's UI and builder chunks (≤ 38 kB raw) and its factor table from the Find index load on the units key's first press, never at start; a Playwright test asserts that a session without it requests neither. First result < 1 s on the Tab One; desktop p95 ≤ 5 ms per evaluation (G15: 1.5–3.2 ms). Also: `units.yaml` in the golden gate; **a unit in ≤ 4 presses at the median** (`tools/probes/unit-presses.mjs`, then the same list as an e2e replay); benchmark tasks 1–4 and 10 within budget (decisions.md "M4-2"); the owner's hand timing (rule 2).
 
 Open points for milestone 5 (each with a default): r7 section 7.
 
@@ -434,11 +434,11 @@ The types live in the code; this is the map. Views see `Calc` (`app/src/calc/por
 
 | Item | Budget | State | Enforced by |
 |---|---|---|---|
-| Start chunk | ≤ 175 kB raw, ≤ 61 kB gzip; pin 60.97 kB gzip | 60.96 kB gzip (58.50 + R4b 0.92 + R50e 0.48 + R57 0.58 + R24b 0.02 + R24c 0.16 + engine-key noise 0.01 + R70 0.27). The pin `START_PIN_GZIP` holds: a package growing the chunk past it raises it in its diff, with the reason, and reports both sizes, never past 61 kB; `LAZY_PARTS` must stay dynamic chunks (R91). `tools/probes/start-chunk.mjs` lists bytes per source; every UI package reports its delta | size test (`npm run size`) |
+| Start chunk | ≤ 175 kB raw, ≤ 61 kB gzip; pin 58.97 kB gzip | 58.97 kB gzip (G81, after R70f1's split to 58.95; 58.50 + R4b 0.92 + R50e 0.48 + R57 0.58 + R24b 0.02 + R24c 0.16 + engine-key noise 0.01 + R70 0.27 − R70f1 2.01: the entry line's field code, entry/field.ts, loads with MathLive; + G81 0.02: a stored constant chip keeps its basis). The pin `START_PIN_GZIP` holds: a package growing the chunk past it raises it in its diff, with the reason, and reports both sizes, never past 61 kB; `LAZY_PARTS` must stay dynamic chunks (R91). `tools/probes/start-chunk.mjs` lists bytes per source; every UI package reports its delta | size test (`npm run size`) |
 | MathLive chunk (after the keypad) | ≤ 830 kB raw | 807.74 kB (2026-10-18) | size test |
 | Find UI chunk | ≤ 30 kB raw | — | size test |
 | Find index asset | ≤ 400 kB raw, ≤ 100 kB gzip | 325.7 / 67.1 kB (2026-10-15) | size test (once Find loads it) |
-| Unit view chunks (UI, builder) | ≤ 34 kB raw | 33.06 kB (R24cf1) | size test (rule on `src/units/`) |
+| Unit view chunks (UI, builder) | ≤ 38 kB raw (34 kB until Opus pass 24, G81) | 34.04 kB (G81) | size test (rule on `src/units/`) |
 | Precache total | ≤ 18 MB | 12.4 MB (2026-10-18) | size test |
 | Keyboard usable / engine ready (Tab One) | < 1 s / < 1.5 s, with the `defs` replay | 722 / 1103 ms cold (2026-10-19, `874ab01`, 1 GB engine); 1489 ms engine ready with 200 definitions (A4a, 2026-10-16) | device runs |
 | Enter → result p95 (Tab One) | < 150 ms at 12 digits; at 30 digits ≤ 1.3 × the 12-digit p95 | RAD 147.9 ms at 12, 152.6 at 30; DEG 149.1 and 141.4 (A16 after G53, 2026-10-20; the third row, after G65, is A16) | device runs |
