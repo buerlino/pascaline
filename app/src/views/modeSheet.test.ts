@@ -173,7 +173,7 @@ describe("Settings, a level of the sheet (R49)", () => {
     const s = settings();
     expect(s.level.items.map((x) => x.id)).toEqual(["appearance", "numbers", "vibration", "counters", "help"]);
     expect(s.level.items.every((x) => x.submenu)).toBe(true);
-    expect(s.level.items.map((x) => x.value)).toEqual(["Pascaline · System", "STD SCI ENG", "Off", "0 taps", undefined]);
+    expect(s.level.items.map((x) => x.value)).toEqual(["Pascaline · System", "STD SCI ENG", "Off", "0 presses", undefined]);
     s.pickNumber(4);
     s.back();
     s.back();
@@ -253,11 +253,15 @@ describe("Settings, a level of the sheet (R49)", () => {
     s.level.move(-1);
     expect(s.level.current?.id).toBe("reset");
     s.level.move(1);
-    expect(s.level.current?.id).toBe("shift");
+    expect(s.level.current?.id).toBe("presses");
     expect(s.activate(at(s, "since"))).toEqual({ kind: "stay" });
     session.taps.counts.shift = 4;
+    session.taps.press();
+    expect(byId(s, "presses")?.value).toBe("1");
+    expect(byId(s, "shift")?.value).toBe("4");
     expect(s.activate(at(s, "reset"))).toEqual({ kind: "stay" });
     expect(session.taps.counts.shift).toBe(0);
+    expect(byId(s, "presses")?.value).toBe("0");
   });
 });
 

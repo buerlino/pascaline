@@ -19,6 +19,7 @@
   import type { UserKeys } from "./keyboard/userKeys.svelte.ts";
   import { noDigit } from "./state/displayMode.ts";
   import type { HistoryItem, Session, View } from "./state/session.svelte.ts";
+  import { counted, countScreenTaps } from "./state/pressCount.ts";
   import { updateOffer } from "./state/updateOffer.svelte.ts";
   import History from "./views/History.svelte";
   // The Mode and Settings lists load when idle after the keypad is drawn, or on the first open (R35: not in the start chunk).
@@ -60,28 +61,30 @@
   // The shell paints first; main.ts then loads MathLive, which puts the field into this element.
   onMount(() => {
     if (host) entry.setHost(host);
+    const count = (): void => session.taps.press(); // R70: a hardware key and a tap on the screen are presses too (docs/04 5.2)
     // R45: a hardware Enter is the Enter key (a picked row, an open sheet), not a bare submit
-    entry.onEnter = () => {
+    entry.onEnter = counted(count, () => {
       const key = keyboard.byId.get("enter");
       if (key) press(key, "primary");
       else enter();
-    };
+    });
     // R15c2: a hardware Escape is the Esc key (an open sheet or pick takes it first)
-    entry.onEscape = () => {
+    entry.onEscape = counted(count, () => {
       const key = keyboard.byId.get("esc");
       if (key) press(key, "primary");
-    };
+    });
     // R31 (F27): a hardware keyboard's printable keys are taps of the keypad key with that character
-    entry.onKey = (id, layer) => {
+    entry.onKey = counted(count, (id, layer) => {
       const key = keyboard.byId.get(id);
       if (key) press(userKeys.resolve(key), layer);
-    };
-    entry.onLetter = typeLetter;
+    });
+    entry.onLetter = counted(count, typeLetter);
     shell.goTo = goTo; // the Apps sheet's Home and CAS rows
     shell.openSettings = openSettings;
     shell.settingsMenu = () => (modeSheet ? (settingsMenu ??= modeSheet.settingsMenu(session, settingsEnv)) : undefined); // (R49)
     shell.homeView = () => (session.view === "cas" ? "cas" : "home"); // the last row of every Menu
     entry.onDead = dead;
+    return countScreenTaps(count);
   });
   let host: HTMLElement | undefined = $state();
   let entryHeight = $state(0);
@@ -465,6 +468,7 @@
       cas={casKeys}
       sheet={shell.sheet ? { filter: shell.sheet.level.filterable } : undefined}
       onpress={press}
+      oncount={() => session.taps.press()}
       ontouch={touched}
     />
     <!-- a pick sheet rises over the maths rows (3–9), anchored at the keypad's bottom edge; the top cluster stays

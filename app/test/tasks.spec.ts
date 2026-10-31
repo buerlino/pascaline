@@ -4,7 +4,7 @@
 //  - a PENDING task replays its `baseline` (today's best sequence), so the baseline stays true and its count is printed;
 //  - every run prints one table: task, status, baseline presses, target presses, budget.
 import { expect, test, type Page } from "@playwright/test";
-import { flick, open } from "./helpers.ts";
+import { flick, open, tap } from "./helpers.ts";
 import { countPresses, keyIds, loadTasks, validate, withinBudget, type Step, type Task } from "./tasks-lib.ts";
 
 const tasks = loadTasks();
@@ -34,6 +34,9 @@ async function replay(page: Page, steps: readonly Step[], want?: string): Promis
   const text = await page.locator('[data-testid="result"]').last().locator(".result").getAttribute("data-text");
   return text ?? "";
 }
+
+/** The counter of every press (R70): what the app counted since the page opened. */
+const pressed = (page: Page): Promise<number> => page.evaluate(() => window.pascaline.session.taps.counts.presses);
 
 async function start(page: Page): Promise<void> {
   await open(page, "");
@@ -77,6 +80,22 @@ test.describe("replay", () => {
     expect(withinBudget(steps, 9)).toBe(false);
   });
 
+  // R70: the benchmark's planned count is what Settings › Counters shows (the taps that open Settings count too).
+  test("t05's four presses are counted, and Settings › Counters shows the count", async ({ page }) => {
+    const t05 = tasks.find((t) => t.id === "t05") as Task;
+    await replay(page, t05.keys ?? [], undefined);
+    expect(await pressed(page)).toBe(countPresses(t05.keys ?? []));
+    expect(await pressed(page)).toBe(4);
+    await tap(page, ["@menu"]); // 1 more: the ☰ button, a tap on the screen
+    await page.getByTestId("menu").getByRole("menuitem").last().tap(); // Settings: 1 more
+    await page.getByTestId("menu").locator('[data-id="counters"]').tap(); // Counters: 1 more
+    await expect(page.getByTestId("sheet-title")).toHaveText("Home menu › Settings › Counters");
+    const value = page.getByTestId("menu").locator('[data-id="presses"]').getByTestId("sheet-value");
+    await expect(value).toHaveText("7");
+    await page.getByTestId("menu").locator('[data-id="reset"]').tap();
+    await expect(value).toHaveText("0");
+  });
+
   // A flick step (R9) replays as a flick, not as Shift + key: 2×π with π flicked up from its key.
   test("a flick step replays as a flick", async ({ page }) => {
     const steps: Step[] = ["d2", "mul", { up: "d3" }, "enter"];
@@ -91,6 +110,7 @@ test.describe("replay", () => {
         const unit = typeof t.expect.unit === "string" ? t.expect.unit : undefined;
         expect(await replay(page, steps, unit)).toBe(unit === undefined ? t.expect.text : `${t.expect.text} ${unit}`);
         const n = countPresses(steps);
+        expect(await pressed(page), `${t.id}: the app counted ${n} presses by docs/04 5.2`).toBe(n); // R70
         rows.push(`${t.id} | active  | ${t.baseline ? countPresses(t.baseline.keys) : "-"} | ${n} | ${t.budget}`);
         expect(n, `${t.id} takes ${n} presses, budget ${t.budget}`).toBeLessThanOrEqual(t.budget ?? 0);
       });

@@ -6,3 +6,4 @@ app/src/engine/numeric.ts: 1043
 app/src/engine/host.ts: 1271
 app/src/engine/homeEval.ts: 834
 app/src/engine/host.test.ts: 908
+app/src/App.svelte: 804   # R70: the press counter hooks (counted(), countScreenTaps, Keypad oncount), +4 over 800; the logic is in state/pressCount.ts
