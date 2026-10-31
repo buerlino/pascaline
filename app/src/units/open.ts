@@ -169,6 +169,6 @@ function hardwareKey(ev: KeyboardEvent, c: RouteCtx, hw: Hw): void {
   ev.stopPropagation();
   if (mod) return c.dead();
   const k = hw.controlKey(ev) ?? (ev.key.length === 1 ? hw.keypadKeyOf(ev.key, c.entry.decimalComma) : undefined);
-  if (k) c.entry.onKey(k[0], k[1]);
+  if (k) c.entry.onKey(k[0], k[1], ev.repeat);
   else c.dead();
 }

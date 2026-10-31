@@ -18,7 +18,7 @@ test.beforeEach(async ({ page }) => {
 const cells = (page: Page): Promise<Cell[]> => page.evaluate(() => JSON.parse(JSON.stringify(window.pascaline.unitPad?.model?.cells ?? [])) as Cell[]);
 const log = (page: Page): Promise<Emit[]> => page.evaluate(() => JSON.parse(JSON.stringify(window.pascaline.unitPad?.log ?? [])) as Emit[]);
 const clear = (page: Page): Promise<void> => page.evaluate(() => void window.pascaline.unitPad?.log?.splice(0));
-const onKey = (page: Page, id: string, layer?: "shift" | "alpha"): Promise<void> => page.evaluate(([i, l]) => window.pascaline.entry.onKey(i as string, l as never), [id, layer]);
+const onKey = (page: Page, id: string, layer?: "shift" | "alpha"): Promise<void> => page.evaluate(([i, l]) => window.pascaline.entry.onKey(i as string, l as never, false), [id, layer]);
 const LAYERS = [["primary", "tap"], ["shift", "up"], ["alpha", "down"]] as const;
 
 /** One press of `id` in `layer`, however the test reaches it. */

@@ -107,8 +107,9 @@ function subjects(manifest: Record<string, ManifestChunk>, all: string[]): { pre
 export const LAZY_VIEWS = ["src/views/Sheet.svelte"];
 
 /** R91: code that only runs after a key press or once a result is in stays out of the start chunk too: the sheet's keys
- *  and the palette cells (loaded with the sheet's view), the result tidy-up, the palettes with their names. */
-export const LAZY_PARTS = ["src/views/sheetKeys.ts", "src/views/tmplSheet.ts", "src/render/tidy.ts", "src/keyboard/shiftPalettes.ts", "src/units/open.ts"];
+ *  and the palette cells (loaded with the sheet's view), the result tidy-up, the palettes with their names. R70f1: how a
+ *  key acts on the entry line's field, and the field's set-up (entry/field.ts, loaded with MathLive). */
+export const LAZY_PARTS = ["src/views/sheetKeys.ts", "src/views/tmplSheet.ts", "src/render/tidy.ts", "src/keyboard/shiftPalettes.ts", "src/units/open.ts", "src/entry/field.ts"];
 
 /** R91's pin: the start chunk is at most this many bytes gzip, 1 kB under the budget of 61 kB, so the Settings base
  *  (R49, R86, R57) has room. A package that needs more raises the pin with a reason, here and in docs/04 8.3.
@@ -126,12 +127,21 @@ export const LAZY_PARTS = ["src/views/sheetKeys.ts", "src/views/tmplSheet.ts", "
  *  and the key alone measures 60.58 kB; the unit view itself is a lazy chunk (Opus pass 22: at most 60.70 kB).
  *  60.68 → 60.70 kB (G133f1): no app source changed; the raw chunk is the same 171.54 kB, but Giac patch 0023 gives a
  *  new engine key, and the engine's hashed file name in the chunk compresses 0.01 kB worse (phase-1's engine 60.68 kB,
- *  the branch's 60.69 kB, one build of one tree). Opus pass 22's bound, so a new engine hash alone does not trip it.
- *  60.70 → 60.80 kB (R24d): phase-1 60.69 kB, the branch 60.79 kB (+0.10 kB gzip, raw +0.2 kB). Four lines of start-chunk
- *  source changed (`Sheet.right()` runs a row's second job, 0.02 kB); the rest is the start chunk's own map of lazy chunks:
- *  the cells' store, Find in a slot and the units menu are three new lazy files (units/userCells.svelte.ts, find.ts,
+ *  the branch's 60.69 kB, one build of one tree). 60.70 kB, Opus pass 22's bound, so a new engine hash alone does not trip it.
+ *  60.70 → 60.95 kB (R70): phase-1 60.69 kB, the branch 60.93 kB (+0.24 kB, raw +0.92 kB): the counter of every press is on
+ *  the key path (Keypad's count at each lift, the screen-tap listener and the hardware-key hooks in App.svelte,
+ *  state/pressCount.ts, the counter's field); the Settings row is in the lazy sheet chunk.
+ *  60.95 → 60.97 kB (R70f1): the pipeline's build of the branch measures 60.96 kB, 0.03 kB over the 60.93 kB of the first run
+ *  (same sources; the order of the chunk's strings, as in G133f1); 0.01 kB of room is left under the pin.
+ *  60.97 → 58.96 kB (R70f1, Opus pass 23): phase-1 60.96 kB gzip (172.46 kB raw), the branch 58.95 kB (166.61 kB raw;
+ *  −2.01 kB): the entry line's work on the field (its set-up and listeners, ⌫ and Del at a template, ᴇ, 10ˣ, a power's
+ *  base, the stops) runs only once MathLive is up, so it is entry/field.ts, loaded beside MathLive; keys pressed before
+ *  it is there are queued as before. The room is for R24d, R38a, R71, R15c4 and R88 under the 61 kB budget.
+ *  58.96 → 59.06 kB (R24d): phase-1 58.95 kB, +0.10 kB gzip (raw +0.2 kB) as measured before the merge on the old base. Four lines of
+ *  start-chunk source changed (`Sheet.right()` runs a row's second job, 0.02 kB); the rest is the start chunk's own map of lazy
+ *  chunks: the cells' store, Find in a slot and the units menu are three new lazy files (units/userCells.svelte.ts, find.ts,
  *  menu.ts), each named in the preload list of the dynamic imports that reach it. */
-export const START_PIN_GZIP = 60.8 * KB;
+export const START_PIN_GZIP = 59.06 * KB;
 
 /** Failures for the start chunk's row when it is over the pin. */
 export function checkStartPin(row: Row): string[] {
