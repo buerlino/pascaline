@@ -48,6 +48,8 @@ export const SPEED_KNOWN: Record<string, string> = {
   // factorial(10^6): one GMP call of 1.0 s that never looks at the interrupt; 8× slower it passes HOME_DEADLINE_MS (2 s)
   "precision/g58-factorial-1e6-12": "HOME_DEADLINE_MS",
   "precision/g58-factorial-1e6-30": "HOME_DEADLINE_MS",
+  // G137 (pending): acosh(cosh(3*sqrt(-pi))) takes about 1 s on the desktop (sqrt(-pi) is slow), so 8× slower the budget gives ⚠0
+  "precision/g137-acosh-cosh-3sqrt-neg-pi-12": "HOME_DEADLINE_MS",
 };
 
 const root = fileURLToPath(new URL("../../", import.meta.url));
