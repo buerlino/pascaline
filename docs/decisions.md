@@ -11,7 +11,7 @@ The owner's other open items are in [backlog.md](backlog.md), "Needs the user". 
 
 - **R50e, on the phone:** (1) the first frame reads the Android default (Dark) from `window.Capacitor` in the inline script; if the bridge is not there yet at that point, a first start with nothing stored shows System for one frame, then Dark (later starts read the mirror). Look at a first start after "clear data". (2) Android's status and navigation bar colours stay open (not in R50e).
 
-- **The start chunk's room:** after R70 it is 60.96 of the 61 kB budget (pin 60.97), and R24d (+0.10), R38a, R71, R15c4 and R88 still come. Opus pass 23 runs the split now, as R70f1: about 1 kB of code that runs only after a press leaves the start chunk, and the 61 kB budget stays. Recommendation: keep the budget; say so if you would rather raise it.
+- **The start chunk's room:** R70f1 split it (−2.01 kB): 58.97 of 61 kB on phase-1; R24d and R38a each add 0.09, then R71, R15c4 and R88. Recommendation: keep the budget; say so if you would rather raise it.
 
 ## Decided proposals
 
@@ -54,7 +54,7 @@ Newest first within each group.
 - **The letters stay on the keys (2026-10-14).** Rule: docs/04 5.1 (the letters; the unassigned Shift cells). Would change if: Alpha taps near zero (P7 point 4); a function in the benchmark needs a key and no cell is free.
 - **The application id is `io.github.buerlino.pascaline` (2026-10-14); the web version lives at `https://pascaline-calc.org/` (2026-10-29).** The id never changes. The PWA is at the domain's root, `www` redirects; GitHub Pages deploys it from a release tag (A45); the docs stay on GitHub. Set up 2026-10-29: Infomaniak, paid to 2028-10-29, auto-renew and Renewal Warranty, transfer lock, DNSSEC, HTTPS enforced (Let's Encrypt), mail by Proton. Full text: archive. Would change if: the domain lapses.
 - **Stored data carries a version; one signing key (2026-10-14).** Rule: docs/04 6.2 (the stamp); the throwaway key lives in `~/.cache/pascaline/keys/` for every worktree, so an install over the last keeps its data.
-- **Start chunk: 175 kB raw, 61 kB gzip (owner, 2026-10-27), pinned at 60.68 kB (R4b +0.92, R50e +0.48, R57 +0.58, R24b +0.02, R24c +0.16).** Rule: docs/04 8.3 (past the pin, a package raises `START_PIN_GZIP`). `./build.sh --measure` is exempt. Would change if: the Tab One's keyboard-usable time passes 738 ms (A4a's 688 ms + 50).
+- **Start chunk: 175 kB raw, 61 kB gzip (owner, 2026-10-27), pinned at 58.97 kB** (R4b +0.92, R50e +0.48, R57 +0.58, R24b +0.02, R24c +0.16, R70 +0.27, R70f1 −2.01: the field code loads with MathLive, G81 +0.02). Rule: docs/04 8.3 (past the pin, a package raises `START_PIN_GZIP` to its size measured after merging phase-1, plus 0.05 kB for build noise and merges in flight; Opus pass 26). `./build.sh --measure` is exempt. Would change if: the Tab One's keyboard-usable time passes 738 ms (A4a's 688 ms + 50).
 - **Owner answers of 2026-10-19 (feel).** R34: one shared entry line, as on the G2 (an unentered line follows you between views; after Enter it clears); R43, R7's defaults and A4a points 3 and 4 as built. Full text: archive.
 
 ### Precision, engine and parser

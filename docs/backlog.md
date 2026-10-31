@@ -19,7 +19,7 @@ The one place for "where are we and what's left", one or two lines per open item
 
 ## Needs the user
 0. **The core list (P23):** cut or extend [tests/core/core.yaml](../tests/core/core.yaml) (66: 51 drafted by sandra, c52–c56 added with you on 2026-10-21, c57–c60 on 2026-10-24, c61–c66 on 2026-10-26; tell a session what to drop or add); do the [morning check](../tests/core/MORNING.md) on the night's device (about 10 minutes, 15 cases; tell the day session what failed); keep the night's device plugged in, unlocked and on the charger (A32, A33).
-1. **Decisions in [decisions.md](decisions.md) "Needs the user":** A21's F-Droid answer; R50e's Android system bar colours; the start chunk's room (R70f1 splits it now; the budget stays).
+1. **Decisions in [decisions.md](decisions.md) "Needs the user":** A21's F-Droid answer; R50e's Android system bar colours; the start chunk's room (R70f1 split it: 58.97 of 61 kB; the budget stays).
 2. **Your outreach steps** (decisions.md P18–P22): send Parisse email 5 (patches 0013–0016 and the regression files at `7438251`, `../outreach/email-parisse-5.md`; 0003–0012 went with email 4, 2026-10-28) after the push; ask F-Droid whether checked-in derived data (`find/factors.yaml`, P22) is fine, before C4; mirror G77's pin (`gh` logged in; the command is in `engine/giac/README.md`).
 3. **G2 questions:** the unanswered items of `tests/golden/G2-CHECKLIST.md` (41, 42, 52, 56, 63–71; each package built a default, named in decisions.md; 63–65 can reverse S14's route R); the optional real-G2 spot checks (`spec/mapping/vc-2026-10-11/SPOT-CHECK.md`).
 4. **From daily use:** the key sequence that left ⌫ stuck "at log" (F39); connect your phone for A9 (F41, no vibration); more points into [feedback.md](feedback.md).
@@ -48,6 +48,7 @@ The one place for "where are we and what's left", one or two lines per open item
 - **F85, no package (G102's Not done; cost only).** A Home input with chips is parsed twice per Enter (G100); the parse is its own bridge-2 call, so G102 could not fold it. Can start (G104 merged).
 - **F80, no package (G99's Not done; probed: `tools/probes/bridge-forms.ts`).** After Home `(BesselJ(1,2))=>y`, `int(y^2,y,0,1)` shows `⚠ 0.333333333333` (right `≈`): Home stores at Digits 40, where `=>` keeps y as `BesselJ(1,2)` unevaluated, and Giac's int with that y errors (Bad Argument Value). `y:=` keeps the float. Test: `boundNames.test.ts` (`it.fails`), seqsweep `12 bound: int…`. Family 8.
 - **F73, no package (it waited for the end of the freeze; owner, 2026-10-24; G103 reads the doubles).** A double in a list shows Giac's text (`[BesselJ(1,2),1/3]`), not numbers with ⚠; no wrong value reaches the screen. Left: `hasFloat` (reads `1..3` and strings). Families 5, 6.
+- **R70 press count, no package (R70f1's report):** a hardware `<`, `>` or `!` (t.run) and a dead hardware key (onDead) are not counted; docs/04 5.2 counts every press.
 - **R57 comma display in Solve and Num, no package:** in comma mode, Solve's roots and the Function and Solve Num tables still show their values with a point (R57 changed Home, CAS, Copy and Paste only).
 
 ### Background stream (extreme inputs; at night, by reach)
