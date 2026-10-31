@@ -16,8 +16,8 @@ const entry = (x: Partial<DefEntry> & Pick<DefEntry, "name" | "kind" | "cmds">):
 const migrate = (log: DefEntry[]): DefEntry[] => validDefs(unstamp("defs", { "@pascaline": 2, value: log }).value);
 
 describe("the version-3 step of the stored log (pure)", () => {
-  it("is DATA_VERSION 3 and writes the record back", () => {
-    expect(DATA_VERSION).toBe(3);
+  it("is DATA_VERSION 3 (or later) and writes the record back", () => {
+    expect(DATA_VERSION).toBeGreaterThanOrEqual(3);
     expect(unstamp("defs", { "@pascaline": 2, value: [] }).upgraded).toBe(true);
   });
 

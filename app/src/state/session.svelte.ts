@@ -58,7 +58,7 @@ export interface Settings extends CalcSettings {
   look: Look;
 }
 /** The stored settings' version (docs/04 6.2): 1 = no field (digits ≤ 15, formats std/sci/eng), 2 = digits ≤ 30, pfx,
- *  3 = `look` (R50e), 4 = the decimal mark (R57). */
+ *  3 = `look` (R50e), 4 = the decimal mark (R57). Raising it raises DATA_VERSION too (storage.ts SETTINGS_SINCE, R94). */
 export const SETTINGS_SCHEMA = 4;
 /** Most significant digits the setting allows (docs/04 2.5). */
 export const MAX_DIGITS = 30;
@@ -194,10 +194,11 @@ function validFacts(x: unknown): ResultFacts | undefined {
  * The settings from what was stored (docs/04 6.2): field by field, so a wrong or missing field keeps its default.
  * `schema` absent is version 1 (digits ≤ 15, formats std/sci/eng); version 2 allows digits ≤ 30 and `pfx`; version 3
  * adds `look`, version 4 `decimalMark`. Every older value stays valid and a missing mark is the point, so the
- * migration only has to write the data back with the new schema.
+ * migration only has to write the data back with the new schema. A newer schema (a downgrade) is `newer`, never
+ * `migrated`: what this version knows is read, and the record is not written over (R94).
  * `firstLook` is the look of a start with nothing stored (Android: Dark; High contrast when the system asks for it).
  */
-export function migrateSettings(saved: unknown, firstLook: Look = defaultSettings.look): { settings: Settings; migrated: boolean } {
+export function migrateSettings(saved: unknown, firstLook: Look = defaultSettings.look): { settings: Settings; migrated: boolean; newer: boolean } {
   const s = structuredClone(defaultSettings);
   s.look = { ...firstLook };
   const x = (saved && typeof saved === "object" ? saved : {}) as Partial<Record<keyof Settings | "schema", unknown>>;
@@ -219,7 +220,8 @@ export function migrateSettings(saved: unknown, firstLook: Look = defaultSetting
     };
   }
   s.look = validLook(x["look"], firstLook);
-  return { settings: s, migrated: x["schema"] !== SETTINGS_SCHEMA };
+  const newer = typeof x["schema"] === "number" && x["schema"] > SETTINGS_SCHEMA;
+  return { settings: s, migrated: !newer && x["schema"] !== SETTINGS_SCHEMA, newer };
 }
 
 /** A stored history item with a fresh id; chip fields that do not have their shape are dropped. */
@@ -285,6 +287,8 @@ export class Session {
    *  stored rows. A save asked for meanwhile is kept pending and runs once the read is in. */
   private historyRead = false;
   private savePending = false;
+  /** R94: the stored settings are from a newer schema. They are read and kept in memory, never written. */
+  private settingsNewer = false;
 
   constructor(calc: Calc, kv: Kv = idbKv) {
     this.kv = kv;
@@ -706,7 +710,11 @@ export class Session {
   /** Settings and the open view: small, read at launch. */
   async restoreSettings(): Promise<void> {
     const saved = await this.kv.get<unknown>("settings");
-    const { settings, migrated } = migrateSettings(saved, firstLook());
+    const { settings, migrated, newer } = migrateSettings(saved, firstLook());
+    if (newer && !this.settingsNewer) {
+      this.settingsNewer = true;
+      this.note(t("settings.newer"));
+    }
     if (saved) Object.assign(this.settings, settings);
     else this.settings.look = settings.look;
     // docs/04 6.2: write the settings back as the newest schema. A start with nothing stored writes its look too, so
@@ -765,7 +773,9 @@ export class Session {
       this.saveHistory();
     }
   }
+  /** Write the settings; never over a newer schema's record (R94: an older build would drop the fields it does not know). */
   save(): void {
+    if (this.settingsNewer) return;
     void this.kv.set("settings", { schema: SETTINGS_SCHEMA, ...$state.snapshot(this.settings) });
   }
   saveView(): void {

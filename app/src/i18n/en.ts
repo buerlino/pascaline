@@ -111,6 +111,7 @@ export const en = {
   "update.ready": "A new version is ready.",
   "update.restart": "Restart",
   "engine.safeStart": "Your stored definitions were not loaded because they stopped the engine; Memory lists them.",
+  "settings.newer": "Data from a newer version: changes here are not kept",
   "mode.title": "Mode",
   "mode.angle": "Angle",
   "mode.format": "Number format",
