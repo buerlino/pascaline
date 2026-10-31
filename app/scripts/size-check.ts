@@ -154,9 +154,11 @@ export const LAZY_PARTS = ["src/views/sheetKeys.ts", "src/views/tmplSheet.ts", "
  *  59.05 → 59.11 kB (R24df2, Opus pass 26): the branch merged with phase-1 3718a40 (G81) measures 59.06 kB gzip (59,059 B,
  *  166.87 kB raw), 0.01 kB over the pin; the new pin is that rounded up to the next 0.01 kB (59.06) plus 0.05 kB for build
  *  noise and merges in flight (decisions.md, Start chunk). Under the budget of 61 kB.
- *  59.11 → 59.13 kB (R38a): the branch measured +0.02 kB (raw +0.04 kB) over phase-1 before R24d; Settings › Data › Save a
- *  backup needs one line in App.svelte (the Settings env's `saveBackup`); the raw read, BACKUP_KEYS, the file port and the
- *  words are in lazy modules (state/backup.ts, storageRaw.ts, i18n/enData.ts). */
+ *  59.11 → 59.13 kB (R38a, R38af1): the branch measures 59.09 kB gzip (166.93 kB raw) against phase-1 59.06 kB (166.87 kB raw),
+ *  +0.03 kB (raw +0.06 kB): one line in App.svelte (the Settings env's `saveBackup`, which goes through `withClip` as a long
+ *  press on a history row does, so the start chunk has no import of state/backup.ts of its own); the raw read, BACKUP_KEYS,
+ *  the file port and the words are in lazy modules (state/backup.ts, storageRaw.ts, i18n/enData.ts). The measure is under
+ *  the pin, so it stays at 59.13. */
 export const START_PIN_GZIP = 59_130;
 
 /** Failures for the start chunk's row when it is over the pin. */

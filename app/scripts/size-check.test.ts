@@ -197,7 +197,7 @@ describe("size-check", () => {
     expect(checkSplits(fakeDist(atStart, { ...files, "assets/sheet.js": 1000 }))[0]).toContain("loaded at start");
   });
 
-  it("pins the start chunk at 59.13 kB gzip, below the 61 kB budget (R91: the room for the Settings base; R70f1: the split; G81, R24d, R38a: 59.11 kB + 0.02)", () => {
+  it("pins the start chunk at 59.13 kB gzip, below the 61 kB budget (R91: the room for the Settings base; R70f1: the split; G81, R24d, R38a: 59.11 kB + 0.02; R38af1 measured 59.09 kB)", () => {
     expect(START_PIN_GZIP).toBe(59_130);
     const { manifest } = base(0);
     const over = checkSizes(fakeDist(manifest, { ...FINDER_FILE, "assets/index.js": { random: 59_140 }, "assets/mathlive.js": 1000 }));
