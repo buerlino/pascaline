@@ -24,8 +24,10 @@ const picked = (page: import("@playwright/test").Page) =>
 test("K1 trackpad: a drag steps in 2D with a tick per step; a tap on an edge is one step", async ({
   page,
 }) => {
-  await tap(page, ["d1", "enter", "d2", "enter", "d3", "enter"]);
-  await expect(page.locator('[data-status="done"]')).toHaveCount(3);
+  for (let n = 1; n <= 3; n++) {
+    await tap(page, [`d${n}`, "enter"]);
+    await expect(page.locator('[data-status="done"]')).toHaveCount(n); // Enter is ignored while a row runs
+  }
   // up/down: on an empty line Up picks history rows, as the arrow keys do
   await drag(page, "up", 0, -30); // two steps
   await expect(picked(page)).toHaveAttribute("data-text", "2");

@@ -115,7 +115,9 @@ test("a sideways slip is still the tap; the arrows (trackpad) and ⌫ (repeat) h
   expect(await entryValue(page)).toBe("78");
   // an arrow slid up is a trackpad drag (steps), never a flick
   await page.evaluate(() => window.pascaline.entry.clear());
-  await tap(page, ["d1", "enter", "d2", "enter"]);
+  await tap(page, ["d1", "enter"]);
+  await expect(page.locator('[data-status="done"]')).toHaveCount(1);
+  await tap(page, ["d2", "enter"]);
   await expect(page.locator('[data-status="done"]')).toHaveCount(2);
   await page.evaluate(() => window.pascaline.entry.clear());
   const a = await touch(page, "right");
