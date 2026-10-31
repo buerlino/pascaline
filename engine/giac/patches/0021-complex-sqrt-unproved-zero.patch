@@ -1,8 +1,8 @@
-# Upstream: giac 2.1.0 usual.cc sqrt, the exact complex branch. An imaginary part b that is exactly 0 but that ratnormal leaves as an expression (im(z^2+1) for z=acosh(10^-6) holds ln((10^-6)^2+(...)^2)/2, whose argument is exactly 1), beside a negative real part a: the form sqrt(2*(a+rho))/2*(1+i*b/(a+rho)) has a+rho = 0 and b = 0, so its evalf was 0 or noise at every Digits: sqrt(acosh(10^-6)^2+1) gave 8.4E-8-4.3E-7*i (right 1.21136202627*i), and asinh(acosh(10^-6)) (ln(x+sqrt(x^2+1))) the ln of x alone, -0.4516+1.5708*i (right 1.02322665303+1.57079632679*i). sqrt(acosh(10^-6)^2) was refused with Overflow. Now, where the evalf of b is within 1e-10 of 0 relative to a < 0 (doubles of the evalf), a b that recursive_normal (Giac's user-level normal, which simplifies inside ln) proves 0 gives sqrt(a).
+# Upstream: giac 2.1.0 usual.cc sqrt, the exact complex branch. An imaginary part b that is exactly 0 but that ratnormal leaves as an expression (im(z^2+1) for z=acosh(10^-6) holds ln((10^-6)^2+(...)^2)/2, whose argument is exactly 1), beside a negative real part a: the form sqrt(2*(a+rho))/2*(1+i*b/(a+rho)) has a+rho = 0 and b = 0, so its evalf was 0 or noise at every Digits: sqrt(acosh(10^-6)^2+1) gave 8.4E-8-4.3E-7*i (right 1.21136202627*i), and asinh(acosh(10^-6)) (ln(x+sqrt(x^2+1))) the ln of x alone, -0.4516+1.5708*i (right 1.02322665303+1.57079632679*i). sqrt(acosh(10^-6)^2) was refused with Overflow. Now, where the evalf of b is within 1e-10 of 0 relative to a < 0 (doubles of the evalf), a b that recursive_normal (Giac's user-level normal, which simplifies inside ln) proves 0 gives sqrt(a). And for a < 0 and b nonzero below 1e-4*|a| (doubles), where a+rho = b^2/(rho-a) cancels about 2*log10(|a/b|) digits at every Digits (acosh(1/2+i/10^20) at Digits 40 took ln of a wrong root, -0.49+0.61*i, so Home's check climbed past P+60 and an 8x slower clock stopped it: 1E-20+i under a warning 0, or -0.69313944918943 under a warning 14), the root is |b|/(2t)+sign(b)*i*t, t = sqrt((rho-a)/2), as the MPFR branch of patch 0020; a b of undecided sign keeps the old form.
 # Changed by Pascaline contributors, 2026-10-31
 --- a/src/usual.cc
 +++ b/src/usual.cc
-@@ -1262,6 +1262,17 @@
+@@ -1262,6 +1262,25 @@
      return oldres;
    }
  
@@ -17,10 +17,18 @@
 +      return false;
 +    return is_exactly_zero(recursive_normal(b,contextptr));
 +  }
++  // Pascaline patch 0021 (G134): whether sqrt(2*(a+rho))/2*(1+i*b/(a+rho)) cancels: a < 0 and b nonzero but below
++  // 1e-4*|a| (doubles of the evalf), so a+rho = b^2/(rho-a) loses about 2*log10(|a/b|) digits at every Digits.
++  static bool sqrt_neg_real_cancels(const gen & a,const gen & b,GIAC_CONTEXT){
++    gen ad=evalf_double(evalf(a,1,contextptr),1,contextptr),bd=evalf_double(evalf(b,1,contextptr),1,contextptr);
++    if (ad.type!=_DOUBLE_ || bd.type!=_DOUBLE_ || !(ad._DOUBLE_val<0) || bd._DOUBLE_val==0)
++      return false;
++    return std::abs(bd._DOUBLE_val)<=1e-4*std::abs(ad._DOUBLE_val);
++  }
    gen sqrt(const gen & e,GIAC_CONTEXT){
      // if (abs_calc_mode(contextptr)==38 && do_lnabs(contextptr) &&!complex_mode(contextptr) && (e.type<=_POLY || e.type==_FLOAT_) && !is_positive(e,contextptr)) return gensizeerr(contextptr);
      if (!escape_real(contextptr) && !complex_mode(contextptr) && (e.type<=_POLY || e.type==_FLOAT_) && !is_positive(e,contextptr)) return gensizeerr(contextptr);
-@@ -1339,6 +1350,13 @@
+@@ -1339,6 +1358,13 @@
        a=re(e,contextptr);b=ratnormal(im(e,contextptr),contextptr);
        if (a!=e && is_zero(b,contextptr))
  	return sqrt(a,contextptr);
@@ -34,3 +42,22 @@
        if ( has_i(a) || has_i(b) )
  	return pow(e,plus_one_half,contextptr);
        gen rho=pow(a,2,contextptr)+pow(b,2,contextptr);
+@@ -1358,6 +1384,18 @@
+       if (rho.type>=_IDNT)
+ 	rho=evalf(rho,1,contextptr);
+ #endif
++      // Pascaline patch 0021 (G134): for a < 0 and a tiny b the form below cancels in a+rho (acosh(1/2+i/10^20) holds
++      // sqrt(z), z = (1/2+i/10^20)^2-1: its evalf at Digits 40 gave ln of the wrong root, -0.49+0.61*i, and Home's
++      // check climbed to P+60 and beyond, so a slower device stopped it and showed 1E-20+i under a ⚠ 0, or ⚠ 14
++      // -0.69313944918943). There the root is |b|/(2t)+sign(b)*i*t, t = sqrt((rho-a)/2), the form of the MPFR branch
++      // above; b of undecided sign keeps the form below.
++      if (sqrt_neg_real_cancels(a,b,contextptr)){
++        int sb=is_strictly_positive(b,contextptr)?1:(is_strictly_positive(-b,contextptr)?-1:0);
++        if (sb){
++          gen t=normalize_sqrt(sqrt((rho-a)/2,contextptr),contextptr);
++          return (sb>0?b:-b)/(2*t)+(sb>0?cst_i:-cst_i)*t;
++        }
++      }
+       gen realpart=normalize_sqrt(sqrt(2*(a+rho),contextptr),contextptr);
+       return ratnormal(realpart/2,contextptr)*(1+cst_i*b/(a+rho));
+     }

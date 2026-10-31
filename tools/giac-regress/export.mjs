@@ -175,7 +175,7 @@ export const KNOWN_IDS = new Set([
   "g71-census-tri-sin1e70",
 ]);
 // The ids that pass on our patched build and fail on stock giac_2.1.0-1 (found by matching the cases the tests and canaries of patches
-// 0003 and 0005 name (tanh-test.ts, mpfr-pi-test.ts, patch-canary.ts) and the ids of G75 and G60, G128's g128-* of patch 0005; G111's g111-* of patch 0007; G113's g113-* of patch 0009 (g113-poisson_cdf-2.5 passes on stock, a guard in the check file); G113f1's ties of patch 0010; G115's g115-* of patch 0011; G118's g118-* of patch 0012; G121's g116-* and g121-* and G125's g125-* of patch 0013; G122's g122-* of patch 0014; G126's g126-* and g116-acos-neg-1e20-half-12 of patch 0015; G127's g127-* of patch 0016; G132's g132-* of patch 0018; G129's g129-* (known lines until then), prec-g50-atan(2i) and G135's g135-home-arg-atan-2i of patch 0019; G133's g133-* at 30 digits but g133-acos-tiny-i-30 and g133-acos-tiny-complex-30, and g133-sqrt-evalf-neg1-tiny-neg-i-12, of patch 0020 (the g133-asinh-* lines rest on asinh's exact path, which the patch keeps unevaluated) (the others pass on stock: pc()'s tolerance is the sum of both parts', so a wrong imaginary part of 1E-20 next to a real part of 0.5 passes; they stay in the check file as guards) G134's seven g134-* lines of patches 0021 and 0022 (each fails on a build with 0001–0020 and passes with them) (the g129 guards pass on stock and stay in the check file; G131's patch 0017 has a written line in build(), its cases are refusals). Each id was run on the stock build (engine/giac/_out/release) and fails there; ln(-pi)-30 passes on stock at these Digits, so it stays in the check file; the g60-f5 and g78-novalue lines seemed to pass on stock until G118 (their difference is an MPFR NaN, printed undef, that pc() took for a pass). g58-acos-5!^(2.5+5!)-30 has budgetMs, so it is left out as a time guard): [id, the patch file the line rests on]. They go to pascaline-patched.cas, not to the check file.
+// 0003 and 0005 name (tanh-test.ts, mpfr-pi-test.ts, patch-canary.ts) and the ids of G75 and G60, G128's g128-* of patch 0005; G111's g111-* of patch 0007; G113's g113-* of patch 0009 (g113-poisson_cdf-2.5 passes on stock, a guard in the check file); G113f1's ties of patch 0010; G115's g115-* of patch 0011; G118's g118-* of patch 0012; G121's g116-* and g121-* and G125's g125-* of patch 0013; G122's g122-* of patch 0014; G126's g126-* and g116-acos-neg-1e20-half-12 of patch 0015; G127's g127-* of patch 0016; G132's g132-* of patch 0018; G129's g129-* (known lines until then), prec-g50-atan(2i) and G135's g135-home-arg-atan-2i of patch 0019; G133's g133-* at 30 digits but g133-acos-tiny-i-30 and g133-acos-tiny-complex-30, and g133-sqrt-evalf-neg1-tiny-neg-i-12, of patch 0020 (the g133-asinh-* lines rest on asinh's exact path, which the patch keeps unevaluated) (the others pass on stock: pc()'s tolerance is the sum of both parts', so a wrong imaginary part of 1E-20 next to a real part of 0.5 passes; they stay in the check file as guards) G134's seven g134-* lines and g133-acosh-half-tiny-i-30 of patches 0021 and 0022 (each fails on a build with 0001–0020 and passes with them) (the g129 guards pass on stock and stay in the check file; G131's patch 0017 has a written line in build(), its cases are refusals). Each id was run on the stock build (engine/giac/_out/release) and fails there; ln(-pi)-30 passes on stock at these Digits, so it stays in the check file; the g60-f5 and g78-novalue lines seemed to pass on stock until G118 (their difference is an MPFR NaN, printed undef, that pc() took for a pass). g58-acos-5!^(2.5+5!)-30 has budgetMs, so it is left out as a time guard): [id, the patch file the line rests on]. They go to pascaline-patched.cas, not to the check file.
 export const PATCHED_IDS = new Map([
   ["prec-g50-tanh(i)-12", "0003-complex-tanh-mpfr.patch"],
   ["prec-g50-tanh(i)-30", "0003-complex-tanh-mpfr.patch"],
@@ -398,13 +398,15 @@ export const PATCHED_IDS = new Map([
   ["g134-ln-neg1-tiny-neg-i-30", "0022-arg-mpfr-tiny-parts.patch"],
   ["g134-pow-half-neg1-tiny-neg-i-30", "0022-arg-mpfr-tiny-parts.patch"],
   ["g134-ln-cos-acosh-tiny-neg-i-30", "0022-arg-mpfr-tiny-parts.patch"],
+  // G134 fix round 1: the exact sqrt of z = (1/2+i/10^20)^2-1 cancelled in a+rho (a < 0, b tiny): its evalf at Digits 40
+  // was a wrong root, so G133 left the line out as cancelling (CANCELS_IDS); with patch 0021 it holds at Digits 40
+  ["g133-acosh-half-tiny-i-30", "0021-complex-sqrt-unproved-zero.patch"],
 ]);
 // G122: Giac's exact answer is right (patch 0014), but pc()'s evalf of it at Digits 40 cancels the digits of a large k*pi
 // (asin(cos(30!)) = -pi/2+30!-k*pi with k of 32 digits keeps about 7, -pi/2+10^50-k*pi none); Home raises the precision
 // until the digits agree, so the golden gate checks these cases and the regression file leaves them out. G126: the same for
 // 10^70-n*pi and 10^100-n*pi (an exact 0 at Digits 40), exp(10^-70)-1 (0 at Digits 40) and asinh(-10^-20) at 30 digits
-// (ln(x+sqrt(x^2+1)) keeps about 20 of them at Digits 40). G133: acosh(1/2+10^-20*i) at 30 digits, whose exact ln form keeps
-// about 20 digits of the real part 1.15E-20 at Digits 40.
+// (ln(x+sqrt(x^2+1)) keeps about 20 of them at Digits 40).
 export const CANCELS_IDS = new Set([
   "g116-asin-cos-30!-12",
   "g122-asin-cos-1e50-12",
@@ -419,7 +421,6 @@ export const CANCELS_IDS = new Set([
   "g126-asin-sin-1e100-30",
   "prec-zero-cancel",
   "g126-asinh-neg-1e-20-30",
-  "g133-acosh-half-tiny-i-30",
 ]);
 export const knownReason = (id) => (KNOWN_IDS.has(id) ? KNOWN_RULES.find(([re]) => re.test(id))?.[1] : undefined);
 

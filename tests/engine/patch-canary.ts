@@ -74,7 +74,8 @@ const CANARIES: [string, string, RegExp, string][] = [
   ["0020-complex-sqrt-asin-small.patch", "giac-2.1.0/src/usual.cc", /a=re\(e,contextptr\);b=ratnormal\(im\(e,contextptr\),contextptr\);\s*if \(a!=e && is_zero\(b,contextptr\)\)\s*return sqrt\(a,contextptr\);/, "gen sqrt(const gen & e,GIAC_CONTEXT){"],
   ["0020-complex-sqrt-asin-small.patch", "giac-2.1.0/src/usual.cc", /^static gen asinasln\(const gen & x,GIAC_CONTEXT\)\{\s*return -cst_i\*ln\(cst_i\*x\+sqrt\(1-x\*x,contextptr\),contextptr\);/, "static gen asinasln(const gen & x,GIAC_CONTEXT){"],
   // G134, patch 0021: the exact sqrt of a complex a+b*i tests b = 0 after ratnormal only, then divides b by a+rho, 0/0 when b is an exact 0
-  // that ratnormal leaves (sqrt(acosh(10^-6)^2+1) = 8.4e-8-4.3e-7*i, right 1.21*i)
+  // that ratnormal leaves (sqrt(acosh(10^-6)^2+1) = 8.4e-8-4.3e-7*i, right 1.21*i), and a+rho cancels for a < 0 and a tiny b (fix round 1:
+  // the evalf of acosh(1/2+i/10^20) at Digits 40 was a wrong root, -0.49+0.61*i)
   ["0021-complex-sqrt-unproved-zero.patch", "giac-2.1.0/src/usual.cc", /if \(a!=e && is_zero\(b,contextptr\)\)\s*return sqrt\(a,contextptr\);\s*if \( has_i\(a\) \|\| has_i\(b\) \)[\s\S]*return ratnormal\(realpart\/2,contextptr\)\*\(1\+cst_i\*b\/\(a\+rho\)\);/, "// sqrt of an exact complex number"],
   // G134, patch 0022: arg of a complex MPFR value tests its parts with is_zero, which compares an MPFR's double with epsilon (1e-12), so
   // both parts below 1e-12 give undef (ln, powers) and one beside a negative real part is 0 (arg(-1-1e-20*i) = +pi)

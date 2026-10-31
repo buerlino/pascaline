@@ -545,6 +545,9 @@ Digits:=40:; pc("g133-sqrt-evalf-neg1-tiny-neg-i-12",'(sqrt(evalf(-1-i/10^20)))'
 // patch 0020-complex-sqrt-asin-small.patch
 // g133-sqrt-evalf-neg1-tiny-neg-i-30 (precision.yaml, oracle)
 Digits:=40:; pc("g133-sqrt-evalf-neg1-tiny-neg-i-30",'(sqrt(evalf(-1-i/10^20)))',(5/10^21)-i,5/10^51+5/10^30);
+// patch 0021-complex-sqrt-unproved-zero.patch
+// g133-acosh-half-tiny-i-30 (precision.yaml, oracle)
+Digits:=40:; pc("g133-acosh-half-tiny-i-30",'(acosh(1/2+i/10^20))',(1154700538379251529018297561/10^47)+(104719755119659774615421446109/10^29)*i,5/10^50+5/10^30);
 // patch 0020-complex-sqrt-asin-small.patch
 // g133-asin-1e-12-i-30 (precision.yaml, oracle)
 Digits:=40:; pc("g133-asin-1e-12-i-30",'(asin(i/10^12))',(999999999999999999999999833333/10^42)*i,5/10^43);
