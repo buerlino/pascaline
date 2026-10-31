@@ -126,6 +126,7 @@ describe.skipIf(!giacAvailable())("Format key (real Giac)", () => {
   it("the choice survives a reload with the history, and the ticked modes are stored", async () => {
     const kv = memoryKv();
     const a = new Session(await engineCalc(), kv);
+    await a.restoreHistory();
     a.setFmtMode("eng", false);
     await a.submit("\\frac13");
     await a.cycleFormat();
