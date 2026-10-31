@@ -75,8 +75,10 @@ async function hide(page: Page): Promise<void> {
   });
   await page.waitForTimeout(300); // the store write is asynchronous
 }
-/** A fresh start of the app on the same IndexedDB, as after a kill. */
+/** A fresh start of the app on the same IndexedDB, as after a kill. A killed page also lets go of the store's writer
+ *  lock (R95): the old page does that here, without a flush, so the new one is the writer. */
 async function relaunch(page: Page, query: string): Promise<Page> {
+  await page.evaluate(() => window.pascaline.yieldWriter());
   const next = await page.context().newPage();
   await open(next, query);
   return next;

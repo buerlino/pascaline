@@ -19,11 +19,20 @@ import { UserKeys } from "./keyboard/userKeys.svelte.ts";
 import { loadNative } from "./input/haptics.ts";
 import { plotHook } from "./apps/function/plotHook.ts";
 import { reloadOnMissingChunk } from "./state/chunkReload.ts";
+import { claimWriter, yieldWriter } from "./state/writer.ts";
 import type { unitPad } from "./units/padView.svelte.ts";
 import type { OpenUnitView } from "./units/open.ts";
 
 // A lazy chunk missing after a deploy (A49): reload once for the new index.html; the half-typed line is kept on pagehide.
 addEventListener("vite:preloadError", () => void reloadOnMissingChunk(sessionStorage, Date.now(), () => location.reload()));
+
+// R95: one writer per browser profile. The lock is asked for before anything is read or written; a store write waits
+// for the answer. The hand-over (and a second tab's note) is a lazy chunk, loaded once the answer is in.
+claimWriter((writer) => {
+  const load = (): void => void import("./state/handOver.ts").then((m) => m.startHandOver(writer, flush)).catch(() => {});
+  if (typeof requestIdleCallback === "function") requestIdleCallback(load, { timeout: 2000 });
+  else setTimeout(load, 200);
+});
 
 const entry = new EntryController();
 // The engine worker starts at launch (D2): it compiles the wasm on another thread while the page paints.
@@ -92,10 +101,11 @@ mount(App, { target: document.getElementById("app") as HTMLElement, props: { ses
 // Test hook (desktop Playwright): read the entry line and the session without reaching into the DOM.
 declare global {
   interface Window {
-    pascaline: { entry: EntryController; session: Session; shell: AppShell; userKeys: UserKeys; calc: Calc; plot: typeof plotHook; renderStats: { count: number }; unitPad?: typeof unitPad; unitView?: OpenUnitView | undefined };
+    pascaline: { entry: EntryController; session: Session; shell: AppShell; userKeys: UserKeys; calc: Calc; plot: typeof plotHook; renderStats: { count: number }; unitPad?: typeof unitPad; unitView?: OpenUnitView | undefined; yieldWriter: typeof yieldWriter };
   }
 }
-window.pascaline = { entry, session, shell, userKeys, calc, plot: plotHook, renderStats };
+// yieldWriter: a kill in the e2e tests (persist.spec.ts) lets go of the store without the pagehide flush (R95)
+window.pascaline = { entry, session, shell, userKeys, calc, plot: plotHook, renderStats, yieldWriter };
 if (import.meta.env.DEV && new URLSearchParams(location.search).has("pad")) void import("./units/padView.svelte.ts").then((m) => { window.pascaline.unitPad = m.unitPad; m.devPad(); }); // R24b: the unit pad alone on the keys (the units key opens it with the unit view, R24c)
 
 // Offline support (web build only): after the engine is up and the browser is idle, so the install's downloads

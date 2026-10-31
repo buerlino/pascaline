@@ -110,6 +110,10 @@ export const en = {
   /** The update line (A49): a new version of the web build is installed and waits for the user's Restart. */
   "update.ready": "A new version is ready.",
   "update.restart": "Restart",
+  /** R95: another tab of this browser holds the store; this one computes but keeps nothing until Use here. */
+  "writer.elsewhere": "Pascaline is open in another tab",
+  "writer.notKept": "Nothing done in this tab is kept",
+  "writer.useHere": "Use here",
   "engine.safeStart": "Your stored definitions were not loaded because they stopped the engine; Memory lists them.",
   "settings.newer": "Data from a newer version: changes here are not kept",
   "mode.title": "Mode",
