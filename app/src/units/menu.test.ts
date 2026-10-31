@@ -20,14 +20,16 @@ const raw = existsSync(file) ? (JSON.parse(readFileSync(file, "utf8")) as IndexI
 const full = raw.some((it) => it.kind === "unit");
 const spec = parse(readFileSync(join(here, "../../../spec/units-menu.yaml"), "utf8")) as { categories: { name: string; first: string[] }[] };
 
-describe("products as pad actions", () => {
-  it("cm^2 is cm and ², Btu/h is Btu ÷ h, in*lbf is both units, lb/ft^3 puts the power on the denominator's unit", () => {
-    expect(productActions("cm^2")).toEqual([{ do: "unit", id: "cm" }, { do: "power", n: 2 }]);
-    expect(productActions("Btu/h")).toEqual([{ do: "unit", id: "Btu" }, { do: "per" }, { do: "unit", id: "h" }]);
-    expect(productActions("in*lbf")).toEqual([{ do: "unit", id: "in" }, { do: "unit", id: "lbf" }]);
-    expect(productActions("lb/ft^3")).toEqual([{ do: "unit", id: "lb" }, { do: "per" }, { do: "unit", id: "ft" }, { do: "power", n: 3 }]);
-    expect(productActions("a/b/c")).toBeUndefined();
-    expect(productActions("m^5")).toBeUndefined();
+describe.skipIf(!full)("products as pad actions", () => {
+  const cat = slotCatalogue(makeIndex(raw).items);
+  it("cm^2 is c, m and ², kgf/cm^2 splits both factors, Btu/h and in*lbf stay whole units, lb/ft^3 puts the power on the denominator's unit", () => {
+    expect(productActions("cm^2", cat)).toEqual([{ do: "pair", prefix: "c", id: "m" }, { do: "power", n: 2 }]);
+    expect(productActions("kgf/cm^2", cat)).toEqual([{ do: "pair", prefix: "k", id: "gf" }, { do: "per" }, { do: "pair", prefix: "c", id: "m" }, { do: "power", n: 2 }]);
+    expect(productActions("Btu/h", cat)).toEqual([{ do: "unit", id: "Btu" }, { do: "per" }, { do: "unit", id: "h" }]);
+    expect(productActions("in*lbf", cat)).toEqual([{ do: "unit", id: "in" }, { do: "unit", id: "lbf" }]);
+    expect(productActions("lb/ft^3", cat)).toEqual([{ do: "unit", id: "lb" }, { do: "per" }, { do: "unit", id: "ft" }, { do: "power", n: 3 }]);
+    expect(productActions("a/b/c", cat)).toBeUndefined();
+    expect(productActions("m^5", cat)).toBeUndefined();
   });
 });
 
@@ -68,7 +70,7 @@ describe.skipIf(!full)("the units menu on the generated index", () => {
     const row = level("ucat:Area").find((r) => r.id === "uprod:cm^2");
     expect(row?.label).toBe("cm²");
     row?.run?.();
-    expect(products).toEqual([[{ do: "unit", id: "cm" }, { do: "power", n: 2 }]]);
+    expect(products).toEqual([[{ do: "pair", prefix: "c", id: "m" }, { do: "power", n: 2 }]]);
     const bare = unitsMenu(index, { pick: () => {} });
     expect(bare.categories.find((c) => c.id === "ucat:Area")?.submenu?.items.some((r) => r.id.startsWith("uprod:"))).toBe(false);
   });

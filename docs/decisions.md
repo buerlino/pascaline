@@ -15,8 +15,6 @@ The owner's other open items are in [backlog.md](backlog.md), "Needs the user". 
 
 - **The start chunk's room:** after R70 it is 60.96 of the 61 kB budget (pin 60.97), and R24d (+0.10), R38a, R71, R15c4 and R88 still come. Opus pass 23 runs the split now, as R70f1: about 1 kB of code that runs only after a press leaves the start chunk, and the 61 kB budget stays. Recommendation: keep the budget; say so if you would rather raise it.
 
-- **R24d, Find in a slot and the user cells (built, three points):** (1) the start chunk is 60.79 of 61 kB (pin 60.8): the split package of the entry above comes before R88. (2) An empty user cell (a "+") opens Find on units; the pick sets that leg and also lands in the slot. Recommendation: keep (one trip does both). (3) `mmH₂O` is no Find item (`mmWC` is), so it cannot be a cell yet; the S5 pad holds all 50 units, so the e2e takes six off-pad units of r9 section 3: Å, arcmin, arcsec, mmHg, oz, cfm.
-
 ## Decided proposals
 
 Newest first within each group.

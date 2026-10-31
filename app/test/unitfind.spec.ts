@@ -111,7 +111,7 @@ test.describe("Find in a slot", () => {
     await emptyOf(page);
     await openFind(page, "d3"); // Area
     await row(page, "uprod:cm^2").tap();
-    expect(await tokens(page)).toEqual([{ unit: "cm", power: "2" }]);
+    expect(await tokens(page)).toEqual([{ prefix: "c", unit: "m", power: "2" }]);
   });
 
   test("the units that are not on the pad, each within the probe's Find count (Math, the letters that make it the first hit, Enter)", async ({ page }) => {

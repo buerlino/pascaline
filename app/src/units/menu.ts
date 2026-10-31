@@ -10,7 +10,7 @@ import { itemRow, type FindIndex } from "../find/finder.ts";
 import { search } from "../find/rank.ts";
 import type { FindItem } from "../find/types.ts";
 import { unitText, type UnitMessageKey } from "../i18n/enUnits.ts";
-import type { PadAction } from "./slot.ts";
+import { slotCatalogue, splitPair, type PadAction, type SlotCatalogue } from "./slot.ts";
 
 interface RawCategory { name: string; dims: string[]; first: string[]; hide?: string[] }
 const spec = raw as unknown as { prefixes: { items: string[] }; categories: RawCategory[] };
@@ -25,9 +25,10 @@ export interface UnitsMenuOptions {
   product?(actions: PadAction[]): void;
 }
 
-/** A product of Find units as the pad presses it: "ft^3" → ft, ³; "Btu/h" → Btu, ÷, h; "in*lbf" → in, lbf. A factor
- *  or power the pad cannot make gives undefined. */
-export function productActions(text: string): PadAction[] | undefined {
+/** A product of Find units as the pad presses it: "ft^3" → ft, ³; "Btu/h" → Btu, ÷, h; "in*lbf" → in, lbf; a factor
+ *  that is a prefix and a unit goes in as a pair, as a pick from Find does ("cm^2" → c, m, ²; "kgf/cm^2" → k, gf, ÷, c,
+ *  m, ²). A factor or power the pad cannot make gives undefined. */
+export function productActions(text: string, cat: SlotCatalogue): PadAction[] | undefined {
   const out: PadAction[] = [];
   const parts = text.split("/");
   if (parts.length > 2) return undefined;
@@ -37,7 +38,8 @@ export function productActions(text: string): PadAction[] | undefined {
       const [name, pw, more] = f.split("^");
       const n = pw === undefined ? 1 : Number(pw);
       if (!name || more !== undefined || (n !== 1 && n !== 2 && n !== 3 && n !== 4)) return undefined;
-      out.push({ do: "unit", id: name });
+      const p = splitPair(cat, name);
+      out.push(p ? { do: "pair", prefix: p.prefix, id: p.unit } : { do: "unit", id: name });
       if (n !== 1) out.push({ do: "power", n });
     }
   }
@@ -53,6 +55,7 @@ export function unitsMenu(index: FindIndex, o: UnitsMenuOptions): { categories: 
     const put = o.put;
     return it.kind === "unit" && put ? { ...r, put: { label: unitText("units.find.put"), run: () => put(it) } } : r;
   };
+  const slots = slotCatalogue(index.items);
   const rows = (hits: readonly FindItem[]): MenuItem[] => hits.map(row);
   const find = (q: string, within?: ReadonlySet<string>): MenuItem[] =>
     rows(search(index.prepared, q, { filter: ["unit", "pfx"], prefer: ["unit"], limit: index.items.length }).map((h) => h.item).filter((it) => !within || within.has(it.id)).slice(0, 50));
@@ -72,7 +75,7 @@ export function unitsMenu(index: FindIndex, o: UnitsMenuOptions): { categories: 
     const ids = new Set<string>();
     for (const f of cat.first) {
       const it = index.byId.get(`unit:${f}`);
-      const acts = it ? undefined : productActions(f);
+      const acts = it ? undefined : productActions(f, slots);
       const product = o.product;
       if (it) { items.push(row(it)); ids.add(it.id); }
       else if (acts && product) items.push({ id: `uprod:${f}`, label: pretty(f), value: f, run: () => product(acts) });

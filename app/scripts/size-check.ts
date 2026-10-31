@@ -140,7 +140,8 @@ export const LAZY_PARTS = ["src/views/sheetKeys.ts", "src/views/tmplSheet.ts", "
  *  58.96 → 59.06 kB (R24d): phase-1 58.95 kB, +0.10 kB gzip (raw +0.2 kB) as measured before the merge on the old base. Four lines of
  *  start-chunk source changed (`Sheet.right()` runs a row's second job, 0.02 kB); the rest is the start chunk's own map of lazy
  *  chunks: the cells' store, Find in a slot and the units menu are three new lazy files (units/userCells.svelte.ts, find.ts,
- *  menu.ts), each named in the preload list of the dynamic imports that reach it. */
+ *  menu.ts), each named in the preload list of the dynamic imports that reach it.
+ *  59.06 stays (R24df1): on phase-1 after R70f1 the branch measures 59.03 kB gzip (166.82 kB raw), under the pin, so no raise. */
 export const START_PIN_GZIP = 59.06 * KB;
 
 /** Failures for the start chunk's row when it is over the pin. */
