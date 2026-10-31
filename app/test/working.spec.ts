@@ -61,11 +61,32 @@ test("a job shows Working… and Cancel only after 150 ms, and its row keeps the
 test("Esc stops a job before Working… shows", async ({ page }) => {
   await open(page, "engine=fake&delay=2000");
   await sampleRows(page);
-  await tap(page, ["d2", "add", "d3", "enter", "esc"]);
+  await tap(page, ["d2", "add", "d3"]);
+  // R109: Enter and Esc go through the app's own key path in one page-side task, so how late a second tap reaches the
+  // page (load on the host) is not measured. Enter parses before the job's row exists, so Esc is pressed from a
+  // MutationObserver (a microtask, before the next frame) the moment the pending row is in the list.
+  const escAt = await page.evaluate(
+    () =>
+      new Promise<number>((resolve, reject) => {
+        const key = (id: string): void => window.pascaline.entry.onKey(id, undefined as never, false);
+        const watch = new MutationObserver(() => {
+          if (!document.querySelector('article.item[data-status="pending"]')) return;
+          watch.disconnect();
+          const t = performance.now();
+          key("esc");
+          resolve(t);
+        });
+        watch.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["data-status"] });
+        setTimeout(() => { watch.disconnect(); reject(new Error("no pending row after Enter")); }, 5000);
+        key("enter");
+      }),
+  );
   await expect(page.locator(".item").last()).toHaveAttribute("data-status", "cancelled");
+  const start = await page.evaluate(() => window.pascaline.session.items.at(-1)!.startedAt);
   const s = (await samples(page)).filter((x) => x.t >= 0);
-  const cancelledAt = s.find((x) => x.status === "cancelled")!.t;
+  const cancelledAt = s.find((x) => x.status === "cancelled")!.t + start - escAt; // ms from Esc's own press
   expect(cancelledAt).toBeLessThan(150); // the key acted during the delay, while nothing was drawn yet
+  // no frame drew Working… or Cancel (the rule: they wait for 150 ms of the job, and Esc came within a frame of its start)
   expect(s.some((x) => x.working || x.cancel)).toBe(false);
   // the engine is free again
   await tap(page, ["d4", "enter"]);
