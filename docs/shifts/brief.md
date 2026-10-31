@@ -10,7 +10,7 @@
 **The freeze ended** on 2026-10-27, before its count: repeated green runs added nothing, and the mornings' failures were UI (c46: F110, F117), not the engine. **The net stays:** every merge runs the core list (R74; [tests/core/core.yaml](../../tests/core/core.yaml), 66 cases, all active), night.sh runs the device's core list after each Opus pass when the night has a device (A33, A41), and the owner's [morning check](../../tests/core/MORNING.md) runs on the night's device. A red result is a bug to fix (a FIX of the next Opus pass, or a backlog bug line past a day of work), not a gate. **The pace** (owner, 2026-10-27): about two weeks of Claude Max are left (to about 2026-11-10). Each night carries about 9 hours of real work, the most important steps first, so a usage limit late costs the least; the day runs what needs the owner's eye.
 
 **Two lanes** (owner, 2026-10-29; decisions.md P17 and "Owner answers of 2026-10-29"): once A47a–A47c are merged, lane A (ron's UI) and lane B (the release, then the engine) run around the clock, each with its own table in section 0c, merged through one queue (A47b); until then one run at a time. ron's packages run at night too: the owner's look moves to three milestone reviews (after R87; after R86, R57, R50e; after R24d), and a package's "owner's eye" item joins the next review. Device steps and the owner's acts (a key, a tag, a phone) stay by day. The order:
-1. **Find:** R4a merged (`b9f0042`, 2026-10-28; R90 by day); R91 (`e80eda0`: start chunk 61.02 → 57.81 kB gzip, pin 58.5 kB; the Fairphone before/after waits for annabell), R15c3 (`6e43091`), R49 (`d60fbfb`), R87 (`56d017f`) merged; R4b (`c682e3e`) merged.
+1. **Find:** R4a merged (`b9f0042`, 2026-10-28); R91 (`e80eda0`: start chunk 61.02 → 57.81 kB gzip, pin 58.5 kB; the Fairphone before/after waits for annabell), R15c3 (`6e43091`), R49 (`d60fbfb`), R87 (`56d017f`) merged; R4b (`c682e3e`) merged.
 2. **The Settings base** (owner, 2026-10-27; decisions.md "Settings in the Mode sheet, and presets"; [mockups/settings.html](../mockups/settings.html)): R85 (`1d35189`), R49, R86, R50e (`e4d6085`), R57 (`bb90a5e`) merged; after the units: R70, R15c4, R38a → R38b, R59; R88 (after R4b, R57, R50e) → R89; R55 (after R15c4); R53; R12b → R12c → R41; R36, R33 → R37, R40.
 3. **The units** (owner, 2026-10-29: right after R86, R57, R50e): R24b (`bca10d5`) and R24c (`bfc6e4e`, by R24cf1) merged → R24d, R60–R63, R71; G81 merged (`a1158a4`).
 4. **Lane B, to v0.1.0** (the APK and the website from one tag): A43 (an update keeps the data, on a device by day; A48 and A50 merged), A7 (signing, the owner's key made off this laptop), A49 (`c6447ff`) and A45 (`01a0e93`) merged, A8 (the owner's test tag); A9 with the owner's phone by day (F41); then wrong numbers by reach, C4.
@@ -68,6 +68,7 @@ Milestone reviews (section 0): after R50e; after R24d.
 | 317 | [R106](packages/R106.md) the history is written only after it was read | ron, Opus | `p1/ron-historyread` | – |
 | 318 | [R93](packages/R93.md) a failed store read is not "nothing stored" | ron, Opus | `p1/ron-failedread` | R106, R88 |
 | 319 | [R94](packages/R94.md) an older build never writes back a newer settings schema | ron, Opus | `p1/ron-settingsguard` | R88 |
+| 320 | [R95](packages/R95.md) one writer per browser profile (web) | ron, Opus | `p1/ron-onewriter` | R106, R93 |
 
 ### Lane B queue (the release, then the engine)
 A43, A7, A8 and A9 run by day (section 0). Step 408 runs only on the weekly extreme night the owner names (tonight); 410 and 411 run every night.
@@ -80,6 +81,7 @@ A43, A7, A8 and A9 run by day (section 0). Step 408 runs only on the weekly extr
 | 412 | [A52](packages/A52.md) the web version's kill switch as a workflow input | annabell, Sonnet, audit Opus | `p1/annabell-pageskill` | – |
 | 413 | [A53](packages/A53.md) the audit's behaviour diff compares something | annabell, Opus | `p1/annabell-behaviourdiff` | A52 |
 | 414 | [G139](packages/G139.md) `eseries` and `sigfig` decide on the exact value | gorge, Opus | `p1/gorge-eseriesexact` | – |
+| 415 | [G140](packages/G140.md) a non-real special function known only as a double shows ⚠ | gorge, Opus | `p1/gorge-complexdouble` | – |
 
 ### The commands henri replies with (one per decision; `scripts/night.sh` runs it)
 - `scripts/pipeline.sh <agent> "<ID>" --model <sonnet|opus> --audit-model auto`: the next queue step not done (the queue's skip rule above); `--audit-model opus` where its row says "audit Opus".

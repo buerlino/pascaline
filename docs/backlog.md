@@ -18,8 +18,8 @@ The one place for "where are we and what's left", one or two lines per open item
 `phase-1` and `master` are on GitHub; `master` was last fast-forwarded to `phase-1` on 2026-10-14 (`ef857a6`). Work continues on `phase-1`.
 
 ## Needs the user
-0. **The core list (P23):** cut or extend [tests/core/core.yaml](../tests/core/core.yaml) (66: 51 drafted by sandra, c52–c56 added with you on 2026-10-21, c57–c60 on 2026-10-24, c61–c66 on 2026-10-26; tell a session what to drop or add); do the [morning check](../tests/core/MORNING.md) on the night's device (about 10 minutes, 15 cases; tell the day session what failed); keep the night's device plugged in, unlocked and on the charger (A32, A33).
-1. **Decisions in [decisions.md](decisions.md) "Needs the user":** A21's F-Droid answer; R50e's Android system bar colours; the start chunk's room (R70f1 split it: 58.97 of 61 kB; the budget stays).
+0. **The core list (P23):** cut or extend [tests/core/core.yaml](../tests/core/core.yaml) (66: 51 drafted by sandra, c52–c56 added with you on 2026-10-21, c57–c60 on 2026-10-24, c61–c66 on 2026-10-26; tell a session what to drop or add); do the [morning check](../tests/core/MORNING.md) on the night's device (about 10 minutes, 15 cases; tell the day session what failed); keep the night's device plugged in, unlocked and on the charger (A32, A33). The one-time checks: [ONE-TIME.md](../tests/core/ONE-TIME.md).
+1. **Decisions in [decisions.md](decisions.md) "Needs the user":** A21's F-Droid answer; R50e's Android system bar colours.
 2. **Your outreach steps** (decisions.md P18–P22): send Parisse email 5 (patches 0013–0016 and the regression files at `7438251`, `../outreach/email-parisse-5.md`; 0003–0012 went with email 4, 2026-10-28) after the push; ask F-Droid whether checked-in derived data (`find/factors.yaml`, P22) is fine, before C4; mirror G77's pin (`gh` logged in; the command is in `engine/giac/README.md`).
 3. **G2 questions:** the unanswered items of `tests/golden/G2-CHECKLIST.md` (41, 42, 52, 56, 63–71; each package built a default, named in decisions.md; 63–65 can reverse S14's route R); the optional real-G2 spot checks (`spec/mapping/vc-2026-10-11/SPOT-CHECK.md`).
 4. **From daily use:** the key sequence that left ⌫ stuck "at log" (F39); connect your phone for A9 (F41, no vibration); more points into [feedback.md](feedback.md).
@@ -27,16 +27,6 @@ The one place for "where are we and what's left", one or two lines per open item
 6. **Tap "Allow USB debugging"** on a device when it shows `unauthorized`.
 7. **v0.1.0** (decisions.md "The release path"): make the release key off this laptop, fill A7's table (A7.md); allow tags `v*` in Settings → Environments → `github-pages` before A45's deploy; read the usage meter each morning and at each lane start (tripwire 85 %); fast-forward `master` and push before the tag. **A49, switching a broken web worker off:** copy `app/pwa/kill/sw.js` over `sw.js` on the server (same URL, same path). Each browser's next update check installs it; it deletes our caches and unregisters, and the next load comes from the network. Put the real `dist/sw.js` back after the fix.
 8. **Later:** the outside rounds (two 30-minute rounds after R4b and R24c, [r18](research/r18-outside-test.md); R70, the press counter, is built); at milestone 5, time ten tasks by hand (E-notation against units). **Later, not now:** CI (C3), the F-Droid recipe (C4).
-
-### One-time checks on the phone (the daily list is MORNING.md; each by the owner, or annabell when a package names it)
-- Flick misfires (R9: 20 px arm, 12 px cancel); whether the first tap after a cold start vibrates (R35); R7's sheet defaults; the 36 px cluster rows and the 28 px status line (R15b).
-- A11: Share session, Paste of `1.5e-3`; a chip tapped right after a flick (R15c2); the ~8 px strip right of an inner fraction (R42); "Working…" on the WebView and a taller CAS result growing its row (F8); the trackpad's `touch-action: none` (K1).
-- The memory cap on the Tab One: `makemat(1,30000,30000)` in CAS gives "Out of memory" and the app stays up (G24).
-- R85 (merged `1d35189`): on the Fairphone, Shift, Fmt opens Mode on Angle; ▶, Enter gives DEG (the owner).
-- R86 (merged `cf087b9`): on the Fairphone, the pill then SCI sets it and closes; the digits chip then 20; ◀ goes up to Mode (the owner).
-- R50e (merged `e4d6085`): each theme family on the phone for a while; a cold start with a non-default theme shows no flash; a first start after "clear data" is Dark from the first frame (the owner).
-- R81 (F99, merged `a956ede`): the system keyboard stays closed after a return to the app, on the Fairphone (`tools/probes/ime-return.py`, annabell).
-- Removal tests to read: the "stored in Home" line under CAS results (R32), the angle check (R37), library imports (S4), Undo (P13).
 
 ### Upstream reports (owner; drafts in `../outreach/upstream-reports.md`)
 - **MathLive**, filed 2026-10-19: [#3122](https://github.com/arnog/mathlive/issues/3122) (⌫ at `\left…\right`), [#3123](https://github.com/arnog/mathlive/issues/3123) (touch caret), [#3124](https://github.com/arnog/mathlive/issues/3124) (focus restore); [#3125](https://github.com/arnog/mathlive/issues/3125) (Redo after ⌫, 2026-10-20); M5 (`isImplicitArg` takes no matrix, F68) drafted by R75.
@@ -50,12 +40,12 @@ The one place for "where are we and what's left", one or two lines per open item
 - **F73, no package (it waited for the end of the freeze; owner, 2026-10-24; G103 reads the doubles).** A double in a list shows Giac's text (`[BesselJ(1,2),1/3]`), not numbers with ⚠; no wrong value reaches the screen. Left: `hasFloat` (reads `1..3` and strings). Families 5, 6.
 - **R70 press count, no package (R70f1's report):** a hardware `<`, `>` or `!` (t.run) and a dead hardware key (onDead) are not counted; docs/04 5.2 counts every press.
 - **R57 comma display in Solve and Num, no package:** in comma mode, Solve's roots and the Function and Solve Num tables still show their values with a point (R57 changed Home, CAS, Copy and Paste only).
-- **F148, R106 (night review bu-1).** An early hide empties the history. Rerun: `cd app && npx vitest run --dir ../tools/probes/review-1030` (red at `0fc50d2`). Reach: a quick leave.
-- **F149, G139 (night review be-10).** `eseries(6,√(1500·2200))` = 1500, right 2200. Rerun (`bb90a5e`): `node tools/probes/engine.ts 'eseries(6,sqrt(1500*2200))'`. Reach: Find.
-- **F150, G140 (night review be-9).** `Zeta(1/2+i)` ≈, wrong from digit 15. Rerun (`bb90a5e`): `DIGITS=30 node tools/probes/engine.ts 'Zeta(1/2+i)'`. Reach: Find.
-- **F154, G143 (night review be-2; reachable once R24d and R71 merge).** σ through `floor` is `± 0`, no ⚠. Rerun (`bb90a5e`): `node tools/probes/unit-result.ts 'floor(pasupm(2.95,0.1))'`. Reach: the unit view.
-- **F146, R93 (night review ca-1; latent).** A failed read counts as empty; the next write replaces it. Rerun: `node tools/probes/review-1030/failed-read.mts` (red at `0fc50d2`).
-- **F147, R95 (night review fh-2; web only).** Two tabs overwrite each other's data. Rerun (`bb90a5e`): `grep -rn "navigator.locks" app/src` (none). Reach: web.
+- **F148, R106 (night review bu-1).** An early hide empties the history. Reach: a quick leave.
+- **F149, G139 (night review be-10).** `eseries(6,√(1500·2200))` = 1500, right 2200. Reach: Find.
+- **F150, G140 (night review be-9).** `Zeta(1/2+i)` ≈, wrong from digit 15. Reach: Find.
+- **F154, G143 (night review be-2; reachable once R24d and R71 merge).** σ through `floor` is `± 0`, no ⚠. Reach: the unit view.
+- **F146, R93 (night review ca-1; latent).** A failed read counts as empty; the next write replaces it.
+- **F147, R95 (night review fh-2; web only).** Two tabs overwrite each other's data. Reach: web.
 - **Night review 2026-10-30:** the rest in [research/night-review-2026-10-31.md](research/night-review-2026-10-31.md).
 
 ### Background stream (extreme inputs; at night, by reach)
@@ -86,9 +76,9 @@ The one place for "where are we and what's left", one or two lines per open item
 - **F139, no package (G133f1).** Home calls an exact 0 it cannot prove an underflow (`novalue.ts` `underflow`): `re(asin(i/10))`, `re(asinh(i/5))`, `re(asin(i))` show "Underflow" (value 0). A wrong reason, no wrong number. Family 3.
 - **F140–F144, no package (G137; pending golden `g137-*`, oracle values).** Home ≈ with a wrong value: `2^sqrt(-1-10^-3)` 0.99999725+0.0023·i (right 0.76901746+0.63922777·i); `(-0.001)^atanh(1.000000001)` the negation of the value; `surd(asinh(1E-100),3)` a complex root (right 4.64158883361E-34); `acosh(cosh(3*sqrt(-pi)))` -0.9658·i (right +, and 1 s on the desktop, ⚠0 on the 8× clock); `acosh(1E150-sqrt(-1))` imaginary part halved (right -1E-150·i).
 - **F145, no package (G120, G137).** Nightly sweep hangs: acos/asin/acosh of a huge real and acosh(1ᴇ-1000) (G120, 20), DEG `sin(asinh(1ᴇ-300))`, `∛1ᴇ1000+e^acosh(-2)`, `atanh(asin(1ᴇ-300))^atan(…)` (G137, 6); triage files their rows under F145. The sweep oracle (`tools/probes/sweep/oracle.py`) drops a part of mpmath's acosh and acos of a tiny complex (G137's 2 oracle rows).
-- **F151, G141 (night review be-1).** `(1+10^-100)^(10^100)` ≈ 1, right e. Rerun (`bb90a5e`): `node tools/probes/engine.ts '(1+10^-100)^(10^100)'`. Reach: keys.
-- **F152, G148 (night review vg-3).** `approx(exp(10^20))`: unmarked +infinity. Rerun (`bb90a5e`): `node tools/probes/engine.ts 'approx(exp(10^20))'`. Reach: Shift+Enter.
-- **F153, G142 (night review vg-1).** Complex `acosh` near 0: ≈, Im wrong from digit 13. Rerun (`bb90a5e`): `DIGITS=30 node tools/probes/engine.ts 'acosh(10^-6/ln(-1.000001))'`. Reach: keys.
+- **F151, G141 (night review be-1).** `(1+10^-100)^(10^100)` ≈ 1, right e. Reach: keys.
+- **F152, G148 (night review vg-3).** `approx(exp(10^20))`: unmarked +infinity. Reach: Shift+Enter.
+- **F153, G142 (night review vg-1).** Complex `acosh` near 0: ≈, Im wrong from digit 13. Reach: keys.
 - **G94, no package.** Depth-3 generated trees in the view sweep crash the in-process engine (wasm memory out of bounds; also the nightly view sweep at count 300, seed 20752); raw output: `../drafts/2026-10-21-packages/g94-raw`.
 - **The hardening without a bug line:** A31 (two shell tests left: A55); r16's end mark, a 50,000-input sweep with no new false mark, is not met (Opus pass 82; G94 stops the view sweep at volume); G116: `node scripts/sweep.ts --nightly --edges`; its first two seeds gave F119–F123 (triage: `.tasks/sweep-2026-10-28-g116-triage.md`); G120 (seed 1793285778): F129–F133 (`.tasks/sweep-2026-10-29-g120-triage.md`); G137 (seed 1793416884): F140–F145 (`.tasks/sweep-2026-10-31-g137-triage.md`); A44: `tests/golden/sweep-nightly-known.yaml` holds the nightly sweep's open rows (F122); the gate never reads it.
 
