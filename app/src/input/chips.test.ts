@@ -98,6 +98,14 @@ describe("chip table", () => {
     expect(validChips(null)).toBeUndefined();
     expect(validChips({})).toBeUndefined();
   });
+  it("G81: a constant's basis is kept with its leaves, dropped when a leaf is malformed (the chip keeps its value)", () => {
+    const leaves = { fine_structure: { value: "7.29735256434E-3", unc: "1.13E-12" } };
+    const mu = { value: "1.25663706127E-6", exact: false, unc: "2.0E-16", basis: "2*pasl_fine_structure", basisLeaves: leaves };
+    expect(validChips({ "const:mu_0": mu })).toEqual({ "const:mu_0": mu });
+    const bad = { ...mu, basisLeaves: { fine_structure: { value: 7 } } };
+    expect(validChips({ "const:mu_0": bad })).toEqual({ "const:mu_0": { value: mu.value, exact: false, unc: mu.unc } });
+    expect(validChips({ "const:mu_0": { ...mu, basis: 3 } })).toEqual({ "const:mu_0": { value: mu.value, exact: false, unc: mu.unc } });
+  });
 });
 
 describe("bracket messages (F10)", () => {

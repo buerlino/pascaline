@@ -14,6 +14,23 @@ export interface Chip extends Omit<ValueFacts, "reliableDigits">, Partial<Pick<V
   value: string;
   /** A constant's standard uncertainty (CODATA), absent when it is exact. */
   unc?: string;
+  /** G81: an inexact constant's basis (Find's item, G80): its value over `pasl_<leaf>` names; absent on a chip
+   *  stored before G81, which keeps its own value and σ. */
+  basis?: string;
+  /** G81: the leaves `basis` uses, with their values and standard uncertainties. */
+  basisLeaves?: Record<string, { value: string; unc: string }>;
+}
+
+/** G81: a stored basis's leaves when every one is `{ value, unc }` of strings, else undefined. */
+function validLeaves(x: unknown): Record<string, { value: string; unc: string }> | undefined {
+  if (!x || typeof x !== "object") return undefined;
+  const out: Record<string, { value: string; unc: string }> = {};
+  for (const [k, l] of Object.entries(x as Record<string, unknown>)) {
+    const { value, unc } = (l ?? {}) as Record<string, unknown>;
+    if (!/^[A-Za-z0-9_]+$/.test(k) || typeof value !== "string" || typeof unc !== "string") return undefined;
+    out[k] = { value, unc };
+  }
+  return Object.keys(out).length ? out : undefined;
 }
 
 /** Keys: `res:<k>` for `\res{k}{…}`, `const:<ID>` for `\const{ID}{…}`, `ans` for `\ans` (filled at Enter). */
@@ -51,9 +68,12 @@ export function validChips(x: unknown): ChipTable | undefined {
   const out: ChipTable = {};
   for (const [k, c] of Object.entries(x as Record<string, unknown>)) {
     if (!/^(res:\d+|const:[A-Za-z0-9_]+)$/.test(k) || !c || typeof c !== "object") continue;
-    const { value, exact, unc, reliableDigits: rd, warn } = c as Record<string, unknown>;
+    const { value, exact, unc, reliableDigits: rd, warn, basis, basisLeaves } = c as Record<string, unknown>;
     if (typeof value !== "string" || typeof exact !== "boolean") continue;
     const chip: Chip = typeof unc === "string" ? { value, exact, unc } : { value, exact };
+    // G81: a constant's basis only whole, with its leaves; a chip without them keeps today's path
+    const leaves = typeof unc === "string" && typeof basis === "string" ? validLeaves(basisLeaves) : undefined;
+    if (leaves) Object.assign(chip, { basis, basisLeaves: leaves });
     if (rd === null || (typeof rd === "number" && Number.isInteger(rd) && rd >= 0 && rd <= 1000)) chip.reliableDigits = rd;
     if (warn === "unaudited" || warn === "unchecked") chip.warn = warn;
     out[k] = chip;

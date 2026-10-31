@@ -7,7 +7,7 @@ import type { AppShell } from "../apps/shell.svelte.ts";
 import type { MenuItem } from "../apps/types.ts";
 import type { EntryController } from "../entry/controller.ts";
 import { findText as t } from "../i18n/enFind.ts";
-import { constKey } from "../input/chips.ts";
+import { constKey, type Chip } from "../input/chips.ts";
 import type { Layer } from "../keyboard/keyboard.ts";
 import type { UserBinding, UserKeys } from "../keyboard/userKeys.svelte.ts";
 import { CATEGORIES, categoryItems } from "./categories.ts";
@@ -122,11 +122,13 @@ export function findMenu(index: FindIndex, pick: (it: FindItem) => void): { cate
   return { categories, search: (q) => find(q) };
 }
 
-/** The chip a constant goes on the line with (docs/04 3.6): its exact value text, its uncertainty, `exact` false then. */
-export function constChipOf(it: FindItem): { id: string; symbol: string; chip: { value: string; exact: boolean; unc?: string } } | undefined {
+/** The chip a constant goes on the line with (docs/04 3.6): its exact value text, its uncertainty, `exact` false then;
+ *  G81: an inexact constant's basis and leaves (G80) with it. */
+export function constChipOf(it: FindItem): { id: string; symbol: string; chip: Chip } | undefined {
   const m = /^\\const\{([^{}]*)\}\{(.*)\}$/.exec(it.insert);
   if (it.kind !== "const" || !m || it.value === undefined) return undefined;
-  const chip = it.unc === undefined ? { value: it.value, exact: true } : { value: it.value, exact: false, unc: it.unc };
+  const basis = it.basis !== undefined && it.basisLeaves !== undefined ? { basis: it.basis, basisLeaves: it.basisLeaves } : {};
+  const chip: Chip = it.unc === undefined ? { value: it.value, exact: true } : { value: it.value, exact: false, unc: it.unc, ...basis };
   return { id: m[1] as string, symbol: m[2] as string, chip };
 }
 
