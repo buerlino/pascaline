@@ -42,6 +42,7 @@ export class UserKeys {
   /** The user's slots (only the ones that differ from the defaults are stored); each is checked when it is used. */
   private stored = $state<StoredUserKeys>({});
   private readonly kv: Kv;
+  private restoring: Promise<void> | undefined;
   /** R57: the decimal comma is on, so the `.` and `,` keys carry the other mark (set from the session's setting). */
   decimalComma = $state(false);
 
@@ -49,10 +50,24 @@ export class UserKeys {
     this.kv = kv;
   }
 
-  /** Read the stored slots (at launch; until then the keys show their defaults). */
-  async restore(): Promise<void> {
-    const v = await this.kv.get<unknown>(USER_KEYS);
-    if (typeof v === "object" && v !== null) this.stored = v as StoredUserKeys;
+  /** Read the stored slots (once, at launch; until then the keys show their defaults). A preset (R88) waits for it. */
+  restore(): Promise<void> {
+    this.restoring ??= this.kv.get<unknown>(USER_KEYS).then((v) => {
+      if (typeof v === "object" && v !== null) this.stored = v as StoredUserKeys;
+    });
+    return this.restoring;
+  }
+
+  /** The stored slots as they are (a preset's Your keys group, R88). */
+  snapshot(): StoredUserKeys {
+    return $state.snapshot(this.stored) as StoredUserKeys;
+  }
+
+  /** Replace every slot with `next` (a preset's apply, R88): only the free keys' entries are kept, so a record that
+   *  names a fixed key never reaches it. Each slot is still checked when it is used. */
+  replace(next: Readonly<StoredUserKeys>): void {
+    const keep = Object.entries(next).filter(([id, s]) => USER_KEY_IDS.includes(id) && typeof s === "object" && s !== null && !Array.isArray(s));
+    this.write(structuredClone(Object.fromEntries(keep)));
   }
 
   /** The key as it is drawn and fires: a free key with the user's slots over its defaults; the `.` and `,` keys with the

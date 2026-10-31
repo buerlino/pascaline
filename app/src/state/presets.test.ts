@@ -7,6 +7,7 @@ import { keyboard } from "../keyboard/keyboard.ts";
 import { USER_KEY_IDS, UserKeys } from "../keyboard/userKeys.svelte.ts";
 import type { Look } from "../theme/look.ts";
 import { CELL_KEYS, UnitCells } from "../units/userCells.svelte.ts";
+import { BACKUP_KEYS, VALIDATORS } from "./backup.ts";
 import { PRESET_GROUPS, PRESETS_KEY, PresetError, Presets, type PresetStore, type StoredPresets } from "./presets.svelte.ts";
 import { Session } from "./session.svelte.ts";
 import { DATA_VERSION, type Kv } from "./storage.ts";
@@ -292,5 +293,18 @@ describe("presets (R88)", () => {
     const { presets: again } = await setup(store.rec);
     expect(again.list.map((p) => p.name)).toEqual(["Lab", "Other"]);
     expect(again.active).toBe(id);
+  });
+
+  it("the backup holds the presets and checks them with the model's own load check", async () => {
+    expect(BACKUP_KEYS).toContain(PRESETS_KEY);
+    const { presets, store } = await setup();
+    presets.capture("Lab", PRESET_GROUPS);
+    presets.capture("Bench", ["mode"]);
+    expect(VALIDATORS[PRESETS_KEY]?.(store.rec?.value)).toBe(true);
+    const v = store.rec?.value as StoredPresets;
+    for (const bad of [null, [], { ...v, presets: [...v.presets, { id: 1, name: "Twice", groups: { mode: {} } }] }, { ...v, presets: [{ id: 9, name: "", groups: { mode: {} } }] }, { ...v, active: 77 }])
+      expect(VALIDATORS[PRESETS_KEY]?.(bad), JSON.stringify(bad).slice(0, 60)).toBe(false);
+    expect(VALIDATORS["taps"]?.({ shift: 0, alpha: 0, presses: 1, presets: 3, since: "" })).toBe(true);
+    expect(VALIDATORS["taps"]?.({ shift: 0, alpha: 0, presses: 1, presets: -1, since: "" })).toBe(false);
   });
 });

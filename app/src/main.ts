@@ -21,6 +21,7 @@ import { plotHook } from "./apps/function/plotHook.ts";
 import { reloadOnMissingChunk } from "./state/chunkReload.ts";
 import type { unitPad } from "./units/padView.svelte.ts";
 import type { OpenUnitView } from "./units/open.ts";
+import type { Presets } from "./state/presets.svelte.ts";
 
 // A lazy chunk missing after a deploy (A49): reload once for the new index.html; the half-typed line is kept on pagehide.
 addEventListener("vite:preloadError", () => void reloadOnMissingChunk(sessionStorage, Date.now(), () => location.reload()));
@@ -45,7 +46,7 @@ if (import.meta.env.VITE_MEASURE === "1") {
 session.saveDelayMs = 400;
 // Settings › Appearance (R50e): the stored look goes on the page once the settings are read, and on every change; the
 // inline script of index.html has already shown it (lazy chunk, off the start).
-session.onLook = (look) => void import("./theme/lookApply.ts").then((m) => m.applyLook(look)).catch(() => {});
+session.onLook = (look) => import("./theme/lookApply.ts").then((m) => m.applyLook(look)).catch(() => {});
 const shell = new AppShell(calc, idbKv, entry, () => session.settings, () => session.userNames);
 const place = shell.restorePlace();
 const settingsRead = session.restoreSettings();
@@ -92,10 +93,12 @@ mount(App, { target: document.getElementById("app") as HTMLElement, props: { ses
 // Test hook (desktop Playwright): read the entry line and the session without reaching into the DOM.
 declare global {
   interface Window {
-    pascaline: { entry: EntryController; session: Session; shell: AppShell; userKeys: UserKeys; calc: Calc; plot: typeof plotHook; renderStats: { count: number }; unitPad?: typeof unitPad; unitView?: OpenUnitView | undefined };
+    pascaline: { entry: EntryController; session: Session; shell: AppShell; userKeys: UserKeys; calc: Calc; plot: typeof plotHook; renderStats: { count: number }; unitPad?: typeof unitPad; unitView?: OpenUnitView | undefined; presets: () => Promise<Presets> };
   }
 }
-window.pascaline = { entry, session, shell, userKeys, calc, plot: plotHook, renderStats };
+// R88: the presets' model, loaded with the Mode sheet's chunk once the settings are read
+const presets = (): Promise<Presets> => settingsRead.then(() => import("./views/modeSheet.ts")).then((m) => m.presetsFor(session, userKeys));
+window.pascaline = { entry, session, shell, userKeys, calc, plot: plotHook, renderStats, presets };
 if (import.meta.env.DEV && new URLSearchParams(location.search).has("pad")) void import("./units/padView.svelte.ts").then((m) => { window.pascaline.unitPad = m.unitPad; m.devPad(); }); // R24b: the unit pad alone on the keys (the units key opens it with the unit view, R24c)
 
 // Offline support (web build only): after the engine is up and the browser is idle, so the install's downloads

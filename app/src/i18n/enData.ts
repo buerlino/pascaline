@@ -44,6 +44,7 @@ export const enData = {
   "part.userKeys": "Your keys",
   "part.unitPadCells": "Unit pad cells",
   "part.taps": "Counters",
+  "part.presets": "Presets",
   "part.app.function": "Function app",
   "part.app.solve": "Solve app",
   "part.units.targets": "Unit targets",

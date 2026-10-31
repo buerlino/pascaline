@@ -8,6 +8,7 @@ import { KeyboardSpecError, keyboard, parseAction } from "../keyboard/keyboard.t
 import { defaultLook, validLook } from "../theme/look.ts";
 import { CELL_KEYS } from "../units/userCells.svelte.ts";
 import { isFmtMode, normalizeCycle } from "./displayMode.ts";
+import { readPresets } from "./presetRecord.ts";
 import { DATA_VERSION, unstamp } from "./storage.ts";
 import { kvGetRaw, type RawRecord } from "./storageRaw.ts";
 
@@ -23,6 +24,7 @@ export const BACKUP_KEYS: readonly string[] = [
   "userKeys",
   "unitPadCells",
   "taps",
+  "presets",
   "app.function",
   "app.solve",
   "units.targets",
@@ -138,7 +140,8 @@ export type Validators = Readonly<Record<string, (value: unknown) => boolean>>;
  * field the start would drop is a fault (a restore never loses data silently). Settings: `migrateSettings` keeps every
  * field the part holds. History: `restoreHistory`'s filter (finished rows with their LaTeX, at most HISTORY_LIMIT per
  * view). Definitions: the log's load check (`validDefs`) keeps every entry. Your keys and the unit pad cells: known keys
- * and layers, each slot null or a binding their reader keeps. The taps: their load check. Keys whose start reads field by
+ * and layers, each slot null or a binding their reader keeps. The taps and the presets: their load check (presets:
+ * state/presetRecord.ts; a held setting the app cannot read is left alone when the preset is applied, as there). Keys whose start reads field by
  * field with defaults (the apps, the place) and the units keys are checked by type.
  */
 export const VALIDATORS: Validators = {
@@ -167,7 +170,8 @@ export const VALIDATORS: Validators = {
     ),
   unitPadCells: (v) =>
     slotsOk(v, CELL_KEYS, ["tap", "up", "down"], (b) => text(b["unit"]) && (b["prefix"] === undefined || text(b["prefix"])) && (b["label"] === undefined || text(b["label"]))),
-  taps: (v) => isObject(v) && isCount(v["shift"]) && isCount(v["alpha"]) && typeof v["since"] === "string" && (v["presses"] === undefined || isCount(v["presses"])),
+  taps: (v) => isObject(v) && isCount(v["shift"]) && isCount(v["alpha"]) && typeof v["since"] === "string" && (v["presses"] === undefined || isCount(v["presses"])) && (v["presets"] === undefined || isCount(v["presets"])),
+  presets: (v) => isObject(v) && readPresets(v).dropped === 0,
   "app.function": isObject,
   "app.solve": isObject,
   "units.targets": (v) => typeof v === "object" && v !== null,

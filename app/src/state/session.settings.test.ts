@@ -96,7 +96,7 @@ describe("the look (R50e, schema 3)", () => {
     kv.data.set("settings", { schema: 3, look: { family: "nord", brightness: "light", contrast: false, plain: false } });
     const s = new Session(new FakeCalc(), kv);
     const seen: unknown[] = [];
-    s.onLook = (l) => seen.push(l);
+    s.onLook = (l) => void seen.push(l);
     await s.restoreSettings();
     expect(seen).toEqual([{ family: "nord", brightness: "light", contrast: false, plain: false }]);
   });
