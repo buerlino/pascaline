@@ -74,6 +74,7 @@ A7, A8 and A9 run by day (section 0); A43 is merged. Step 408 runs only on the w
 |---|---|---|---|---|
 | 408 | [G138](packages/G138.md) the weekly fuzz and its triage | gorge, Opus | `p1/gorge-nightfuzz-1106` | the weekly night |
 | 413 | [A53](packages/A53.md) the audit's behaviour diff compares something | annabell, Opus | `p1/annabell-behaviourdiff` | A52 |
+| 422 | [A56](packages/A56.md) the device step's core run reads its own node_modules | annabell, Opus | `p1/annabell-devicemods` | A53 |
 | 414 | [G139](packages/G139.md) `eseries` and `sigfig` decide on the exact value | gorge, Opus | `p1/gorge-eseriesexact` | – |
 | 415 | [G140](packages/G140.md) a non-real special function known only as a double shows ⚠ | gorge, Opus | `p1/gorge-complexdouble` | – |
 | 416 | [G149](packages/G149.md) a real base to a near-imaginary power (F140) | gorge, Opus | `p1/gorge-powimag` | – |
