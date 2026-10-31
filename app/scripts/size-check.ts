@@ -93,8 +93,9 @@ function subjects(manifest: Record<string, ManifestChunk>, all: string[]): { pre
   add("Start chunk", startFiles(manifest), { rawMax: 175 * KB, gzipMax: 61 * KB });
   add("MathLive chunk", chunks.filter((c) => /(^|\/)mathlive\/mathlive\.min\.m?js$/.test(normalSrc(c.src))).map((c) => c.file), { rawMax: 830 * KB });
   add("Find UI chunk", dynamic("src/find/"), { rawMax: 30 * KB });
-  // The unit view (G16): Calc.units() loads the builder and the factor table (src/units/calc.ts) on its first call.
-  add("Unit view chunk", dynamic("src/units/"), { rawMax: 30 * KB });
+  // The unit view (G16, R24c): one rule over src/units/, so it covers the UI chunk (units/open.ts, 23.33 kB raw) and the
+  // builder that Calc.units() loads with the factor table on its first call (units/calc.ts, 9.72 kB): 34 kB (Opus pass 22).
+  add("Unit view chunk", dynamic("src/units/"), { rawMax: 34 * KB });
   // The index and qalc have no fixed place yet (G4 and A2 decide); these match by location and name, so they apply wherever they land.
   add("Find index asset", all.filter((f) => f.startsWith("find/") || /(^|\/)find-index[^/]*$/.test(f)), { rawMax: 400 * KB, gzipMax: 100 * KB });
   add("qalc wasm + glue", all.filter((f) => /(^|\/)qalc[^/]*\.(wasm|mjs|js)$/.test(f)), { brotliMax: 1 * MB });
@@ -120,8 +121,10 @@ export const LAZY_PARTS = ["src/views/sheetKeys.ts", "src/views/tmplSheet.ts", "
  *  the drawn comma, the hardware keys, and the Paste and rows holds (keyboard/route.ts) are on the key path.
  *  60.5 → 60.52 kB (R24b): phase-1 60.49 kB, the branch 60.51 kB (+0.02 kB, raw +0.06 kB): the unit pad is drawn through the
  *  keypad's own seams (the sheet's state, sheetChunk.pad; Keypad's key list and its row of legends; one hook in
- *  keyboard/route.ts), and everything else (units/pad.ts, units/padView, spec/unit-pad.yaml) is a lazy chunk. */
-export const START_PIN_GZIP = 60.52 * KB;
+ *  keyboard/route.ts), and everything else (units/pad.ts, units/padView, spec/unit-pad.yaml) is a lazy chunk.
+ *  60.52 → 60.68 kB (R24c): phase-1 60.52 kB, the branch 60.68 kB (+0.16 kB): the units key is on the key path (P11),
+ *  and the key alone measures 60.58 kB; the unit view itself is a lazy chunk (Opus pass 22: at most 60.70 kB). */
+export const START_PIN_GZIP = 60.68 * KB;
 
 /** Failures for the start chunk's row when it is over the pin. */
 export function checkStartPin(row: Row): string[] {
