@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 # R7: Unit slots, the paper test (package S1, 2026-10-13)
 
-**Status (2026-10-21): decided.** decisions.md S1 (2026-10-13), the unit slots, and P14 (the pad replaces the letters, r9); docs/04 4.3–4.4; the slots are built, the pad's packages R24b, R24c, R24d.
+**Status (2026-10-31): decided and built.** decisions.md S1 (2026-10-13), the unit slots, and P14 (the pad replaces the letters, r9); docs/04 4.3–4.4; the slots (R24a), the pad (R24b) and the unit view's entry (R24c) are built; `unit_slot:` in spec/keyboard.yaml keeps only the units key's record (the letters left with R24c); R24d next.
 
 sandra, for the owner. **Accepted by the owner 2026-10-13** (decisions.md S1); section 7 is now docs/04 4.3–4.4. **P14 (decided 2026-10-14)** replaces the letters in a slot with the unit pad: [r9-unit-pad.md](r9-unit-pad.md); the slots, the reading and the guards of section 5.4 stay as r9 section 4 says. The question (P11, brief S1): can units added *after* the formula, typed letter by letter into
 unit slots, reach a unit in 4 presses or fewer at the median (P8 rule 2: a unit must beat typing `E-10`)? And which
