@@ -5,6 +5,7 @@
   import { FlickTracker, PAD_KEYS, REPEAT_KEYS, Repeat, Stepper, type Flick, type PadDir } from "./gestures.ts";
   import { fitLegends } from "./fit.ts";
   import { actionFor, gridPlace, keyboard, labelFor, type Key, type Layer } from "./keyboard.ts";
+  import { touchPresses } from "../state/pressCount.ts";
   import { sheetChunk } from "../views/sheetView.svelte.ts";
   import type { UserKeys } from "./userKeys.svelte.ts";
 
@@ -18,6 +19,7 @@
     cas = false,
     sheet,
     onpress,
+    oncount = () => {},
     ontouch = () => {},
   }: {
     /** The free keys' slots (U1–U6, R15b, R15c): drawn and fired with the user's actions over the defaults. */
@@ -36,6 +38,8 @@
     /** A key fires; `layer` overrides the Shift/Alpha state: "primary" for a trackpad step, "shift" for a flick up,
      *  "alpha" for a flick down (on Shift and Alpha themselves: the lock flicks). */
     onpress: (key: Key, layer?: Layer) => void;
+    /** One press was made, as docs/04 5.2 counts them (R70): a tap, a flick, a drag, a held ⌫ once. */
+    oncount?: () => void;
     /** A finger went down, a gesture made a step, or a flick became armed: the haptic tick. */
     ontouch?: () => void;
   } = $props();
@@ -193,6 +197,7 @@
     }
 
     if (target && target !== "pad" && REPEAT_KEYS.includes(target.id)) {
+      oncount();
       onpress(target);
       // the repeats keep the layer of the first press (Shift ⌫ = Del), which used up a one-shot Shift
       const layer: Layer = alpha ? "alpha" : shift ? "shift" : "primary";
@@ -245,6 +250,7 @@
    * touch is the key, ⌫ stops repeating.
    */
   function finish(g: Gesture): void {
+    if (touchPresses(g) > 0) oncount();
     if (g.kind === "pad") {
       if (g.steps.count === 0 && g.key) onpress(g.key);
     } else if (g.kind === "key") {
