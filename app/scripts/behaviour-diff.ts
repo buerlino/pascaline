@@ -14,6 +14,7 @@
 // $BEHAVIOUR_RUN_SECONDS (10) is killed with its worker and shows as a timeout (the next run gets a fresh engine); the CAS
 // view's hardTimeoutS is 0.8 of it (some inputs never reach Giac's check: precision.yaml's Home-budget cases run on in CAS).
 // An input that times out in both trees is not run again in that view, and is listed at the end.
+// Test hook: $BEHAVIOUR_INPUTS=<n> runs only the first n inputs and no sequence (behaviour-diff.test.ts: a few runs, not ~10^4).
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { Worker } from "node:worker_threads";
@@ -114,6 +115,11 @@ for (const f of ["home.yaml", "precision.yaml", "bench.yaml", "corpus.yaml"]) {
   for (const c of golden(f)) if (c.input && !c.latex && !c.steps && !c.before && !c.beforeHome && !c.beforeCas && !inputs.includes(c.input)) inputs.push(c.input);
 }
 const sequences = (parse(readFileSync(`${here}tests/golden/corpus.yaml`, "utf8")) as { sequences?: { id: string; steps: string[] }[] }).sequences ?? [];
+const only = env("BEHAVIOUR_INPUTS");
+if (only !== undefined) {
+  inputs.splice(Number(only));
+  sequences.splice(0);
+}
 
 const t0 = performance.now();
 const trees = [new Tree(ta, mjs[0]), new Tree(tb, mjs[1])] as const;

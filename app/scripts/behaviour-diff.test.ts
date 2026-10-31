@@ -58,14 +58,15 @@ function tree(name: string, display: string, throws?: string): string {
 }
 
 function diff(a: string, b: string, env: Record<string, string> = {}): { code: number | null; out: string } {
-  const r = spawnSync(process.execPath, [tool, a, b], { cwd: repo + "app", encoding: "utf8", timeout: 120_000, env: { ...process.env, GIAC_MJS: "", ...env } });
+  // the first three inputs only (the target is the first): the whole set is ~10^4 runs, too heavy beside the other test files
+  const r = spawnSync(process.execPath, [tool, a, b], { cwd: repo + "app", encoding: "utf8", timeout: 120_000, env: { ...process.env, GIAC_MJS: "", BEHAVIOUR_INPUTS: "3", ...env } });
   return { code: r.status, out: `${r.stdout}${r.stderr}` };
 }
 
 describe("behaviour-diff.ts (A53)", () => {
   const same = tree("same", "(input) => 'same'");
 
-  it("lists the one input whose display differs in tree B's code", () => {
+  it("lists the one input whose display differs in tree B's code", { timeout: 60_000 }, () => {
     const b = tree("b-differs", "(input) => (input === TARGET ? 'other' : 'same')");
     const r = diff(same, b, { GIAC_MJS_A: "/x/a/giac.mjs", GIAC_MJS_B: "/x/a/giac.mjs" });
     expect(r.code).toBe(0);
@@ -75,7 +76,7 @@ describe("behaviour-diff.ts (A53)", () => {
     expect(r.out).toMatch(/^8 difference\(s\)$/m);
   });
 
-  it("runs tree A on GIAC_MJS_A and tree B on GIAC_MJS_B", () => {
+  it("runs tree A on GIAC_MJS_A and tree B on GIAC_MJS_B", { timeout: 60_000 }, () => {
     const e = tree("engine-shows", "(input, mjs) => (input === TARGET ? mjs : 'same')");
     const r = diff(e, e, { GIAC_MJS_A: "/x/p1/a.mjs", GIAC_MJS_B: "/x/branch/b.mjs" });
     expect(r.code).toBe(0);
@@ -105,7 +106,7 @@ describe("behaviour-diff.ts (A53)", () => {
     expect(r.out).toContain(`timed out in both trees in cas (not run again there): ${target}`);
   });
 
-  it("refuses to say none when every run throws the same message", () => {
+  it("refuses to say none when every run throws the same message", { timeout: 60_000 }, () => {
     const t = tree("throws", "(input) => 'same'", "Cannot read properties of undefined (reading 'ctxSet')");
     const r = diff(t, t);
     expect(r.code).not.toBe(0);
