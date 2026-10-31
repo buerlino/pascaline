@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // G26: the pure parts of constUnc.ts (no engine).
 import { describe, expect, it } from "vitest";
+import { basisOf, correlated } from "./constBasis.ts";
 import { constFacts, constTable, inexactConstsIn, sigmaExpr, uncDigitsOf, withConstValues } from "./constUnc.ts";
 import { decimalFromString } from "./format.ts";
 
@@ -56,5 +57,45 @@ describe("ConstEntry carries its facts (G86)", () => {
     expect(inexactConstsIn("pasc_c", c)).toEqual([]);
     const G = { G: { value: "6.67430E-11", unc: "0.00015E-11", facts: { exact: true, reliableDigits: null } } };
     expect(inexactConstsIn("pasc_G", G)).toEqual(["G"]);
+  });
+});
+
+describe("a constant enters through its basis (G81)", () => {
+  const a = { fine_structure: { value: "7.3E-3", unc: "1E-12" } };
+  const mu = { value: "1.2E-6", unc: "2E-16", basis: "2*pasl_fine_structure/3", basisLeaves: a };
+  const eps = { value: "8.8E-12", unc: "1E-21", basis: "5/pasl_fine_structure", basisLeaves: a };
+  it("the basis is used only when every leaf is carried and the constant is inexact", () => {
+    expect(basisOf(mu)).toBe("2*pasl_fine_structure/3");
+    expect(basisOf({ ...mu, basisLeaves: {} })).toBeUndefined();
+    expect(basisOf({ unc: "2E-16" })).toBeUndefined();
+    expect(basisOf({ ...mu, unc: "0" })).toBeUndefined();
+  });
+  it("constants sharing a leaf go in through their bases; any other keeps its own value", () => {
+    expect(withConstValues("pasc_mu*pasc_eps*pasc_G", { mu, eps, G })).toBe("(2*(7.3E-3)/3)*(5/(7.3E-3))*(6.67430E-11)");
+    expect(withConstValues("pasc_mu*pasc_eps", { mu, eps }, undefined, "names")).toBe("(2*pasl_fine_structure/3)*(5/pasl_fine_structure)");
+    // alone, or beside a constant without a basis, the index's curated value (G13), not the leaves' (G81)
+    expect(withConstValues("pasc_mu*pasc_G", { mu, G })).toBe("(1.2E-6)*(6.67430E-11)");
+    expect(withConstValues("pasc_mu*pasc_eps", { mu, eps: { value: eps.value, unc: eps.unc } })).toBe("(1.2E-6)*(8.8E-12)");
+  });
+  it("correlated: only the constants whose bases share a leaf", () => {
+    const g = { unc: "1", basis: "pasl_newtonian", basisLeaves: { newtonian: { value: "6", unc: "1" } } };
+    expect([...correlated([["mu", mu], ["eps", eps], ["g", g]])]).toEqual(["mu", "eps"]);
+    expect([...correlated([["mu", mu], ["g", g]])]).toEqual([]);
+  });
+  it("a leaf of zero uncertainty is its value, also among the names for σ (as the unit view, build.test.ts)", () => {
+    const b = { fine_structure: a.fine_structure, k: { value: "2", unc: "0" } };
+    const muK = { value: "1.2E-6", unc: "2E-16", basis: "pasl_k*pasl_fine_structure", basisLeaves: b };
+    const eps2 = { value: "8.8E-12", unc: "1E-21", basis: "5/pasl_fine_structure^2", basisLeaves: b };
+    expect(withConstValues("pasc_mu*pasc_eps", { mu: muK, eps: eps2 })).toBe("((2)*(7.3E-3))*(5/(7.3E-3)^2)");
+    expect(withConstValues("pasc_mu*pasc_eps", { mu: muK, eps: eps2 }, undefined, "names")).toBe("((2)*pasl_fine_structure)*(5/pasl_fine_structure^2)");
+    expect(sigmaExpr("pasc_mu*pasc_eps", { mu: muK, eps: eps2 }, ["mu", "eps"])).toBe(
+      "sqrt((subst(diff(((2)*pasl_fine_structure)*(5/pasl_fine_structure^2),pasl_fine_structure),[pasl_fine_structure=((73/10^4))])*((1/10^12)))^2)",
+    );
+  });
+  it("σ is taken over the shared leaf once, and over a constant without a basis as before", () => {
+    expect(sigmaExpr("pasc_mu*pasc_eps*pasc_G", { mu, eps, G }, ["mu", "eps", "G"])).toBe(
+      "sqrt((subst(diff((2*pasl_fine_structure/3)*(5/pasl_fine_structure)*pasc_G,pasl_fine_structure),[pasl_fine_structure=((73/10^4)),pasc_G=((667430/10^16))])*((1/10^12)))^2" +
+        "+(subst(diff((2*pasl_fine_structure/3)*(5/pasl_fine_structure)*pasc_G,pasc_G),[pasl_fine_structure=((73/10^4)),pasc_G=((667430/10^16))])*((15/10^16)))^2)",
+    );
   });
 });

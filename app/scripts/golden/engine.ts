@@ -18,10 +18,11 @@ export function stageInterrupt(): void {
 export async function stageSteps(): Promise<void> {
   const r = spawnSync(process.execPath, [`${root}tests/engine/step-budget-test.mjs`], { env: { ...process.env, GIAC_MJS: mjs }, encoding: "utf8", timeout: 300_000 });
   const canary = `${r.stdout}${r.stderr}`.trim().split("\n").slice(-3).join(" | ");
-  const { findings, known, records } = await speedFindings(8, mjs);
+  const { findings, known, pending, records } = await speedFindings(8, mjs);
   for (const f of known) console.log(`  steps known (${SPEED_KNOWN[`${f.stage}/${f.id}`]}): ${describeFinding(f)}`);
+  for (const f of pending) console.log(`  steps pending: ${describeFinding(f)}`);
   for (const f of findings) console.log(`  steps ${describeFinding(f)}`);
-  report("steps", r.status === 0 && findings.length === 0, `${canary} | ${records} cases, clock ×1 and ×8: ${findings.length} new findings, ${known.length} known`);
+  report("steps", r.status === 0 && findings.length === 0, `${canary} | ${records} cases, clock ×1 and ×8: ${findings.length} new findings, ${known.length} known, ${pending.length} pending`);
 }
 
 export function stageFlags(): void {

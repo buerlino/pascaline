@@ -185,8 +185,7 @@ export function settingsSections(session: Session, env: SettingsEnv = {}): MenuI
     // Your keys (R4b, views/yourKeys.ts): only where the app gives the slots; (Data: R38a)
     ...(env.userKeys ? [section("keys", findText("keys.title"), yourKeysItems(env), () => yourKeysValue(env))] : []),
     section("counters", t("settings.counters"), tapsItems(session), () => {
-      const c = session.taps.counts; // (a reset replaces the object)
-      return t("settings.counters.value", { n: String(c.shift + c.alpha) });
+      return t("settings.counters.value", { n: String(session.taps.counts.presses) }); // (a reset replaces the object)
     }),
     section("help", aboutText("help"), helpItems()),
   ];
@@ -304,11 +303,13 @@ function numbersRows(session: Session): MenuItem[] {
   });
 }
 
-/** The Shift and Alpha tap counter (R9, P7 point 4): the counts, since when, and a reset. Counted on this device only,
- *  never sent anywhere. The first three rows are information. */
+/** The press counter (R70, docs/04 5.2: every key tap, flick and screen tap) and the Shift and Alpha tap counter (R9,
+ *  P7 point 4): the counts, since when, and a reset. Counted on this device only, never sent anywhere. The first four
+ *  rows are information. */
 function tapsItems(session: Session): MenuItem[] {
   const taps = session.taps;
   return [
+    { id: "presses", label: t("settings.taps.presses"), keep: true, get value() { return String(taps.counts.presses); } },
     { id: "shift", label: t("settings.taps.shift"), keep: true, get value() { return String(taps.counts.shift); } },
     { id: "alpha", label: t("settings.taps.alpha"), keep: true, get value() { return String(taps.counts.alpha); } },
     { id: "since", label: t("settings.taps.since"), keep: true, get value() { return taps.counts.since || "—"; } },

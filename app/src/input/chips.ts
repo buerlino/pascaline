@@ -14,6 +14,11 @@ export interface Chip extends Omit<ValueFacts, "reliableDigits">, Partial<Pick<V
   value: string;
   /** A constant's standard uncertainty (CODATA), absent when it is exact. */
   unc?: string;
+  /** G81: an inexact constant's basis (Find's item, G80): its value over `pasl_<leaf>` names; absent on a chip
+   *  stored before G81, which keeps its own value and σ. */
+  basis?: string;
+  /** G81: the leaves `basis` uses, with their values and standard uncertainties. */
+  basisLeaves?: Record<string, { value: string; unc: string }>;
 }
 
 /** Keys: `res:<k>` for `\res{k}{…}`, `const:<ID>` for `\const{ID}{…}`, `ans` for `\ans` (filled at Enter). */
@@ -51,9 +56,12 @@ export function validChips(x: unknown): ChipTable | undefined {
   const out: ChipTable = {};
   for (const [k, c] of Object.entries(x as Record<string, unknown>)) {
     if (!/^(res:\d+|const:[A-Za-z0-9_]+)$/.test(k) || !c || typeof c !== "object") continue;
-    const { value, exact, unc, reliableDigits: rd, warn } = c as Record<string, unknown>;
+    const { value, exact, unc, reliableDigits: rd, warn, basis, basisLeaves } = c as Record<string, unknown>;
     if (typeof value !== "string" || typeof exact !== "boolean") continue;
-    const chip: Chip = typeof unc === "string" ? { value, exact, unc } : { value, exact };
+    // G81: a constant's basis and leaves as stored, unchecked: basisOf (constBasis.ts) checks their types and each
+    // leaf the basis names before any use, so a malformed or absent one keeps today's path (the check is not in the
+    // start chunk)
+    const chip: Chip = typeof unc === "string" ? ({ value, exact, unc, basis, basisLeaves } as Chip) : { value, exact };
     if (rd === null || (typeof rd === "number" && Number.isInteger(rd) && rd >= 0 && rd <= 1000)) chip.reliableDigits = rd;
     if (warn === "unaudited" || warn === "unchecked") chip.warn = warn;
     out[k] = chip;

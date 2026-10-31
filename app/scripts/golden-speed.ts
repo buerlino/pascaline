@@ -4,6 +4,7 @@
 // budget (Giac's `timeout` reads performance.now through emscripten_get_now; Home's own deadlines, HOME_DEADLINE_MS, the
 // WALK_BUDGET_MS of nonsquare.ts and novalue.ts and EXTRA_BUDGET_MS of numeric.ts, read performance.now and Date.now).
 // Display, mark and copy text must agree; a case that still differs is in SPEED_KNOWN with its reason (decisions.md).
+// A `status: pending` case is listed when it differs, never failed (as golden/precision.ts treats it): its fix makes it active.
 //   GIAC_OUT=<dir> node scripts/golden-speed.ts      # SLOW=8 (default; the Tab One is 5-8× slower than the desktop); also the golden gate's stage `steps`
 //   ONLY=a20 GIAC_OUT=<dir> node scripts/golden-speed.ts   # A20's cases only
 import { readFileSync } from "node:fs";
@@ -63,12 +64,12 @@ const cases = (file: string, ids?: readonly string[]): Case[] => {
 };
 
 /** The cases (all, or A20's) on the real clock and on a `slow`× fast one; the findings between the two runs, split into
- *  the known ones (SPEED_KNOWN) and the new ones. */
+ *  the known ones (SPEED_KNOWN), the pending cases' (listed, never failed) and the new ones. */
 export async function speedFindings(
   slow: number,
   mjs: string = giacMjsPath(),
   only: "all" | "a20" = "all",
-): Promise<{ findings: Finding[]; known: Finding[]; records: number }> {
+): Promise<{ findings: Finding[]; known: Finding[]; pending: Finding[]; records: number }> {
   const fresh = async (): Promise<EngineHost> => {
     const { giac, bridge } = await loadNodeGiac(mjs);
     giac.eval(pasdegCommand("rad"));
@@ -79,16 +80,28 @@ export async function speedFindings(
   const normal = await goldenRecords(home, precision, fresh);
   const slowed = await withFastClock(slow, () => goldenRecords(home, precision, fresh));
   const all = compareGolden(normal, slowed);
+  const pendingIds = new Set([
+    ...home.filter((c) => c.status === "pending").map((c) => `home/${c.id}`),
+    ...precision.filter((c) => c.status === "pending").map((c) => `precision/${c.id}`),
+  ]);
+  return { ...splitSpeed(all, pendingIds), records: normal.length };
+}
+
+/** G137: splits the findings into the known ones (SPEED_KNOWN), the pending cases' (stage/id in `pendingIds`: listed, never
+ *  failed, so no exemption outlives a case's pending status) and the new ones. */
+export function splitSpeed(all: Finding[], pendingIds: ReadonlySet<string>): { findings: Finding[]; known: Finding[]; pending: Finding[] } {
   const isKnown = (f: Finding): boolean => `${f.stage}/${f.id}` in SPEED_KNOWN;
-  return { findings: all.filter((f) => !isKnown(f)), known: all.filter(isKnown), records: normal.length };
+  const isPending = (f: Finding): boolean => !isKnown(f) && pendingIds.has(`${f.stage}/${f.id}`);
+  return { findings: all.filter((f) => !isKnown(f) && !isPending(f)), known: all.filter(isKnown), pending: all.filter(isPending) };
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const slow = Number(process.env.SLOW ?? 8);
-  const { findings, known, records } = await speedFindings(slow, giacMjsPath(), process.env.ONLY === "a20" ? "a20" : "all");
+  const { findings, known, pending, records } = await speedFindings(slow, giacMjsPath(), process.env.ONLY === "a20" ? "a20" : "all");
   const show = (f: Finding): string => describe(f).replace("desktop", "clock ×1").replace("device", `clock ×${slow}`);
   for (const f of known) console.log(`known (${SPEED_KNOWN[`${f.stage}/${f.id}`]}): ${show(f)}`);
+  for (const f of pending) console.log(`pending: ${show(f)}`);
   for (const f of findings) console.log(show(f));
-  console.log(`${findings.length === 0 ? "SAME" : "DIFFERENT"}: ${records} cases, clock ×1 and ×${slow}, ${findings.length} new findings, ${known.length} known`);
+  console.log(`${findings.length === 0 ? "SAME" : "DIFFERENT"}: ${records} cases, clock ×1 and ×${slow}, ${findings.length} new findings, ${known.length} known, ${pending.length} pending`);
   process.exit(findings.length === 0 ? 0 : 1);
 }
