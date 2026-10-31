@@ -280,7 +280,10 @@ export class Session {
   /** 0 = write the history at once (tests); the app sets a delay so Enter does not wait for the store. */
   saveDelayMs = 0;
   private saveTimer: ReturnType<typeof setTimeout> | undefined;
-  private restoring = false;
+  /** R106: the stored history has been read and merged in. Until then nothing writes `history`: the lists in memory
+   *  hold only what was typed since launch, so a write (a hide or close before the read, docs/04 6.2) would drop the
+   *  stored rows. A save asked for meanwhile is kept pending and runs once the read is in. */
+  private historyRead = false;
   private savePending = false;
 
   constructor(calc: Calc, kv: Kv = idbKv) {
@@ -715,7 +718,7 @@ export class Session {
   }
   /** Entry LaTeX, result LaTeX and the Home numeric value of finished entries; nothing that needs the engine. */
   saveHistory(): void {
-    if (this.restoring) {
+    if (!this.historyRead) {
       // Writing now would overwrite the stored history with only the entries typed since launch.
       this.savePending = true;
       return;
@@ -727,23 +730,23 @@ export class Session {
     }
     this.flushHistory();
   }
-  /** Write the history now (also called when the page is hidden). */
+  /** Write the history now (also called when the page is hidden); before the stored history was read, only mark the
+   *  save pending (R106). */
   flushHistory(): void {
     if (this.saveTimer !== undefined) clearTimeout(this.saveTimer);
     this.saveTimer = undefined;
+    if (!this.historyRead) {
+      this.savePending = true;
+      return;
+    }
     const keep = (xs: HistoryItem[]): HistoryItem[] =>
       $state.snapshot(xs).filter((i) => i.status === "done" || i.status === "error").slice(-HISTORY_LIMIT);
     void this.kv.set("history", { home: keep(this.home), cas: keep(this.cas) });
   }
   /** The stored history (up to HISTORY_LIMIT entries per view); the app reads it after the keypad is drawn. */
   async restoreHistory(): Promise<void> {
-    this.restoring = true;
-    let hist: { home?: HistoryItem[]; cas?: HistoryItem[] } | undefined;
-    try {
-      hist = await this.kv.get<{ home?: HistoryItem[]; cas?: HistoryItem[] }>("history");
-    } finally {
-      this.restoring = false;
-    }
+    // A read that fails or never settles leaves the history unread: nothing then writes over the stored rows.
+    const hist = await this.kv.get<{ home?: HistoryItem[]; cas?: HistoryItem[] }>("history");
     if (hist) {
       // Entries typed before the store answered stay after the restored ones.
       // Fresh ids: entries typed before the store answered already use the low numbers (ids key the list).
@@ -755,6 +758,7 @@ export class Session {
       this.home.splice(0, 0, ...keep(hist.home));
       this.cas.splice(0, 0, ...keep(hist.cas));
     }
+    this.historyRead = true;
     if (this.savePending) {
       this.savePending = false;
       this.saveHistory();
