@@ -43,7 +43,6 @@ The one place for "where are we and what's left", one or two lines per open item
 - **F149, G139 (night review be-10).** `eseries(6,√(1500·2200))` = 1500, right 2200. Reach: Find.
 - **F150, G140 (night review be-9).** `Zeta(1/2+i)` ≈, wrong from digit 15. Reach: Find.
 - **F154, G143 (night review be-2; reachable once R24d and R71 merge).** σ through `floor` is `± 0`, no ⚠. Reach: the unit view.
-- **F146, R93 (night review ca-1; latent).** A failed read counts as empty; the next write replaces it.
 - **F147, R95 (night review fh-2; web only).** Two tabs overwrite each other's data. Reach: web.
 - **Night review 2026-10-30:** the rest in [research/night-review-2026-10-31.md](research/night-review-2026-10-31.md).
 

@@ -14,16 +14,21 @@ interface FakeRequest<T> {
 }
 
 /** One database's records by store and key; tests read and seed `stores` directly. A get of a key in `failGets` ends in
- *  its onerror (R38af2). */
+ *  its onerror (R38af2); a key in `failGetsOnce` only for its next get, which takes it out (R93: one failed read, then a
+ *  working store). While `failOpens` is above 0, each open ends in its onerror and counts it down (R93). */
 export interface FakeIdb {
   readonly stores: Map<string, Map<string, unknown>>;
   readonly failGets: Set<string>;
+  readonly failGetsOnce: Set<string>;
+  failOpens: number;
   readonly factory: { open(name: string, version: number): FakeRequest<unknown> };
 }
 
 export function fakeIndexedDb(): FakeIdb {
   const stores = new Map<string, Map<string, unknown>>();
   const failGets = new Set<string>();
+  const failGetsOnce = new Set<string>();
+  const fails = (key: string): boolean => failGets.has(key) || failGetsOnce.delete(key);
   const later = (f: () => void): void => void setTimeout(f, 0);
 
   const transaction = (name: string) => {
@@ -52,7 +57,7 @@ export function fakeIndexedDb(): FakeIdb {
       const store = stores.get(s);
       if (!store) throw new Error(`no store ${s}`);
       return {
-        get: (key: string) => request(() => (store.has(key) ? structuredClone(store.get(key)) : undefined), failGets.has(key)),
+        get: (key: string) => request(() => (store.has(key) ? structuredClone(store.get(key)) : undefined), fails(key)),
         put: (value: unknown, key: string) => request(() => void store.set(key, structuredClone(value))),
         delete: (key: string) => request(() => void store.delete(key)),
       };
@@ -67,12 +72,20 @@ export function fakeIndexedDb(): FakeIdb {
     transaction,
   };
 
-  return {
+  const fake: FakeIdb = {
     stores,
     failGets,
+    failGetsOnce,
+    failOpens: 0,
     factory: {
       open() {
         const r: FakeRequest<unknown> = { result: db, error: null, onsuccess: null, onerror: null, onupgradeneeded: null };
+        if (fake.failOpens > 0) {
+          fake.failOpens--;
+          r.error = new Error("UnknownError (fake open failed)");
+          later(() => r.onerror?.());
+          return r;
+        }
         later(() => {
           if (stores.size === 0) r.onupgradeneeded?.();
           r.onsuccess?.();
@@ -81,4 +94,5 @@ export function fakeIndexedDb(): FakeIdb {
       },
     },
   };
+  return fake;
 }

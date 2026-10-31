@@ -745,7 +745,8 @@ export class Session {
   }
   /** The stored history (up to HISTORY_LIMIT entries per view); the app reads it after the keypad is drawn. */
   async restoreHistory(): Promise<void> {
-    // A read that fails or never settles leaves the history unread: nothing then writes over the stored rows.
+    // A read that never settles leaves the history unread: nothing then writes over the stored rows. A read that fails
+    // reads as nothing stored here, and the store drops every write of `history` for the session (R93, storage.ts).
     const hist = await this.kv.get<{ home?: HistoryItem[]; cas?: HistoryItem[] }>("history");
     if (hist) {
       // Entries typed before the store answered stay after the restored ones.
