@@ -166,8 +166,12 @@ export const LAZY_PARTS = ["src/views/sheetKeys.ts", "src/views/tmplSheet.ts", "
  *  so it cannot load later. The pin is 59.33 + 0.05 kB.
  *  59.38 → 59.47 kB (R94): phase-1 2fcb7bc measures 59.33 kB gzip (167.60 kB raw), the branch 59.42 kB (167.85 kB raw,
  *  +0.09 kB): a settings record from a newer schema is read and never written back, with a one-time note through i18n
- *  (owner, vg-8); it is the start's own read of the settings, so it cannot load later. The pin is 59.42 + 0.05 kB. */
-export const START_PIN_GZIP = 59_470;
+ *  (owner, vg-8); it is the start's own read of the settings, so it cannot load later. The pin is 59.42 + 0.05 kB.
+ *  59.47 → 59.81 kB (R95): phase-1 1032dfb measures 59.42 kB gzip (167.85 kB raw), the branch 59.76 kB (168.70 kB raw,
+ *  +0.34 kB): one writer per browser profile (state/writer.ts): the Web Lock is asked for before the first store write
+ *  and every write asks its answer, so it cannot load later; the note, its words and the hand-over are a lazy chunk
+ *  (state/handOver.ts). The pin is 59.76 + 0.05 kB. */
+export const START_PIN_GZIP = 59_810;
 
 /** Failures for the start chunk's row when it is over the pin. */
 export function checkStartPin(row: Row): string[] {

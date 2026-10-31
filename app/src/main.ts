@@ -28,11 +28,7 @@ addEventListener("vite:preloadError", () => void reloadOnMissingChunk(sessionSto
 
 // R95: one writer per browser profile. The lock is asked for before anything is read or written; a store write waits
 // for the answer. The hand-over (and a second tab's note) is a lazy chunk, loaded once the answer is in.
-claimWriter((writer) => {
-  const load = (): void => void import("./state/handOver.ts").then((m) => m.startHandOver(writer, flush)).catch(() => {});
-  if (typeof requestIdleCallback === "function") requestIdleCallback(load, { timeout: 2000 });
-  else setTimeout(load, 200);
-});
+claimWriter((writer) => setTimeout(() => void import("./state/handOver.ts").then((m) => m.startHandOver(writer, flush)).catch(() => {}), writer ? 2000 : 0));
 
 const entry = new EntryController();
 // The engine worker starts at launch (D2): it compiles the wasm on another thread while the page paints.

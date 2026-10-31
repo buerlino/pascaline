@@ -21,7 +21,6 @@
   import type { HistoryItem, Session, View } from "./state/session.svelte.ts";
   import { counted, countScreenTaps } from "./state/pressCount.ts";
   import { updateOffer } from "./state/updateOffer.svelte.ts";
-  import { writerNote } from "./state/writerNote.svelte.ts";
   import History from "./views/History.svelte";
   // The Mode and Settings lists load when idle after the keypad is drawn, or on the first open (R35: not in the start chunk).
   let modeSheet: typeof import("./views/modeSheet.ts") | null = null;
@@ -405,10 +404,7 @@
 
   <div class="screen">
     <div class="stage">
-      <div class="notes">
-        {#if session.engineState !== "ready"}<p class="enginenote" role="status" data-testid="engine-note">{t(session.engineState === "failed" ? "engine.error" : "engine.starting")}</p>{/if}
-        {#if writerNote.view}{@const Note = writerNote.view}<Note />{/if}
-      </div>
+      {#if session.engineState !== "ready"}<p class="enginenote" role="status" data-testid="engine-note">{t(session.engineState === "failed" ? "engine.error" : "engine.starting")}</p>{/if}
       {#if shell.app === null}
         <History
           items={session.items}
@@ -683,22 +679,12 @@
     border-radius: 7px;
   }
   /* the engine's start and failure notes, in the stage (R82f2: not in the status line) */
-  /* the engine's note and another tab's (R95, views/WriterNote.svelte), one under the other */
-  .notes {
+  .enginenote {
     position: absolute;
     top: 8px;
     left: 50%;
     transform: translateX(-50%);
     z-index: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 6px;
-    width: max-content;
-    max-width: calc(100% - 16px);
-    pointer-events: none;
-  }
-  .enginenote {
     margin: 0;
     padding: 6px 14px;
     border-radius: 16px;
