@@ -39,7 +39,7 @@
 ## 4. Build and gates
 
 - **`build.sh`**: fetch (SHA-256 pinned, mirror for Giac) → Giac in the pinned `debian:trixie` container (Emscripten 3.1.69, `setarch -R` for bit-reproducible output) → libqalculate (step 1c, `engine/qalc/build-wasm.sh`, for the Find index's values; `--no-units` skips it) → the Find index generator → app (`npm run build`, with the size test; `scripts/copy-engine.mjs` copies the engine into `app/public/engine`) → `cap sync` → Gradle 8.14.3 (downloaded and pinned; no wrapper jar in git). Development uses emsdk 6.0.12 (`engine/giac/build-wasm.sh`, output `engine/giac/_out/gsl`).
-- **Gates today**: `npm run typecheck`, `npm test` (Vitest), `npm run test:e2e` (Playwright, `app/test/*.spec.ts`, among them the ⌫ grid over every template, `bksp-grid.spec.ts`), the golden gate `npm run golden` (`app/scripts/golden.ts`: interrupt, home, precision, solve, function, bench in CAS mode, parser), `tests/golden/oracle.py` (mpmath), `scripts/compare-engines.ts`, the size test. Device bars through `tools/device_run.py` (annabell). One `npm run gate` is A6.
+- **Gates today**: one `npm run gate` (A6; the list lives in `app/scripts/gate.ts`) runs 14 stages in order: typecheck, rules, index, vitest, e2e (Playwright, `app/test/*.spec.ts`, among them the ⌫ grid over every template, `bksp-grid.spec.ts`), golden (`app/scripts/golden.ts`: interrupt, home, precision, solve, function, bench in CAS mode, parser), sweep, seqsweep, casback, viewsweep, findcensus, size, docs and g2check. Beside it: `tests/golden/oracle.py` (mpmath), `scripts/compare-engines.ts`. Device bars through `tools/device_run.py` (annabell).
 
 ## 5. Giac behaviour learned by probing (dev build, Giac 2.1.0 + GSL)
 

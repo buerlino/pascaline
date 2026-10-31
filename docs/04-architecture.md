@@ -142,7 +142,7 @@ Cost: one more `evalf` for irrational results (each about 1 ms on the desktop, p
 ### 2.7 Decision: SI prefix display, and prefix entry
 
 - **Display:** a format `PFX` beside ENG: `n` significant digits as in ENG, the exponent replaced by f p n µ m (none) k M G T P (10⁻¹⁵ to 10¹⁵); `µ` is U+00B5. Outside that range, ENG E notation. Built (package R3, not the R3 layout): mantissa, thin space, the prefix as `\class{pfx}{\mathrm{k}}` in the accent colour, so `1.5 m` (milli) does not read as metres; ENG and PFX keep trailing zeros to n digits (`2.500 k`); in Settings and the Format key cycle; copy gives the full value, never the prefix text; unit tests per prefix boundary and rounding into the next prefix (999.96 k at 4 digits → 1.000 M).
-- **Entry (gated by benchmark task 3):** only through a prefix chip `\pfx{k}`. Letters typed with Alpha stay variables (`4.7k` parses as `4.7*k`: probe), so a variable `k` and the prefix k never collide. Parser rule: a numeric literal directly followed by `\pfx{X}` becomes the exact `(literal*10^e)`; `\pfx` anywhere else is a parse error. One round-trip case per chip.
+- **Entry:** none in Home (owner, 2026-10-31): a prefix is entered in the unit view's prefix cells (P11, docs/05 §7.2), and Enter in Home refuses a prefix picked in Find (R4a). Letters typed with Alpha stay variables (`4.7k` parses as `4.7*k`: probe), so a variable `k` and the prefix k never collide.
 
 ### 2.8 Decision: reuse through chips and Ans
 
@@ -310,11 +310,10 @@ Positions use our rows and columns (`spec/keyboard.yaml`); the reference's id is
 | Unit slots | the unit pad (`spec/unit-pad.yaml`, docs/archive/r9-unit-pad.md): prefix and unit cells over the maths rows, S5's arrangement, 18 user slots; Enter to the next slot, `→` the end slot. Until R24c, `spec/keyboard.yaml` `unit_slot:` holds S1's letters | P11, S1, P14 |
 | Fmt (row 9, col 0) | a tap cycles the last result's format; Shift (and a flick up) opens Mode on Angle (built, R85) | ours; decisions.md "Settings in the Mode sheet, and presets" |
 | Unassigned Shift cells (10 since R85: Shift + ▲ ▼ ◀ ▶, Vars, a b/c, `( )`, `,`, 1, 0; decided: `,` becomes ± with R71) | they get the functions the task benchmark shows are pressed most, not a list made in advance | decisions.md "The letters stay" |
-| Prefix chips | a strip above the keypad, only after a number, only if task 3 shows a gain | P8 |
 
 
 ### 5.2 Decision: how key presses are counted (EN0)
-Every key press counts 1, Shift and Alpha included; letters typed in Find count 1 each; Enter counts; a held ⌫ that auto-repeats counts 1; a trackpad drag counts 1; a flick (up or down on a key, lock flicks included) counts 1; a tap on the screen (history row, Find result, chip, menu item, prefix chip) counts 1. Nothing is free. A task stores its sequence as data (`keys:` key ids, `up:`/`down:` flicks and `tap:` targets), and the harness replays it and counts.
+Every key press counts 1, Shift and Alpha included; letters typed in Find count 1 each; Enter counts; a held ⌫ that auto-repeats counts 1; a trackpad drag counts 1; a flick (up or down on a key, lock flicks included) counts 1; a tap on the screen (history row, Find result, chip, menu item) counts 1. Nothing is free. A task stores its sequence as data (`keys:` key ids, `up:`/`down:` flicks and `tap:` targets), and the harness replays it and counts.
 
 ### 5.3 Decision: matrices and lists (EN5)
 - **Entry:** Shift + 5 inserts a 1×1 `pmatrix` with the cursor inside; ▶ at the end of a row adds a column, ▼ in the last row adds a row (MathLive's `addColumnAfter`, `addRowAfter`, `mathlive/types/commands.d.ts:137-157`), ⌫ in an empty last row or column removes it. A 3×3 needs only digits, ▶ and ▼. Shift + 8 inserts `\{□\}` (built in R54): its body is one box holding the elements, separated by commas, read as a Giac list; ⌫ at the start of the body removes the braces and keeps the elements; an empty list is refused with a message.
@@ -434,7 +433,7 @@ The types live in the code; this is the map. Views see `Calc` (`app/src/calc/por
 
 | Item | Budget | State | Enforced by |
 |---|---|---|---|
-| Start chunk | ≤ 175 kB raw, ≤ 61 kB gzip; pin 58.97 kB gzip | 58.97 kB gzip (each package's delta: decisions.md, Start chunk). The pin `START_PIN_GZIP` holds: a package growing the chunk past it raises it in its diff to its size after merging phase-1 plus 0.05 kB (decisions.md), with the reason, and reports both sizes, never past 61 kB; `LAZY_PARTS` must stay dynamic chunks (R91). `tools/probes/start-chunk.mjs` lists bytes per source; every UI package reports its delta | size test (`npm run size`) |
+| Start chunk | ≤ 175 kB raw, ≤ 61 kB gzip; pin 58.97 kB gzip | 58.97 kB gzip (each package's delta: decisions.md, Start chunk). The pin `START_PIN_GZIP` holds: a package growing the chunk past it raises it in its diff to its size after merging phase-1 plus 0.05 kB (decisions.md), with the reason, and reports both sizes, never past 61 kB; no package has an allowance of its own (owner, 2026-10-31); `LAZY_PARTS` must stay dynamic chunks (R91). `tools/probes/start-chunk.mjs` lists bytes per source; every UI package reports its delta | size test (`npm run size`) |
 | MathLive chunk (after the keypad) | ≤ 830 kB raw | 807.74 kB (2026-10-18) | size test |
 | Find UI chunk | ≤ 30 kB raw | — | size test |
 | Find index asset | ≤ 400 kB raw, ≤ 100 kB gzip | 325.7 / 67.1 kB (2026-10-15) | size test (once Find loads it) |

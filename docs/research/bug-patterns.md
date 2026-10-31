@@ -99,7 +99,7 @@ In all, 224 rows outside family 16: 155 fixed and 69 open or proposed, 2 of them
 | D12 | DEG `(−8)^0.2` and CAS `(−32)^(1/5)` wrong | Giac builds the trig of a complex power itself | **open route R** |
 | chk 7 | `pasexp(` in the exported library file | see family 9 | **merged G46 `2bee0fc`** (migration) |
 | r14 §3, §5 | (with route R) the kept `==` text shows `cos(1*pi/7)`; a user's `pasdeg:=5` makes `sin(x)` into `sin(5x)` | see family 9 | **merged R64 `ce41519`** |
-| **new N1** | CAS `approx_mode:=1` (or `cas_setup(1,…)`): CAS `1/3` and `int(x^2,x,0,1)` give 0.333333333333; Home `1/4` loses its `=`; the line is stored and replayed at every start; `approx_mode:=0` afterwards returns 1 and stores `approx_mode:=(1)` | the host resets `Digits` and the angle per call, but not the other `cas_setup()` fields, and the defs log stores a Giac flag as a user variable | **new**, no package (section 4) |
+| **new N1** | CAS `approx_mode:=1` (or `cas_setup(1,…)`): CAS `1/3` and `int(x^2,x,0,1)` give 0.333333333333; Home `1/4` loses its `=`; the line is stored and replayed at every start; `approx_mode:=0` afterwards returns 1 and stores `approx_mode:=(1)` | the host resets `Digits` and the angle per call, but not the other `cas_setup()` fields, and the defs log stores a Giac flag as a user variable | fixed by G67f1 (`b34b8eb`) |
 
 Checked and right today: `Digits:=5` typed in CAS does not leak into Home (the host sets it per call); `complex_mode:=1` and `epsilon:=0.001` changed no Home result I tried (**verified**, section 4).
 
@@ -279,7 +279,7 @@ Checked and right today: `Digits:=5` typed in CAS does not leak into Home (the h
 | chk 7 | `pasexp(` in the exported library file | **merged G46 `2bee0fc`** |
 | r14 §5 | a user's `pasdeg:=5` (route R) | **merged R64 `ce41519`, G46 `2bee0fc`**: reserve it |
 | r14 §3 | the angle factor in a kept `==` text | **merged R64 `ce41519`** |
-| **new N2** | the library's state-word guard does not list `approx_mode`, `epsilon` or `complex_variables` (`library.ts:21`), so a library line that sets them would pass (inferred, not run) | **new**, with N1 |
+| **new N2** | the library's state-word guard does not list `approx_mode`, `epsilon` or `complex_variables` (`library.ts:21`), so a library line that sets them would pass (inferred, not run) | fixed by G67f1 (`b34b8eb`) |
 
 **Hunt.**
 - **Leaks:** grep everything a user can see or take away (the line, results, copy text, share, the export file, Vars previews, why-lines, error messages) for `pas[a-z]`, `pcasans` and Giac's internal words, on a corpus that hits every helper.
@@ -469,7 +469,7 @@ Not bugs: decided or asked. Users will report them, so each needs our choice, th
 
 ## 4. Leads for the next hunt, ranked
 
-1. **N1: Giac's mode switches typed by the user (new, verified today; no package).** Probe on `0bd9631` with a scratch sequence probe (one `EngineHost`, Home and CAS sharing Giac as in the app):
+1. **N1: Giac's mode switches typed by the user (fixed by G67f1, `b34b8eb`).** Probe on `0bd9631` with a scratch sequence probe (one `EngineHost`, Home and CAS sharing Giac as in the app):
    - CAS `approx_mode:=1`: stored as `{name: "approx_mode", kind: "var", cmds: ["approx_mode:=(1)"]}`, so the defs log replays it at every start.
    - After it, CAS `1/3` and `int(x^2,x,0,1)` give `0.333333333333`, and Home `1/4`, `0.1+0.2` and `2^70` come back with `exactRational: false`: `≈ 0.25` where `= 0.25` is right. The digits stay right; the CAS view loses its exact answers.
    - CAS `approx_mode:=0` afterwards returns 1 and stores `approx_mode:=(1)`, so typing cannot undo it. Home `approx_mode:=0` stores `approx_mode:=(1)` with the preview 0.
