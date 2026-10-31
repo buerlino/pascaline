@@ -137,11 +137,11 @@ export const LAZY_PARTS = ["src/views/sheetKeys.ts", "src/views/tmplSheet.ts", "
  *  −2.01 kB): the entry line's work on the field (its set-up and listeners, ⌫ and Del at a template, ᴇ, 10ˣ, a power's
  *  base, the stops) runs only once MathLive is up, so it is entry/field.ts, loaded beside MathLive; keys pressed before
  *  it is there are queued as before. The room is for R24d, R38a, R71, R15c4 and R88 under the 61 kB budget.
- *  58.96 → 59.03 kB (R24d, R24df1): phase-1 58.95 kB, the branch 59.03 kB gzip (166.82 kB raw). Four lines of start-chunk source
+ *  58.96 → 59.04 kB (R24d, R24df1): phase-1 58.95 kB, the branch 59.035 kB gzip (59,035 B, rounded up to the next 0.01 kB; 166.82 kB raw). Four lines of start-chunk source
  *  changed (`Sheet.right()` runs a row's second job); the rest is the start chunk's own map of lazy chunks: the cells' store,
  *  Find in a slot and the units menu are three new lazy files (units/userCells.svelte.ts, find.ts, menu.ts), each named in the
  *  preload list of the dynamic imports that reach it. */
-export const START_PIN_GZIP = 59.03 * KB;
+export const START_PIN_GZIP = 59.04 * KB;
 
 /** Failures for the start chunk's row when it is over the pin. */
 export function checkStartPin(row: Row): string[] {
