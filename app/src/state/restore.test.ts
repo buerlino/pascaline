@@ -8,7 +8,7 @@ import { BACKUP_KEYS, checkBackup, HISTORY_ROWS, KEY_LAYERS, MAX_BACKUP_BYTES, V
 import { fakeIndexedDb, type FakeIdb } from "./fakeIdb.ts";
 import { holdWrites, readUndo, restoreParts, UNDO_KEY, undoRestore } from "./restore.ts";
 import { FakeCalc } from "../calc/fake.ts";
-import { USER_KEY_IDS, USER_LAYERS } from "../keyboard/userKeys.svelte.ts";
+import { USER_KEY_IDS, USER_LAYERS, UserKeys } from "../keyboard/userKeys.svelte.ts";
 import { defaultLook } from "../theme/look.ts";
 import { migrateSettings, Session, SETTINGS_SCHEMA } from "./session.svelte.ts";
 import { DATA_VERSION, idbKv } from "./storage.ts";
@@ -133,6 +133,9 @@ describe("checkBackup (r11 section 3.4)", () => {
     ["userKeys", { u99: { primary: { label: "x", action: { special: "home" } } } }],
     ["userKeys", { u1: { primary: { label: "", action: { special: "home" } } } }],
     ["userKeys", { u1: { hold: null } }],
+    ["userKeys", { u1: { primary: { label: "X", action: { special: "nope" } } } }], // parseAction refuses it
+    ["userKeys", { u1: { primary: { label: "X", action: { foo: 1 } } } }],
+    ["userKeys", { u1: { primary: { label: "X", action: { insert: "x", type: "y" } } } }],
     ["unitPadCells", { nope: { tap: { unit: "m" } } }],
     ["taps", { shift: -1, alpha: 0, since: "" }],
     ["view", "plot"],
@@ -217,6 +220,32 @@ describe("the repeated rules agree with the start's readers", () => {
     expect(KEY_LAYERS).toEqual(USER_LAYERS);
     for (const id of USER_KEY_IDS) expect(VALIDATORS["userKeys"]?.({ [id]: { primary: null } }), id).toBe(true);
     for (const id of ["u0", "u99", "sin", "U1"]) expect(VALIDATORS["userKeys"]?.({ [id]: {} }), id).toBe(false);
+  });
+  it("your keys: a binding passes exactly when UserKeys keeps it", async () => {
+    const bindings: unknown[] = [
+      { label: "Home", action: { special: "home" } },
+      { label: "s", action: { insert: "\\sinh\\left(#0\\right)" } },
+      { label: "x", action: { type: "x" } },
+      { label: "c", action: { cmd: "cursorLeft" } },
+      { label: "x", action: { type: "x", line: { type: "y" } } },
+      { label: "X", action: { special: "nope" } },
+      { label: "X", action: { foo: 1 } },
+      { label: "X", action: { insert: "x", type: "y" } },
+      { label: "X", action: { type: 3 } },
+      { label: "X", action: {} },
+      { label: "X", action: "home" },
+      { label: "X" },
+      { label: "", action: { special: "home" } },
+      { label: 3, action: { special: "home" } },
+      { action: { special: "home" } },
+    ];
+    for (const b of bindings) {
+      const record = { [USER_KEY_IDS[0] as string]: { primary: b } };
+      const keys = new UserKeys({ get: async <T>() => record as T, set: async () => {} });
+      await keys.restore();
+      const kept = keys.labelOf(USER_KEY_IDS[0] as string, "primary") !== undefined;
+      expect(VALIDATORS["userKeys"]?.(record), JSON.stringify(b)).toBe(kept);
+    }
   });
 });
 

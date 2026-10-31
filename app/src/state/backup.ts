@@ -4,7 +4,7 @@
 // restores one (never in the start chunk).
 import { validDefs } from "../engine/defs.ts";
 import { dataText, enData, type DataKey } from "../i18n/enData.ts";
-import { keyboard } from "../keyboard/keyboard.ts";
+import { KeyboardSpecError, keyboard, parseAction } from "../keyboard/keyboard.ts";
 import { defaultLook, validLook } from "../theme/look.ts";
 import { CELL_KEYS } from "../units/userCells.svelte.ts";
 import { isFmtMode, normalizeCycle } from "./displayMode.ts";
@@ -94,6 +94,16 @@ function slotsOk(v: unknown, ids: readonly string[], layers: readonly string[], 
   );
 }
 const text = (x: unknown): boolean => typeof x === "string" && x !== "";
+/** UserKeys' load check of a slot's action (keyboard/userKeys.svelte.ts `valid`): the keypad's own parser. */
+function actionOk(a: unknown): boolean {
+  try {
+    parseAction(a, "backup");
+    return true;
+  } catch (e) {
+    if (e instanceof KeyboardSpecError) return false;
+    throw e;
+  }
+}
 const whole = (x: unknown, lo: number, hi: number): boolean => typeof x === "number" && Number.isInteger(x) && x >= lo && x <= hi;
 
 // The start's readers live in the start chunk (session.svelte.ts, keyboard/userKeys.svelte.ts). An import of them from
@@ -153,7 +163,7 @@ export const VALIDATORS: Validators = {
       v,
       keyboard.keys.filter((k) => k.user).map((k) => k.id), // USER_KEY_IDS
       KEY_LAYERS,
-      (b) => text(b["label"]) && isObject(b["action"]),
+      (b) => text(b["label"]) && actionOk(b["action"]),
     ),
   unitPadCells: (v) =>
     slotsOk(v, CELL_KEYS, ["tap", "up", "down"], (b) => text(b["unit"]) && (b["prefix"] === undefined || text(b["prefix"])) && (b["label"] === undefined || text(b["label"]))),
