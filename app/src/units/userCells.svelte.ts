@@ -8,6 +8,7 @@
 import raw from "../../../spec/unit-pad.yaml";
 import type { Layer } from "../keyboard/keyboard.ts";
 import { idbKv, type Kv } from "../state/storage.ts";
+import { cellText } from "./padCells.ts";
 
 /** The key of the stamped store (state/storage.ts stamps every value with DATA_VERSION and migrates it on read) that holds
  *  the user's legs, beside USER_KEYS (the free keys' slots). Here, not in storage.ts: the start chunk does not carry it. */
@@ -34,11 +35,8 @@ const defaults = (raw as unknown as { user: RawUser[] }).user;
 /** The user cells' key ids in the pad's order (the free keys U1–U6). */
 export const CELL_KEYS: readonly string[] = defaults.map((c) => c.key);
 
-/** Find's ids are ASCII (`oC`, `u`, `ohm`, `deg`): the symbols they are drawn as. */
-export const SYMBOL: Readonly<Record<string, string>> = { oC: "°C", oF: "°F", deg: "°", u: "µ", ohm: "Ω" };
-export const symbol = (id: string, label?: string): string => label ?? SYMBOL[id] ?? id;
-/** The legend of a cell unit: its label, else the prefix and the unit as symbols. */
-export const cellText = (c: CellUnit): string => c.label ?? symbol(c.prefix ?? "") + symbol(c.unit);
+// The symbols of Find's ASCII ids and a cell's legend live in padCells.ts (plain TS, R60's alternatives read them too).
+export { SYMBOL, symbol, cellText } from "./padCells.ts";
 
 /** The default of a leg (spec/unit-pad.yaml `user:`), undefined for an empty one. */
 export function defaultCell(key: string, leg: CellLeg): CellUnit | undefined {

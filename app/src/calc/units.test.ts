@@ -29,7 +29,7 @@ describe("Calc.units (G16)", () => {
     expect(await calc.units(req, settings)).toMatchObject({ dimension: "m1" });
     await calc.units(req, settings);
     expect(reads).toBe(1);
-    expect(jobs[0]).toEqual({ expr: "2*(((1)*pasdimL^(1)))", check: "pasz1*(((1)*pasdimL^(1)))", inexact: false, shows: [{ text: "m", dim: "m1", factor: "1" }] });
+    expect(jobs[0]).toEqual({ expr: "2*(((1)*pasdimL^(1)))", check: "pasz1*(((1)*pasdimL^(1)))", inexact: false, shows: [{ text: "m", dim: "m1", factor: "1", slot: { tokens: [{ unit: "m" }] } }] });
   });
 
   it("a refused request does not reach the engine", async () => {

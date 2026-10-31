@@ -53,6 +53,8 @@ export interface UnitJob {
   absTemp?: true;
   /** The end slot as text ("m/s", "cm²"), the unit of the result then. */
   endUnit?: string;
+  /** R60: the end slot's tokens, the unit the result is in (Quantity.shownSlot). */
+  endSlot?: UnitSlot;
   /** Without an end slot: the typed units the result may be shown in, best first (G25). The first whose `dim` is the
    *  result's dimension is used; none: SI with an SI prefix. */
   shows?: ShownUnit[];
@@ -76,6 +78,8 @@ export interface ShownUnit {
   dim: string;
   /** Its exact factor to SI base units as Giac text ("1", "1000", "pi/180"). */
   factor: string;
+  /** R60: the tokens it came from, merged as `text` reads (the positive powers, then the ones below the ÷). */
+  slot: UnitSlot;
 }
 
 /** An uncertain input: the symbol `pasv<n>` stands for a value with a standard uncertainty (Giac text of both). */
@@ -98,6 +102,12 @@ export interface Quantity {
   unit: string;
   /** The dimension as text ("L·T⁻¹", "M·L²·T⁻²", "1" for a pure number); null when `dimension` is. */
   dimensionText: string | null;
+  /** R60: `unit` as tokens: the end slot, the typed unit chosen (ShownUnit.slot), else the SI unit with its prefix (° in
+   *  DEG, K for an absolute temperature). Absent for a pure number and a 0 with no unit in it. */
+  shownSlot?: UnitSlot;
+  /** R60: the SI unit with the SI prefix that puts this value from 1 to 999 ("mm", "kJ", "µs"; a unit that takes
+   *  no prefix as it is: "m/s", "m²"), whatever unit is shown: the alternatives' second chip. "" without a dimension. */
+  siPrefixed: string;
   /** Giac's exact text of the number in SI base units. Absent for an exact 0, or when the text is too long to keep. */
   si?: string;
   /** G18, G41: the uncertainty (first and second order) of a result with uncertain inputs (the value is then never "="). */

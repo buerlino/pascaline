@@ -8,8 +8,8 @@ import { FULL_EXACT_MAX, resultFromFacts, toExactLiterals, type HomeResult, type
 import { exactFacts, floatFacts, hasFloat, rationalValue, valuePrecision, type ElementFacts, type Giac } from "../engine/numeric.ts";
 import { callsOf, isNameChar, splitList } from "../engine/giacPrint.ts";
 import { PASDEG } from "../input/angles.ts";
-import { BASES, dimKeyOf, dimensionText, isExponent, parseDimKey, siUnit } from "./dims.ts";
-import { isUnitError, type Quantity, type Uncertainty, type UncVar, type UnitError, type UnitJob, type UnitNote } from "./types.ts";
+import { BASES, dimKeyOf, dimensionText, isExponent, parseDimKey, siSlot, siUnit } from "./dims.ts";
+import { isUnitError, type Quantity, type Uncertainty, type UncVar, type UnitError, type UnitJob, type UnitNote, type UnitSlot } from "./types.ts";
 import { shownWithUncertainty, uncertaintyText } from "./uncertainty.ts";
 
 const S = `[${BASES.map((b) => b.symbol).join(",")}]`;
@@ -291,18 +291,9 @@ function uncertainty(giac: Giac, job: UnitJob, src: Checked, dst: { num: string 
 
 const PREFIXES: Readonly<Record<number, string>> = { [-15]: "f", [-12]: "p", [-9]: "n", [-6]: "µ", [-3]: "m", 0: "", 3: "k", 6: "M", 9: "G", 12: "T", 15: "P" };
 
-/** The unit a result without an end slot is shown in (G25): the first typed unit of the job that has the result's
- *  dimension; an angle in the mode's unit (G40: ° in DEG, rad in RAD); else the SI unit with the SI prefix that puts
- *  the number from 1 to 999. `factor` is its factor to SI. G40: when no typed unit has the dimension, the first typed
- *  unit with one rad less is taken with the rad dropped (`asin(1/2)·1 rad` is π/6 rad, not rad²), unless a cycle unit is in. */
-function chosenUnit(giac: Giac, job: UnitJob, dimension: string, num: string, angle: HomeSettings["angle"]): { text: string; factor: string; radDropped?: true } {
-  const typed = job.shows?.find((u) => u.dim === dimension);
-  if (typed) return { text: typed.text, factor: typed.factor };
-  // Only a result with one rad more than the unit: a pure number (sin 30°) never takes the typed °.
-  const rad = (k: string): string => parseDimKey(k).get("rad") ?? "0";
-  const near = job.cycles ? undefined : job.shows?.find((u) => oneRadApart(dimension, u.dim) && Number(rad(dimension)) === Number(rad(u.dim)) + 1);
-  if (near) return { text: near.text, factor: near.factor, radDropped: true };
-  if (dimension === "rad1" && angle === "deg") return { text: "°", factor: "pi/180" };
+/** The SI unit of `dimension` with the SI prefix that puts the number `num` (in SI) from 1 to 999 (2.7), and its factor
+ *  to SI; mass stops at kg. One evalf. */
+function siPrefixed(giac: Giac, dimension: string, num: string): { text: string; factor: string } {
   const si = siUnit(dimension);
   const base = { text: si.text, factor: "1" };
   if (!si.prefixable) return base;
@@ -315,6 +306,22 @@ function chosenUnit(giac: Giac, job: UnitJob, dimension: string, num: string, an
   if (pfx === undefined) return base;
   const exp10 = k + si.prefixable.exp10;
   return { text: pfx + si.prefixable.symbol, factor: exp10 >= 0 ? `${10n ** BigInt(exp10)}` : `1/${10n ** BigInt(-exp10)}` };
+}
+
+/** The unit a result without an end slot is shown in (G25): the first typed unit of the job that has the result's
+ *  dimension; an angle in the mode's unit (G40: ° in DEG, rad in RAD); else `si`, the SI unit with the SI prefix that
+ *  puts the number from 1 to 999. `factor` is its factor to SI, `slot` its tokens (R60). G40: when no typed unit has the
+ *  dimension, the first typed unit with one rad less is taken with the rad dropped (`asin(1/2)·1 rad` is π/6 rad, not
+ *  rad²), unless a cycle unit is in. */
+function chosenUnit(job: UnitJob, dimension: string, si: { text: string; factor: string }, angle: HomeSettings["angle"]): { text: string; factor: string; slot: UnitSlot; radDropped?: true } {
+  const typed = job.shows?.find((u) => u.dim === dimension);
+  if (typed) return { text: typed.text, factor: typed.factor, slot: typed.slot };
+  // Only a result with one rad more than the unit: a pure number (sin 30°) never takes the typed °.
+  const rad = (k: string): string => parseDimKey(k).get("rad") ?? "0";
+  const near = job.cycles ? undefined : job.shows?.find((u) => oneRadApart(dimension, u.dim) && Number(rad(dimension)) === Number(rad(u.dim)) + 1);
+  if (near) return { text: near.text, factor: near.factor, slot: near.slot, radDropped: true };
+  if (dimension === "rad1" && angle === "deg") return { text: "°", factor: "pi/180", slot: { tokens: [{ unit: "deg" }] } };
+  return { ...si, slot: siSlot(dimension, si.text) };
 }
 
 /** Evaluates a job in the engine's current (Home) mode. One Giac call when the value is rational; the agreement
@@ -356,10 +363,14 @@ export function unitEval(giac: Giac, job: UnitJob, s: HomeSettings): Quantity | 
   const num = src.kind === "term" ? src.num : "0";
   const si = src.kind === "term" && num.length <= FULL_EXACT_MAX ? { si: num } : {};
   let unit = job.endUnit ?? "";
+  // R60: the SI unit with its prefix for this value, always (the alternatives' second chip); the unit shown as tokens.
+  const sp = dimension === null || dimension === "" ? null : siPrefixed(giac, dimension, num);
+  let shownSlot: UnitSlot | undefined = job.endSlot;
   // No end slot: the typed unit that fits, else the SI unit with a prefix (an absolute temperature stays in K).
   if (!job.end && dimension !== null && !job.absTemp) {
-    const c = chosenUnit(giac, job, dimension, num, s.angle);
+    const c = chosenUnit(job, dimension, sp ?? { text: "", factor: "1" }, s.angle);
     unit = c.text;
+    if (c.slot.tokens.length) shownSlot = c.slot;
     if (c.radDropped) note = { note: "radDropped" };
     if (c.factor !== "1") {
       g = c.factor;
@@ -369,13 +380,16 @@ export function unitEval(giac: Giac, job: UnitJob, s: HomeSettings): Quantity | 
       if (!d2 || d2.kind !== "term") return { error: "engine", detail: out2 };
       dst = d2;
     }
-  } else if (!job.end && dimension !== null) unit = siUnit(dimension).text;
+  } else if (!job.end && dimension !== null) {
+    unit = siUnit(dimension).text;
+    shownSlot = siSlot(dimension);
+  }
   // The end slot as shown: the one given, or the unit chosen for the result (σ is scaled by this one, like the value).
   const shownDst = dst;
   const done = (value: HomeResult, valueExpr: string): Quantity | UnitError => {
     const unc = job.unc ? uncertainty(giac, job, src, shownDst, valueExpr, value.display, dimension, s) : null;
     if (unc && isUnitError(unc)) return unc;
-    return { value, dimension, dimensionText: dimension === null ? null : dimensionText(dimension), unit, ...si, ...(unc ? { unc } : {}), ...(note ? { note } : {}), ms: performance.now() - t0 };
+    return { value, dimension, dimensionText: dimension === null ? null : dimensionText(dimension), unit, ...(shownSlot ? { shownSlot } : {}), siPrefixed: sp?.text ?? "", ...si, ...(unc ? { unc } : {}), ...(note ? { note } : {}), ms: performance.now() - t0 };
   };
   if ((job.absTemp || job.endOffset !== undefined) && src.kind === "term" && giac.eval(`sign(${num})`).trim() === "-1") return { error: "belowzero" };
   // An end slot in °C or °F: the SI number less the offset (K = a·x + b, the end slot holds a); in dB, dBm or Np: the
