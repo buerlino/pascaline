@@ -71,3 +71,25 @@ export function readPresets(v: unknown): { record: StoredPresets; dropped: numbe
     list.length - presets.length + (isObject(v) && Array.isArray(o["presets"]) ? 0 : 1) + (o["active"] === null || active !== null ? 0 : 1) + (next === o["next"] ? 0 : 1);
   return { record: { presets, active, next }, dropped };
 }
+
+/** Runs the migration steps of the stored key `key` on `value`, written in version `from`, up to the current version
+ *  (state/storage.ts unstamp, passed in: this module imports nothing). */
+export type KeySteps = (key: string, value: unknown, from: number) => unknown;
+
+/**
+ * The presets' value with each preset's keys group brought up from version `from`: the group holds the records of the
+ * stored keys `userKeys` and `unitPadCells` (GROUP_FIELDS.keys, the stored keys' own names), so their own steps run on
+ * them. The model's open and the backup's check both run it, each with the presets record's own stamp: a restore writes
+ * the part stamped as current, and the model then runs no step on it. Anything else in the value stays as it is.
+ */
+export function migratePresetKeys(v: unknown, from: number, up: KeySteps): unknown {
+  if (!isObject(v) || !Array.isArray(v["presets"])) return v;
+  const presets = (v["presets"] as unknown[]).map((p) => {
+    const groups = isObject(p) ? p["groups"] : undefined;
+    if (!isObject(p) || !isObject(groups) || !isObject(groups["keys"])) return p;
+    const keys: Record<string, unknown> = { ...groups["keys"] };
+    for (const key of GROUP_FIELDS.keys) if (key in keys) keys[key] = up(key, keys[key], from);
+    return { ...p, groups: { ...groups, keys } };
+  });
+  return { ...v, presets };
+}

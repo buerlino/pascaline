@@ -6,8 +6,8 @@
 // (views/modeSheet.ts), never in the start chunk.
 import { keyboard } from "../keyboard/keyboard.ts";
 import type { UserKeys, StoredUserKeys } from "../keyboard/userKeys.svelte.ts";
-import { unitCells, UNIT_PAD_CELLS, type StoredCells, type UnitCells } from "../units/userCells.svelte.ts";
-import { GROUP_FIELDS, nameKey, PRESET_GROUPS, PRESETS_KEY, readPresets, type GroupValues, type Preset, type PresetGroup, type StoredPresets } from "./presetRecord.ts";
+import { unitCells, type StoredCells, type UnitCells } from "../units/userCells.svelte.ts";
+import { GROUP_FIELDS, migratePresetKeys, nameKey, PRESET_GROUPS, PRESETS_KEY, readPresets, type GroupValues, type Preset, type PresetGroup, type StoredPresets } from "./presetRecord.ts";
 import type { Look } from "../theme/look.ts";
 import type { Session, Settings } from "./session.svelte.ts";
 import { DATA_VERSION, idbKv, unstamp, type MIGRATIONS } from "./storage.ts";
@@ -132,14 +132,8 @@ export class Presets {
     }
     const up = (key: string, stored: unknown): unknown => (env.steps ? unstamp(key, stored, env.steps) : unstamp(key, stored)).value;
     const from = rec["@pascaline"];
-    const { record } = readPresets(up(PRESETS_KEY, rec));
-    // The keys a preset holds are the records of USER_KEYS and UNIT_PAD_CELLS: their own steps run on them too.
-    for (const preset of record.presets) {
-      const keys = preset.groups.keys;
-      if (!keys) continue;
-      if ("userKeys" in keys) keys["userKeys"] = up(USER_KEYS, { "@pascaline": from, value: keys["userKeys"] });
-      if ("unitPadCells" in keys) keys["unitPadCells"] = up(UNIT_PAD_CELLS, { "@pascaline": from, value: keys["unitPadCells"] });
-    }
+    // the keys a preset holds are the records of USER_KEYS and UNIT_PAD_CELLS: their own steps run on them too
+    const { record } = readPresets(migratePresetKeys(up(PRESETS_KEY, rec), from, (key, value, v) => up(key, { "@pascaline": v, value })));
     p.list = record.presets;
     p.active = record.active;
     p.next = record.next;
