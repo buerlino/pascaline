@@ -12,7 +12,7 @@
 **Two lanes** (owner, 2026-10-29; decisions.md P17 and "Owner answers of 2026-10-29"): once A47a–A47c are merged, lane A (ron's UI) and lane B (the release, then the engine) run around the clock, each with its own table in section 0c, merged through one queue (A47b); until then one run at a time. ron's packages run at night too: the owner's look moves to three milestone reviews (after R87; after R86, R57, R50e; after R24d), and a package's "owner's eye" item joins the next review. Device steps and the owner's acts (a key, a tag, a phone) stay by day. The order:
 1. **Find:** R4a, R91, R15c3, R49, R87 and R4b merged (`git log --merges`); R91's before/after on the Fairphone is in [ONE-TIME.md](../../tests/core/ONE-TIME.md).
 2. **The Settings base** (owner, 2026-10-27; decisions.md "Settings in the Mode sheet, and presets"; [mockups/settings.html](../mockups/settings.html)): R85 (`1d35189`), R49, R86, R50e (`e4d6085`), R57 (`bb90a5e`) merged; after the units: R70, R15c4, R38a (`f2fd5e7`), R38b (`dc0f77e`), R88 (`d510fc2`) merged → R59, R89; R55 (after R15c4); R53; R12b → R12c → R41; R36, R33 → R37, R40.
-3. **The units** (owner, 2026-10-29: right after R86, R57, R50e): R24b, R24c, R24d (by R24df2, `a33e57f`) and G81 merged, R60 and R61 merged → R62, R63, R71, then R92 (the units menu's Tools and Const tabs; its package after R61 and R63).
+3. **The units** (owner, 2026-10-29: right after R86, R57, R50e): R24b, R24c, R24d (by R24df2, `a33e57f`) and G81 merged, R60 and R61 merged → R62, R63 (R71 merged), then R92 (the units menu's Tools and Const tabs; its package after R61 and R63).
 4. **Lane B, to v0.1.0** (the APK and the website from one tag): A43 merged (`975258e`, an update keeps the data; A48 and A50 merged), so A7 may start: A7 (signing, the owner's key made off this laptop), A49 and A45 merged, A8 (the owner's test tag); A9 with the owner's phone by day (F41); then wrong numbers by reach, C4.
 5. **Every morning:** the owner's check (MORNING.md, on the night's device when the night had one, about 10 minutes). The day session writes each failed step as a backlog bug line on phase-1 and logs one line in `.coord/log.md`: `- HH:MM morning <date>: clean` or `- HH:MM morning <date>: fails <ids>`.
 
@@ -59,9 +59,6 @@ Milestone reviews (section 0): after R50e; after R24d.
 
 | Step | What | Agent, model | Branch | After |
 |---|---|---|---|---|
-| 316 | [R71](packages/R71.md) ± on Shift + `,` | ron, Sonnet | `p1/ron-m5-pmkey` | R24c |
-| 318 | [R93](packages/R93.md) a failed store read is not "nothing stored" | ron, Opus | `p1/ron-failedread` | R106, R88 |
-| 319 | [R94](packages/R94.md) an older build never writes back a newer settings schema | ron, Opus | `p1/ron-settingsguard` | R88 |
 | 320 | [R95](packages/R95.md) one writer per browser profile (web) | ron, Opus | `p1/ron-onewriter` | R106, R93 |
 | 321 | [R107](packages/R107.md) every hardware key press counts | ron, Sonnet | `p1/ron-presscount-hw` | – |
 | 322 | [R108](packages/R108.md) the decimal comma in Solve and the Num tables | ron, Sonnet | `p1/ron-commanum` | – |

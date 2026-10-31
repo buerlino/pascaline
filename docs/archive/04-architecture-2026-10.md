@@ -22,5 +22,13 @@ G15's probe (`tools/probes/units-giac.mjs`) computed the spike's cases, the task
 **Risks:** the recognisers read MathLive's atom LaTeX (`\text{i}`, `\mathrm{d}`, `\,`), so a MathLive upgrade can break them without a type error; both grids are the guard and run before any upgrade merges.
 **Would change if:** a MathLive upgrade breaks the recognisers more than once; then the template registry of the alternatives replaces them.
 
+## Moved 2026-10-31 (Opus pass 32) to make room for R93 and R94, as they stood
+
+### Units: the grammar per slot, the rejected alternative
+**Alternative rejected:** qalc's own parser, which reads `BTU`, `lbm`, `var`, `Kg`, `pa`, `G` as other things (docs/archive/r7-unit-slots.md section 5.2).
+
+### Units: the uncertainty, why no Monte Carlo check
+no Monte Carlo check (GUM Supplement 1): cos X, X ~ N(0, 0.1²), spreads 0.0070358300299, the formula 0.00707106781187)
+
 ## Appendix A: probes
 The probes behind this document are in `tools/probes/` (its README says how to run each): `engine.ts` (Home and CAS paths through `EngineHost`, `FACTS=1` for the facts), `parse.ts` (the parser), `digits-cost.ts`, `units-giac.mjs` (G15), `find/` (the index prototype), `start-chunk.mjs`, `bound.ts`, `replay-cost.mjs`, `unit-presses.mjs`, `results-geometry.mjs`. What they found is in [research/r12-evidence.md](../research/r12-evidence.md); oracle values come from mpmath in `tests/golden/.venv` (the expressions: r12 section 1).
