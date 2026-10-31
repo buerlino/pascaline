@@ -129,8 +129,17 @@ describe("what a cell shows and emits", () => {
     expect(pad.press("u4", "shift")).toEqual({ do: "unit", id: "eV" });
     const mine = new UnitPad({ ...defaultUser(), u1: {}, u2: { tap: "H", down: "mH", label: { down: "mH" } } });
     expect(shown(mine, "u1", false, false)).toMatchObject({ pad: "empty", face: "+", dead: true });
-    expect(mine.press("u1", "primary")).toBeNull();
+    expect(mine.press("u1", "primary")).toEqual({ do: "find", into: { key: "u1", leg: "tap" } }); // an empty user cell opens Find (R24d)
+    expect(mine.press("u1", "alpha")).toEqual({ do: "find", into: { key: "u1", leg: "down" } });
+    expect(mine.press("d1", "shift")).toBeNull(); // (any other empty leg stays dead)
     expect(mine.press("u2", "alpha")).toEqual({ do: "unit", id: "mH" });
+  });
+
+  it("a user cell can hold a prefix and a unit (MPa): it shows both and emits the pair (R24d)", () => {
+    const mine = new UnitPad({ ...defaultUser(), u1: { tap: "Pa", pfx: { tap: "M" }, up: "u", label: { up: "µm" } } });
+    expect(shown(mine, "u1", false, false)).toMatchObject({ pad: "user", face: "MPa", up: "µm" });
+    expect(mine.press("u1", "primary")).toEqual({ do: "pair", prefix: "M", id: "Pa" });
+    expect(mine.press("u1", "shift")).toEqual({ do: "unit", id: "u" });
   });
 });
 

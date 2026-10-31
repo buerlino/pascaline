@@ -11,10 +11,12 @@ import type { Action, Key } from "../keyboard/keyboard.ts";
 import type { Mods, RouteCtx } from "../keyboard/route.ts";
 import { unitPad } from "./padView.svelte.ts";
 import type { PadAction } from "./slot.ts";
+import { cellText, type CellLeg } from "./userCells.svelte.ts";
 
-/** What a pad press hands on: R24a's actions, plus the keys that are not the slot's: Find (Math), the next slot
- *  (Enter), evaluate now (Enter, flick up), and × (units in a row multiply: it changes nothing, but it is a press). */
-export type PadEmit = PadAction | { do: "find" | "next" | "evaluate" | "times" };
+/** What a pad press hands on: R24a's actions, plus the keys that are not the slot's: Find (Math; `into`: an empty user
+ *  cell, whose pick sets that leg, R24d), the next slot (Enter), evaluate now (Enter, flick up), and × (units in a row
+ *  multiply: it changes nothing, but it is a press). */
+export type PadEmit = PadAction | { do: "find"; into?: { key: string; leg: CellLeg } } | { do: "next" | "evaluate" | "times" };
 
 export type PadLayer = "primary" | "shift" | "alpha";
 export type CellKind = "prefix" | "unit" | "op" | "keep" | "user";
@@ -33,11 +35,13 @@ export interface PadCell {
   down?: Leg;
 }
 
-/** A user key's three unit ids (Find ids) with the texts to show where the id is not the name (`label`). */
+/** A user key's three unit ids (Find ids) with the prefix of a leg that is a pair (`pfx`, R24d) and the texts to show
+ *  where the ids are not the name (`label`). */
 export interface UserSet {
   tap?: string;
   up?: string;
   down?: string;
+  pfx?: { tap?: string; up?: string; down?: string };
   label?: { tap?: string; up?: string; down?: string };
 }
 export type UserCells = Readonly<Record<string, UserSet>>;
@@ -51,10 +55,6 @@ interface RawSpec {
   user: RawCell[];
 }
 const spec = raw as unknown as RawSpec;
-
-/** Ids that are drawn as another symbol: Find's ids are ASCII (`oC`, `u`, `ohm`, `deg`). */
-const SYMBOL: Readonly<Record<string, string>> = { oC: "°C", oF: "°F", deg: "°", u: "µ", ohm: "Ω" };
-const symbol = (id: string, label?: string): string => label ?? SYMBOL[id] ?? id;
 
 const OPS: Readonly<Record<string, { text: string; emit: PadEmit }>> = {
   per: { text: "÷", emit: { do: "per" } },
@@ -150,7 +150,10 @@ export class UnitPad {
    *  is not a pad cell (the keypad's own routing takes it). */
   press(key: string, layer: PadLayer): PadEmit | null | undefined {
     const c = this.#cells.get(key);
-    return c ? (c[LEG[layer]]?.emit ?? null) : undefined;
+    if (!c) return undefined;
+    const leg = LEG[layer];
+    // an empty user cell opens Find, whose pick sets it (R24d)
+    return c[leg]?.emit ?? (c.kind === "user" ? { do: "find", into: { key, leg } } : null);
   }
 }
 
@@ -158,7 +161,9 @@ function cellOf(key: string, kind: CellKind, c: UserSet): PadCell {
   const leg = (l: "tap" | "up" | "down"): { [k in typeof l]?: Leg } => {
     const id = c[l];
     if (id === undefined) return {};
-    return { [l]: { text: symbol(id, c.label?.[l]), emit: kind === "prefix" ? { do: "prefix", id } : { do: "unit", id } } };
+    const prefix = c.pfx?.[l];
+    const emit: PadEmit = kind === "prefix" ? { do: "prefix", id } : prefix !== undefined ? { do: "pair", prefix, id } : { do: "unit", id };
+    return { [l]: { text: cellText({ unit: id, ...(prefix !== undefined ? { prefix } : {}), ...(c.label?.[l] !== undefined ? { label: c.label[l] as string } : {}) }), emit } };
   };
   return { key, kind, ...leg("tap"), ...leg("up"), ...leg("down") };
 }

@@ -11,6 +11,7 @@ import { unitText } from "../i18n/enUnits.ts";
 import { END, slotFormula, type SlotFormula } from "../input/unitFormula.ts";
 import { unitErrorMessage, unitNoteText, unitWhyText } from "./messages.ts";
 import type { PadEmit } from "./pad.ts";
+import type { CellLeg } from "./userCells.svelte.ts";
 import { SlotModel, type Reading, type SlotCatalogue } from "./slot.ts";
 import { isUnitError, type Quantity, type UnitError, type UnitRequest, type UnitSlot } from "./types.ts";
 
@@ -26,8 +27,8 @@ export interface ViewHost {
   /** Write a slot's LaTeX into its prompt (the field's setPromptValue). */
   write(id: string, latex: string): void;
   evaluate(req: UnitRequest): Promise<Quantity | UnitError>;
-  /** Math: Find on units; a pick comes back through `apply`. */
-  find(): void;
+  /** Math: Find on units; a pick comes back through `apply`. `into`: an empty user cell was pressed (R24d), the pick sets it. */
+  find(into?: { key: string; leg: CellLeg }): void;
   dead(): void;
   /** The active slot, the reading or what is shown changed: draw them (units/panel.ts). */
   changed(): void;
@@ -128,7 +129,7 @@ export class UnitView {
   apply(e: PadEmit): void {
     switch (e.do) {
       case "find":
-        return this.#host.find();
+        return this.#host.find(e.into);
       case "next":
         return void this.next();
       case "evaluate":

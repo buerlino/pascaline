@@ -142,7 +142,7 @@ Cost: one more `evalf` for irrational results (each about 1 ms on the desktop, p
 ### 2.7 Decision: SI prefix display, and prefix entry
 
 - **Display:** a format `PFX` beside ENG: `n` significant digits as in ENG, the exponent replaced by f p n µ m (none) k M G T P (10⁻¹⁵ to 10¹⁵); `µ` is U+00B5. Outside that range, ENG E notation. Built (package R3, not the R3 layout): mantissa, thin space, the prefix as `\class{pfx}{\mathrm{k}}` in the accent colour, so `1.5 m` (milli) does not read as metres; ENG and PFX keep trailing zeros to n digits (`2.500 k`); in Settings and the Format key cycle; copy gives the full value, never the prefix text; unit tests per prefix boundary and rounding into the next prefix (999.96 k at 4 digits → 1.000 M).
-- **Entry (gated by benchmark task 3):** only through a prefix chip `\pfx{k}`. Letters typed with Alpha stay variables (`4.7k` parses as `4.7*k`: probe), so a variable `k` and the prefix k never collide. Parser rule: a numeric literal directly followed by `\pfx{X}` becomes the exact `(literal*10^e)`; `\pfx` anywhere else is a parse error. One round-trip case per chip.
+- **Entry:** none in Home (owner, 2026-10-31): a prefix is entered in the unit view's prefix cells (P11, docs/05 §7.2), and Enter in Home refuses a prefix picked in Find (R4a). Letters typed with Alpha stay variables (`4.7k` parses as `4.7*k`: probe), so a variable `k` and the prefix k never collide.
 
 ### 2.8 Decision: reuse through chips and Ans
 
@@ -267,7 +267,7 @@ sin, cos and tan take an angle or a pure number; the angle dimension is dropped 
 - **The way back:** the result inserted into Home is a `\res` chip with the number in the unit shown; the chip's label says the unit was dropped. The line itself keeps its slots, so the units key shows them again.
 
 ### 4.4 Budgets and gates
-No engine chunk: the unit view's UI and builder chunks (≤ 34 kB raw) and its factor table from the Find index load on the units key's first press, never at start; a Playwright test asserts that a session without it requests neither. First result < 1 s on the Tab One; desktop p95 ≤ 5 ms per evaluation (G15: 1.5–3.2 ms). Also: `units.yaml` in the golden gate; **a unit in ≤ 4 presses at the median** (`tools/probes/unit-presses.mjs`, then the same list as an e2e replay); benchmark tasks 1–4 and 10 within budget (decisions.md "M4-2"); the owner's hand timing (rule 2).
+No engine chunk: the unit view's UI and builder chunks (≤ 38 kB raw) and its factor table from the Find index load on the units key's first press, never at start; a Playwright test asserts that a session without it requests neither. First result < 1 s on the Tab One; desktop p95 ≤ 5 ms per evaluation (G15: 1.5–3.2 ms). Also: `units.yaml` in the golden gate; **a unit in ≤ 4 presses at the median** (`tools/probes/unit-presses.mjs`, then the same list as an e2e replay); benchmark tasks 1–4 and 10 within budget (decisions.md "M4-2"); the owner's hand timing (rule 2).
 
 Open points for milestone 5 (each with a default): r7 section 7.
 
@@ -310,11 +310,10 @@ Positions use our rows and columns (`spec/keyboard.yaml`); the reference's id is
 | Unit slots | the unit pad (`spec/unit-pad.yaml`, docs/archive/r9-unit-pad.md): prefix and unit cells over the maths rows, S5's arrangement, 18 user slots; Enter to the next slot, `→` the end slot. Until R24c, `spec/keyboard.yaml` `unit_slot:` holds S1's letters | P11, S1, P14 |
 | Fmt (row 9, col 0) | a tap cycles the last result's format; Shift (and a flick up) opens Mode on Angle (built, R85) | ours; decisions.md "Settings in the Mode sheet, and presets" |
 | Unassigned Shift cells (10 since R85: Shift + ▲ ▼ ◀ ▶, Vars, a b/c, `( )`, `,`, 1, 0; decided: `,` becomes ± with R71) | they get the functions the task benchmark shows are pressed most, not a list made in advance | decisions.md "The letters stay" |
-| Prefix chips | a strip above the keypad, only after a number, only if task 3 shows a gain | P8 |
 
 
 ### 5.2 Decision: how key presses are counted (EN0)
-Every key press counts 1, Shift and Alpha included; letters typed in Find count 1 each; Enter counts; a held ⌫ that auto-repeats counts 1; a trackpad drag counts 1; a flick (up or down on a key, lock flicks included) counts 1; a tap on the screen (history row, Find result, chip, menu item, prefix chip) counts 1. Nothing is free. A task stores its sequence as data (`keys:` key ids, `up:`/`down:` flicks and `tap:` targets), and the harness replays it and counts.
+Every key press counts 1, Shift and Alpha included; letters typed in Find count 1 each; Enter counts; a held ⌫ that auto-repeats counts 1; a trackpad drag counts 1; a flick (up or down on a key, lock flicks included) counts 1; a tap on the screen (history row, Find result, chip, menu item) counts 1. Nothing is free. A task stores its sequence as data (`keys:` key ids, `up:`/`down:` flicks and `tap:` targets), and the harness replays it and counts.
 
 ### 5.3 Decision: matrices and lists (EN5)
 - **Entry:** Shift + 5 inserts a 1×1 `pmatrix` with the cursor inside; ▶ at the end of a row adds a column, ▼ in the last row adds a row (MathLive's `addColumnAfter`, `addRowAfter`, `mathlive/types/commands.d.ts:137-157`), ⌫ in an empty last row or column removes it. A 3×3 needs only digits, ▶ and ▼. Shift + 8 inserts `\{□\}` (built in R54): its body is one box holding the elements, separated by commas, read as a Giac list; ⌫ at the start of the body removes the braces and keeps the elements; an empty list is refused with a message.
@@ -434,11 +433,11 @@ The types live in the code; this is the map. Views see `Calc` (`app/src/calc/por
 
 | Item | Budget | State | Enforced by |
 |---|---|---|---|
-| Start chunk | ≤ 175 kB raw, ≤ 61 kB gzip; pin 60.97 kB gzip | 60.96 kB gzip (58.50 + R4b 0.92 + R50e 0.48 + R57 0.58 + R24b 0.02 + R24c 0.16 + engine-key noise 0.01 + R70 0.27). The pin `START_PIN_GZIP` holds: a package growing the chunk past it raises it in its diff, with the reason, and reports both sizes, never past 61 kB; `LAZY_PARTS` must stay dynamic chunks (R91). `tools/probes/start-chunk.mjs` lists bytes per source; every UI package reports its delta | size test (`npm run size`) |
+| Start chunk | ≤ 175 kB raw, ≤ 61 kB gzip; pin 58.97 kB gzip | 58.97 kB gzip (each package's delta: decisions.md, Start chunk). The pin `START_PIN_GZIP` holds: a package growing the chunk past it raises it in its diff to its size after merging phase-1 plus 0.05 kB (decisions.md), with the reason, and reports both sizes, never past 61 kB; no package has an allowance of its own (owner, 2026-10-31); `LAZY_PARTS` must stay dynamic chunks (R91). `tools/probes/start-chunk.mjs` lists bytes per source; every UI package reports its delta | size test (`npm run size`) |
 | MathLive chunk (after the keypad) | ≤ 830 kB raw | 807.74 kB (2026-10-18) | size test |
 | Find UI chunk | ≤ 30 kB raw | — | size test |
 | Find index asset | ≤ 400 kB raw, ≤ 100 kB gzip | 325.7 / 67.1 kB (2026-10-15) | size test (once Find loads it) |
-| Unit view chunks (UI, builder) | ≤ 34 kB raw | 33.06 kB (R24cf1) | size test (rule on `src/units/`) |
+| Unit view chunks (UI, builder) | ≤ 38 kB raw (34 kB until Opus pass 24, G81) | 34.04 kB (G81) | size test (rule on `src/units/`) |
 | Precache total | ≤ 18 MB | 12.4 MB (2026-10-18) | size test |
 | Keyboard usable / engine ready (Tab One) | < 1 s / < 1.5 s, with the `defs` replay | 722 / 1103 ms cold (2026-10-19, `874ab01`, 1 GB engine); 1489 ms engine ready with 200 definitions (A4a, 2026-10-16) | device runs |
 | Enter → result p95 (Tab One) | < 150 ms at 12 digits; at 30 digits ≤ 1.3 × the 12-digit p95 | RAD 147.9 ms at 12, 152.6 at 30; DEG 149.1 and 141.4 (A16 after G53, 2026-10-20; the third row, after G65, is A16) | device runs |

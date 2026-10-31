@@ -44,7 +44,9 @@ for (const [name, reach] of Object.entries(ways))
         const got = await log(page);
         // ⌫ fires on touch and has no flicks (gestures.ts REPEAT_KEYS): a slide on it is the tap
         const flicked = name === "by touch, tap and flicks" && c.key === "bksp" && layer !== "primary";
-        expect(got, `${c.key} ${layer}`).toEqual(flicked ? [{ do: "delete" }] : c[leg] ? [c[leg].emit] : []);
+        // an empty leg of a user cell opens Find, whose pick sets it (R24d); any other empty leg is a dead key
+        const empty = c.kind === "user" ? [{ do: "find", into: { key: c.key, leg } }] : [];
+        expect(got, `${c.key} ${layer}`).toEqual(flicked ? [{ do: "delete" }] : c[leg] ? [c[leg].emit] : empty);
       }
     // the pad typed nothing, and the one-shot Shift or Alpha was used up by each cell
     expect(await entryValue(page)).toBe("");
@@ -69,7 +71,7 @@ test("a user cell emits its unit; an empty one shows a dim + and is dead", async
   await expect(page.locator('[data-key="u1"]')).toHaveAttribute("data-pad", "empty");
   await clear(page);
   await tap(page, ["u1"]);
-  expect(await log(page)).toEqual([]);
+  expect(await log(page)).toEqual([{ do: "find", into: { key: "u1", leg: "tap" } }]); // an empty user cell opens Find (R24d)
 });
 
 test("a user cell shows its flick down as a legend, and the flick emits it", async ({ page }) => {

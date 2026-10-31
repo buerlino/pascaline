@@ -11,15 +11,15 @@ The one place for "where are we and what's left", one or two lines per open item
 | **The core freeze (P23)** | **Ended 2026-10-27** (owner). Its net stays: [tests/core/](../tests/core/README.md) (66 everyday tasks, all active) runs on every merge and on the night's device; a red case is a bug to fix. Order of the work: brief section 0. |
 | Milestone 4a: feel (P11) | **Next after Find.** Merged: the entry work (⌫, cursor, focus, hardware keys), sheets, flicks, Settings as levels of the Mode sheet (R49) with Help and about (R87), history-row actions, R15b, R15c1, R15c2, R15c3, the mockups (R12a). Waiting: R15c4, the palette, the visual pass, results mode, the trust features |
 | Milestone 4: Find and trust | Engine side done (marks, 30 digits, chips, copy, defs, the Find index, the size test, A4a); Find's UI: R4a, R4b built; A4b next |
-| Milestone 5: Units | The evaluator on Giac is done (P15: G15–G18, G25, G13, G7, G32, R28, R24a); the pad (R24b) and the unit view's entry (R24c) are built, the units key opens it; next R24d, the result view (R60–R63), ± on Shift + `,` (R71), then R92 (the units menu's Tools and Const tabs) |
+| Milestone 5: Units | The evaluator on Giac is done (P15: G15–G18, G25, G13, G7, G32, R28, R24a); the pad (R24b), the unit view's entry (R24c) and Find in a slot with the user cells (R24d) are built, the units key opens it; next the result view (R60–R63), ± on Shift + `,` (R71), then R92 (the units menu's Tools and Const tabs) |
 | Milestone 6: Structure | Not started (EN5–EN7, Help) |
 | MVP release | v0.1.0, the APK and the website from one tag: lane B (brief section 0) |
 
 `phase-1` and `master` are on GitHub; `master` was last fast-forwarded to `phase-1` on 2026-10-14 (`ef857a6`). Work continues on `phase-1`.
 
 ## Needs the user
-0. **The core list (P23):** cut or extend [tests/core/core.yaml](../tests/core/core.yaml) (66: 51 drafted by sandra, c52–c56 added with you on 2026-10-21, c57–c60 on 2026-10-24, c61–c66 on 2026-10-26; tell a session what to drop or add); do the [morning check](../tests/core/MORNING.md) on the night's device (about 10 minutes, 15 cases; tell the day session what failed); keep the night's device plugged in, unlocked and on the charger (A32, A33).
-1. **Decisions in [decisions.md](decisions.md) "Needs the user":** A21's F-Droid answer; R50e's Android system bar colours; the start chunk's room (R70f1 splits it now; the budget stays).
+0. **The core list (P23):** cut or extend [tests/core/core.yaml](../tests/core/core.yaml) (66: 51 drafted by sandra, c52–c56 added with you on 2026-10-21, c57–c60 on 2026-10-24, c61–c66 on 2026-10-26; tell a session what to drop or add); do the [morning check](../tests/core/MORNING.md) on the night's device (about 10 minutes, 15 cases; tell the day session what failed); keep the night's device plugged in, unlocked and on the charger (A32, A33). The one-time checks: [ONE-TIME.md](../tests/core/ONE-TIME.md).
+1. **Decisions in [decisions.md](decisions.md) "Needs the user":** A21's F-Droid answer; R50e's Android system bar colours.
 2. **Your outreach steps** (decisions.md P18–P22): send Parisse email 5 (patches 0013–0016 and the regression files at `7438251`, `../outreach/email-parisse-5.md`; 0003–0012 went with email 4, 2026-10-28) after the push; ask F-Droid whether checked-in derived data (`find/factors.yaml`, P22) is fine, before C4; mirror G77's pin (`gh` logged in; the command is in `engine/giac/README.md`).
 3. **G2 questions:** the unanswered items of `tests/golden/G2-CHECKLIST.md` (41, 42, 52, 56, 63–71; each package built a default, named in decisions.md; 63–65 can reverse S14's route R); the optional real-G2 spot checks (`spec/mapping/vc-2026-10-11/SPOT-CHECK.md`).
 4. **From daily use:** the key sequence that left ⌫ stuck "at log" (F39); connect your phone for A9 (F41, no vibration); more points into [feedback.md](feedback.md).
@@ -28,19 +28,9 @@ The one place for "where are we and what's left", one or two lines per open item
 7. **v0.1.0** (decisions.md "The release path"): make the release key off this laptop, fill A7's table (A7.md); allow tags `v*` in Settings → Environments → `github-pages` before A45's deploy; read the usage meter each morning and at each lane start (tripwire 85 %); fast-forward `master` and push before the tag. **A49, switching a broken web worker off:** copy `app/pwa/kill/sw.js` over `sw.js` on the server (same URL, same path). Each browser's next update check installs it; it deletes our caches and unregisters, and the next load comes from the network. Put the real `dist/sw.js` back after the fix.
 8. **Later:** the outside rounds (two 30-minute rounds after R4b and R24c, [r18](research/r18-outside-test.md); R70, the press counter, is built); at milestone 5, time ten tasks by hand (E-notation against units). **Later, not now:** CI (C3), the F-Droid recipe (C4).
 
-### One-time checks on the phone (the daily list is MORNING.md; each by the owner, or annabell when a package names it)
-- Flick misfires (R9: 20 px arm, 12 px cancel); whether the first tap after a cold start vibrates (R35); R7's sheet defaults; the 36 px cluster rows and the 28 px status line (R15b).
-- A11: Share session, Paste of `1.5e-3`; a chip tapped right after a flick (R15c2); the ~8 px strip right of an inner fraction (R42); "Working…" on the WebView and a taller CAS result growing its row (F8); the trackpad's `touch-action: none` (K1).
-- The memory cap on the Tab One: `makemat(1,30000,30000)` in CAS gives "Out of memory" and the app stays up (G24).
-- R85 (merged `1d35189`): on the Fairphone, Shift, Fmt opens Mode on Angle; ▶, Enter gives DEG (the owner).
-- R86 (merged `cf087b9`): on the Fairphone, the pill then SCI sets it and closes; the digits chip then 20; ◀ goes up to Mode (the owner).
-- R50e (merged `e4d6085`): each theme family on the phone for a while; a cold start with a non-default theme shows no flash; a first start after "clear data" is Dark from the first frame (the owner).
-- R81 (F99, merged `a956ede`): the system keyboard stays closed after a return to the app, on the Fairphone (`tools/probes/ime-return.py`, annabell).
-- Removal tests to read: the "stored in Home" line under CAS results (R32), the angle check (R37), library imports (S4), Undo (P13).
-
 ### Upstream reports (owner; drafts in `../outreach/upstream-reports.md`)
 - **MathLive**, filed 2026-10-19: [#3122](https://github.com/arnog/mathlive/issues/3122) (⌫ at `\left…\right`), [#3123](https://github.com/arnog/mathlive/issues/3123) (touch caret), [#3124](https://github.com/arnog/mathlive/issues/3124) (focus restore); [#3125](https://github.com/arnog/mathlive/issues/3125) (Redo after ⌫, 2026-10-20); M5 (`isImplicitArg` takes no matrix, F68) drafted by R75.
-- **Giac**, not filed yet. Regression files: `tools/giac-regress/` (G89; check, known and patched: `pascaline-patched.cas` holds the lines that fail on stock giac_2.1.0-1 and pass with our patches; the golden gate runs them since G108). Parisse takes email, forum or commit links: 0003–0012 sent (email 4), 0013–0016 in email 5 (item 2 above); the rest as four forum threads; new since: `simplify`'s assume leak (G92: subst.cc:2419, 2802), `restart(1)` clearing nothing (G93: VARS(1) lists equations, usual.cc:251), a typed string ending in a backslash refused inside brackets (G105f1), the laplace VARS() garbage (F89).
+- **Giac**, not filed yet. Regression files: `tools/giac-regress/` (G89; check, known and patched: `pascaline-patched.cas` holds the lines that fail on stock giac_2.1.0-1 and pass with our patches; the golden gate runs them since G108). Parisse takes email, forum or commit links: 0003–0012 sent (email 4), 0013–0016 in email 5 (item 2 above), 0017–0023 next; the rest as four forum threads; new since: `simplify`'s assume leak (G92: subst.cc:2419, 2802), `restart(1)` clearing nothing (G93: VARS(1) lists equations, usual.cc:251), a typed string ending in a backslash refused inside brackets (G105f1), the laplace VARS() garbage (F89).
 
 ## Tasks
 
@@ -48,7 +38,15 @@ The one place for "where are we and what's left", one or two lines per open item
 - **F85, no package (G102's Not done; cost only).** A Home input with chips is parsed twice per Enter (G100); the parse is its own bridge-2 call, so G102 could not fold it. Can start (G104 merged).
 - **F80, no package (G99's Not done; probed: `tools/probes/bridge-forms.ts`).** After Home `(BesselJ(1,2))=>y`, `int(y^2,y,0,1)` shows `⚠ 0.333333333333` (right `≈`): Home stores at Digits 40, where `=>` keeps y as `BesselJ(1,2)` unevaluated, and Giac's int with that y errors (Bad Argument Value). `y:=` keeps the float. Test: `boundNames.test.ts` (`it.fails`), seqsweep `12 bound: int…`. Family 8.
 - **F73, no package (it waited for the end of the freeze; owner, 2026-10-24; G103 reads the doubles).** A double in a list shows Giac's text (`[BesselJ(1,2),1/3]`), not numbers with ⚠; no wrong value reaches the screen. Left: `hasFloat` (reads `1..3` and strings). Families 5, 6.
+- **R70 press count, no package (R70f1's report):** a hardware `<`, `>` or `!` (t.run) and a dead hardware key (onDead) are not counted; docs/04 5.2 counts every press.
 - **R57 comma display in Solve and Num, no package:** in comma mode, Solve's roots and the Function and Solve Num tables still show their values with a point (R57 changed Home, CAS, Copy and Paste only).
+- **F148, R106 (night review bu-1).** An early hide empties the history. Reach: a quick leave.
+- **F149, G139 (night review be-10).** `eseries(6,√(1500·2200))` = 1500, right 2200. Reach: Find.
+- **F150, G140 (night review be-9).** `Zeta(1/2+i)` ≈, wrong from digit 15. Reach: Find.
+- **F154, G143 (night review be-2; reachable once R24d and R71 merge).** σ through `floor` is `± 0`, no ⚠. Reach: the unit view.
+- **F146, R93 (night review ca-1; latent).** A failed read counts as empty; the next write replaces it.
+- **F147, R95 (night review fh-2; web only).** Two tabs overwrite each other's data. Reach: web.
+- **Night review 2026-10-30:** the rest in [research/night-review-2026-10-31.md](research/night-review-2026-10-31.md).
 
 ### Background stream (extreme inputs; at night, by reach)
 - **F87, no package (G93's report).** CAS `restart(0)`, `restart_vars(0)`, `restart(1)` and Home `restart(1)` show "pcasans: recursive definition" (pasans in Home): the answer lists our Ans slot's own name. The command took effect. Our name on screen (family 9); not reachable by keys until Find.
@@ -78,19 +76,22 @@ The one place for "where are we and what's left", one or two lines per open item
 - **F139, no package (G133f1).** Home calls an exact 0 it cannot prove an underflow (`novalue.ts` `underflow`): `re(asin(i/10))`, `re(asinh(i/5))`, `re(asin(i))` show "Underflow" (value 0). A wrong reason, no wrong number. Family 3.
 - **F140–F144, no package (G137; pending golden `g137-*`, oracle values).** Home ≈ with a wrong value: `2^sqrt(-1-10^-3)` 0.99999725+0.0023·i (right 0.76901746+0.63922777·i); `(-0.001)^atanh(1.000000001)` the negation of the value; `surd(asinh(1E-100),3)` a complex root (right 4.64158883361E-34); `acosh(cosh(3*sqrt(-pi)))` -0.9658·i (right +, and 1 s on the desktop, ⚠0 on the 8× clock); `acosh(1E150-sqrt(-1))` imaginary part halved (right -1E-150·i).
 - **F145, no package (G120, G137).** Nightly sweep hangs: acos/asin/acosh of a huge real and acosh(1ᴇ-1000) (G120, 20), DEG `sin(asinh(1ᴇ-300))`, `∛1ᴇ1000+e^acosh(-2)`, `atanh(asin(1ᴇ-300))^atan(…)` (G137, 6); triage files their rows under F145. The sweep oracle (`tools/probes/sweep/oracle.py`) drops a part of mpmath's acosh and acos of a tiny complex (G137's 2 oracle rows).
+- **F151, G141 (night review be-1).** `(1+10^-100)^(10^100)` ≈ 1, right e. Reach: keys.
+- **F152, G148 (night review vg-3).** `approx(exp(10^20))`: unmarked +infinity. Reach: Shift+Enter.
+- **F153, G142 (night review vg-1).** Complex `acosh` near 0: ≈, Im wrong from digit 13. Reach: keys.
 - **G94, no package.** Depth-3 generated trees in the view sweep crash the in-process engine (wasm memory out of bounds; also the nightly view sweep at count 300, seed 20752); raw output: `../drafts/2026-10-21-packages/g94-raw`.
-- **The hardening without a bug line:** A31 (a gate stage for the shell tests in `tools/` and `scripts/`, not drafted); r16's end mark, a 50,000-input sweep with no new false mark, is not met (Opus pass 82; G94 stops the view sweep at volume); G116: `node scripts/sweep.ts --nightly --edges`; its first two seeds gave F119–F123 (triage: `.tasks/sweep-2026-10-28-g116-triage.md`); G120 (seed 1793285778): F129–F133; G137 (seed 1793416884): F140–F145 (`.tasks/sweep-2026-10-31-g137-triage.md`); A44: `tests/golden/sweep-nightly-known.yaml` holds the nightly sweep's open rows (F122); the gate never reads it.
+- **The hardening without a bug line:** A31 (two shell tests left: A55); r16's end mark, a 50,000-input sweep with no new false mark, is not met (Opus pass 82; G94 stops the view sweep at volume); G116: `node scripts/sweep.ts --nightly --edges`; its first two seeds gave F119–F123 (triage: `.tasks/sweep-2026-10-28-g116-triage.md`); G120 (seed 1793285778): F129–F133 (`.tasks/sweep-2026-10-29-g120-triage.md`); G137 (seed 1793416884): F140–F145 (`.tasks/sweep-2026-10-31-g137-triage.md`); A44: `tests/golden/sweep-nightly-known.yaml` holds the nightly sweep's open rows (F122); the gate never reads it.
 
 ### Next (packages and order: brief section 0)
 - **Find (milestone 4, EN1):** R4a built (Math = Find; task 5 active at 4 presses; c38, c39, c43 keyed through it); R4b built; A4b next, brief section 0.
 - **Units (milestone 5; docs/04 section 4):** packages and order in brief section 0; the first unit result on the Tab One and the Fairphone 6 (< 1 s). Gate: tasks 1–4 and 10; a unit in ≤ 4 presses at the median; `units.yaml`; the owner's hand timing.
-- **Settings and looks (milestone 4a), the trust features, the backup and libraries:** packages and order in brief section 0 ("What waits").
+- **Settings and looks (milestone 4a), the trust features, the backup and libraries:** packages and order in brief section 0.
 - **Milestone 6, Structure** (not packaged): EN5 matrices with Shift + 5 and the editor on Shift + 4 (§5.3; the Tmpl matrices work today), EN6 number bases, EN7 everyday functions, Help as context help; EN4, copying one element of a list or matrix.
 
 ### Without a package yet
 - The Function app and plots of user functions wait for your word (R56b covers Solve); **R58b** Alpha letters are always names in CAS (G2 item 62 can reverse it).
 - **G9. Number formats against the G2** (item 15): decide in the settings and help pass. **K1:** a pending one-shot Shift is used up by the first drag step. **K5:** the gestures in the help texts.
-- **`tieRisk`** (`format.ts:130`, set in `homeEval.ts:422`) has no reader (docs/04 2.4 rule 2 already drops a digit at a tie): drop it when `homeEval.ts` is next touched outside the freeze.
+- **`tieRisk`** has no reader (`format.ts:130`): G146 drops it.
 - **The pipeline:** `resolve_audit_model` is tested only through dry-run echo lines (Opus pass 20; `want_checks` has its own test since A36); the size test does not cover CSS (25.8 kB raw at 2026-10-12). `tests/engine/patch-canary.ts` unpacks the Giac tarball once per canary (40 times, `member()` of `tools/find-index/state.mjs`), 100 s of CPU alone, so the golden `flags` stage times out under load (A51 counts it as timing): unpack it once. Red-first (`pipeline-lib.sh`) runs vitest on the branch's engine, so an engine test like G133f1's passes there (golden carries the red), and reads ids as `[A-Za-z0-9_.-]`, so older ids with `/` or `^` are invisible to it (G133f1).
 - **C3. CI** (needs your OK); **C4. F-Droid recipe:** untested end to end; `npm ci` after `prebuild` needs an offline rework; two drifts from build.sh in `fdroid/README.md`.
 

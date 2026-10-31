@@ -232,6 +232,7 @@
       {/if}
       <!-- Find (R4a): the highlighted item's details (docs/04 3.6) -->
       {#if level.current?.preview}<div class="preview" class:long={level.longPreview} data-testid="find-preview">{level.current.preview}</div>{/if}
+      {#if level.current?.put}<button type="button" class="put" data-testid="find-put" onclick={() => level.current?.put?.run()}>{level.current.put.label} ▶</button>{/if}
     {/if}
   </div>
   <!-- over the view: shrinks first (flex-shrink weighs by size: 1000 × its height against the sheet's 1 × its own) -->
@@ -375,6 +376,19 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+  /* Find in a unit slot (R24d): the row's second job, a button under the preview */
+  .put {
+    flex: none;
+    margin: 2px 8px 4px;
+    padding: 4px 10px;
+    min-height: 32px;
+    align-self: flex-start;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: none;
+    color: var(--text);
+    font-size: 13px;
   }
   .preview.long {
     white-space: pre-line;

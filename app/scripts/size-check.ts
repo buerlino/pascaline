@@ -18,6 +18,8 @@ const MB = 1_000_000;
 interface ManifestChunk {
   file: string;
   src?: string;
+  /** Rollup's name of the chunk: a shared chunk has no `src`, only a name (the file's base name, e.g. "finder"). */
+  name?: string;
   isEntry?: boolean;
   isDynamicEntry?: boolean;
   /** Manifest keys of the chunks this one imports statically (loaded with it). `dynamicImports` load later and are not listed here. */
@@ -80,19 +82,23 @@ export function startFiles(manifest: Record<string, ManifestChunk>): string[] {
 }
 
 /** The budgets of docs/04 section 8.3 that apply to files of the build; the device bars are not here. */
-function subjects(manifest: Record<string, ManifestChunk>, all: string[]): { present: Subject[]; absent: string[] } {
+function subjects(manifest: Record<string, ManifestChunk>, all: string[]): { present: Subject[]; absent: string[]; missing: string[] } {
   const chunks = Object.values(manifest);
   const present: Subject[] = [];
   const absent: string[] = [];
-  const add = (rule: string, files: string[], limits: Omit<Subject, "rule" | "files">): void => {
+  const missing: string[] = [];
+  const add = (rule: string, files: string[], limits: Omit<Subject, "rule" | "files">, required = false): void => {
     if (files.length > 0) present.push({ rule, files, ...limits });
-    else absent.push(rule);
+    else (required ? missing : absent).push(rule);
   };
   const dynamic = (prefix: string): string[] => chunks.filter((c) => c.isDynamicEntry && normalSrc(c.src).startsWith(prefix)).map((c) => c.file);
 
   add("Start chunk", startFiles(manifest), { rawMax: 175 * KB, gzipMax: 61 * KB });
   add("MathLive chunk", chunks.filter((c) => /(^|\/)mathlive\/mathlive\.min\.m?js$/.test(normalSrc(c.src))).map((c) => c.file), { rawMax: 830 * KB });
-  add("Find UI chunk", dynamic("src/find/"), { rawMax: 30 * KB });
+  // The chunk that holds src/find/finder.ts, whether it is a dynamic entry (src in the manifest) or a shared chunk
+  // (units/find.ts and units/menu.ts import it statically, so Rollup names it "finder" and the manifest has no src).
+  // Required: a build without it is a failure, not "not built yet" (the rule once matched nothing for weeks).
+  add("Find UI chunk", [...new Set(chunks.filter((c) => normalSrc(c.src) === "src/find/finder.ts" || c.name === "finder").map((c) => c.file))], { rawMax: 30 * KB }, true);
   // The unit view (G16, R24c): one rule over src/units/, so it covers the UI chunk (units/open.ts, 23.33 kB raw) and the
   // builder that Calc.units() loads with the factor table on its first call (units/calc.ts, 9.72 kB): 34 kB (Opus pass 22);
   // 38 kB (Opus pass 24): G81's correlated constants measure 34.04 kB, and R24d and R60–R63 still add; the bar that counts
@@ -102,7 +108,7 @@ function subjects(manifest: Record<string, ManifestChunk>, all: string[]): { pre
   add("Find index asset", all.filter((f) => f.startsWith("find/") || /(^|\/)find-index[^/]*$/.test(f)), { rawMax: 400 * KB, gzipMax: 100 * KB });
   add("qalc wasm + glue", all.filter((f) => /(^|\/)qalc[^/]*\.(wasm|mjs|js)$/.test(f)), { brotliMax: 1 * MB });
   present.push({ rule: "Precache total", files: all, rawMax: 18 * MB });
-  return { present, absent };
+  return { present, absent, missing };
 }
 
 /** Views that only draw an open sheet stay out of the start chunk (R46): each must be its own dynamic chunk, not in `startFiles`. */
@@ -141,10 +147,17 @@ export const LAZY_PARTS = ["src/views/sheetKeys.ts", "src/views/tmplSheet.ts", "
  *  it is there are queued as before. The room is for R24d, R38a, R71, R15c4 and R88 under the 61 kB budget.
  *  58.96 → 58.97 kB (G81): phase-1 58.95 kB, the branch 58.963 kB (166.66 kB raw, +0.05 kB): a stored constant chip keeps
  *  its basis and leaves (validChips, read back at start); their check is in basisOf, in the lazy chunks.
- *  58.97 → 59.00 kB (R38a): phase-1 58.96 kB, the branch 58.98 kB (+0.02 kB, raw +0.04 kB) before G81; Settings › Data › Save a
+ *  58.97 → 59.05 kB (R24d, R24df1): phase-1 58.963 kB (G81), the branch 59.035 kB without G81 (59,035 B, rounded up to the next 0.01 kB; 166.82 kB raw); the sum is 59.05 kB. Four lines of start-chunk source
+ *  changed (`Sheet.right()` runs a row's second job); the rest is the start chunk's own map of lazy chunks: the cells' store,
+ *  Find in a slot and the units menu are three new lazy files (units/userCells.svelte.ts, find.ts, menu.ts), each named in the
+ *  preload list of the dynamic imports that reach it.
+ *  59.05 → 59.11 kB (R24df2, Opus pass 26): the branch merged with phase-1 3718a40 (G81) measures 59.06 kB gzip (59,059 B,
+ *  166.87 kB raw), 0.01 kB over the pin; the new pin is that rounded up to the next 0.01 kB (59.06) plus 0.05 kB for build
+ *  noise and merges in flight (decisions.md, Start chunk). Under the budget of 61 kB.
+ *  59.11 → 59.13 kB (R38a): the branch measured +0.02 kB (raw +0.04 kB) over phase-1 before R24d; Settings › Data › Save a
  *  backup needs one line in App.svelte (the Settings env's `saveBackup`); the raw read, BACKUP_KEYS, the file port and the
  *  words are in lazy modules (state/backup.ts, storageRaw.ts, i18n/enData.ts). */
-export const START_PIN_GZIP = 59.0 * KB;
+export const START_PIN_GZIP = 59_130;
 
 /** Failures for the start chunk's row when it is over the pin. */
 export function checkStartPin(row: Row): string[] {
@@ -196,7 +209,7 @@ const kB = (n: number): string => `${(n / KB).toFixed(2)} kB`;
 /** Measure `dist` against the budgets. Pure apart from reading files; the CLI prints and sets the exit code. */
 export function checkSizes(dist: string): Report {
   const all = precacheFiles(dist);
-  const { present, absent } = subjects(readManifest(dist), all);
+  const { present, absent, missing } = subjects(readManifest(dist), all);
   const rows: Row[] = [];
   for (const s of present) {
     let raw = 0;
@@ -216,7 +229,8 @@ export function checkSizes(dist: string): Report {
     if (s.brotliMax !== undefined && brotli > s.brotliMax) failures.push(`${s.rule}: ${kB(brotli)} brotli is over the budget of ${kB(s.brotliMax)} (${s.files.join(", ")})`);
     rows.push({ rule: s.rule, files: s.files, raw, gzip, brotli, rawMax: s.rawMax, gzipMax: s.gzipMax, brotliMax: s.brotliMax, failures });
   }
-  return { rows, notBuilt: absent, failures: rows.flatMap((r) => r.failures) };
+  const missingFailures = missing.map((rule) => `${rule}: no chunk holds src/find/finder.ts (neither a dynamic entry nor a shared chunk named "finder"); the rule measures nothing`);
+  return { rows, notBuilt: absent, failures: [...rows.flatMap((r) => r.failures), ...missingFailures] };
 }
 
 function format(report: Report): string {
