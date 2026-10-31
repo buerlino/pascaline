@@ -130,9 +130,7 @@ function validUses(x: unknown): UsedValue[] | undefined {
   return ok.length ? ok : undefined;
 }
 
-export const HISTORY_LIMIT = 200;
-/** A stored history row the start keeps (restoreHistory); the backup's check counts the others as faults (R38b). */
-export const keptRow = (i: HistoryItem): boolean => (i?.status === "done" || i?.status === "error") && typeof i.latex === "string";
+const HISTORY_LIMIT = 200;
 /** R91: the tidy-up of Giac's latex (render/tidy.ts) is only needed once a result is in, so it is a chunk of its own: it
  *  loads beside the first job (and when idle, main.ts), and a failed load is tried again by the next job. */
 let tidyChunk: Promise<typeof import("../render/tidy.ts")> | undefined;
@@ -751,7 +749,7 @@ export class Session {
       // Fresh ids: entries typed before the store answered already use the low numbers (ids key the list).
       const keep = (xs: HistoryItem[] | undefined): HistoryItem[] =>
         (xs ?? [])
-          .filter(keptRow)
+          .filter((i) => (i.status === "done" || i.status === "error") && typeof i.latex === "string")
           .slice(-HISTORY_LIMIT)
           .map((i) => restoredItem(i, this.nextId++));
       this.home.splice(0, 0, ...keep(hist.home));

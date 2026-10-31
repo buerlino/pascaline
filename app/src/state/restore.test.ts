@@ -4,10 +4,13 @@
 // Undo write in one transaction.
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { dataText } from "../i18n/enData.ts";
-import { BACKUP_KEYS, checkBackup, MAX_BACKUP_BYTES, VALIDATORS, type CheckedBackup, type RefusedBackup } from "./backup.ts";
+import { BACKUP_KEYS, checkBackup, HISTORY_ROWS, KEY_LAYERS, MAX_BACKUP_BYTES, VALIDATORS, type CheckedBackup, type RefusedBackup } from "./backup.ts";
 import { fakeIndexedDb, type FakeIdb } from "./fakeIdb.ts";
 import { holdWrites, readUndo, restoreParts, UNDO_KEY, undoRestore } from "./restore.ts";
-import { migrateSettings, SETTINGS_SCHEMA } from "./session.svelte.ts";
+import { FakeCalc } from "../calc/fake.ts";
+import { USER_KEY_IDS, USER_LAYERS } from "../keyboard/userKeys.svelte.ts";
+import { defaultLook } from "../theme/look.ts";
+import { migrateSettings, Session, SETTINGS_SCHEMA } from "./session.svelte.ts";
 import { DATA_VERSION, idbKv } from "./storage.ts";
 
 const at = (value: unknown, v = DATA_VERSION): { "@pascaline": unknown; value: unknown } => ({ "@pascaline": v, value });
@@ -60,6 +63,11 @@ describe("checkBackup (r11 section 3.4)", () => {
   });
   it("every key the backup holds has a validator", () => {
     for (const k of BACKUP_KEYS) expect(VALIDATORS[k], k).toBeTypeOf("function");
+  });
+  it("a key without a validator is refused", () => {
+    const { view: _view, ...rest } = VALIDATORS;
+    const r = checkBackup(bytes(good()), rest);
+    expect(r.ok === false && r.part).toBe("view");
   });
 
   // one bad file per refusal, in the order of r11 section 3.4
@@ -136,6 +144,79 @@ describe("checkBackup (r11 section 3.4)", () => {
     const r = refused(withPart(key, at(value)));
     expect(r.part).toBe(key);
     expect(r.message).toMatch(/: holds data this version cannot read$/);
+  });
+});
+
+// backup.ts repeats the rules of the start's readers that live in the start chunk (an import would split it); these
+// tests run both on the same values.
+describe("the repeated rules agree with the start's readers", () => {
+  const canon = (v: unknown): string =>
+    JSON.stringify(v, (_k, x: unknown) => (x && typeof x === "object" && !Array.isArray(x) ? Object.fromEntries(Object.entries(x).sort(([a], [b]) => (a < b ? -1 : 1))) : x));
+  const samples: Record<string, unknown[]> = {
+    angle: ["rad", "deg", "grad", "", null, 1],
+    format: ["std", "sci", "eng", "pfx", "fix", "frac", "STD"],
+    entry: ["textbook", "line", "math"],
+    decimalMark: ["point", "comma", "dot"],
+    digits: [1, 12, 30, 31, 0, -1, 12.5, "12", 1e3],
+    fixDecimals: [0, 4, 12, 13, -1, 2.5, "4"],
+    fmtCycle: [["std", "sci", "eng"], ["std"], ["sci", "std"], [], ["std", "std"], ["frac"], ["std", "frac"], "std", ["pfx", "fix"], ["fix", "pfx"]],
+    haptics: [
+      { on: true, strength: 50, ms: 15 },
+      { on: false, strength: 0, ms: 5 },
+      { on: false, strength: 100, ms: 100 },
+      { on: "yes", strength: 50, ms: 15 },
+      { on: true, strength: 101, ms: 15 },
+      { on: true, strength: 50, ms: 4 },
+      { on: true, strength: 50 },
+      { on: true, strength: 50, ms: 15, x: 1 },
+      { on: true, strength: 50.5, ms: 15 },
+      null,
+      "on",
+    ],
+    look: [defaultLook(), defaultLook(true, true), { ...defaultLook(), family: "nope" }, {}, "dark"],
+  };
+  it("settings: a field passes exactly when migrateSettings keeps it as it is", () => {
+    const fields = Object.keys(migrateSettings({}).settings).sort();
+    expect(Object.keys(samples).sort()).toEqual(fields); // a new settings field needs its rule (and samples here)
+    for (const [f, values] of Object.entries(samples))
+      for (const v of values) {
+        const keeps = canon((migrateSettings({ [f]: v }).settings as unknown as Record<string, unknown>)[f]) === canon(v);
+        expect(VALIDATORS["settings"]?.({ [f]: v }), `${f}: ${JSON.stringify(v)}`).toBe(keeps);
+      }
+    expect(VALIDATORS["settings"]?.({ schema: SETTINGS_SCHEMA, ...migrateSettings({}).settings })).toBe(true);
+  });
+  it("history: a part passes exactly when restoreHistory keeps every row", async () => {
+    const restored = async (hist: unknown): Promise<number | "throws"> => {
+      const s = new Session(new FakeCalc(), { get: async <T>() => hist as T, set: async () => {} });
+      try {
+        await s.restoreHistory();
+      } catch {
+        return "throws";
+      }
+      return s.home.length + s.cas.length;
+    };
+    const many = (n: number): unknown[] => Array.from({ length: n }, () => row("1"));
+    const cases: unknown[][] = [
+      [row("1")],
+      [row("1", "error")],
+      [row("1", "pending")],
+      [row("1", "cancelled")],
+      [row("1", "note")],
+      [{ status: "done" }],
+      [{ status: "done", latex: 3 }],
+      [null],
+      many(HISTORY_ROWS),
+      many(HISTORY_ROWS + 1),
+    ];
+    for (const rows of cases) {
+      const n = await restored({ home: rows });
+      expect(VALIDATORS["history"]?.({ home: rows }), JSON.stringify(rows).slice(0, 80)).toBe(n === rows.length);
+    }
+  });
+  it("your keys: the same key ids and layers as UserKeys", () => {
+    expect(KEY_LAYERS).toEqual(USER_LAYERS);
+    for (const id of USER_KEY_IDS) expect(VALIDATORS["userKeys"]?.({ [id]: { primary: null } }), id).toBe(true);
+    for (const id of ["u0", "u99", "sin", "U1"]) expect(VALIDATORS["userKeys"]?.({ [id]: {} }), id).toBe(false);
   });
 });
 

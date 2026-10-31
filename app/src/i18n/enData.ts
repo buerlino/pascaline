@@ -56,3 +56,12 @@ export function dataText(key: DataKey, vars?: Readonly<Record<string, string | n
   const m: string = enData[key];
   return vars ? m.replace(/\{(\w+)\}/g, (all, k: string) => String(vars[k] ?? all)) : m;
 }
+
+/** A time as Settings › Data and the restore sheet show it (R38b): local `YYYY-MM-DD HH:MM`, or the text itself when it
+ *  is not a time. */
+export function shownTime(t: string | number): string {
+  const d = new Date(t);
+  if (Number.isNaN(d.getTime())) return String(t);
+  const p = (n: number): string => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+}

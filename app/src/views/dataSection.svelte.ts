@@ -3,7 +3,7 @@
 // row runs and closes the sheet, so its notice shows in the stage. The backup and restore code loads on the press
 // (clipboard/actions.svelte.ts); this module comes with the Mode sheet's chunk.
 import type { MenuItem } from "../apps/types.ts";
-import { dataText } from "../i18n/enData.ts";
+import { dataText, shownTime } from "../i18n/enData.ts";
 import type { SettingsEnv } from "./yourKeys.ts";
 
 /** The time of the kept copy (`backup.undo`): undefined until read, null when there is none. A restore and an Undo
@@ -56,15 +56,6 @@ function dataItems(env: SettingsEnv, pick: () => Promise<File | null>): MenuItem
     rows.push({ id: "undo", label: dataText("restore.undo", { time: shownTime(time) }), run: () => env.data?.((c) => c.restoreBackup("undo")) });
   }
   return rows;
-}
-
-/** A time as the Data rows and the restore sheet show it: local `YYYY-MM-DD HH:MM`, or the text itself when it is not
- *  a time. */
-export function shownTime(t: string | number): string {
-  const d = new Date(t);
-  if (Number.isNaN(d.getTime())) return String(t);
-  const p = (n: number): string => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
 }
 
 /** Settings' Data section: a row with › whose level reads the kept copy's time on every draw. */

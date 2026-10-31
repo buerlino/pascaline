@@ -4,9 +4,10 @@
 // restores one (never in the start chunk).
 import { validDefs } from "../engine/defs.ts";
 import { dataText, enData, type DataKey } from "../i18n/enData.ts";
-import { USER_KEY_IDS, USER_LAYERS } from "../keyboard/userKeys.svelte.ts";
+import { keyboard } from "../keyboard/keyboard.ts";
+import { defaultLook, validLook } from "../theme/look.ts";
 import { CELL_KEYS } from "../units/userCells.svelte.ts";
-import { HISTORY_LIMIT, keptRow, migrateSettings, type HistoryItem } from "./session.svelte.ts";
+import { isFmtMode, normalizeCycle } from "./displayMode.ts";
 import { DATA_VERSION, unstamp } from "./storage.ts";
 import { kvGetRaw, type RawRecord } from "./storageRaw.ts";
 
@@ -85,24 +86,7 @@ const canon = (v: unknown): string =>
   JSON.stringify(v, (_k, x: unknown) => (isObject(x) ? Object.fromEntries(Object.entries(x).sort(([a], [b]) => (a < b ? -1 : 1))) : x));
 const isCount = (n: unknown): boolean => typeof n === "number" && Number.isInteger(n) && n >= 0;
 
-/** Settings: `migrateSettings` (as the start reads them) must keep every field the part holds; a field it would reset to
- *  its default is a fault. */
-function settingsOk(v: unknown): boolean {
-  if (!isObject(v)) return false;
-  const { settings } = migrateSettings(v);
-  return Object.entries(settings).every(([k, x]) => !(k in v) || canon(v[k]) === canon(x));
-}
-
-/** History: `restoreHistory`'s filter, which keeps finished rows with their LaTeX, at most HISTORY_LIMIT per view. */
-function historyOk(v: unknown): boolean {
-  if (!isObject(v)) return false;
-  return (["home", "cas"] as const).every((view) => {
-    const xs = v[view];
-    return xs === undefined || (Array.isArray(xs) && xs.length <= HISTORY_LIMIT && xs.every((i: HistoryItem) => keptRow(i)));
-  });
-}
-
-/** Per key id and layer: null (an emptied slot) or a binding with a label and an action, as UserKeys reads them. */
+/** Per key id and layer: null (an emptied slot) or a binding the reader keeps. */
 function slotsOk(v: unknown, ids: readonly string[], layers: readonly string[], binding: (b: Record<string, unknown>) => boolean): boolean {
   if (!isObject(v)) return false;
   return Object.entries(v).every(
@@ -110,18 +94,67 @@ function slotsOk(v: unknown, ids: readonly string[], layers: readonly string[], 
   );
 }
 const text = (x: unknown): boolean => typeof x === "string" && x !== "";
+const whole = (x: unknown, lo: number, hi: number): boolean => typeof x === "number" && Number.isInteger(x) && x >= lo && x <= hi;
 
-/** Each key's validator: the check the app runs when it reads that key at start, strict so that a row or field the start
- *  would drop is a fault (a restore never loses data silently). Keys whose start reads field by field with defaults (the
- *  apps, the place) are checked by type. */
-export const VALIDATORS: Readonly<Record<string, (value: unknown) => boolean>> = {
-  settings: settingsOk,
+// The start's readers live in the start chunk (session.svelte.ts, keyboard/userKeys.svelte.ts). An import of them from
+// this lazy chunk makes the bundler split the start chunk into six files (59.09 → 60.62 kB gzip, measured in R38b), so
+// the rules they apply are repeated here, as storageRaw.ts repeats storage.ts's constants, and restore.test.ts runs both
+// on the same values and fails when they disagree. What needs no such import is used as it is (validLook,
+// normalizeCycle, validDefs, the keyboard spec, CELL_KEYS).
+
+/** session.svelte.ts HISTORY_LIMIT: rows kept per view. */
+export const HISTORY_ROWS = 200;
+/** keyboard/userKeys.svelte.ts USER_LAYERS. */
+export const KEY_LAYERS: readonly string[] = ["primary", "shift", "alpha"];
+/** The settings fields `migrateSettings` reads and the values it keeps as they are; any other value it resets. */
+const SETTING_RULES: Readonly<Record<string, (x: unknown) => boolean>> = {
+  angle: (x) => x === "rad" || x === "deg",
+  format: (x) => x === "std" || x === "sci" || x === "eng" || x === "pfx",
+  entry: (x) => x === "textbook" || x === "line",
+  decimalMark: (x) => x === "point" || x === "comma",
+  digits: (x) => whole(x, 1, 30), // MAX_DIGITS
+  fixDecimals: (x) => whole(x, 0, 12),
+  fmtCycle: (x) => Array.isArray(x) && canon(normalizeCycle(x.filter(isFmtMode))) === canon(x),
+  haptics: (x) =>
+    isObject(x) && Object.keys(x).length === 3 && typeof x["on"] === "boolean" && whole(x["strength"], 0, 100) && whole(x["ms"], 5, 100), // HAPTIC_MS_RANGE
+  look: (x) => isObject(x) && canon(validLook(x, defaultLook())) === canon(x),
+};
+
+/** Each key's validator. */
+export type Validators = Readonly<Record<string, (value: unknown) => boolean>>;
+
+/**
+ * The validators: for each key the check the app runs when it reads that key at start, made strict, so that a row or a
+ * field the start would drop is a fault (a restore never loses data silently). Settings: `migrateSettings` keeps every
+ * field the part holds. History: `restoreHistory`'s filter (finished rows with their LaTeX, at most HISTORY_LIMIT per
+ * view). Definitions: the log's load check (`validDefs`) keeps every entry. Your keys and the unit pad cells: known keys
+ * and layers, each slot null or a binding their reader keeps. The taps: their load check. Keys whose start reads field by
+ * field with defaults (the apps, the place) and the units keys are checked by type.
+ */
+export const VALIDATORS: Validators = {
+  settings: (v) => isObject(v) && Object.entries(SETTING_RULES).every(([k, ok]) => !(k in v) || ok(v[k])),
   view: (v) => v === "home" || v === "cas",
   place: isObject,
   entry: (v) => v === null || (isObject(v) && (v["view"] === "home" || v["view"] === "cas") && typeof v["latex"] === "string"),
-  history: historyOk,
+  history: (v) =>
+    isObject(v) &&
+    (["home", "cas"] as const).every((view) => {
+      const xs = v[view];
+      return (
+        xs === undefined ||
+        (Array.isArray(xs) &&
+          xs.length <= HISTORY_ROWS &&
+          xs.every((i: unknown) => isObject(i) && (i["status"] === "done" || i["status"] === "error") && typeof i["latex"] === "string"))
+      );
+    }),
   defs: (v) => Array.isArray(v) && validDefs(v).length === v.length,
-  userKeys: (v) => slotsOk(v, USER_KEY_IDS, USER_LAYERS, (b) => text(b["label"]) && isObject(b["action"])),
+  userKeys: (v) =>
+    slotsOk(
+      v,
+      keyboard.keys.filter((k) => k.user).map((k) => k.id), // USER_KEY_IDS
+      KEY_LAYERS,
+      (b) => text(b["label"]) && isObject(b["action"]),
+    ),
   unitPadCells: (v) =>
     slotsOk(v, CELL_KEYS, ["tap", "up", "down"], (b) => text(b["unit"]) && (b["prefix"] === undefined || text(b["prefix"])) && (b["label"] === undefined || text(b["label"]))),
   taps: (v) => isObject(v) && isCount(v["shift"]) && isCount(v["alpha"]) && typeof v["since"] === "string" && (v["presses"] === undefined || isCount(v["presses"])),
@@ -151,9 +184,9 @@ export const partName = (key: string): string => (`part.${key}` in enData ? data
 /**
  * r11 section 3.4, in order: the first fault refuses the whole file, with its message and the part it names, and
  * nothing is written. The probe's `check` (tools/probes/backup-file.mjs) plus step 5: each part through `unstamp` and
- * its key's validator.
+ * its key's validator (VALIDATORS; a key without one is refused).
  */
-export function checkBackup(bytes: Uint8Array): CheckedBackup | RefusedBackup {
+export function checkBackup(bytes: Uint8Array, validators: Validators = VALIDATORS): CheckedBackup | RefusedBackup {
   const no = (key: DataKey, part?: string, vars: Record<string, string | number> = {}): RefusedBackup => ({
     ok: false,
     message: dataText(key, { ...vars, ...(part === undefined ? {} : { part: partName(part) }) }),
@@ -193,7 +226,7 @@ export function checkBackup(bytes: Uint8Array): CheckedBackup | RefusedBackup {
     } catch {
       return no("refuse.invalid", key); // a migration step that cannot read the value
     }
-    if (!VALIDATORS[key]?.(value)) return no("refuse.invalid", key);
+    if (!validators[key]?.(value)) return no("refuse.invalid", key);
     values[key] = value;
   }
   return { ok: true, made: typeof f["made"] === "string" ? f["made"] : "", dataVersion: typeof f["dataVersion"] === "number" ? f["dataVersion"] : 0, parts: values };

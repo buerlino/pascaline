@@ -5,10 +5,9 @@
 // in every sheet. Restore replaces the ticked parts in one transaction and reloads. Loaded on the press only.
 import type { AppShell } from "../apps/shell.svelte.ts";
 import type { MenuItem } from "../apps/types.ts";
-import { dataText } from "../i18n/enData.ts";
+import { dataText, shownTime } from "../i18n/enData.ts";
 import { BACKUP_KEYS, checkBackup, MAX_BACKUP_BYTES, partName, type CheckedBackup } from "../state/backup.ts";
 import { holdWrites, restoreParts, undoRestore } from "../state/restore.ts";
-import { shownTime } from "./dataSection.svelte.ts";
 
 type Say = (message: string) => void;
 
