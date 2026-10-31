@@ -13,6 +13,8 @@ The owner's other open items are in [backlog.md](backlog.md), "Needs the user". 
 
 - **The start chunk's last 0.3 kB:** after R24c it is 60.69 of the 61 kB budget, and R70, R15c4, R38a, R88 and the rest of the Settings list still come. Recommendation: before R88, a split package like R91 moves about 1 kB of code that runs only after a press out of the start chunk, and the 61 kB budget stays.
 
+- **R24d, Find in a slot and the user cells (built, three points):** (1) the start chunk is 60.79 kB of the 61 kB budget (pin 60.8): 0.21 kB is left for R88, R70, R15c4 and R38a, so the split package of the entry above comes before R88. (2) An empty user cell (a "+") opens Find on units and its pick sets that leg and also lands in the slot; recommendation: keep (one trip does both); the other reading is "opens Find, the pick lands only". (3) `mmH₂O` is no Find item (`mmWC` is), so it cannot be a cell until Find has it; the package's "six of the 50 units off the pad" are none now (S5's pad holds all 50), so the e2e takes six off-pad units of r9 section 3: Å, arcmin, arcsec, mmHg, oz, cfm.
+
 ## Decided proposals
 
 Newest first within each group.
