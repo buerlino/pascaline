@@ -9,7 +9,7 @@ import { parse } from "yaml";
 import { describe, expect, it } from "vitest";
 import type { IndexItem } from "../find/types.ts";
 import { unitText } from "../i18n/enUnits.ts";
-import { SlotModel, slotCatalogue, type PadAction, type SlotCatalogue } from "./slot.ts";
+import { SlotModel, slotCatalogue, splitPair, type PadAction, type SlotCatalogue } from "./slot.ts";
 import type { UnitSlot } from "./types.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -411,4 +411,36 @@ describe("the probe's units and S5's weights list, typed on the pad", () => {
       expect(wrong).toEqual([]);
     });
   }
+});
+
+describe("R24d: a Find unit that is a prefix and a unit goes in as both", () => {
+  it("splitPair: MPa is M and Pa, kWh is k and Wh, kΩ is k and ohm; min, dB, nmi and a bare unit are not pairs", () => {
+    expect(splitPair(CAT, "MPa")).toEqual({ prefix: "M", unit: "Pa" });
+    expect(splitPair(CAT, "kWh")).toEqual({ prefix: "k", unit: "Wh" });
+    expect(splitPair(CAT, "kohm")).toEqual({ prefix: "k", unit: "ohm" });
+    expect(splitPair(CAT, "um")).toEqual({ prefix: "u", unit: "m" });
+    expect(splitPair(CAT, "kcmil")).toEqual({ prefix: "k", unit: "cmil" });
+    for (const id of ["min", "dB", "nmi", "Pa", "m", "nothing"]) expect(splitPair(CAT, id), id).toBeUndefined();
+  });
+
+  it("the pair action is the prefix and the unit as tokens, and replaces an armed prefix instead of disarming it", () => {
+    expect(slotOf({ do: "pair", prefix: "M", id: "Pa" })).toEqual({ tokens: [{ prefix: "M", unit: "Pa" }] });
+    expect(slotOf(P("M"), { do: "pair", prefix: "M", id: "Pa" })).toEqual({ tokens: [{ prefix: "M", unit: "Pa" }] });
+    expect(slotOf(P("k"), { do: "pair", prefix: "M", id: "Pa" })).toEqual({ tokens: [{ prefix: "M", unit: "Pa" }] });
+    expect(typed([{ do: "pair", prefix: "M", id: "Pa" }]).reading.text).toBe("megapascal");
+  });
+
+  it("⌫ takes the unit and arms its prefix again, as for the pad's two presses", () => {
+    const s = typed([{ do: "pair", prefix: "M", id: "Pa" }, DEL]);
+    expect(s.slot).toEqual({ tokens: [] });
+    expect(s.armed).toEqual({ prefix: "M", sqrt: false });
+  });
+
+  it("an unknown prefix or unit is refused and leaves the slot as it was", () => {
+    const s = typed([U("m")]);
+    expect(s.apply({ do: "pair", prefix: "zz", id: "Pa" }).ok).toBe(false);
+    expect(s.apply({ do: "pair", prefix: "k", id: "nothing" }).ok).toBe(false);
+    expect(s.slot).toEqual({ tokens: [{ unit: "m" }] });
+    expect(s.armed).toEqual({ sqrt: false });
+  });
 });

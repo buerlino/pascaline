@@ -11,7 +11,6 @@
 // chunk of its own beside this one, the two imported each other through units/padView, and Rolldown then split Svelte's
 // runtime out of the start chunk, +1.1 kB gzip at start).
 import type { MathfieldElement } from "mathlive";
-import { unitText } from "../i18n/enUnits.ts";
 import type { Key } from "../keyboard/keyboard.ts";
 import type { Mods, RouteCtx } from "../keyboard/route.ts";
 import type { HistoryItem } from "../state/session.svelte.ts";
@@ -19,6 +18,7 @@ import { UnitPad } from "./pad.ts";
 import { unitPad } from "./padView.svelte.ts";
 import { slotCatalogue } from "./slot.ts";
 import { makePanel } from "./panel.ts";
+import { unitCells } from "./userCells.svelte.ts";
 import { UnitView, type ViewHost } from "./view.ts";
 
 /** The open unit view (window.pascaline.unitView in the e2e). */
@@ -45,7 +45,7 @@ export async function openUnits(c: RouteCtx, row?: HistoryItem): Promise<void> {
   const line = c.entry.value;
   const chips = c.entry.chips;
   // MathLive comes with the entry line (its field is up once `ready`): the class is taken from the element registry
-  const [, index, hw] = await Promise.all([c.entry.ready, import("../find/finder.ts").then((m) => m.loadIndex(true)), import("../entry/hwkeys.ts")]);
+  const [, index, hw] = await Promise.all([c.entry.ready, import("../find/finder.ts").then((m) => m.loadIndex(true)), import("../entry/hwkeys.ts"), unitCells.restore()]);
   const Field = customElements.get("math-field") as typeof MathfieldElement | undefined;
   if (!Field) return c.dead();
   const mf = new Field();
@@ -53,13 +53,17 @@ export async function openUnits(c: RouteCtx, row?: HistoryItem): Promise<void> {
   const host: ViewHost = {
     write: (id, latex) => mf.setPromptValue(id, latex, {}),
     evaluate: (req) => c.shell.calc.units(req, c.session.settings),
-    find: () => void showUnitFind(c, view),
+    find: (into) =>
+      void import("./find.ts").then((m) => {
+        if (current?.view === view) m.showUnitFind({ shell: c.shell, index, cat, apply: (a) => view.apply(a), refresh: () => (unitPad.model = new UnitPad(unitCells.userSet())) }, into);
+      }),
     dead: () => c.dead(),
     changed: () => panel.draw(),
   };
   let made: UnitView | undefined;
   const panel = makePanel(() => made);
-  const view = new UnitView(slotCatalogue(index.items), line, chips, host);
+  const cat = slotCatalogue(index.items);
+  const view = new UnitView(cat, line, chips, host);
   made = view;
   entryEl.insertBefore(panel.element, fieldEl);
   fieldEl.style.display = "none";
@@ -113,7 +117,7 @@ export async function openUnits(c: RouteCtx, row?: HistoryItem): Promise<void> {
     if (current?.view === view) keep();
     return true;
   };
-  unitPad.model = new UnitPad();
+  unitPad.model = new UnitPad(unitCells.userSet());
   element.focus();
 }
 
@@ -167,20 +171,4 @@ function hardwareKey(ev: KeyboardEvent, c: RouteCtx, hw: Hw): void {
   const k = hw.controlKey(ev) ?? (ev.key.length === 1 ? hw.keypadKeyOf(ev.key, c.entry.decimalComma) : undefined);
   if (k) c.entry.onKey(k[0], k[1]);
   else c.dead();
-}
-
-/** Math in a slot: Find on units (its Units category; docs/archive/r9-unit-pad.md 2.9). A unit's pick goes into the
- *  slot, a prefix's arms it. */
-async function showUnitFind(c: RouteCtx, view: UnitView): Promise<void> {
-  const m = await import("../find/finder.ts");
-  const index = await m.loadIndex(true);
-  const { categories } = m.findMenu(index, (it) => {
-    const id = it.id.slice(it.kind.length + 1); // ("unit:m", "pfx:k")
-    if (it.kind === "unit") view.apply({ do: "unit", id });
-    else if (it.kind === "pfx") view.apply({ do: "prefix", id });
-    else c.dead();
-  });
-  const units = categories.find((x) => x.id === "cat:units")?.submenu;
-  if (!units) return c.dead();
-  c.shell.showFind(unitText("units.pad.find"), units.items, units.search ?? (() => []));
 }

@@ -5,6 +5,7 @@ import { FakeCalc } from "../calc/fake.ts";
 import { Session } from "../state/session.svelte.ts";
 import type { Kv } from "../state/storage.ts";
 import { UserKeys } from "../keyboard/userKeys.svelte.ts";
+import { unitCells } from "../units/userCells.svelte.ts";
 import { modeItems } from "./modeSheet.ts";
 import { Sheet, forgetPicks } from "./sheet.svelte.ts";
 
@@ -338,7 +339,7 @@ describe("Settings › Your keys (R4b)", () => {
     expect(byId(s, "keys")?.value).toBe("None set");
     s.pickNumber(4);
     const ids = s.level.items.map((x) => x.id);
-    expect(ids).toHaveLength(19);
+    expect(ids).toHaveLength(20); // 18 slots, Unit pad cells (R24d), Reset all
     expect(ids.slice(0, 4)).toEqual(["u1:primary", "u1:shift", "u1:alpha", "u2:primary"]);
     expect(byId(s, "u2:shift")?.label).toBe("U2 ⇧");
     expect(byId(s, "u1:alpha")?.label).toBe("U1 α");
@@ -361,6 +362,50 @@ describe("Settings › Your keys (R4b)", () => {
     const p = s.pickNumber(1);
     if (p.kind === "run") p.item.run?.();
     expect(chosen).toEqual(["u2:shift"]);
+  });
+
+  it("Unit pad cells (R24d): U1–U6 in three layers and a reset; a leg shows its unit, Find… hands it to the app as a cell, Empty and Back to the default set it", async () => {
+    const { s, chosen } = withKeys();
+    s.pickNumber(4);
+    const at = (id: string): number => s.level.items.findIndex((x) => x.id === id);
+    expect(byId(s, "unitcells")?.label).toBe("Unit pad cells");
+    expect(byId(s, "unitcells")?.value).toBe("9 set"); // the nine default legs
+    s.activate(at("unitcells"));
+    await s.level.loading();
+    expect(s.path).toBe("Settings › Your keys › Unit pad cells");
+    expect(s.level.items).toHaveLength(19);
+    expect(s.level.items.slice(0, 3).map((x) => x.label)).toEqual(["U1", "U1 ⇧", "U1 α"]);
+    expect(byId(s, "u1:primary")?.value).toBe("dB");
+    expect(byId(s, "u3:primary")?.value).toBe("ton");
+    expect(byId(s, "u3:alpha")?.value).toBe("Empty");
+    expect(s.goKey("u4", "shift")).toBe(true); // a free key goes to its row in its layer
+    expect(s.level.current?.id).toBe("u4:shift");
+    s.activate(at("u3:alpha"));
+    expect(s.level.items.map((x) => x.id)).toEqual(["find", "default", "empty"]);
+    const find = s.pickNumber(1);
+    if (find.kind === "run") find.item.run?.();
+    expect(chosen).toEqual(["cell:u3:alpha"]);
+    unitCells.set("u3", "down", { unit: "Pa", prefix: "M" }); // what Find's pick does
+    expect(byId(s, "u3:alpha")).toBeUndefined(); // (this level is a leg's: its row is in the level above)
+    s.back();
+    expect(byId(s, "u3:alpha")?.value).toBe("MPa");
+    expect(byId(s, "unitcells")).toBeUndefined();
+    s.activate(at("u3:alpha"));
+    expect(s.pickNumber(3)).toEqual({ kind: "stay" }); // Empty this slot
+    s.back();
+    expect(unitCells.get("u3", "down")).toBeUndefined();
+    expect(unitCells.isSet("u3", "down")).toBe(true);
+    s.activate(at("u1:primary"));
+    s.pickNumber(3);
+    s.back();
+    expect(byId(s, "u1:primary")?.value).toBe("Empty");
+    s.activate(at("u1:primary"));
+    s.pickNumber(2); // Back to the default
+    s.back();
+    expect(byId(s, "u1:primary")?.value).toBe("dB");
+    s.pickNumber(19); // Reset the unit pad cells
+    expect(unitCells.count()).toBe(9);
+    unitCells.reset();
   });
 
   it("a free key pressed while the slots are listed goes to its row in its layer; elsewhere it does nothing", () => {

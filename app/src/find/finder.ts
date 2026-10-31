@@ -138,6 +138,8 @@ export function bindingOf(it: FindItem): UserBinding {
   return { label, action: c ? { insert: it.insert, chip: { key: constKey(c.id), ...c.chip } } : { insert: it.insert } };
 }
 
+const LEG = { primary: "tap", shift: "up", alpha: "down" } as const;
+
 /** The slot a pick sets instead of inserting (Settings › Your keys, R4b). */
 export interface SlotTarget {
   readonly id: string;
@@ -149,6 +151,8 @@ export interface SlotTarget {
  *  puts a constant on the line as a chip with its value and uncertainty, anything else as its insert (a function
  *  with the cursor in its first argument). With `slot` (R4b) a pick sets that free key's slot instead. */
 export function showFind(shell: AppShell, entry: EntryController, index: FindIndex, slot?: SlotTarget): void {
+  // R24d: a unit pad cell ("cell:u1", Settings › Your keys › Unit pad cells): Find on units, the pick sets that leg
+  if (slot?.id.startsWith("cell:")) return void import("../units/find.ts").then((m) => m.showCellFind(shell, index, slot.id.slice(5), LEG[slot.layer]));
   const pick = (it: FindItem): void => {
     if (slot) return slot.userKeys.set(slot.id, slot.layer, bindingOf(it));
     const c = constChipOf(it);

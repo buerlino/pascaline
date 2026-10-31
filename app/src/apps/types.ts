@@ -80,6 +80,9 @@ export interface MenuItem {
   readonly slot?: { readonly key: string; readonly layer: string };
   /** Find (R4a): the highlighted item's details, drawn under the list (already translated). */
   readonly preview?: string;
+  /** Find in a unit slot (R24d): a second job of the row beside picking it ("Put on the unit pad"), a button under the list
+   *  while the row is highlighted, and ▶ on the row. */
+  readonly put?: { readonly label: string; run(): void };
 }
 
 export interface SubMenu {

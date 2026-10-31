@@ -13,6 +13,7 @@ import type { UnitSlot, UnitToken } from "./types.ts";
 export type PadAction =
   | { do: "prefix"; id: string }
   | { do: "unit"; id: string }
+  | { do: "pair"; prefix: string; id: string }
   | { do: "per" }
   | { do: "power"; n: 2 | 3 | 4 | -1 }
   | { do: "sqrt" }
@@ -120,6 +121,20 @@ function isPair(pair: SlotName, prefix: SlotName | undefined, unit: SlotName | u
   return p.pi === a.pi + b.pi && p.n * a.d * b.d === a.n * b.n * p.d;
 }
 
+/** A Find unit that is a prefix and a unit of Find's list (R24d: `MPa` is M and Pa, `kWh` is k and Wh): the pair
+ *  the slot holds as tokens, else undefined. The longest prefix first (`da` before `d`); only an exact pair counts
+ *  (isPair: `min` is no milli-inch, `dB` no deci-byte). */
+export function splitPair(cat: SlotCatalogue, id: string): { prefix: string; unit: string } | undefined {
+  const pair = cat.units.get(id);
+  if (!pair) return undefined;
+  const ids = [...cat.prefixes.keys()].filter((p) => id.length > p.length && id.startsWith(p)).sort((a, b) => b.length - a.length);
+  for (const prefix of ids) {
+    const unit = id.slice(prefix.length);
+    if (isPair(pair, cat.prefixes.get(prefix), cat.units.get(unit))) return { prefix, unit };
+  }
+  return undefined;
+}
+
 /** The catalogue from the Find index's units and prefixes. */
 export function slotCatalogue(items: readonly IndexItem[]): SlotCatalogue {
   const units = new Map<string, SlotName>();
@@ -208,6 +223,13 @@ export class SlotModel {
         this.#factors.push({ ...(prefix !== undefined ? { prefix } : {}), unit: a.id, exp: 1, root: this.#pending.some((p) => p.kind === "sqrt"), took: this.#pending });
         this.#pending = [];
         return OK;
+      }
+      case "pair": {
+        if (!this.#cat.prefixes.has(a.prefix)) return refuse("units.slot.unknown", { unit: a.prefix });
+        if (!this.#cat.units.has(a.id)) return refuse("units.slot.unknown", { unit: a.id });
+        this.#pending = this.#pending.filter((p) => p.kind !== "prefix"); // (a pair replaces an armed prefix, never disarms it)
+        this.apply({ do: "prefix", id: a.prefix });
+        return this.apply({ do: "unit", id: a.id });
       }
       case "per": {
         const pending = this.#pendingRefusal();
