@@ -4,35 +4,44 @@
 // to 40 significant digits; the Zeta prints are Giac's own at 60 and 100 digits (tools/probes/complex-double.ts).
 import { describe, expect, it } from "vitest";
 import type { GiacValue } from "./bridge.ts";
+import { decimalFromString } from "./format.ts";
 import { atParts, binary64Of, isDouble, type Parts } from "./numeric.ts";
+
+/** binary64Of of a print, read with its own significant digits, as atParts reads a part at the precision asked. */
+const of = (t: string): number | null => {
+  const mant = t.split(/e/i)[0]!.replace(/[-.]/g, "");
+  const n = mant.length - mant.search(/[1-9]|$/);
+  const v = decimalFromString(t, Math.max(n, 1));
+  return v && binary64Of(v, n);
+};
 
 describe("G140: binary64Of", () => {
   it("finds a double's exact expansion rounded to the digits printed, at any magnitude", () => {
-    expect(binary64Of("0.143936427077187900636090489570051431655883789062500000000000")).not.toBeNull();
-    expect(binary64Of("-0.722099743531668281093516270630061626434326171875000000000000")).not.toBeNull();
-    expect(binary64Of("0.9465032062247669131238581030629575252532958984375000000000000000000000000000000000000000000000000000e-1")).not.toBeNull();
+    expect(of("0.143936427077187900636090489570051431655883789062500000000000")).not.toBeNull();
+    expect(of("-0.722099743531668281093516270630061626434326171875000000000000")).not.toBeNull();
+    expect(of("0.9465032062247669131238581030629575252532958984375000000000000000000000000000000000000000000000000000e-1")).not.toBeNull();
     // 1e-300, 1e300 and 0.1 as doubles; a plain dyadic test misses the first two (the expansion is longer than the print)
-    expect(binary64Of("1.000000000000000025059091835208759685696e-300")).not.toBeNull();
-    expect(binary64Of("1.000000000000000052504760255204420248704e+300")).not.toBeNull();
-    expect(binary64Of("0.1000000000000000055511151231257827021182")).not.toBeNull();
+    expect(of("1.000000000000000025059091835208759685696e-300")).not.toBeNull();
+    expect(of("1.000000000000000052504760255204420248704e+300")).not.toBeNull();
+    expect(of("0.1000000000000000055511151231257827021182")).not.toBeNull();
     // the smallest subnormal
-    expect(binary64Of("4.940656458412465441765687928682213723651e-324")).not.toBeNull();
+    expect(of("4.940656458412465441765687928682213723651e-324")).not.toBeNull();
   });
 
   it("is false for an MPFR value, a short print, a zero and a short dyadic", () => {
-    expect(binary64Of("0.1000000000000000000000000000000000000000")).toBeNull();
+    expect(of("0.1000000000000000000000000000000000000000")).toBeNull();
     // the last printed digit off by one
-    expect(binary64Of("0.1000000000000000055511151231257827021183")).toBeNull();
-    expect(binary64Of("1.000000000000000025059091835208759685697e-300")).toBeNull();
+    expect(of("0.1000000000000000055511151231257827021183")).toBeNull();
+    expect(of("1.000000000000000025059091835208759685697e-300")).toBeNull();
     // Zeta(1/2+i)'s value (oracle, mpmath) at 40 digits
-    expect(binary64Of("0.1439364270771890603243896664837200000000")).toBeNull();
+    expect(of("0.1439364270771890603243896664837200000000")).toBeNull();
     // fewer digits than say anything about a double
-    expect(binary64Of("0.10000000000000000555")).toBeNull();
-    expect(binary64Of("0.49801566811836")).toBeNull();
-    expect(binary64Of("0.0000000000000000000000000000000000000000")).toBeNull();
-    expect(binary64Of("0.5000000000000000000000000000000000000000")).toBeNull();
-    expect(binary64Of("2.250000000000000000000000000000000000000")).toBeNull();
-    expect(binary64Of("3/7")).toBeNull();
+    expect(of("0.10000000000000000555")).toBeNull();
+    expect(of("0.49801566811836")).toBeNull();
+    expect(of("0.0000000000000000000000000000000000000000")).toBeNull();
+    expect(of("0.5000000000000000000000000000000000000000")).toBeNull();
+    expect(of("2.250000000000000000000000000000000000000")).toBeNull();
+    expect(of("3/7")).toBeNull();
   });
 
   it("takes the same double at two precisions as a double, not cancellation noise", () => {

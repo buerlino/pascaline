@@ -23,6 +23,7 @@ import {
   isZero,
   roundSignificant,
   type ComplexValue,
+  decimalToString,
   type DecimalValue,
   type PrecisionWarn,
   type PrecisionWhy,
@@ -333,7 +334,14 @@ function binary64Expansion(x: number): { digits: string; exp: number } {
   const e2 = (biased === 0 ? 1 : biased) - 1075;
   const k = e2 < 0 ? -e2 : 0;
   const s = (e2 >= 0 ? m << BigInt(e2) : m * 5n ** BigInt(k)).toString();
-  return { digits: s.replace(/0+$/, ""), exp: s.length - 1 - k };
+  return { digits: s.slice(0, endOfDigits(s)), exp: s.length - 1 - k };
+}
+
+/** The length of `s` without its trailing zeros. */
+function endOfDigits(s: string): number {
+  let end = s.length;
+  while (end > 0 && s[end - 1] === "0") end--;
+  return end;
 }
 
 /** The double next to `x` towards +∞ (`up`) or −∞. */
@@ -345,30 +353,23 @@ function nextDouble(x: number, up: boolean): number {
 }
 
 /**
- * G140 (be-9): `text`, a float Giac printed with more digits than a double holds, is exactly a binary64 rounded to the
- * digits printed: Giac's MPFR value of Zeta((1+2*i)/2) at 60 digits is the double's exact binary expansion, then zeros,
- * so its two precisions agree with each other and confirm nothing. Exact BigInt arithmetic on the double nearest the
- * print (and its two neighbours): a plain dyadic test misses magnitudes below about 1E-3 or above 1E60, whose expansion
- * is longer than the print. The double, or null for a zero, a short print, or a double with a short expansion (0.5,
- * 2.25), which an MPFR value may hold exactly.
+ * G140 (be-9): the double `v` is, a part Giac printed with `n` digits (`v` read with them, partValue), when it is exactly a
+ * binary64 rounded to n digits: Giac's MPFR value of Zeta((1+2*i)/2) at 60 digits is the double's exact binary expansion,
+ * then zeros, so its two precisions agree with each other and confirm nothing. Exact BigInt arithmetic on the double
+ * nearest `v` (and its two neighbours): a plain dyadic test misses magnitudes below about 1E-3 or above 1E60, whose
+ * expansion is longer than the print. Null for a zero, fewer digits than say anything about a double, or a double with a
+ * short expansion (0.5, 2.25), which an MPFR value may hold exactly.
  */
-export function binary64Of(text: string): number | null {
-  const m = /^\s*-?(\d*)\.?(\d*)(?:e([+-]?\d+))?\s*$/.exec(text);
-  if (!m || (m[1] === "" && m[2] === "")) return null;
-  const all = m[1]! + m[2]!;
-  const lead = all.search(/[1-9]/);
-  if (lead < 0) return null;
-  const sig = all.slice(lead);
-  if (sig.length < BINARY64_PRINT_MIN) return null;
-  const exp = m[1]!.length - 1 - lead + Number(m[3] ?? 0);
-  const x = Number(text.trim());
+export function binary64Of(v: DecimalValue, n: number): number | null {
+  if (isZero(v) || v.sticky || n < BINARY64_PRINT_MIN) return null;
+  const x = Number(decimalToString(v));
   if (!Number.isFinite(x) || x === 0) return null;
   const found = [x, nextDouble(x, true), nextDouble(x, false)].find((c) => {
     if (!Number.isFinite(c) || c === 0) return false;
     const e = binary64Expansion(c);
     if (e.digits.length <= BINARY64_SHORT) return false;
-    const r = roundSignificant({ neg: false, digits: e.digits, exp: e.exp, sticky: false }, sig.length);
-    return r.digits === sig && r.exp === exp;
+    const r = roundSignificant({ neg: false, digits: e.digits, exp: e.exp, sticky: false }, n);
+    return r.exp === v.exp && r.digits.slice(0, endOfDigits(r.digits)) === v.digits;
   });
   return found ?? null;
 }
@@ -408,7 +409,13 @@ export function atParts(v: GiacValue, prec: number, keep: number, n: number): Pa
     const short = [d & 1 ? shortDigits(reT, prec) : undefined, d & 2 ? shortDigits(imT, prec) : undefined].filter((x): x is number => x !== undefined);
     // a part that is 0 has no digits a double could get wrong (DEG cosh(90*i)'s imaginary part)
     const double = mpfr && ((d & 1 && !isZero(a)) || (d & 2 && !isZero(b)));
-    const b64 = mpfr ? ([binary64Of(reT) ?? NaN, binary64Of(imT) ?? NaN] as const) : undefined;
+    // read again with the digits Giac printed when `keep` cut them
+    const full = (t: string, x: DecimalValue): DecimalValue | null => (keep >= prec ? x : partValue(t, prec));
+    const part64 = (t: string, x: DecimalValue): number => {
+      const y = full(t, x);
+      return (y && binary64Of(y, prec)) ?? NaN;
+    };
+    const b64 = mpfr ? ([part64(reT, a), part64(imT, b)] as const) : undefined;
     out.push({
       re: a,
       im: b,
