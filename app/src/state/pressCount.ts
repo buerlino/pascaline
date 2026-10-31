@@ -26,9 +26,13 @@ export function isScreenTap(target: { closest(selector: string): unknown } | nul
   return target.closest(TAPPABLE) !== null && target.closest(KEYPAD) === null;
 }
 
-/** A hardware key's handler that counts the press first (docs/04 5.2: every key press counts 1). */
-export function counted<A extends unknown[]>(count: () => void, run: (...a: A) => void): (...a: A) => void {
-  return (...a) => (count(), run(...a));
+/** A hardware key's handler that counts the press first (docs/04 5.2: every key press counts 1). Its last argument is the
+ *  event's KeyboardEvent.repeat: a held key counts once, so an auto-repeat runs the key again but counts nothing (R70f1). */
+export function counted<A extends unknown[]>(count: () => void, run: (...a: A) => void): (...a: [...A, repeat: boolean]) => void {
+  return (...a) => {
+    if (a[a.length - 1] !== true) count();
+    run(...(a.slice(0, -1) as A));
+  };
 }
 
 /** Count every tap on the screen (a history row, a Find result, a chip, a menu item). Captured, so the count is in before

@@ -143,9 +143,9 @@ test.describe("the unit view from the keys", () => {
       const on = e.onKey;
       const log: [string, string][] = [];
       (window as unknown as { keyLog: [string, string][] }).keyLog = log;
-      e.onKey = (id, layer) => {
+      e.onKey = (id, layer, repeat) => {
         log.push([id, layer]);
-        on(id, layer);
+        on(id, layer, repeat);
       };
     });
     const pressed = async (k: string): Promise<[string, string][]> => {
