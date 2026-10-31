@@ -75,6 +75,13 @@ test("a backup restores into an empty store as the same state, and Undo gives ba
       for (let e = document.activeElement; e; e = e.shadowRoot?.activeElement ?? null) out.push(e.tagName);
       return out.join(">");
     });
+  // Android back (history.back(), backLayer.ts) closes the restore sheet and writes nothing
+  await pick(other, path);
+  await expect(other.getByTestId("sheet-title")).toHaveText("Restore from a file");
+  await other.evaluate(() => history.back());
+  await expect(other.getByTestId("sheet-title")).toHaveCount(0);
+  expect(await state(other)).toEqual(before);
+
   const focusBefore = await focus();
   await pick(other, path);
   await expect(other.getByTestId("sheet-title")).toHaveText("Restore from a file");

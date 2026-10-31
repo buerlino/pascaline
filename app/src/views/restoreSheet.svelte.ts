@@ -48,18 +48,19 @@ export function restoreItems(b: CheckedBackup, say: Say, ops: RestoreOps = live)
   const chosen = (): string[] => keys.filter((k) => ticked[k]);
   return [
     { id: "made", label: dataText("restore.made", { made: shownTime(b.made), version: b.dataVersion }), keep: true },
-    ...keys.map(
-      (k): MenuItem => ({
+    ...keys.map((k): MenuItem => {
+      const value = partSummary(k, b.parts[k]);
+      return {
         id: k,
         label: partName(k),
         keep: true,
-        ...(partSummary(k, b.parts[k]) === undefined ? {} : { value: partSummary(k, b.parts[k]) as string }),
+        ...(value === undefined ? {} : { value }),
         get selected() {
           return ticked[k] === true;
         },
         run: () => void (ticked[k] = !ticked[k]),
-      }),
-    ),
+      };
+    }),
     {
       id: "restore",
       label: dataText("restore.go"),
