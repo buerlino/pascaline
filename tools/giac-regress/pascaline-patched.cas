@@ -582,11 +582,11 @@ Digits:=40:; pc("g134-ln-cos-acosh-tiny-neg-i-30",'(ln(-1/cos(acosh(-1/2))-i/10^
 // g134-sqrt-acosh-1e-6-sq-12 (precision.yaml, oracle)
 Digits:=40:; pc("g134-sqrt-acosh-1e-6-sq-12",'(sqrt(acosh(10^-6)^2))',(157079532679/10^11)*i,5/10^12);
 // patch 0023-asin-imaginary-real-part.patch
-// g133f1-asinh-1e20asinh-i/10-12 (precision.yaml, oracle)
-Digits:=40:; pc("g133f1-asinh-1e20asinh-i/10-12",'(asinh(asinh(i/10)*10^20))',(444439367591/10^10)+(157079632679/10^11)*i,5/10^11+5/10^12);
+// g133f1-asinh-1e20asinh-i-div10-12 (precision.yaml, oracle)
+Digits:=40:; pc("g133f1-asinh-1e20asinh-i-div10-12",'(asinh(asinh(i/10)*10^20))',(444439367591/10^10)+(157079632679/10^11)*i,5/10^11+5/10^12);
 // patch 0023-asin-imaginary-real-part.patch
-// g133f1-asinh-1e20asinh-i/10-30 (precision.yaml, oracle)
-Digits:=40:; pc("g133f1-asinh-1e20asinh-i/10-30",'(asinh(asinh(i/10)*10^20))',(444439367591324459024448901932/10^28)+(157079632679489661923132169164/10^29)*i,5/10^29+5/10^30);
+// g133f1-asinh-1e20asinh-i-div10-30 (precision.yaml, oracle)
+Digits:=40:; pc("g133f1-asinh-1e20asinh-i-div10-30",'(asinh(asinh(i/10)*10^20))',(444439367591324459024448901932/10^28)+(157079632679489661923132169164/10^29)*i,5/10^29+5/10^30);
 // patch 0006-reim-root-of-unknown-sign.patch
 // g96-cas-im-2sqrt (bench.yaml, derived)
 Digits:=40:; pc("g96-cas-im-2sqrt",'subst(im(2*sqrt(x)),x,-1)',2,1/10^30);
