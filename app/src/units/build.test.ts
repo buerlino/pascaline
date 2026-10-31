@@ -60,11 +60,18 @@ describe("unit view builder (G16)", () => {
     const job = buildJob({ formula: "2*pasu1*3*pasu2", slots: [{ tokens: [{ prefix: "k", unit: "N" }] }, { tokens: [{ unit: "m" }] }] }, table);
     expect(job).toEqual({ expr: "2*(((1000)*(1)*pasdimM^(1)*pasdimL^(1)*pasdimT^(-2)))*3*(((1)*pasdimL^(1)))", inexact: false,
       check: "pasz1*(((1000)*(1)*pasdimM^(1)*pasdimL^(1)*pasdimT^(-2)))*(((1)*pasdimL^(1)))",
-      shows: [{ text: "kN·m", dim: "kg1m2s-2", factor: "1000" }, { text: "kN", dim: "kg1m1s-2", factor: "1000" }, { text: "m", dim: "m1", factor: "1" }] });
+      shows: [
+        { text: "kN·m", dim: "kg1m2s-2", factor: "1000", slot: { tokens: [{ prefix: "k", unit: "N" }, { unit: "m" }] } },
+        { text: "kN", dim: "kg1m1s-2", factor: "1000", slot: { tokens: [{ prefix: "k", unit: "N" }] } },
+        { text: "m", dim: "m1", factor: "1", slot: { tokens: [{ unit: "m" }] } },
+      ] });
   });
   it("G25: typed units that multiply to factor 1 are kept (N·m), the end slot is named", () => {
     const job = buildJob({ formula: "5*pasu1*2*pasu2", slots: [{ tokens: [{ unit: "N" }] }, { tokens: [{ unit: "m" }] }] }, table);
-    expect((job as { shows: unknown[] }).shows[0]).toEqual({ text: "N·m", dim: "kg1m2s-2", factor: "1" });
+    expect((job as { shows: unknown[] }).shows[0]).toEqual({ text: "N·m", dim: "kg1m2s-2", factor: "1", slot: { tokens: [{ unit: "N" }, { unit: "m" }] } });
+    // R60: the tokens as `text` reads them, the powers merged, the negative ones below the ÷
+    const per = buildJob({ formula: "pasu1", slots: [{ tokens: [{ unit: "m" }, { unit: "s" }, { unit: "s" }], per: 1 }] }, table);
+    expect((per as { shows: unknown[] }).shows[0]).toEqual({ text: "m/s²", dim: "m1s-2", factor: "1", slot: { tokens: [{ unit: "m" }, { unit: "s", power: "2" }], per: 1 } });
     const end = buildJob({ formula: "pasu1", slots: [{ tokens: [{ unit: "m" }, { unit: "s", power: "-1" }], per: 1 }], end: { tokens: [{ prefix: "k", unit: "m" }, { unit: "h" }], per: 1 } }, table);
     expect(end).toMatchObject({ endUnit: "km/h" });
   });

@@ -272,7 +272,7 @@ describe.skipIf(!giacAvailable())("200 library programs, defined on first use (G
     const h = new EngineHost(giac, bridge);
     h.restore(log);
     // the job calc/units.ts makes for `2 m` (calc/units.test.ts); its key `expr` matched LOAD_ALL before G83f1
-    expect(h.units({ expr: "2*(((1)*pasdimL^(1)))", check: "pasz1*(((1)*pasdimL^(1)))", inexact: false, shows: [{ text: "m", dim: "m1", factor: "1" }] }, defaultHomeSettings)).toMatchObject({ dimension: "m1" });
+    expect(h.units({ expr: "2*(((1)*pasdimL^(1)))", check: "pasz1*(((1)*pasdimL^(1)))", inexact: false, shows: [{ text: "m", dim: "m1", factor: "1", slot: { tokens: [{ unit: "m" }] } }] }, defaultHomeSettings)).toMatchObject({ dimension: "m1" });
     expect(h.analyze({ kind: "root", f: "x^2-2", x0: "1" }, defaultHomeSettings).ok).toBe(true);
     expect(giac.eval("VARS")).not.toMatch(/\blib\d+\b/);
   });
