@@ -9,7 +9,8 @@
 #    other finished notes (*.patch, *-night.md, *.txt) → .tasks/archive/<date>/.
 # 2. Delete scratch: .coord/tmpbuild/*, .coord/henri_*.out older than 2 days, the agents' stray
 #    *.err logs in archived runs. Nothing tracked by git, nothing in engine/giac/_downloads or spike/prebuilt.
-# 3. Clutter (A27): .tasks/pass-*, report-* and night-*.log, .coord/*.png and *.apk older than 2 days → the archive; *.log in
+# 3. Clutter (A27): .tasks/pass-*, report-* and night-*.log, .coord/*.png and *.apk older than 2 days → the archive; a device-N
+#    older than 2 days loses its runner tree (A56f1, size reported) and moves with its logs; *.log in
 #    the archive older than 2 days are gzipped; engine/giac/_out/key-<k> that no local branch (nor phase-1) uses and archive
 #    folders older than 14 days are deleted (never gsl, gsl.prev, base, release). The report gives the space freed.
 # 4. Audit: every repo path named in CLAUDE.md and docs/README.md must exist; reports in docs/shifts/
@@ -50,6 +51,16 @@ act() { if [[ $apply -eq 1 ]]; then "$@"; else echo "would: $*"; fi; }
     [[ -n "$f" ]] || continue; act mkdir -p "$arch"; act mv "$f" "$arch/"; echo "- $f (older than 2 days)"
   done < <({ find "$tasks" -maxdepth 1 \( -name 'pass-*' -o -name 'report-*' -o -name 'night-*.log' \) -mtime +2
              find "$coord" -maxdepth 1 \( -name '*.png' -o -name '*.apk' \) -type f -mtime +2; } 2>/dev/null | sort)
+  # A56f1: a device step keeps its runner tree (.tasks/device-N/tree, a hard-link copy of node_modules) after a skip. A device-N whose
+  # own files are all older than 2 days is finished (a step lasts 30 minutes): its tree goes (with its size), its logs move to the archive.
+  for d in "$tasks"/device-[0-9]*/; do
+    d="${d%/}"; [[ -d "$d" ]] || continue
+    [[ -z "$(find "$d" -maxdepth 1 ! -name tree -mtime -2 2>/dev/null | head -n1)" ]] || continue
+    if [[ -d "$d/tree" ]]; then
+      tk="$(kb "$d/tree")"; freed=$((freed + tk)); act rm -rf "$d/tree"; echo "- $d/tree removed ($tk kB)"
+    fi
+    act mkdir -p "$arch"; act mv "$d" "$arch/"; echo "- $d (older than 2 days)"
+  done
   echo; echo "## Gzipped (*.log in the archive older than 2 days)"
   gz_before=0; gz_after=0
   while IFS= read -r f; do
