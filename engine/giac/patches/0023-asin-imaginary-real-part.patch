@@ -1,0 +1,76 @@
+# Upstream: giac 2.1.0 usual.cc asinasln, asinhasln, after patch 0020. asin(i*y) for a real y, and asinh(i*y) for a real y with |y| <= 1, are purely imaginary, but the ln form (and patch 0020's rounding of it at a raised precision, small_cplx_ln_form) leaves its rounding in the real part, and evalf shows it: evalf(asinh(i/10)) at Digits 12 in our CAS view was -1.18694596822E-66+0.100167421162*i, evalf(asin(i/10^20)) -9.87065545841E-86+1E-20*i, evalf(asin(i/3)) -5.1E-61+0.327450150237*i (Giac's own asin of a complex MPFR value left such a part before patch 0020 too, 4.1E-61 for asin(i/10)). Now, where the real part of x is exactly 0 (an exact 0 or an MPFR zero), the result is i times the imaginary part of the rounded result, with a real part that is a zero of the imaginary part's type (an MPFR zero beside an MPFR part, as Giac's own evalf(i/3) has: an exact 0 there made asinh(5*asin(i/3)) a double); for asinh only when |im(x)| <= 1, where asinh(i*y) = i*asin(y).
+# Changed by Pascaline contributors, 2026-10-31
+--- a/src/usual.cc
++++ b/src/usual.cc
+@@ -2343,7 +2343,7 @@
+   }
+   // f's ln form at prec+lost+16 bits, rounded back to prec; x itself when x^2 is below the rounding (asin(x) and
+   // asinh(x) are x*(1+O(x^2)), part by part).
+-  static gen small_cplx_ln_form(gen (*f)(const gen &,GIAC_CONTEXT),const gen & x,GIAC_CONTEXT){
++  static gen small_cplx_ln_form_(gen (*f)(const gen &,GIAC_CONTEXT),const gen & x,GIAC_CONTEXT){
+     int prec=0,lost=small_cplx_lost_bits(x,prec);
+     if (!lost)
+       return f(x,contextptr);
+@@ -2351,6 +2351,44 @@
+       return x;
+     return accurate_evalf(f(accurate_evalf(x,prec+lost+16),contextptr),prec);
+   }
++  // Pascaline patch 0023 (G133f1): asin(i*y) for a real y, and asinh(i*y) for a real y with |y| <= 1, are purely
++  // imaginary, but the ln form leaves its rounding in the real part (CAS evalf(asinh(i/10)) showed
++  // -1.18694596822E-66+0.100167421162*i, evalf(asin(i/3)) -5.1E-61+0.327450150237*i). Where the real part of x is
++  // exactly 0 (an exact 0 or an MPFR zero), the result is i times the imaginary part of the rounded result, its real
++  // part a zero. hyp: asinh, whose value off [-i,i] has a real part.
++  static bool cplx_zero_real_part(const gen & x){
++    if (x.type!=_CPLX)
++      return false;
++    const gen & r=*x._CPLXptr;
++    if (r.type==_REAL)
++      return mpfr_zero_p(r._REALptr->inf);
++    return is_exactly_zero(r);
++  }
++  static bool at_most_one_in_size(const gen & y){
++    switch (y.type){
++    case _REAL:
++      return !mpfr_nan_p(y._REALptr->inf) && mpfr_cmp_si(y._REALptr->inf,-1)>=0 && mpfr_cmp_ui(y._REALptr->inf,1)<=0;
++    case _DOUBLE_:
++      return y._DOUBLE_val>=-1 && y._DOUBLE_val<=1;
++    case _INT_: case _ZINT: case _FRAC:
++      return is_greater(1,y,context0) && is_greater(y,-1,context0);
++    default:
++      return false;
++    }
++  }
++  static gen small_cplx_ln_form(gen (*f)(const gen &,GIAC_CONTEXT),const gen & x,bool hyp,GIAC_CONTEXT){
++    gen res=small_cplx_ln_form_(f,x,contextptr);
++    if (res.type!=_CPLX || !cplx_zero_real_part(x) || (hyp && !at_most_one_in_size(*(x._CPLXptr+1))))
++      return res;
++    // the zero of the imaginary part's type, as Giac's own evalf(i/3) has: an exact 0 beside an MPFR part made
++    // later functions take the complex value as exact and go to doubles (asinh(5*asin(i/3)) at Digits 40)
++    const gen & im=*(res._CPLXptr+1);
++    if (im.type==_REAL)
++      return gen(gen(real_object(gen(0),mpfr_get_prec(im._REALptr->inf))),im);
++    if (im.type==_DOUBLE_)
++      return gen(gen(0.0),im);
++    return gen(gen(0),im);
++  }
+   static gen asinasln_form(const gen & x,GIAC_CONTEXT){
+     if (ln_form_cancels(x,false,contextptr))
+       return cst_i*ln(-cst_i*x+sqrt_one_minus_square(x,contextptr),contextptr);
+@@ -2358,7 +2396,7 @@
+     // return cst_i*ln(sqrt(x*x-1,contextptr)+x,contextptr)+cst_pi_over_2;
+   }
+   static gen asinasln(const gen & x,GIAC_CONTEXT){
+-    return small_cplx_ln_form(asinasln_form,x,contextptr);
++    return small_cplx_ln_form(asinasln_form,x,false,contextptr);
+   }
+   gen * normal_sin_pi_12_ptr_(){
+     static gen * ans=0;
+@@ -2991,7 +3029,7 @@
+     return ln(x+s,contextptr);
+   }
+   static gen asinhasln(const gen & x,GIAC_CONTEXT){
+-    return small_cplx_ln_form(asinhasln_form,x,contextptr);
++    return small_cplx_ln_form(asinhasln_form,x,true,contextptr);
+   }
+   // Pascaline patch 0020 (G133): an exact x that is not real, of size below 1/4 (its double): the exact ln form
+   // ln(x+sqrt(x^2+1)) cancels as the float one does, so its evalf at P digits left a real part near 10^-P where it is
