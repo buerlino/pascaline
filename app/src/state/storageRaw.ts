@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // The raw read of the backup (R38a). A module of its own so that the start chunk does not carry it: only the backup code
 // imports it.
-// It opens the database itself (the same name, store and stamp field as storage.ts, whose own copies are not exported:
-// an export would cost the start chunk bytes).
+// It opens the database itself (the same name, version, store and stamp field as storage.ts, whose own copies are not
+// exported: an export would cost the start chunk bytes; backup.test.ts checks that the two agree).
 const STORE = "kv";
 const STAMP = "@pascaline";
 
@@ -22,23 +22,21 @@ export interface RawRecord {
   value: unknown;
 }
 
+/** The record under `key`, undefined only for a key that was never stored. A failed open or get throws (R38af2): read as
+ *  a missing key, it would give a backup without that part and the notice "Backup saved". */
 export async function kvGetRaw(key: string): Promise<RawRecord | undefined> {
-  try {
-    const db = await open();
-    return await new Promise<RawRecord | undefined>((resolve, reject) => {
-      const r = db.transaction(STORE, "readonly").objectStore(STORE).get(key);
-      r.onsuccess = () => {
-        const stored: unknown = r.result;
-        if (stored === undefined) return resolve(undefined);
-        if (typeof stored === "object" && stored !== null && STAMP in stored) {
-          const rec = stored as Record<string, unknown>;
-          return resolve({ [STAMP]: Number(rec[STAMP]), value: rec["value"] });
-        }
-        resolve({ [STAMP]: 0, value: stored });
-      };
-      r.onerror = () => reject(r.error ?? new Error("indexedDB get failed"));
-    });
-  } catch {
-    return undefined;
-  }
+  const db = await open();
+  return await new Promise<RawRecord | undefined>((resolve, reject) => {
+    const r = db.transaction(STORE, "readonly").objectStore(STORE).get(key);
+    r.onsuccess = () => {
+      const stored: unknown = r.result;
+      if (stored === undefined) return resolve(undefined);
+      if (typeof stored === "object" && stored !== null && STAMP in stored) {
+        const rec = stored as Record<string, unknown>;
+        return resolve({ [STAMP]: Number(rec[STAMP]), value: rec["value"] });
+      }
+      resolve({ [STAMP]: 0, value: stored });
+    };
+    r.onerror = () => reject(r.error ?? new Error("indexedDB get failed"));
+  });
 }

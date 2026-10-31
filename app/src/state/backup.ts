@@ -15,6 +15,7 @@ export const BACKUP_KEYS: readonly string[] = [
   "history",
   "defs",
   "userKeys",
+  "unitPadCells",
   "taps",
   "app.function",
   "app.solve",
