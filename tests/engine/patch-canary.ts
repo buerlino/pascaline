@@ -73,6 +73,14 @@ const CANARIES: [string, string, RegExp, string][] = [
   // any Digits), and asin's ln form loses -log2|x| bits for a small complex x
   ["0020-complex-sqrt-asin-small.patch", "giac-2.1.0/src/usual.cc", /a=re\(e,contextptr\);b=ratnormal\(im\(e,contextptr\),contextptr\);\s*if \(a!=e && is_zero\(b,contextptr\)\)\s*return sqrt\(a,contextptr\);/, "gen sqrt(const gen & e,GIAC_CONTEXT){"],
   ["0020-complex-sqrt-asin-small.patch", "giac-2.1.0/src/usual.cc", /^static gen asinasln\(const gen & x,GIAC_CONTEXT\)\{\s*return -cst_i\*ln\(cst_i\*x\+sqrt\(1-x\*x,contextptr\),contextptr\);/, "static gen asinasln(const gen & x,GIAC_CONTEXT){"],
+  // G134, patch 0021: the exact sqrt of a complex a+b*i tests b = 0 after ratnormal only, then divides b by a+rho, 0/0 when b is an exact 0
+  // that ratnormal leaves (sqrt(acosh(10^-6)^2+1) = 8.4e-8-4.3e-7*i, right 1.21*i), and a+rho cancels for a < 0 and a tiny b (fix round 1:
+  // the evalf of acosh(1/2+i/10^20) at Digits 40 was a wrong root, -0.49+0.61*i)
+  ["0021-complex-sqrt-unproved-zero.patch", "giac-2.1.0/src/usual.cc", /if \(a!=e && is_zero\(b,contextptr\)\)\s*return sqrt\(a,contextptr\);\s*if \( has_i\(a\) \|\| has_i\(b\) \)[\s\S]*return ratnormal\(realpart\/2,contextptr\)\*\(1\+cst_i\*b\/\(a\+rho\)\);/, "// sqrt of an exact complex number"],
+  // G134, patch 0022: arg of a complex MPFR value tests its parts with is_zero, which compares an MPFR's double with epsilon (1e-12), so
+  // both parts below 1e-12 give undef (ln, powers) and one beside a negative real part is 0 (arg(-1-1e-20*i) = +pi)
+  ["0022-arg-mpfr-tiny-parts.patch", "giac-2.1.0/src/gen.cc", /if \(is_zero_or_contains\(realpart,contextptr\)\)\{\s*if \(is_zero_or_contains\(imagpart,contextptr\)\)\s*return undef;/, "gen arg_CPLX(const gen & a,GIAC_CONTEXT){"],
+  ["0022-arg-mpfr-tiny-parts.patch", "giac-2.1.0/src/gen.cc", /case _REAL:\s*return fabs\(evalf_double\(a,1,contextptr\)\._DOUBLE_val\)<=epsilon\(contextptr\);/, "bool is_zero(const gen & a,GIAC_CONTEXT){"],
   // G135, patch 0019: atan keeps an exact argument on its cut symbolic (atan(2*i)), which Giac's cos rule reads on the other side
   ["0019-atan-exact-cut.patch", "giac-2.1.0/src/usual.cc", /atan\(b,contextptr\)\),_SEQ__VECT\)\);\s*gen tmp=evalf_double\(e,0,contextptr\);\s*if \(tmp\.type==_DOUBLE_\)\{/, "return symbolic(at_program,gen(makevecteur(a,0,atan(b,contextptr)),_SEQ__VECT));"],
   // G135, patch 0019: cos(atan(f)) = sqrt(1/(f^2+1)) takes the other root where f^2+1 is a negative real (cos(quote(atan(2*i))) = i*sqrt(3)/3)
