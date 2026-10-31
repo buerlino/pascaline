@@ -6,6 +6,7 @@ import { DOUBLE_DIGITS, hasFloat, namePrint, numbersAt, shapeOfValue, size, valu
 import { callsOf, closing, functionsIn, isName, namesIn, type Quoting, topLevelArgs, UNCLOSED, walk, withoutStrings } from "./giacPrint.ts";
 import { decimalFromString, isZero, type DecimalValue } from "./format.ts";
 import type { GiacValue } from "./bridge.ts";
+import { ESERIES_CUT } from "./eseries.ts";
 
 const RATIONAL = /^(-?\d+)(?:\/(\d+))?$/;
 const INTEGER = /^\s*\d+\s*$/;
@@ -24,6 +25,8 @@ export const DECISION_FUNCTIONS: ReadonlySet<string> = new Set([
   "ifte", "int", "integrate", "sum", "limit", "solve",
   // G71's census (tools/probes/tier1-decide.ts): tier-1 functions that decide a sign inside on sin(10^70) at P.
   "arg", "angle", "instphase", "norm", "normalize", "polar", "polar_coordinates", "tri", "dfc", "classes", "Psi",
+  // G139: our definitions (homeEval.ts ENGINE_DEFINITIONS, eseries.ts) that compare and floor an exact x inside
+  "eseries", "sigfig",
 ]);
 
 /** A comparison operator (`<`, `>`, `<=`, `>=`, `==`, `!=`, `<>`) at `k` in `s`, with its length; 0 when there is none.
@@ -47,7 +50,7 @@ function hasComparison(input: string, q: Quoting): boolean {
 /** Functions that map rationals to rationals and decide on rationals only (exactly, at any Digits). */
 const RATIONAL_FUNCTIONS: ReadonlySet<string> = new Set([
   "sum", "product", "floor", "ceil", "round", "trunc", "frac", "fPart", "iPart", "sign", "abs", "max", "min", "piecewise", "when",
-  "ifte", "irem", "iquo", "gcd", "lcm", "comb", "factorial", "pasmod",
+  "ifte", "irem", "iquo", "gcd", "lcm", "comb", "factorial", "pasmod", "eseries", "sigfig",
 ]);
 
 /**
@@ -134,8 +137,9 @@ function comparisonCut(seg: string): string | null {
   return lhs && rhs ? `(${lhs})-(${rhs})` : null;
 }
 
-/** The cuts of every discrete decision in `expr`: floor, ceil, trunc, iPart, frac, fPart (an integer), round (a
- *  half-integer), sign, Heaviside and every comparison (zero); the two-argument trunc(x,n) cuts x·10^n at an integer.
+/** The cuts of every discrete decision in `expr`: floor, ceil, trunc, iPart, frac, fPart (an integer), round and
+ *  sigfig (a half-integer), sign, Heaviside, eseries and every comparison (zero); the two-argument trunc(x,n) cuts
+ *  x·10^n at an integer.
  *  abs, max and min are continuous: a wrong branch at a tie gives the same value, and away from one the second
  *  evaluation finds it. */
 export function decisionCuts(expr: string): Cut[] {
@@ -161,6 +165,13 @@ export function decisionCuts(expr: string): Cut[] {
     } else if (name === "sign" && args.length === 1) cuts.push({ q: args[0]!, kind: "zero", call });
     // Heaviside(0) has no value to put in its place (conventions differ): a proven tie on it stays ⚠.
     else if (name === "Heaviside" && args.length === 1) cuts.push({ q: args[0]!, kind: "zero" });
+    // G139: our definitions' one decision each. sigfig(x,n) rounds |x|·10^k, k = n-1-p, at a half-integer (|x| as
+    // sign(x)·x, as sigfig takes it); eseries(n,x) picks by the sign of the helper's v (eseries.ts ESERIES_CUT). A tie
+    // Giac proves comes back exact and is no hit; an unproven one is refused, as any.
+    else if (name === "sigfig" && args.length === 2) {
+      const a = `sign(${args[0]!})*(${args[0]!})`;
+      cuts.push({ q: `${a}*10^((${args[1]!})-1-floor(log10(${a})))`, kind: "half" });
+    } else if (name === "eseries" && args.length === 2) cuts.push({ q: `${ESERIES_CUT}(${args[0]!},${args[1]!})[4]`, kind: "zero" });
   }
   for (const seg of segments) {
     const q = comparisonCut(seg);
