@@ -84,6 +84,27 @@ describe("behaviour-diff.ts (A53)", () => {
     expect(r.out).toContain(`| home 30 deg | ${target.replace(/\|/g, "\\|")} | - a.mjs | - b.mjs |`);
   });
 
+  // A run that never answers (Giac's own timeout never fires on some CAS inputs) is killed after BEHAVIOUR_RUN_SECONDS
+  it("kills a run that never answers and goes on with a fresh engine", { timeout: 60_000 }, () => {
+    const b = tree("b-hangs", "(input) => { if (input === TARGET) for (;;) {} return 'same'; }");
+    const r = diff(same, b, { BEHAVIOUR_RUN_SECONDS: "1" });
+    expect(r.code).toBe(0);
+    expect(r.out).toContain(`| home 12 rad | ${target.replace(/\|/g, "\\|")} | - same | ⏱ timeout: no answer in 1 s |`);
+    expect(r.out).toContain("timeouts A 0, B 8");
+    // only the hanging input differs: the runs after it got answers again
+    expect(r.out).toMatch(/^8 difference\(s\)$/m);
+  });
+
+  it("runs an input that times out in both trees once per view and lists it", { timeout: 60_000 }, () => {
+    const h = tree("both-hang", "(input) => { if (input === TARGET) for (;;) {} return 'same'; }");
+    const r = diff(h, h, { BEHAVIOUR_RUN_SECONDS: "1" });
+    expect(r.code).toBe(0);
+    expect(r.out).toContain("timeouts A 2, B 2");
+    expect(r.out).toMatch(/^none$/m);
+    expect(r.out).toContain(`timed out in both trees in home (not run again there): ${target}`);
+    expect(r.out).toContain(`timed out in both trees in cas (not run again there): ${target}`);
+  });
+
   it("refuses to say none when every run throws the same message", () => {
     const t = tree("throws", "(input) => 'same'", "Cannot read properties of undefined (reading 'ctxSet')");
     const r = diff(t, t);
