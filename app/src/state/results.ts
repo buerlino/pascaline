@@ -172,6 +172,6 @@ export function chipOf(item: ChipSource): Chip | undefined {
 export function chipFactsOf(named: ChipTable): ChipFactsTable {
   const out: Record<string, ChipFactsTable[string]> = {};
   for (const [k, c] of Object.entries(named))
-    out[k] = { value: c.value, reliableDigits: c.reliableDigits ?? null, exact: c.exact, ...(c.warn ? { warn: c.warn } : {}) };
+    out[k] = { value: c.value, reliableDigits: c.reliableDigits ?? null, exact: c.exact, ...(c.warn ? { warn: c.warn } : {}), ...(c.unc !== undefined ? { unc: c.unc } : {}) };
   return out;
 }
