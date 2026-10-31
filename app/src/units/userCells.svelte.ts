@@ -118,6 +118,17 @@ export class UnitCells {
     this.write(next);
   }
 
+  /** The stored legs as they are (a preset's Your keys group, R88). */
+  snapshot(): StoredCells {
+    return $state.snapshot(this.stored) as StoredCells;
+  }
+
+  /** Replace every leg with `next` (a preset's apply, R88): only the pad's cells are kept; each leg is checked when used. */
+  replace(next: Readonly<StoredCells>): void {
+    const keep = Object.entries(next).filter(([key, l]) => CELL_KEYS.includes(key) && typeof l === "object" && l !== null && !Array.isArray(l));
+    this.write(structuredClone(Object.fromEntries(keep)));
+  }
+
   /** The cells as the pad draws them (units/pad.ts UnitPad): per key the ids of its legs, the prefixes and the labels. */
   userSet(): Record<string, { tap?: string; up?: string; down?: string; pfx?: { tap?: string; up?: string; down?: string }; label?: { tap?: string; up?: string; down?: string } }> {
     return Object.fromEntries(

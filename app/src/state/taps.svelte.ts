@@ -10,6 +10,8 @@ export interface TapCounts {
   alpha: number;
   /** Every press (R70). */
   presses: number;
+  /** Presets applied (R88): the removal test of decisions.md "Settings in the Mode sheet, and presets". */
+  presets: number;
   /** When counting started (ISO date, the first tap or the last reset). */
   since: string;
 }
@@ -18,10 +20,11 @@ export const TAPS_KEY = "taps";
 /** Writes wait this long, so a burst of taps is one IndexedDB write. */
 const SAVE_MS = 1000;
 
+const COUNTS = ["shift", "alpha", "presses", "presets"] as const;
 const isCount = (n: unknown): n is number => typeof n === "number" && Number.isInteger(n) && n >= 0;
 
 export class TapCounter {
-  counts = $state<TapCounts>({ shift: 0, alpha: 0, presses: 0, since: "" });
+  counts = $state<TapCounts>({ shift: 0, alpha: 0, presses: 0, presets: 0, since: "" });
   private timer: ReturnType<typeof setTimeout> | undefined;
   /** A reset before the stored counts arrived: they are dropped. */
   private wasReset = false;
@@ -37,16 +40,14 @@ export class TapCounter {
       if (this.wasReset || typeof v !== "object" || v === null) return;
       const o = v as Record<string, unknown>;
       if (!isCount(o["shift"]) || !isCount(o["alpha"]) || typeof o["since"] !== "string") return;
-      this.counts = {
-        shift: o["shift"] + this.counts.shift,
-        alpha: o["alpha"] + this.counts.alpha,
-        presses: (isCount(o["presses"]) ? o["presses"] : 0) + this.counts.presses, // (absent before R70)
-        since: o["since"] || this.counts.since,
-      };
+      const c = { ...this.counts, since: o["since"] || this.counts.since };
+      for (const k of COUNTS) if (isCount(o[k])) c[k] += o[k]; // (presses absent before R70, presets before R88)
+      this.counts = c;
     });
   }
 
-  tap(key: "shift" | "alpha"): void {
+  /** One Shift or Alpha tap, or one preset applied (R88). */
+  tap(key: "shift" | "alpha" | "presets"): void {
     const c = this.counts;
     this.counts = { ...c, [key]: c[key] + 1, since: c.since || this.today() };
     this.schedule();
@@ -61,7 +62,7 @@ export class TapCounter {
 
   reset(): void {
     this.wasReset = true;
-    this.counts = { shift: 0, alpha: 0, presses: 0, since: this.today() };
+    this.counts = { shift: 0, alpha: 0, presses: 0, presets: 0, since: this.today() };
     this.schedule();
   }
 

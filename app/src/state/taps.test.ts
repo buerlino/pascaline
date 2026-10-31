@@ -25,14 +25,14 @@ describe("Shift/Alpha tap counter (R9, P7 point 4)", () => {
     c.tap("shift");
     c.tap("alpha");
     await c.flush();
-    expect(kv.data.get(TAPS_KEY)).toEqual({ shift: 2, alpha: 1, presses: 0, since: "2026-10-13" });
+    expect(kv.data.get(TAPS_KEY)).toEqual({ shift: 2, alpha: 1, presses: 0, presets: 0, since: "2026-10-13" });
   });
   it("continues from the stored counts after a relaunch, and adds taps made before they loaded", async () => {
     const kv = memoryKv([[TAPS_KEY, { shift: 5, alpha: 7, since: "2026-10-10" }]]);
     const c = new TapCounter(kv, day("2026-10-13"));
     c.tap("alpha"); // before the store answered
     await c.ready;
-    expect(c.counts).toEqual({ shift: 5, alpha: 8, presses: 0, since: "2026-10-10" });
+    expect(c.counts).toEqual({ shift: 5, alpha: 8, presses: 0, presets: 0, since: "2026-10-10" });
   });
   it("reset starts again from zero today, also before the stored counts arrived", async () => {
     const kv = memoryKv([[TAPS_KEY, { shift: 5, alpha: 7, since: "2026-10-10" }]]);
@@ -40,7 +40,7 @@ describe("Shift/Alpha tap counter (R9, P7 point 4)", () => {
     c.reset();
     await c.ready;
     await c.flush();
-    expect(kv.data.get(TAPS_KEY)).toEqual({ shift: 0, alpha: 0, presses: 0, since: "2026-10-14" });
+    expect(kv.data.get(TAPS_KEY)).toEqual({ shift: 0, alpha: 0, presses: 0, presets: 0, since: "2026-10-14" });
   });
   it("ignores a stored value that is not a count", async () => {
     const c = new TapCounter(memoryKv([[TAPS_KEY, { shift: -1, alpha: "x", since: 3 }]]));
@@ -58,17 +58,17 @@ describe("the press counter (R70; docs/04 5.2)", () => {
     c.press();
     c.tap("shift"); // a Shift tap is also a press: the caller counts both
     c.press();
-    expect(c.counts).toEqual({ shift: 1, alpha: 0, presses: 3, since: "2026-10-30" });
+    expect(c.counts).toEqual({ shift: 1, alpha: 0, presses: 3, presets: 0, since: "2026-10-30" });
     await c.flush();
-    expect(kv.data.get(TAPS_KEY)).toEqual({ shift: 1, alpha: 0, presses: 3, since: "2026-10-30" });
+    expect(kv.data.get(TAPS_KEY)).toEqual({ shift: 1, alpha: 0, presses: 3, presets: 0, since: "2026-10-30" });
   });
   it("continues from stored counts (also those stored before presses existed), and reset zeroes it", async () => {
     const kv = memoryKv([[TAPS_KEY, { shift: 5, alpha: 7, since: "2026-10-10" }]]);
     const c = new TapCounter(kv, day("2026-10-30"));
     c.press(); // before the store answered
     await c.ready;
-    expect(c.counts).toEqual({ shift: 5, alpha: 7, presses: 1, since: "2026-10-10" });
+    expect(c.counts).toEqual({ shift: 5, alpha: 7, presses: 1, presets: 0, since: "2026-10-10" });
     c.reset();
-    expect(c.counts).toEqual({ shift: 0, alpha: 0, presses: 0, since: "2026-10-30" });
+    expect(c.counts).toEqual({ shift: 0, alpha: 0, presses: 0, presets: 0, since: "2026-10-30" });
   });
 });

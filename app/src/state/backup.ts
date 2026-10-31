@@ -23,6 +23,7 @@ export const BACKUP_KEYS: readonly string[] = [
   "userKeys",
   "unitPadCells",
   "taps",
+  "presets",
   "app.function",
   "app.solve",
   "units.targets",
@@ -116,8 +117,9 @@ const whole = (x: unknown, lo: number, hi: number): boolean => typeof x === "num
 export const HISTORY_ROWS = 200;
 /** keyboard/userKeys.svelte.ts USER_LAYERS. */
 export const KEY_LAYERS: readonly string[] = ["primary", "shift", "alpha"];
-/** The settings fields `migrateSettings` reads and the values it keeps as they are; any other value it resets. */
-const SETTING_RULES: Readonly<Record<string, (x: unknown) => boolean>> = {
+/** The settings fields `migrateSettings` reads and the values it keeps as they are; any other value it resets. A
+ *  preset's apply checks each field it holds with them too (R88, state/presets.svelte.ts). */
+export const SETTING_RULES: Readonly<Record<string, (x: unknown) => boolean>> = {
   angle: (x) => x === "rad" || x === "deg",
   format: (x) => x === "std" || x === "sci" || x === "eng" || x === "pfx",
   entry: (x) => x === "textbook" || x === "line",
@@ -130,6 +132,25 @@ const SETTING_RULES: Readonly<Record<string, (x: unknown) => boolean>> = {
   look: (x) => isObject(x) && canon(validLook(x, defaultLook())) === canon(x),
 };
 
+/** state/presetRecord.ts readPresets, strict: the record keeps every preset (a whole id, a name, groups as a non-empty
+ *  object of objects; no id or name, by nameKey, twice), `active` names one of them or is null, `next` is past every id.
+ *  (An import of presetRecord.ts would make it a chunk of its own on the Mode sheet's preload list in the start chunk;
+ *  presets.test.ts runs both on the same values.) */
+function presetsOk(v: unknown): boolean {
+  if (!isObject(v) || !Array.isArray(v["presets"])) return false;
+  const ids = new Set<number>();
+  const names = new Set<string>();
+  for (const p of v["presets"] as unknown[]) {
+    if (!isObject(p) || !whole(p["id"], 1, Number.MAX_SAFE_INTEGER) || !text(p["name"]) || !isObject(p["groups"])) return false;
+    const groups = Object.values(p["groups"]);
+    const name = String(p["name"]).trim().toLocaleLowerCase();
+    if (name === "" || groups.length === 0 || !groups.every(isObject) || ids.has(p["id"] as number) || names.has(name)) return false;
+    ids.add(p["id"] as number);
+    names.add(name);
+  }
+  return (v["active"] === null || ids.has(v["active"] as number)) && whole(v["next"], Math.max(0, ...ids) + 1, Number.MAX_SAFE_INTEGER);
+}
+
 /** Each key's validator. */
 export type Validators = Readonly<Record<string, (value: unknown) => boolean>>;
 
@@ -138,7 +159,8 @@ export type Validators = Readonly<Record<string, (value: unknown) => boolean>>;
  * field the start would drop is a fault (a restore never loses data silently). Settings: `migrateSettings` keeps every
  * field the part holds. History: `restoreHistory`'s filter (finished rows with their LaTeX, at most HISTORY_LIMIT per
  * view). Definitions: the log's load check (`validDefs`) keeps every entry. Your keys and the unit pad cells: known keys
- * and layers, each slot null or a binding their reader keeps. The taps: their load check. Keys whose start reads field by
+ * and layers, each slot null or a binding their reader keeps. The taps and the presets: their load check (presets:
+ * state/presetRecord.ts; a held setting the app cannot read is left alone when the preset is applied, as there). Keys whose start reads field by
  * field with defaults (the apps, the place) and the units keys are checked by type.
  */
 export const VALIDATORS: Validators = {
@@ -167,7 +189,8 @@ export const VALIDATORS: Validators = {
     ),
   unitPadCells: (v) =>
     slotsOk(v, CELL_KEYS, ["tap", "up", "down"], (b) => text(b["unit"]) && (b["prefix"] === undefined || text(b["prefix"])) && (b["label"] === undefined || text(b["label"]))),
-  taps: (v) => isObject(v) && isCount(v["shift"]) && isCount(v["alpha"]) && typeof v["since"] === "string" && (v["presses"] === undefined || isCount(v["presses"])),
+  taps: (v) => isObject(v) && isCount(v["shift"]) && isCount(v["alpha"]) && typeof v["since"] === "string" && (v["presses"] === undefined || isCount(v["presses"])) && (v["presets"] === undefined || isCount(v["presets"])),
+  presets: presetsOk,
   "app.function": isObject,
   "app.solve": isObject,
   "units.targets": (v) => typeof v === "object" && v !== null,

@@ -17,6 +17,8 @@ import { dataSection } from "./dataSection.svelte.ts";
 import { BRIGHTNESS, validLook, type Look } from "../theme/look.ts";
 import { familyOf, FAMILIES, stepped } from "../theme/lookView.ts";
 import { yourKeysItems, yourKeysValue, type SettingsEnv } from "./yourKeys.ts";
+/** The presets' model (R88) is part of this chunk; R89 draws it in Mode. */
+export { presetsFor } from "../state/presets.svelte.ts";
 
 const ANGLES: readonly AngleUnit[] = ["rad", "deg"];
 const FORMATS: readonly NumberFormat[] = ["std", "sci", "eng", "pfx"];

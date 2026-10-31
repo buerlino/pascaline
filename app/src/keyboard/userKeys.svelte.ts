@@ -126,13 +126,13 @@ export class UserKeys {
     this.write(next);
   }
 
-  /** A key's stored slots ({} for none, or for a damaged record). */
-  private slots(id: string): Partial<Record<UserLayer, UserBinding | null>> {
+  /** A key's stored slots ({} for none, or for a damaged record). A preset reads them (R88, state/presets.svelte.ts). */
+  slots(id: string): Partial<Record<UserLayer, UserBinding | null>> {
     const s = this.stored[id];
     return typeof s === "object" && s !== null ? s : {};
   }
 
-  private write(next: StoredUserKeys): void {
+  write(next: StoredUserKeys): void {
     this.stored = next;
     void this.kv.set(USER_KEYS, $state.snapshot(next));
   }

@@ -35,6 +35,9 @@ const ways: Record<string, Reach> = {
 
 for (const [name, reach] of Object.entries(ways))
   test(`every cell emits its action ${name}`, async ({ page }) => {
+    // a sweep of every cell × 3 layers (≈ 150 gestures): 24 s alone by touch, so 30 s ran out under the full suite's
+    // load (run 393); the budget follows the work, as unitpad.spec.ts's sweep does
+    test.setTimeout(120_000);
     const all = await cells(page);
     expect(all.length).toBeGreaterThan(40);
     for (const c of all)
