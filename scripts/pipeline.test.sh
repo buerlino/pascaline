@@ -438,6 +438,28 @@ grep -qx 'none' "$bh/o2.md" || fail "A18: no change does not print none"
 STUB_SLOW=1 PASCALINE_BEHAVIOUR_SECONDS=1 PASCALINE_BEHAVIOUR_TOOL="$bh/tool.mjs" behaviour_section "$bh/a" "$bh/b" "$bh/o3.md"
 grep -q 'timed out after 20 min' "$bh/o3.md" || fail "A18: a timeout is not reported: $(cat "$bh/o3.md")"
 grep -q 'behaviour_section "$integ" "$wt"' "$here/pipeline.sh" || fail "A18: pipeline.sh does not run the stage"
+# A53: the real behaviour-diff.ts on fake trees (no engine). fake_tree <dir> <display JS> [bridge|nobridge]: its loader hands the host a
+# bridge (or none, as the old tool built it) and the host reads it on every call, as the real one does (ctxGate.ts flush()).
+fake_tree() {
+  local e="$1/app/src/engine" br="{ ctxSet: () => 0 }"; [[ "${3:-bridge}" == bridge ]] || br=undefined
+  mkdir -p "$e"; echo '{"type":"module"}' > "$1/package.json"; echo '{"type":"module"}' > "$1/app/package.json"
+  echo 'export const defaultHomeSettings = {};' > "$e/homeEval.ts"; echo 'export const defaultCasSettings = {};' > "$e/types.ts"
+  echo 'export const markOf = () => null;' > "$e/format.ts"
+  echo "export async function loadNodeGiac(mjs) { return { giac: { mjs: mjs.split('/').slice(-2).join('/'), eval: () => '' }, bridge: $br }; }" > "$e/nodeGiac.ts"
+  printf 'const display = %s;\nexport class EngineHost {\n  constructor(giac, bridge) { this.giac = giac; this.bridge = bridge; }\n  call(input) { this.bridge.ctxSet; const d = display(input, this.giac.mjs); return { result: { ok: true, display: d, text: d } }; }\n  home(input) { return this.call(input); }\n  cas(input) { return this.call(input); }\n}\n' "$2" > "$e/host.ts"
+}
+bd="$tmp/bd"; realtool="$here/../app/scripts/behaviour-diff.ts"
+fake_tree "$bd/a" "(i) => 'same'"; fake_tree "$bd/b" "(i) => (/sin/.test(i) ? 'other' : 'same')"; fake_tree "$bd/old" "(i) => 'same'" nobridge
+PASCALINE_BEHAVIOUR_TOOL="$realtool" behaviour_section "$bd/a" "$bd/b" "$bd/o1.md" "$bd/p1eng" "$bd/breng"
+grep -q '^| home 12 rad | [^|]*sin[^|]* | - same | - other |$' "$bd/o1.md" && grep -q 'difference(s)$' "$bd/o1.md" || fail "A53: tree B's changed display is not listed: $(head -n 8 "$bd/o1.md")"
+grep -qx "engine A $bd/p1eng/giac.mjs" "$bd/o1.md" && grep -qx "engine B $bd/breng/giac.mjs" "$bd/o1.md" || fail "A53: the section does not run phase-1's engine for A and the branch's for B: $(head -n 6 "$bd/o1.md")"
+fake_tree "$bd/e" "(i, mjs) => (/sin/.test(i) ? mjs : 'same')"
+PASCALINE_BEHAVIOUR_TOOL="$realtool" behaviour_section "$bd/e" "$bd/e" "$bd/o2.md" "$bd/p1eng" "$bd/breng"
+grep -q '^| cas 30 deg | [^|]*sin[^|]* | - p1eng/giac.mjs | - breng/giac.mjs |$' "$bd/o2.md" || fail "A53: one tree on two engines does not show each tree its own engine: $(head -n 8 "$bd/o2.md")"
+PASCALINE_BEHAVIOUR_TOOL="$realtool" behaviour_section "$bd/old" "$bd/old" "$bd/o3.md"
+grep -q 'failed to run (exit 1' "$bd/o3.md" && grep -q "Cannot read properties of undefined (reading 'ctxSet')" "$bd/o3.md" && ! grep -qx none "$bd/o3.md" || fail "A53: trees whose every run throws do not give 'failed to run' with the message: $(cat "$bd/o3.md")"
+grep -q 'behaviour_section "$integ" "$wt" "$run/behaviour-$rounds.md" "$b_p1" "$GIAC_OUT"' "$here/pipeline.sh" || fail "A53: pipeline.sh does not pass phase-1's and the branch's engines"
+grep -q 'b_p1="$engine_root/key-$p1key"' "$here/pipeline.sh" || fail "A53: the managed phase-1 engine is not key-<phase-1 key>"
 
 # A47a: jobs apart. A sandbox with the real devlock, a managed engine (a stub build-wasm.sh that counts its builds) and a stub
 # worker that commits the PW_PORT and GIAC_OUT it was given.
