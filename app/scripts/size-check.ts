@@ -159,8 +159,12 @@ export const LAZY_PARTS = ["src/views/sheetKeys.ts", "src/views/tmplSheet.ts", "
  *  as stored, a value with σ never exact) and a σ chip passes its σ to Home (chipFactsOf); the unit's check (chipUnit)
  *  is in input/chipUnit.ts, off the start chunk (it alone measured +0.21 kB there). The pin is 59.16 + 0.05 kB.
  *  59.21 → 59.30 kB (R71): the branch merged with phase-1 2ddd358 measures 59.24 kB gzip (59,243 B, 167.37 kB raw): Shift + `,`
- *  is the ± key (a keyboard.yaml layer, its dimming rule in keyboard.ts and route.ts, one legend). The pin is 59.25 + 0.05 kB. */
-export const START_PIN_GZIP = 59_300;
+ *  is the ± key (a keyboard.yaml layer, its dimming rule in keyboard.ts and route.ts, one legend). The pin is 59.25 + 0.05 kB.
+ *  59.30 → 59.38 kB (R93): phase-1 3499958 measures 59.25 kB gzip (167.40 kB raw), the branch 59.33 kB (167.60 kB raw,
+ *  +0.08 kB): the store's read tells a value, nothing stored and a failed read apart (kvGet), and idbKv drops the writes
+ *  of a key whose read failed, so a transient fault never lets defaults replace the user's record; it is read at start,
+ *  so it cannot load later. The pin is 59.33 + 0.05 kB. */
+export const START_PIN_GZIP = 59_380;
 
 /** Failures for the start chunk's row when it is over the pin. */
 export function checkStartPin(row: Row): string[] {

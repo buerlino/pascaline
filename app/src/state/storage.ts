@@ -1,14 +1,19 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Tiny key-value store on IndexedDB (settings, history, definitions, app states). Every value is stamped with
 // DATA_VERSION and migrated on read. Every call survives a missing or blocked IndexedDB: the app then simply starts
-// with defaults.
+// with defaults. A key whose read failed is not written again in that session (R93): its record may still be there.
 import { migrateAngleDefs, migrateAngleText } from "../engine/angleMigration.ts";
 
-/** The store the session persists to; tests pass an in-memory one. */
+/** The store the session persists to; tests pass an in-memory one. `get` gives undefined for nothing stored and for a
+ *  read that failed: the caller keeps its defaults either way, and the app's store (idbKv) then drops every write of
+ *  a key whose read failed, so the defaults never replace the user's record. */
 export interface Kv {
   get<T>(key: string): Promise<T | undefined>;
   set(key: string, value: unknown): Promise<void>;
 }
+
+/** What a read found (R93): the value, nothing stored under the key, or a store that could not be read. */
+export type KvRead<T> = { kind: "value"; value: T } | { kind: "none" } | { kind: "failed" };
 
 const DB = "pascaline";
 const STORE = "kv";
@@ -76,21 +81,22 @@ function open(): Promise<IDBDatabase> {
   });
 }
 
-export async function kvGet<T>(key: string): Promise<T | undefined> {
+/** The value under `key`, brought up to DATA_VERSION (and written back when older), nothing stored, or "failed": a
+ *  failed open or get, or a migration step that throws, is never read as a key that was never stored. */
+export async function kvGet<T>(key: string): Promise<KvRead<T>> {
   try {
     const db = await open();
-    return await new Promise<T | undefined>((resolve, reject) => {
+    const stored = await new Promise<unknown>((resolve, reject) => {
       const r = db.transaction(STORE, "readonly").objectStore(STORE).get(key);
-      r.onsuccess = () => {
-        if (r.result === undefined) return resolve(undefined);
-        const { value, upgraded } = unstamp(key, r.result);
-        if (upgraded) void kvSet(key, value);
-        resolve(value as T);
-      };
+      r.onsuccess = () => resolve(r.result);
       r.onerror = () => reject(r.error ?? new Error("indexedDB get failed"));
     });
+    if (stored === undefined) return { kind: "none" };
+    const { value, upgraded } = unstamp(key, stored);
+    if (upgraded) void kvSet(key, value);
+    return { kind: "value", value: value as T };
   } catch {
-    return undefined;
+    return { kind: "failed" };
   }
 }
 
@@ -123,4 +129,19 @@ export async function kvSet(key: string, value: unknown): Promise<void> {
   }
 }
 
-export const idbKv: Kv = { get: kvGet, set: kvSet };
+/** R93: the keys whose read failed in this session (the page). */
+const unread = new Set<string>();
+
+/**
+ * The store as its callers use it (R93). A read that failed gives undefined, so the caller keeps its defaults in memory,
+ * and the key is not written for the rest of the session: the defaults never replace the record the read could not
+ * see. A read that finds nothing stored leaves the key writable, as before.
+ */
+export const idbKv: Kv = {
+  async get<T>(key: string): Promise<T | undefined> {
+    const r = await kvGet<T>(key);
+    if (r.kind === "failed") unread.add(key);
+    return r.kind === "value" ? r.value : undefined;
+  },
+  set: (key, value) => (unread.has(key) ? Promise.resolve() : kvSet(key, value)),
+};
