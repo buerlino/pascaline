@@ -2,6 +2,7 @@
 // Dimensions of the unit view (P15, docs/04 4.2): the base dimensions of the Find index's `dim` keys, the Giac symbol
 // each becomes, and the key and text of a dimension. Plain TS, used on both sides of the worker. Only erasable
 // TypeScript syntax, so Node runs this file directly (the golden gate).
+import type { UnitSlot, UnitToken } from "./types.ts";
 
 export interface BaseDimension {
   /** The base unit in the index's dimension key ("kg1m1s-2"). */
@@ -125,4 +126,30 @@ export function unitProduct(factors: readonly (readonly [string, string])[]): st
   if (!neg.length) return part(pos, false);
   const down = part(neg, true);
   return `${pos.length ? part(pos, false) : "1"}/${neg.length > 1 ? `(${down})` : down}`;
+}
+
+/** NAMED's symbols that are not their Find unit id. */
+const FIND_ID: Readonly<Record<string, string>> = { "Ω": "ohm" };
+/** The SI prefixes the evaluator chooses (evaluate.ts PREFIXES), by their text: the Find prefix id. */
+const PREFIX_ID: Readonly<Record<string, string>> = { f: "f", p: "p", n: "n", "µ": "u", m: "m", k: "k", M: "M", G: "G", T: "T", P: "P" };
+
+/** R60: the coherent SI unit of a dimension (siUnit) as slot tokens: a named unit (N, Ω as `ohm`), a base unit (kg), else
+ *  the bases with their powers, the negative ones below the ÷ (m/s, m²/s²). With `text`, siUnit's symbol with an SI
+ *  prefix before it as the evaluator chose it ("mm", "kJ", "µs", "mg"), that prefixed unit; a text that is not one is
+ *  read as no prefix. Empty tokens for a pure number. */
+export function siSlot(key: string, text?: string): UnitSlot {
+  const si = siUnit(key);
+  const p = si.prefixable;
+  if (p && text !== undefined && text !== si.text && text.endsWith(p.symbol)) {
+    const prefix = PREFIX_ID[text.slice(0, -p.symbol.length)];
+    const unit = FIND_ID[p.symbol] ?? p.symbol;
+    if (prefix !== undefined) return { tokens: [{ prefix, unit }] };
+    if (text === p.symbol) return { tokens: [{ unit }] }; // (the gram)
+  }
+  if (p) return { tokens: [{ unit: FIND_ID[si.text] ?? si.text }] };
+  const exps = parseDimKey(key);
+  const tok = (k: string, e: string): UnitToken => ({ unit: k, ...(e === "1" ? {} : { power: e }) });
+  const up = BASES.filter((b) => exps.has(b.key) && !exps.get(b.key)!.startsWith("-")).map((b) => tok(b.key, exps.get(b.key)!));
+  const down = BASES.filter((b) => exps.get(b.key)?.startsWith("-")).map((b) => tok(b.key, exps.get(b.key)!.slice(1)));
+  return down.length ? { tokens: [...up, ...down], per: up.length } : { tokens: up };
 }

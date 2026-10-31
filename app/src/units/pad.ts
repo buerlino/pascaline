@@ -9,6 +9,7 @@ import raw from "../../../spec/unit-pad.yaml";
 import { unitText } from "../i18n/enUnits.ts";
 import type { Action, Key } from "../keyboard/keyboard.ts";
 import type { Mods, RouteCtx } from "../keyboard/route.ts";
+import { padUnitCells, type PadUnitCell } from "./padCells.ts";
 import { unitPad } from "./padView.svelte.ts";
 import type { PadAction } from "./slot.ts";
 import { cellText, type CellLeg } from "./userCells.svelte.ts";
@@ -166,6 +167,12 @@ function cellOf(key: string, kind: CellKind, c: UserSet): PadCell {
     return { [l]: { text: cellText({ unit: id, ...(prefix !== undefined ? { prefix } : {}), ...(c.label?.[l] !== undefined ? { label: c.label[l] as string } : {}) }), emit } };
   };
   return { key, kind, ...leg("tap"), ...leg("up"), ...leg("down") };
+}
+
+let units: PadUnitCell[] | undefined;
+/** R60: the pad's unit cells as data (padCells.ts), parsed once, for the result's alternatives (units/alternatives.ts). */
+export function padUnitList(): readonly PadUnitCell[] {
+  return (units ??= padUnitCells(raw));
 }
 
 /** The spec's user cells (U1–U6 and their defaults). */

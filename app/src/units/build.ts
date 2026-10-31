@@ -202,13 +202,14 @@ function cycleUnit(slots: readonly UnitSlot[]): string | null {
 const hasCycles = (slots: readonly UnitSlot[]): boolean => slots.some((s) => s.tokens.some((t) => /rpm|rev|Hz/.test(t.unit)));
 
 /** The end slot's part of a job. */
-function endJob(req: UnitRequest, table: FactorTable): Pick<UnitJob, "end" | "endOffset" | "endLog" | "endUnit"> {
+function endJob(req: UnitRequest, table: FactorTable): Pick<UnitJob, "end" | "endOffset" | "endLog" | "endUnit" | "endSlot"> {
   if (!req.end) return {};
   const x = specialIn(req.end, table);
   const endUnit = slotText(req.end, table);
-  if (!x) return { end: slotGiac(req.end, table), endUnit };
+  const endSlot = req.end;
+  if (!x) return { end: slotGiac(req.end, table), endUnit, endSlot };
   if (!x.bare) throw refuseSpecial(x.id, x.u);
-  return { ...specialEnd(x.id, x.u), endUnit };
+  return { ...specialEnd(x.id, x.u), endUnit, endSlot };
 }
 
 /** One unit of a product of typed tokens: the same prefix and unit from different slots add their powers. */
@@ -263,12 +264,16 @@ function shownOf(slots: readonly UnitSlot[], table: FactorTable, accept: (n: num
   const dim = dimKeyOf(BASES.map((b) => `${exps.get(b.key) ?? 0n}`));
   const factor = rat ? (rat.q === 1n ? `${rat.p}` : `${rat.p}/${rat.q}`) : giac.join("*");
   const text = unitProduct(factors.map((f) => [tokenSymbol(f.token, table), `${f.power}`] as const));
-  return { text, dim, factor };
+  // R60: the same factors as tokens, in the order `text` has them
+  const tok = (f: Factor, p: bigint): UnitToken => ({ ...f.token, ...(p === 1n ? {} : { power: `${p}` }) });
+  const up = factors.filter((f) => f.power > 0n).map((f) => tok(f, f.power));
+  const down = factors.filter((f) => f.power < 0n).map((f) => tok(f, -f.power));
+  return { text, dim, factor, slot: down.length ? { tokens: [...up, ...down], per: up.length } : { tokens: up } };
 }
 
 /** The typed units a result without an end slot may be shown in, best first (G25): all slots together when they come
  *  to one unit, to a product with factor 1 (N·m), to a product with at most one prefixed token (kN·m, kW·h, lbf·ft; not kΩ·nF) or are the only slot; then each slot alone (a sum of km and km). */
-function shownUnits(req: UnitRequest, table: FactorTable): ShownUnit[] {
+export function shownUnits(req: UnitRequest, table: FactorTable): ShownUnit[] {
   const out: ShownUnit[] = [];
   const all = shownOf(req.slots, table, (n, one, prefixed) => n === 1 || one || prefixed <= 1 || req.slots.length === 1);
   if (all) out.push(all);
