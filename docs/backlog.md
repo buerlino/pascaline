@@ -49,10 +49,10 @@ The one place for "where are we and what's left", one or two lines per open item
 - **F80, no package (G99's Not done; probed: `tools/probes/bridge-forms.ts`).** After Home `(BesselJ(1,2))=>y`, `int(y^2,y,0,1)` shows `⚠ 0.333333333333` (right `≈`): Home stores at Digits 40, where `=>` keeps y as `BesselJ(1,2)` unevaluated, and Giac's int with that y errors (Bad Argument Value). `y:=` keeps the float. Test: `boundNames.test.ts` (`it.fails`), seqsweep `12 bound: int…`. Family 8.
 - **F73, no package (it waited for the end of the freeze; owner, 2026-10-24; G103 reads the doubles).** A double in a list shows Giac's text (`[BesselJ(1,2),1/3]`), not numbers with ⚠; no wrong value reaches the screen. Left: `hasFloat` (reads `1..3` and strings). Families 5, 6.
 - **R57 comma display in Solve and Num, no package:** in comma mode, Solve's roots and the Function and Solve Num tables still show their values with a point (R57 changed Home, CAS, Copy and Paste only).
-- **F139, R92 (night review bu-1).** An early hide empties the history. Rerun: `cd app && npx vitest run --dir ../tools/probes/review-1030` (red at `0fc50d2`). Reach: a quick leave.
-- **F140, G139 (night review be-10).** `eseries(6,√(1500·2200))` = 1500, right 2200. Rerun (`bb90a5e`): `node tools/probes/engine.ts 'eseries(6,sqrt(1500*2200))'`. Reach: Find.
-- **F141, G140 (night review be-9).** `Zeta(1/2+i)` ≈, wrong from digit 15. Rerun (`bb90a5e`): `DIGITS=30 node tools/probes/engine.ts 'Zeta(1/2+i)'`. Reach: Find.
-- **F145, G143 (night review be-2; reachable once R24d and R71 merge).** σ through `floor` is `± 0`, no ⚠. Rerun (`bb90a5e`): `node tools/probes/unit-result.ts 'floor(pasupm(2.95,0.1))'`. Reach: the unit view.
+- **F148, R106 (night review bu-1).** An early hide empties the history. Rerun: `cd app && npx vitest run --dir ../tools/probes/review-1030` (red at `0fc50d2`). Reach: a quick leave.
+- **F149, G139 (night review be-10).** `eseries(6,√(1500·2200))` = 1500, right 2200. Rerun (`bb90a5e`): `node tools/probes/engine.ts 'eseries(6,sqrt(1500*2200))'`. Reach: Find.
+- **F150, G140 (night review be-9).** `Zeta(1/2+i)` ≈, wrong from digit 15. Rerun (`bb90a5e`): `DIGITS=30 node tools/probes/engine.ts 'Zeta(1/2+i)'`. Reach: Find.
+- **F154, G143 (night review be-2; reachable once R24d and R71 merge).** σ through `floor` is `± 0`, no ⚠. Rerun (`bb90a5e`): `node tools/probes/unit-result.ts 'floor(pasupm(2.95,0.1))'`. Reach: the unit view.
 - **F146, R93 (night review ca-1; latent).** A failed read counts as empty; the next write replaces it. Rerun: `node tools/probes/review-1030/failed-read.mts` (red at `0fc50d2`).
 - **F147, R95 (night review fh-2; web only).** Two tabs overwrite each other's data. Rerun (`bb90a5e`): `grep -rn "navigator.locks" app/src` (none). Reach: web.
 - **Night review 2026-10-30:** the rest in [research/night-review-2026-10-31.md](research/night-review-2026-10-31.md).
@@ -82,9 +82,9 @@ The one place for "where are we and what's left", one or two lines per open item
 - **F138, no package (G135).** CAS in DEG, `evalf(cos(atan(2*i)))` shows -1.37121078136E-60-0.57735026919·i, right -0.57735026919·i: pasdeg's round trip leaves noise. Family 8.
 - **F134, no package (G132).** CAS `simplify(sqrt(acosh(-1/2)^3))` and `normal(…)` give the other root (right 2.14325044527-2.14325044527·i), before and after patch 0018: their own rewrite. Family 3.
 - **F135, no package (Opus pass 12).** Giac's `sqrt(exp(z))` = `exp(z/2)`, no branch check: `sqrt(exp(3*acosh(-2)))` evalf -7.20976852011·i, right +7.2097…·i. Home's mark not checked. Family 3.
-- **F142, G141 (night review be-1).** `(1+10^-100)^(10^100)` ≈ 1, right e. Rerun (`bb90a5e`): `node tools/probes/engine.ts '(1+10^-100)^(10^100)'`. Reach: keys.
-- **F143, G138 (night review vg-3).** `approx(exp(10^20))`: unmarked +infinity. Rerun (`bb90a5e`): `node tools/probes/engine.ts 'approx(exp(10^20))'`. Reach: Shift+Enter.
-- **F144, G142 (night review vg-1).** Complex `acosh` near 0: ≈, Im wrong from digit 13. Rerun (`bb90a5e`): `DIGITS=30 node tools/probes/engine.ts 'acosh(10^-6/ln(-1.000001))'`. Reach: keys.
+- **F151, G141 (night review be-1).** `(1+10^-100)^(10^100)` ≈ 1, right e. Rerun (`bb90a5e`): `node tools/probes/engine.ts '(1+10^-100)^(10^100)'`. Reach: keys.
+- **F152, G148 (night review vg-3).** `approx(exp(10^20))`: unmarked +infinity. Rerun (`bb90a5e`): `node tools/probes/engine.ts 'approx(exp(10^20))'`. Reach: Shift+Enter.
+- **F153, G142 (night review vg-1).** Complex `acosh` near 0: ≈, Im wrong from digit 13. Rerun (`bb90a5e`): `DIGITS=30 node tools/probes/engine.ts 'acosh(10^-6/ln(-1.000001))'`. Reach: keys.
 - **G94, no package.** Depth-3 generated trees in the view sweep crash the in-process engine (wasm memory out of bounds; also the nightly view sweep at count 300, seed 20752); raw output: `../drafts/2026-10-21-packages/g94-raw`.
 - **The hardening without a bug line:** A31 (two shell tests left: A55); r16's end mark, a 50,000-input sweep with no new false mark, is not met (Opus pass 82; G94 stops the view sweep at volume); G116: `node scripts/sweep.ts --nightly --edges`; its first two seeds gave F119–F123 (triage: `.tasks/sweep-2026-10-28-g116-triage.md`); G120 (seed 1793285778): F129–F133 and 20 acos/acosh hangs (`.tasks/sweep-2026-10-29-g120-triage.md`; vg-2, night review note); A44: `tests/golden/sweep-nightly-known.yaml` holds the nightly sweep's open rows (F122, F129, F130); the gate never reads it.
 

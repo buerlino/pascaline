@@ -20,7 +20,7 @@
 
 **No package yet** (backlog, by reach): F73 (it waited for the end of the freeze), F80, F85, F70, F71; the background stream F62, G94, F106; what G116 finds. S20 (the MPFI spike) by day.
 
-**The night review of 2026-10-30** ([its note](../research/night-review-2026-10-31.md) section 2): 28 packages (R92–R105, G138–G147, A52–A55), S1 lines F139–F147; section 0c takes its order a few rows at a time.
+**The night review of 2026-10-30** ([its note](../research/night-review-2026-10-31.md) section 2): 28 packages (R93–R106, G139–G148, A52–A55), S1 lines F146–F154; section 0c takes its order a few rows at a time.
 
 **Why this order:** the lanes first (A47a–A47c): every later run uses them; silent wrong numbers by reach; R91 before R49 and A49 (room in the start chunk; A49 handles its chunks); A43 → A7 (stored data safe before the first signed release); R87 and A49 before A45 (owner, 2026-10-29); R15c3 and R49 before R4b (R4b fills the user keys in R49's levels); the units right after R86, R57, R50e (owner, 2026-10-29).
 
@@ -67,8 +67,8 @@ Milestone reviews (section 0): after R50e; after R24d.
 | 314 | [R38b](packages/R38b.md) the backup: restore from a file | ron, Opus | `p1/ron-m4-restore` | R38a |
 | 315 | [R88](packages/R88.md) presets, the model and the store | ron, Opus | `p1/ron-presets-model` | R57, R50e, R24d |
 | 316 | [R71](packages/R71.md) ± on Shift + `,` | ron, Sonnet | `p1/ron-m5-pmkey` | R24c |
-| 317 | [R92](packages/R92.md) the history is written only after it was read | ron, Opus | `p1/ron-historyread` | – |
-| 318 | [R93](packages/R93.md) a failed store read is not "nothing stored" | ron, Opus | `p1/ron-failedread` | R92, R88 |
+| 317 | [R106](packages/R106.md) the history is written only after it was read | ron, Opus | `p1/ron-historyread` | – |
+| 318 | [R93](packages/R93.md) a failed store read is not "nothing stored" | ron, Opus | `p1/ron-failedread` | R106, R88 |
 | 319 | [R94](packages/R94.md) an older build never writes back a newer settings schema | ron, Opus | `p1/ron-settingsguard` | R88 |
 
 ### Lane B queue (the release, then the engine)
