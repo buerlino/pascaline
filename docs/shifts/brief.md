@@ -52,7 +52,7 @@ Tonight's queue (one lane, to 07:00) comes first, then each lane's table; With t
 12. **No lanes in the morning** (A47c not merged, or a selftest failed): the owner starts `scripts/night.sh` without `--lane`, and henri runs lane B's rows 401–405, then lane A's from 301, as one queue.
 
 ### Tonight: 2026-10-31 to Sunday 09:00, both lanes on the Tab One (owner, 2026-10-31)
-`ANDROID_SERIAL=HA24BZ2Y` for both lanes, `--until 09:00`; CORE DEVICE after each pass. Not the weekly extreme night: row 408 waits. A step whose "After" is not merged is skipped.
+`ANDROID_SERIAL=HA24BZ2Y` for both lanes, `--until 09:00`; CORE DEVICE after each pass. Not the weekly extreme night: row 408 waits. A step whose "After" is not merged is skipped. Opus pass 27's FIX R38af2 (log 13:43) runs first in lane A, verbatim, then its QUEUE line.
 
 ### Lane A queue (ron's UI)
 Milestone reviews (section 0): after R50e; after R24d.
