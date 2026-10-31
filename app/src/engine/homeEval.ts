@@ -32,6 +32,7 @@ import { plainRows } from "./matrixType.ts";
 import { complexSafe, readsReplaced } from "./complex.ts";
 import { decidedAtDouble, decideTwice, decidingStored, restsOnDecision } from "./decisions.ts";
 import { PLAIN_FORM, type InputForm } from "./stores.ts";
+import { ESERIES_CUT } from "./eseries.ts";
 
 export type { Giac };
 
@@ -203,9 +204,8 @@ export const ENGINE_DEFINITIONS: Readonly<Record<string, string>> = {
   [POLY_AT]: POLY_AT_ANY_DEPTH,
 };
 
-/** Definitions whose text is built engine-side (host.ts) so their tables stay out of the start chunk: G30 `eseries`
- *  (IEC 60063 preferred value nearest to x in x's decade, eseries.ts). Only the names are known here. */
-export const WORKER_DEFINITION_NAMES: readonly string[] = ["eseries"];
+/** Our names whose definition host.ts builds (tables out of the start chunk): G30 `eseries` and its helper (G139). */
+export const WORKER_DEFINITION_NAMES: readonly string[] = ["eseries", ESERIES_CUT];
 
 /** Set to 1 by an == or ≠ test that met a float (input/emit.ts equalityTest, which spells the same name). Purged, not
  *  set to 0, before an input runs: `sto` inside the test's function would read a value as the place to store to.
