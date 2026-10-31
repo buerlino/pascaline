@@ -58,7 +58,7 @@ function symbolLatex(it: IndexItem): string {
 }
 
 /** Words of a unit's name that keep their capital: names of people and calendars. */
-const PROPER = new Set(["Celsius", "Fahrenheit", "Rankine", "Réaumur", "Planck", "Gregorian", "Julian"]);
+const PROPER = new Set(["Celsius", "Fahrenheit", "Rankine", "Réaumur", "Planck", "Gregorian", "Julian", "British", "American", "Johnson"]);
 
 /** A Find title in words: "Kilo (10^3)" → "kilo", "Degree Celsius" → "degree Celsius", "Nautical Mile" → "nautical
  *  mile", "U.S. Survey Inch" → "U.S. survey inch". A word keeps its capital when it has a second one (an acronym:

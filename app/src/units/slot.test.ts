@@ -238,6 +238,13 @@ describe("the reading in words (r7 5.4 guards 2 and 3)", () => {
     expect(typed([P("k"), U("ohm")]).reading.text).toBe("kiloohm");
     expect(typed([U("oC")]).reading.text).toBe("degree Celsius");
   });
+  it("keeps the capital of British, American and Johnson (Opus pass 15 defaults, point 4)", () => {
+    const cat = slotCatalogue([unit("Btu", "Btu", "British Thermal Unit (IT)", "52752792631/50000000", "kg1m2s-2"),
+      unit("pt_US", "pt", "American Point", "3175/9000000", "m1"), unit("ata_pica", "pica", "Johnson Pica", "10541/2500000", "m1")]);
+    expect(typed([U("Btu")], cat).reading.text).toBe("British thermal unit");
+    expect(typed([U("pt_US")], cat).reading.text).toBe("American point");
+    expect(typed([U("ata_pica")], cat).reading.text).toBe("Johnson pica");
+  });
   it("marks a prefixed pair outside Find's list (Mm, Ms) and not its neighbour (mm, ms)", () => {
     expect(typed([P("M"), U("m")]).reading).toEqual({ text: "megameter", marked: true, parts: [{ text: "megameter", marked: true }] });
     expect(typed([P("m"), U("m")]).reading.marked).toBe(false);

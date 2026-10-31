@@ -125,6 +125,9 @@ export function special(c: RouteCtx, name: Special): void {
     case "tmpl":
       c.openTemplates();
       break;
+    case "units":
+      units(c);
+      break;
     case "relations":
       c.openShiftPalette("rel");
       break;
@@ -144,6 +147,15 @@ export function special(c: RouteCtx, name: Special): void {
       c.dead();
       break;
   }
+}
+
+/** The units key (R24c): the unit view (a lazy chunk) on the line or `row`; keys pressed while it loads wait (R8). */
+function units(c: RouteCtx, row?: HistoryItem): void {
+  const load: Promise<void> = import("../units/open.ts")
+    .then((m) => m.openUnits(c, row))
+    .catch(() => c.dead())
+    .finally(() => c.sheetLoad === load && (c.sheetLoad = null));
+  c.sheetLoad ??= load;
 }
 
 /** P4: Up on an empty entry line picks the last history row (Home/CAS); Up/Down walk the rows, Enter puts the picked
@@ -175,6 +187,10 @@ export function historyKey(c: RouteCtx, action: ActionBody): boolean {
   c.picked = null;
   if (action.kind !== "special") return false;
   if (action.name === "esc") return true;
+  if (action.name === "units" && item) {
+    units(c, item); // the units key on the picked row (docs/04 4.3)
+    return true;
+  }
   if (action.name === "menu" && item) {
     c.withClip((x) => x.openMenu(item)); // ☰ acts on the picked row (R13)
     return true;
@@ -290,7 +306,7 @@ function replay(c: RouteCtx): void {
   for (const w of keys)
     if (c.shell.loading !== null || c.sheetLoad !== null) wait(c, w); // another app started loading meanwhile
     else if ("letter" in w) typeLetter(c, w.letter);
-    else if (!(c.shell.sheet && sheetPress(c, w.key, w.layer))) run(c, w.key, w.mods); // a sheet opened meanwhile takes its keys
+    else if (!(c.shell.sheet && sheetPress(c, w.key, w.layer)) && !sheetChunk.pad?.route(c, w.key, w.mods)) run(c, w.key, w.mods); // a sheet or the unit pad opened meanwhile takes its keys
 }
 
 const SHEET_KEYS: readonly string[] = ["apps", "menu", "tmpl", "relations", "symbols", "find", "vars", "memory"];

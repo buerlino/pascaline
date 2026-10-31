@@ -59,6 +59,25 @@ test("Find (R4a) has no <input>: open, typing and a pick never focus an element 
   await expectNoSystemKeyboard(page, "after a Find pick");
 });
 
+// R24c: the unit view's slots are MathLive prompts in a read-only field. Opening it, filling a slot from the pad, moving
+// between slots, a tap on the formula and Find on units never focus an element that opens the system keyboard.
+test("the unit view (R24c): its prompts never summon the system keyboard", async ({ page }) => {
+  await tap(page, ["d7", "d2", "shift", "tmpl"]);
+  await expect(page.getByTestId("unit-view")).toBeVisible();
+  await page.waitForFunction(() => document.querySelector('[data-pad="unit"]') !== null);
+  await expectNoSystemKeyboard(page, "unit view open");
+  await tap(page, ["d4", "d9", "enter"]);
+  await expectNoSystemKeyboard(page, "a slot filled, the next one active");
+  await page.getByTestId("unit-field").tap();
+  await expectNoSystemKeyboard(page, "a tap on the formula");
+  await tap(page, ["math"]);
+  await expect(page.getByTestId("find")).toBeVisible();
+  await expectNoSystemKeyboard(page, "Find on units");
+  await tap(page, ["esc", "esc"]);
+  await expect(page.getByTestId("unit-view")).toBeHidden();
+  await expectNoSystemKeyboard(page, "back on the line");
+});
+
 /** The deepest focused element is editable (the entry field's input, or an editor). */
 const editableFocused = (page: Page) => focused(page).then((f) => f.editable);
 

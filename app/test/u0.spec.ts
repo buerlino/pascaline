@@ -104,7 +104,7 @@ test("every key reserves a legend line above its face, and every key in a row wi
 const dead = async (page: import("@playwright/test").Page, id: string): Promise<boolean> =>
   (await page.locator(`[data-key="${id}"]`).getAttribute("data-dead")) === "true";
 
-test("finding 3: Vars opens Find on the names (R4b), Math Find (R4a), Tmpl its palette (R10); all three type A, B, C in Alpha; Shift + Math is Memory, Vars and Tmpl have no Shift", async ({ page }) => {
+test("finding 3: Vars opens Find on the names (R4b), Math Find (R4a), Tmpl its palette (R10); all three type A, B, C in Alpha; Shift + Math is Memory, Shift + Tmpl the units key (R24c), Vars has no Shift", async ({ page }) => {
   for (const id of ["vars", "math", "tmpl"]) expect(await dead(page, id), `${id} plain`).toBe(false);
   await tap(page, ["alpha"]);
   for (const id of ["vars", "math", "tmpl"]) expect(await dead(page, id), `${id} alpha`).toBe(false);
@@ -113,7 +113,8 @@ test("finding 3: Vars opens Find on the names (R4b), Math Find (R4a), Tmpl its p
   await page.evaluate(() => window.pascaline.entry.clear());
   await tap(page, ["shift"]);
   expect(await dead(page, "math"), "math shift").toBe(false); // Memory
-  for (const id of ["vars", "tmpl"]) expect(await dead(page, id), `${id} shift`).toBe(true);
+  expect(await dead(page, "tmpl"), "tmpl shift").toBe(false); // the units key (R24c)
+  expect(await dead(page, "vars"), "vars shift").toBe(true);
 });
 
 test("finding 3: a key is dimmed exactly where it does nothing (the shift layer of keys without a shift function)", async ({ page }) => {

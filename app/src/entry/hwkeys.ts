@@ -51,10 +51,27 @@ const KEYS: Readonly<Record<string, readonly [string, Layer]>> = {
   ":": ["sub", "alpha"],
   ";": ["add", "alpha"],
 };
-/** The arrow keys and the keypad keys they press (R45); with Shift they stay with MathLive (selection). */
+/** The arrow keys and the keypad keys they press (R45, controlKey). */
 const ARROWS: Readonly<Record<string, string>> = { ArrowLeft: "left", ArrowRight: "right", ArrowUp: "up", ArrowDown: "down" };
 /** The Shift palettes' symbols that are one ASCII character (spec/keyboard.yaml `relations` lt, gt; `symbols` fact). */
 const PALETTE = new Set(["<", ">", "!"]);
+
+/** The keypad key and layer a hardware control key presses (R45, F38): Backspace is ⌫, Delete is Shift + ⌫ (Del), the
+ *  arrows are the pad's arrow keys, Enter is Enter and Escape is Esc. Shift + an arrow is none (MathLive's selection on
+ *  the entry line), nor are Home and End. One map for the entry line and the unit view's field (R24c). */
+export function controlKey(ev: Pick<KeyboardEvent, "key" | "shiftKey">): readonly [string, Layer] | undefined {
+  const k = ev.key;
+  if (k === "Backspace" || k === "Delete") return ["bksp", k === "Backspace" ? "primary" : "shift"];
+  if (k === "Enter") return ["enter", "primary"];
+  if (k === "Escape") return ["esc", "primary"];
+  const arrow = ARROWS[k];
+  return arrow && !ev.shiftKey ? [arrow, "primary"] : undefined;
+}
+
+/** The keypad key (and its layer) that types `ch` (R24c: the unit view's field takes the same path). */
+export function keypadKeyOf(ch: string, decimalComma: boolean): readonly [string, Layer] | undefined {
+  return KEYS[decimalComma && ch === "," ? "." : ch];
+}
 
 /** Handle a keydown on the entry line. True: handled, and the caller stops the event. */
 export function hardwareKey(ev: KeyboardEvent, t: HwTarget): boolean {
@@ -62,15 +79,11 @@ export function hardwareKey(ev: KeyboardEvent, t: HwTarget): boolean {
   const mf = t.field;
   if (!mf || ev.isComposing) return false;
   if ((ev.ctrlKey || ev.metaKey || ev.altKey) && !ev.getModifierState("AltGraph")) return false;
-  // R45 (F38): Backspace is ⌫, Delete is Shift + ⌫ (Del) and the arrows are the pad's keys, all through the shell's
-  // path. Shift + arrows (selection), Home and End stay with MathLive.
-  if (ch === "Backspace" || ch === "Delete") {
-    t.onKey("bksp", ch === "Backspace" ? "primary" : "shift");
-    return true;
-  }
-  const arrow = ARROWS[ch];
-  if (arrow && !ev.shiftKey) {
-    t.onKey(arrow, "primary");
+  // R45 (F38): Backspace, Delete and the arrows through the shell's path (controlKey). Enter and Escape are left to the
+  // controller's own listener (onEnter, onEscape), which presses the same keys.
+  const ctl = ch === "Enter" || ch === "Escape" ? undefined : controlKey(ev);
+  if (ctl) {
+    t.onKey(ctl[0], ctl[1]);
     return true;
   }
   if (ch.length !== 1) return false;

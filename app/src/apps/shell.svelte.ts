@@ -49,7 +49,7 @@ export class AppShell {
   /** Which of Home and CAS is under the keys (set by App.svelte); names the Menu there (R83). */
   homeView: (() => "home" | "cas") | undefined;
 
-  private readonly calc: Calc;
+  readonly calc: Calc;
   private readonly kv: Kv;
   private readonly entry: EntryLine;
   private readonly settings: () => CalcSettings;
