@@ -5,6 +5,7 @@
 import { BASES, dimKeyOf, dimSymbols, isExponent, parseDimKey, unitProduct } from "./dims.ts";
 import type { FactorTable, UnitFactor } from "./factors.ts";
 import { balanced, closing, mapNames, names, walk } from "../engine/giacPrint.ts";
+import { basisGiac, basisOf, correlated, LEAF_PREFIX } from "../engine/constBasis.ts";
 
 const letters = (s: string): boolean => s !== "" && [...s].every((c) => (c >= "a" && c <= "z") || (c >= "A" && c <= "Z"));
 const digits = (s: string): boolean => s !== "" && [...s].every((c) => c >= "0" && c <= "9");
@@ -126,23 +127,31 @@ function specialEnd(id: string, u: UnitFactor): { end: string; endOffset?: strin
   return { end: `((${a})${dims ? `*${dims}` : ""})`, endOffset: b! };
 }
 
+/** The uncertain input `key` of `vars` (`seen` holds those named so far): its symbol pasv<n>, made once. */
+function uncVar(key: string, value: string, sigma: string, vars: UncVar[], seen: Map<string, string>): string {
+  let name = seen.get(key);
+  if (name === undefined) {
+    name = `pasv${vars.length + 1}`;
+    vars.push({ name, value, sigma });
+    seen.set(key, name);
+  }
+  return name;
+}
+
 /** A constant as Giac text: its value times its dimension symbols (the worker makes the decimal exact). A constant
- *  with a CODATA uncertainty is an uncertain input: its number is the symbol `uncVar` names, once per constant. */
-function constGiac(id: string, table: FactorTable, vars: UncVar[], seen: Map<string, string>): { giac: string; inexact: boolean } {
+ *  with a CODATA uncertainty is an uncertain input: its number is the symbol `uncVar` names, once per constant. G81:
+ *  one in `through` (it shares a leaf with another constant of the formula) is its basis instead, each leaf an
+ *  uncertain input once (`pasl_<leaf>` in `seen`), so the two are correlated; a leaf of zero uncertainty is its value. */
+function constGiac(id: string, table: FactorTable, vars: UncVar[], seen: Map<string, string>, through: ReadonlySet<string>): { giac: string; inexact: boolean } {
   const c = table.consts.get(id);
   if (!c) throw new Refused({ error: "engine", detail: `no constant ${id} in the index` });
   if (c.dim === undefined) throw new Refused({ error: "nofactor", unit: c.symbol });
   const dims = dimSymbols(c.dim);
   let number = `(${c.value})`;
-  if (c.unc !== undefined) {
-    let name = seen.get(id);
-    if (name === undefined) {
-      name = `pasv${vars.length + 1}`;
-      vars.push({ name, value: c.value, sigma: c.unc });
-      seen.set(id, name);
-    }
-    number = name;
-  }
+  const basis = through.has(id) ? basisOf(c) : undefined;
+  if (basis !== undefined) {
+    number = `(${basisGiac(c, basis, (l, leaf) => uncVar(`${LEAF_PREFIX}${l}`, leaf.value, leaf.unc, vars, seen))})`;
+  } else if (c.unc !== undefined) number = uncVar(id, c.value, c.unc, vars, seen);
   return { giac: `(${number}${dims ? `*${dims}` : ""})`, inexact: c.unc !== undefined };
 }
 
@@ -374,7 +383,8 @@ export function buildJob(req: UnitRequest, table: FactorTable): UnitJob | UnitEr
     const vars: UncVar[] = [];
     const formula = uncertainValues(req.formula, vars);
     const seen = new Map<string, string>();
-    const consts = (req.consts ?? []).map((id) => constGiac(id, table, vars, seen));
+    const through = correlated((req.consts ?? []).map((id) => [id, table.consts.get(id) ?? {}] as const));
+    const consts = (req.consts ?? []).map((id) => constGiac(id, table, vars, seen, through));
     const used = new Set<string>();
     const sym = formula.replace(PLACEHOLDER, (all, kind: string, n: string) => {
       const k = Number(n) - 1;

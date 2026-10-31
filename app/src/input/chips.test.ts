@@ -2,6 +2,7 @@
 // Chips (docs/04 2.8, 3.6): value conversion, the inexact flag and the chip table helpers. The round trips through
 // Giac are in tests/golden/parser.yaml (group "chips").
 import { describe, expect, it } from "vitest";
+import { basisOf } from "../engine/constBasis.ts";
 import { chipToGiac } from "./chip-giac.ts";
 import { pruneChips, validChips, type ChipTable } from "./chips.ts";
 import { EQ_INEXACT_FLAG, SerializeError } from "./emit.ts";
@@ -97,6 +98,21 @@ describe("chip table", () => {
     });
     expect(validChips(null)).toBeUndefined();
     expect(validChips({})).toBeUndefined();
+  });
+  it("G81: a constant's basis is kept with its leaves; a malformed leaf keeps today's path (basisOf refuses it)", () => {
+    const leaves = { fine_structure: { value: "7.29735256434E-3", unc: "1.13E-12" } };
+    const mu = { value: "1.25663706127E-6", exact: false, unc: "2.0E-16", basis: "2*pasl_fine_structure", basisLeaves: leaves };
+    expect(validChips({ "const:mu_0": mu })).toEqual({ "const:mu_0": mu });
+    expect(basisOf(validChips({ "const:mu_0": mu })!["const:mu_0"]!)).toBe(mu.basis);
+    for (const basisLeaves of [{ fine_structure: { value: 7 } }, { fine_structure: null }, "x", 5, {}]) {
+      const back = validChips({ "const:mu_0": { ...mu, basisLeaves } })!["const:mu_0"]!;
+      expect(back).toMatchObject({ value: mu.value, exact: false, unc: mu.unc });
+      expect(basisOf(back)).toBeUndefined();
+    }
+    expect(basisOf(validChips({ "const:mu_0": { ...mu, basis: 3 } })!["const:mu_0"]!)).toBeUndefined();
+    expect(validChips({ "const:mu_0": { value: mu.value, exact: false, unc: mu.unc } })).toEqual({ "const:mu_0": { value: mu.value, exact: false, unc: mu.unc } });
+    // an exact chip's basis is never read
+    expect(basisOf(validChips({ "const:c": { value: "299792458", exact: true, basis: "pasl_x", basisLeaves: { x: { value: "1", unc: "1" } } } })!["const:c"]!)).toBeUndefined();
   });
 });
 

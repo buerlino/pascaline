@@ -70,6 +70,11 @@ describe.skipIf(!full)("Find on the generated index", () => {
     expect(g?.chip.exact).toBe(false);
     expect(g?.chip.unc).toBeTruthy();
     expect(constChipOf(index.byId.get("fn:solve") as FindItem)).toBeUndefined();
+    // G81: an inexact constant's chip carries its basis and leaves (G80); an exact one carries none
+    const mu = index.byId.get("const:mu_0") as FindItem;
+    expect(constChipOf(mu)?.chip).toMatchObject({ basis: mu.basis, basisLeaves: mu.basisLeaves });
+    expect(constChipOf(mu)?.chip.basis).toContain("pasl_fine_structure");
+    expect(constChipOf(index.byId.get("const:c") as FindItem)?.chip).not.toHaveProperty("basis");
   });
 
   it("picking a row runs the pick with its item", () => {
