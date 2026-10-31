@@ -401,6 +401,7 @@ export function run(c: RouteCtx, key: Key, mods: Mods): void {
     if (dir && shell.nav(dir)) return;
     if (!shell.showsEntry) return c.dead(); // a view without an entry line (Plot) ignores typing, ⇤ ⇥ and Undo
     if (action.kind === "insert" && action.latex === ANS_CHIP) return c.dead(); // Ans belongs to Home and CAS
+    if (action.kind === "insert" && action.units) return c.dead(); // ± (R71) is read by the unit view, from the Home or CAS line
   } else if (entry.value === "" && key.id === "frac" && layerOf(mods) === "primary") {
     // a b/c on an empty line (R10): the last result in its next form (decimal ↔ fraction, a+bi ↔ polar), as on the
     // G2; while typing it is the stacked fraction below

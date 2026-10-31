@@ -70,6 +70,8 @@ describe.skipIf(!giacOut)("LaTeX -> Giac round trip", () => {
       it(`${t.keyId}/${t.layer}/${t.variant}: ${latex}${t.refused ? " is refused" : ""}`, () => {
         // a refused cell (R18: & and Å) must give a message, never a guessed meaning
         if (t.refused) return void expect(() => latexToGiac(latex, { chips: SAMPLE_CHIPS })).toThrow(/has no meaning|is a unit/);
+        // R71: ± is read in units mode alone (the unit view's formula); its text is checked as written (G18: pasupm)
+        if (t.units) return void expect(latexToGiac(latex, { chips: SAMPLE_CHIPS, units: true })).toBe(intended);
         const produced = latexToGiac(latex, { chips: SAMPLE_CHIPS });
         const r = equal(produced, intended);
         expect(r.ok, `got ${produced}, want ${intended}: ${r.how}`).toBe(true);
