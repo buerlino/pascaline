@@ -5,7 +5,7 @@
 import { BASES, dimKeyOf, dimSymbols, isExponent, parseDimKey, unitProduct } from "./dims.ts";
 import type { FactorTable, UnitFactor } from "./factors.ts";
 import { balanced, closing, mapNames, names, walk } from "../engine/giacPrint.ts";
-import { basisOf, correlated, isZeroText, LEAF_PREFIX, mapLeaves } from "../engine/constBasis.ts";
+import { basisGiac, basisOf, correlated, LEAF_PREFIX } from "../engine/constBasis.ts";
 
 const letters = (s: string): boolean => s !== "" && [...s].every((c) => (c >= "a" && c <= "z") || (c >= "A" && c <= "Z"));
 const digits = (s: string): boolean => s !== "" && [...s].every((c) => c >= "0" && c <= "9");
@@ -150,10 +150,7 @@ function constGiac(id: string, table: FactorTable, vars: UncVar[], seen: Map<str
   let number = `(${c.value})`;
   const basis = through.has(id) ? basisOf(c) : undefined;
   if (basis !== undefined) {
-    number = `(${mapLeaves(basis, (l) => {
-      const leaf = c.basisLeaves![l]!;
-      return isZeroText(leaf.unc) ? `(${leaf.value})` : uncVar(`${LEAF_PREFIX}${l}`, leaf.value, leaf.unc, vars, seen);
-    })})`;
+    number = `(${basisGiac(c, basis, (l, leaf) => uncVar(`${LEAF_PREFIX}${l}`, leaf.value, leaf.unc, vars, seen))})`;
   } else if (c.unc !== undefined) number = uncVar(id, c.value, c.unc, vars, seen);
   return { giac: `(${number}${dims ? `*${dims}` : ""})`, inexact: c.unc !== undefined };
 }

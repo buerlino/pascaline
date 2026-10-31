@@ -12,7 +12,7 @@ import { decimalFromString, isZero, roundSignificant, type DecimalValue } from "
 import { toExactLiterals, type HomeResult } from "./homeEval.ts";
 import type { Giac } from "./numeric.ts";
 import { mapNames, names } from "./giacPrint.ts";
-import { basisOf, correlated, isZeroText, LEAF_PREFIX, mapLeaves } from "./constBasis.ts";
+import { basisGiac, basisOf, correlated, isZeroText, LEAF_PREFIX } from "./constBasis.ts";
 import type { ValueFacts } from "./types.ts";
 
 /** A constant the input holds by name: its value as Giac text (`6.67430E-11`), and its standard uncertainty in the
@@ -68,7 +68,8 @@ export function withConstValues(input: string, table: ConstTable, keep?: Readonl
     if (!e || keep?.has(id)) return null;
     const b = through.has(id) ? basisOf(e) : undefined;
     if (b === undefined) return `(${e.value})`;
-    return `(${leaves === "names" ? b : mapLeaves(b, (l) => `(${e.basisLeaves![l]!.value})`)})`;
+    // a leaf of zero uncertainty is its value in both modes, as in the unit view (constBasis.ts basisGiac)
+    return `(${basisGiac(e, b, (l, v) => (leaves === "names" ? `${LEAF_PREFIX}${l}` : `(${v.value})`))})`;
   }, "typed");
 }
 
@@ -104,11 +105,10 @@ function sigmaInputs(table: ConstTable, ids: readonly string[]): { keep: Set<str
       inputs.push({ name: `${CONST_PREFIX}${id}`, value: e.value, unc: e.unc! });
       continue;
     }
-    mapLeaves(b, (l) => {
-      const leaf = e.basisLeaves![l]!;
+    basisGiac(e, b, (l, leaf) => {
       const name = `${LEAF_PREFIX}${l}`;
-      if (!isZeroText(leaf.unc) && !inputs.some((v) => v.name === name)) inputs.push({ name, value: leaf.value, unc: leaf.unc });
-      return null;
+      if (!inputs.some((v) => v.name === name)) inputs.push({ name, value: leaf.value, unc: leaf.unc });
+      return name;
     });
   }
   return { keep, inputs };

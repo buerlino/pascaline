@@ -82,6 +82,16 @@ describe("a constant enters through its basis (G81)", () => {
     expect([...correlated([["mu", mu], ["eps", eps], ["g", g]])]).toEqual(["mu", "eps"]);
     expect([...correlated([["mu", mu], ["g", g]])]).toEqual([]);
   });
+  it("a leaf of zero uncertainty is its value, also among the names for σ (as the unit view, build.test.ts)", () => {
+    const b = { fine_structure: a.fine_structure, k: { value: "2", unc: "0" } };
+    const muK = { value: "1.2E-6", unc: "2E-16", basis: "pasl_k*pasl_fine_structure", basisLeaves: b };
+    const eps2 = { value: "8.8E-12", unc: "1E-21", basis: "5/pasl_fine_structure^2", basisLeaves: b };
+    expect(withConstValues("pasc_mu*pasc_eps", { mu: muK, eps: eps2 })).toBe("((2)*(7.3E-3))*(5/(7.3E-3)^2)");
+    expect(withConstValues("pasc_mu*pasc_eps", { mu: muK, eps: eps2 }, undefined, "names")).toBe("((2)*pasl_fine_structure)*(5/pasl_fine_structure^2)");
+    expect(sigmaExpr("pasc_mu*pasc_eps", { mu: muK, eps: eps2 }, ["mu", "eps"])).toBe(
+      "sqrt((subst(diff(((2)*pasl_fine_structure)*(5/pasl_fine_structure^2),pasl_fine_structure),[pasl_fine_structure=((73/10^4))])*((1/10^12)))^2)",
+    );
+  });
   it("σ is taken over the shared leaf once, and over a constant without a basis as before", () => {
     expect(sigmaExpr("pasc_mu*pasc_eps*pasc_G", { mu, eps, G }, ["mu", "eps", "G"])).toBe(
       "sqrt((subst(diff((2*pasl_fine_structure/3)*(5/pasl_fine_structure)*pasc_G,pasl_fine_structure),[pasl_fine_structure=((73/10^4)),pasc_G=((667430/10^16))])*((1/10^12)))^2" +

@@ -33,6 +33,15 @@ export function mapLeaves(basis: string, f: (leaf: string) => string | null): st
   return mapNames(basis, ({ name }) => (name.startsWith(LEAF_PREFIX) ? f(name.slice(LEAF_PREFIX.length)) : null), "typed");
 }
 
+/** G81: `basis` (basisOf's, of `e`) as Giac text, the one rule Home and the unit view share: a leaf of zero uncertainty
+ *  is its value; any other is written by `uncertain` (its value, or its name as an input of σ). */
+export function basisGiac(e: BasisCarrier, basis: string, uncertain: (leaf: string, v: { value: string; unc: string }) => string): string {
+  return mapLeaves(basis, (l) => {
+    const v = e.basisLeaves![l]!;
+    return isZeroText(v.unc) ? `(${v.value})` : uncertain(l, v);
+  });
+}
+
 /** The leaf ids `basis` names. */
 function leavesOf(basis: string): Set<string> {
   const out = new Set<string>();

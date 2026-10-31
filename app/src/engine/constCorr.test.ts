@@ -105,6 +105,17 @@ describe.skipIf(!giacAvailable())("a constant's σ through its basis (G81, real 
     expect(home("pasc_G*pasc_m_e", t).facts.uncDigits).toBe(home("pasc_G*pasc_m_e", u).facts.uncDigits);
   });
 
+  it("a leaf of zero uncertainty is its value: σ is a number and uncDigits is there (derived)", () => {
+    const b = { ...ALPHA, k: { value: "2", unc: "0" } };
+    const t = {
+      mu: { value: "1.2E-6", unc: "2E-16", basis: "pasl_k*pasl_fine_structure", basisLeaves: b },
+      eps: { value: "8.8E-12", unc: "1E-21", basis: "5/pasl_fine_structure^2", basisLeaves: b },
+    };
+    // f = 10/α = 1370.36, σ = 10/α² · 1.13E-12 = 2.12201E-7 at α = 7.29735256434E-3: digits 1E3 … 1E-6, 10 (derived)
+    expect(sigma("pasc_mu*pasc_eps", t) / 2.12201e-7).toBeCloseTo(1, 4);
+    expect(home("pasc_mu*pasc_eps", t).facts.uncDigits).toBe(10);
+  });
+
   describe("the unit view (G18, G41) takes the same leaves", () => {
     const units = (formula: string, consts: string[], t: Record<string, ConstEntry>) => {
       const job = buildJob({ formula, slots: [], consts } as UnitRequest, factorTable(items(t)));
