@@ -599,7 +599,8 @@ class Parser implements CalcParser {
   private command(name: string): Json {
     if (name === EMARK) throw parseError("parse.typeTheNumber");
     if (this.units && promptId(this.peek()) !== undefined) throw parseError("parse.slotNeedsNumber");
-    if (name === "pm") throw parseError(this.units ? "parse.pmNeedsNumber" : "parse.pmUnitView");
+    if (this.units && name === "pm") throw parseError("parse.pmNeedsNumber");
+    if (name === "pm") throw parseError("parse.pmUnitView");
     if (name in CONSTS) {
       this.pos++;
       return CONSTS[name] as string;
