@@ -27,7 +27,14 @@ export const USER_KEYS = "userKeys";
  * of stored text changes: definitions are Giac text that holds our internal names (R18f1 renamed Φ and Ψ to Phi_ and
  * Psi_), so a rename or a parser fix must rewrite what older versions stored. 0 = stored before versions (2026-10-14).
  */
-export const DATA_VERSION = 3;
+export const DATA_VERSION = 4;
+/**
+ * The data version from which each settings schema (`SETTINGS_SCHEMA`, state/session.svelte.ts) is stamped (R94). A
+ * new schema raises DATA_VERSION with it (storage.test.ts holds the two together): a build that knows only the stamp
+ * then refuses to write over the newer record (kvSet), so it never drops the fields it does not know. Schemas 1–3 were
+ * written before this pairing; schema 4 was first stamped 3 and is guarded from 4 on.
+ */
+export const SETTINGS_SINCE: Readonly<Record<number, number>> = { 4: 4 };
 /** The stamp's field; no value stored before versions has it. */
 const STAMP = "@pascaline";
 
@@ -41,6 +48,8 @@ export const MIGRATIONS: Migrations = {
   // 2 → 3 (G46): Giac runs in radians and the degree mode lives in the text (`pasdeg`); pasexp goes
   // (engine/angleMigration.ts).
   2: { defs: migrateAngleDefs, library: migrateAngleText },
+  // 3 → 4 (R94): nothing to rewrite; the stamp guards settings schema 4 from builds that would drop its fields.
+  3: {},
 };
 
 /** The version a stored record was written in (0 before versions). */

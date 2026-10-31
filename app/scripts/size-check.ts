@@ -163,8 +163,11 @@ export const LAZY_PARTS = ["src/views/sheetKeys.ts", "src/views/tmplSheet.ts", "
  *  59.30 → 59.38 kB (R93): phase-1 3499958 measures 59.25 kB gzip (167.40 kB raw), the branch 59.33 kB (167.60 kB raw,
  *  +0.08 kB): the store's read tells a value, nothing stored and a failed read apart (kvGet), and idbKv drops the writes
  *  of a key whose read failed, so a transient fault never lets defaults replace the user's record; it is read at start,
- *  so it cannot load later. The pin is 59.33 + 0.05 kB. */
-export const START_PIN_GZIP = 59_380;
+ *  so it cannot load later. The pin is 59.33 + 0.05 kB.
+ *  59.38 → 59.47 kB (R94): phase-1 2fcb7bc measures 59.33 kB gzip (167.60 kB raw), the branch 59.42 kB (167.85 kB raw,
+ *  +0.09 kB): a settings record from a newer schema is read and never written back, with a one-time note through i18n
+ *  (owner, vg-8); it is the start's own read of the settings, so it cannot load later. The pin is 59.42 + 0.05 kB. */
+export const START_PIN_GZIP = 59_470;
 
 /** Failures for the start chunk's row when it is over the pin. */
 export function checkStartPin(row: Row): string[] {
