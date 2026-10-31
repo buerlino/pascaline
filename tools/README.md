@@ -10,6 +10,8 @@ tools/devlock.sh acquire <serial|host-cpu|integ> <owner> [wait_s]   # release / 
 tools/device-build.sh [--measure] [--install] [--engine-dir DIR] # build our APK (wraps ./build.sh), prints its path
 tools/device-build.sh --test --install                             # the test build: WebView debugging on (never release), installed on $ANDROID_SERIAL
 tools/core-device.sh [--only c05,c07]                             # the core list on the device's WebView over adb (A32): lock, stay-awake, pm clear per case; CORE DEVICE line, .coord/device-runs.jsonl
+ANDROID_SERIAL=<s> tools/update-device.sh <old.apk> <new.apk> [shots]   # A43: the old build, today's APK installed over it (adb install -r), each item checked; old APK: ef857a6 built with build.sh --engine-dir D --no-units and webContentsDebuggingEnabled true in its capacitor.config.ts; new: device-build.sh --test
+GIAC_OUT=<abs dir> node tools/make-update-snapshot.mjs           # A43: tests/fixtures/update-from-ef857a6.json from the old build (run once)
 tools/device_run.py status                                        # battery, temperature, WebView, app version
 tools/device_run.py start --mode first|cold|warm --runs 7         # launch timings from logcat marks (waits for engine-ready)
 tools/device_run.py bench --runs 5                                 # the benchmark cases of tests/golden/bench.yaml on the device

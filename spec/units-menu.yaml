@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # The units menu of the unit view (milestone 5 item 4): an empty unit slot shows it on the sheet, typing letters
-# filters it (Find on units), and its Const and Tools tabs map onto the unit view (docs/04 4.3). Nothing reads this
-# file yet; the unit view package does (ron).
+# filters it (Find on units), and its Const and Tools tabs map onto the unit view (docs/04 4.3). units/menu.ts reads
+# `prefixes` and `categories` (R24d); the Const and Tools tabs, `constants`, `tools` and `define` are still unread (R92).
 #
 # The G2's flow, our data (owner, 2026-10-13; decisions.md). From the G2, for the hand's memory: Shift + Units opens
 # it, the three tabs, Prefix first, the categories in the G2's order (spec/mapping/vc-2026-10-11/menus.yaml, G2
