@@ -178,9 +178,10 @@ test.describe("the unit view from the keys", () => {
     await tap(page, ["math"]);
     const find = page.getByTestId("find");
     await expect(find).toBeVisible();
-    await find.getByRole("menuitem").first().tap();
+    await find.getByRole("menuitem").nth(1).tap(); // the empty query shows the units menu (R24d): Length
+    await find.getByRole("menuitem").first().tap(); // m
     await expect(find).toBeHidden();
-    expect(await page.evaluate(() => window.pascaline.unitView?.view.model("u1")?.empty)).toBe(false);
+    expect(await tokens(page, "u1")).toEqual({ tokens: [{ unit: "m" }] });
     await expect(page.locator('[data-key="d9"][data-pad="unit"]')).toBeVisible();
   });
 });

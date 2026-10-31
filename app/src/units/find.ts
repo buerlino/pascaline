@@ -15,7 +15,7 @@ import { CELL_KEYS, CELL_LEGS, unitCells, type CellLeg, type CellUnit } from "./
 /** What a unit slot is given by a Find pick: a prefix arms, a unit that is a prefix and a unit of Find's list goes in as
  *  both, any other unit as itself. */
 export function pickActions(cat: SlotCatalogue, it: FindItem): PadAction[] {
-  const id = it.id.slice(it.id.indexOf(":") + 1);
+  const id = it.id.slice(it.kind.length + 1);
   if (it.kind === "pfx") return [{ do: "prefix", id }];
   const p = splitPair(cat, id);
   return [p ? { do: "pair", prefix: p.prefix, id: p.unit } : { do: "unit", id }];
@@ -23,7 +23,7 @@ export function pickActions(cat: SlotCatalogue, it: FindItem): PadAction[] {
 
 /** A Find unit as a cell holds it: with its prefix when it is a pair; else the first name where that is not the id. */
 export function cellUnitOf(cat: SlotCatalogue, it: FindItem): CellUnit {
-  const id = it.id.slice(it.id.indexOf(":") + 1);
+  const id = it.id.slice(it.kind.length + 1);
   const p = splitPair(cat, id);
   if (p) return { unit: p.unit, prefix: p.prefix };
   const name = it.names[0];

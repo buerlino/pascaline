@@ -34,10 +34,10 @@ export function productActions(text: string): PadAction[] | undefined {
   for (const [i, part] of parts.entries()) {
     if (i === 1) out.push({ do: "per" });
     for (const f of part.split("*")) {
-      const m = /^([^^]+)(?:\^(\d))?$/.exec(f);
-      const n = Number(m?.[2] ?? "1");
-      if (!m || (n !== 1 && n !== 2 && n !== 3 && n !== 4)) return undefined;
-      out.push({ do: "unit", id: m[1] as string });
+      const [name, pw, more] = f.split("^");
+      const n = pw === undefined ? 1 : Number(pw);
+      if (!name || more !== undefined || (n !== 1 && n !== 2 && n !== 3 && n !== 4)) return undefined;
+      out.push({ do: "unit", id: name });
       if (n !== 1) out.push({ do: "power", n });
     }
   }
@@ -45,7 +45,7 @@ export function productActions(text: string): PadAction[] | undefined {
 }
 
 const SUP: Readonly<Record<string, string>> = { "2": "²", "3": "³", "4": "⁴" };
-const pretty = (s: string): string => s.replace(/\^(\d)/g, (_, d: string) => SUP[d] ?? `^${d}`);
+const pretty = (s: string): string => s.split("^").map((p, i) => (i === 0 ? p : (SUP[p.slice(0, 1)] ?? `^${p.slice(0, 1)}`) + p.slice(1))).join("");
 
 export function unitsMenu(index: FindIndex, o: UnitsMenuOptions): { categories: MenuItem[]; search: (q: string) => MenuItem[] } {
   const row = (it: FindItem): MenuItem => {
