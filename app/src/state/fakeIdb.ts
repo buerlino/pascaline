@@ -13,14 +13,17 @@ interface FakeRequest<T> {
   onupgradeneeded?: Handler;
 }
 
-/** One database's records by store and key; tests read and seed `stores` directly. */
+/** One database's records by store and key; tests read and seed `stores` directly. A get of a key in `failGets` ends in
+ *  its onerror (R38af2). */
 export interface FakeIdb {
   readonly stores: Map<string, Map<string, unknown>>;
+  readonly failGets: Set<string>;
   readonly factory: { open(name: string, version: number): FakeRequest<unknown> };
 }
 
 export function fakeIndexedDb(): FakeIdb {
   const stores = new Map<string, Map<string, unknown>>();
+  const failGets = new Set<string>();
   const later = (f: () => void): void => void setTimeout(f, 0);
 
   const transaction = (name: string) => {
@@ -30,12 +33,17 @@ export function fakeIndexedDb(): FakeIdb {
       pending--;
       if (pending === 0) later(() => tx.oncomplete?.());
     };
-    function request<T>(run: () => T): FakeRequest<T | undefined> {
+    function request<T>(run: () => T, fail = false): FakeRequest<T | undefined> {
       const r: FakeRequest<T | undefined> = { result: undefined, error: null, onsuccess: null, onerror: null };
       pending++;
       later(() => {
-        r.result = run();
-        r.onsuccess?.();
+        if (fail) {
+          r.error = new Error("fake get failed");
+          r.onerror?.();
+        } else {
+          r.result = run();
+          r.onsuccess?.();
+        }
         done();
       });
       return r;
@@ -44,7 +52,7 @@ export function fakeIndexedDb(): FakeIdb {
       const store = stores.get(s);
       if (!store) throw new Error(`no store ${s}`);
       return {
-        get: (key: string) => request(() => (store.has(key) ? structuredClone(store.get(key)) : undefined)),
+        get: (key: string) => request(() => (store.has(key) ? structuredClone(store.get(key)) : undefined), failGets.has(key)),
         put: (value: unknown, key: string) => request(() => void store.set(key, structuredClone(value))),
       };
     }
@@ -60,6 +68,7 @@ export function fakeIndexedDb(): FakeIdb {
 
   return {
     stores,
+    failGets,
     factory: {
       open() {
         const r: FakeRequest<unknown> = { result: db, error: null, onsuccess: null, onerror: null, onupgradeneeded: null };
