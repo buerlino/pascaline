@@ -111,25 +111,25 @@ describe("size-check", () => {
         "src/units/calc.ts": { file: "assets/units.js", src: "src/units/calc.ts", isDynamicEntry: true },
         "src/units/open.ts": { file: "assets/open.js", src: "src/units/open.ts", isDynamicEntry: true },
       },
-      { ...files, "assets/find.js": 30_001, "assets/units.js": 10_000, "assets/open.js": 24_000, "find/index.json": { random: 400_001 }, "qalc/qalc.wasm": { random: 1_000_001 }, "qalc/qalc.mjs": 1000 },
+      { ...files, "assets/find.js": 30_001, "assets/units.js": 10_000, "assets/open.js": 28_000, "find/index.json": { random: 400_001 }, "qalc/qalc.wasm": { random: 1_000_001 }, "qalc/qalc.mjs": 1000 },
     );
     const r = checkSizes(dist);
     expect(r.notBuilt).toEqual([]);
     const failed = r.failures.map((f) => f.split(":")[0]);
     expect(failed).toContain("Find UI chunk");
-    expect(failed).not.toContain("Unit view chunk"); // the UI chunk and the builder together, exactly at 34 kB, are allowed
+    expect(failed).not.toContain("Unit view chunk"); // the UI chunk and the builder together, exactly at 38 kB, are allowed
     expect(failed).toContain("Find index asset");
     expect(failed).toContain("qalc wasm + glue");
   });
 
-  it("budgets the unit view's UI chunk and builder as one, at 34 kB raw (R24c)", () => {
+  it("budgets the unit view's UI chunk and builder as one, at 38 kB raw (R24c; Opus pass 24, G81)", () => {
     const { manifest, files } = base(1000);
     const units = {
       ...manifest,
       "src/units/calc.ts": { file: "assets/units.js", src: "src/units/calc.ts", isDynamicEntry: true },
       "src/units/open.ts": { file: "assets/open.js", src: "src/units/open.ts", isDynamicEntry: true },
     };
-    const r = checkSizes(fakeDist(units, { ...files, "assets/units.js": 10_000, "assets/open.js": 24_001 }));
+    const r = checkSizes(fakeDist(units, { ...files, "assets/units.js": 10_000, "assets/open.js": 28_001 }));
     expect(r.failures.map((f) => f.split(":")[0])).toEqual(["Unit view chunk"]);
     expect(r.rows.find((x) => x.rule === "Unit view chunk")?.files.sort()).toEqual(["assets/open.js", "assets/units.js"]);
   });

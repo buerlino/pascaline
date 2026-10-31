@@ -61,7 +61,8 @@ describe.skipIf(!giacAvailable())("a constant's σ through its basis (G81, real 
     expect(r.display).toBe("1");
     expect("uncDigits" in r.facts).toBe(false);
     // The mark is unchanged (decisions M4-4): the input holds inexact constants, so the item is never `=` (the session's
-    // inexactInput, results.ts homeItem). Whether a σ of 0 may give `=` is under "Needs the user".
+    // inexactInput, results.ts homeItem). Opus pass 24 decided it (decisions.md, Units: G81): a result whose every leaf
+    // cancels keeps `≈`, by docs/04 2.4 (`=` only when no input was inexact).
     expect(inexactConstsIn(body, WITH)).toEqual(["mu_0", "epsilon_0"]);
   });
 
