@@ -11,6 +11,8 @@ The owner's other open items are in [backlog.md](backlog.md), "Needs the user". 
 
 - **R50e, on the phone:** (1) the first frame reads the Android default (Dark) from `window.Capacitor` in the inline script; if the bridge is not there yet at that point, a first start with nothing stored shows System for one frame, then Dark (later starts read the mirror). Look at a first start after "clear data". (2) Android's status and navigation bar colours stay open (not in R50e).
 
+- **R24c, the unit view's sizes and the task budgets.** (1) The start chunk grows 60.51 → 60.74 kB gzip (pin 60.52 → 60.75; R24c's block asked for it unchanged): the units key on Tmpl, its routing (line, picked row, keys held while the view loads), the Find index wired into EngineCalc, and the bindings the lazy view takes from the start chunk. (2) The "Unit view chunk" rule summed G16's builder (`units/calc.ts`, 9.7 kB) with the new UI chunk (22.4 kB) against docs/04 4.4's 30 kB for the UI chunk; R24c measures them apart, each under 30 kB. (3) t02 and t04 are active at 12 and 13 presses, within their plans (15, 14); M4-2's budgets 9 and 12 count R62's one-tap alternative, so they apply when R62 is built. Recommendation: accept all three.
+
 ## Decided proposals
 
 Newest first within each group.
