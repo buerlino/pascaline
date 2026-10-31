@@ -136,6 +136,9 @@ export class UnitView {
       case "times":
         return; // units in a row multiply: × changes nothing
       default: {
+        // A slot press (a pick from Find too): an evaluation still running answers for the slots it was asked with,
+        // so its result is dropped (R24cf1).
+        this.#run++;
         const m = this.#models.get(this.activeId) as SlotModel;
         const r = m.apply(e);
         if (!r.ok) {
