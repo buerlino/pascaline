@@ -79,6 +79,14 @@ export class ClipActions {
     this.say(await (await import("../state/backup.ts")).saveBackup());
   }
 
+  /** Settings › Data › Restore from a file, with the picked file, or Undo the restore (R38b): the restore code loads on
+   *  the press; a refusal or a failure is the notice, a good file opens the restore sheet. */
+  async restoreBackup(file: File | "undo"): Promise<void> {
+    const m = await import("../views/restoreSheet.svelte.ts");
+    const say = (s: string): void => this.say(s);
+    await (file === "undo" ? m.offerUndo(say) : m.offerRestore(file, this.shell, say));
+  }
+
   /** The row an action means: the given one, else the newest finished result of the open view. */
   target(item?: HistoryItem): HistoryItem | undefined {
     if (item) return item.status === "done" ? item : undefined;

@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // The Mode sheet and Settings as rows of the one sheet (docs/05 3.4): what each key does to the session.
+import type { ClipActions } from "../clipboard/actions.svelte.ts";
+import { resetUndoTime } from "./dataSection.svelte.ts";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { FakeCalc } from "../calc/fake.ts";
 import { Session } from "../state/session.svelte.ts";
@@ -428,11 +430,13 @@ describe("Settings › Data (R38a)", () => {
   it("is the fifth section, between Your keys and Counters, only where the app gives the backup; its row saves and closes", () => {
     const saved: string[] = [];
     const userKeys = new UserKeys(memoryKv());
-    const s = new Sheet("mode", "Mode", () => modeItems(session, { userKeys, saveBackup: () => void saved.push("save") }), { remember: false });
+    resetUndoTime(null); // no kept copy of a restore (R38b)
+    const clip = { saveBackup: async () => void saved.push("save") } as unknown as ClipActions;
+    const s = new Sheet("mode", "Mode", () => modeItems(session, { userKeys, data: (run) => void run(clip) }), { remember: false });
     s.pickNumber(5);
     expect(s.level.items.map((x) => x.id)).toEqual(["appearance", "numbers", "vibration", "keys", "data", "counters", "help"]);
     s.pickNumber(5);
-    expect(s.level.items.map((x) => x.id)).toEqual(["backup"]);
+    expect(s.level.items.map((x) => x.id)).toEqual(["backup", "restore"]);
     const picked = s.activate(0);
     expect(picked.kind).toBe("run"); // not a switch: the sheet closes, the notice shows in the stage
     if (picked.kind === "run") picked.item.run?.();

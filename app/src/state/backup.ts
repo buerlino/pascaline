@@ -1,8 +1,13 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// The backup (R11 section 3, docs/04 6.2): one JSON file with each stored key's record as stored, stamp included. Loaded
-// only when the user saves one (never in the start chunk).
-import { dataText } from "../i18n/enData.ts";
-import { DATA_VERSION } from "./storage.ts";
+// The backup (R11 section 3, docs/04 6.2): one JSON file with each stored key's record as stored, stamp included, and
+// the check a restore runs on it before it writes anything (R38b, r11 section 3.4). Loaded only when the user saves or
+// restores one (never in the start chunk).
+import { validDefs } from "../engine/defs.ts";
+import { dataText, enData, type DataKey } from "../i18n/enData.ts";
+import { USER_KEY_IDS, USER_LAYERS } from "../keyboard/userKeys.svelte.ts";
+import { CELL_KEYS } from "../units/userCells.svelte.ts";
+import { HISTORY_LIMIT, keptRow, migrateSettings, type HistoryItem } from "./session.svelte.ts";
+import { DATA_VERSION, unstamp } from "./storage.ts";
 import { kvGetRaw, type RawRecord } from "./storageRaw.ts";
 
 /** The keys a backup holds (docs/04 6.2). A new key joins by being added here; the unit test fails until it is here or
@@ -63,4 +68,133 @@ export async function saveBackup(now: Date = new Date()): Promise<string> {
   } catch {
     return dataText("backup.failed");
   }
+}
+
+// ---- the restore's check (R38b, archive/r11-files.md section 3.4)
+
+/** The file format this app reads (the envelope's own number; the parts carry their own stamps). */
+export const BACKUP_FORMAT = 1;
+/** A restore refuses a larger file: twice the worst case of r11 section 3.3, so a wrong pick (a video) is never read. */
+export const MAX_BACKUP_BYTES = 4 * 1024 * 1024;
+const FORMAT = "pascaline-backup";
+const STAMP = "@pascaline";
+
+const isObject = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
+/** JSON with sorted keys: two values are the same data whatever order their fields were written in. */
+const canon = (v: unknown): string =>
+  JSON.stringify(v, (_k, x: unknown) => (isObject(x) ? Object.fromEntries(Object.entries(x).sort(([a], [b]) => (a < b ? -1 : 1))) : x));
+const isCount = (n: unknown): boolean => typeof n === "number" && Number.isInteger(n) && n >= 0;
+
+/** Settings: `migrateSettings` (as the start reads them) must keep every field the part holds; a field it would reset to
+ *  its default is a fault. */
+function settingsOk(v: unknown): boolean {
+  if (!isObject(v)) return false;
+  const { settings } = migrateSettings(v);
+  return Object.entries(settings).every(([k, x]) => !(k in v) || canon(v[k]) === canon(x));
+}
+
+/** History: `restoreHistory`'s filter, which keeps finished rows with their LaTeX, at most HISTORY_LIMIT per view. */
+function historyOk(v: unknown): boolean {
+  if (!isObject(v)) return false;
+  return (["home", "cas"] as const).every((view) => {
+    const xs = v[view];
+    return xs === undefined || (Array.isArray(xs) && xs.length <= HISTORY_LIMIT && xs.every((i: HistoryItem) => keptRow(i)));
+  });
+}
+
+/** Per key id and layer: null (an emptied slot) or a binding with a label and an action, as UserKeys reads them. */
+function slotsOk(v: unknown, ids: readonly string[], layers: readonly string[], binding: (b: Record<string, unknown>) => boolean): boolean {
+  if (!isObject(v)) return false;
+  return Object.entries(v).every(
+    ([id, slots]) => ids.includes(id) && isObject(slots) && Object.entries(slots).every(([l, b]) => layers.includes(l) && (b === null || (isObject(b) && binding(b)))),
+  );
+}
+const text = (x: unknown): boolean => typeof x === "string" && x !== "";
+
+/** Each key's validator: the check the app runs when it reads that key at start, strict so that a row or field the start
+ *  would drop is a fault (a restore never loses data silently). Keys whose start reads field by field with defaults (the
+ *  apps, the place) are checked by type. */
+export const VALIDATORS: Readonly<Record<string, (value: unknown) => boolean>> = {
+  settings: settingsOk,
+  view: (v) => v === "home" || v === "cas",
+  place: isObject,
+  entry: (v) => v === null || (isObject(v) && (v["view"] === "home" || v["view"] === "cas") && typeof v["latex"] === "string"),
+  history: historyOk,
+  defs: (v) => Array.isArray(v) && validDefs(v).length === v.length,
+  userKeys: (v) => slotsOk(v, USER_KEY_IDS, USER_LAYERS, (b) => text(b["label"]) && isObject(b["action"])),
+  unitPadCells: (v) =>
+    slotsOk(v, CELL_KEYS, ["tap", "up", "down"], (b) => text(b["unit"]) && (b["prefix"] === undefined || text(b["prefix"])) && (b["label"] === undefined || text(b["label"]))),
+  taps: (v) => isObject(v) && isCount(v["shift"]) && isCount(v["alpha"]) && typeof v["since"] === "string" && (v["presses"] === undefined || isCount(v["presses"])),
+  "app.function": isObject,
+  "app.solve": isObject,
+  "units.targets": (v) => typeof v === "object" && v !== null,
+  "units.history": (v) => typeof v === "object" && v !== null,
+};
+
+/** A file that passed: its envelope's facts and each part's value, brought up to DATA_VERSION. */
+export interface CheckedBackup {
+  readonly ok: true;
+  readonly made: string;
+  readonly dataVersion: number;
+  readonly parts: Readonly<Record<string, unknown>>;
+}
+/** A refused file: the message to show and the part it names, if any. */
+export interface RefusedBackup {
+  readonly ok: false;
+  readonly message: string;
+  readonly part?: string;
+}
+
+/** A part's name as the sheet and the messages show it. */
+export const partName = (key: string): string => (`part.${key}` in enData ? dataText(`part.${key}` as DataKey) : key);
+
+/**
+ * r11 section 3.4, in order: the first fault refuses the whole file, with its message and the part it names, and
+ * nothing is written. The probe's `check` (tools/probes/backup-file.mjs) plus step 5: each part through `unstamp` and
+ * its key's validator.
+ */
+export function checkBackup(bytes: Uint8Array): CheckedBackup | RefusedBackup {
+  const no = (key: DataKey, part?: string, vars: Record<string, string | number> = {}): RefusedBackup => ({
+    ok: false,
+    message: dataText(key, { ...vars, ...(part === undefined ? {} : { part: partName(part) }) }),
+    ...(part === undefined ? {} : { part }),
+  });
+  if (bytes.length > MAX_BACKUP_BYTES) return no("refuse.size");
+  let source: string;
+  try {
+    source = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+  } catch {
+    return no("refuse.utf8");
+  }
+  let f: unknown;
+  try {
+    f = JSON.parse(source.replace(/^\uFEFF/, ""));
+  } catch {
+    return no("refuse.json");
+  }
+  if (!isObject(f) || !(FORMAT in f)) return no("refuse.envelope");
+  const format = f[FORMAT];
+  if (typeof format !== "number" || !Number.isInteger(format) || format < 1) return no("refuse.format");
+  if (format > BACKUP_FORMAT) return no("refuse.newerFormat", undefined, { n: format, max: BACKUP_FORMAT });
+  const parts = f["parts"];
+  if (!isObject(parts)) return no("refuse.parts");
+  for (const [key, rec] of Object.entries(parts)) {
+    if (!BACKUP_KEYS.includes(key)) return no("refuse.unknown", key);
+    if (!isObject(rec) || !(STAMP in rec) || !("value" in rec)) return no("refuse.noStamp", key);
+    const v = rec[STAMP];
+    if (typeof v !== "number" || !Number.isInteger(v) || v < 0) return no("refuse.stamp", key);
+    if (v > DATA_VERSION) return no("refuse.newer", key, { v, max: DATA_VERSION });
+  }
+  const values: Record<string, unknown> = {};
+  for (const [key, rec] of Object.entries(parts)) {
+    let value: unknown;
+    try {
+      value = unstamp(key, rec).value;
+    } catch {
+      return no("refuse.invalid", key); // a migration step that cannot read the value
+    }
+    if (!VALIDATORS[key]?.(value)) return no("refuse.invalid", key);
+    values[key] = value;
+  }
+  return { ok: true, made: typeof f["made"] === "string" ? f["made"] : "", dataVersion: typeof f["dataVersion"] === "number" ? f["dataVersion"] : 0, parts: values };
 }

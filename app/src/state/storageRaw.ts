@@ -40,3 +40,44 @@ export async function kvGetRaw(key: string): Promise<RawRecord | undefined> {
     r.onerror = () => reject(r.error ?? new Error("indexedDB get failed"));
   });
 }
+
+/**
+ * R38b: several records in ONE transaction, so a restore or its Undo is written whole or not at all. It reads the
+ * records under `read` as stored (no migration), then `write(stored)` gives each key's new record, put exactly as given
+ * (the caller stamps it), or undefined to delete the key. A missing key reads as undefined. When `write` throws, nothing
+ * is written and the promise rejects with its error.
+ */
+export async function kvSetMany(read: readonly string[], write: (stored: Readonly<Record<string, unknown>>) => Readonly<Record<string, unknown>>): Promise<void> {
+  const db = await open();
+  await new Promise<void>((resolve, reject) => {
+    const tx = db.transaction(STORE, "readwrite");
+    const store = tx.objectStore(STORE);
+    const stored: Record<string, unknown> = {};
+    let left = read.length;
+    let failed: unknown;
+    const put = (): void => {
+      let recs: Readonly<Record<string, unknown>>;
+      try {
+        recs = write(stored);
+      } catch (e) {
+        failed = e; // nothing is written: the transaction ends with its reads only
+        return;
+      }
+      for (const [key, rec] of Object.entries(recs)) {
+        if (rec === undefined) store.delete(key);
+        else store.put(rec, key);
+      }
+    };
+    for (const key of read) {
+      const r = store.get(key);
+      r.onsuccess = () => {
+        stored[key] = r.result;
+        if (--left === 0) put();
+      };
+    }
+    if (left === 0) put();
+    tx.oncomplete = () => (failed === undefined ? resolve() : reject(failed));
+    tx.onerror = () => reject(tx.error ?? new Error("indexedDB write failed"));
+    tx.onabort = () => reject(tx.error ?? new Error("indexedDB write aborted"));
+  });
+}
