@@ -44,7 +44,7 @@ export async function tap(page: Page, ids: string[]): Promise<void> {
       const el = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
       return el !== null && !k.contains(el) && el.closest('[role="menu"]') !== null;
     }, id);
-  const press = (id: string): Promise<void> => page.evaluate((id) => window.pascaline.entry.onKey(id, undefined as never), id);
+  const press = (id: string): Promise<void> => page.evaluate((id) => window.pascaline.entry.onKey(id, undefined as never, false), id);
   for (const id of ids) {
     if (id.startsWith("@")) {
       await statusTap(page, id);

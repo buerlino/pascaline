@@ -25,10 +25,11 @@ export interface HwTarget {
   readonly decimalComma: boolean;
   /** The entry line's own path for an action. */
   run(a: ActionBody): void;
-  /** Press a keypad key in a layer, as a tap would (the shell's path: Ans first, one-line forms, open sheets). */
-  onKey(id: string, layer: Layer): void;
+  /** Press a keypad key in a layer, as a tap would (the shell's path: Ans first, one-line forms, open sheets). `repeat`
+   *  is the event's KeyboardEvent.repeat: a held key's auto-repeat acts again but is no new press (docs/04 5.2). */
+  onKey(id: string, layer: Layer, repeat: boolean): void;
   /** A typed letter, through the shell's checks (open sheet, picked row, apps) before it reaches the line. */
-  onLetter(ch: string): void;
+  onLetter(ch: string, repeat: boolean): void;
   /** A key that does nothing here (docs/05 3.7). */
   onDead(): void;
 }
@@ -83,27 +84,27 @@ export function hardwareKey(ev: KeyboardEvent, t: HwTarget): boolean {
   // controller's own listener (onEnter, onEscape), which presses the same keys.
   const ctl = ch === "Enter" || ch === "Escape" ? undefined : controlKey(ev);
   if (ctl) {
-    t.onKey(ctl[0], ctl[1]);
+    t.onKey(ctl[0], ctl[1], ev.repeat);
     return true;
   }
   if (ch.length !== 1) return false;
   // a character outside ASCII (é, µ, π from a keyboard layout) is left to MathLive, as before
   if (ch < " " || ch > "~") return false;
   if ((ch === "e" || ch === "E") && afterNumber(mf)) {
-    t.onKey("emark", "primary");
+    t.onKey("emark", "primary", ev.repeat);
     return true;
   }
   if (ch === ")" || ch === "|") {
     if (leave(mf, ch === ")" ? "(" : "|")) mf.focus();
-    else if (ch === "|") t.onKey("neg", "shift");
+    else if (ch === "|") t.onKey("neg", "shift", ev.repeat);
     else t.onDead();
     return true;
   }
   // R57: with the decimal comma both `.` and `,` type the decimal mark (the keypad's `.` key); `;` stays the separator
   const k = KEYS[t.decimalComma && ch === "," ? "." : ch];
-  if (k) t.onKey(k[0], k[1]);
+  if (k) t.onKey(k[0], k[1], ev.repeat);
   else if (PALETTE.has(ch)) t.run({ kind: "insert", latex: ch });
-  else if (/^[A-Za-z]$/.test(ch)) t.onLetter(ch);
+  else if (/^[A-Za-z]$/.test(ch)) t.onLetter(ch, ev.repeat);
   else t.onDead();
   return true;
 }
