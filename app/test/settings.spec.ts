@@ -87,7 +87,7 @@ test.describe("by keys", () => {
     await page.keyboard.press("5");
     await expect(title(page)).toHaveText("Mode › Settings › Counters");
     await page.keyboard.press("ArrowDown");
-    await expect(active(page)).toHaveAttribute("data-id", "alpha");
+    await expect(active(page)).toHaveAttribute("data-id", "shift"); // the key presses (R70) come first
     await page.keyboard.press("Escape");
     await expect(title(page)).toHaveText("Mode › Settings");
     await expect(active(page)).toHaveAttribute("data-id", "counters");
@@ -148,7 +148,8 @@ test.describe("by touch", () => {
   test("Counters: the Shift and Alpha counts, since when, and Reset, which keeps the sheet open", async ({ page }) => {
     await tap(page, ["shift", "shift", "alpha", "alpha"]);
     await tap(page, ["@mode", "d5", "d5"]);
-    expect(await rowIds(page)).toEqual(["shift", "alpha", "since", "reset"]);
+    expect(await rowIds(page)).toEqual(["presses", "shift", "alpha", "since", "reset"]);
+    await expect(row(page, "presses").getByTestId("sheet-value")).toHaveText("8"); // R70: Shift Shift Alpha Alpha, the format chip, ▲, 5, 5
     await expect(row(page, "shift").getByTestId("sheet-value")).toHaveText("2");
     await expect(row(page, "alpha").getByTestId("sheet-value")).toHaveText("2");
     await expect(row(page, "since").getByTestId("sheet-value")).toHaveText(/^\d{4}-\d\d-\d\d$/);
