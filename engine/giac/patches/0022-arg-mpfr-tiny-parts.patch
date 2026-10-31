@@ -1,0 +1,49 @@
+# Upstream: giac 2.1.0 gen.cc arg_CPLX. is_zero of an MPFR part compares its double with epsilon (1e-12), so a complex MPFR value with both parts below 1e-12 had arg undef, and ln and every power of it too (Digits 60: arg(evalf(1/10^20-i/10^20)) undef; surd(10^-299/cos(acosh(-1/2)),3) undef, its argument's evalf carries an imaginary part of 1e-360, so Home fell back to the double: 1.3437024079419E-100-2.94E-115*i, right 1.34370240794014650320E-100), and a part below 1e-12 beside a negative real part was taken as 0 (arg(evalf(-1-i/10^20)) = +pi, right -pi). Now, when a part is MPFR, nonzero and within epsilon of 0 and the other is MPFR or exactly 0, arg is MPFR's atan2 at the parts' precision (an exact 0 as +0).
+# Changed by Pascaline contributors, 2026-10-31
+--- a/src/gen.cc
++++ b/src/gen.cc
+@@ -4343,6 +4343,19 @@
+ #endif
+   }
+ 
++#ifdef HAVE_LIBMPFR
++  // Pascaline patch 0022 (G134): an MPFR value (no interval) that is not 0 but that is_zero takes as 0 (|x| <= epsilon)
++  static bool arg_part_tiny(const gen & g,GIAC_CONTEXT){
++    if (g.type!=_REAL || g._REALptr->is_zero() || !is_zero(g,contextptr))
++      return false;
++#ifndef NO_RTTI
++    if (dynamic_cast<real_interval *>(g._REALptr))
++      return false;
++#endif
++    return mpfr_regular_p(g._REALptr->inf);
++  }
++#endif
++
+   gen arg_CPLX(const gen & a,GIAC_CONTEXT){
+     gen realpart=normal(a.re(contextptr),contextptr),
+       imagpart=normal(a.im(contextptr),contextptr);
+@@ -4354,6 +4367,24 @@
+       return atan2f(realpart._FLOAT_val,imagpart._FLOAT_val,angle_radian(contextptr));
+ #endif
+     }
++#ifdef HAVE_LIBMPFR
++    // Pascaline patch 0022 (G134): is_zero of an MPFR part compares its double with epsilon (1e-12), so a complex MPFR
++    // value with both parts below 1e-12 had arg undef (ln and every power of it too: surd(10^-299/cos(acosh(-1/2)),3)
++    // at Digits 60 was undef, as the argument's evalf carries an imaginary part of 1e-360, and Home fell back to the
++    // double: 1.3437024079419E-100-2.94E-115*i), and one below 1e-12 beside a negative real part was taken as 0
++    // (arg(-1-10^-20*i) = +pi). A part that is MPFR and nonzero but within epsilon of 0, the other MPFR or exactly 0:
++    // the arg is MPFR's atan2 at the parts' precision (an exact 0 as +0).
++    if (arg_part_tiny(realpart,contextptr) || arg_part_tiny(imagpart,contextptr)){
++      if ((realpart.type==_REAL || is_exactly_zero(realpart)) && (imagpart.type==_REAL || is_exactly_zero(imagpart))){
++        unsigned int prec=0;
++        if (realpart.type==_REAL) prec=mpfr_get_prec(realpart._REALptr->inf);
++        if (imagpart.type==_REAL && mpfr_get_prec(imagpart._REALptr->inf)>prec) prec=mpfr_get_prec(imagpart._REALptr->inf);
++        real_object R(is_exactly_zero(realpart)?gen(0):realpart,prec),I(is_exactly_zero(imagpart)?gen(0):imagpart,prec),res(R);
++        mpfr_atan2(res.inf,I.inf,R.inf,MPFR_RNDN);
++        return res;
++      }
++    }
++#endif
+     if (is_zero_or_contains(realpart,contextptr)){
+       if (is_zero_or_contains(imagpart,contextptr))
+ 	return undef;

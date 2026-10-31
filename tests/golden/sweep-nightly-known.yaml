@@ -9,8 +9,6 @@ known:
   - { id: 'rad 30 \left(\operatorname{asinh}\left(\sqrt[3]{0.5}\right)\right)^{\left(\frac{\pi}{2}+10^{-3}\right)^{\frac{90+10^{-3}}{\frac{\pi}{2}+10^{-6}}}}', check: crash, package: F122 }
   - { id: 'rad 12 \left(\arctan\left(\ln\left(-\pi\right)+9007199254740993\right)\right)^{\sin\left(1ᴇ-300\right)-\left(1ᴇ300\right)}', check: crash, package: F122 }
   - { id: 'deg 12 \left(\arctan\left(\ln\left(-\pi\right)+9007199254740993\right)\right)^{\sin\left(1ᴇ-300\right)-\left(1ᴇ300\right)}', check: crash, package: F122 }
-  # G120's open findings (F132 fixed by G133)
+  # G120's open findings (F132 fixed by G133, F131 and F133 by G134)
   - { id: 'rad 12 \frac{\sin\left(\sqrt[3]{\sin\left(\frac{\pi}{2}-\frac{\pi}{10^{8}}\right)}\right)}{\sqrt{\left(\operatorname{acosh}\left(-0.5\right)\right)^{3}}}', check: '≈', package: F129 }
   - { id: 'rad 30 \arccos\left(9007199254740993^{9007199254740993}\right)\times \arcsin\left(\arccos\left(90+10^{-3}\right)\right)', check: part, package: F130 }
-  - { id: 'rad 30 \operatorname{asinh}\left(\operatorname{acosh}\left(10^{-6}\right)\right)', check: '⚠n', package: F131 }
-  - { id: 'rad 30 \sqrt[3]{\frac{\frac{90+10^{-3}}{1ᴇ300}}{\cos\left(\operatorname{acosh}\left(-0.5\right)\right)}}', check: '⚠n', package: F133 }
