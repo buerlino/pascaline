@@ -641,6 +641,7 @@ STUB
 printf '#!/bin/sh\nowner > "%s/build-owner"; mkdir -p dist; echo apk > dist/pascaline.apk\n' "$mq" > "$p1q/tools/device-build.sh"
 printf '#!/bin/sh\nowner > "%s/core-owner"; echo "CORE DEVICE 3/3 (known 0, needs 0)"\n' "$mq" > "$p1q/tools/core-device.sh"
 chmod +x "$mq/bin/adb" "$p1q/tools/device-build.sh" "$p1q/tools/core-device.sh"
+git -C "$p1q" add tools/core-device.sh; gc "$p1q" "device runner stub"   # A56: the runner comes from the built sha's tree
 out="$(mqrun env ANDROID_SERIAL=TESTSERIAL "$script" device 6 2>&1)"
 [[ "$(cat "$mq/build-owner" 2>/dev/null)" == device-6 && "$(cat "$mq/core-owner" 2>/dev/null)" == free ]] || fail "A47b: the device step does not hold integ for the build only: build $(cat "$mq/build-owner" 2>&1), core $(cat "$mq/core-owner" 2>&1): $out"
 # A47bf1: a start copies the phase-1 node_modules under nodemods only; a stale one takes integ, then nodemods, then host-cpu (npm ci);
@@ -668,7 +669,8 @@ mqrun env ANDROID_SERIAL=TESTSERIAL "$script" device 7 > "$tmp/d7.out" 2>&1 & d7
 for _ in $(seq 1 150); do grep -q ci-start "$ev" && break; sleep 0.2; done
 mqrun "$script" ron "queue task" --id N3 --branch p1/n3 --checks typecheck > "$tmp/n3.out" 2>&1
 wait "$d7"; rm -f "$mq/bin/cp"
-[[ "$(paste -sd' ' "$ev")" == "ci-start ci-end copy-start copy-end" ]] || fail "A47bf1: the device build's npm ci and a start's copy overlap: $(paste -sd' ' "$ev"): $(cat "$tmp/d7.out" "$tmp/n3.out")"
+# A56: the device step's own copy (its runner's tree) follows its npm ci under the same nodemods hold, then the start's copy
+[[ "$(paste -sd' ' "$ev")" == "ci-start ci-end copy-start copy-end copy-start copy-end" ]] || fail "A47bf1: the device build's npm ci and a start's copy overlap: $(paste -sd' ' "$ev"): $(cat "$tmp/d7.out" "$tmp/n3.out")"
 [[ "$(cat "$mq/build-nodemods" 2>/dev/null)" == device-7 ]] || fail "A47bf1: the device build runs without nodemods: $(cat "$mq/build-nodemods" 2>&1)"
 grep -q '^RESULT #[0-9]* N3: MERGED' "$tmp/n3.out" || fail "A47bf1: the start that waited for the device build did not merge: $(cat "$tmp/n3.out")"
 # stale phase-1 node_modules: the start waits for integ (the npm ci path), not just nodemods
