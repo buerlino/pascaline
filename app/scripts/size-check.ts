@@ -117,7 +117,7 @@ export const LAZY_VIEWS = ["src/views/Sheet.svelte"];
 /** R91: code that only runs after a key press or once a result is in stays out of the start chunk too: the sheet's keys
  *  and the palette cells (loaded with the sheet's view), the result tidy-up, the palettes with their names. R70f1: how a
  *  key acts on the entry line's field, and the field's set-up (entry/field.ts, loaded with MathLive). */
-export const LAZY_PARTS = ["src/views/sheetKeys.ts", "src/views/tmplSheet.ts", "src/render/tidy.ts", "src/keyboard/shiftPalettes.ts", "src/units/open.ts", "src/entry/field.ts"];
+export const LAZY_PARTS = ["src/views/sheetKeys.ts", "src/views/tmplSheet.ts", "src/render/tidy.ts", "src/keyboard/shiftPalettes.ts", "src/units/open.ts", "src/entry/field.ts", "src/state/handOver.ts"];
 
 /** R91's pin: the start chunk is at most this many bytes gzip, 1 kB under the budget of 61 kB, so the Settings base
  *  (R49, R86, R57) has room. A package that needs more raises the pin with a reason, here and in docs/04 8.3.
