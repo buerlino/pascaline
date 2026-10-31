@@ -11,8 +11,6 @@ The owner's other open items are in [backlog.md](backlog.md), "Needs the user". 
 
 - **R50e, on the phone:** (1) the first frame reads the Android default (Dark) from `window.Capacitor` in the inline script; if the bridge is not there yet at that point, a first start with nothing stored shows System for one frame, then Dark (later starts read the mirror). Look at a first start after "clear data". (2) Android's status and navigation bar colours stay open (not in R50e).
 
-- **R38b, the restore's validators:** an import of `session.svelte.ts` or `userKeys.svelte.ts` from lazy code splits the start chunk into six files (59.09 → 60.62 kB gzip, Rolldown 1.2.13), so `state/backup.ts` repeats `migrateSettings`' field rules, `restoreHistory`'s filter and the key layers, and `restore.test.ts` runs both on the same values. Keep that (as `storageRaw.ts`), or pin those modules to the start chunk in `vite.config.ts` (annabell) and call the readers directly?
-
 - **A52, the kill run's gate:** recommendation: a kill run skips the golden step (check-version stays), because its tag already passed the gate and the golden units stage fails past p95 5 ms on a slow runner, which would block the emergency switch-off. Yes: a FIX for annabell. No: as built.
 
 ## Decided proposals
@@ -179,4 +177,5 @@ The defaults that bind code and tests, one line each. A default changes when its
 - **A45, a criterion on a shared file (Opus pass 19):** a package step that changes `THIRD_PARTY.md` or another shared file (rules section 4) is met by its exact text under "For shared files"; the audit checks that text and does not FIX the file, and the next Opus pass applies it (A45's Vite and Actions rows: pass 19). Would change if: the owner lets workers edit `THIRD_PARTY.md`.
 - **R87 (Opus pass 15):** no ISC or UIUC text in `LICENSES/`: yaml is build-time only, Emscripten's runtime ships under MIT (THIRD_PARTY.md). Would change if: a shipped part needs another licence's text.
 - **G116, the sweep oracle:** on atanh's cut it takes Giac's side (+π/2·i for a real x > 1), and an argument on a cut within noise is a skip. Would change if: a case shows Giac off the textbook side.
+- **R38b, R88, the restore's checks and presets (Opus pass 29):** `state/backup.ts` repeats the start readers' rules (settings, history, key layers, the presets' load check), since an import splits the start chunk; a guard test runs both on the same values; no pin in `vite.config.ts`. A preset name compares trimmed and without case, a preset holds at least one group, capture and update make it active. Would change if: a guard misses a drift.
 - **G119, Giac's sequence answers in Home (Opus pass 6):** each shows as its value (one element) or as a list in braces, so Ans reads back a value or a list; CAS unchanged (F108). Full text: archive.
