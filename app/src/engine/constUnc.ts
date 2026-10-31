@@ -5,12 +5,14 @@
 // σ = sqrt(Σ (∂f/∂xᵢ · σᵢ)²) over independent inputs, exactly with Giac's diff at their values. G81: an inexact
 // constant with a basis (G80: its value over the measured leaves it is computed from, `pasl_<leaf>`) enters as that
 // basis, so constants sharing a leaf (μ₀, ε₀ and Z₀ share α) are correlated: the value is evaluated through the basis
-// (μ₀·ε₀·c² is exactly 1) and σ is taken over the leaves; a constant without one is an input of its own, as before. `uncDigits` is the number of significant digits of the shown value before the digit position of
-// σ's first digit: the digits from there on are uncertain. Synchronous, UI-free. Only erasable TypeScript syntax.
+// (μ₀·ε₀·c² is exactly 1) and σ is taken over the leaves; a constant without one is an input of its own, as before.
+// `uncDigits` is the number of significant digits of the shown value before the digit position of σ's first digit:
+// the digits from there on are uncertain. Synchronous, UI-free. Only erasable TypeScript syntax.
 import { decimalFromString, isZero, roundSignificant, type DecimalValue } from "./format.ts";
 import { toExactLiterals, type HomeResult } from "./homeEval.ts";
 import type { Giac } from "./numeric.ts";
 import { mapNames, names } from "./giacPrint.ts";
+import { basisOf, isZeroText, LEAF_PREFIX, mapLeaves } from "./constBasis.ts";
 import type { ValueFacts } from "./types.ts";
 
 /** A constant the input holds by name: its value as Giac text (`6.67430E-11`), and its standard uncertainty in the
@@ -30,14 +32,7 @@ export type ConstTable = Readonly<Record<string, ConstEntry>>;
 
 /** The prefix of a constant sent by name. */
 export const CONST_PREFIX = "pasc_";
-/** The prefix of a basis leaf (G80, G81). */
-export const LEAF_PREFIX = "pasl_";
 
-
-/** A decimal or integer text that is exactly zero ("0", "0.0", "0E-11"). */
-function isZeroText(s: string): boolean {
-  return /^\s*[+-]?0*\.?0*(?:[eE][+-]?\d+)?\s*$/.test(s) && /\d/.test(s);
-}
 
 /** An inexact constant has a nonzero uncertainty text (the one rule; constFacts states it as facts). */
 function inexact(e: ConstEntry | undefined): e is ConstEntry & { unc: string } {
@@ -53,23 +48,6 @@ export function constFacts(e: ConstEntry): ValueFacts {
 /** A constant table with every entry carrying its facts (G86): where a table is built (the golden sequences, G49). */
 export function constTable(entries: Readonly<Record<string, ConstEntry>>): ConstTable {
   return Object.fromEntries(Object.entries(entries).map(([id, e]) => [id, { ...e, facts: constFacts(e) }]));
-}
-
-/** G81: the basis an inexact constant enters through, when it has one whose every leaf it carries with a value and an
- *  uncertainty; else undefined (an exact constant, or a chip stored before G81: its own value, as before). */
-export function basisOf(e: Pick<ConstEntry, "unc" | "basis" | "basisLeaves">): string | undefined {
-  const leaves = e.basisLeaves;
-  if (!inexact({ value: "", ...e }) || !e.basis || !leaves) return undefined;
-  for (const { name } of names(e.basis, "typed")) {
-    const l = name.slice(LEAF_PREFIX.length);
-    if (name.startsWith(LEAF_PREFIX) && !(Object.hasOwn(leaves, l) && typeof leaves[l]?.value === "string" && typeof leaves[l]?.unc === "string")) return undefined;
-  }
-  return e.basis;
-}
-
-/** `basis` with each leaf name replaced by `f` of its leaf id (null keeps the name). */
-export function mapLeaves(basis: string, f: (leaf: string) => string | null): string {
-  return mapNames(basis, ({ name }) => (name.startsWith(LEAF_PREFIX) && name.length > LEAF_PREFIX.length ? f(name.slice(LEAF_PREFIX.length)) : null), "typed");
 }
 
 /**

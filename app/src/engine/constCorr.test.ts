@@ -7,6 +7,10 @@ import { EngineHost } from "./host.ts";
 import { defaultHomeSettings } from "./homeEval.ts";
 import { engineGiac, giacAvailable, loadNodeGiac, type EngineGiac } from "./nodeGiac.ts";
 import { inexactConstsIn, sigmaExpr, type ConstEntry, type ConstTable } from "./constUnc.ts";
+import type { IndexItem } from "../find/types.ts";
+import { buildJob } from "../units/build.ts";
+import { factorTable } from "../units/factors.ts";
+import { isUnitError, type UnitRequest } from "../units/types.ts";
 
 const H = "(662607015*10^(-42))";
 const E = "(1602176634*10^(-28))";
@@ -27,6 +31,11 @@ const WITH: Record<string, ConstEntry> = {
 };
 /** The same constants as a chip stored before G81 carries them: value and uncertainty only. */
 const WITHOUT: ConstTable = Object.fromEntries(Object.entries(WITH).map(([id, { value, unc }]) => [id, unc === undefined ? { value } : { value, unc }]));
+
+/** The same constants as Find's items for the unit view (the index's dimension keys). */
+const DIMS: Record<string, string> = { c: "m1s-1", mu_0: "A-2kg1m1s-2", epsilon_0: "A2kg-1m-3s4", m_e: "kg1", m_p: "kg1" };
+const items = (t: Record<string, ConstEntry>): IndexItem[] =>
+  Object.entries(t).map(([id, e]) => ({ id: `const:${id}`, kind: "const", names: [id], title: id, tier: 0, insert: `\\const{${id}}{${id}}`, dim: DIMS[id]!, ...e }));
 
 describe.skipIf(!giacAvailable())("a constant's σ through its basis (G81, real Giac)", () => {
   let host: EngineHost;
@@ -86,5 +95,27 @@ describe.skipIf(!giacAvailable())("a constant's σ through its basis (G81, real 
     expect(sigma("pasc_G*pasc_m_e", t) / 6.6743e-11 / 9.1093837139e-31 / 2.2474e-5).toBeCloseTo(1, 3);
     expect(sigma("pasc_G*pasc_m_e", t) / sigma("pasc_G*pasc_m_e", u)).toBeCloseTo(1, 3);
     expect(home("pasc_G*pasc_m_e", t).facts.uncDigits).toBe(home("pasc_G*pasc_m_e", u).facts.uncDigits);
+  });
+
+  describe("the unit view (G18, G41) takes the same leaves", () => {
+    const units = (formula: string, consts: string[], t: Record<string, ConstEntry>) => {
+      const job = buildJob({ formula, slots: [], consts } as UnitRequest, factorTable(items(t)));
+      if (isUnitError(job)) throw new Error(job.error);
+      const q = host.units(job, defaultHomeSettings);
+      if (isUnitError(q) || !q.unc) throw new Error(JSON.stringify(q));
+      return { value: q.value.display, sigma: Number(giac.eval(`evalf(${q.unc.value.exact ?? q.unc.value.full},20)`)), shown: q.unc.shown };
+    };
+    it("μ₀·ε₀·c² is 1 ± 0 (oracle)", () => {
+      expect(units("pask1*pask2*pask3^2", ["mu_0", "epsilon_0", "c"], WITH)).toMatchObject({ value: "1", sigma: 0, shown: "1 ± 0" });
+    });
+    it("Z₀ and m_p/m_e: σ within 2 % of the oracle's 5.8337E-8 and 3.5819E-8", () => {
+      const z = units("sqrt(pask1/pask2)", ["mu_0", "epsilon_0"], WITH);
+      expect(z.value).toBe("376.730313412");
+      expect(Math.abs(z.sigma / 5.8336944858e-8 - 1)).toBeLessThan(0.02);
+      expect(Math.abs(units("pask1/pask2", ["m_p", "m_e"], WITH).sigma / 3.5819195431e-8 - 1)).toBeLessThan(0.02);
+    });
+    it("without a basis each constant is its own input, as on phase-1 (m_p/m_e: σ 8.0E-7, derived)", () => {
+      expect(Math.abs(units("pask1/pask2", ["m_p", "m_e"], WITHOUT as Record<string, ConstEntry>).sigma / 8.0e-7 - 1)).toBeLessThan(0.02);
+    });
   });
 });

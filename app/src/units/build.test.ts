@@ -171,6 +171,18 @@ describe("uncertain inputs (G18)", () => {
     expect(job.unc?.vars).toEqual([{ name: "pasv1", value: "6.67430E-11", sigma: "1.5E-15" }]);
     expect(job.unc?.expr).toBe("(pasv1*pasdimM^(-1)*pasdimL^(3)*pasdimT^(-2))*(pasv1*pasdimM^(-1)*pasdimL^(3)*pasdimT^(-2))*((299792458)*pasdimL^(1)*pasdimT^(-1))");
   });
+  it("G81: a constant with a basis enters as its basis, each leaf an input once, shared between constants", () => {
+    const a = { fine_structure: { value: "7.3E-3", unc: "1E-12" }, exact_leaf: { value: "2", unc: "0" } };
+    const t = factorTable([
+      { id: "const:mu", kind: "const", names: ["mu"], title: "mu", value: "1.2E-6", unc: "2E-16", basis: "pasl_exact_leaf*pasl_fine_structure", basisLeaves: a, dim: "kg1", tier: 0, insert: "\\const{mu}{mu}" },
+      { id: "const:eps", kind: "const", names: ["eps"], title: "eps", value: "8.8E-12", unc: "1E-21", basis: "1/pasl_fine_structure", basisLeaves: a, dim: "kg-1", tier: 0, insert: "\\const{eps}{eps}" },
+    ]);
+    const job = buildJob({ formula: "pask1*pask2", slots: [], consts: ["mu", "eps"] }, t);
+    if ("error" in job) throw new Error(job.error);
+    expect(job.unc?.vars).toEqual([{ name: "pasv1", value: "7.3E-3", sigma: "1E-12" }]);
+    expect(job.unc?.expr).toBe("(((2)*pasv1)*pasdimM^(1))*((1/pasv1)*pasdimM^(-1))");
+    expect(job.expr).toBe("(((2)*(7.3E-3))*pasdimM^(1))*((1/(7.3E-3))*pasdimM^(-1))");
+  });
   it("a value without ± has no uncertainty; a malformed ± is refused", () => {
     const job = buildJob({ formula: "12.34*pasu1", slots: [{ tokens: [{ unit: "m" }] }] }, table);
     if ("error" in job) throw new Error(job.error);

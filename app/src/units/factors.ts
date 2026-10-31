@@ -19,6 +19,9 @@ export interface ConstFactor {
   value: string;
   /** Standard uncertainty (CODATA); absent when the value is exact. */
   unc?: string;
+  /** G81: an inexact constant's basis over `pasl_<leaf>` names and its leaves (the Find item's, G80). */
+  basis?: string;
+  basisLeaves?: Readonly<Record<string, { value: string; unc: string }>>;
   dim?: string;
   symbol: string;
 }
@@ -45,7 +48,13 @@ export function factorTable(items: readonly IndexItem[]): FactorTable {
     if (it.kind === "unit") units.set(bare(it.id), { ...(it.si ? { si: it.si } : {}), ...(it.dim !== undefined ? { dim: it.dim } : {}), symbol: symbolOf(it) });
     else if (it.kind === "pfx" && it.si) prefixes.set(bare(it.id), { si: it.si, symbol: symbolOf(it) });
     else if (it.kind === "const" && it.value)
-      consts.set(bare(it.id), { value: it.value, ...(it.unc ? { unc: it.unc } : {}), ...(it.dim !== undefined ? { dim: it.dim } : {}), symbol: symbolOf(it) });
+      consts.set(bare(it.id), {
+        value: it.value,
+        ...(it.unc ? { unc: it.unc } : {}),
+        ...(it.unc && it.basis !== undefined && it.basisLeaves !== undefined ? { basis: it.basis, basisLeaves: it.basisLeaves } : {}),
+        ...(it.dim !== undefined ? { dim: it.dim } : {}),
+        symbol: symbolOf(it),
+      });
   }
   return { units, prefixes, consts };
 }

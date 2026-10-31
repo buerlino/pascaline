@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // G26: the pure parts of constUnc.ts (no engine).
 import { describe, expect, it } from "vitest";
-import { basisOf, constFacts, constTable, inexactConstsIn, sigmaExpr, uncDigitsOf, withConstValues } from "./constUnc.ts";
+import { basisOf } from "./constBasis.ts";
+import { constFacts, constTable, inexactConstsIn, sigmaExpr, uncDigitsOf, withConstValues } from "./constUnc.ts";
 import { decimalFromString } from "./format.ts";
 
 const G = { value: "6.67430E-11", unc: "0.00015E-11" };
@@ -66,7 +67,7 @@ describe("a constant enters through its basis (G81)", () => {
   it("the basis is used only when every leaf is carried and the constant is inexact", () => {
     expect(basisOf(mu)).toBe("2*pasl_fine_structure/3");
     expect(basisOf({ ...mu, basisLeaves: {} })).toBeUndefined();
-    expect(basisOf({ value: "1.2E-6", unc: "2E-16" })).toBeUndefined();
+    expect(basisOf({ unc: "2E-16" })).toBeUndefined();
     expect(basisOf({ ...mu, unc: "0" })).toBeUndefined();
   });
   it("the value goes in through the basis; a chip without one keeps its value", () => {
