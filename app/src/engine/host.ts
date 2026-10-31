@@ -49,7 +49,7 @@ import { SOLVE_HARD_TIMEOUT_S, solveRequest, unknownsOf } from "./solve.ts";
 import { analyze, table } from "./analysis.ts";
 import { UNIT_DEFINITIONS, unitEval } from "../units/evaluate.ts";
 import { constUncDigits, inexactConstsIn, withConstValues, type ConstTable } from "./constUnc.ts";
-import { chipCommand, chipNameFacts, chipsIn, CHIP_PREFIX, withChipValues, type ChipFactsTable } from "./chipFacts.ts";
+import { chipCommand, chipNameFacts, chipSigma, chipsIn, CHIP_PREFIX, literalChip, withChipValues, type ChipFactsTable } from "./chipFacts.ts";
 import type { Quantity, UnitError, UnitJob } from "../units/types.ts";
 import { contextDiff, hostContext, isFlagName, namesFlag, namesUnreadFlag } from "./flags.ts";
 import { contextOf, gated, type GatedGiac } from "./ctxGate.ts";
@@ -808,11 +808,11 @@ export class EngineHost implements FactsHost {
     const asg = form.assignment;
     const stateful = form.stores;
     const held = chips ? chipsIn(input, chips) : [];
-    const keep = new Set(stateful && form.defined?.kind !== "var" ? [] : held.filter((k) => !chips![k]!.exact));
+    const keep = new Set(stateful && form.defined?.kind !== "var" ? [] : held.filter((k) => !literalChip(chips![k]!)));
     const named = chips ? withChipValues(input, chips, keep) : input;
     // G49f1: the facts an inexact chip or constant lends to a function defined from it (its value is put in).
     const lent: NameFacts[] = [
-      ...held.filter((k) => !chips![k]!.exact).map((k) => chipNameFacts(chips![k]!)),
+      ...held.filter((k) => !literalChip(chips![k]!)).map((k) => chipNameFacts(chips![k]!)),
       ...(consts !== undefined && inexactConstsIn(input, consts).length > 0 ? [{ exact: false, reliableDigits: null, inexact: true as const }] : []),
     ];
     const inexactIn = lent.length > 0;
@@ -823,10 +823,10 @@ export class EngineHost implements FactsHost {
     try {
       const ran = consts ? withConstValues(named, consts) : named;
       const out = this.homeRun(ran, s, inexactIn, lent, formIn(form, ran));
+      const sig = chipSigma(asg ? (formIn(form, named).assignment?.rhs ?? named) : named, chips ?? {}); // R61: σ chips (G26's body without)
       // A setting the input changed was put back after its run: it is not run again (G67).
-      if (!consts || (stateful && !asg) || this.post?.flagsChanged) return out;
-      const body = asg ? (formIn(form, named).assignment?.rhs ?? named) : named;
-      const n = constUncDigits(this.giac, body, consts, out.result, Math.trunc(out.result.digits ?? s.digits));
+      if ((!consts && !sig.inputs.length) || (stateful && !asg) || this.post?.flagsChanged) return out;
+      const n = constUncDigits(this.giac, sig.body, consts ?? {}, out.result, Math.trunc(out.result.digits ?? s.digits), sig.inputs);
       return n === undefined ? out : { ...out, result: { ...out.result, facts: { ...out.result.facts, uncDigits: n } } };
     } finally {
       if (keep.size) this.giac.eval(`purge(${[...keep].map((k) => CHIP_PREFIX + k).join(",")})`);
