@@ -11,7 +11,7 @@ The one place for "where are we and what's left", one or two lines per open item
 | **The core freeze (P23)** | **Ended 2026-10-27** (owner). Its net stays: [tests/core/](../tests/core/README.md) (66 everyday tasks, all active) runs on every merge and on the night's device; a red case is a bug to fix. Order of the work: brief section 0. |
 | Milestone 4a: feel (P11) | **Next after Find.** Merged: the entry work (⌫, cursor, focus, hardware keys), sheets, flicks, Settings as levels of the Mode sheet (R49) with Help and about (R87), history-row actions, R15b, R15c1, R15c2, R15c3, the mockups (R12a). Waiting: R15c4, the palette, the visual pass, results mode, the trust features |
 | Milestone 4: Find and trust | Engine side done (marks, 30 digits, chips, copy, defs, the Find index, the size test, A4a); Find's UI: R4a, R4b built; A4b next |
-| Milestone 5: Units | The evaluator on Giac is done (P15: G15–G18, G25, G13, G7, G32, R28, R24a); the pad is built (R24b); next the unit view's entry (R24c), R24d, the result view (R60–R63), ± on Shift + `,` (R71) |
+| Milestone 5: Units | The evaluator on Giac is done (P15: G15–G18, G25, G13, G7, G32, R28, R24a); the pad (R24b) and the unit view's entry (R24c) are built, the units key opens it; next R24d, the result view (R60–R63), ± on Shift + `,` (R71), then R92 (the units menu's Tools and Const tabs) |
 | Milestone 6: Structure | Not started (EN5–EN7, Help) |
 | MVP release | v0.1.0, the APK and the website from one tag: lane B (brief section 0) |
 
@@ -19,7 +19,7 @@ The one place for "where are we and what's left", one or two lines per open item
 
 ## Needs the user
 0. **The core list (P23):** cut or extend [tests/core/core.yaml](../tests/core/core.yaml) (66: 51 drafted by sandra, c52–c56 added with you on 2026-10-21, c57–c60 on 2026-10-24, c61–c66 on 2026-10-26; tell a session what to drop or add); do the [morning check](../tests/core/MORNING.md) on the night's device (about 10 minutes, 15 cases; tell the day session what failed); keep the night's device plugged in, unlocked and on the charger (A32, A33).
-1. **Decisions in [decisions.md](decisions.md) "Needs the user":** A21's F-Droid answer; R50e's Android system bar colours; the start chunk's last 0.3 kB (a split package before R88).
+1. **Decisions in [decisions.md](decisions.md) "Needs the user":** A21's F-Droid answer; R50e's Android system bar colours; the start chunk's room (R70f1 splits it now; the budget stays).
 2. **Your outreach steps** (decisions.md P18–P22): send Parisse email 5 (patches 0013–0016 and the regression files at `7438251`, `../outreach/email-parisse-5.md`; 0003–0012 went with email 4, 2026-10-28) after the push; ask F-Droid whether checked-in derived data (`find/factors.yaml`, P22) is fine, before C4; mirror G77's pin (`gh` logged in; the command is in `engine/giac/README.md`).
 3. **G2 questions:** the unanswered items of `tests/golden/G2-CHECKLIST.md` (41, 42, 52, 56, 63–71; each package built a default, named in decisions.md; 63–65 can reverse S14's route R); the optional real-G2 spot checks (`spec/mapping/vc-2026-10-11/SPOT-CHECK.md`).
 4. **From daily use:** the key sequence that left ⌫ stuck "at log" (F39); connect your phone for A9 (F41, no vibration); more points into [feedback.md](feedback.md).
