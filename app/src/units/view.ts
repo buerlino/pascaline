@@ -3,7 +3,7 @@
 // slot after every number and the end slot (input/unitFormula.ts); each slot is R24a's SlotModel, fed by the pad's
 // presses (units/pad.ts emits them). Enter goes to the next slot and evaluates in the end slot, a flick up on Enter
 // evaluates at once, ◀ ▶ move between slots. A slot reaches the field only through `write` (setPromptValue, units/
-// open.ts), never through the entry line. Evaluation: the parser's units mode (R28) on the formula, the slots' tokens,
+// open.ts), never through the entry line. Plain TS (no runes): a change calls `host.changed()`. Evaluation: the parser's units mode (R28) on the formula, the slots' tokens,
 // then Calc.units(). Loaded with the unit view.
 import type { ChipTable } from "../input/chips.ts";
 import { latexToGiacInfo } from "../input/latex-to-giac.ts";
@@ -29,6 +29,8 @@ export interface ViewHost {
   /** Math: Find on units; a pick comes back through `apply`. */
   find(): void;
   dead(): void;
+  /** The active slot, the reading or what is shown changed: draw them (units/panel.ts). */
+  changed(): void;
 }
 
 /** The active slot's look: drawn inline, since a class does not reach into the field's shadow root. */
@@ -61,11 +63,33 @@ export class UnitView {
   readonly #models = new Map<string, SlotModel>();
   readonly #chips: ChipTable;
   readonly #host: ViewHost;
-  /** The active slot, an index into `ids`. */
-  active = $state(0);
-  reading = $state<Reading>({ text: "", parts: [], marked: false });
-  shown = $state<Shown>({ kind: "none" });
+  #active = 0;
+  #reading: Reading = { text: "", parts: [], marked: false };
+  #shown: Shown = { kind: "none" };
   #run = 0;
+
+  /** The active slot, an index into `ids`. */
+  get active(): number {
+    return this.#active;
+  }
+  set active(n: number) {
+    this.#active = n;
+    this.#host.changed();
+  }
+  get reading(): Reading {
+    return this.#reading;
+  }
+  set reading(r: Reading) {
+    this.#reading = r;
+    this.#host.changed();
+  }
+  get shown(): Shown {
+    return this.#shown;
+  }
+  set shown(s: Shown) {
+    this.#shown = s;
+    this.#host.changed();
+  }
 
   constructor(catalogue: SlotCatalogue, line: string, chips: ChipTable, host: ViewHost) {
     this.line = line;

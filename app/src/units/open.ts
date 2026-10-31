@@ -5,20 +5,21 @@
 // (UnitPad.route), then this view for the keys that are no cell (◀ ▶ between slots, Esc leaves and the line keeps its
 // slots, a key that changes place leaves first; any other key is dead). A hardware key on the field takes the keypad's
 // path (`press`), so it reaches the pad's actions or does nothing. The view writes a slot only with setPromptValue.
-// A lazy chunk: route.ts imports it on the first press of the units key.
+// A lazy chunk: route.ts imports it on the first press of the units key. units/pad.ts is in it (a static import: as a
+// chunk of its own beside this one, the two imported each other through units/padView, and Rolldown then split Svelte's
+// runtime out of the start chunk, +1.1 kB gzip at start).
 import type { MathfieldElement } from "mathlive";
-import { mount, unmount } from "svelte";
 import { ENTRY_MACROS } from "../entry/macros.ts";
 import { keypadKeyOf } from "../entry/hwkeys.ts";
 import { findText } from "../i18n/enFind.ts";
 import { actionFor, keyboard, type Layer } from "../keyboard/keyboard.ts";
 import { press, type RouteCtx } from "../keyboard/route.ts";
-import { mathlive } from "../render/mathlive.svelte.ts";
 import type { HistoryItem } from "../state/session.svelte.ts";
+import { UnitPad } from "./pad.ts";
 import { unitPad } from "./padView.svelte.ts";
 import { slotCatalogue } from "./slot.ts";
-import UnitViewPanel from "./UnitView.svelte";
-import { UnitView, type ViewHost } from "./view.svelte.ts";
+import { makePanel } from "./panel.ts";
+import { UnitView, type ViewHost } from "./view.ts";
 
 /** The open unit view (window.pascaline.unitView in the e2e). */
 export interface OpenUnitView {
@@ -43,25 +44,33 @@ export async function openUnits(c: RouteCtx, row?: HistoryItem): Promise<void> {
   if (row) c.entry.set(row.latex, row.chips);
   const line = c.entry.value;
   const chips = c.entry.chips;
-  const [ml, index, pads] = await Promise.all([mathlive.load(), import("../find/finder.ts").then((m) => m.loadIndex(true)), import("./pad.ts")]);
-  const mf = new ml.MathfieldElement();
+  // MathLive comes with the entry line (its field is up once `ready`): the class is taken from the element registry
+  const [, index] = await Promise.all([c.entry.ready, import("../find/finder.ts").then((m) => m.loadIndex(true))]);
+  const Field = customElements.get("math-field") as typeof MathfieldElement | undefined;
+  if (!Field) return c.dead();
+  const mf = new Field();
   mf.dataset["testid"] = "unit-field";
   const host: ViewHost = {
     write: (id, latex) => mf.setPromptValue(id, latex, {}),
     evaluate: (req) => c.shell.calc.units(req, c.session.settings),
     find: () => void showUnitFind(c, view),
     dead: () => c.dead(),
+    changed: () => panel.draw(),
   };
+  let made: UnitView | undefined;
+  const panel = makePanel(() => made);
   const view = new UnitView(slotCatalogue(index.items), line, chips, host);
-  const panel = mount(UnitViewPanel, { target: entryEl, anchor: fieldEl, props: { view } });
+  made = view;
+  entryEl.insertBefore(panel.element, fieldEl);
   fieldEl.style.display = "none";
+  panel.draw();
   // MathLive takes options only once the field is mounted (as the entry line's, entry/controller.ts)
   const mounted = new Promise<void>((resolve) => {
     mf.addEventListener("mount", () => resolve(), { once: true });
     setTimeout(resolve, 1000);
   });
-  const element = entryEl.querySelector<HTMLElement>(".unitview") as HTMLElement;
-  element.querySelector(".formula")?.append(mf);
+  const element = panel.element;
+  panel.formula.append(mf);
   await mounted;
   await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
   setUp(mf, element, c);
@@ -77,8 +86,7 @@ export async function openUnits(c: RouteCtx, row?: HistoryItem): Promise<void> {
     unitPad.model = null;
     unitPad.on = () => {};
     unitPad.other = undefined;
-    unmount(panel);
-    mf.remove();
+    element.remove();
     fieldEl.style.display = "";
     window.pascaline.unitView = undefined;
     c.entry.focus();
@@ -105,7 +113,7 @@ export async function openUnits(c: RouteCtx, row?: HistoryItem): Promise<void> {
     if (current?.view === view) keep();
     return true;
   };
-  unitPad.model = new pads.UnitPad();
+  unitPad.model = new UnitPad();
   element.focus();
 }
 
@@ -128,7 +136,6 @@ function setUp(mf: MathfieldElement, element: HTMLElement, c: RouteCtx): void {
   };
   enforce();
   mf.addEventListener("focusin", enforce);
-  element.tabIndex = -1;
   element.addEventListener("keydown", (ev) => hardwareKey(ev, c), { capture: true });
   const stop = (ev: Event): void => {
     if (ev.type === "beforeinput" && !ev.isTrusted) return;

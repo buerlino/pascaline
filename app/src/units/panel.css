@@ -1,0 +1,9 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+/* R24c: the unit view's panel (units/panel.ts); loaded with it. The panel holds the focus for the hardware keys, so no
+   outline: the active slot shows where they go. */
+.unitview { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; outline: none; }
+.unitview .reading, .unitview .why, .unitview .note, .unitview .working { color: var(--muted); font-size: 14px; min-height: 1.2em; }
+.unitview .rare, .unitview .warn { color: var(--warn, var(--error)); }
+.unitview .message { color: var(--error); font-size: 14px; }
+.unitview .result { font-size: 20px; display: flex; gap: 6px; align-items: baseline; }
+.unitview .result .mark, .unitview .result .unit { color: var(--muted); }

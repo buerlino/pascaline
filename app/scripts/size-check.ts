@@ -93,8 +93,12 @@ function subjects(manifest: Record<string, ManifestChunk>, all: string[]): { pre
   add("Start chunk", startFiles(manifest), { rawMax: 175 * KB, gzipMax: 61 * KB });
   add("MathLive chunk", chunks.filter((c) => /(^|\/)mathlive\/mathlive\.min\.m?js$/.test(normalSrc(c.src))).map((c) => c.file), { rawMax: 830 * KB });
   add("Find UI chunk", dynamic("src/find/"), { rawMax: 30 * KB });
-  // The unit view (G16): Calc.units() loads the builder and the factor table (src/units/calc.ts) on its first call.
-  add("Unit view chunk", dynamic("src/units/"), { rawMax: 30 * KB });
+  // The unit view's UI chunk (docs/04 4.4, R24c): the units key loads src/units/open.ts with the pad, the slots and the
+  // panel. Calc.units() (G16) loads the builder and the factor table (src/units/calc.ts) on its first call: the
+  // evaluator's side, measured on its own under the same 30 kB.
+  const builder = dynamic("src/units/calc.ts");
+  add("Unit view chunk", dynamic("src/units/").filter((f) => !builder.includes(f)), { rawMax: 30 * KB });
+  add("Unit builder chunk", builder, { rawMax: 30 * KB });
   // The index and qalc have no fixed place yet (G4 and A2 decide); these match by location and name, so they apply wherever they land.
   add("Find index asset", all.filter((f) => f.startsWith("find/") || /(^|\/)find-index[^/]*$/.test(f)), { rawMax: 400 * KB, gzipMax: 100 * KB });
   add("qalc wasm + glue", all.filter((f) => /(^|\/)qalc[^/]*\.(wasm|mjs|js)$/.test(f)), { brotliMax: 1 * MB });
@@ -107,7 +111,7 @@ export const LAZY_VIEWS = ["src/views/Sheet.svelte"];
 
 /** R91: code that only runs after a key press or once a result is in stays out of the start chunk too: the sheet's keys
  *  and the palette cells (loaded with the sheet's view), the result tidy-up, the palettes with their names. */
-export const LAZY_PARTS = ["src/views/sheetKeys.ts", "src/views/tmplSheet.ts", "src/render/tidy.ts", "src/keyboard/shiftPalettes.ts"];
+export const LAZY_PARTS = ["src/views/sheetKeys.ts", "src/views/tmplSheet.ts", "src/render/tidy.ts", "src/keyboard/shiftPalettes.ts", "src/units/open.ts"];
 
 /** R91's pin: the start chunk is at most this many bytes gzip, 1 kB under the budget of 61 kB, so the Settings base
  *  (R49, R86, R57) has room. A package that needs more raises the pin with a reason, here and in docs/04 8.3.
@@ -120,8 +124,13 @@ export const LAZY_PARTS = ["src/views/sheetKeys.ts", "src/views/tmplSheet.ts", "
  *  the drawn comma, the hardware keys, and the Paste and rows holds (keyboard/route.ts) are on the key path.
  *  60.5 → 60.52 kB (R24b): phase-1 60.49 kB, the branch 60.51 kB (+0.02 kB, raw +0.06 kB): the unit pad is drawn through the
  *  keypad's own seams (the sheet's state, sheetChunk.pad; Keypad's key list and its row of legends; one hook in
- *  keyboard/route.ts), and everything else (units/pad.ts, units/padView, spec/unit-pad.yaml) is a lazy chunk. */
-export const START_PIN_GZIP = 60.52 * KB;
+ *  keyboard/route.ts), and everything else (units/pad.ts, units/padView, spec/unit-pad.yaml) is a lazy chunk.
+ *  60.52 → 60.75 kB (R24c): phase-1 60.51 kB, the branch 60.74 kB (+0.23 kB, raw +0.68 kB): the units key (its Shift
+ *  binding and label on Tmpl, the `units` special and its routing: on the line, on a picked row, and the keys held while
+ *  the view loads), the Find index wired into EngineCalc for Calc.units(), and the bindings the lazy unit view takes from
+ *  the start chunk (press, the keyboard, the entry's macros, the sheet state). The view itself (units/open.ts with the
+ *  pad, the slots, the panel and the formula) is a lazy chunk. */
+export const START_PIN_GZIP = 60.75 * KB;
 
 /** Failures for the start chunk's row when it is over the pin. */
 export function checkStartPin(row: Row): string[] {
