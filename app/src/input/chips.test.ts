@@ -114,6 +114,43 @@ describe("chip table", () => {
     // an exact chip's basis is never read
     expect(basisOf(validChips({ "const:c": { value: "299792458", exact: true, basis: "pasl_x", basisLeaves: { x: { value: "1", unc: "1" } } } })!["const:c"]!)).toBeUndefined();
   });
+  // R61: a unit result's chip keeps its σ and its unit (label and slot) across a restart.
+  const T10 = {
+    value: "4936/125",
+    exact: false,
+    reliableDigits: null,
+    unc: "sqrt(1548381)/1000",
+    unit: { text: "m²", dim: "m2", slot: { tokens: [{ unit: "m", power: "2" }] } },
+  };
+  const KMH = { value: "72", exact: true, unit: { text: "km/h", dim: "m1s-1", slot: { tokens: [{ prefix: "k", unit: "m" }, { unit: "h" }], per: 1 } } };
+  it("R61: a result chip with unit and unc round-trips", () => {
+    const stored = JSON.parse(JSON.stringify({ "res:1": T10, "res:2": KMH })) as unknown;
+    expect(validChips(stored)).toStrictEqual({ "res:1": T10, "res:2": KMH });
+  });
+  it("R61: a bad unit is dropped, not thrown; the chip stays", () => {
+    const slot = KMH.unit.slot;
+    const bad: unknown[] = [
+      "km/h",
+      null,
+      { text: "x".repeat(41), dim: "m1s-1", slot },
+      { text: "", dim: "m1s-1", slot },
+      { text: "km/h", dim: "m 1", slot },
+      { text: "km/h", dim: 3, slot },
+      { text: "km/h", dim: "m1s-1" },
+      { text: "km/h", dim: "m1s-1", slot: { tokens: "km" } },
+      { text: "km/h", dim: "m1s-1", slot: { tokens: [{ unit: "" }] } },
+      { text: "km/h", dim: "m1s-1", slot: { tokens: [{ unit: "m", prefix: 3 }] } },
+      { text: "km/h", dim: "m1s-1", slot: { tokens: [{ unit: "m", power: "x" }] } },
+      { text: "km/h", dim: "m1s-1", slot: { tokens: [{ unit: "m" }], per: 5 } },
+      { text: "km/h", dim: "m1s-1", slot: { tokens: [{ unit: "m{}" }] } },
+    ];
+    for (const unit of bad)
+      expect(validChips({ "res:2": { ...KMH, unit }, "res:3": KMH }), JSON.stringify(unit)).toStrictEqual({ "res:2": { value: "72", exact: true }, "res:3": KMH });
+  });
+  it("R61: an exact chip with an uncertainty is refused", () => {
+    expect(validChips({ "res:1": { ...T10, exact: true } })).toBeUndefined();
+    expect(validChips({ "const:G": { value: "6.67430E-11", exact: true, unc: "0.00015E-11" } })).toBeUndefined();
+  });
 });
 
 describe("bracket messages (F10)", () => {
