@@ -5,6 +5,10 @@ History only: read it when a decision is questioned. What still binds is in [../
 
 ## Decided proposals moved here later
 
+### Shortened 2026-11-01 (Opus pass 38) to make room for R104's question, as it stood
+From "Library, release and process":
+- **R38b, R88, the restore's checks and presets (Opus pass 29):** `state/backup.ts` repeats the start readers' rules (settings, history, key layers, the presets' load check), each guarded by a test on the same values; no pin in `vite.config.ts`. Its import of `state/presetRecord.ts` (R88f1, `migratePresetKeys`) is a chunk of its own, +10 B gzip at start. A preset name compares trimmed and without case, holds a group, and capture or update makes it active. Would change if: a guard misses a drift.
+
 ### Shortened 2026-11-01 (Opus pass 36) to make room for G140's and G143's defaults, as they stood
 From "Pipeline and process":
 - **P17 (2026-10-18; two lanes 2026-10-29, the owner): the pipeline is the only path** (`scripts/pipeline.sh`, brief 0c). Once A47a–A47c are merged, two lanes run around the clock, one run each: lane A ron's UI, lane B the release and the engine. The merge queue (A47b) holds the `integ` lock from merging phase-1 into the branch through the checks, the audit and the merge, so what merges is what was tested; an Opus pass holds it for its whole run. Review-only merges `--no-worker`; the audit is Opus for Opus workers, input, engine and keyboard diffs and gorge packages, Sonnet elsewhere; an Opus pass after every three packages of a lane. Full text: archive. Would change if: the queue's waits cost more than the second lane gains.

@@ -7,6 +7,8 @@ Phase 0 decisions (D1–D9, P1, P2): [spike/DECISIONS.md](../spike/DECISIONS.md)
 
 The owner's other open items are in [backlog.md](backlog.md), "Needs the user". Once decided, an entry moves to "Decided proposals".
 
+- **R104, a key for `%`:** add a fourth row to the Shift + 9 palette with `%` first (its 24 G2 cells stay), so `250 ± 0.4 %` can be typed on the phone; today no key types `%`, only a hardware keyboard. Yes, or another place?
+
 - **R95:** keep the reload of Use here, and make "Nothing done in this tab is kept" the read-only note's visible line, not only its tooltip (rows typed while read-only are lost at the reload): yes, or keep them across it in sessionStorage?
 
 - **R94:** keep the newer-version note a history line (as G19's), not vg-8's status line, which has no text slot (Opus pass 32).
@@ -163,7 +165,7 @@ The defaults that bind code and tests, one line each. A default changes when its
 - **G16:** an exact 0 loses its dimension; terms that cancel exactly are a known gap. **G17:** dB is a field-ratio level (1 Np = 20/ln 10 dB, 1 bel = 10 dB), dBm and dBW to 1 mW and 1 W; °C, °F and the levels alone convert by offset or level; a lone dB, bel or Np with no end slot, a level of a ratio ≤ 0 and a temperature below 0 K are refused.
 - **G18:** ± is `pasupm(value,sigma)`, each an independent standard uncertainty in the slot's unit; ± inside sin, cos, tan works. **G25:** a typed product is kept when at most one token carries a prefix or its factor is 1 (N·m, kW·h), else SI with a prefix.
 - **G13:** the 13 CODATA overrides and the hp, mmHg, inHg factors stay in `find/factors.yaml` until qalc agrees (`refresh-factors.mjs` shows the change, P22). **G7:** `rev`, `revolution`, `cycle` name `rev`; StdT 273.15 K and StdP 101325 Pa.
-- **R28:** rule: docs/04 4.3 (`pasu<n>` in the order written, the end slot after `\to`); a slot only right after a number literal; σ is a number literal; a product with a slot keeps its brackets.
+- **R28:** rule: docs/04 4.3 (`pasu<n>` in the order written, the end slot after `\to`); a slot only right after a number literal; σ is a number literal, or `n %` of the value (R104, docs/04 4.2); a product with a slot keeps its brackets.
 - **R24a, R24af1:** ⁻¹ turns the power's sign, ², ³, ⁴ set its size; √ arms like a prefix; ÷ on an empty slot becomes negated powers; the reading goes by sign and Find's titles; a prefixed pair counts only when its factor and dimension match, and a unit without an exact factor never pairs.
 - **R60:** the alternatives row (units/alternatives.ts) takes a temperature's three units (absolute K, °C, °F; interval K, Δ°C, Δ°F) and no target; Δ°C is K's Find alias, so its tap shows K. Would change if: R62 labels the alias.
 - **R61 (Opus pass 28):** a unit result's σ chip is an independent input of σ, as a constant (G26), also beside the constant it came from; one chip used twice is one input; a σ of 0 is none. Its σ is G41's: t10's is sqrt(1.548381) = 1.24433958388, and `tests/tasks/tasks.yaml` t10's first-order value is fixed by the next package that edits that file. Would change if: a chip keeps its inputs' basis (G81).
@@ -183,5 +185,5 @@ The defaults that bind code and tests, one line each. A default changes when its
 - **A45, a criterion on a shared file (Opus pass 19):** a package step that changes `THIRD_PARTY.md` or another shared file (rules section 4) is met by its exact text under "For shared files"; the audit checks that text and does not FIX the file, and the next Opus pass applies it (A45's Vite and Actions rows: pass 19). Would change if: the owner lets workers edit `THIRD_PARTY.md`.
 - **R87 (Opus pass 15):** no ISC or UIUC text in `LICENSES/`: yaml is build-time only, Emscripten's runtime ships under MIT (THIRD_PARTY.md). Would change if: a shipped part needs another licence's text.
 - **G116, the sweep oracle:** on atanh's cut it takes Giac's side (+π/2·i for a real x > 1), and an argument on a cut within noise is a skip. Would change if: a case shows Giac off the textbook side.
-- **R38b, R88, the restore's checks and presets (Opus pass 29):** `state/backup.ts` repeats the start readers' rules (settings, history, key layers, the presets' load check), each guarded by a test on the same values; no pin in `vite.config.ts`. Its import of `state/presetRecord.ts` (R88f1, `migratePresetKeys`) is a chunk of its own, +10 B gzip at start. A preset name compares trimmed and without case, holds a group, and capture or update makes it active. Would change if: a guard misses a drift.
+- **R38b, R88, the restore's checks and presets (Opus pass 29):** `state/backup.ts` repeats the start readers' rules, each guarded by a test on the same values; no pin in `vite.config.ts`. Full text: archive. Would change if: a guard misses a drift.
 - **G119, Giac's sequence answers in Home (Opus pass 6):** each shows as its value (one element) or as a list in braces, so Ans reads back a value or a list; CAS unchanged (F108). Full text: archive.
