@@ -60,8 +60,18 @@ export class UnitView {
   #row = -1;
   /** R62: "More…" opened Find on the end slot: the pick that completes it evaluates. */
   #more = false;
-  /** R62: how many of the row's chips fit (the panel measures); undefined: all. */
-  fit: number | undefined;
+  /** R62: the chip last tapped: while the end slot is still its slot, the result reads the unit as the chip did ("ton", "cal"). */
+  #picked: Alternative | undefined;
+  #fit: number | undefined;
+
+  /** R62: how many of the row's chips fit (the panel measures); undefined: all. A smaller number moves a focus on a hidden chip to "More…". */
+  get fit(): number | undefined {
+    return this.#fit;
+  }
+  set fit(n: number | undefined) {
+    this.#fit = n;
+    if (this.#row > this.chips) this.#row = this.chips;
+  }
 
   /** The active slot, an index into `ids`. */
   get active(): number {
@@ -84,7 +94,7 @@ export class UnitView {
   set shown(s: Shown) {
     this.#shown = s;
     this.#row = -1;
-    this.fit = undefined;
+    this.#fit = undefined;
     this.#host.changed();
   }
   /** R62: the focused chip of the alternatives row (0 … chips, the last being "More…"), or -1: the row is not entered. */
@@ -94,7 +104,7 @@ export class UnitView {
   /** The chips on screen, "More…" not counted. */
   get chips(): number {
     const s = this.#shown;
-    return s.kind === "result" && s.dimension !== "" ? Math.min(s.alts.length, this.fit ?? s.alts.length) : 0;
+    return s.kind === "result" && s.dimension !== "" ? Math.min(s.alts.length, this.#fit ?? s.alts.length) : 0;
   }
 
   constructor(catalogue: SlotCatalogue, line: string, chips: ChipTable, host: ViewHost) {
@@ -147,6 +157,7 @@ export class UnitView {
         // A slot press (a pick from Find too): an evaluation still running answers for the slots it was asked with,
         // so its result is dropped (R24cf1).
         this.#run++;
+        this.#picked = undefined;
         const m = this.#models.get(this.activeId) as SlotModel;
         const r = m.apply(e);
         if (!r.ok) {
@@ -219,6 +230,7 @@ export class UnitView {
       return this.#host.dead(); // (a unit the catalogue does not read)
     }
     this.#more = false;
+    this.#picked = alt;
     this.#models.set(END, m);
     this.active = this.ids.length - 1;
     this.#draw(was);
@@ -234,6 +246,7 @@ export class UnitView {
     this.#models.set(END, new SlotModel(this.#cat));
     this.active = this.ids.length - 1;
     this.#run++;
+    this.#picked = undefined;
     this.shown = { kind: "none" };
     this.#draw(was);
     this.#draw(END);
@@ -276,6 +289,7 @@ export class UnitView {
 
   /** Evaluate from any slot: every slot must be complete. */
   async evaluate(): Promise<void> {
+    this.#more = false; // (the evaluation More… started has begun)
     for (const id of this.ids) {
       const r = (this.#models.get(id) as SlotModel).check();
       if (!r.ok) {
@@ -293,8 +307,11 @@ export class UnitView {
     const run = ++this.#run;
     this.shown = { kind: "working" };
     try {
-      const q = await this.#host.evaluate(req);
-      const alts = "error" in q ? [] : await this.#host.alternatives(q, req).catch(() => []);
+      const got = await this.#host.evaluate(req);
+      const alts = "error" in got ? [] : await this.#host.alternatives(got, req).catch(() => []);
+      // the chip's own text is the unit (the index's symbol for ton is s_ton)
+      const p = this.#picked;
+      const q = !("error" in got) && p && got.shownSlot && JSON.stringify(got.shownSlot) === JSON.stringify(p.slot) ? { ...got, unit: p.text } : got;
       if (run === this.#run) this.shown = shownOf(q, this.#host.format(), alts);
     } catch (e) {
       if (run === this.#run) this.shown = { kind: "message", text: unitText("units.engine") };

@@ -75,20 +75,21 @@ describe("shownOf (R62)", () => {
 describe("the unit a chip reads as after a tap (R62)", () => {
   const unit = (id: string, insert: string, names: string[]): IndexItem => ({ id: `unit:${id}`, kind: "unit", names, title: id, tier: 0, insert, si: "3600", dim: "kg1m2s-2" }) as IndexItem;
   const table = factorTable([unit("Wh", "\\unit{Wh}{\\mathrm{W\\cdot\\,h}}", ["Wh", "W·h"]), unit("s_ton", "\\unit{s_ton}{\\mathrm{s_ton}}", ["s_ton"]), unit("oC", "\\unit{oC}{\\mathrm{°C}}", ["oC"])]);
-  it("Wh is Wh, a symbol without LaTeX is kept", () => {
+  it("Wh is Wh, °C is °C", () => {
     expect(slotText({ tokens: [{ unit: "Wh" }] }, table)).toBe("Wh");
-    expect(slotText({ tokens: [{ unit: "s_ton" }] }, table)).toBe("s_ton");
     expect(slotText({ tokens: [{ unit: "oC" }] }, table)).toBe("°C");
   });
 });
 
 describe("the alternatives row on the view (R62)", () => {
   const CAT = slotCatalogue([
+    { id: "unit:s_ton", kind: "unit", names: ["s_ton"], title: "Short ton", tier: 0, insert: "\\unit{s_ton}{\\mathrm{s_ton}}", si: "907", dim: "kg1" },
+    { id: "unit:cal_th", kind: "unit", names: ["cal_th"], title: "Calorie", tier: 0, insert: "\\unit{cal_th}{\\mathrm{cal_th}}", si: "4184/1000", dim: "kg1m2s-2" },
     { id: "unit:m", kind: "unit", names: ["m"], title: "Meter", tier: 0, insert: "\\unit{m}{\\mathrm{m}}", si: "1", dim: "m1" },
     { id: "unit:s", kind: "unit", names: ["s"], title: "Second", tier: 0, insert: "\\unit{s}{\\mathrm{s}}", si: "1", dim: "s1" },
     { id: "unit:ft", kind: "unit", names: ["ft"], title: "Foot", tier: 0, insert: "\\unit{ft}{\\mathrm{ft}}", si: "381/1250", dim: "m1" },
   ] as IndexItem[]);
-  function make(): { view: UnitView; writes: [string, string][]; remembered: [string, UnitSlot][]; found: (string | undefined)[]; dead: number[]; requests: UnitRequest[] } {
+  function make(over: Partial<ViewHost> = {}): { view: UnitView; writes: [string, string][]; remembered: [string, UnitSlot][]; found: (string | undefined)[]; dead: number[]; requests: UnitRequest[] } {
     const writes: [string, string][] = [];
     const remembered: [string, UnitSlot][] = [];
     const found: (string | undefined)[] = [];
@@ -109,6 +110,7 @@ describe("the alternatives row on the view (R62)", () => {
       },
       dead: () => void dead.push(1),
       changed: () => {},
+      ...over,
     };
     const view = new UnitView(CAT, "1", {}, host);
     view.start();
@@ -168,5 +170,49 @@ describe("the alternatives row on the view (R62)", () => {
     t.view.apply({ do: "unit", id: "ft" }); // the pick from Find lands in the end slot and evaluates
     await Promise.resolve();
     expect(t.requests.at(-1)?.end).toEqual({ tokens: [{ unit: "ft" }] });
+  });
+  it("a tap on the ton or cal chip reads \"ton\" or \"cal\", not the index's s_ton or cal_th", async () => {
+    for (const [unit, text] of [["s_ton", "ton"], ["cal_th", "cal"]] as const) {
+      const slot: UnitSlot = { tokens: [{ unit }] };
+      const t = make({
+        alternatives: () => Promise.resolve([{ text, kind: "pad", slot }]),
+        evaluate: (req) => Promise.resolve(qty(num("1"), { dimension: "kg1", unit: req.end ? unit : "kg", ...(req.end ? { shownSlot: req.end } : {}) })),
+      });
+      t.view.apply({ do: "unit", id: "m" });
+      await t.view.evaluate();
+      t.view.down();
+      await t.view.next();
+      expect(t.view.shown).toMatchObject({ kind: "result", unit: text });
+    }
+  });
+
+  it("after More… and a pick, a later edit of the end slot does not evaluate until Enter", async () => {
+    const t = make();
+    t.view.apply({ do: "unit", id: "m" });
+    await t.view.evaluate();
+    t.view.down();
+    t.view.move(1);
+    t.view.move(1);
+    await t.view.next(); // More…
+    t.view.apply({ do: "unit", id: "ft" }); // the Find pick evaluates
+    await Promise.resolve();
+    await Promise.resolve();
+    const n = t.requests.length;
+    t.view.apply({ do: "power", n: 2 });
+    await Promise.resolve();
+    expect(t.requests).toHaveLength(n);
+  });
+
+  it("a lower fit moves a focus on a hidden chip to More…, so Enter does not clear the end slot", async () => {
+    const t = make();
+    t.view.apply({ do: "unit", id: "m" });
+    await t.view.evaluate();
+    t.view.down();
+    t.view.move(1); // chip 1 of 2
+    t.view.fit = 1;
+    expect(t.view.row).toBe(1); // (More… is now index 1: the same number, the focus follows)
+    t.view.fit = 0;
+    expect(t.view.row).toBe(0);
+    expect(t.view.chips).toBe(0);
   });
 });
