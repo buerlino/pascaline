@@ -2,10 +2,12 @@
 // R89 (docs/05 3.4, docs/mockups/settings.html section 4): the presets in Mode. Mode's row 5 shows the active preset and
 // what it holds; ◀ ▶ apply the previous or next one with the sheet open; a tap, a digit or Enter opens `Mode › Presets`
 // (the presets, Save, Edit ›). A preset's page holds its five ticks, Update and Rename or delete ›. A name is typed in the
-// entry line under the label "Preset name" (AppShell.prompt; route.ts gives it Enter and Esc). The model is R88's
-// (state/presets.svelte.ts); this module is part of the Mode sheet's chunk.
+// entry line under the label "Preset name" (AppShell.prompt: route.ts gives it each key first, so Enter and Esc never
+// reach the history). The model is R88's (state/presets.svelte.ts), read when Mode opens; this module is part of the
+// Mode sheet's chunk, so none of it is in the start chunk.
 import type { MenuItem, SubMenu } from "../apps/types.ts";
 import type { EntryPrompt } from "../apps/shell.svelte.ts";
+import type { ClipActions } from "../clipboard/actions.svelte.ts";
 import type { EntryController } from "../entry/controller.ts";
 import { t, type MessageKey } from "../i18n/index.ts";
 import { presetText as pt, type PresetKey } from "../i18n/enPresets.ts";
@@ -16,30 +18,34 @@ import { familyOf } from "../theme/lookView.ts";
 
 type Family = Parameters<typeof familyOf>[0];
 
-/** What the preset rows need from the app (App.svelte's SettingsEnv): the line to type a name in, and the notice. */
+/** What the preset rows need from the app (App.svelte's SettingsEnv): the free keys, the line to type a name in, and
+ *  the clipboard code, whose notice says what happened. */
 export interface PresetsHost {
+  readonly userKeys?: UserKeys;
   readonly shell?: { prompt: EntryPrompt | null };
-  readonly entry?: Pick<EntryController, "value" | "chips" | "set">;
-  notice?(message: string): void;
+  readonly entry?: Pick<EntryController, "value" | "chips" | "set" | "run" | "clear">;
+  data?(run: (c: ClipActions) => void | Promise<void>): void;
 }
+const say = (host: PresetsHost, message: string): void => host.data?.((c) => c.say(message));
 
-/** The page's model once it is read (null before; the rows read it on each draw). */
+/** The page's model once it is read (null before; the rows read it on each draw); `asked`: the read has ended. */
 const held = $state<{ model: Presets | null; asked: boolean }>({ model: null, asked: false });
+let loading: Promise<void> | undefined;
 
-/** Read the presets for the Mode sheet: resolves once they are in, or after a second at most (a store that never
- *  answers must not hold the sheet; the rows fill in when the model comes). */
-export function presetsReady(session: Session, userKeys: UserKeys): Promise<void> {
-  const load = presetsFor(session, userKeys).then((m) => void (held.model = m));
-  return Promise.race([load, new Promise<void>((r) => setTimeout(r, 1000))])
+/** Read the presets (once per page): Mode's rows start it; a key on them meanwhile waits for it. */
+function load(session: Session, host: PresetsHost): Promise<void> {
+  const keys = host.userKeys;
+  if (!keys) return Promise.resolve();
+  return (loading ??= presetsFor(session, keys)
+    .then((m) => void (held.model = m))
     .catch(() => {})
-    .finally(() => (held.asked = true));
+    .finally(() => (held.asked = true)));
 }
-/** The presets were asked for once (in or not): the Mode sheet opens without waiting again. */
-export const presetsAsked = (): boolean => held.asked;
 /** For tests: the model the rows use. */
 export function setPresetsModel(m: Presets | null): void {
   held.model = m;
   held.asked = m !== null;
+  loading = m === null ? undefined : Promise.resolve();
 }
 
 const str = (v: unknown): string | undefined => (typeof v === "string" ? v : undefined);
@@ -153,8 +159,10 @@ export function nameFrom(latex: string): string {
 /** A name as the line takes it (rename starts from the old name). */
 const nameLatex = (name: string): string => name.replace(/[\\{}]/g, "").replace(/ /g, "\\ ");
 
-/** The sheet has closed: the entry line takes a name under its label. Enter offers it to `save` (a refusal is the
- *  notice, and the line stays for another try); Esc cancels. Either way the line then holds what it held before. */
+/** The sheet has closed: the entry line takes a name under its label, and every key goes to it first. Enter offers the
+ *  name to `save` (a refusal is the notice, and the line stays for another try); Esc cancels; C empties the line, never
+ *  the history; the space key types a space; a key that goes elsewhere (a sheet, a place) cancels first. Either way the
+ *  line then holds what it held before. */
 function askName(host: PresetsHost, start: string, save: (name: string) => void, said: (name: string) => string): void {
   const { shell, entry } = host;
   if (!shell || !entry) return;
@@ -164,20 +172,29 @@ function askName(host: PresetsHost, start: string, save: (name: string) => void,
     shell.prompt = null;
     entry.set(line, chips);
   };
+  const offer = (): void => {
+    const name = nameFrom(entry.value);
+    try {
+      save(name);
+    } catch (e) {
+      return say(host, faultText(e, name));
+    }
+    end();
+    say(host, said(name));
+  };
   shell.prompt = {
     label: pt("name"),
-    enter: (latex) => {
-      const name = nameFrom(latex);
-      try {
-        save(name);
-      } catch (e) {
-        host.notice?.(faultText(e, name));
-        return;
+    key: (a) => {
+      if (a.kind !== "special") entry.run(a.kind === "type" && a.text === " " ? { kind: "insert", latex: "\\ " } : a);
+      else if (a.name === "enter") offer();
+      else if (a.name === "esc") end();
+      else if (a.name === "clear") entry.clear();
+      else {
+        if (a.name !== "none") end();
+        return false;
       }
-      end();
-      host.notice?.(said(name));
+      return true;
     },
-    cancel: end,
   };
   entry.set(nameLatex(start));
 }
@@ -187,9 +204,9 @@ function switchTo(m: Presets, id: number, host: PresetsHost): void {
   void m.apply(id).then(
     () => {
       const p = m.list.find((x) => x.id === id);
-      if (p) host.notice?.(`${p.name}: ${summary(p)}`);
+      if (p) say(host, `${p.name}: ${summary(p)}`);
     },
-    (e: unknown) => host.notice?.(faultText(e, "")),
+    (e: unknown) => say(host, faultText(e, "")),
   );
 }
 
@@ -197,8 +214,9 @@ const activeOf = (m: Presets): Preset | undefined => m.list.find((x) => x.id ===
 
 /** Mode's row 5: the active preset's name (a dot after it once a held setting changed) and what it holds; ◀ ▶ apply
  *  the previous or next preset, round the ends; a tap, a digit or Enter lists them. */
-export function presetRow(host: PresetsHost): MenuItem {
-  return {
+export function presetRow(session: Session, host: PresetsHost): MenuItem {
+  void load(session, host);
+  const row: MenuItem = {
     id: "preset",
     label: pt("row"),
     get value() {
@@ -212,6 +230,7 @@ export function presetRow(host: PresetsHost): MenuItem {
       return p ? summary(p) : undefined;
     },
     adjust: (by) => {
+      if (!held.asked) return void load(session, host).then(() => row.adjust?.(by)); // a key before the read: after it
       const m = held.model;
       if (!m || m.list.length === 0) return;
       const i = m.list.findIndex((x) => x.id === m.active);
@@ -219,16 +238,18 @@ export function presetRow(host: PresetsHost): MenuItem {
       const next = i < 0 ? (by > 0 ? 0 : n - 1) : (i + by + n) % n;
       switchTo(m, (m.list[next] as Preset).id, host);
     },
-    submenu: presetsMenu(host),
+    submenu: presetsMenu(session, host),
   };
+  return row;
 }
 
 /** `Mode › Presets`: the presets (a pick applies one and closes the sheet), Save the current setup, Edit the presets ›.
  *  While the record is refused (a newer version's, or unreadable) nothing is saved or edited. */
-function presetsMenu(host: PresetsHost): SubMenu {
+function presetsMenu(session: Session, host: PresetsHost): SubMenu {
   return {
     title: pt("title"),
     remember: false,
+    loading: () => (held.asked ? null : load(session, host)),
     get items(): MenuItem[] {
       const m = held.model;
       if (!m) return [{ id: "loading", label: pt("loading"), disabled: true }];
@@ -264,7 +285,7 @@ function presetsMenu(host: PresetsHost): SubMenu {
 function pageRow(m: Presets, p: Preset, host: PresetsHost): MenuItem {
   const id = p.id;
   const now = (): Preset | undefined => m.list.find((x) => x.id === id);
-  const say = (e: unknown): void => host.notice?.(faultText(e, now()?.name ?? ""));
+  const fault = (e: unknown): void => say(host, faultText(e, now()?.name ?? ""));
   const groups: MenuItem[] = PRESET_GROUPS.map((g) => ({
     id: g,
     label: pt(GROUP_LABEL[g]),
@@ -283,7 +304,7 @@ function pageRow(m: Presets, p: Preset, host: PresetsHost): MenuItem {
       try {
         m.setGroups(id, has.includes(g) ? has.filter((x) => x !== g) : [...has, g]);
       } catch (e) {
-        say(e);
+        fault(e);
       }
     },
   }));
@@ -294,9 +315,9 @@ function pageRow(m: Presets, p: Preset, host: PresetsHost): MenuItem {
     run: () => {
       try {
         m.update(id);
-        host.notice?.(pt("updated", { name: now()?.name ?? "" }));
+        say(host, pt("updated", { name: now()?.name ?? "" }));
       } catch (e) {
-        say(e);
+        fault(e);
       }
     },
   };
@@ -319,9 +340,9 @@ function pageRow(m: Presets, p: Preset, host: PresetsHost): MenuItem {
             const name = now()?.name ?? "";
             try {
               m.remove(id);
-              host.notice?.(pt("deleted", { name }));
+              say(host, pt("deleted", { name }));
             } catch (e) {
-              say(e);
+              fault(e);
             }
           },
         },

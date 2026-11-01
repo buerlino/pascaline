@@ -20,7 +20,6 @@ import { yourKeysItems, yourKeysValue, type SettingsEnv } from "./yourKeys.ts";
 import { presetRow, switchedRow } from "./presetsView.svelte.ts";
 /** The presets' model (R88) is part of this chunk; R89 draws it in Mode (views/presetsView.svelte.ts). */
 export { presetsFor } from "../state/presets.svelte.ts";
-export { presetsAsked, presetsReady } from "./presetsView.svelte.ts";
 
 const ANGLES: readonly AngleUnit[] = ["rad", "deg"];
 const FORMATS: readonly NumberFormat[] = ["std", "sci", "eng", "pfx"];
@@ -97,7 +96,7 @@ export function modeItems(session: Session, env: SettingsEnv = {}): MenuItem[] {
       },
       adjust: (by) => session.setEntry(cycle(ENTRIES, s.entry, by)),
     },
-    presetRow(env), // R89: row 5, the active preset; Settings is row 6
+    presetRow(session, env), // R89: row 5, the active preset; Settings is row 6
     { id: "settings", label: t("mode.settings"), submenu: settingsMenu(session, env) },
   ];
 }

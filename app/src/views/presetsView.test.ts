@@ -2,7 +2,10 @@
 // R89: the presets in Mode (views/presetsView.svelte.ts): what a preset's lines say, the name read off the entry line,
 // ◀ ▶ round the ends, and a refused record (a newer version's) offers no Save and no Edit.
 import { afterEach, describe, expect, it, vi } from "vitest";
+import type { EntryPrompt } from "../apps/shell.svelte.ts";
 import type { MenuItem } from "../apps/types.ts";
+import type { ClipActions } from "../clipboard/actions.svelte.ts";
+import type { ActionBody } from "../keyboard/keyboard.ts";
 import { FakeCalc } from "../calc/fake.ts";
 import { UserKeys } from "../keyboard/userKeys.svelte.ts";
 import { Presets, type PresetStore, type StoredPresets } from "../state/presets.svelte.ts";
@@ -70,7 +73,7 @@ describe("what a preset says", () => {
 describe("Mode's Preset row", () => {
   it("None, then the active one; ◀ ▶ apply the previous or next, round the ends; a later change puts a dot after the name", async () => {
     const { session, presets } = await setup();
-    const row = presetRow({});
+    const row = presetRow(session, {});
     expect(row.value).toBe("None");
     expect(row.hint).toBeUndefined();
     row.adjust?.(1); // nothing to apply
@@ -88,34 +91,49 @@ describe("Mode's Preset row", () => {
     expect(row.value).toBe("Survey •");
   });
   it("a record from a newer version: no Save and no Edit, the reason on the row", async () => {
-    await setup({ "@pascaline": DATA_VERSION + 1, value: { presets: [], active: null, next: 1 } });
-    const rows = items(presetRow({}));
+    const { session } = await setup({ "@pascaline": DATA_VERSION + 1, value: { presets: [], active: null, next: 1 } });
+    const rows = items(presetRow(session, {}));
     expect(rows.map((r) => [r.id, r.disabled])).toEqual([
       ["save", true],
       ["edit", true],
     ]);
     expect(rows[0]?.reason).toBe("Saved by a newer Pascaline: kept as it is");
   });
-  it("Save asks for a name on the entry line; Enter saves it, a taken name is refused and the line stays; Esc gives the line back", async () => {
-    const { presets } = await setup();
+  it("Save asks for a name on the entry line; Enter saves it, a taken name is refused and the line stays; another key cancels and gives the line back", async () => {
+    const { session, presets } = await setup();
     const notices: string[] = [];
-    const shell = { prompt: null as null | { label: string; enter(latex: string): void; cancel(): void } };
+    const shell = { prompt: null as EntryPrompt | null };
     let line = "12";
-    const entry = { get value() { return line; }, chips: {}, set: (latex: string) => void (line = latex) };
-    const host = { shell, entry, notice: (m: string) => void notices.push(m) };
-    const save = () => items(presetRow(host)).find((r) => r.id === "save")?.run?.();
+    const entry = {
+      get value() {
+        return line;
+      },
+      chips: {},
+      set: (latex: string) => void (line = latex),
+      run: (a: ActionBody) => void (line += a.kind === "type" ? a.text : a.kind === "insert" ? a.latex : ""),
+      clear: () => void (line = ""),
+    };
+    const host = { shell, entry, data: (run: (c: ClipActions) => void) => run({ say: (m: string) => void notices.push(m) } as unknown as ClipActions) };
+    const key = (a: ActionBody): boolean | undefined => shell.prompt?.key(a);
+    const save = () => items(presetRow(session, host)).find((r) => r.id === "save")?.run?.();
     save();
     expect(shell.prompt?.label).toBe("Preset name");
     expect(line).toBe("");
-    shell.prompt?.enter("Lab");
+    for (const ch of "Lab") key({ kind: "type", text: ch });
+    expect(key({ kind: "special", name: "enter" })).toBe(true);
     expect(shell.prompt).toBeNull();
     expect(line).toBe("12");
     expect(presets.list.map((p) => p.name)).toEqual(["Lab"]);
     save();
-    shell.prompt?.enter("lab");
+    key({ kind: "type", text: "lab" });
+    key({ kind: "type", text: " " }); // a space is kept, typed as MathLive's space
+    expect(line).toBe("lab\\ ");
+    key({ kind: "special", name: "enter" });
     expect(notices.at(-1)).toBe("There is already a preset named lab");
     expect(shell.prompt).not.toBeNull();
-    shell.prompt?.cancel();
+    expect(key({ kind: "special", name: "clear" })).toBe(true); // C empties the line, never the history
+    expect(line).toBe("");
+    expect(key({ kind: "special", name: "mode" })).toBe(false); // a key that goes elsewhere cancels first
     expect(shell.prompt).toBeNull();
     expect(line).toBe("12");
     expect(notices).toEqual(["Saved Lab", "There is already a preset named lab"]);
