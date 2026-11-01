@@ -63,6 +63,16 @@ describe("a number has one decimal point (F24)", () => {
     expect(giac("1{,}5\\times2")).toBe(giac("1.5\\times2"));
     expect(giac("\\max\\left(1{,}5,2\\right)")).toBe("max(1.5,2)");
   });
+  it("R99 (be-5): {,} before a digit starts a number, as . before a digit does, in either mode", () => {
+    for (const comma of [false, true]) {
+      expect(giac("{,}5", comma)).toBe(giac(".5"));
+      expect(giac("-{,}5", comma)).toBe(giac("-.5"));
+      expect(giac("2\\times{,}5", comma)).toBe(giac("2\\times.5"));
+      expect(giac("\\max\\left({,}5;2\\right)", comma)).toBe(giac("\\max\\left(.5;2\\right)"));
+    }
+    expect(message("{,}5{,}3", true)).toBe("a number has one decimal comma");
+    expect(message("{,}5.3", true)).toBe("a number has one decimal point");
+  });
   it("with the decimal point, a comma after a decimal is the argument separator", () => {
     expect(giac("\\max\\left(2.5,3\\right)")).toBe("max(2.5,3)");
   });

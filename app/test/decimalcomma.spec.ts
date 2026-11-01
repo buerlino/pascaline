@@ -154,3 +154,36 @@ test("max(1,5) in point mode gives 5; after Settings › Numbers › Decimal mar
   await tap(page, ["enter"]);
   await resultIs(page, "5", 2);
 });
+
+// R99 (bu-3): the . key types MathLive's {,} in the apps too; their Num entry reads it as the mark (derived: y = 2·2,5 = 5).
+test("Solve: a known x typed 2 , 5 with the keys is 2,5, and y=2x solves to 5; a letter is refused with a notice", async ({ page }) => {
+  const row = (name: string) => page.locator(`[data-testid="solve-table"] tr[data-name="${name}"]`);
+  await tap(page, ["@place", "d4", "@symb"]);
+  await expect(page.getByTestId("entry-label")).toHaveText("E1:");
+  await tap(page, ["shift", "x", "shift", "dot", "d2", "x", "enter", "@num"]);
+  await row("x").locator("th button").tap();
+  await tap(page, ["esc", "d2", "dot", "d5"]);
+  expect(await entryValue(page)).toBe("2{,}5");
+  await tap(page, ["enter"]);
+  await expect(row("x").locator("td")).toHaveAttribute("data-value", "2.5");
+  await expect(row("x").locator("td")).toHaveText("2,5");
+  await tap(page, ["esc", "x", "enter"]);
+  await expect(page.getByTestId("notice")).toHaveText("Not a number");
+  await expect(row("x").locator("td")).toHaveAttribute("data-value", "2.5");
+  await row("y").locator("th button").tap();
+  await tap(page, ["@menu", "d1"]); // Solve for y, x known
+  await expect(row("y").locator("td")).toHaveText("5");
+});
+
+test("Function: a Num start typed 0 , 5 with the keys starts the table at 0,5; a , alone before 5 too", async ({ page }) => {
+  await tap(page, ["@symb", "x", "enter", "@num"]);
+  const firstX = page.locator('[data-testid="num-table"] td.x').first();
+  await expect(firstX).toHaveAttribute("data-x", "0");
+  await tap(page, ["@menu", "d1", "d0", "dot", "d5"]); // Start value
+  expect(await entryValue(page)).toBe("0{,}5");
+  await tap(page, ["enter"]);
+  await expect(firstX).toHaveAttribute("data-x", "0.5");
+  await expect(firstX).toHaveText("0,5");
+  await tap(page, ["@menu", "d1", "dot", "d2", "enter"]); // ,2
+  await expect(firstX).toHaveAttribute("data-x", "0.2");
+});
