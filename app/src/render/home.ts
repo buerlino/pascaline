@@ -9,13 +9,8 @@ import { balanced, mapNames } from "../engine/giacPrint.ts";
  * R55: a mantissa's digits in groups of three from the decimal point outward, a thin space between them, on a side
  * with five or more digits (1234 and 0.1234 stay whole). Drawn results only: the text, the chips and Copy stay plain.
  */
-export function groupDigits(mantissa: string): string {
-  const [int = "", frac] = mantissa.split(".");
-  const i = int.length >= 5 ? int.replace(/\B(?=(\d{3})+$)/g, "\\,") : int;
-  if (frac === undefined) return i;
-  const f = frac.length >= 5 ? frac.replace(/(\d{3})(?=\d)/g, "$1\\,") : frac;
-  return `${i}.${f}`;
-}
+export const groupDigits = (m: string): string =>
+  m.replace(/\d{5,}/g, (d, at: number) => (at ? d.replace(/(\d{3})(?=\d)/g, "$1\\,") : d.replace(/\B(?=(\d{3})+$)/g, "\\,")));
 
 function part(f: FormattedNumber, group: boolean): string {
   const m = group ? groupDigits(f.mantissa) : f.mantissa;

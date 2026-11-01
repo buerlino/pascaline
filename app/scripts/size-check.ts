@@ -201,8 +201,11 @@ export const LAZY_PARTS = ["src/views/sheetKeys.ts", "src/views/tmplSheet.ts", "
  *  +0.31 kB): the first-start tips' decision (state/tips.ts: the flag read at start and the `tips=off` check), the
  *  lazy import of the overlay with its preload entries, and the Settings row's callback in App.svelte. The overlay
  *  (views/tipsHost.ts, tips.css, i18n/enTips.ts) is a lazy chunk in plain DOM, so none of Svelte's runtime goes into
- *  the start chunk for it (a component did: +0.47 kB). The pin is 60.89 + 0.05 kB. */
-export const START_PIN_GZIP = 60_940;
+ *  the start chunk for it (a component did: +0.47 kB). The pin is 60.89 + 0.05 kB.
+ *  60.94 → 60.99 kB (R55): the branch measures 60.97 kB gzip (171.69 kB raw): the digit-group function (render/home.ts
+ *  groupDigits, one regex) and the `grouped` flag from the History row through session.display and renderNumeric. The
+ *  pin is 60.97 + 0.02 kB, the most that keeps it under the 61.00 kB budget with room for the test below. */
+export const START_PIN_GZIP = 60_990;
 
 /** Failures for the start chunk's row when it is over the pin. */
 export function checkStartPin(row: Row): string[] {
