@@ -15,6 +15,7 @@ import type { UserCells } from "../../src/units/pad.ts";
 import { isUnitError, type Quantity, type UnitError, type UnitJob } from "../../src/units/types.ts";
 import type { FactorTable } from "../../src/units/factors.ts";
 import type { IndexItem } from "../../src/find/types.ts";
+import { latexToGiacInfo } from "../../src/input/latex-to-giac.ts";
 import { requestOf, slotOf } from "../unit-case.ts";
 import { root, ROUNDS, want, cases, median, freshHost, report, str, same } from "./lib.ts";
 
@@ -31,6 +32,18 @@ function unitGot(r: Quantity | UnitError, c: Case): string {
 function unitWant(c: Case): string {
   if (c.message !== undefined) return `refused: ${c.message}`;
   return `${c.mark ?? "-"} ${str(c.expect as string)} exact ${c.exact ?? "-"}${c.dim !== undefined ? ` dim ${JSON.stringify(c.dim)}` : ""}${c.unit !== undefined ? ` unit ${JSON.stringify(c.unit)}` : ""}${c.dimtext !== undefined ? ` dimtext ${JSON.stringify(c.dimtext)}` : ""}${c.si !== undefined ? ` si ${c.si}` : ""}${c.unc !== undefined ? ` unc ${c.unc}` : ""}${c.shown !== undefined ? ` shown ${c.shown}` : ""}${c.unc_why !== undefined ? ` ⚠ ${c.unc_why}` : ""}${c.notice !== undefined ? ` note ${c.notice}` : ""}`;
+}
+
+/** R104: a case with `latex`: why the parser's units mode does not give `input`'s formula, or null when it does. */
+function latexMismatch(c: Case, table: FactorTable): string | null {
+  if (c.latex === undefined) return null;
+  const want = requestOf(c.input!, c.to, table).formula;
+  try {
+    const got = latexToGiacInfo(c.latex, { units: true }).giac;
+    return got === want ? null : `formula ${got}, want ${want}`;
+  } catch (e) {
+    return `parser: ${(e as Error).message}`;
+  }
 }
 
 /** R60: a `tap` case's job: the input evaluated without an end slot, its row of alternatives (the spec's pad and user
@@ -74,7 +87,8 @@ export async function stageUnits(): Promise<void> {
   let pass = 0;
   for (const c of cs) {
     const want = unitWant(c);
-    const got = runs.get(c.id)!;
+    const bad = latexMismatch(c, table);
+    const got = bad === null ? runs.get(c.id)! : [bad];
     if (got.every((g) => g === want)) pass++;
     else console.log(`  units ${c.id}: got ${[...new Set(got)].join(" / ")}, expect ${want}`);
   }
