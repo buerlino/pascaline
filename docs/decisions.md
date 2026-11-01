@@ -7,7 +7,6 @@ Phase 0 decisions (D1–D9, P1, P2): [spike/DECISIONS.md](../spike/DECISIONS.md)
 
 The owner's other open items are in [backlog.md](backlog.md), "Needs the user". Once decided, an entry moves to "Decided proposals".
 
-- **G140, rule 3's doubles:** `Psi(1+i)`, `erfc(1+i)` keep ⚠ 12 (a double against its own print), all right; ⚠ with 14 digits would show erfc's wrong 14th. Keep (G140's report).
 - **R95:** keep the reload of Use here, and make "Nothing done in this tab is kept" the read-only note's visible line, not only its tooltip (rows typed while read-only are lost at the reload): yes, or keep them across it in sessionStorage?
 
 - **R94:** keep the newer-version note a history line (as G19's), not vg-8's status line, which has no text slot (Opus pass 32).
