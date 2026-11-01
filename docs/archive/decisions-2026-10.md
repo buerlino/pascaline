@@ -5,6 +5,11 @@ History only: read it when a decision is questioned. What still binds is in [../
 
 ## Decided proposals moved here later
 
+### Shortened 2026-11-01 (Opus pass 43) to make room for R55's and R63's defaults, as they stood
+From "Pipeline and process":
+- **Owner answers of 2026-10-31, evening.** A53's diff stage stays (trigger ten minutes); a kill run skips the golden gate (A52f1, built 2d34033); a worker's measurement holds host-cpu at most 10 min at a time (A58); the Opus pass takes integ only for its docs commit (A57, by day; P17's text changes with it); sem in Find (G155, fh-11); fh-7 waits for the unit view in use.
+- **Owner answers of 2026-10-31 (night review 2026-10-30, [its note](../research/night-review-2026-10-31.md) section 6).** The website deploys only a gated build: check-version and the golden gate in `pages.yml` until A8's `release.yml` (A52). A package's "Done when" names no start-chunk allowance (Start chunk); R103, trimmed, measures the inline script. R90 is dropped: R24c brought the unit view. The docs budgets stay; the one-time phone checks live in `tests/core/ONE-TIME.md`. Would change if: A8 gates both deploys.
+
 ### Shortened 2026-11-01 (Opus pass 41) to make room for R63's default, as they stood
 From "Defaults":
 - **G140 (Opus pass 34): a value Giac holds only as a double** (bridge-3's `doubles`, or the same binary64 at P and P + 20, `binary64.ts`) is an unaudited double: ⚠, at most 14 digits, never ≈ with P's. Rule 3's doubles on the exact path (`Psi(1+i)`, `Beta(1+i,2)`, `erf`/`erfc(1+i)`) keep ⚠ 12–13 (14 would show erfc's wrong 14th); `negbinomial_cdf` off the integers is ⚠ (Giac's incomplete Beta is a C double). Would change if: Giac gets an MPFR path for them.

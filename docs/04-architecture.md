@@ -102,8 +102,6 @@ Cost: one more `evalf` per irrational result (about 1 ms, desktop) and one per f
 
 **Golden cases:** every numeric case in `home.yaml` carries its mark, checked by the gate (`oracle.py` checks that `=` appears exactly when the oracle value equals the expected text); `precision.yaml` holds the cases at 20 and 30 digits (`oracle`) and 2.3's regression list.
 
-**Alternatives:** a mark from `approximate` alone (cannot tell 1/3 from 1/4); MPFI intervals (S20).
-
 **Risk:** both evaluations wrong in the same way is not caught (2.3 #2; section 9 risk 1): until a function has passed the tier-0 audit, a float Giac's numeric code returned for it is `⚠`, never a bare `≈`.
 **Would change if:** Tab One timing shows the extra `evalf` costing more than 20 % of Enter p95; then the check runs only above 15 digits and for float-returning inputs.
 
@@ -117,8 +115,6 @@ Cost: one more `evalf` per irrational result (about 1 ms, desktop) and one per f
 - Exact budget: `budgetSteps` checks, not ms (G82): a result must not depend on the device's speed (A20: 16 golden cases differed on the Tab One at 300 ms).
 - The agreement check (2.4) makes 20 and 30 digits honest: without it, 2.3 #3–#5 would go out unmarked.
 - **Latency gate (Tab One):** p95 at 30 digits < 150 ms and ≤ 1.3 × the 12-digit p95, else the setting stops at 20. It holds (A4a, 2026-10-16), so 30 stays; numbers in [research/r12-evidence.md](research/r12-evidence.md) section 3.
-
-**Alternatives:** keep 15 (reference data needs more); unlimited digits (the 40-digit value path and the screen width cap it at 30).
 
 **`sigfig(x,n)`** (EN3 d): an engine definition that rounds the exact value to `n` significant digits and returns an exact decimal rational, so `sigfig(1/3,3)` is `= 0.333`. The power of ten is found exactly (BigInt, not `floor(log10(…))`, which can land on the wrong side at 999.95). Golden cases at the boundaries: 999.95 at 4 digits, 0.0012345 at 3, negatives, ties.
 
@@ -137,8 +133,6 @@ Cost: one more `evalf` per irrational result (about 1 ms, desktop) and one per f
 **Paste** (Shift + Copy, or ☰ → Paste): the clipboard is read as one number (`-1.5`, `1,5` with decimal comma, `1.5e-3`, `1.5E-3`, `i` parts) or a list as Copy writes it (`{1,16}`, `{1,5;2,25}`; with decimal comma `{1,5}`, 1,5 or 1 and 5, is refused); it enters as the keyboard's own LaTeX (`1.5\emark-3`, drawn `1.5ᴇ-3`), so the parser sees only what our keys produce. Anything else gives the message "Paste: not a number". Pasting a result copied from Pascaline gives the same value back (P5; with decimal comma not a list of one decimal).
 **Mechanics:** the APK uses `@capacitor/clipboard` and `@capacitor/share` (A11; the Tab One's WebView 131 denies `readText` and has no `navigator.share`, A4a); the PWA `navigator.clipboard`, and `navigator.share` where it exists, else copy. Files go out through the native `save` (`ACTION_CREATE_DOCUMENT`) in the APK and `<a download>` in the PWA, and come in through `<input type="file">` (R11).
 
-**Alternatives:** copy the displayed text by default (hides digits, against principle 3); copy the exact form by default (`1/3` pastes badly into spreadsheets and code).
-
 ### 2.7 Decision: SI prefix display, and prefix entry
 
 - **Display:** a format `PFX` beside ENG: `n` significant digits as in ENG, the exponent replaced by f p n µ m (none) k M G T P (10⁻¹⁵ to 10¹⁵); `µ` is U+00B5. Outside that range, ENG E notation. Built (package R3, not the R3 layout): mantissa, thin space, the prefix as `\class{pfx}{\mathrm{k}}` in the accent colour, so `1.5 m` (milli) does not read as metres; ENG and PFX keep trailing zeros to n digits (`2.500 k`); in Settings and the Format key cycle; copy gives the full value, never the prefix text; unit tests per prefix boundary and rounding into the next prefix (999.96 k at 4 digits → 1.000 M).
@@ -154,8 +148,6 @@ Cost: one more `evalf` per irrational result (about 1 ms, desktop) and one per f
 - A stored name takes the facts of what its input read, and a run-once result that rests on a decision is ⚠ (G48). Names stored and read come from Giac's state and tree (G65, G99); whether an input stores, from its tree (stores.ts, G100): a target, a state or string head, or a stored program that stores; over-reads only.
 - A CAS result without a float that read a stored name, or called a function, with facts takes their mark (`warn`, `why.inherited`); one built from exact names stays unmarked (G51).
 - The rule that turns a result into an item's `full`, facts and chip is plain TypeScript (`state/results.ts`), so the session and the golden gate run the same code; a rune file holds state and calls, not rules (G86).
-
-**Alternatives:** insert the full digits as text (40 digits clutter the line); keep inserting the rounded digits (2.3 #8).
 
 ### 2.9 Decision: CAS
 
@@ -212,14 +204,11 @@ Live items (variables, user functions) have the same shape with `kind: "var" | "
 
 **Licences:** 7.2 (Giac's English lines under P10, confirmed by B. Parisse on 2026-10-19); the About screen credits Giac and libqalculate.
 
-**Alternatives:** generating at run time (start-up, memory); committing the generated JSON (not our source for F-Droid; P22's `find/factors.yaml` is the audited source, not output).
-
 ### 3.4 Live entries
 The engine host reports the name each stateful input defines (`defined: {name, kind}`, from `:=` and ▶). The session keeps `userNames` (name, kind, formatted value preview, view, time), read through `Calc.names()` from the persisted defs log (6.2), so Vars works after a relaunch. Find merges them at query time; a library function brings its one-line `desc` (G33).
 
 ### 3.5 Ranking
 No usage boost (P11), so the same query always gives the same order (docs/03 rule 8); with an empty query Find shows the G2-style Math menu (fixed categories, fixed order). Our own code (`app/src/find/rank.ts`, built in G4). Order (numbered as in `rank.ts`, from 2): (2) exact match of a name, symbol or alias; (3) prefix of one, shorter first; (4) word prefix inside one (`_`, space); (5) word prefix in the title or description; (6) one edit away (insertion, deletion, substitution, transposition) for queries of 4+ characters. Ties: tier 0 first, then the context's kind (variables in Vars, units in a unit slot), then the shorter name, then id. Nothing is stored.
-**Alternatives:** uFuzzy, fuzzysort, Fuse.js (they know none of our tiers or kinds).
 
 ### 3.6 Insertion and tokens
 - MathLive macros on the entry field, all `captureSelection: true, expand: false`, so the cursor cannot enter a chip and `getValue()` keeps the macro (R2: `entry/macros.test.ts`, `app/test/chips.spec.ts`): `\const{ID}`, `\res{n}`, `\ans` (unit slots hold R24a's tokens, not macros: 4.3). The chip macros take a second argument that is only what they show: `\res{k}{shown LaTeX}`, `\const{ID}{symbol LaTeX}`; a macro definition cannot look up a value, so the display travels in the LaTeX and the value in the chip table. A Find item's `insert` for a constant is `\const{ID}{symbol}`, ID being the item id without `const:`.
@@ -267,7 +256,7 @@ sin, cos and tan take an angle or a pure number; the angle dimension is dropped 
 - **Result:** value (exact fraction or P-digit decimal) through our formatter at the digits setting, the mark by the 2.4 rules from the same engine facts as Home, the unit drawn upright, the dimension as `L·T⁻¹`. With an end slot: in that unit. Without: in the units typed when they fit the result's dimension (so a torque stays `N·m`, SI would say `J`), else SI with an SI prefix (2.7); the alternatives (R60, `units/alternatives.ts`, r17 0.2's order) are end slots: coherent SI (Hz never Bq), SI with its prefix, the last unit tapped (stamped store `units.targets`, `{dimKey: UnitSlot}`, order only), the cells' units, the typed units; a tap sets the end slot and runs the job.
 - **Temperature:** `°C` and `°F` alone carry their offset; inside a compound unit they are an interval (G37: `J/(kg·°C)`, `°C⁻¹`; 1 °C = 1 K, 1 °F = 5/9 K). Alone they are absolute (`20 °C → °F` = 68, `derived`); other differences are `K`, `°R`, or the Find aliases `Δ°C` (of K) and `Δ°F` (of °R).
 - **Logarithmic units, angles, currency:** (conversions only for dB, dBm, Np; `rad` stays in the dimension key, and an angle is a quantity both ways: sin, cos and tan take an angle (a bare number in the mode's unit), asin, acos, atan and atan2 give one (in rad, shown without an end slot in the mode's unit, ° in DEG and rad in RAD); an end slot one rad apart from the result converts with the note "rad = 1 dropped" unless rpm, rev or Hz is on either side (G32's refusal stays), and rpm or rev times a dimension other than time keeps its value with the note "rpm counts turns: the speed at radius r is 2π·r·n" (G40); currencies off, with the index test). dB, bel and Np convert by the field-ratio rule (1 Np = 20/ln 10 dB, 1 bel = 10 dB); dBm and dBW by the power ratio to 1 mW / 1 W; the message is `dB converts only`.
-- **The way back:** the result inserted into Home is a `\res` chip with the number in the unit shown; the chip's label says the unit was dropped. The line itself keeps its slots, so the units key shows them again.
+- **The way back (R63, `units/row.ts`):** each result of a visit of the unit view is one Home history row, saved with the history (a later result of the visit replaces it): Home's number and mark by Home's rules, the line with its chips and filled slots, the Quantity summary (unit, dimension, σ, note) and R61's chip. The row draws the request with its units and the number with ± σ and the unit set apart (smaller, muted, upright); its text (Copy as shown) is the number, ± σ and the unit. ▲ or a tap puts the chip on the line, drawn the same way and worth the number in the unit shown with its σ (Ans is the same chip); a row with no chip puts Home's number alone. A Home row computed from the chip says "unit dropped: Home has no units". The units key on the picked row shows its slots again (a line typed again starts with empty slots); on a line with a result chip the slot after the chip starts with the chip's unit.
 
 ### 4.4 Budgets and gates
 No engine chunk: the unit view's UI and builder chunks (≤ 38 kB raw) and its factor table from the Find index load on the units key's first press, never at start; a Playwright test asserts that a session without it requests neither. First result < 1 s on the Tab One; desktop p95 ≤ 5 ms per evaluation (G15: 1.5–3.2 ms). Also: `units.yaml` in the golden gate; **a unit in ≤ 4 presses at the median** (`tools/probes/unit-presses.mjs`, then the same list as an e2e replay); benchmark tasks 1–4 and 10 within budget (decisions.md "M4-2"); the owner's hand timing (rule 2).
@@ -438,7 +427,7 @@ The types live in the code; this is the map. Views see `Calc` (`app/src/calc/por
 
 | Item | Budget | State | Enforced by |
 |---|---|---|---|
-| Start chunk | ≤ 175 kB raw, ≤ 61 kB gzip; pin 60.36 kB gzip | 60.34 kB gzip (deltas: size-check.ts). The pin `START_PIN_GZIP` holds: a package growing the chunk past it raises it in its diff to its size after merging phase-1 plus 0.05 kB, with the reason, and reports both sizes, never past 61 kB; `LAZY_PARTS` must stay dynamic chunks (R91). `tools/probes/start-chunk.mjs` lists bytes per source | size test (`npm run size`) |
+| Start chunk | ≤ 175 kB raw, ≤ 61 kB gzip; pin 60.99 kB gzip | 60.97 kB gzip after R55 (R63 60.59, R15c4 60.94, R55 60.99; deltas: size-check.ts). The pin `START_PIN_GZIP` holds: a package growing the chunk past it raises it in its diff to its size after merging phase-1 plus 0.05 kB, with the reason, and reports both sizes, never past 61 kB; `LAZY_PARTS` must stay dynamic chunks (R91). `tools/probes/start-chunk.mjs` lists bytes per source | size test (`npm run size`) |
 | MathLive chunk (after the keypad) | ≤ 830 kB raw | 807.74 kB (2026-10-18) | size test |
 | Find UI chunk | ≤ 30 kB raw | 8.04 kB raw (R24df2): the chunk that holds `src/find/finder.ts` (dynamic entry or shared chunk); a build without it fails | size test |
 | Find index asset | ≤ 400 kB raw, ≤ 100 kB gzip | 325.7 / 67.1 kB (2026-10-15) | size test (once Find loads it) |
