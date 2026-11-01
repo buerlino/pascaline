@@ -91,6 +91,9 @@ const CANARIES: [string, string, RegExp, string][] = [
   // G149, patch 0025: pow writes b^(n*s/d) as ((b^s)^(1/d))^r*(b^s)^q for any b and s, another branch where im(s*ln(b)) is
   // past pi (2^sqrt(-1-10^-3) = (2^(10*i*sqrt(10010)))^(1/1000), the root of 2^(1000.5*i))
   ["0025-pow-root-extract-branch.patch", "giac-2.1.0/src/gen.cc", /gen res\(1\);\s*if \(r\)\{\s*if \(complex_mode\(contextptr\) && fastsign\(base,contextptr\)==-1\)\{/, "// extract integral powers in a product exponent"],
+  // G151, patch 0026: asinh of an exact real ends in its ln form, which cancels at evalf for a small x
+  // (surd(asinh(1/10^100),3) took the noise's sign, the complex root)
+  ["0026-asinh-small-real-exact.patch", "giac-2.1.0/src/usual.cc", /if \(keep_acosh_asinh\(contextptr\)\)\s*return symbolic\(at_asinh,e\);\s*return ln\(e\+sqrt\(pow\(e,2\)\+1,contextptr\),contextptr\);/, "gen asinh(const gen & e0,GIAC_CONTEXT){"],
   // G135, patch 0019: atan keeps an exact argument on its cut symbolic (atan(2*i)), which Giac's cos rule reads on the other side
   ["0019-atan-exact-cut.patch", "giac-2.1.0/src/usual.cc", /atan\(b,contextptr\)\),_SEQ__VECT\)\);\s*gen tmp=evalf_double\(e,0,contextptr\);\s*if \(tmp\.type==_DOUBLE_\)\{/, "return symbolic(at_program,gen(makevecteur(a,0,atan(b,contextptr)),_SEQ__VECT));"],
   // G135, patch 0019: cos(atan(f)) = sqrt(1/(f^2+1)) takes the other root where f^2+1 is a negative real (cos(quote(atan(2*i))) = i*sqrt(3)/3)

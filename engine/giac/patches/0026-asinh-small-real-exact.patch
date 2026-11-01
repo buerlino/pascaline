@@ -1,0 +1,31 @@
+# Upstream: giac 2.1.0 usual.cc asinh. For an exact real x the exact path returns ln(x+sqrt(x^2+1)), which is ln(1+x+O(x^2)): its evalf at Digits cancels -log10|x| digits (asinh(1/10^100) at Digits 40 = -5.9e-39, at Digits 12 = -1.4e-14), so a sign decided on it takes the noise: surd(asinh(1/10^100),3) gave -(-asinh(...))^(1/3), the complex root of a negative number (-2.32e-34-4.02e-34*i, right 4.64158883361e-34), the same for 10^-200, 3*10^-300, 10^-300, and evalf(asinh(10^-400)) at Digits 12 was 3e-78 (right 1e-400). Now asinh of an exact real below 1/4 in size (its double; a double that reads 0 too) stays unevaluated, as an exact complex one below 1/4 does since patch 0020 (G133), and evalf takes the MPFR asinh. A float x, a free x and |x| >= 1/4 keep the form (CAS asinh(-1/2) = ln(-1/2+sqrt((-1/2)^2+1)), asinh(-2) = -ln(2+sqrt((-2)^2+1))).
+# Changed by Pascaline contributors, 2026-11-01
+--- a/src/usual.cc
++++ b/src/usual.cc
+@@ -3049,6 +3049,17 @@
+     double r=d._CPLXptr->_DOUBLE_val,i=(d._CPLXptr+1)->_DOUBLE_val;
+     return i!=0 && r*r+i*i<0.0625;
+   }
++  // Pascaline patch 0026 (G151): an exact real x of size below 1/4 (its double; a double that reads 0, 10^-400, too): the
++  // exact ln form ln(x+sqrt(x^2+1)) is ln(1+x+O(x^2)), whose evalf at Digits cancels -log10|x| digits (asinh(1/10^100) at
++  // Digits 40 was -5.9e-39), so a sign decided on it took the noise: surd(asinh(1/10^100),3) was -(-asinh(...))^(1/3),
++  // the complex root of a negative number (Home -2.3E-34-4.0E-34*i, right 4.64158883361E-34). asinh keeps it
++  // unevaluated, as patch 0020 does for an exact complex x, and evalf takes MPFR's asinh. A float x keeps today's path.
++  static bool small_exact_real(const gen & x,GIAC_CONTEXT){
++    if (x.type==_REAL || x.type==_DOUBLE_ || x.type==_FLOAT_ || x.type==_CPLX)
++      return false;
++    gen d=evalf_double(x,1,contextptr);
++    return d.type==_DOUBLE_ && d._DOUBLE_val*d._DOUBLE_val<0.0625;
++  }
+   gen asinh(const gen & e0,GIAC_CONTEXT){
+     if (e0.type==_FLOAT_){
+ #ifdef BCD
+@@ -3093,7 +3104,7 @@
+       return symbolic(at_asinh,e);
+     if (part_below_double(e,contextptr))
+       return symbolic(at_asinh,e);
+-    if (small_exact_cplx(e,contextptr))
++    if (small_exact_cplx(e,contextptr) || small_exact_real(e,contextptr))
+       return symbolic(at_asinh,e);
+     if (ln_form_cancels(e,true,contextptr))
+       return -ln(-e+sqrt(pow(e,2)+1,contextptr),contextptr);
