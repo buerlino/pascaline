@@ -28,6 +28,9 @@ function host(): { host: ViewHost; requests: UnitRequest[]; answer: (q: Quantity
         return new Promise((resolve) => pending.push(resolve));
       },
       find: () => {},
+      format: () => ({ format: "STD", digits: 12 }),
+      alternatives: () => Promise.resolve([]),
+      remember: () => Promise.resolve(),
       dead: () => {},
       changed: () => {},
     },

@@ -65,8 +65,9 @@ export interface UnitFindEnv {
   refresh(): void;
 }
 
-/** Math in a slot: Find on units. `into`: an empty user cell was pressed, so the pick also sets that cell. */
-export function showUnitFind(env: UnitFindEnv, into?: { key: string; leg: CellLeg }): void {
+/** Math in a slot: Find on units. `into`: an empty user cell was pressed, so the pick also sets that cell. `dim`: R62's
+ *  "More…" on a result, only that dimension's units. */
+export function showUnitFind(env: UnitFindEnv, into?: { key: string; leg: CellLeg }, dim?: string): void {
   const { shell, cat } = env;
   const set = (key: string, leg: CellLeg, it: FindItem): void => {
     unitCells.set(key, leg, cellUnitOf(cat, it));
@@ -79,6 +80,7 @@ export function showUnitFind(env: UnitFindEnv, into?: { key: string; leg: CellLe
     },
     put: (it) => shell.showMenu(unitText("units.find.cell"), cellRows((key, leg) => set(key, leg, it))),
     product: (acts) => acts.forEach(env.apply),
+    ...(dim !== undefined ? { dim } : {}),
   });
   shell.showFind(unitText("units.pad.find"), categories, search);
 }
