@@ -6,3 +6,5 @@ app/src/engine/numeric.ts: 1087   # G140: the double rule in atParts (Parts.doub
 app/src/engine/host.ts: 1271
 app/src/engine/homeEval.ts: 834
 app/src/engine/host.test.ts: 908
+scripts/pipeline.sh: 812   # A54: the owned process group (own_sh, the TERM/HUP traps), host-cpu around the device build, the census locks; +12 over 800
+scripts/pipeline.test.sh: 875   # A54, A54f1: the tests for the owned children, the device build under host-cpu, the census HEAD check and a TERM during a lock wait; +75 over 800

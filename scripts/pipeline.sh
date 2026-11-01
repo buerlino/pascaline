@@ -53,12 +53,15 @@
 # phase-1 worktree's app/node_modules and every npm ci in it (the device build's and its runner's tree, A56), so a fresh start copies under nodemods
 # alone; host-cpu around the checks and builds.
 # Lock order: integ, then nodemods, then host-cpu, everywhere; nothing holding a later one waits for an earlier one.
+# Children (A54): every check, agent, npm ci and device build runs in a session of its own (own_sh, pipeline-lib.sh); TERM, HUP, INT and
+# every EXIT trap kill those sessions and wait until they are empty (owned_kill) before integ, nodemods and host-cpu are dropped.
 # Starts read the package and the brief from phase-1's commit (git show), so a dirty phase-1 worktree never stops a start.
 set -euo pipefail
 export PASCALINE_LOCK_PID=$$   # A35: locks taken here (and by the agents it starts) record this pid
 self_dir="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"  # before the cd below: a relative call (night.sh's) resolves here
 # shellcheck source=scripts/pipeline-lib.sh
 source "$self_dir/pipeline-lib.sh"
+own_traps  # A54: TERM, HUP and INT end the child sessions first (owned_kill), then the job (its EXIT trap drops the locks)
 
 main="$(cd "$(git rev-parse --git-common-dir)/.." && pwd)"
 cd "$main"
@@ -131,9 +134,9 @@ refresh_integ_node_modules() {  # under integ; takes nodemods (kept for the call
   nodemods_take "pipeline-$n" "pipeline #$n $id:" || die "nodemods lock busy for 7200 s (npm ci in phase-1)"
   phase1_nm_stale || return 0
   runlog "node_modules of $integ/app are missing or stale: npm ci"
-  host_cpu_acquire "pipeline-$n" "pipeline #$n $id:" || die "host-cpu lock busy for 7200 s"
-  local rc=0; (cd "$integ/app" && timeout 1800 npm ci --prefer-offline) > "$run/npm-ci.log" 2>&1 || rc=1
-  tools/devlock.sh release host-cpu "pipeline-$n" >/dev/null || true
+  host_cpu_take "pipeline-$n" "pipeline #$n $id:" || die "host-cpu lock busy for 7200 s"
+  local rc=0; own_sh 'cd "$1" && timeout 1800 npm ci --prefer-offline' "$integ/app" > "$run/npm-ci.log" 2>&1 < /dev/null || rc=1
+  host_cpu_drop
   if [[ $rc -ne 0 ]]; then
     log "pipeline #$n $id: NOT MERGED (machine: npm ci in phase-1 failed); see $run/npm-ci.log"
     echo "RESULT #$n $id: NOT MERGED (machine: npm ci in the phase-1 worktree failed; see $run/npm-ci.log)"; exit 1
@@ -181,9 +184,9 @@ queue_node_modules() {
     copy_node_modules "$wt"; nodemods_drop
     log "pipeline #$n $id: node_modules refreshed from $integ/app after merging phase-1 ($((SECONDS - t0)) s)"; return 0
   fi
-  host_cpu_acquire "pipeline-$n" "pipeline #$n $id:" || queue_stop "host-cpu lock busy for 7200 s (npm ci)"
-  (cd "$wt/app" && timeout 1800 npm ci --prefer-offline) > "$run/npm-ci-branch.log" 2>&1 || rc=1
-  tools/devlock.sh release host-cpu "pipeline-$n" >/dev/null || true
+  host_cpu_take "pipeline-$n" "pipeline #$n $id:" || queue_stop "host-cpu lock busy for 7200 s (npm ci)"
+  own_sh 'cd "$1" && timeout 1800 npm ci --prefer-offline' "$wt/app" > "$run/npm-ci-branch.log" 2>&1 < /dev/null || rc=1
+  host_cpu_drop
   [[ $rc -eq 0 ]] || queue_stop "machine: npm ci in $wt failed; see $run/npm-ci-branch.log"
   log "pipeline #$n $id: npm ci in the branch's worktree after merging phase-1 ($((SECONDS - t0)) s)"
 }
@@ -206,13 +209,13 @@ if [[ "${1:-}" == "pass" ]]; then
   [[ "$used" == "$n" ]] || log "Opus pass $n: pass number $n is taken; this pass is $used"
   n="$used"; run="$tasks/pass-$n"; mkdir -p "$run"; echo $$ > "$run/pid"
   # A47b: the pass holds integ from its start to its end: no merge meets its edits, and it reads one unmoving HEAD
-  trap integ_drop EXIT
+  trap 'owned_kill; integ_drop' EXIT
   integ_take "pass-$n" "Opus pass $n:" || die "pass $n: integ lock busy for 7200 s"
   integ_clean "$integ" || die "pass $n: phase-1 worktree $integ is not clean"
   log "Opus pass $n (job $job, PW_PORT $PW_PORT): spawned sofia (opus) on: $ids; waiting."
   prompt="Opus pass $n of the night shift: follow \"Opus pass (instructions for the Opus agent)\" in docs/shifts/brief.md section 0c for packages $ids. Open questions from the log: $open. You run in the phase-1 worktree $integ. Run any e2e with PW_PORT=$PW_PORT (exported; do not change it). The pipeline holds the integration lock (integ) for you for the whole pass: do not take or release it yourself, whatever the brief says. Reply in exactly the form the section gives (OPUS PASS, VERDICT, FIX lines, QUEUE, NOTES)."
   set +e
-  (cd "$integ" && timeout -k 60 7200 claude -p --agent sofia --model opus --effort high "${claude_common[@]}" -n "pass-$n" "$prompt") > "$run/reply.md" 2> "$run/stderr.log"
+  own_sh 'cd "$1" && shift && timeout -k 60 7200 claude "$@"' "$integ" -p --agent sofia --model opus --effort high "${claude_common[@]}" -n "pass-$n" "$prompt" < /dev/null > "$run/reply.md" 2> "$run/stderr.log"
   rc=$?; set -e
   integ_clean "$integ" || log "Opus pass $n: left the phase-1 worktree not clean (the queue's next run stops on it)"
   log "Opus pass $n: integ released after $((SECONDS - integ_t0)) s"; integ_drop
@@ -232,7 +235,7 @@ if [[ "${1:-}" == "device" ]]; then
   if [[ "${3:-}" == "--dry-run" ]]; then
     integ="$(integ_dir)"; : "${integ:=$main/.claude/worktrees/phase-1}"
     echo "DRY RUN: device step $n on ${dev:-<ANDROID_SERIAL unset: DEVICE SKIPPED>}; output in $run; at most 30 minutes"
-    echo "1. under integ, then nodemods (device-$n, each waits up to 7200 s; build.sh runs npm ci in the phase-1 worktree): (cd $integ && tools/device-build.sh --test) = the test APK of phase-1's HEAD, built under the host-cpu lock (build.sh takes it); the APK copied to $run; the runner's own tree (A56): git archive <sha> into $run/tree, cp -al $integ/app/node_modules $run/tree/app/node_modules; nodemods and integ released"
+    echo "1. under integ, then nodemods, then host-cpu (device-$n, each waits up to 7200 s; the build runs npm ci in the phase-1 worktree, A54): (cd $integ && NO_LOCK=1 tools/device-build.sh --test) = the test APK of phase-1's HEAD, built in a session of its own under the host-cpu lock this step holds (build.sh's own lock is off); the APK copied to $run; host-cpu released; the runner's own tree (A56): git archive <sha> into $run/tree, cp -al $integ/app/node_modules $run/tree/app/node_modules; nodemods and integ released"
     echo "2. $run/tree/tools/devlock.sh acquire ${dev:-<serial>} device-$n-install 600; adb -s ${dev:-<serial>} install -r $run/pascaline.apk (our app only); release"
     echo "3. ANDROID_SERIAL=${dev:-<serial>} $run/tree/tools/core-device.sh   (A32's runner from the run's tree, no lock held: npx --no-install; holds the device lock, stay-awake and restore); the tree removed after a CORE DEVICE line, kept on a skip"
     echo "4. log: - HH:MM pipeline device $n: CORE DEVICE <p>/<a> (known <k>, new <ids or none>) on <sha>"
@@ -254,25 +257,28 @@ if [[ "${1:-}" == "device" ]]; then
   }
   locked && skip "screen locked"
   # A47b: integ while the APK is built (one HEAD, no merge meanwhile), released before the device run; build.sh takes host-cpu itself
-  trap 'nodemods_drop; integ_drop' EXIT
+  trap 'owned_kill; host_cpu_drop; nodemods_drop; integ_drop' EXIT
   integ_take "device-$n" "pipeline device $n:" || skip "integ lock busy"; integ_clean "$integ" || skip "phase-1 worktree not clean"
   # nodemods inside integ: build.sh's npm ci (A47bf1) and the runner's own tree (A56): no start's copy, other npm ci or merge meets them
   nodemods_take "device-$n" "pipeline device $n:" || skip "nodemods lock busy"; sha="$(git -C "$integ" rev-parse --short HEAD)"
+  # A54: host-cpu after integ and nodemods, around the build only (build.sh runs npm ci, the index and vite build before its own lock)
+  host_cpu_take "device-$n" "pipeline device $n:" || skip "host-cpu lock busy"
   t0=$SECONDS; rm -f "$run/pascaline.apk"
-  rc=0; (cd "$integ" && timeout -k 60 1200 tools/device-build.sh --test) > "$run/build.log" 2>&1 || rc=$?
+  rc=0; own_sh 'cd "$1" && NO_LOCK=1 timeout -k 60 1200 tools/device-build.sh --test' "$integ" > "$run/build.log" 2>&1 < /dev/null || rc=$?
+  host_cpu_drop
   [[ $rc -ne 0 || ! -f "$integ/dist/pascaline.apk" ]] || cp "$integ/dist/pascaline.apk" "$run/pascaline.apk" || rc=1
   tree="$run/tree"; tinfo=""; [[ $rc -ne 0 ]] || tinfo="$(device_tree "$integ" "$sha" "$tree" 2> "$run/tree.log")" || tinfo=""
   nodemods_drop; integ_drop
   [[ $rc -eq 0 && -f "$run/pascaline.apk" ]] || skip "build failed, rc=$rc; see $run/build.log"
   [[ -n "$tinfo" ]] || skip "no runner tree; see $run/tree.log"; runlog "runner tree $tree: $tinfo, node_modules hard-linked"
   "$tree/tools/devlock.sh" acquire "$dev" "device-$n-install" 600 >/dev/null || skip "device lock busy"
-  rc=0; timeout -k 30 300 adb -s "$dev" install -r "$run/pascaline.apk" > "$run/install.log" 2>&1 || rc=$?
+  rc=0; own_sh 'timeout -k 30 300 adb -s "$1" install -r "$2"' "$dev" "$run/pascaline.apk" > "$run/install.log" 2>&1 < /dev/null || rc=$?
   "$tree/tools/devlock.sh" release "$dev" "device-$n-install" >/dev/null || true
   [[ $rc -eq 0 ]] || skip "install failed, rc=$rc; see $run/install.log"
   before=0; [[ -f "$coord/device-runs.jsonl" ]] && before="$(wc -l < "$coord/device-runs.jsonl")"
   left=$((1800 - (SECONDS - t0))); (( left > 120 )) || skip "no time left after the build"
   locked && skip "screen locked (after the build)"
-  rc=0; ANDROID_SERIAL="$dev" PASCALINE_COORD="$coord" timeout -k 60 "$left" "$tree/tools/core-device.sh" > "$run/core.log" 2>&1 || rc=$?
+  rc=0; own_sh 'ANDROID_SERIAL="$1" PASCALINE_COORD="$2" exec timeout -k 60 "$3" "$4"' "$dev" "$coord" "$left" "$tree/tools/core-device.sh" > "$run/core.log" 2>&1 < /dev/null || rc=$?
   line="$(grep -E '^CORE DEVICE ' "$run/core.log" | tail -n1 || true)"
   [[ -n "$line" ]] || skip "runner gave no CORE DEVICE line, rc=$rc; see $run/core.log"; rm -rf "$tree"  # kept on a skip, for a look
   new="$(tail -n +"$((before + 1))" "$coord/device-runs.jsonl" 2>/dev/null | grep '"kind":"core"' | grep '"ok":false' | grep -o '"case":"c[0-9]*"' | cut -d'"' -f4 | sort -u | paste -sd, - || true)"
@@ -284,7 +290,8 @@ fi
 
 # ---------- subcommand: flakes ----------
 # A37: the flake census: vitest and e2e five times each on phase-1's HEAD (host-cpu lock held throughout); a test that failed in some
-# runs and passed in others is a flake. Output: .tasks/flakes-<date>.md and one log line. Refuses to go on when HEAD moves.
+# runs and passed in others is a flake. Output: .tasks/flakes-<date>.md and one log line. HEAD is checked before and after each run:
+# a run during which it moved is dropped and the census ends (A54; it holds host-cpu only, so a merge or a pass can move HEAD).
 if [[ "${1:-}" == "flakes" ]]; then
   [[ $# -ge 2 && "$2" =~ ^[0-9]+$ ]] || die "usage: pipeline.sh flakes <n> [--dry-run]"
   n="$2"; runs="${PASCALINE_FLAKES_RUNS:-5}"; run="$tasks/flakes-$n"; out_md="$tasks/flakes-$(date +%F).md"
@@ -293,7 +300,7 @@ if [[ "${1:-}" == "flakes" ]]; then
     integ="$(integ_dir)"; : "${integ:=$main/.claude/worktrees/phase-1}"
     echo "DRY RUN: flake census $n on the HEAD of $integ; $runs runs each of vitest (npm test) and e2e (npm run test:e2e); PW_PORT=$PW_PORT"
     echo "1. tools/devlock.sh acquire host-cpu flakes-$n 7200 (waits logged), held until the end; npm run index once"
-    echo "2. before every run: HEAD must still be the first run's sha, else FLAKES $n: ABORTED (HEAD moved); load average noted per run"
+    echo "2. before every run and after it: HEAD must still be the first run's sha (a run during which it moved is dropped, A54; integ is not taken, it would block the merge queue), else FLAKES $n: ABORTED (HEAD moved) after the last whole run; load average noted per run"
     echo "3. logs in $run; a test failing in some runs and passing in others is flaky (always failing is not)"
     echo "4. output $out_md; log: - HH:MM pipeline flakes $n: FLAKES $n: vitest <k> of $runs runs clean, e2e <k> of $runs, flaky: <ids or none>"
     echo "RESULT flakes $n: DRY RUN"; exit 0
@@ -301,26 +308,30 @@ if [[ "${1:-}" == "flakes" ]]; then
   ensure_integ clean; mkdir -p "$run"; t0=$SECONDS
   job="$(take_number "$tasks")" || die "flakes $n: the counter lock is busy"; export PW_PORT="$(job_port "$job")"
   sha="$(git -C "$integ" rev-parse HEAD)"
-  host_cpu_acquire "flakes-$n" "pipeline flakes $n:" || { log "pipeline flakes $n: FLAKES SKIPPED (host-cpu lock busy)"; echo "RESULT flakes $n: SKIPPED (host-cpu lock busy)"; exit 0; }
-  trap 'tools/devlock.sh release host-cpu "flakes-$n" >/dev/null 2>&1 || true' EXIT
+  host_cpu_take "flakes-$n" "pipeline flakes $n:" || { log "pipeline flakes $n: FLAKES SKIPPED (host-cpu lock busy)"; echo "RESULT flakes $n: SKIPPED (host-cpu lock busy)"; exit 0; }
+  trap 'owned_kill; host_cpu_drop' EXIT
   logs_tool="$integ/app/scripts/pipeline-logs.ts"
   vcmd="${PASCALINE_FLAKES_VITEST:-FORCE_COLOR=0 NO_COLOR=1 FIND_INDEX=required timeout 1800 npm run -s test}"
   ecmd="${PASCALINE_FLAKES_E2E:-FORCE_COLOR=0 timeout 2700 npm run -s test:e2e}"
-  (cd "$integ/app" && timeout 1800 npm run -s index) > "$run/index.log" 2>&1 || true
+  own_sh 'cd "$1" && timeout 1800 npm run -s index' "$integ/app" > "$run/index.log" 2>&1 < /dev/null || true
   clean_v=0; clean_e=0; ran=0; aborted=""; loads=""
   for i in $(seq 1 "$runs"); do
     head_is "$integ" "$sha" || { aborted="HEAD moved before run $i ($(git -C "$integ" rev-parse --short HEAD), not ${sha:0:9})"; break; }
     la="$(cut -d' ' -f1-3 /proc/loadavg 2>/dev/null || echo '?')"
-    rv=0; (cd "$integ/app" && eval "$vcmd") > "$run/vitest-$i.log" 2>&1 || rv=$?
-    re=0; (cd "$integ/app" && eval "$ecmd") > "$run/e2e-$i.log" 2>&1 || re=$?
+    rv=0; own_sh 'cd "$1" && eval "$2"' "$integ/app" "$vcmd" > "$run/vitest-$i.log" 2>&1 < /dev/null || rv=$?
+    re=0; own_sh 'cd "$1" && eval "$2"' "$integ/app" "$ecmd" > "$run/e2e-$i.log" 2>&1 < /dev/null || re=$?
+    # A54: the census holds host-cpu only (integ would block the merge queue for hours): a run during which HEAD moved read two commits; it is dropped
+    head_is "$integ" "$sha" || { aborted="HEAD moved during run $i ($(git -C "$integ" rev-parse --short HEAD), not ${sha:0:9}); the run is dropped"; break; }
     la2="$(cut -d' ' -f1-3 /proc/loadavg 2>/dev/null || echo '?')"
     loads+="| $i | $la | $la2 | $([[ $rv -eq 0 ]] && echo clean || echo "failed ($rv)") | $([[ $re -eq 0 ]] && echo clean || echo "failed ($re)") |"$'\n'
     [[ $rv -ne 0 ]] || clean_v=$((clean_v + 1)); [[ $re -ne 0 ]] || clean_e=$((clean_e + 1))
     for c in vitest e2e; do node "$logs_tool" items "$c" "$run/$c-$i.log" > "$run/$c-$i.items" 2>/dev/null || : > "$run/$c-$i.items"; done
     ran=$i
   done
-  flaky_v="$(flaky_items "$ran" "$run"/vitest-*.items | sed 's/^/vitest /')"; flaky_e="$(flaky_items "$ran" "$run"/e2e-*.items | sed 's/^/e2e /')"
-  [[ $ran -gt 0 ]] || { flaky_v=""; flaky_e=""; }
+  flaky_v=""; flaky_e=""  # no whole run (the first was dropped, A54): no items files to read
+  if [[ $ran -gt 0 ]]; then
+    flaky_v="$(flaky_items "$ran" "$run"/vitest-*.items | sed 's/^/vitest /')"; flaky_e="$(flaky_items "$ran" "$run"/e2e-*.items | sed 's/^/e2e /')"
+  fi
   ids="$(printf '%s\n%s\n' "$flaky_v" "$flaky_e" | awk -F'\t' 'NF >= 3 { print ($3 == "" ? $2 : $2 ": " $3) " (" $1 ")" } NF == 2 { print $2 " (" $1 ")" }' | paste -sd, - | sed 's/,/, /g')"
   {
     echo "# Flake census $n, $(date +%F) $(date +%H:%M)"
@@ -340,12 +351,13 @@ fi
 if [[ "${1:-}" == "report" ]]; then
   ensure_integ; run="$tasks/report-$(date +%F)"; mkdir -p "$run"
   job="$(take_number "$tasks")" || die "report: the counter lock is busy"; export PW_PORT="$(job_port "$job")"
-  trap integ_drop EXIT  # A47b: the report holds integ for its whole run
+  trap 'owned_kill; integ_drop' EXIT  # A47b: the report holds integ for its whole run
   integ_take report "Shift report:" || die "report: integ lock busy for 7200 s"
   integ_clean "$integ" || die "report: phase-1 worktree $integ is not clean"
   log "Shift report (job $job): spawned sonnet writer; waiting."
   prompt="Write the shift report of docs/shifts/brief.md section 0c (\"Shift report\") for the night section of .coord/log.md (the log is on stdin; a line with [A] or [B] after its time belongs to that night lane: report both lanes). You run in the phase-1 worktree $integ: commit the report there with git commit -s and the Sonnet trailer. The pipeline holds the integration lock (integ) for you: do not take or release it yourself. Never push. Reply with the commit hash only."
-  night_section "$coord/log.md" | (cd "$integ" && timeout -k 60 1800 claude -p --model sonnet --effort high "${claude_common[@]}" -n report "$prompt") > "$run/reply.md" 2> "$run/stderr.log" || true
+  night_section "$coord/log.md" > "$run/input.txt"
+  own_sh 'cd "$1" && shift && timeout -k 60 1800 claude "$@"' "$integ" -p --model sonnet --effort high "${claude_common[@]}" -n report "$prompt" < "$run/input.txt" > "$run/reply.md" 2> "$run/stderr.log" || true
   integ_drop
   log "Shift report: $(tail -n1 "$run/reply.md")"; echo "RESULT report: $(tail -n1 "$run/reply.md")"; exit 0
 fi
@@ -354,7 +366,7 @@ fi
 # A47a: the shell tests of the scripts next to this one; further options are ignored (night.sh appends --audit-model auto).
 if [[ "${1:-}" == "selftest" ]]; then
   here="$(cd "$self_dir/.." && pwd)"; out="$tasks/selftest-$(date +%F-%H%M%S).log"; t0=$SECONDS
-  if r="$(selftest_run "$here" "$out")"; then :; fi
+  selftest_run "$here" "$out" > "$out.res" || true; r="$(cat "$out.res")"  # not $( ): own_sh needs the main shell (A54)
   log "pipeline selftest: $r ($((SECONDS - t0)) s; $out)"
   echo "RESULT selftest: $r"; [[ "$r" == PASSED ]] && exit 0 || exit 1
 fi
@@ -400,7 +412,7 @@ slug="$(tr -cs 'a-z0-9' '-' <<<"${id,,}" | sed 's/^-//; s/-$//')"
 
 # A47a: one run per branch: the lock branch-<branch> with this pid, held to the end (a dead pid's lock is broken by the next run).
 branch_lock="branch-${branch//\//-}"
-cleanup() { nodemods_drop; queue_leave; rm -f "$spec_file" "$brief"; [[ "${branch_locked:-0}" -eq 0 ]] || tools/devlock.sh release "$branch_lock" "pipeline-$$" >/dev/null 2>&1 || true; }
+cleanup() { owned_kill; host_cpu_drop; nodemods_drop; queue_leave; rm -f "$spec_file" "$brief"; [[ "${branch_locked:-0}" -eq 0 ]] || tools/devlock.sh release "$branch_lock" "pipeline-$$" >/dev/null 2>&1 || true; }
 trap cleanup EXIT
 if [[ $dry -eq 0 ]]; then
   if [[ $nowork -eq 1 ]]; then git show-ref --verify --quiet "refs/heads/$branch" || die "--no-worker: branch $branch does not exist"; fi
@@ -505,10 +517,10 @@ if [[ $engine_managed -eq 1 ]]; then
     if [[ "$(engine_stamp "$engine_root/gsl")" != "$p1key" ]]; then
       log "pipeline #$n $id: shared engine is not phase-1's ($p1key); rebuilding first"
       t0=$SECONDS
-      why="$(engine_build "$integ" "$p1key" "$engine_root" "$engine_log")" && engine_promote "$engine_root" "$p1key" || die "engine build: ${why:-promote failed}"
+      engine_build "$integ" "$p1key" "$engine_root" "$engine_log" && engine_promote "$engine_root" "$p1key" || die "engine build: ${engine_why:-promote failed}"
       log "pipeline #$n $id: shared engine rebuilt: key $p1key, giac.wasm sha256 $(engine_sha "$engine_root/gsl") ($((SECONDS - t0)) s)"
     fi
-    why="$(engine_ensure "$integ" "$p1key" "$engine_root" "$engine_log")" || die "engine build (phase-1, key $p1key): $why"
+    engine_ensure "$integ" "$p1key" "$engine_root" "$engine_log" || die "engine build (phase-1, key $p1key): $engine_why"
     integ_drop
   fi
 fi
@@ -527,9 +539,9 @@ setup_node_modules "$wt"
 # A28: GIAC_OUT for the worker, the fix rounds and the checks: the shared engine, or the build of the branch's own key.
 select_engine() {
   [[ $engine_managed -eq 1 ]] || return 0
-  local k t0=$SECONDS why; k="$(engine_key "$wt" HEAD)"
+  local k t0=$SECONDS; k="$(engine_key "$wt" HEAD)"
   if [[ "$k" != "$p1key" && "$(engine_stamp "$engine_root/key-$k")" != "$k" ]]; then log "pipeline #$n $id: building the branch's engine, key $k (phase-1: $p1key)"; fi
-  why="$(engine_ensure "$wt" "$k" "$engine_root" "$engine_log")" || die "engine build: $why"
+  engine_ensure "$wt" "$k" "$engine_root" "$engine_log" || die "engine build: $engine_why"
   export GIAC_OUT="$engine_root/key-$k"
   runlog "engine: key $k, GIAC_OUT=$GIAC_OUT ($((SECONDS - t0)) s)"
 }
@@ -540,7 +552,7 @@ run_agent() {  # <name> <log> <agent> <model> <effort> <stdin file> <prompt> [to
   local name="$1" out="$2" ag="$3" mdl="$4" eff="$5" input="$6" prompt="$7"; shift 7
   local rc
   set +e
-  (cd "$wt" && timeout -k 60 10800 claude -p --agent "$ag" --model "$mdl" --effort "$eff" "${claude_common[@]}" "$@" -n "$name" "$prompt") < "$input" > "$out" 2> "$out.err"
+  own_sh 'cd "$1" && shift && timeout -k 60 10800 claude "$@"' "$wt" -p --agent "$ag" --model "$mdl" --effort "$eff" "${claude_common[@]}" "$@" -n "$name" "$prompt" < "$input" > "$out" 2> "$out.err"
   rc=$?; set -e
   if [[ $rc -ne 0 ]] && grep -qiE 'usage limit|rate limit|429|overloaded' "$out" "$out.err"; then
     log "pipeline #$n $id: LIMIT during $name (claude exit $rc)"; echo "RESULT #$n $id: LIMIT"; exit 75
@@ -581,9 +593,9 @@ rerun_timing() {  # <check> <log>: only the failing files, output appended to th
   quiet_wait | while IFS= read -r line; do runlog "$line"; done
   local files; mapfile -t files < <(node "$wt/app/scripts/pipeline-logs.ts" files "$1" "$2")
   case "$1" in
-    vitest) (cd "$wt/app" && FORCE_COLOR=0 NO_COLOR=1 FIND_INDEX=required timeout 900 npx vitest run "${files[@]}") >> "$2" 2>&1;;
-    e2e)    (cd "$wt/app" && FORCE_COLOR=0 timeout 1800 npx playwright test "${files[@]}") >> "$2" 2>&1;;
-    golden) (cd "$wt/app" && timeout 2700 npm run -s golden) >> "$2" 2>&1;;
+    vitest) own_sh 'cd "$1" && shift && FORCE_COLOR=0 NO_COLOR=1 FIND_INDEX=required timeout 900 npx vitest run "$@"' "$wt/app" "${files[@]}" >> "$2" 2>&1 < /dev/null;;
+    e2e)    own_sh 'cd "$1" && shift && FORCE_COLOR=0 timeout 1800 npx playwright test "$@"' "$wt/app" "${files[@]}" >> "$2" 2>&1 < /dev/null;;
+    golden) own_sh 'cd "$1" && timeout 2700 npm run -s golden' "$wt/app" >> "$2" 2>&1 < /dev/null;;
   esac
 }
 run_checks() {  # <round>; returns 1 and writes fail-<round>.txt on failure
@@ -591,27 +603,27 @@ run_checks() {  # <round>; returns 1 and writes fail-<round>.txt on failure
   [[ $engine_managed -eq 0 ]] || p1_engine="$engine_root/key-$p1key"
   list="$(want_checks)"; [[ ",$list," == *,stages,* ]] || list="${list//golden/golden,stages}"  # A25: the engine stages follow golden
   [[ -n "$list" ]] || { runlog "checks: none"; return 0; }
-  host_cpu_acquire "pipeline-$n" "pipeline #$n $id:" || die "host-cpu lock busy for 7200 s"
+  host_cpu_take "pipeline-$n" "pipeline #$n $id:" || die "host-cpu lock busy for 7200 s"
   : > "$run/fail-$round.txt"
   for name in ${list//,/ }; do
     local out="$run/check-$round-$name.log"
     case "$name" in
-      typecheck) (cd "$wt/app" && timeout 900 npm run -s typecheck) > "$out" 2>&1 || rc=1;;
-      vitest)    (cd "$wt/app" && timeout 1800 npm run -s index && FORCE_COLOR=0 NO_COLOR=1 FIND_INDEX=required timeout 1800 npm run -s test) > "$out" 2>&1 || rc=1;;
-      e2e)       (cd "$wt/app" && FORCE_COLOR=0 timeout 2700 npm run -s test:e2e) > "$out" 2>&1 || rc=1;;
-      golden)    (cd "$wt/app" && timeout 2700 npm run -s golden) > "$out" 2>&1 || rc=1;;
+      typecheck) own_sh 'cd "$1" && timeout 900 npm run -s typecheck' "$wt/app" > "$out" 2>&1 < /dev/null || rc=1;;
+      vitest)    own_sh 'cd "$1" && timeout 1800 npm run -s index && FORCE_COLOR=0 NO_COLOR=1 FIND_INDEX=required timeout 1800 npm run -s test' "$wt/app" > "$out" 2>&1 < /dev/null || rc=1;;
+      e2e)       own_sh 'cd "$1" && FORCE_COLOR=0 timeout 2700 npm run -s test:e2e' "$wt/app" > "$out" 2>&1 < /dev/null || rc=1;;
+      golden)    own_sh 'cd "$1" && timeout 2700 npm run -s golden' "$wt/app" > "$out" 2>&1 < /dev/null || rc=1;;
       stages)    : > "$out"; local st sc=0
                  for st in "${ENGINE_STAGES[@]}"; do
-                   echo "== $st" >> "$out"; (cd "$wt/app" && timeout 600 node "scripts/$st.ts") >> "$out" 2>&1 || sc=1
+                   echo "== $st" >> "$out"; own_sh 'cd "$1" && timeout 600 node "scripts/$2.ts"' "$wt/app" "$st" >> "$out" 2>&1 < /dev/null || sc=1
                  done
                  # each is a FAIL on NEW or NOW PASSING (the script's exit code too)
                  if [[ $sc -ne 0 ]] || stage_findings "$out" > /dev/null; then rc=1; fi;;
-      size)      (cd "$wt/app" && timeout 1800 npm run -s build && timeout 300 npm run -s size) > "$out" 2>&1 || rc=1;;
-      docs)      (cd "$wt" && timeout 300 node tools/docs-check.mjs && timeout 120 node tools/docs-check.test.mjs) > "$out" 2>&1 || rc=1;;
+      size)      own_sh 'cd "$1" && timeout 1800 npm run -s build && timeout 300 npm run -s size' "$wt/app" > "$out" 2>&1 < /dev/null || rc=1;;
+      docs)      own_sh 'cd "$1" && timeout 300 node tools/docs-check.mjs && timeout 120 node tools/docs-check.test.mjs' "$wt" > "$out" 2>&1 < /dev/null || rc=1;;
       shell)     # A47a: the shell tests (SELFTESTS); the full output in <log>.full, the FAIL lines here (never a machine failure: tests quote such lines)
-                 local sr; sr="$(selftest_run "$wt" "$out.full")" || rc=1
+                 local sr; selftest_run "$wt" "$out.full" > "$out.sr" || rc=1; sr="$(cat "$out.sr")"
                  { grep -E '^FAIL' "$out.full" | head -n 40 || true; echo "selftest: $sr (full output: $out.full)"; } > "$out";;
-      redfirst)  why="$(red_first "$wt" "$spec_file" "${p1_engine}" "$out")" || { rc=1; echo "red-first: $why" >> "$out"; redwhy="$why"; };;
+      redfirst)  red_first "$wt" "$spec_file" "${p1_engine}" "$out" > "$out.why" || { rc=1; why="$(cat "$out.why")"; echo "red-first: $why" >> "$out"; redwhy="$why"; };;
       *) die "unknown check $name";;
     esac
     if [[ $rc -eq 1 && ( "$name" == e2e || "$name" == vitest ) ]] && mm="$(node "$wt/app/scripts/pipeline-logs.ts" mismatch "$name" "$out")"; then
@@ -625,17 +637,17 @@ run_checks() {  # <round>; returns 1 and writes fail-<round>.txt on failure
     fi
     if [[ $rc -eq 1 ]]; then
       if [[ "$name" != shell ]] && machine_failure "$out"; then
-        tools/devlock.sh release host-cpu "pipeline-$n" >/dev/null
+        host_cpu_drop
         mline="$(grep -m1 -E "$MACHINE_RE" "$out" | cut -c1-160)"
         log "pipeline #$n $id: NOT MERGED (machine: $name: $mline); branch $branch kept"
         echo "RESULT #$n $id: NOT MERGED (machine: $name: $mline; worktree $wt kept; see $out)"; exit 1
       fi
       { [[ "$name" != redfirst ]] || echo "checks failed: red-first (${redwhy:-every new test passes on phase-1})"; echo "## $name failed (full log: $out)"; excerpt "$out"; echo; } >> "$run/fail-$round.txt"
-      runlog "check $name: FAILED"; tools/devlock.sh release host-cpu "pipeline-$n" >/dev/null; return 1
+      runlog "check $name: FAILED"; host_cpu_drop; return 1
     fi
     runlog "check $name: ok"
   done
-  tools/devlock.sh release host-cpu "pipeline-$n" >/dev/null
+  host_cpu_drop
   return 0
 }
 
@@ -713,7 +725,7 @@ queue_enter() {
   first_entry=0
   if [[ $engine_managed -eq 1 ]]; then  # phase-1's engine as it is now (red-first; promoted by the last merge, so usually a copy)
     p1key="$(engine_key "$main" phase-1)"
-    why="$(engine_ensure "$integ" "$p1key" "$engine_root" "$engine_log")" || die "engine build (phase-1, key $p1key): $why"
+    engine_ensure "$integ" "$p1key" "$engine_root" "$engine_log" || die "engine build (phase-1, key $p1key): $engine_why"
   fi
   select_engine  # the merge may have changed the key
 }
@@ -785,12 +797,12 @@ fi
 # A28: a merge that changed the engine's key moves the shared engine to that build (old one kept as gsl.prev), still in the queue
 # (A47b), so the next run's start finds it.
 if [[ $rc -eq 0 && $engine_managed -eq 1 ]]; then
-  mkey="$(engine_key "$main" phase-1)"
+  mkey="$(engine_key "$main" phase-1)"; engine_why=""
   if [[ "$mkey" != "$merge_key_before" ]]; then
-    if [[ "$(engine_key "$integ" HEAD)" == "$mkey" ]] && why="$(engine_build "$integ" "$mkey" "$engine_root" "$engine_log")" && engine_promote "$engine_root" "$mkey"; then
+    if [[ "$(engine_key "$integ" HEAD)" == "$mkey" ]] && engine_build "$integ" "$mkey" "$engine_root" "$engine_log" && engine_promote "$engine_root" "$mkey"; then
       log "pipeline #$n $id: shared engine is now key $mkey, giac.wasm sha256 $(sha256sum "$engine_root/gsl/giac.wasm" | cut -d' ' -f1) (old kept as gsl.prev)"
     else
-      log "pipeline #$n $id: engine promotion FAILED for key $mkey (${why:-promote failed}); the next start rebuilds it"
+      log "pipeline #$n $id: engine promotion FAILED for key $mkey (${engine_why:-promote failed}); the next start rebuilds it"
     fi
   fi
 fi
