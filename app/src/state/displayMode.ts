@@ -198,18 +198,20 @@ function baseMode(mode: FmtMode | undefined, ctx: DisplayContext): "std" | "sci"
 /**
  * A result drawn in `mode` (undefined: the global setting). Undefined when the item has no number.
  * Only the digits the engine confirmed are drawn (docs/04 2.4): re-formatting a ⚠ value with the plain digits setting
- * would show digits nobody checked.
+ * would show digits nobody checked. `grouped` (R55): the LaTeX has thin-space digit groups; only the screen's row asks
+ * for it, never a chip, the entry line or Copy.
  */
 export function renderNumeric(
   r: NumericResult,
   mode: FmtMode | undefined,
   ctx: DisplayContext,
+  grouped = false,
 ): { text: string; latex: string } | undefined {
-  const out = renderPoint(r, mode, ctx);
+  const out = renderPoint(r, mode, ctx, grouped);
   return out && ctx.decimalComma ? { text: commaResult(out.text, false), latex: commaResult(out.latex, true) } : out;
 }
 
-function renderPoint(r: NumericResult, mode: FmtMode | undefined, ctx: DisplayContext): { text: string; latex: string } | undefined {
+function renderPoint(r: NumericResult, mode: FmtMode | undefined, ctx: DisplayContext, grouped: boolean): { text: string; latex: string } | undefined {
   const m = mode ?? ctx.format;
   const digits = r.facts?.digits ?? ctx.digits;
   const opts = (f: keyof typeof BASE): FormatOptions => ({ format: BASE[f], digits, fixed: ctx.fixDecimals });
@@ -226,10 +228,10 @@ function renderPoint(r: NumericResult, mode: FmtMode | undefined, ctx: DisplayCo
   }
   if (m === "polar" && r.polar && r.polar.angle === ctx.angle) {
     const p = formatPolar(r.polar.r, r.polar.theta, opts(ctx.format));
-    return { text: p.text, latex: polarToLatex(p) };
+    return { text: p.text, latex: polarToLatex(p, grouped) };
   }
   const c = formatComplex(r.value, confirmedOptions(r.value, r.facts?.reliableDigits ?? null, opts(base)));
-  return { text: c.text, latex: complexToLatex(c) };
+  return { text: c.text, latex: complexToLatex(c, grouped) };
 }
 
 /**

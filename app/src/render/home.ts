@@ -5,17 +5,30 @@
 import type { FormattedComplex, FormattedFraction, FormattedNumber, FormattedPolar } from "../engine/format.ts";
 import { balanced, mapNames } from "../engine/giacPrint.ts";
 
-function part(f: FormattedNumber): string {
+/**
+ * R55: a mantissa's digits in groups of three from the decimal point outward, a thin space between them, on a side
+ * with five or more digits (1234 and 0.1234 stay whole). Drawn results only: the text, the chips and Copy stay plain.
+ */
+export function groupDigits(mantissa: string): string {
+  const [int = "", frac] = mantissa.split(".");
+  const i = int.length >= 5 ? int.replace(/\B(?=(\d{3})+$)/g, "\\,") : int;
+  if (frac === undefined) return i;
+  const f = frac.length >= 5 ? frac.replace(/(\d{3})(?=\d)/g, "$1\\,") : frac;
+  return `${i}.${f}`;
+}
+
+function part(f: FormattedNumber, group: boolean): string {
+  const m = group ? groupDigits(f.mantissa) : f.mantissa;
   // PFX: a thin space, then the prefix in the accent colour (docs/04 2.7); .pfx is styled in Math.svelte
-  if (f.prefix) return `${f.mantissa}\\,\\class{pfx}{\\mathrm{${f.prefix}}}`;
-  return `${f.mantissa}${f.exponent === null ? "" : `\\times10^{${f.exponent}}`}`;
+  if (f.prefix) return `${m}\\,\\class{pfx}{\\mathrm{${f.prefix}}}`;
+  return `${m}${f.exponent === null ? "" : `\\times10^{${f.exponent}}`}`;
 }
 
 /** A formatted Home number as LaTeX: the exponent is drawn raised, the imaginary unit as i. */
-export function complexToLatex(c: FormattedComplex): string {
-  const re = `${c.re.neg ? "-" : ""}${part(c.re)}`;
+export function complexToLatex(c: FormattedComplex, group = false): string {
+  const re = `${c.re.neg ? "-" : ""}${part(c.re, group)}`;
   if (!c.im) return re;
-  const im = c.im.mantissa === "1" && c.im.exponent === null && !c.im.prefix ? "\\mathrm{i}" : `${part(c.im)}\\mathrm{i}`;
+  const im = c.im.mantissa === "1" && c.im.exponent === null && !c.im.prefix ? "\\mathrm{i}" : `${part(c.im, group)}\\mathrm{i}`;
   if (c.re.mantissa.replace(/[0.]/g, "") === "" && c.re.exponent === null && !c.re.prefix) return `${c.im.neg ? "-" : ""}${im}`;
   return `${re}${c.im.neg ? "-" : "+"}${im}`;
 }
@@ -28,8 +41,8 @@ export function fractionToLatex(f: FormattedFraction): string {
 }
 
 /** r∡θ, with the same ∡ the keyboard types. */
-export function polarToLatex(p: FormattedPolar): string {
-  const n = (f: FormattedNumber): string => `${f.neg ? "-" : ""}${part(f)}`;
+export function polarToLatex(p: FormattedPolar, group = false): string {
+  const n = (f: FormattedNumber): string => `${f.neg ? "-" : ""}${part(f, group)}`;
   return `${n(p.r)}\\mathbin{\\measuredangle}${n(p.theta)}`;
 }
 

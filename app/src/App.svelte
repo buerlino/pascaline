@@ -316,7 +316,7 @@
         <History
           items={session.items}
           selected={picked}
-          display={(item) => session.display(item)}
+          display={(item) => session.display(item, true)}
           input={(item) => session.input(item)}
           mark={(item) => session.mark(item)}
           onrecall={(item) => { picked = null; entry.set(session.input(item), item.chips); }}
