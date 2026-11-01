@@ -14,7 +14,12 @@ import type { MathfieldElement } from "mathlive";
 import type { Key } from "../keyboard/keyboard.ts";
 import type { Mods, RouteCtx } from "../keyboard/route.ts";
 import type { HistoryItem } from "../state/session.svelte.ts";
-import { UnitPad } from "./pad.ts";
+import { engineFormat } from "../calc/port.ts";
+import { idbKv } from "../state/storage.ts";
+import { alternatives, readTargets, writeTarget } from "./alternatives.ts";
+import { factorTable } from "./factors.ts";
+import { userUnitCells } from "./padCells.ts";
+import { UnitPad, padUnitList } from "./pad.ts";
 import { unitPad } from "./padView.svelte.ts";
 import { slotCatalogue } from "./slot.ts";
 import { makePanel } from "./panel.ts";
@@ -53,16 +58,23 @@ export async function openUnits(c: RouteCtx, row?: HistoryItem): Promise<void> {
   const host: ViewHost = {
     write: (id, latex) => mf.setPromptValue(id, latex, {}),
     evaluate: (req) => c.shell.calc.units(req, c.session.settings),
-    find: (into) =>
+    find: (into, dim) =>
       void import("./find.ts").then((m) => {
-        if (current?.view === view) m.showUnitFind({ shell: c.shell, index, cat, apply: (a) => view.apply(a), refresh: () => (unitPad.model = new UnitPad(unitCells.userSet())) }, into);
+        if (current?.view === view) m.showUnitFind({ shell: c.shell, index, cat, apply: (a) => view.apply(a), refresh: () => (unitPad.model = new UnitPad(unitCells.userSet())) }, into, dim);
       }),
+    format: () => ({ format: engineFormat(c.session.settings.format), digits: c.session.settings.digits }),
+    alternatives: async (q, req) => {
+      const target = q.dimension ? (await readTargets(idbKv))[q.dimension] : undefined;
+      return alternatives(q, { table, pad: padUnitList(), user: userUnitCells(unitCells.userSet()), req, ...(target ? { target } : {}) });
+    },
+    remember: (dim, slot) => writeTarget(idbKv, dim, slot).then(() => undefined),
     dead: () => c.dead(),
     changed: () => panel.draw(),
   };
   let made: UnitView | undefined;
   const panel = makePanel(() => made);
   const cat = slotCatalogue(index.items);
+  const table = factorTable(index.items);
   const view = new UnitView(cat, line, chips, host);
   made = view;
   entryEl.insertBefore(panel.element, fieldEl);
@@ -112,7 +124,11 @@ export async function openUnits(c: RouteCtx, row?: HistoryItem): Promise<void> {
     c2.session.clearModifiers();
     if (a?.kind === "cmd" && a.name === "moveToPreviousChar") view.move(-1);
     else if (a?.kind === "cmd" && a.name === "moveToNextChar") view.move(1);
-    else if (a?.kind === "special" && a.name === "esc") close();
+    else if (a?.kind === "cmd" && a.name === "moveDown") view.down();
+    else if (a?.kind === "cmd" && a.name === "moveUp") view.up();
+    else if (a?.kind === "special" && a.name === "esc") {
+      if (!view.escape()) close();
+    }
     else c2.dead();
     if (current?.view === view) keep();
     return true;

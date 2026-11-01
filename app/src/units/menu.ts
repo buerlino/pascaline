@@ -23,6 +23,8 @@ export interface UnitsMenuOptions {
   /** A product row was picked, as pad actions (cm² is cm, then ²). Without it the product rows are left out (a cell
    *  holds one unit). */
   product?(actions: PadAction[]): void;
+  /** R62's "More…": only the units of this dimension key (tier 0 first, then by tier), as one list. */
+  dim?: string;
 }
 
 /** A product of Find units as the pad presses it: "ft^3" → ft, ³; "Btu/h" → Btu, ÷, h; "in*lbf" → in, lbf; a factor
@@ -60,6 +62,10 @@ export function unitsMenu(index: FindIndex, o: UnitsMenuOptions): { categories: 
   const find = (q: string, within?: ReadonlySet<string>): MenuItem[] =>
     rows(search(index.prepared, q, { filter: ["unit", "pfx"], prefer: ["unit"], limit: index.items.length }).map((h) => h.item).filter((it) => !within || within.has(it.id)).slice(0, 50));
 
+  if (o.dim !== undefined) {
+    const of = index.items.filter((it) => it.kind === "unit" && it.dim === o.dim).sort((a, b) => (a.tier ?? 0) - (b.tier ?? 0));
+    return { categories: rows(of), search: (q) => find(q, new Set(of.map((it) => it.id))) };
+  }
   const prefixes = spec.prefixes.items.flatMap((p) => {
     const it = index.items.find((x) => x.kind === "pfx" && (x.id === `pfx:${p}` || x.names.includes(p)));
     return it ? [it] : [];

@@ -1,0 +1,76 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// R62: what the unit view shows under the reading, as data (docs/04 4.3 "Result", docs/archive/r17-unit-result.md 0.3,
+// docs/mockups/unit-result.html): a refusal, Working…, or a result with its value line (the mark as Home draws it, the
+// value at the digits setting, the unit, the dimension), σ with its ⚠ and why-line, a note and the alternatives row.
+// Plain TS; units/panel.ts draws it. Loaded with the unit view.
+import { confirmedOptions, formatComplex, markOf, type FormatOptions, type Mark } from "../engine/format.ts";
+import { precisionFacts } from "../engine/homeEval.ts";
+import { unitText } from "../i18n/enUnits.ts";
+import { markText } from "../state/displayMode.ts";
+import type { Alternative } from "./alternatives.ts";
+import { unitErrorMessage, unitNoteText, unitWhyText } from "./messages.ts";
+import { isUnitError, type Quantity, type UnitError } from "./types.ts";
+
+/** What the view shows under the reading: nothing, a refusal (a slot's or the evaluator's), Working…, or a result. */
+export type Shown =
+  | { kind: "none" }
+  | { kind: "message"; text: string }
+  | { kind: "working" }
+  | UnitShown;
+
+export interface UnitShown {
+  kind: "result";
+  /** The value line's number: with σ `39.5 ± 1.2` (Uncertainty.shown), else the value at the digits setting. */
+  text: string;
+  /** The value alone as the evaluator displays it (the e2e reads it). */
+  display: string;
+  unit: string;
+  /** The mark as Home draws it (`⚠ 3` for fewer confirmed digits); a value with σ is never "=". */
+  mark: Mark;
+  markText: string;
+  /** The value line's σ as `{ head: "1.0000 ± ", sigma: "0.0071" }`, so the ⚠ can sit just before σ. */
+  sigma?: { head: string; tail: string };
+  /** σ has ⚠ (Uncertainty.why). */
+  warn: boolean;
+  why?: string;
+  note?: string;
+  /** "L·T⁻¹"; absent for a pure number. */
+  dim?: string;
+  /** With σ, muted under the value line: the value and σ at the digits setting. */
+  sub?: string;
+  /** The dimension key; "" for a pure number (no row). */
+  dimension: string;
+  /** The row's chips, fixed for as long as this result is on screen (not reordered); "More…" follows them. */
+  alts: readonly Alternative[];
+}
+
+/** A result as the view shows it. `alts` is the row (alternatives.ts), none for a refusal or a pure number. */
+export function shownOf(q: Quantity | UnitError, o: FormatOptions, alts: readonly Alternative[] = []): Shown {
+  if (isUnitError(q)) return { kind: "message", text: unitErrorMessage(q) };
+  const facts = precisionFacts(q.value);
+  const m = markOf(facts, o);
+  const mark: Mark = m?.mark === "⚠" ? "⚠" : q.unc ? "≈" : (m?.mark ?? "≈");
+  const number = (v: Quantity["value"]): string => (v.value ? formatComplex(v.value, confirmedOptions(v.value, v.facts.reliableDigits, o)).text : v.display);
+  const value = number(q.value);
+  const why = q.unc?.why;
+  const dimension = q.dimension ?? "";
+  const text = q.unc ? q.unc.shown : value;
+  const cut = q.unc ? q.unc.shown.lastIndexOf(" ± ") : -1;
+  const dim = q.dimensionText !== null && q.dimensionText !== "1" && dimension !== "" ? q.dimensionText : undefined;
+  return {
+    kind: "result",
+    text,
+    display: q.value.display,
+    unit: q.unit,
+    mark,
+    markText: m ? markText({ ...m, mark }) : mark,
+    ...(q.unc && cut >= 0 ? { sigma: { head: text.slice(0, cut + 3), tail: text.slice(cut + 3) } } : {}),
+    warn: why !== undefined,
+    ...(why ? { why: unitWhyText(why) } : {}),
+    ...(q.note ? { note: unitNoteText(q.note) } : {}),
+    ...(dim ? { dim } : {}),
+    ...(q.unc ? { sub: unitText("units.result.sub", { value, sigma: number(q.unc.value) }) } : {}),
+    dimension,
+    alts: dimension === "" ? [] : alts,
+  };
+}

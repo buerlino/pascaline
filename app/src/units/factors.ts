@@ -32,10 +32,12 @@ export interface FactorTable {
   consts: ReadonlyMap<string, ConstFactor>;
 }
 
-/** The symbol a unit's or prefix's chip shows (`\unit{oC}{\mathrm{°C}}` → °C), else the item's first name. */
+/** The symbol a unit's or prefix's chip shows (`\unit{oC}{\mathrm{°C}}` → °C), else the item's first name. A chip with
+ *  LaTeX in it (Wh: `W\cdot\,h`) gives the first name instead, never the LaTeX (R62: a result reads "Wh"). */
 function symbolOf(it: IndexItem): string {
   const m = /\{\\mathrm\{([^{}]+)\}\}$/.exec(it.insert ?? "");
-  return m?.[1] ?? it.names[0] ?? it.id.slice(it.id.indexOf(":") + 1);
+  const name = it.names[0] ?? it.id.slice(it.id.indexOf(":") + 1);
+  return m && !m[1]!.includes("\\") ? m[1]! : name;
 }
 
 const bare = (id: string): string => id.slice(id.indexOf(":") + 1);

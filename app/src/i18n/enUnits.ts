@@ -47,6 +47,11 @@ export const enUnits = {
   "units.pad.evaluate": "Eval",
   // R24c: the unit view while Calc.units() runs.
   "units.view.working": "Working…",
+  // R62: the result (units/result.ts): the value and σ under the value line, the alternatives row.
+  "units.result.sub": "{value} · σ {sigma}",
+  "units.result.alts": "Show in another unit",
+  "units.result.more": "More…",
+  "units.result.moreLabel": "More units for this quantity",
   // R24d: Find in a slot (Math): the units menu of the empty query (spec/units-menu.yaml), the second job of a unit row,
   // and the cell it lands in.
   "units.menu.prefixes": "Prefixes",
