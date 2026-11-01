@@ -5,6 +5,14 @@ History only: read it when a decision is questioned. What still binds is in [../
 
 ## Decided proposals moved here later
 
+### Shortened 2026-11-01 (Opus pass 41) to make room for R63's default, as they stood
+From "Defaults":
+- **G140 (Opus pass 34): a value Giac holds only as a double** (bridge-3's `doubles`, or the same binary64 at P and P + 20, `binary64.ts`) is an unaudited double: ⚠, at most 14 digits, never ≈ with P's. Rule 3's doubles on the exact path (`Psi(1+i)`, `Beta(1+i,2)`, `erf`/`erfc(1+i)`) keep ⚠ 12–13 (14 would show erfc's wrong 14th); `negbinomial_cdf` off the integers is ⚠ (Giac's incomplete Beta is a C double). Would change if: Giac gets an MPFR path for them.
+- **G143 (Opus pass 36): σ through a step function** stays the GUM σ (0 for floor, round, sign; the output's spread is not shown), with ⚠ "the interval reaches a jump" when an input's x ± 2σ reaches a jump, the other inputs at their values; trunc and frac around 0 get ⚠ too (Giac writes them with floor and sign); the argument's extremes are solve()'s principal ones. Would change if: S16's sweep finds a missed jump.
+- **⌫ and Del keep a template whole** (R23–R26h, R47; it includes ⌫ at a bracket): never half a template or a lost box; an emptied box shows □; inside a template ⌫ steps to the box before; ⌫ at the first box removes the template or first selects it; ⌫ right after a template steps in; every way in takes this path. Full text: archive. Would change if: G2 items 44, 46, 49 or 51 differ (the G2 way wins unless it leaves half a template).
+From "Feel, keys and screen (milestone 4a)":
+- **P7 (2026-10-12, revised by P11): keypad gestures.** The arrow keys are one trackpad (K1); flicks up (Shift layer) and down (letter) on every key, with a bubble while sliding, the key firing on lift; Shift and Alpha stay two keys with lock flicks (owner, 2026-10-19); the keypad hides only by the View key (P16). Thresholds: Defaults "Flicks". Would change if: the owner finds a threshold wrong on the phone.
+
 ### Shortened 2026-11-01 (Opus pass 38) to make room for R104's question, as it stood
 From "Library, release and process":
 - **R38b, R88, the restore's checks and presets (Opus pass 29):** `state/backup.ts` repeats the start readers' rules (settings, history, key layers, the presets' load check), each guarded by a test on the same values; no pin in `vite.config.ts`. Its import of `state/presetRecord.ts` (R88f1, `migratePresetKeys`) is a chunk of its own, +10 B gzip at start. A preset name compares trimmed and without case, holds a group, and capture or update makes it active. Would change if: a guard misses a drift.
