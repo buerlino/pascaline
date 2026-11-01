@@ -185,3 +185,16 @@ describe("G46f1: a DEG result copies the text drawn, not the radian full", () =>
     expect(copyExact({ ...item, drawn: undefined })).toBe("pi/180*cos(pi/180*x)");
   });
 });
+
+describe("R100 (bu-6 = be-8): a drawn list copies with the decimal comma", () => {
+  const list = done({ text: "{1.5,2}", full: "list[1.5,2]", drawn: "{1.5,2}" });
+  const exact = done({ text: "{3/2,2}", full: "list[3/2,2]", fullExact: true, drawn: "{3/2,2}" });
+  it("comma: the mark in the numbers and ; between the elements", () => {
+    expect(copyFull(list, { decimalComma: true })).toBe("{1,5;2}");
+    expect(copyFull(exact, { decimalComma: true })).toBe("{3/2;2}");
+  });
+  it("point: as drawn", () => {
+    expect(copyFull(list)).toBe("{1.5,2}");
+    expect(copyFull(exact)).toBe("{3/2,2}");
+  });
+});

@@ -1,13 +1,11 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 <script lang="ts">
   import { onMount } from "svelte";
-  import { ICONS } from "./views/icons.ts";
-  import { APPS, placeGlyph } from "./apps/registry.ts";
   import type { AppShell, PaletteId } from "./apps/shell.svelte.ts";
   import type { SubMenu } from "./apps/types.ts";
   import type { ClipActions } from "./clipboard/actions.svelte.ts";
   import type { EntryController } from "./entry/controller.ts";
-  import { t, type MessageKey } from "./i18n/index.ts";
+  import { t } from "./i18n/index.ts";
   import { openLayer } from "./input/backLayer.ts";
   import { vibrate } from "./input/haptics.ts";
   import Keypad from "./keyboard/Keypad.svelte";
@@ -20,40 +18,29 @@
   import { noDigit } from "./state/displayMode.ts";
   import type { HistoryItem, Session, View } from "./state/session.svelte.ts";
   import { counted, countScreenTaps } from "./state/pressCount.ts";
-  import { updateOffer } from "./state/updateOffer.svelte.ts";
+  import { createLoaders, type FindCode, type ModeSheetCode } from "./appLoaders.ts";
   import History from "./views/History.svelte";
-  // The Mode and Settings lists load when idle after the keypad is drawn, or on the first open (R35: not in the start chunk).
-  let modeSheet: typeof import("./views/modeSheet.ts") | null = null;
-  const loadModeSheet = async (): Promise<typeof import("./views/modeSheet.ts")> => (modeSheet ??= await import("./views/modeSheet.ts"));
+  import StatusLine from "./views/StatusLine.svelte";
   /** Set while the first Mode or Settings open waits for that code. */
   let sheetLoad: Promise<void> | null = null;
   // The sheet's view (Sheet.svelte with sheetFit.ts) is its own chunk, fetched when idle after the keypad is drawn (R46);
   // the model and the keys stay here. A key that opens a sheet before it is in waits in the queue.
   import { loadSheetView, sheetChunk } from "./views/sheetView.svelte.ts";
 
-  // Find (R4a) is its own chunk with the index beside it: both load when the browser is idle after the engine is ready
-  // (docs/04 3.3), or on the first Math press.
-  type FindCode = { m: typeof import("./find/finder.ts"); index: import("./find/finder.ts").FindIndex };
-  let findCode: FindCode | null = null;
-  let findLoading: Promise<FindCode> | null = null;
-  /** `urgent` (a Math press): an idle load under way prepares the rest of the index at once (finder.ts). */
-  const loadFind = (urgent = false): Promise<FindCode> =>
-    (findLoading ??= import("./find/finder.ts")
-      .then(async (m) => {
-        m.pauseWhile(() => busy); // the idle preparing gives way to a running job
-        return (findCode = { m, index: await m.loadIndex(urgent) });
-      })
-      .catch((e: unknown) => {
-        findLoading = null; // a later Math press tries again
-        throw e;
-      }));
-
   let { session, entry, shell, userKeys }: { session: Session; entry: EntryController; shell: AppShell; userKeys: UserKeys } = $props();
 
-  /** A status-line control as a key (R15b, R15c1): its tap takes the same path as a key press (an open sheet gives way, it runs at once while an app loads, and waits while a sheet's code loads). */
-  const statusKey = (id: string, name: "apps" | "symb" | "plot" | "num" | "menu"): Key => ({ id, row: 0, col: 0, span: 1, cls: "nav", label: { primary: "" }, actions: { primary: { kind: "special", name } } });
-  const PLACE_KEY = statusKey("place", "apps"), MENU_KEY = statusKey("menu-status", "menu");
-  const TABS = (["symb", "plot", "num"] as const).map((v) => ({ view: v, name: t(`view.${v}`), key: statusKey(`tab-${v}`, v) }));
+  // The lazy code (appLoaders.ts, R97): the Mode lists, Find with its index, and copy, paste and share. None is in the start chunk.
+  let clip = $state.raw<ClipActions | undefined>();
+  // svelte-ignore state_referenced_locally (main.ts mounts App once with these three objects; none is ever replaced)
+  const loaders = createLoaders({
+    session,
+    shell,
+    entry,
+    busy: () => busy,
+    insertResult: (item) => insertResult(item),
+    onClip: (c) => (clip = c),
+  });
+  const { loadModeSheet, loadFind, loadClip } = loaders;
 
   const sheetOpen = $derived(shell.sheet !== null);
   $effect(() => void (userKeys.decimalComma = entry.decimalComma = session.decimalComma)); // R57: the `.` and `,` keys' faces (keypad, tap, hardware key)
@@ -81,7 +68,7 @@
     entry.onLetter = counted(count, typeLetter);
     shell.goTo = goTo; // the Apps sheet's Home and CAS rows
     shell.openSettings = openSettings;
-    shell.settingsMenu = () => (modeSheet ? (settingsMenu ??= modeSheet.settingsMenu(session, settingsEnv)) : undefined); // (R49)
+    shell.settingsMenu = () => (loaders.modeSheet ? (settingsMenu ??= loaders.modeSheet.settingsMenu(session, settingsEnv)) : undefined); // (R49)
     shell.homeView = () => (session.view === "cas" ? "cas" : "home"); // the last row of every Menu
     entry.onSymbol = counted(count, (ch) => entry.run({ kind: "insert", latex: ch }));
     entry.onDead = counted(count, dead);
@@ -117,24 +104,10 @@
     return () => ro.disconnect();
   });
 
-  // Copy, paste and share (docs/04 2.6) load after the engine is ready, once the browser is idle (not in the start chunk).
-  // The shell reaches them for the apps (AppHost.copy) and for the Home/CAS Menu.
-  let clip = $state.raw<ClipActions | undefined>();
-  let clipLoading: Promise<ClipActions> | undefined;
-  function loadClip(): Promise<ClipActions> {
-    clipLoading ??= import("./clipboard/actions.svelte.ts").then((m) => {
-      const c = new m.ClipActions(session, shell, entry, { insert: insertResult, recall: (item) => entry.set(item.latex, item.chips) });
-      shell.clip = c;
-      shell.homeMenu = () => c.menu();
-      clip = c;
-      return c;
-    });
-    return clipLoading;
-  }
   /** Run now when loaded, else as soon as the code has arrived (a key pressed before the idle load), with the keys
    *  meanwhile in the queue (decisions.md R8). The Mode code comes too: every Menu's last row is Settings, its submenu (R49). */
   function withClip(run: (c: ClipActions) => void | Promise<void>): void {
-    if (clip && modeSheet) return void run(clip);
+    if (clip && loaders.modeSheet) return void run(clip);
     const load = Promise.all([loadClip(), loadModeSheet().catch(() => null)]).then(([c]) => run(c));
     if (sheetLoad === null) sheetLoad = load.catch(() => {}).finally(() => (sheetLoad = null));
   }
@@ -143,7 +116,7 @@
     if (session.engineState === "ready" && "requestIdleCallback" in window) requestIdleCallback(() => void loadClip(), { timeout: 3000 });
   });
   $effect(() => {
-    if (session.engineState !== "ready" || !("requestIdleCallback" in window) || findLoading) return;
+    if (session.engineState !== "ready" || !("requestIdleCallback" in window) || loaders.findLoading) return;
     // not while a job runs (its Working… timing, working.spec.ts); this runs again when it ends
     if (!busy) requestIdleCallback(() => void loadFind().catch(() => {}), { timeout: 5000 }); // the first Math press tries again
   });
@@ -205,8 +178,8 @@
    *  R8). No entry line, nothing to insert into. `slot` (R4b, Settings › Your keys): a pick sets that free key's slot. */
   function openFind(slot?: FindSlot): void {
     if (!slot && !shell.showsEntry) return dead();
-    if (findCode && sheetChunk.C) return showFind(findCode, slot);
-    if (findLoading) void import("./find/finder.ts").then((m) => m.loadIndex(true)).catch(() => {}); // hurry the idle load
+    if (loaders.findCode && sheetChunk.C) return showFind(loaders.findCode, slot);
+    if (loaders.findLoading) void import("./find/finder.ts").then((m) => m.loadIndex(true)).catch(() => {}); // hurry the idle load
     onFind(loadFind(true), (f) => showFind(f, slot));
   }
   type FindSlot = { id: string; layer: Layer };
@@ -259,8 +232,8 @@
   }
   /** Run `open` at once when the lists are loaded; else after the load, with every key meanwhile waiting in the queue
    *  (decisions.md R8), so none of them lands on the line before the sheet is there. */
-  function onModeSheet(open: (m: NonNullable<typeof modeSheet>) => void): void {
-    if (modeSheet && sheetChunk.C) return open(modeSheet);
+  function onModeSheet(open: (m: ModeSheetCode) => void): void {
+    if (loaders.modeSheet && sheetChunk.C) return open(loaders.modeSheet);
     sheetLoad = Promise.all([loadModeSheet(), loadSheetView()]).then(
       ([m]) => {
         sheetLoad = null;
@@ -319,90 +292,14 @@
   const typeLetter = (ch: string): void => route.typeLetter(ctx, ch);
   const cancel = (): Promise<void> => route.escape(ctx);
 
-  const busy = $derived(session.busy || shell.busy);
-  const appName = $derived(shell.app ? t(APPS.find((a) => a.id === shell.app)?.name as MessageKey) : "");
-  /** Where you are (docs/05 3.2): Home, CAS, or an app and its view. */
-  const place = $derived(shell.app === null ? t(`view.${session.view}`) : appName);
-  const angle = $derived(session.settings.angle);
-  const glyph = $derived(placeGlyph(shell.app ?? session.view));
-  /** The tile's ring: a job running, or the engine starting (R82f2: the ⟳ went). */
-  const ring = $derived(busy || session.engineState === "starting");
-  /** The ⇧ α slot: one sign, underlined when locked; Alpha with Shift types lower case, shown as `a`. */
-  const mod = $derived(
-    session.alpha
-      ? { alpha: true, lock: session.alphaLock, text: session.shift ? "a" : "α" }
-      : session.shift
-        ? { alpha: false, lock: session.shiftLock, text: "⇧" }
-        : null,
-  );
-  /** The status line is not a place for typing: a tap on it must not take the caret out of the entry line. */
+  /** A tap on the status line's strip, or on a row bar button, is not a place for typing: it must not take the caret out of the entry line. */
   const noFocus = (e: Event): void => e.preventDefault();
+
+  const busy = $derived(session.busy || shell.busy);
 </script>
 
 <main class="app">
-  <!-- the status line (docs/05 3.2, R82f2): the place's glyph tile (the apps list), the views as icons, the fixed ⇧ α
-       slot, the mode chips, ☰. At most 28 px (docs/03 rule 9). Nothing in it changes width with Shift, Alpha or the
-       engine's state, so a press never moves a view from under the finger; the engine's notes show in the stage. -->
-  <!-- svelte-ignore a11y_no_static_element_interactions (only keeps the caret in the entry line; the buttons inside are the controls) -->
-  <header data-testid="status" data-engine={session.engineState} data-busy={busy} onpointerdown={noFocus}>
-    <button
-      type="button"
-      class="place"
-      data-testid="place"
-      data-app={shell.app ?? ""}
-      data-view={shell.app === null ? session.view : shell.view}
-      aria-label={t("status.place", { place })}
-      onclick={() => press(PLACE_KEY, "primary")}>
-      <!-- the glyph is our own table's text or icon (registry.ts), never user text -->
-      <span class="tile math" class:small={"text" in glyph && glyph.text.length > 1} data-ring={ring} aria-hidden="true">{@html "icon" in glyph ? ICONS.home : glyph.text}</span>
-      {#if shell.app === null}<span class="name" aria-hidden="true">{place}</span>{/if}
-      <span class="caret" aria-hidden="true">▾</span>
-    </button>
-    {#if shell.app !== null}
-      <span class="seg" role="tablist" aria-label={t("status.views")}>
-        {#each TABS.filter((tb) => shell.views.includes(tb.view)) as tab (tab.view)}
-          <!-- the icons are our own markup (ICONS), never user text -->
-          <button
-            type="button"
-            class="tab"
-            role="tab"
-            data-testid="tab-{tab.view}"
-            aria-selected={shell.view === tab.view}
-            aria-label={tab.name}
-            title={tab.name}
-            onclick={() => press(tab.key, "primary")}>
-            {@html ICONS[tab.view]}
-          </button>
-        {/each}
-      </span>
-    {/if}
-    {#if updateOffer.restart}
-      <button type="button" class="update" data-testid="update-note" title={t("update.ready")}
-        onclick={updateOffer.restart}>{t("update.restart")}</button>
-    {/if}
-    <span class="slot" data-testid="mod-slot">
-      <span
-        class="mod"
-        data-testid={mod ? `mod-${mod.alpha ? "alpha" : "shift"}` : undefined}
-        data-lock={mod?.lock}
-        aria-label={mod && t(mod.alpha ? "key.alpha" : "key.shift")}>{mod?.text}</span>
-    </span>
-    <span class="chips">
-      <button
-        type="button"
-        class="chip"
-        data-testid="chip-angle"
-        data-angle={angle}
-        data-changed={angle !== "rad"}
-        aria-label={t("status.angle", { angle: t(`angle.${angle}`) })}
-        onclick={() => session.setAngle(angle === "rad" ? "deg" : "rad")}>{angle === "rad" ? "RAD" : "DEG"}</button>
-      <span class="pill" aria-label={t("status.format", { format: t(`format.${session.settings.format}`) })}>
-        <button type="button" class="chip" data-testid="chip-format" onclick={() => openMode("format")}>{session.settings.format.toUpperCase()}</button>
-        <button type="button" class="chip" data-testid="chip-digits" onclick={() => openMode("digits")}>{session.settings.digits}</button>
-      </span>
-    </span>
-    <button type="button" class="menubtn" data-testid="menu-button" aria-label={t("status.menu")} onclick={() => press(MENU_KEY, "primary")}>☰</button>
-  </header>
+  <StatusLine {session} {shell} {busy} cas={casKeys} onpress={press} onmode={openMode} />
 
   <div class="screen">
     <div class="stage">
@@ -412,8 +309,9 @@
           items={session.items}
           selected={picked}
           display={(item) => session.display(item)}
+          input={(item) => session.input(item)}
           mark={(item) => session.mark(item)}
-          onrecall={(item) => { picked = null; entry.set(item.latex, item.chips); }}
+          onrecall={(item) => { picked = null; entry.set(session.input(item), item.chips); }}
           oninsert={(item) => { picked = null; insertResult(item); }}
           oncancel={() => void cancel()}
           onlongpress={(item) => withClip((c) => c.openRowMenu(item))}
@@ -505,180 +403,6 @@
     height: 100%;
     max-width: 720px;
     margin: 0 auto;
-  }
-  header {
-    display: flex;
-    align-items: stretch;
-    gap: 6px;
-    box-sizing: border-box;
-    height: 28px;
-    padding: 0 8px;
-    /* the line under it as an inset shadow, so the targets keep the full 28 px */
-    box-shadow: inset 0 -1px 0 var(--line);
-    font-size: 14px;
-    line-height: 1;
-  }
-  header button {
-    all: unset;
-    box-sizing: border-box;
-    cursor: pointer;
-  }
-  /* the icons come from ICONS through {@html}, outside the component's scope */
-  header :global(svg) {
-    display: block;
-    width: 16px;
-    height: 14px;
-  }
-  header :global(.math) {
-    font-family: "STIX Two Math", "Cambria Math", "Times New Roman", serif;
-    font-style: italic;
-  }
-  /* The place (R15b, R82f2): its glyph tile and ▾, Home's and CAS's name between; the target is the line's full height,
-     from the screen's left edge, and does not reach below the line (the top history row and an app's first slot take
-     their own taps). */
-  .place {
-    flex: none;
-    display: flex;
-    align-items: center;
-    gap: 2px;
-    margin-left: -8px;
-    padding: 0 4px 0 8px;
-    white-space: nowrap;
-    font-weight: 700;
-    color: var(--text);
-  }
-  .place:active {
-    background: var(--key-nav);
-  }
-  .tile {
-    position: relative;
-    flex: none;
-    width: 30px;
-    height: 22px;
-    border-radius: 6px;
-    background: var(--chip-bg);
-    color: var(--text);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-    font-weight: 400;
-  }
-  .tile.small {
-    font-size: 13px;
-  }
-  /* busy or starting: a 2 px ring over the tile, its size unchanged */
-  .tile[data-ring="true"]::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    border: 2px solid var(--alpha);
-    border-radius: 6px;
-    box-sizing: border-box;
-  }
-  .name {
-    margin-left: 4px;
-  }
-  .caret {
-    font-size: 12px;
-    font-weight: 400;
-    color: var(--muted);
-  }
-  /* the views as icons, one segmented control; the selected one filled */
-  .seg {
-    flex: none;
-    align-self: center;
-    display: flex;
-    gap: 1px;
-    padding: 1px;
-    border: 1px solid var(--line);
-    border-radius: 7px;
-  }
-  .tab {
-    width: 30px;
-    height: 20px;
-    border-radius: 5px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 15px;
-    color: var(--muted);
-  }
-  .tab[aria-selected="true"] {
-    background: var(--chip-bg);
-    color: var(--text);
-  }
-  /* the fixed ⇧ α slot: always 16 px, so Shift or Alpha moves nothing */
-  .slot {
-    flex: none;
-    width: 16px;
-    margin-left: auto;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .mod {
-    color: var(--shift);
-    font-weight: 700;
-    line-height: 16px;
-  }
-  .mod[data-testid="mod-alpha"] {
-    color: var(--alpha);
-  }
-  .mod[data-lock="true"] {
-    box-shadow: inset 0 -2px 0 currentColor;
-  }
-  .update {
-    flex: none;
-    margin-left: auto;
-    padding: 0 6px;
-    display: flex;
-    align-items: center;
-    font-size: 12px;
-    font-weight: 700;
-    white-space: nowrap;
-    color: var(--shift);
-  }
-  .update:active {
-    background: var(--key-nav);
-  }
-  .update + .slot {
-    margin-left: 0;
-  }
-  .menubtn {
-    flex: none;
-    width: 36px;
-    margin-right: -8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 17px;
-    color: var(--text);
-  }
-  .menubtn:active {
-    background: var(--key-nav);
-  }
-  .chips {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    flex: none;
-    color: var(--muted);
-  }
-  .chip {
-    padding: 5px 6px;
-    border-radius: 6px;
-    color: var(--muted);
-    font-variant-numeric: tabular-nums;
-  }
-  .chip[data-changed="true"] {
-    color: var(--shift);
-    font-weight: 700;
-  }
-  .pill {
-    display: flex;
-    border: 1px solid var(--line);
-    border-radius: 7px;
   }
   /* the engine's start and failure notes, in the stage (R82f2: not in the status line) */
   .enginenote {

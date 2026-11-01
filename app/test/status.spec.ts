@@ -148,6 +148,32 @@ test("Shift and Alpha show in the status line: one tap each, twice for the lock"
   await expect(page.getByTestId("mod-alpha")).toHaveAttribute("data-lock", "true");
 });
 
+test("in CAS the slot shows what Alpha types: a for lower case (Alpha alone), α for capitals (Shift + Alpha), the locks likewise (R101)", async ({ page }) => {
+  await open(page);
+  await tap(page, ["@cas"]);
+  const slot = page.getByTestId("mod-alpha");
+  const typed = async (): Promise<string> => { // the letter the sin key (Alpha: G) types now: the line's last character
+    await tap(page, ["sin"]);
+    return (await entryValue(page)).slice(-1);
+  };
+  await tap(page, ["alpha"]); // Alpha alone: lower case
+  await expect(slot).toHaveText("a");
+  await expect(slot).toHaveAttribute("data-lock", "false");
+  expect(await typed()).toBe("g");
+  await tap(page, ["shift", "alpha"]); // Shift + Alpha: capitals
+  await expect(slot).toHaveText("α");
+  expect(await typed()).toBe("G");
+  await tap(page, ["alpha", "alpha"]); // the lock that keeps Alpha alone: lower case
+  await expect(slot).toHaveText("a");
+  await expect(slot).toHaveAttribute("data-lock", "true");
+  expect(await typed()).toBe("g");
+  await tap(page, ["alpha"]);
+  await tap(page, ["shift", "alpha", "alpha"]); // the lock with Shift: capitals
+  await expect(slot).toHaveText("α");
+  await expect(slot).toHaveAttribute("data-lock", "true");
+  expect(await typed()).toBe("G");
+});
+
 test("tap RAD → DEG changes the next result; sin 90 is 1 in degrees", async ({ page }) => {
   await open(page, "");
   await ready(page);

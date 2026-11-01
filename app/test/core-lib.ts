@@ -251,16 +251,18 @@ export async function check(page: Page, e: CoreExpect, id = ""): Promise<void> {
     if (Array.isArray(want)) await expect(loc).toHaveText(want);
     else await expect.poll(async () => (await loc.allTextContents()).map((t) => t.trim()), { message: sel }).toContain(want);
     // R82 (F110): the text is also there for the eye: on screen and not under another element
-    await expect.poll(() => seen(page, sel), { message: `${id} ${sel} on screen and uncovered`.trim(), timeout: 2000 }).toBe("");
+    await expect.poll(() => seen(page, sel, Array.isArray(want)), { message: `${id} ${sel} on screen and uncovered`.trim(), timeout: 2000 }).toBe("");
   }
 }
 
 /** Why the first match of `sel` cannot be read ("" = it can): hidden, outside the viewport, or covered at its centre
- *  or an edge's middle (what `elementFromPoint` finds there, with the layout boxes, so a device log names the cause). */
-export function seen(page: Page, sel: string): Promise<string> {
-  return page.evaluate((s) => {
-    const el = document.querySelector(s);
-    if (!el) return "no match";
+ *  or an edge's middle (what `elementFromPoint` finds there, with the layout boxes, so a device log names the cause).
+ *  `every` (R105, an array expect): each match must be readable; the first that is not is named ("match 2 of 3: …"). */
+export function seen(page: Page, sel: string, every = false): Promise<string> {
+  return page.evaluate(({ s, every }) => {
+    const all = [...document.querySelectorAll(s)];
+    if (all.length === 0) return "no match";
+    const one = (el: Element): string => {
     const r = el.getBoundingClientRect();
     const box = (b: DOMRect): string => `${Math.round(b.left)},${Math.round(b.top)} ${Math.round(b.width)}×${Math.round(b.height)}`;
     const where = (): string =>
@@ -289,5 +291,11 @@ export function seen(page: Page, sel: string): Promise<string> {
     const name = (n: Element | null): string => n ? `${n.tagName.toLowerCase()}${n.id ? `#${n.id}` : ""}${n.className && typeof n.className === "string" ? `.${n.className.trim().split(/\s+/).join(".")}` : ""}` : "nothing";
     const owner = top?.closest("[data-testid], header, .keys, [data-key]");
     return `covered at its ${at} by ${name(top)}${owner && owner !== top ? ` in ${name(owner)}` : ""}, box ${box(r)}${where()}`;
-  }, sel);
+    };
+    for (const [i, el] of (every ? all : all.slice(0, 1)).entries()) {
+      const why = one(el);
+      if (why !== "") return every && all.length > 1 ? `match ${i + 1} of ${all.length}: ${why}` : why;
+    }
+    return "";
+  }, { s: sel, every });
 }

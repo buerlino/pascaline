@@ -19,6 +19,9 @@ describe("slotFormula (R24c)", () => {
   it("a ± σ belongs to its number: one slot after the σ", () => {
     expect(slotFormula("\\cos\\left(0\\pm0.1\\right)").latex).toBe("\\cos\\left(0\\pm0.1\\placeholder[u1]{}\\right)\\to\\placeholder[end]{}");
     expect(slotFormula("-\\left(20\\pm0.5\\right)").slots).toEqual(["u1"]);
+    // R104: ± n % is the σ too, so the slot goes after the %
+    expect(slotFormula("250\\pm0.4\\%").latex).toBe("250\\pm0.4\\%\\placeholder[u1]{}\\to\\placeholder[end]{}");
+    expect(slotFormula("250\\pm0.4\\%+1").slots).toEqual(["u1", "u2"]);
   });
   it("no slot inside a power, a subscript, a name, a chip or a root's index", () => {
     expect(slotFormula("5^{2}").latex).toBe("5\\placeholder[u1]{}^{2}\\to\\placeholder[end]{}"); // (5 u)²: the parser reads a slot only right after a number (R28)

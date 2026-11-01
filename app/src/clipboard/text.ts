@@ -91,7 +91,7 @@ function copyDigits(i: CopySource): number {
  */
 export function copyFull(i: CopySource, o: TextOptions = {}): string | undefined {
   if (i.status !== "done") return undefined;
-  if (i.drawn !== undefined) return i.drawn;
+  if (i.drawn !== undefined) return o.decimalComma ? commaResult(i.drawn, false) : i.drawn; // R100: a list's elements by `;`
   const f = i.full;
   if (f !== undefined && /^-?\d+$/.test(f)) return f; // an exact integer, however long
   // A real the engine wrote as digits (CAS floats too): its confirmed digits, in the notation of docs/04 2.6.

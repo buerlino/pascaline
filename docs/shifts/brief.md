@@ -59,11 +59,6 @@ Milestone reviews (section 0): after R50e; after R24d (with R108's gallery group
 
 | Step | What | Agent, model | Branch | After |
 |---|---|---|---|---|
-| 324 | [R100](packages/R100.md) copy and paste round-trip with the decimal comma | ron, Opus | `p1/ron-commacopy` | R99 |
-| 325 | [R97](packages/R97.md) App.svelte split below its line | ron, Sonnet | `p1/ron-appsplit` | – |
-| 326 | [R105](packages/R105.md) the core list's visibility check looks at every match | ron, Sonnet | `p1/ron-coreseen` | – |
-| 327 | [R104](packages/R104.md) `± n %` after a number in the unit view | ron, Opus | `p1/ron-m5-pmpercent` | R71 |
-| 328 | [R101](packages/R101.md) the Alpha slot in CAS shows what Alpha types | ron, Sonnet | `p1/ron-alphaslot` | R97 |
 | 329 | [R102](packages/R102.md) spoken names and strings | ron, Sonnet | `p1/ron-strings` | R97 |
 
 ### Lane B queue (the release, then the engine)
@@ -74,7 +69,6 @@ A7, A8, A9 and [A57](packages/A57.md) (after A58) run by day (section 0); A43 is
 | 408 | [G138](packages/G138.md) the weekly fuzz and its triage | gorge, Opus | `p1/gorge-nightfuzz-1106` | the weekly night |
 | 424 | [A54](packages/A54.md) the pipeline owns its children | annabell, Sonnet | `p1/annabell-ownedchildren` | A53 |
 | 425 | [A55](packages/A55.md) guards that never fire | annabell, Sonnet | `p1/annabell-idleguards` | A54 |
-| 426 | [A52f1](packages/A52f1.md) the kill run skips the golden step | annabell, Sonnet | `p1/annabell-killnogolden` | – |
 | 427 | [A58](packages/A58.md) a long measurement lets the checks in between | annabell, Sonnet | `p1/annabell-cpuslices` | A55 |
 | 416 | [G149](packages/G149.md) a real base to a near-imaginary power (F140) | gorge, Opus | `p1/gorge-powimag` | – |
 | 417 | [G150](packages/G150.md) a negative base to a complex power (F141) | gorge, Opus | `p1/gorge-negpowcomplex` | G149 |

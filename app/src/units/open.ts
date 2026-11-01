@@ -41,7 +41,7 @@ export async function openUnits(c: RouteCtx, row?: HistoryItem): Promise<void> {
   const entryEl = document.querySelector<HTMLElement>(".entry");
   const fieldEl = entryEl?.querySelector<HTMLElement>(".field");
   if (current || c.shell.app !== null || !entryEl || !fieldEl) return c.dead();
-  if (row) c.entry.set(row.latex, row.chips);
+  if (row) c.entry.set(c.session.input(row), row.chips); // R100: in comma mode its argument commas as `;`
   const line = c.entry.value;
   const chips = c.entry.chips;
   // MathLive comes with the entry line (its field is up once `ready`): the class is taken from the element registry
