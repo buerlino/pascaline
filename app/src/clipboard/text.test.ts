@@ -110,6 +110,41 @@ describe("copyMark", () => {
   });
 });
 
+describe("sessionText: a unit-view row (R63f2)", () => {
+  // t04: 2π·25 mm to m = 0.1570796326794896619… (oracle, tasks.yaml t04); t10: 39.488 ± 1.2 m² (derived, decisions R61)
+  const t04 = done({
+    latex: "2\\times\\pi\\times25",
+    text: "0.157079632679",
+    full: "0.1570796326794896619",
+    value: re("0.1570796326794896619"),
+    facts: { exact: false, reliableDigits: null },
+    units: { input: "2\\times\\pi\\times25\\,\\mathrm{mm}\\to\\,\\mathrm{m}", text: " m" },
+  });
+  const t10 = done({
+    latex: "12.34\\pm0.05\\times3.2\\pm0.1",
+    text: "39.488",
+    full: "39.488",
+    value: re("39.488"),
+    facts: { exact: false, reliableDigits: null },
+    units: { input: "12.34\\pm0.05\\,\\mathrm{m}\\times3.2\\pm0.1\\,\\mathrm{m}", text: " ± 1.2 m²" },
+  });
+  it("writes the request with its units and the arrow, and the value with its unit", () => {
+    expect(sessionText([t04], {}, CTX)).toBe("2×π×25 mm → m ≈ 0.1570796326794896619 m");
+  });
+  it("t10 ends in ± 1.2 m²", () => {
+    const line = sessionText([t10], {}, CTX);
+    expect(line.endsWith(" 39.488 ± 1.2 m²")).toBe(true);
+    expect(line).toBe("12.34±0.05 m×3.2±0.1 m ≈ 39.488 ± 1.2 m²");
+  });
+  it("the decimal comma rewrites the unit text too", () => {
+    expect(sessionText([t10], { decimalComma: true }, { ...CTX, decimalComma: true }).endsWith(" 39,488 ± 1,2 m²")).toBe(true);
+  });
+  it("a row without those fields keeps today's line", () => {
+    expect(sessionText([{ ...t04, units: {} }], {}, CTX)).toBe("2×π×25 ≈ 0.1570796326794896619");
+    expect(sessionText([{ ...t04, units: { input: 5, text: " m" } }], {}, CTX)).toBe("2×π×25 ≈ 0.1570796326794896619");
+  });
+});
+
 describe("sessionText", () => {
   it("writes one line per finished entry: input, mark, full value", () => {
     const items: CopySource[] = [
