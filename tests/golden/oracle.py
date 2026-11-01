@@ -299,7 +299,7 @@ def two_digits(x, place=None):
 
 
 # G41: the why-lines of a σ shown with ⚠ (app/src/i18n/enUnits.ts units.why.*).
-UNC_WHY = ("first order does not hold here", "the interval reaches a singular point")
+UNC_WHY = ("first order does not hold here", "the interval reaches a singular point", "the interval reaches a jump")
 
 
 def check_unc(case: dict) -> list:
