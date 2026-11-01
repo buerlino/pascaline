@@ -55,7 +55,6 @@ export function shownOf(q: Quantity | UnitError, o: FormatOptions, alts: readonl
   const why = q.unc?.why;
   const dimension = q.dimension ?? "";
   const text = q.unc ? q.unc.shown : value;
-  const cut = q.unc ? q.unc.shown.lastIndexOf(" ± ") : -1;
   const dim = q.dimensionText !== null && q.dimensionText !== "1" && dimension !== "" ? q.dimensionText : undefined;
   return {
     kind: "result",
@@ -64,7 +63,7 @@ export function shownOf(q: Quantity | UnitError, o: FormatOptions, alts: readonl
     unit: q.unit,
     mark,
     markText: m ? markText({ ...m, mark }) : mark,
-    ...(q.unc && cut >= 0 ? { sigma: { head: text.slice(0, cut + 3), tail: text.slice(cut + 3) } } : {}),
+    ...(q.unc && q.unc.shown.endsWith(q.unc.text) ? { sigma: { head: q.unc.shown.slice(0, q.unc.shown.length - q.unc.text.length), tail: q.unc.text } } : {}),
     warn: why !== undefined,
     ...(why ? { why: unitWhyText(why) } : {}),
     ...(q.note ? { note: unitNoteText(q.note) } : {}),
