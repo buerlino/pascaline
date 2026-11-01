@@ -30,5 +30,25 @@ G15's probe (`tools/probes/units-giac.mjs`) computed the spike's cases, the task
 ### Units: the uncertainty, why no Monte Carlo check
 no Monte Carlo check (GUM Supplement 1): cos X, X ~ N(0, 0.1²), spreads 0.0070358300299, the formula 0.00707106781187)
 
+## Moved 2026-11-01 (Opus pass 43) to make room for R63's way back, as they stood
+
+### 2.4 The mark and the agreement check: alternatives
+**Alternatives:** a mark from `approximate` alone (cannot tell 1/3 from 1/4); MPFI intervals (S20).
+
+### 2.5 Digits up to 30: alternatives
+**Alternatives:** keep 15 (reference data needs more); unlimited digits (the 40-digit value path and the screen width cap it at 30).
+
+### 2.6 Copy and paste: alternatives
+**Alternatives:** copy the displayed text by default (hides digits, against principle 3); copy the exact form by default (`1/3` pastes badly into spreadsheets and code).
+
+### 2.8 Reuse through chips and Ans: alternatives
+**Alternatives:** insert the full digits as text (40 digits clutter the line); keep inserting the rounded digits (2.3 #8).
+
+### 3.3 The index: alternatives
+**Alternatives:** generating at run time (start-up, memory); committing the generated JSON (not our source for F-Droid; P22's `find/factors.yaml` is the audited source, not output).
+
+### 3.5 Ranking: alternatives
+**Alternatives:** uFuzzy, fuzzysort, Fuse.js (they know none of our tiers or kinds).
+
 ## Appendix A: probes
 The probes behind this document are in `tools/probes/` (its README says how to run each): `engine.ts` (Home and CAS paths through `EngineHost`, `FACTS=1` for the facts), `parse.ts` (the parser), `digits-cost.ts`, `units-giac.mjs` (G15), `find/` (the index prototype), `start-chunk.mjs`, `bound.ts`, `replay-cost.mjs`, `unit-presses.mjs`, `results-geometry.mjs`. What they found is in [research/r12-evidence.md](../research/r12-evidence.md); oracle values come from mpmath in `tests/golden/.venv` (the expressions: r12 section 1).

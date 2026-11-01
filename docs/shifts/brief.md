@@ -11,8 +11,8 @@
 
 **Two lanes** (owner, 2026-10-29; decisions.md P17 and "Owner answers of 2026-10-29"): once A47a–A47c are merged, lane A (ron's UI) and lane B (the release, then the engine) run around the clock, each with its own table in section 0c, merged through one queue (A47b); until then one run at a time. ron's packages run at night too: the owner's look moves to three milestone reviews (after R87; after R86, R57, R50e; after R24d), and a package's "owner's eye" item joins the next review. Device steps and the owner's acts (a key, a tag, a phone) stay by day. The order:
 1. **Find:** R4a, R91, R15c3, R49, R87 and R4b merged (`git log --merges`); R91's before/after on the Fairphone is in [ONE-TIME.md](../../tests/core/ONE-TIME.md).
-2. **The Settings base** (owner, 2026-10-27; decisions.md "Settings in the Mode sheet, and presets"; [mockups/settings.html](../mockups/settings.html)): R85, R49, R86, R50e, R57 merged; after the units: R70, R15c4, R38a, R38b, R88 merged → R59, R89; R55 (after R15c4); R53; R12b → R12c → R41; R36, R33 → R37, R40.
-3. **The units** (owner, 2026-10-29: right after R86, R57, R50e): R24b, R24c, R24d and G81 merged, R60 and R61 merged → R62, R63 (R71 merged), then R92 (the units menu's Tools and Const tabs; its package after R61 and R63).
+2. **The Settings base** (owner, 2026-10-27; decisions.md "Settings in the Mode sheet, and presets"; [mockups/settings.html](../mockups/settings.html)): R85, R49, R86, R50e, R57 merged; after the units: R70, R15c4, R38a, R38b, R88, R55 merged → R59, R89; R53; R12b → R12c → R41; R36, R33 → R37, R40.
+3. **The units** (owner, 2026-10-29: right after R86, R57, R50e): R24b, R24c, R24d and G81 merged, R60, R61, R62, R63 and R71 merged → R92 (the units menu's Tools and Const tabs; its package after R61 and R63).
 4. **Lane B, to v0.1.0** (the APK and the website from one tag): A43, A48 and A50 merged, so A7 may start: A7 (signing, the owner's key made off this laptop), A49 and A45 merged, A8 (the owner's test tag); A9 with the owner's phone by day (F41); then wrong numbers by reach, C4.
 5. **Every morning:** the owner's check (MORNING.md, on the night's device when the night had one, about 10 minutes). The day session writes each failed step as a backlog bug line on phase-1 and logs one line in `.coord/log.md`: `- HH:MM morning <date>: clean` or `- HH:MM morning <date>: fails <ids>`.
 
@@ -59,13 +59,10 @@ Milestone reviews (section 0): after R50e; after R24d (with R108's gallery group
 
 | Step | What | Agent, model | Branch | After |
 |---|---|---|---|---|
-| 332 | [R63](packages/R63.md) the way back from the unit view | ron, Opus | `p1/ron-m5-unitback` | R62 |
-| 333 | [R15c4](packages/R15c4.md) first-start tips | ron, Sonnet | `p1/ron-m4a-tips` | – |
-| 334 | [R55](packages/R55.md) digit groups in drawn results | ron, Sonnet | `p1/ron-m4a-digitgroups` | R15c4 |
+| 338 | [R103](packages/R103.md) room in the start chunk | ron, Opus | `p1/ron-startroom` | – |
 | 335 | [R89](packages/R89.md) presets in Mode | ron, Opus | `p1/ron-presets` | – |
 | 336 | [R33](packages/R33.md) names with a value, marked on the line | ron, Sonnet | `p1/ron-m4a-namemarks` | – |
 | 337 | [R36](packages/R36.md) a picked row says why it has its mark | ron, Sonnet | `p1/ron-m4a-why` | – |
-| 338 | [R103](packages/R103.md) room in the start chunk | ron, Opus | `p1/ron-startroom` | – |
 
 ### Lane B queue (the release, then the engine)
 A7, A8, A9 and [A57](packages/A57.md) run by day (section 0); A43 and A58 are merged. Step 408 runs only on the weekly extreme night the owner names (not today).
