@@ -52,7 +52,7 @@ describe("units mode (R28)", () => {
     expect(units("4.7\\pm5\\emark-1\\%").giac).toBe("pasupm(4.7,0.0235)");
     expect(units("2\\tfrac12\\pm10\\%").giac).toBe("pasupm((2+1/2),(2+1/2)*10/100)");
     expect(units("12\\pm0.5\\placeholder[u1]{}\\%").giac).toBe("pasupm(12,0.5)*pasu1/100");
-    expect(units("5\\%\\pm1").giac).toBe("5/100");
+    expect(() => units("5\\%\\pm1")).toThrow("± goes right after a number"); // a percentage is not a number with a σ
     expect(latexToGiacInfo("5\\%").giac).toBe("5/100");
     expect(() => units("\\pm5\\%")).toThrow("± goes right after a number");
     expect(() => units("5\\pm x\\%\\placeholder[u1]{}")).toThrow("± needs a plain number after it");
