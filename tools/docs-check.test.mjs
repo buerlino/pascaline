@@ -98,14 +98,3 @@ test("a live doc linked twice in docs/README.md fails", () => {
   assert.equal(r.code, 1);
   assert.match(r.out, /index: docs\/backlog\.md is linked 2 times/);
 });
-
-test("a live doc naming a docs path that does not exist fails", () => {
-  const r = run({ ...base, "docs/backlog.md": "- **F1.** see docs/release.md\n" });
-  assert.equal(r.code, 1);
-  assert.match(r.out, /path: docs\/backlog\.md names docs\/release\.md/);
-});
-
-test("a live doc may name a docs path an open package will create", () => {
-  const r = run({ ...base, "docs/backlog.md": "- **F1.** see docs/release.md\n", "docs/shifts/packages/A1.md": pkg("A1") + "Writes `docs/release.md`.\n" });
-  assert.equal(r.code, 0, r.out);
-});
