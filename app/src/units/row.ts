@@ -5,19 +5,14 @@
 // slots and end slot), the Quantity summary (unit, dimension, σ, note) and R61's chip. One row per visit of the view: a
 // later result of the same visit (an alternative tapped, a slot changed) takes its place. Loaded with the unit view.
 import type { ChipTable } from "../input/chips.ts";
-import { validSlot } from "../input/chipUnit.ts";
+import { unitLatex, validSlots } from "../input/chipUnit.ts";
 import { homeResultToLatex } from "../render/home.ts";
-import { homeItem } from "../state/results.ts";
-import { HISTORY_LIMIT, type HistoryItem, type Session } from "../state/session.svelte.ts";
+import { HISTORY_LIMIT, homeItem } from "../state/results.ts";
+// (types only from the session: a value import of it from this lazy chunk makes Rolldown split modules out of the
+// start chunk, +0.8 kB gzip there)
+import type { HistoryItem, Session } from "../state/session.svelte.ts";
 import { quantityChip } from "./chip.ts";
 import type { Quantity, UnitRow, UnitSlot } from "./types.ts";
-
-/** A unit set apart after a number (r17 section 2): smaller, muted and upright, so the chip and the row read it as a
- *  label, never as a factor. Text mode, so any symbol (µ, Ω, °, ², ·) is drawn as it is; its few LaTeX specials escaped. */
-export function unitLatex(text: string): string {
-  const t = text.replace(/[\\^~]/g, "").replace(/[#$%&_{}]/g, (c) => `\\${c}`);
-  return `\\htmlStyle{color:var(--muted);font-size:smaller}{\\,\\text{${t}}}`;
-}
 
 export interface RowIn {
   /** The entry line the view was opened on, and its chips. */
@@ -74,20 +69,10 @@ export function putRow(s: Session, row: Omit<HistoryItem, "id">, id?: number): n
   return item.id;
 }
 
-const SLOT_ID = /^(?:u\d{1,3}|end)$/;
-
-/** A unit row's slots, read back checked (a stored row is kept as read, unchecked): the well-formed ones by prompt id;
- *  undefined for a row that is no unit row or holds none. */
-export function rowSlots(item: HistoryItem | undefined): Record<string, UnitSlot> | undefined {
-  const slots = (item?.units as { slots?: unknown } | undefined)?.slots;
-  if (!slots || typeof slots !== "object") return undefined;
-  const out: Record<string, UnitSlot> = {};
-  for (const [id, x] of Object.entries(slots as Record<string, unknown>)) {
-    const s = SLOT_ID.test(id) ? validSlot(x) : undefined;
-    if (s) out[id] = s;
-  }
-  return Object.keys(out).length ? out : undefined;
-}
+/** A unit row's slots, read back checked (a stored row is kept as read): the well-formed ones by prompt id; undefined
+ *  for a row that is no unit row or holds none. */
+export const rowSlots = (item: HistoryItem | undefined): Record<string, UnitSlot> | undefined =>
+  validSlots((item?.units as { slots?: unknown } | undefined)?.slots);
 
 /** The last unit row in Home whose line is `line` (the line recalled, or typed again, after a relaunch). */
 export function rowFor(s: Session, line: string): HistoryItem | undefined {

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// R61: the check of a result chip's unit (units/chip.ts quantityChip makes it), and R63's of a unit row's slots. The
-// loader keeps a stored unit as it reads it (chips.ts validChips, at start); this check runs where the unit is used,
-// off the start chunk (R91's pin): do not import this file from code loaded at start. Pure; only erasable TypeScript.
+// R61: the check of a result chip's unit (units/chip.ts quantityChip makes it); R63's of a unit row's slots, and the
+// unit's label. The loader keeps a stored unit as it reads it (chips.ts validChips, at start); this check runs where
+// the unit is used, off the start chunk (R91's pin): do not import this file from code loaded at start. Pure; only erasable TypeScript.
 import type { UnitSlot } from "../units/types.ts";
 import type { Chip, ChipUnit } from "./chips.ts";
 
@@ -33,4 +33,22 @@ export function validSlot(x: unknown): UnitSlot | undefined {
     tokens.push({ ...(prefix !== undefined ? { prefix } : {}), unit, ...(power !== undefined ? { power } : {}) });
   }
   return { tokens, ...(per !== undefined ? { per } : {}) };
+}
+
+/** R63: a unit row's stored slots by prompt id (`u2`, `end`), the well-formed ones; undefined when none is. */
+export function validSlots(x: unknown): Record<string, UnitSlot> | undefined {
+  if (!x || typeof x !== "object") return undefined;
+  const out: Record<string, UnitSlot> = {};
+  for (const [id, y] of Object.entries(x as Record<string, unknown>)) {
+    const s = /^(?:u\d{1,3}|end)$/.test(id) ? validSlot(y) : undefined;
+    if (s) out[id] = s;
+  }
+  return Object.keys(out).length ? out : undefined;
+}
+
+/** R63: a unit set apart after a number (r17 section 2): smaller, muted and upright, so a chip and a unit row read it as
+ *  a label, never as a factor. Text mode, so any symbol (µ, Ω, °, ², ·) is drawn as it is; its LaTeX specials escaped. */
+export function unitLatex(text: string): string {
+  const t = text.replace(/[\\^~]/g, "").replace(/[#$%&_{}]/g, (c) => `\\${c}`);
+  return `\\htmlStyle{color:var(--muted);font-size:smaller}{\\,\\text{${t}}}`;
 }

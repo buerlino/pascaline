@@ -13,7 +13,8 @@ import type { Kv } from "../state/storage.ts";
 import { buildJob } from "./build.ts";
 import { quantityChip } from "./chip.ts";
 import { factorTable } from "./factors.ts";
-import { putRow, rowFor, rowSlots, unitLatex, unitRow } from "./row.ts";
+import { unitLatex } from "../input/chipUnit.ts";
+import { putRow, rowFor, rowSlots, unitRow } from "./row.ts";
 import { isUnitError, type Quantity, type UnitRequest } from "./types.ts";
 
 const item = (kind: string, id: string, x: Record<string, string>): IndexItem =>

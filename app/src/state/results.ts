@@ -14,6 +14,8 @@ import type { Rational, ResultFacts } from "./displayMode.ts";
 export const FULL_LIMIT = 2048;
 /** A numeric list or matrix keeps its elements in the history (to re-format it); beyond this the item shows no mark. */
 export const ITEMS_LIMIT = 400;
+/** Rows a view's history keeps (in memory and stored); the oldest go first. */
+export const HISTORY_LIMIT = 200;
 
 /** Engine text with a decimal point or an E exponent is rounded digits, not an exact value. */
 const isDigitsText = (t: string): boolean => /\.|\d[eE][+-]?\d/.test(t);

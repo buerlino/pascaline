@@ -32,7 +32,7 @@ import { defaultLook, validLook, type Look } from "../theme/look.ts";
 import { idbKv, type Kv } from "./storage.ts";
 import { TapCounter } from "./taps.svelte.ts";
 import { commaInput } from "../entry/commaInput.ts";
-import { casItem, chipFactsOf, chipOf, FULL_LIMIT, homeItem, ITEMS_LIMIT } from "./results.ts";
+import { casItem, chipFactsOf, chipOf, FULL_LIMIT, HISTORY_LIMIT, homeItem, ITEMS_LIMIT } from "./results.ts";
 import type { UnitRow } from "../units/types.ts";
 
 export type View = "home" | "cas";
@@ -117,8 +117,7 @@ export interface HistoryItem {
   settingReset?: true;
   /** R63: a unit-view result (units/row.ts): its request, Quantity summary and chip. Read back unchecked (see UnitRow). */
   units?: UnitRow;
-  /** R63: a unit result's chip went into the input (Ans too): Home has no units, so a line under the result says the
-   *  unit was dropped. */
+  /** R63: a unit result's chip (Ans too) went into the input; Home has no units: a line under the result says so. */
   unitDropped?: true;
   startedAt: number;
 }
@@ -137,7 +136,6 @@ function validUses(x: unknown): UsedValue[] | undefined {
   return ok.length ? ok : undefined;
 }
 
-export const HISTORY_LIMIT = 200;
 /** R91: the tidy-up of Giac's latex (render/tidy.ts) is only needed once a result is in, so it is a chunk of its own: it
  *  loads beside the first job (and when idle, main.ts), and a failed load is tried again by the next job. */
 let tidyChunk: Promise<typeof import("../render/tidy.ts")> | undefined;
@@ -519,9 +517,9 @@ export class Session {
     });
   }
 
-  /** The chip a finished result gives when it is tapped or picked (docs/04 2.8); undefined: insert it as drawn. */
+  /** The chip a finished result gives when it is tapped or picked (docs/04 2.8); undefined: insert it as drawn. R63: a
+   *  unit row's is R61's, kept with the row and read back unchecked, so checked here as a stored chip is. */
   chipFor(item: HistoryItem): Chip | undefined {
-    // R63: a unit row's chip is R61's, kept with the row; read back unchecked, so checked here as a stored chip is
     return item.units ? validChips({ "res:0": item.units.chip })?.["res:0"] : chipOf(item);
   }
   /** A fresh row id (units/row.ts adds a unit row to Home's list). */
@@ -624,8 +622,7 @@ export class Session {
     const shown = item.view === "home" || item.fmt !== undefined || item.form !== undefined || item.facts !== undefined;
     if (item.status === "done" && shown) {
       const r = renderNumeric(item, this.modeOf(item), this.displayContext());
-      // R63: a unit row draws ± σ and its unit, set apart, after the number
-      const u = item.units?.latex;
+      const u = item.units?.latex; // R63: a unit row draws ± σ and its unit, set apart, after the number
       if (r) return typeof u === "string" ? { text: r.text, latex: r.latex + (this.decimalComma ? commaResult(u, true) : u) } : r;
     }
     // (R57) what the engine wrote, with the decimal comma, is drawn as the numbers above
