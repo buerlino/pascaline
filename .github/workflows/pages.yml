@@ -5,7 +5,7 @@
 # Every action is pinned by commit SHA (version in the comment); app/scripts/pages.test.ts checks this file.
 # A52: the build job reads only (contents: read, no stored token); the deploy job alone may write Pages. The kill switch is the
 # dispatch input `kill`: `gh workflow run pages --ref v0.1.0 -f kill=true` puts app/pwa/kill/sw.js over dist/sw.js (app/pwa/README.md).
-# The version check and the golden gate (release engine) run before the upload, so only a gated build is deployed.
+# The version check and the golden gate (release engine) run before the upload, so only a gated build is deployed (a kill run skips the golden gate).
 name: pages
 
 on:
@@ -48,7 +48,9 @@ jobs:
       - name: One version (a tag run also checks the tag)
         run: |
           if [ "$GITHUB_REF_TYPE" = "tag" ]; then tools/check-version.sh "$GITHUB_REF_NAME"; else tools/check-version.sh; fi
+      # A52f1: a kill run skips the golden gate: its tag passed it already, and a slow runner (the units stage's p95 bar) must not block the switch-off.
       - name: Golden gate on the release engine
+        if: ${{ inputs.kill != true }}
         working-directory: app
         run: |
           GIAC_OUT="$GITHUB_WORKSPACE/engine/giac/_out/release" npm run golden
