@@ -192,6 +192,8 @@ test.describe("the row at phone widths", () => {
       await expect(page.getByTestId("unit-more")).toBeVisible();
       const box = await page.getByTestId("unit-more").boundingBox();
       expect((box?.x ?? 0) + (box?.width ?? 0)).toBeLessThanOrEqual(width);
+      await chip(page, "m").tap(); // the chip is where it is drawn: a tap reaches it at every width
+      await expect(result(page)).toHaveAttribute("data-unit", "m");
       test.info().annotations.push({ type: "chips", description: `${width}: ${shown}` });
     });
   }

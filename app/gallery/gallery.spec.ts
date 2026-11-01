@@ -78,7 +78,7 @@ function unitResultShots(): Shot[] {
     }
   };
   const units = async (p: Page, line: string[], steps: string): Promise<void> => {
-    await tap(p, line);
+    await plan(p, line.join(" "));
     await flick(p, "tmpl", "up");
     await p.waitForFunction(() => window.pascaline.unitView !== undefined && document.querySelector('[data-pad="unit"]') !== null);
     await plan(p, steps);
@@ -92,8 +92,8 @@ function unitResultShots(): Shot[] {
   const cases: { id: string; title: string; setup: (p: Page) => Promise<void> }[] = [
     { id: "t02", title: "72 km/h with no end slot: the typed unit is kept, L·T⁻¹ on the right, the row m/s, knot … More…", setup: (p) => units(p, ["d7", "d2"], "d4 d9 div ↑d3 ↑enter") },
     { id: "t02-row", title: "The same, ▼ entered the row: the first chip is outlined, ◀ ▶ move, Enter picks", setup: async (p) => { await units(p, ["d7", "d2"], "d4 d9 div ↑d3 ↑enter"); await tap(p, ["down", "right"]); } },
-    { id: "t02-tap", title: "After a tap on m/s: = 20 m/s with the end slot filled", setup: async (p) => { await units(p, ["d7", "d2"], "d4 d9 div ↑d3 ↑enter"); await p.getByTestId("unit-alt").first().tap(); await p.waitForFunction(() => document.querySelector('[data-testid="unit-result"]')?.getAttribute("data-unit") === "m/s"); } },
-    { id: "t04", title: "t04: 2π·25 mm, mm kept (≈), the coherent m first in the row", setup: (p) => units(p, ["d2", "mul", "mul", "d2", "d5"], "enter d1 d9 ↑enter") },
+    { id: "t02-tap", title: "After a tap on m/s: = 20 m/s with the end slot filled", setup: async (p) => { await units(p, ["d7", "d2"], "d4 d9 div ↑d3 ↑enter"); await p.getByTestId("unit-alt").filter({ hasText: /^m\/s$/ }).tap(); await p.waitForFunction(() => document.querySelector('[data-testid="unit-result"]')?.getAttribute("data-unit") === "m/s"); } },
+    { id: "t04", title: "t04: 2π·25 mm, mm kept (≈), the coherent m first in the row", setup: (p) => units(p, ["d2", "mul", "↑d3", "mul", "d2", "d5"], "enter d1 d9 ↑enter") },
     { id: "t10", title: "t10: σ belongs to the value line, the value and σ muted under it", setup: (p) => units(p, ["d1", "d2", "dot", "d3", "d4", ...pm, "d0", "dot", "d0", "d5", "mul", "d3", "dot", "d2", ...pm, "d0", "dot", "d1"], "d9 enter d9 ↑enter") },
     { id: "warn", title: "σ with ⚠ (G41): the ⚠ sits before σ, the why-line under it in the warn colour", setup: (p) => units(p, ["cos", "d0", ...pm, "d0", "dot", "d1"], "↑enter") },
     { id: "note", title: "A note (G40): one line under the value, which stays", setup: (p) => units(p, ["d3", "d0", "d0", "d0", "mul", "d0", "dot", "d1"], "↑x enter d9 enter d9 div d3 ↑enter") },

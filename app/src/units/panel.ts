@@ -119,13 +119,14 @@ export function makePanel(view: () => UnitView | undefined): Panel {
     else if (s.kind === "result") out.push(...resultRows(s, v, fitRow));
     below.replaceChildren(...out);
   };
-  // a new width changes how many chips fit
-  let width = 0;
+  // a new width changes how many chips fit (the first callback is the size at the start: the draws measure it themselves,
+  // and a draw under a finger would drop its tap)
+  let width = -1;
   if (typeof ResizeObserver !== "undefined")
     new ResizeObserver(() => {
-      if (element.clientWidth === width) return;
+      const was = width;
       width = element.clientWidth;
-      draw();
+      if (was >= 0 && width !== was) draw();
     }).observe(element);
   return { element, formula, draw };
 }
