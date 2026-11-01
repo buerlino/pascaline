@@ -218,7 +218,7 @@ export class EngineHost implements FactsHost {
     for (const name of definitionsUsedBy(text)) {
       if (this.loaded.has(name)) continue;
       this.giac.eval(ENGINE_DEFINITIONS[name] ?? eseriesDefinition());
-      this.loaded.add(name);
+      for (const n of name in ENGINE_DEFINITIONS ? [name] : WORKER_DEFINITION_NAMES) this.loaded.add(n); // eseries + helper
     }
   }
 

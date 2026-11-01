@@ -16,22 +16,33 @@ export const ESERIES: Readonly<Record<number, readonly number[]>> = {
 /** The scale of each series' integers: 10 for E6–E24 (two digits), 100 for E48–E192 (three digits). */
 export const ESERIES_SCALE: Readonly<Record<number, number>> = { 6: 10, 12: 10, 24: 10, 48: 100, 96: 100, 192: 100 };
 
-/** The Giac definition of `eseries(n,x)`: the preferred value nearest to x (smaller ratio) in x's decade, exact for a
- *  rational x. The decade is found by exact comparisons (a float log10 can land on the wrong side). An exact ratio tie
- *  (x^2 = lo·hi; none exists in the tables) would go up. */
+/** The helper that holds eseries's one decision (G139), `pasesb(n,x)` = [lo, hi, d, p, v]: x's decade 10^p, its
+ *  neighbours lo ≤ s < hi in the table (scale d), s = x/10^p·d its mantissa, and v = normal(s^2 - lo·hi), whose sign
+ *  picks lo or hi. onCut (decisions.ts) reads v as eseries's cut. Its other decisions (the decade, the neighbours) give
+ *  the same value on both sides of their cut: at a table value or a power of ten both brackets pick it. */
+export const ESERIES_CUT = "pasesb";
+
+/** The Giac definition of `eseries(n,x)` (with its helper ESERIES_CUT): the preferred value nearest to x (smaller
+ *  ratio) in x's decade. x stays exact (G139): a float of x is only checked to be real and gives the decade's first
+ *  guess, which exact comparisons correct (a float log10 can land on the wrong side). The choice is the sign of v:
+ *  0 is an exact ratio tie (x^2 = lo·hi, the geometric mean of two neighbours, eseries(6,sqrt(10*15))) and goes up, as
+ *  does a sign Giac cannot find at Digits; a sign Giac finds by evaluation is decided again at P + 20, and its cut is
+ *  checked (eseries is a decision function, decisions.ts). */
 export function eseriesDefinition(): string {
   const pick = Object.keys(ESERIES)
     .map((n) => `if (n==${n}) { t:=[${ESERIES[Number(n)]!.join(",")}]; d:=${ESERIES_SCALE[Number(n)]}; } `)
     .join("");
   return (
-    "eseries(n,x):={ local t,d,p,s,k,lo,hi; t:=0; d:=0; " +
+    `${ESERIES_CUT}(n,x):={ local t,d,p,s,k,lo,hi; t:=0; d:=0; ` +
     pick +
-    'if (d==0) throw("eseries: n must be 6, 12, 24, 48, 96 or 192"); ' +
-    'if (type(x)!=integer and type(x)!=rational) { x:=evalf(x,30); if (type(x)!=real) throw("eseries: x must be a real number"); } ' +
-    'if (x<=0) throw("eseries: x must be positive"); ' +
     "p:=floor(evalf(log10(x),30)); while (10^p>x) p:=p-1; while (10^(p+1)<=x) p:=p+1; " +
     "s:=x/10^p*d; lo:=t[0]; hi:=10*d; " +
     "for (k:=0;k<size(t);k:=k+1) { if (t[k]<=s) { lo:=t[k]; if (k+1<size(t)) hi:=t[k+1]; else hi:=10*d; } } " +
-    "if (s^2<lo*hi) return lo/d*10^p; return hi/d*10^p; }"
+    "return [lo,hi,d,p,normal(s^2-lo*hi)]; }; " +
+    "eseries(n,x):={ local b; " +
+    `if (!member(n,[${Object.keys(ESERIES).join(",")}])) throw("eseries: n must be 6, 12, 24, 48, 96 or 192"); ` +
+    'if (type(x)!=integer and type(x)!=rational and type(evalf(x,30))!=real) throw("eseries: x must be a real number"); ' +
+    'if (x<=0) throw("eseries: x must be positive"); ' +
+    `b:=${ESERIES_CUT}(n,x); if (b[4]<0) return b[0]/b[2]*10^b[3]; return b[1]/b[2]*10^b[3]; }`
   );
 }

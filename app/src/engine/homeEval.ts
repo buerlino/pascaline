@@ -32,6 +32,7 @@ import { plainRows } from "./matrixType.ts";
 import { complexSafe, readsReplaced } from "./complex.ts";
 import { decidedAtDouble, decideTwice, decidingStored, restsOnDecision } from "./decisions.ts";
 import { PLAIN_FORM, type InputForm } from "./stores.ts";
+import { ESERIES_CUT } from "./eseries.ts";
 
 export type { Giac };
 
@@ -162,7 +163,7 @@ export function safePrecision(display: string): Pick<HomeResult, "facts" | "full
  * them costs ~10 ms on the desktop, which must not land on the engine-ready path.
  * `sigfig(x,n)` (docs/04 section 2.5): x rounded to n significant digits, half away from zero, as an exact rational,
  * so `sigfig(1/3,3)` is exactly 333/1000. The power of ten is found by exact comparisons (a float log10 can land on
- * the wrong side at 999.95); an irrational x is first evaluated with n+30 digits.
+ * the wrong side at 999.95); x stays exact, |x| = sign(x)·x, and sigfig is a decision function (G139, decisions.ts).
  */
 export const ENGINE_DEFINITIONS: Readonly<Record<string, string>> = {
   // Find's `mod` (input/emit.ts): Euclidean, never negative. Giac's irem is an error on a rational (irem(15/2,2)), and
@@ -171,12 +172,12 @@ export const ENGINE_DEFINITIONS: Readonly<Record<string, string>> = {
     "pasmod(a,b):={ if (type(a)==integer and type(b)==integer) return irem(a,b); " +
     "if (b==0) return a; return a-abs(b)*floor(a/abs(b)); }",
   sigfig:
-    "sigfig(x,n):={ local a,p,k,m; " +
+    "sigfig(x,n):={ local a,p,k,m,g; " +
     'if (type(n)!=integer or n<1) throw("sigfig: n must be a positive integer"); ' +
     "if (x==0) return 0; " +
-    'if (type(x)!=integer and type(x)!=rational) { x:=evalf(x,n+30); if (type(x)!=real) throw("sigfig: x must be a real number"); } ' +
-    "a:=abs(x); p:=floor(evalf(log10(a),30)); while (10^p>a) p:=p-1; while (10^(p+1)<=a) p:=p+1; " +
-    "k:=n-1-p; m:=floor(a*10^k+1/2); return sign(x)*m/10^k; }",
+    'if (type(x)!=integer and type(x)!=rational and type(evalf(x,n+30))!=real) throw("sigfig: x must be a real number"); ' +
+    "g:=sign(x); a:=g*x; p:=floor(evalf(log10(a),30)); while (10^p>a) p:=p-1; while (10^(p+1)<=a) p:=p+1; " +
+    "k:=n-1-p; m:=floor(a*10^k+1/2); return g*m/10^k; }",
   // G42: Giac's median of an even list is the lower middle, as a float; `median` is also a reserved word, so the
   // parser renames the written word (input/emit.ts CALL_NAME). Sorted, the middle value or the mean of the two middle ones.
   pasmedian:
@@ -203,9 +204,8 @@ export const ENGINE_DEFINITIONS: Readonly<Record<string, string>> = {
   [POLY_AT]: POLY_AT_ANY_DEPTH,
 };
 
-/** Definitions whose text is built engine-side (host.ts) so their tables stay out of the start chunk: G30 `eseries`
- *  (IEC 60063 preferred value nearest to x in x's decade, eseries.ts). Only the names are known here. */
-export const WORKER_DEFINITION_NAMES: readonly string[] = ["eseries"];
+/** Our names whose definition host.ts builds (tables out of the start chunk): G30 `eseries` and its helper (G139). */
+export const WORKER_DEFINITION_NAMES: readonly string[] = ["eseries", ESERIES_CUT];
 
 /** Set to 1 by an == or ≠ test that met a float (input/emit.ts equalityTest, which spells the same name). Purged, not
  *  set to 0, before an input runs: `sto` inside the test's function would read a value as the place to store to.
