@@ -60,6 +60,10 @@ describe.skipIf(!giacAvailable())("parseLibrary (Giac's tree, no evaluation)", (
     expect(() => parseLibrary("// pascaline library 1\n// d\npaspoly1(v):=5\n", parse)).toThrow(/paspoly1 is one of Pascaline's own names/);
     expect(() => parseLibrary("// pascaline library 1\n// d\npaspoly1:=5\n", parse)).toThrow(/paspoly1 is one of Pascaline's own names/);
   });
+  it("G139: refuses pasesb, eseries's helper, as Pascaline's own name (a library pasesb loaded over ours gave eseries(6,4.6) = 0)", () => {
+    expect(() => parseLibrary("// pascaline library 1\n// d\npasesb(n,x):=[0,0,1,0,-1]\n", parse)).toThrow(/pasesb is one of Pascaline's own names/);
+    expect(() => parseLibrary("// pascaline library 1\n// d\npasesb:=5\n", parse)).toThrow(/pasesb is one of Pascaline's own names/);
+  });
   it("refuses pasdeg, the degree factor (R64), as a name and in a body", () => {
     expect(() => parseLibrary("// pascaline library 1\n// d\npasdeg:=5\n", parse)).toThrow(/pasdeg is one of Pascaline's own names/);
     expect(() => parseLibrary("// pascaline library 1\n// d\nf(x):={local pasdeg; pasdeg:=2; return sin(x);}\n", parse)).toThrow(/pasdeg is one of Pascaline's own names/);
