@@ -107,8 +107,12 @@ const CANARIES: [string, string, RegExp, string][] = [
 
 const tar = tarball(SOURCES.giac);
 const failures: string[] = [];
+// G153: each file is unpacked once (tar -xzOf reads the whole tarball, about 2 s); one unpack per canary took 107 s for
+// 51 canaries, past the flags stage's 120 s under load.
+const files = new Map<string, string>();
+const read = (file: string): string => files.get(file) ?? files.set(file, member(tar, file)).get(file)!;
 for (const [patch, file, wrong, near] of CANARIES) {
-  const src = member(tar, file);
+  const src = read(file);
   const at = src.indexOf(near);
   const body = at < 0 ? "" : src.slice(at, at + 3000);
   if (at < 0) failures.push(`${patch}: "${near}" not found in ${file}`);
