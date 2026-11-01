@@ -183,8 +183,13 @@ export const LAZY_PARTS = ["src/views/sheetKeys.ts", "src/views/tmplSheet.ts", "
  *  60.00 → 60.25 kB (R97): phase-1 1deea7f measures 59.95 kB gzip (169.12 kB raw), the branch 60.20 kB (169.78 kB raw,
  *  +0.25 kB): App.svelte's status line is a component (views/StatusLine.svelte: the compiled component wrapper, its
  *  props read through $$props, the dynamic child) and the lazy loaders are a module (appLoaders.ts); the update note's
- *  button and style went out (views/UpdateNote.svelte, a lazy chunk) but do not pay for that. The pin is 60.20 + 0.05 kB. */
-export const START_PIN_GZIP = 60_250;
+ *  button and style went out (views/UpdateNote.svelte, a lazy chunk) but do not pay for that. The pin is 60.20 + 0.05 kB.
+ *  60.25 → 60.36 kB (R102): the branch measures 60.31 kB gzip (170.08 kB raw), +0.06 kB over the old pin: the busy
+ *  state's visually hidden `role="status"` line in StatusLine.svelte (markup and its few CSS rules; a screen reader
+ *  hears the job) and `error.ansTooLong`, the Ans error's text moved from session.svelte.ts into the table. Both are on
+ *  the start's own path (the status line is drawn at start; Session.submit runs before any lazy chunk), so neither can
+ *  load later. The pin is 60.31 + 0.05 kB. */
+export const START_PIN_GZIP = 60_360;
 
 /** Failures for the start chunk's row when it is over the pin. */
 export function checkStartPin(row: Row): string[] {
