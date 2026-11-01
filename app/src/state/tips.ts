@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// R15c4: the first-start tips are shown once. The flag is in the kv store; the overlay itself (views/Tips.svelte) is a
+// R15c4: the first-start tips are shown once. The flag is in the kv store; the overlay itself (views/tipsHost.ts) is a
 // lazy chunk that only this decision loads. A store that cannot be read shows nothing (it may hold the flag).
 import { kvGet, kvSet, type KvRead } from "./storage.ts";
 

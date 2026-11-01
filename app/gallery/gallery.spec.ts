@@ -19,10 +19,10 @@ function settingsShots(): Shot[] {
     { id: "-numbers", title: "Settings › Numbers: the Decimal mark (R57), the Fmt cycle (its hint under Standard) and Decimals in Fixed", keys: ["d2"] },
     { id: "-vibration", title: "Settings › Key vibration, switched on (strength disabled with its reason), Try it", keys: ["d3", "d1"] },
     { id: "-counters", title: "Settings › Counters: the Shift and Alpha counts, since when, Reset", keys: ["d4"] },
-    { id: "-help", title: "Settings › Help and about (R87): About Pascaline, Parts we use and their licences", keys: ["d5"] },
-    { id: "-about", title: "Help and about › About Pascaline: version, licence, source, credits", keys: ["d5", "d1"] },
-    { id: "-parts", title: "Help and about › Parts: a row per part of THIRD_PARTY.md with its licence, the copyright line under the list", keys: ["d5", "d2"] },
-    { id: "-licence", title: "Parts › a licence's full text, a level that scrolls", keys: ["d5", "d1", "d2"] },
+    { id: "-help", title: "Settings › Help and about (R87): the first-start tips row, About Pascaline, Parts we use and their licences", keys: ["d5"] },
+    { id: "-about", title: "Help and about › About Pascaline: version, licence, source, credits", keys: ["d5", "d2"] },
+    { id: "-parts", title: "Help and about › Parts: a row per part of THIRD_PARTY.md with its licence, the copyright line under the list", keys: ["d5", "d3"] },
+    { id: "-licence", title: "Parts › a licence's full text, a level that scrolls", keys: ["d5", "d2", "d2"] },
   ];
   const sizes = [
     { tag: "small", group: "Small phone (360 × 740)", viewport: { width: 360, height: 740 } },
