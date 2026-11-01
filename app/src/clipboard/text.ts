@@ -39,6 +39,9 @@ export interface CopySource {
   fmt?: FmtMode;
   form?: FormStep;
   chips?: ChipTable;
+  /** R63f2: a unit-view row (units/row.ts UnitRow, read back unchecked): `input` the request as drawn (unit after each
+   *  number, → the end unit), `text` the ` ± σ unit` after the value. Both strings, else the row is exported as Home's. */
+  units?: { input?: unknown; text?: unknown };
 }
 
 /** Text options: `decimalComma` writes `,` for the decimal point (the Settings option, docs/04 section 6.2). */
@@ -147,6 +150,8 @@ export function entryText(latex: string): string {
     .replace(/\\imaginaryI/g, "i")
     .replace(/\\exponentialE/g, "e")
     .replace(/\\blacktriangleright/g, "▶")
+    .replace(/\\to(?![A-Za-z])/g, " → ") // the unit view's request: `25 mm → m`
+    .replace(/\\pm(?![A-Za-z])/g, "±")
     .replace(/\\[,;:! ]/g, " ")
     .replace(/\^\{([^{}]*)\}/g, (_m, a: string) => `^${group(a)}`)
     .replace(/_\{([^{}]*)\}/g, "_$1")
@@ -163,8 +168,15 @@ export function sessionText(items: readonly CopySource[], o: TextOptions, ctx: D
   const lines: string[] = [];
   for (const i of items) {
     if (i.status === "done") {
-      const result = copyFull(i, o) ?? i.text;
-      lines.push(`${entryText(i.latex)} ${markText(copyMark(i, ctx))} ${result}`);
+      let result = copyFull(i, o) ?? i.text;
+      let input = i.latex;
+      // R63f2: a unit row's latex is the plain line and its value is in the result's unit: the request as drawn, the unit after the value
+      const u = i.units;
+      if (u && typeof u.input === "string" && typeof u.text === "string") {
+        input = u.input;
+        result += o.decimalComma ? commaResult(u.text, false) : u.text;
+      }
+      lines.push(`${entryText(input)} ${markText(copyMark(i, ctx))} ${result}`);
     } else if (i.status === "error") lines.push(`${entryText(i.latex)} → ${i.text}`);
   }
   return lines.join("\n");
