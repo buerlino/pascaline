@@ -52,37 +52,36 @@ Tonight's queue (one lane, to 07:00) comes first, then each lane's table; With t
 12. **No lanes in the morning** (A47c not merged, or a selftest failed): the owner starts `scripts/night.sh` without `--lane`, and henri runs lane B's rows 401–405, then lane A's from 301, as one queue.
 
 ### Day shift 2026-11-01, 12:00 to 19:00, both lanes on the Tab One (owner, 2026-11-01)
-`ANDROID_SERIAL=HA24BZ2Y` for both lanes, `--until 19:00`; CORE DEVICE after each pass. Not the weekly extreme night: row 408 waits. A step whose "After" is not merged is skipped. The owner is away until 19:00: follow each Opus pass as written (rule 3).
+`ANDROID_SERIAL=HA24BZ2Y` for both lanes, `--until 19:00`; CORE DEVICE after each pass. Not the weekly extreme night: row 408 waits. A step whose "After" is not merged is skipped; "–" was checked against the merges on 2026-11-01. The owner is away until 19:00: follow each Opus pass as written (rule 3).
 
 ### Lane A queue (ron's UI)
 Milestone reviews (section 0): after R50e; after R24d (with R108's gallery group "Decimal comma in apps").
 
 | Step | What | Agent, model | Branch | After |
 |---|---|---|---|---|
-| 330 | [R102](packages/R102.md) spoken names and strings | ron, Sonnet | `p1/ron-strings` | R97 |
-| 331 | [R62](packages/R62.md) the unit result view drawn | ron, Sonnet | `p1/ron-m5-unitresult` | R60 |
-| 332 | [R63](packages/R63.md) the way back from the unit view | ron, Opus | `p1/ron-m5-unitback` | R61, R62, R71 |
-| 333 | [R15c4](packages/R15c4.md) first-start tips | ron, Sonnet | `p1/ron-m4a-tips` | R15c2, R49 |
+| 330 | [R102](packages/R102.md) spoken names and strings | ron, Sonnet | `p1/ron-strings` | – |
+| 331 | [R62](packages/R62.md) the unit result view drawn | ron, Sonnet | `p1/ron-m5-unitresult` | – |
+| 332 | [R63](packages/R63.md) the way back from the unit view | ron, Opus | `p1/ron-m5-unitback` | R62 |
+| 333 | [R15c4](packages/R15c4.md) first-start tips | ron, Sonnet | `p1/ron-m4a-tips` | – |
 | 334 | [R55](packages/R55.md) digit groups in drawn results | ron, Sonnet | `p1/ron-m4a-digitgroups` | R15c4 |
-| 335 | [R89](packages/R89.md) presets in Mode | ron, Opus | `p1/ron-presets` | R88, R86 |
-| 336 | [R33](packages/R33.md) names with a value, marked on the line | ron, Sonnet | `p1/ron-m4a-namemarks` | R4b |
-| 337 | [R36](packages/R36.md) a picked row says why it has its mark | ron, Sonnet | `p1/ron-m4a-why` | G76 |
-| 338 | [R103](packages/R103.md) room in the start chunk | ron, Opus | `p1/ron-startroom` | R93 |
+| 335 | [R89](packages/R89.md) presets in Mode | ron, Opus | `p1/ron-presets` | – |
+| 336 | [R33](packages/R33.md) names with a value, marked on the line | ron, Sonnet | `p1/ron-m4a-namemarks` | – |
+| 337 | [R36](packages/R36.md) a picked row says why it has its mark | ron, Sonnet | `p1/ron-m4a-why` | – |
+| 338 | [R103](packages/R103.md) room in the start chunk | ron, Opus | `p1/ron-startroom` | – |
 
 ### Lane B queue (the release, then the engine)
-A7, A8, A9 and [A57](packages/A57.md) (after A58) run by day (section 0); A43 is merged. Step 408 runs only on the weekly extreme night the owner names (not today). A54f1 (pass 39's FIX of [A54](packages/A54.md)) runs by day, run 452; lane B's first Opus pass covers it too.
+A7, A8, A9 and [A57](packages/A57.md) (after A58) run by day (section 0); A43 is merged. Step 408 runs only on the weekly extreme night the owner names (not today). By day: pass 39's FIX lines, A54f1 (merged 260b3ce) and [G149f1](packages/G149f1.md) (run 453); lane B's first Opus pass covers both too.
 
 | Step | What | Agent, model | Branch | After |
 |---|---|---|---|---|
 | 408 | [G138](packages/G138.md) the weekly fuzz and its triage | gorge, Opus | `p1/gorge-nightfuzz-1106` | the weekly night |
-| 429 | [G149f1](packages/G149f1.md) s = 1 keeps the root rule (pass 39) | gorge, Opus | `p1/gorge-powimag` | – |
-| 430 | [A55](packages/A55.md) guards that never fire | annabell, Sonnet | `p1/annabell-idleguards` | A54f1 |
+| 430 | [A55](packages/A55.md) guards that never fire | annabell, Sonnet | `p1/annabell-idleguards` | – |
 | 431 | [A58](packages/A58.md) a long measurement lets the checks in between | annabell, Sonnet | `p1/annabell-cpuslices` | A55 |
 | 432 | [G150](packages/G150.md) a negative base to a complex power (F141) | gorge, Opus | `p1/gorge-negpowcomplex` | G149f1 |
 | 433 | [G151](packages/G151.md) the cube root of a tiny asinh (F142) | gorge, Opus | `p1/gorge-cbrttiny` | – |
 | 434 | [G154](packages/G154.md) an unproved exact 0 is not an underflow (F139) | gorge, Opus | `p1/gorge-zeronotunderflow` | – |
 | 435 | [G155](packages/G155.md) the standard error of the mean in Find | gorge, Sonnet | `p1/gorge-sem` | – |
-| 436 | [G153](packages/G153.md) three 30-digit rows of G137 (F155) | gorge, Opus | `p1/gorge-g137rest` | G140, G141 |
+| 436 | [G153](packages/G153.md) three 30-digit rows of G137 (F155) | gorge, Opus | `p1/gorge-g137rest` | G141 |
 | 437 | [G152](packages/G152.md) acosh's sign and tiny imaginary part (F143, F144) | gorge, Opus | `p1/gorge-acoshsign` | G142 |
 
 ### The commands henri replies with (one per decision; `scripts/night.sh` runs it)
