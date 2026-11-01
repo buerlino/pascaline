@@ -246,4 +246,17 @@ test.describe("Copy as shown on a unit row (R63f1)", () => {
     await page.getByRole("menuitem", { name: /^\d As shown$/ }).click();
     await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toBe("39.488 ± 1.2 m²");
   });
+
+  // R63f2: Share session writes the request with its units and the value with σ and unit, never the plain line with
+  // the number in the result's unit (2×π×25 ≈ 0.157…, a silent wrong statement)
+  test("Menu → Share session on t10's row: the request with its units, the value ending ± 1.2 m²", async ({ page }) => {
+    await t10(page);
+    await leaveView(page);
+    await tap(page, ["@menu"]);
+    await expect(page.getByTestId("menu")).toBeVisible();
+    await page.getByRole("menuitem", { name: /^\d Share session$/ }).click();
+    await expect(page.getByTestId("notice")).toHaveText("This device cannot share: copied instead");
+    const text = await page.evaluate(() => navigator.clipboard.readText());
+    expect(text).toBe("12.34±0.05 m×3.2±0.1 m ≈ 39.488 ± 1.2 m²");
+  });
 });
