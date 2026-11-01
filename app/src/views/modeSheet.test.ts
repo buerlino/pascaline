@@ -217,7 +217,7 @@ describe("Settings, a level of the sheet (R49)", () => {
     expect(s.activate(at(s, "mark"))).toEqual({ kind: "stay" }); // a tap steps it on
     expect(session.settings.decimalMark).toBe("comma");
   });
-  it("a digit key on the Decimal mark row steps it and stays (Shift Fmt 5 2 1 reaches it by keys)", () => {
+  it("a digit key on the Decimal mark row steps it and stays (Shift Fmt 6 2 1 reaches it by keys)", () => {
     const s = settings(2);
     expect(s.pickNumber(1)).toEqual({ kind: "stay" });
     expect(session.settings.decimalMark).toBe("comma");

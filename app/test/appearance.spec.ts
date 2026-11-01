@@ -42,7 +42,7 @@ test.beforeEach(async ({ page }, info) => {
 });
 
 test.describe("the level", () => {
-  test("Mode, 5, 1: Theme with its dots and name, Brightness, and two switches with a line each", async ({ page }) => {
+  test("Mode, 6, 1: Theme with its dots and name, Brightness, and two switches with a line each", async ({ page }) => {
     await tap(page, ["@mode", "d6", "d1"]);
     await expect(title(page)).toHaveText("Mode › Settings › Appearance");
     await expect(sheet(page).getByRole("menuitem")).toHaveCount(4);
