@@ -480,10 +480,14 @@ export function build(cases) {
   // complex mode off a negative real base with s = 1 lies on the side where patch 0025's rule holds (im(s*ln(b)) = pi), so Giac's forms
   // stay (round 1 kept the powers as typed); Digits 40, the CAS view's precision, where the double of (-pi)^3 has a rounding imaginary
   // part. Raw Giac prints acosh(-2) as ln(-2+sqrt(-2+1)*sqrt(-2-1)), which the CAS view's regroup shows as ln(-sqrt(3)-2) (round 1:
-  // ln(-2+(-2+1)^(1/2)*(-2-1)^(1/2))). They hold on stock Giac too: a check line.
+  // ln(-2+(-2+1)^(1/2)*(-2-1)^(1/2))). A check line, though stock Giac prints sqrt((-pi)^3) and sqrt(acosh(-1/2)^2) by patch 0018's
+  // cause and asinh(-10^300) by 0015's (-sqrt(-pi)*pi, abs(…), ln(-x+…)), so the line fails there.
+  // G149f1: s = 1 keeps the rule for any base (arg b lies in (-pi,pi]), so sqrt(acosh(-1/2)^2), (-1-i/10^20)^(1/2) and the root in
+  // asinh(-10^300) stay sqrt (G149's fix round 2 printed them as ^(1/2)); Giac prints 10^300 in full.
+  const E300 = `1${"0".repeat(300)}`;
   check.push(
-    "// g149-cas-keep-forms (precision.yaml g149-cas-keep-acosh-neg2, g149-cas-keep-ln-neg-pi-pow-3/2, g149-cas-keep-sqrt-neg-pi-cubed, derived)",
-    `Digits:=40:; pc("g149-cas-keep-forms",'when(string(acosh(-2))=="ln(-2+sqrt(-2+1)*sqrt(-2-1))" and string(ln((-pi)^(3/2)))=="ln(-sqrt(-pi)*pi)" and string(sqrt((-pi)^3))=="sqrt((-pi)^3)",1,0)',1,1/10^30);`,
+    "// g149-cas-keep-forms (precision.yaml g149-cas-keep-acosh-neg2, g149-cas-keep-ln-neg-pi-pow-3/2, g149-cas-keep-sqrt-neg-pi-cubed, g149f1-cas-keep-*, derived)",
+    `Digits:=40:; pc("g149-cas-keep-forms",'when(string(acosh(-2))=="ln(-2+sqrt(-2+1)*sqrt(-2-1))" and string(ln((-pi)^(3/2)))=="ln(-sqrt(-pi)*pi)" and string(sqrt((-pi)^3))=="sqrt((-pi)^3)" and string(sqrt(acosh(-1/2)^2))=="sqrt(ln(-1/2+sqrt(-1/2+1)*sqrt(-1/2-1))^2)" and string((-1-i/10^20)^(1/2))=="sqrt((-100000000000000000000-i)/100000000000000000000)" and string(asinh(-10^300))=="-ln(${E300}+sqrt((-${E300})^2+1))",1,0)',1,1/10^30);`,
   );
   nCheck++;
   // Patch 0006 (G96), tests/golden/bench.yaml g96-cas-im-2sqrt: im(2*sqrt(x)) with x free is 2*im(sqrt(x)); at x=-1 it is 2 (stock Giac: 0).
