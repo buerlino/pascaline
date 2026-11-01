@@ -43,9 +43,8 @@
   });
   const { loadModeSheet, loadFind, loadClip } = loaders;
 
-  // R15c4: the first-start tips, a lazy chunk shown once on a fresh profile and again from Settings › Help and about.
-  let Tips = $state.raw<(typeof import("./views/Tips.svelte"))["default"] | undefined>();
-  const showTips = (): void => void import("./views/Tips.svelte").then((m) => (Tips = m.default), () => {});
+  // R15c4: the first-start tips, a lazy chunk (views/tipsHost.ts) shown once on a fresh profile and again from Settings › Help and about.
+  const showTips = (): void => void import("./views/tipsHost.ts").then((m) => m.showTips(), () => {});
 
   const sheetOpen = $derived(shell.sheet !== null);
   $effect(() => void (userKeys.decimalComma = entry.decimalComma = session.decimalComma)); // R57: the `.` and `,` keys' faces (keypad, tap, hardware key)
@@ -78,12 +77,8 @@
     entry.onSymbol = counted(count, (ch) => entry.run({ kind: "insert", latex: ch }));
     entry.onDead = counted(count, dead);
     entry.onPress = counted(count, () => {}); // R107f1: a leaving ) or | is a press that needs nothing more
-    // the first start: once the keypad is drawn and the browser is idle, so the tips never compete with the start
-    void tipsDue(location.search).then((due) => {
-      if (!due) return;
-      if ("requestIdleCallback" in window) requestIdleCallback(showTips, { timeout: 2000 });
-      else setTimeout(showTips, 500);
-    });
+    // the first start (R15c4): once the keypad is drawn and the browser is idle, so the tips never compete with the start
+    void tipsDue(location.search).then((due) => due && ("requestIdleCallback" in window ? requestIdleCallback(showTips, { timeout: 2000 }) : setTimeout(showTips, 500)));
     return countScreenTaps(count);
   });
   let host: HTMLElement | undefined = $state();
@@ -391,8 +386,6 @@
     {/if}
   </div>
 </main>
-
-{#if Tips}<Tips onclose={() => (Tips = undefined)} />{/if}
 
 
 {#snippet sheetView(sheet: NonNullable<typeof shell.sheet>, over: "keypad" | "view")}

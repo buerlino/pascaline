@@ -5,15 +5,9 @@ import { kvGet, kvSet, type KvRead } from "./storage.ts";
 
 export const TIPS_SEEN = "tipsSeen";
 
-/** `?tips=off` (the e2e tests, a deep link) keeps the tips away. */
-export function tipsOff(search: string): boolean {
-  return new URLSearchParams(search).get("tips") === "off";
-}
-
-/** True on a profile that has never shown the tips and was not asked to hide them. */
+/** True on a profile that has never shown the tips and was not asked to hide them (`?tips=off`: the e2e tests, a deep link). */
 export async function tipsDue(search: string, read: (key: string) => Promise<KvRead<unknown>> = kvGet): Promise<boolean> {
-  if (tipsOff(search)) return false;
-  return (await read(TIPS_SEEN)).kind === "none";
+  return !/[?&]tips=off(&|$)/.test(search) && (await read(TIPS_SEEN)).kind === "none";
 }
 
 /** Remember that the tips were shown. */

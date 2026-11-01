@@ -8,7 +8,7 @@ import { entryValue, open, tap } from "./helpers.ts";
 
 const tips = (page: Page) => page.getByTestId("tips");
 const ON = "engine=fake&tips=on";
-const TIPS_CHUNK = /Tips\.svelte|tips-[\w-]+\.js/;
+const TIPS_CHUNK = /tipsHost/;
 
 /** The stored flag, read from IndexedDB as the app wrote it. */
 const stored = (page: Page) =>
@@ -61,9 +61,10 @@ test("the rings sit on the place name and ☰, measured from their boxes", async
   for (const [ring, target] of [["tips-ring-place", "place"], ["tips-ring-menu", "menu-button"]] as const) {
     const r = (await page.getByTestId(ring).boundingBox())!;
     const b = (await page.getByTestId(target).boundingBox())!;
-    expect(r.x, ring).toBeLessThanOrEqual(b.x);
-    expect(r.y, ring).toBeLessThanOrEqual(b.y);
-    expect(r.x + r.width, ring).toBeGreaterThanOrEqual(b.x + b.width);
+    // (a ring is kept 2 px inside the screen, so it may start up to 2 px inside the control's box)
+    expect(r.x, ring).toBeLessThanOrEqual(b.x + 2);
+    expect(r.y, ring).toBeLessThanOrEqual(b.y + 2);
+    expect(r.x + r.width, ring).toBeGreaterThanOrEqual(b.x + b.width - 2);
     expect(r.y + r.height, ring).toBeGreaterThanOrEqual(b.y + b.height);
     expect(r.width, ring).toBeLessThanOrEqual(b.width + 16);
     expect(r.height, ring).toBeLessThanOrEqual(b.height + 16);
