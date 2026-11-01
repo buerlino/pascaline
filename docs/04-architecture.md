@@ -128,14 +128,14 @@ Cost: one more `evalf` per irrational result (about 1 ms, desktop) and one per f
 |---|---|---|---|---|
 | Home or CAS number | full value: every confirmed digit up to P (40), trailing zeros dropped, `.` (`,` with the decimal-comma setting), plain for 1E-4 ≤ \|x\| < 1E21, else `d.ddd…E±k` | display text, without the mark | Giac's exact text when it exists (`1/3`, `sqrt(2)`) | the result LaTeX |
 | Complex | `a+b*i`, each part as above | yes | yes | yes |
-| List, matrix | `[a,b]`, `[[a,b],[c,d]]`, elements as above | yes | yes | yes |
+| List, matrix | `{a,b}`, `[[a,b],[c,d]]`, elements as above; with decimal comma `{1,5;2}`, `[[a;b];[c;d]]` | yes | yes | yes |
 | Solve root, analysis value | full value | yes | — | — |
 | Num table | CSV (Menu, Export): header row with the function names, full values, `.` and `,` as separator (`;` with decimal comma) | — | — | — |
 | Units result (m5) | `20 m/s`, `39.5±1.2 m^2` (value full, uncertainty 2 significant digits) | yes | `(1397/3125) m/s` | yes |
 | Session (Menu, Share) | text: one line per entry, `input = result` with the mark, full values | — | — | — |
 
-**Paste** (Shift + Copy, or ☰ → Paste): the clipboard is read as one number (`-1.5`, `1,5` with decimal comma, `1.5e-3`, `1.5E-3`, `i` parts); it enters as the keyboard's own LaTeX (`1.5\emark-3`, drawn `1.5ᴇ-3`), so the parser sees only what our keys produce. Anything else gives the message "Paste: not a number". Pasting a result copied from Pascaline gives the same value back (P5).
-**Mechanics:** `navigator.clipboard` in a secure context (Capacitor serves `https://localhost`): the Tab One's WebView 131 denies `readText` and has no `navigator.share` (A4a), so the APK gets `@capacitor/clipboard` and `@capacitor/share` (A11); the PWA keeps `navigator.clipboard` and `navigator.share` where it exists, else copy. Files go out through the native `save` (`ACTION_CREATE_DOCUMENT`) in the APK and `<a download>` in the PWA, and come in through `<input type="file">` (R11).
+**Paste** (Shift + Copy, or ☰ → Paste): the clipboard is read as one number (`-1.5`, `1,5` with decimal comma, `1.5e-3`, `1.5E-3`, `i` parts) or a list as Copy writes it (`{1,16}`, `{1,5;2,25}`; with decimal comma `{1,5}`, 1,5 or 1 and 5, is refused); it enters as the keyboard's own LaTeX (`1.5\emark-3`, drawn `1.5ᴇ-3`), so the parser sees only what our keys produce. Anything else gives the message "Paste: not a number". Pasting a result copied from Pascaline gives the same value back (P5; with decimal comma not a list of one decimal).
+**Mechanics:** the APK uses `@capacitor/clipboard` and `@capacitor/share` (A11; the Tab One's WebView 131 denies `readText` and has no `navigator.share`, A4a); the PWA `navigator.clipboard`, and `navigator.share` where it exists, else copy. Files go out through the native `save` (`ACTION_CREATE_DOCUMENT`) in the APK and `<a download>` in the PWA, and come in through `<input type="file">` (R11).
 
 **Alternatives:** copy the displayed text by default (hides digits, against principle 3); copy the exact form by default (`1/3` pastes badly into spreadsheets and code).
 
@@ -435,23 +435,23 @@ The types live in the code; this is the map. Views see `Calc` (`app/src/calc/por
 
 | Item | Budget | State | Enforced by |
 |---|---|---|---|
-| Start chunk | ≤ 175 kB raw, ≤ 61 kB gzip; pin 59.87 kB gzip | 59.82 kB gzip (deltas: decisions.md). The pin `START_PIN_GZIP` holds: a package growing the chunk past it raises it in its diff to its size after merging phase-1 plus 0.05 kB (decisions.md), with the reason, and reports both sizes, never past 61 kB; `LAZY_PARTS` must stay dynamic chunks (R91). `tools/probes/start-chunk.mjs` lists bytes per source | size test (`npm run size`) |
+| Start chunk | ≤ 175 kB raw, ≤ 61 kB gzip; pin 60.25 kB gzip | 60.20 kB gzip (deltas: size-check.ts). The pin `START_PIN_GZIP` holds: a package growing the chunk past it raises it in its diff to its size after merging phase-1 plus 0.05 kB, with the reason, and reports both sizes, never past 61 kB; `LAZY_PARTS` must stay dynamic chunks (R91). `tools/probes/start-chunk.mjs` lists bytes per source | size test (`npm run size`) |
 | MathLive chunk (after the keypad) | ≤ 830 kB raw | 807.74 kB (2026-10-18) | size test |
 | Find UI chunk | ≤ 30 kB raw | 8.04 kB raw (R24df2): the chunk that holds `src/find/finder.ts` (dynamic entry or shared chunk); a build without it fails | size test |
 | Find index asset | ≤ 400 kB raw, ≤ 100 kB gzip | 325.7 / 67.1 kB (2026-10-15) | size test (once Find loads it) |
 | Unit view chunks (UI, builder) | ≤ 38 kB raw | 34.04 kB (G81) | size test (rule on `src/units/`) |
 | Precache total | ≤ 18 MB | 12.4 MB (2026-10-18) | size test |
 | Keyboard usable / engine ready (Tab One) | < 1 s / < 1.5 s, with the `defs` replay | 722 / 1103 ms cold (2026-10-19, `874ab01`, 1 GB engine); 1489 ms engine ready with 200 definitions (A4a, 2026-10-16) | device runs |
-| Enter → result p95 (Tab One) | < 150 ms at 12 digits; at 30 digits ≤ 1.3 × the 12-digit p95 | RAD 147.9 ms at 12, 152.6 at 30; DEG 149.1 and 141.4 (A16 after G53, 2026-10-20; the third row, after G65, is A16) | device runs |
+| Enter → result p95 (Tab One) | < 150 ms at 12 digits; at 30 digits ≤ 1.3 × the 12-digit p95 | RAD 147.9 ms at 12, 152.6 at 30; DEG 149.1 and 141.4 (A16 after G53, 2026-10-20) | device runs |
 | Find key → list (Tab One) | p95 ≤ 16 ms | desktop prototype p95 1.04–1.23 ms | `?bench=find` (A4b) |
 | Find open | ≤ 100 ms warm, ≤ 300 ms cold | — | device runs |
 | Units first result (Tab One) | < 1 s | — | device runs |
 | Unit evaluation (desktop) | p95 ≤ 5 ms | median 0.91 ms, p95 ≈ 2 ms (G16) | the golden units section |
 | `defs` replay | ≤ 50 ms at 200 definitions | 158 ms (A12, Tab One); a 200-program library 403 ms; G83: functions on first use | device runs |
 | Key presses | each task within its budget; a unit ≤ 4 at the median | — | task benchmark |
-| Find quality | 100 % top 3, ≥ 90 % first | 100/100 first at G4 (100 phrases then; 108 now) | query test |
+| Find quality | 100 % top 3, ≥ 90 % first | 100/100 first at G4 | query test |
 
-"Start chunk" is the entry's JavaScript plus every chunk it imports statically (Vite manifest `imports`, transitively), as `app/scripts/size-check.ts` measures it. The entry's CSS is not counted (25.8 kB raw, 9.0 kB gzip on 2026-10-12); it gets its own line if it passes 40 kB raw.
+"Start chunk" is the entry's JavaScript plus every chunk it imports statically (Vite manifest `imports`, transitively), as `app/scripts/size-check.ts` measures it. The entry's CSS is not counted; it gets its own line if it passes 40 kB raw.
 
 
 ---

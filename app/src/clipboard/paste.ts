@@ -62,20 +62,24 @@ function splitAt(s: string): number {
 
 /**
  * G109: a list of numbers as Copy writes one (`{1,16}`, `{}`), braces with commas between the elements and no brackets
- * inside, onto the entry line as the list key types it. Refused with the decimal comma, where `{1,5}` could be 1.5.
+ * inside, onto the entry line as the list key types it. With the decimal comma (R100) the elements are separated by `;`
+ * as Copy writes them (`{1,5;2,25}`), and a list with a comma but no `;` is refused: `{1,5}` could be 1.5 or 1 and 5.
  */
 function pastedList(s: string, o: TextOptions): PastedNumber | null {
-  if (o.decimalComma === true || !s.startsWith("{") || !s.endsWith("}")) return null;
+  if (!s.startsWith("{") || !s.endsWith("}")) return null;
   const inner = s.slice(1, -1).trim();
   if (/[{}[\]()]/.test(inner)) return null;
-  const parts = inner === "" ? [] : inner.split(",").map((e) => parsePastedNumber(e, o));
-  return parts.every((e) => e !== null) ? { latex: `\\left\\{${parts.map((e) => e!.latex).join(",")}\\right\\}` } : null;
+  const comma = o.decimalComma === true;
+  if (comma && inner.includes(",") && !inner.includes(";")) return null;
+  const sep = comma ? ";" : ",";
+  const parts = inner === "" ? [] : inner.split(sep).map((e) => parsePastedNumber(e, o));
+  return parts.every((e) => e !== null) ? { latex: `\\left\\{${parts.map((e) => e!.latex).join(sep)}\\right\\}` } : null;
 }
 
 /**
  * The clipboard text as one number, or null when it is something else. Accepts `-1.5`, `1.5e-3`, `1.5E-3`,
  * `1.5×10^-3`, `1,5` with the decimal comma (and then no `.`), and complex `a+b*i`, `a-bi`, `2i`, `-i`; a list of them
- * in braces (pastedList).
+ * in braces (pastedList, `;` between them with the decimal comma).
  */
 export function parsePastedNumber(clip: string, o: TextOptions = {}): PastedNumber | null {
   const comma = o.decimalComma === true;

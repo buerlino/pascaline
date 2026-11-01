@@ -116,8 +116,9 @@ export const LAZY_VIEWS = ["src/views/Sheet.svelte"];
 
 /** R91: code that only runs after a key press or once a result is in stays out of the start chunk too: the sheet's keys
  *  and the palette cells (loaded with the sheet's view), the result tidy-up, the palettes with their names. R70f1: how a
- *  key acts on the entry line's field, and the field's set-up (entry/field.ts, loaded with MathLive). */
-export const LAZY_PARTS = ["src/views/sheetKeys.ts", "src/views/tmplSheet.ts", "src/render/tidy.ts", "src/keyboard/shiftPalettes.ts", "src/units/open.ts", "src/entry/field.ts", "src/state/handOver.ts"];
+ *  key acts on the entry line's field, and the field's set-up (entry/field.ts, loaded with MathLive). R97: the update
+ *  note's button and style (views/UpdateNote.svelte), which show only when an update waits. */
+export const LAZY_PARTS = ["src/views/sheetKeys.ts", "src/views/tmplSheet.ts", "src/render/tidy.ts", "src/keyboard/shiftPalettes.ts", "src/units/open.ts", "src/entry/field.ts", "src/state/handOver.ts", "src/views/UpdateNote.svelte"];
 
 /** R91's pin: the start chunk is at most this many bytes gzip, 1 kB under the budget of 61 kB, so the Settings base
  *  (R49, R86, R57) has room. A package that needs more raises the pin with a reason, here and in docs/04 8.3.
@@ -174,8 +175,16 @@ export const LAZY_PARTS = ["src/views/sheetKeys.ts", "src/views/tmplSheet.ts", "
  *  59.81 → 59.87 kB (R99): phase-1 d578f5b measures 59.80 kB gzip (168.85 kB raw), the branch merged with it 59.82 kB
  *  (168.87 kB raw, +0.02 kB): `{,}` before a digit starts a number in the tokenizer (Home's parser) and the apps' host
  *  gets `notice` (AppHost, shell.svelte.ts); the words of the refusal are a lazy table (i18n/enNum.ts, loaded with
- *  Solve and Function; in en.ts they measured 59.84 kB). The pin is 59.82 + 0.05 kB. */
-export const START_PIN_GZIP = 59_870;
+ *  Solve and Function; in en.ts they measured 59.84 kB). The pin is 59.82 + 0.05 kB.
+ *  59.87 → 60.00 kB (R100): phase-1 8f294fc measures 59.81 kB gzip (168.87 kB raw), the branch 59.95 kB (169.12 kB raw,
+ *  +0.14 kB): in comma mode a history row's input is drawn, and recalled, with `;` for its argument commas (owner,
+ *  2026-10-31): the rewrite (entry/commaInput.ts), Session.input and History's input prop are on the start's own drawing
+ *  of the stored history, so they cannot load later. The pin is 59.95 + 0.05 kB.
+ *  60.00 → 60.25 kB (R97): phase-1 1deea7f measures 59.95 kB gzip (169.12 kB raw), the branch 60.20 kB (169.78 kB raw,
+ *  +0.25 kB): App.svelte's status line is a component (views/StatusLine.svelte: the compiled component wrapper, its
+ *  props read through $$props, the dynamic child) and the lazy loaders are a module (appLoaders.ts); the update note's
+ *  button and style went out (views/UpdateNote.svelte, a lazy chunk) but do not pay for that. The pin is 60.20 + 0.05 kB. */
+export const START_PIN_GZIP = 60_250;
 
 /** Failures for the start chunk's row when it is over the pin. */
 export function checkStartPin(row: Row): string[] {
