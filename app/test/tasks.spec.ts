@@ -20,6 +20,16 @@ async function replay(page: Page, steps: readonly Step[], want?: string): Promis
       await ("up" in s ? flick(page, s.up, "up") : flick(page, s.down, "down"));
     } else if ("tap" in s && s.tap === "result:last") {
       await page.locator('[data-testid="result"]').last().locator(".result").tap();
+    } else if ("tap" in s && s.tap.startsWith("alt:")) {
+      // R63: a chip of the unit view's alternatives row (R62): `alt:si` is the first (the coherent SI unit, r17 0.2),
+      // `alt:<unit>` the chip with that text; it is one touch press
+      const want = s.tap.slice(4);
+      const chips = page.getByTestId("unit-alt");
+      await expect(chips.first()).toBeVisible();
+      const chip = want === "si" ? chips.first() : chips.filter({ hasText: new RegExp(`^${want.replace(/[.*+?^${}()|[\]\\/]/g, "\\$&")}$`) });
+      const text = (await chip.textContent()) ?? "";
+      await chip.tap();
+      await expect(page.getByTestId("unit-result")).toHaveAttribute("data-unit", text); // the evaluation of the tap is in
     } else {
       throw new Error(`cannot replay ${JSON.stringify(s)} yet: the feature it taps does not exist`);
     }
@@ -135,6 +145,8 @@ test.describe("replay", () => {
         const steps = t.keys ?? [];
         const unit = typeof t.expect.unit === "string" ? t.expect.unit : undefined;
         expect(await replay(page, steps, unit)).toBe(unit === undefined ? t.expect.text : `${t.expect.text} ${unit}`);
+        // R63: a task with σ shows it as the value line does (t10: 39.5 ± 1.2)
+        if (typeof t.expect.shown === "string") await expect(page.getByTestId("unit-result").locator(".value")).toHaveText(t.expect.shown);
         const n = countPresses(steps);
         expect(await pressed(page), `${t.id}: the app counted ${n} presses by docs/04 5.2`).toBe(n); // R70
         rows.push(`${t.id} | active  | ${t.baseline ? countPresses(t.baseline.keys) : "-"} | ${n} | ${t.budget}`);

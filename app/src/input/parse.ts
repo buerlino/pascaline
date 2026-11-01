@@ -528,14 +528,26 @@ class Parser implements CalcParser {
       if (pct) this.pos++;
       v = ["Call", "pasupm", n, pct ? percentSigma(n, sigma) : sigma];
     }
+    return this.slotAfter(v);
+  }
+
+  /** Units mode: a prompt right after a number (or a result chip, R63) is its unit slot, `pasu<i>` multiplying it. */
+  private slotAfter(v: Json): Json {
     const id = promptId(this.peek());
-    if (id !== undefined) {
-      this.pos++;
-      if (this.units.slots.includes(id)) throw parseError("parse.slotTwice", { id });
-      this.units.slots.push(id);
-      v = ["Multiply", v, `pasu${this.units.slots.length}`];
-    }
-    return v;
+    if (!this.units || id === undefined) return v;
+    this.pos++;
+    if (this.units.slots.includes(id)) throw parseError("parse.slotTwice", { id });
+    this.units.slots.push(id);
+    return ["Multiply", v, `pasu${this.units.slots.length}`];
+  }
+
+  /** R63, units mode: a result chip is a number. Its σ (R61: in the unit shown) makes it an uncertain value, G18's
+   *  `pasupm(value,σ)`, so the unit view keeps it; a prompt after it is its unit slot. Elsewhere the chip as it is. */
+  private resultChip(key: string): Json {
+    const v = this.chip(key, "result chip");
+    if (!this.units) return v;
+    const unc = this.chips[key]?.unc;
+    return this.slotAfter(unc ? ["Call", "pasupm", v, ["Chip", { str: chipToGiac(unc) }]] : v);
   }
 
   /**
@@ -624,7 +636,7 @@ class Parser implements CalcParser {
         if (!/^\d+$/.test(k)) throw parseError("parse.unsupportedResultChip", { k });
         this.skipGroup();
         this.resEnd = this.pos;
-        return this.chip(resKey(k), "result chip");
+        return this.resultChip(resKey(k));
       }
       case "ans":
         this.pos++;

@@ -61,6 +61,11 @@
     else act();
   }
 
+  /** R63: a unit row draws its request with the units in it (the line itself, recalled, has none: Home has no units). */
+  function drawnInput(item: HistoryItem): string {
+    const u = item.units?.input;
+    return input(typeof u === "string" ? { ...item, latex: u } : item);
+  }
   // F28: the stored values a CAS result read, in one muted line: at most three names, then "+n". When all come from
   // one view it is said once at the end; otherwise after each name.
   const USES_SHOWN = 3;
@@ -143,7 +148,7 @@
       oncontextmenu={(e) => e.preventDefault()}
       data-selected={selected !== null && k + items.length - shown.length === selected ? "true" : undefined}>
       <button type="button" class="in" title={t("history.recall")} onclick={() => tapped(() => onrecall(item))}>
-        <Math latex={input(item)} />
+        <Math latex={drawnInput(item)} />
       </button>
       <div class="out" data-testid="result">
         {#if item.status === "pending"}
@@ -172,6 +177,9 @@
       {/if}
       {#if item.settingReset}
         <div class="uses" data-testid="setting-reset">{t("history.settingReset")}</div>
+      {/if}
+      {#if item.unitDropped}
+        <div class="uses" data-testid="unit-dropped">{t("history.unitDropped")}</div>
       {/if}
     </article>
     {/if}

@@ -24,6 +24,7 @@ import { unitPad } from "./padView.svelte.ts";
 import { slotCatalogue } from "./slot.ts";
 import { makePanel } from "./panel.ts";
 import { unitCells } from "./userCells.svelte.ts";
+import { putRow, rowSlots, unitRow } from "./row.ts";
 import { UnitView, type ViewHost } from "./view.ts";
 
 /** The open unit view (window.pascaline.unitView in the e2e). */
@@ -53,6 +54,11 @@ export async function openUnits(c: RouteCtx, row?: HistoryItem): Promise<void> {
   const [, index, hw] = await Promise.all([c.entry.ready, import("../find/finder.ts").then((m) => m.loadIndex(true)), import("../entry/hwkeys.ts"), unitCells.restore()]);
   const Field = customElements.get("math-field") as typeof MathfieldElement | undefined;
   if (!Field) return c.dead();
+  // R63: a picked unit row shows its slots again. Only the picked row: a line typed again (after a relaunch too) is a
+  // new request, so its slots start empty and the keys typed into them are the whole unit (72 km/h, not km/h km/h)
+  const seed = row ? rowSlots(row) : undefined;
+  /** The Home row of this visit's result (R63): a later result takes its place. */
+  let rowId: number | undefined;
   const mf = new Field();
   mf.dataset["testid"] = "unit-field";
   const host: ViewHost = {
@@ -70,12 +76,13 @@ export async function openUnits(c: RouteCtx, row?: HistoryItem): Promise<void> {
     remember: (dim, slot) => writeTarget(idbKv, dim, slot).then(() => undefined),
     dead: () => c.dead(),
     changed: () => panel.draw(),
+    result: (q) => void (rowId = putRow(c.session, unitRow({ line, chips, q, slots: view.filled(), input: view.drawn(), digits: c.session.settings.digits }), rowId)),
   };
   let made: UnitView | undefined;
   const panel = makePanel(() => made);
   const cat = slotCatalogue(index.items);
   const table = factorTable(index.items);
-  const view = new UnitView(cat, line, chips, host);
+  const view = new UnitView(cat, line, chips, host, seed);
   made = view;
   entryEl.insertBefore(panel.element, fieldEl);
   fieldEl.style.display = "none";
