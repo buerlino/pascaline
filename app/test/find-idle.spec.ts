@@ -15,7 +15,7 @@ test("no request for the Find index or Find's code before the engine is ready an
   page.on("request", (r) => {
     if (/find-index|\/src\/find\//.test(r.url())) asked.push({ url: r.url(), ready });
   });
-  await page.goto("/?engine=fake");
+  await page.goto("/?engine=fake&tips=off");
   await page.waitForFunction(() => window.pascaline?.session.engineState === "ready");
   ready = true;
   await page.waitForTimeout(1000);

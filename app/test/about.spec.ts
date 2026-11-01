@@ -25,7 +25,7 @@ test("start fetches no About data; opening Help and about does not either, About
   await tap(page, ["@mode", "d5", "d7"]);
   await expect(title(page)).toHaveText("Mode › Settings › Help and about");
   expect(urls.filter((u) => /virtual:about|about-[\w-]+\.js/.test(u))).toEqual([]);
-  await tap(page, ["d1"]);
+  await tap(page, ["d2"]);
   await expect(row(page, "version")).toBeVisible();
   expect(urls.filter((u) => /virtual:about|about-[\w-]+\.js/.test(u)).length).toBeGreaterThan(0);
 });
@@ -37,10 +37,10 @@ test.describe("by keys", () => {
   });
 
   test("Help and about: About Pascaline and Parts we use; digit 1 shows the name, the version, GPL-3.0-or-later and the source URL", async ({ page }) => {
-    await expect(rows(page)).toHaveCount(2);
+    await expect(rows(page)).toHaveCount(3);
     await expect(row(page, "about")).toContainText("About Pascaline");
     await expect(row(page, "parts")).toContainText("Parts we use and their licences");
-    await tap(page, ["d1"]);
+    await tap(page, ["d2"]);
     await expect(title(page)).toHaveText("Settings › Help and about › About");
     await expect(row(page, "version")).toContainText(version);
     await expect(row(page, "licence")).toContainText("GPL-3.0-or-later");
@@ -51,7 +51,7 @@ test.describe("by keys", () => {
   });
 
   test("About › Licence opens the GPL text as a level that scrolls; ▼ pages down, ◀ goes back onto the same row", async ({ page }) => {
-    await tap(page, ["d1", "d2"]);
+    await tap(page, ["d2", "d3"]);
     // the first licence text loads its lazy chunk; under the full run's load that took more than the default 5 s once (pipeline run 350)
     await expect(text(page)).toContainText("GNU GENERAL PUBLIC LICENSE", { timeout: 20_000 });
     await expect(title(page)).toHaveText("Help and about › About › GPL-3.0-or-later");
@@ -73,13 +73,13 @@ test.describe("by keys", () => {
       await new Promise((done) => setTimeout(done, 800));
       await r.continue();
     });
-    await tap(page, ["d1", "d2"]);
+    await tap(page, ["d2", "d3"]);
     await expect(text(page)).toContainText("GNU GENERAL PUBLIC LICENSE");
     await expect(title(page)).toHaveText("Help and about › About › GPL-3.0-or-later");
   });
 
   test("Parts we use: a row per part with its licence; Enter on MPFR shows the LGPL text, on GMP both of its licences", async ({ page }) => {
-    await tap(page, ["d2"]);
+    await tap(page, ["d3"]);
     await expect(title(page)).toHaveText("Settings › Help and about › Parts");
     await expect.poll(() => rows(page).count()).toBeGreaterThan(30); // the chunk loads on the first look
     const mpfr = rows(page).filter({ hasText: "MPFR 4.2.2" });
