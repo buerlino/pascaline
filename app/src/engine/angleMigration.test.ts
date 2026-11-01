@@ -9,16 +9,17 @@ import { EngineHost } from "./host.ts";
 import { defaultHomeSettings } from "./homeEval.ts";
 import { giacAvailable, nodeHost } from "./nodeGiac.ts";
 import { defaultCasSettings } from "./types.ts";
-import { DATA_VERSION, migratedText, unstamp } from "../state/storage.ts";
+import { DATA_VERSION, unstamp } from "../state/storage.ts";
+import { migratedText, MIGRATIONS } from "../state/migrations.ts";
 
 const entry = (x: Partial<DefEntry> & Pick<DefEntry, "name" | "kind" | "cmds">): DefEntry => ({ preview: "", view: "home", time: 0, ...x });
 /** A version-2 log as IndexedDB holds it, brought up to DATA_VERSION. */
-const migrate = (log: DefEntry[]): DefEntry[] => validDefs(unstamp("defs", { "@pascaline": 2, value: log }).value);
+const migrate = (log: DefEntry[]): DefEntry[] => validDefs(unstamp("defs", { "@pascaline": 2, value: log }, MIGRATIONS).value);
 
 describe("the version-3 step of the stored log (pure)", () => {
   it("is DATA_VERSION 3 (or later) and writes the record back", () => {
     expect(DATA_VERSION).toBeGreaterThanOrEqual(3);
-    expect(unstamp("defs", { "@pascaline": 2, value: [] }).upgraded).toBe(true);
+    expect(unstamp("defs", { "@pascaline": 2, value: [] }, MIGRATIONS).upgraded).toBe(true);
   });
 
   it("pasexp( becomes exp( everywhere, never inside a string", () => {

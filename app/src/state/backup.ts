@@ -9,7 +9,8 @@ import { defaultLook, validLook } from "../theme/look.ts";
 import { CELL_KEYS } from "../units/userCells.svelte.ts";
 import { isFmtMode, normalizeCycle } from "./displayMode.ts";
 import { migratePresetKeys, PRESETS_KEY } from "./presetRecord.ts";
-import { DATA_VERSION, unstamp, type MIGRATIONS } from "./storage.ts";
+import { DATA_VERSION, unstamp, type Migrations } from "./storage.ts";
+import { MIGRATIONS } from "./migrations.ts";
 import { kvGetRaw, type RawRecord } from "./storageRaw.ts";
 
 /** The keys a backup holds (docs/04 6.2). A new key joins by being added here; the unit test fails until it is here or
@@ -223,7 +224,7 @@ export const partName = (key: string): string => (`part.${key}` in enData ? data
  * of their own keys from the part's stamp too (migratePresetKeys, as the model's open does): restored, the part is
  * stamped as current, and nothing runs those steps later. `steps`: the migration steps (tests); MIGRATIONS by default.
  */
-export function checkBackup(bytes: Uint8Array, validators: Validators = VALIDATORS, steps?: typeof MIGRATIONS): CheckedBackup | RefusedBackup {
+export function checkBackup(bytes: Uint8Array, validators: Validators = VALIDATORS, steps: Migrations = MIGRATIONS): CheckedBackup | RefusedBackup {
   const no = (key: DataKey, part?: string, vars: Record<string, string | number> = {}): RefusedBackup => ({
     ok: false,
     message: dataText(key, { ...vars, ...(part === undefined ? {} : { part: partName(part) }) }),
@@ -255,7 +256,7 @@ export function checkBackup(bytes: Uint8Array, validators: Validators = VALIDATO
     if (typeof v !== "number" || !Number.isInteger(v) || v < 0) return no("refuse.stamp", key);
     if (v > DATA_VERSION) return no("refuse.newer", key, { v, max: DATA_VERSION });
   }
-  const up = (k: string, stored: unknown): unknown => (steps ? unstamp(k, stored, steps) : unstamp(k, stored)).value;
+  const up = (k: string, stored: unknown): unknown => unstamp(k, stored, steps).value;
   const values: Record<string, unknown> = {};
   for (const [key, rec] of Object.entries(parts)) {
     let value: unknown;

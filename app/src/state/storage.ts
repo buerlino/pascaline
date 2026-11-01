@@ -2,7 +2,7 @@
 // Tiny key-value store on IndexedDB (settings, history, definitions, app states). Every value is stamped with
 // DATA_VERSION and migrated on read. Every call survives a missing or blocked IndexedDB: the app then simply starts
 // with defaults. A key whose read failed is not written again in that session (R93): its record may still be there.
-import { migrateAngleDefs, migrateAngleText } from "../engine/angleMigration.ts";
+// The migration steps themselves are a lazy chunk (state/migrations.ts, R103): only a record that needs one loads them.
 import { guardWrite } from "./writer.ts";
 
 /** The store the session persists to; tests pass an in-memory one. `get` gives undefined for nothing stored and for a
@@ -24,7 +24,8 @@ const STORE = "kv";
 export const USER_KEYS = "userKeys";
 
 /**
- * The format version of every stored value. Raise it, with a step in MIGRATIONS, whenever a stored shape or the meaning
+ * The format version of every stored value. Raise it, with a step in MIGRATIONS (state/migrations.ts) and its keys in
+ * STEP_KEYS, whenever a stored shape or the meaning
  * of stored text changes: definitions are Giac text that holds our internal names (R18f1 renamed Φ and Ψ to Phi_ and
  * Psi_), so a rename or a parser fix must rewrite what older versions stored. 0 = stored before versions (2026-10-14).
  */
@@ -39,35 +40,35 @@ export const SETTINGS_SINCE: Readonly<Record<number, number>> = { 4: 4 };
 /** The stamp's field; no value stored before versions has it. */
 const STAMP = "@pascaline";
 
-/** Steps from version n to n+1, by key; a key without a step keeps its value. */
-type Migrations = Record<number, Record<string, (value: unknown) => unknown>>;
-export const MIGRATIONS: Migrations = {
-  // 0 → 1: only the stamp is new.
-  0: {},
-  // 1 → 2: a definitions entry may carry `desc` (G33); nothing to rewrite.
-  1: {},
-  // 2 → 3 (G46): Giac runs in radians and the degree mode lives in the text (`pasdeg`); pasexp goes
-  // (engine/angleMigration.ts).
-  2: { defs: migrateAngleDefs, library: migrateAngleText },
-  // 3 → 4 (R94): nothing to rewrite; the stamp guards settings schema 4 from builds that would drop its fields.
-  3: {},
-};
+/** Steps from version n to n+1, by key; a key without a step keeps its value. The table is MIGRATIONS in
+ *  state/migrations.ts, a lazy chunk (R103). */
+export type Migrations = Record<number, Record<string, (value: unknown) => unknown>>;
+
+/** The keys that have a step from version n to n+1: MIGRATIONS's own keys (storage.test.ts holds the two together), so a
+ *  read knows whether to load the steps without loading them. */
+export const STEP_KEYS: Readonly<Record<number, readonly string[]>> = { 0: [], 1: [], 2: ["defs", "library"], 3: [] };
 
 /** The version a stored record was written in (0 before versions). */
 function storedVersion(stored: unknown): number {
   return typeof stored === "object" && stored !== null && STAMP in stored ? Number((stored as Record<string, unknown>)[STAMP]) : 0;
 }
 
-/** A value as stored: stamped with the version it was written in. */
-export function stamp(value: unknown): unknown {
-  return { [STAMP]: DATA_VERSION, value };
+/** A value as stored: stamped with the version it is written in (today's, or `version` for text read from elsewhere). */
+export function stamp(value: unknown, version: number = DATA_VERSION): unknown {
+  return { [STAMP]: version, value };
+}
+
+/** A step of `key` lies between the record's version and DATA_VERSION (STEP_KEYS): only then are the steps loaded. */
+export function needsSteps(key: string, stored: unknown): boolean {
+  for (let v = storedVersion(stored); v < DATA_VERSION; v++) if (STEP_KEYS[v]?.includes(key)) return true;
+  return false;
 }
 
 /**
  * The value of a stored record, brought up to DATA_VERSION, and whether it changed version (then it is written back).
  * A record from a newer version is returned as it is (the app was downgraded; dropping it would lose it on the next save).
  */
-export function unstamp(key: string, stored: unknown, steps: Migrations = MIGRATIONS): { value: unknown; upgraded: boolean } {
+export function unstamp(key: string, stored: unknown, steps: Migrations): { value: unknown; upgraded: boolean } {
   const from = storedVersion(stored);
   let value = typeof stored === "object" && stored !== null && STAMP in stored ? (stored as Record<string, unknown>)["value"] : stored;
   for (let v = from; v < DATA_VERSION; v++) {
@@ -75,11 +76,6 @@ export function unstamp(key: string, stored: unknown, steps: Migrations = MIGRAT
     if (step) value = step(value);
   }
   return { value, upgraded: from < DATA_VERSION };
-}
-
-/** Plain text (a library file, G33) written in `from`, brought up to DATA_VERSION by the same steps as the stored `defs`. */
-export function migratedText(key: string, text: string, from: number, steps: Migrations = MIGRATIONS): string {
-  return String(unstamp(key, { [STAMP]: from, value: text }, steps).value);
 }
 
 function open(): Promise<IDBDatabase> {
@@ -92,7 +88,8 @@ function open(): Promise<IDBDatabase> {
 }
 
 /** The value under `key`, brought up to DATA_VERSION (and written back when older), nothing stored, or "failed": a
- *  failed open or get, or a migration step that throws, is never read as a key that was never stored. */
+ *  failed open or get, a migration step that throws, or a steps chunk that does not load, is never read as a key that
+ *  was never stored. The steps are loaded only for a record that has one to run (needsSteps, R103). */
 export async function kvGet<T>(key: string): Promise<KvRead<T>> {
   try {
     const db = await open();
@@ -102,7 +99,8 @@ export async function kvGet<T>(key: string): Promise<KvRead<T>> {
       r.onerror = () => reject(r.error ?? new Error("indexedDB get failed"));
     });
     if (stored === undefined) return { kind: "none" };
-    const { value, upgraded } = unstamp(key, stored);
+    const steps: Migrations = needsSteps(key, stored) ? (await import("./migrations.ts")).MIGRATIONS : {};
+    const { value, upgraded } = unstamp(key, stored, steps);
     if (upgraded) void kvSet(key, value);
     return { kind: "value", value: value as T };
   } catch {

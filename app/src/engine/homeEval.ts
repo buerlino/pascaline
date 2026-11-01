@@ -33,6 +33,7 @@ import { complexSafe, readsReplaced } from "./complex.ts";
 import { decidedAtDouble, decideTwice, decidingStored, restsOnDecision } from "./decisions.ts";
 import { PLAIN_FORM, type InputForm } from "./stores.ts";
 import { ESERIES_CUT } from "./eseries.ts";
+import { defaultHomeSettings } from "./homeDefaults.ts";
 
 export type { Giac };
 
@@ -68,19 +69,9 @@ export const HOME_CLOCK_S = 1.5;
  *  would follow (each as long again) are not run and the input is refused with the time-out reason. */
 export const HOME_DEADLINE_MS = 2000;
 
-/** G82: Home's step budget, the count of Giac's checks that equals today's 300 ms on the desktop (with a margin;
- *  tools/probes/step-budget.ts prints how it was found). */
-export const HOME_BUDGET_STEPS = 518_000;
-
-export const defaultHomeSettings: HomeSettings = {
-  digits: 12,
-  angle: "rad",
-  budgetSteps: HOME_BUDGET_STEPS,
-  maxExactDigits: 20,
-  workDigits: 30,
-  guardMode: "round-exact",
-  powLimit: 1e5,
-};
+// G82's step budget, Home's default settings and the placeholder precision facts live in homeDefaults.ts (R103): the
+// app's start (calc/engine.ts, calc/fake.ts) reads them without this module's imports (input/angles.ts and the rest).
+export { defaultHomeSettings, HOME_BUDGET_STEPS, safePrecision } from "./homeDefaults.ts";
 
 /** `numeric`: a value from a numeric method (Solve, Function analysis) at work precision, rounded for display. */
 export type HomePath = "exact" | "exact-big" | "float-big" | "float-timeout" | "float-error" | "numeric";
@@ -153,10 +144,6 @@ export function unquote(s: string): string {
   return s.length >= 2 && s.startsWith('"') && s.endsWith('"') ? s.slice(1, -1) : s;
 }
 
-/** Placeholder precision facts until the engine fills them (docs/04 section 8.2): no claim of exactness, `full` = the display. */
-export function safePrecision(display: string): Pick<HomeResult, "facts" | "full"> {
-  return { facts: { exact: false, reliableDigits: null }, full: display };
-}
 
 /**
  * Our definitions, by name, loaded into Giac on the first input that mentions the name (EngineHost.need): defining
