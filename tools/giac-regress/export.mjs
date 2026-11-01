@@ -476,6 +476,16 @@ export function build(cases) {
       nCheck++;
     }
   }
+  // G149 fix round 2, tests/golden/precision.yaml g149-cas-keep-* (the CAS view's exact forms, which no value line reaches): with
+  // complex mode off a negative real base with s = 1 lies on the side where patch 0025's rule holds (im(s*ln(b)) = pi), so Giac's forms
+  // stay (round 1 kept the powers as typed); Digits 40, the CAS view's precision, where the double of (-pi)^3 has a rounding imaginary
+  // part. Raw Giac prints acosh(-2) as ln(-2+sqrt(-2+1)*sqrt(-2-1)), which the CAS view's regroup shows as ln(-sqrt(3)-2) (round 1:
+  // ln(-2+(-2+1)^(1/2)*(-2-1)^(1/2))). They hold on stock Giac too: a check line.
+  check.push(
+    "// g149-cas-keep-forms (precision.yaml g149-cas-keep-acosh-neg2, g149-cas-keep-ln-neg-pi-pow-3/2, g149-cas-keep-sqrt-neg-pi-cubed, derived)",
+    `Digits:=40:; pc("g149-cas-keep-forms",'when(string(acosh(-2))=="ln(-2+sqrt(-2+1)*sqrt(-2-1))" and string(ln((-pi)^(3/2)))=="ln(-sqrt(-pi)*pi)" and string(sqrt((-pi)^3))=="sqrt((-pi)^3)",1,0)',1,1/10^30);`,
+  );
+  nCheck++;
   // Patch 0006 (G96), tests/golden/bench.yaml g96-cas-im-2sqrt: im(2*sqrt(x)) with x free is 2*im(sqrt(x)); at x=-1 it is 2 (stock Giac: 0).
   patched.push("// patch 0006-reim-root-of-unknown-sign.patch", "// g96-cas-im-2sqrt (bench.yaml, derived)", 'Digits:=40:; pc("g96-cas-im-2sqrt",\'subst(im(2*sqrt(x)),x,-1)\',2,1/10^30);');
   nPatched++;

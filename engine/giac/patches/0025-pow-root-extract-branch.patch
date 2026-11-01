@@ -1,8 +1,8 @@
-# Upstream: giac 2.1.0 gen.cc pow, "extract integral powers in a product exponent". b^(n*s/d), with n an integer and d an integer denominator in a product exponent, is rewritten as ((b^s)^(1/d))^r*(b^s)^q (n = q*d+r), which is b^(n*s/d) only when im(s*ln(b)) lies in (-pi,pi] (for a negative b in complex mode Giac takes (-b)^s and exp(i*pi*s/d), so im(s*ln(-b))): 2^sqrt(-1-10^-3), Giac's 2^(10*i*sqrt(10010)/1000), became (2^(10*i*sqrt(10010)))^(1/1000), the principal root of 2^(1000.5*i), about 0.999997254512+0.00234328161588*i (right 0.769017463424+0.639227769225*i); also 2^sqrt(-2-10^-3), 3^sqrt(-1-10^-9). Takes the rule only where it holds, decided on the doubles of b and s with a margin at the cut (as patch 0018); elsewhere the power stays as typed and its evalf is the principal value. b or s with no numeric value, and every rule with r = 0 (an integer power), keep today's form (2^(i/1000) = (2^i)^(1/1000), 2^(sqrt(2)/7) = (2^sqrt(2))^(1/7)).
+# Upstream: giac 2.1.0 gen.cc pow, "extract integral powers in a product exponent". b^(n*s/d), with n an integer and d an integer denominator in a product exponent, is rewritten as ((b^s)^(1/d))^r*(b^s)^q (n = q*d+r), which is b^(n*s/d) only when im(s*ln(b)) lies in (-pi,pi] (for a negative b in complex mode Giac takes (-b)^s and exp(i*pi*s/d), so im(s*ln(-b))): 2^sqrt(-1-10^-3), Giac's 2^(10*i*sqrt(10010)/1000), became (2^(10*i*sqrt(10010)))^(1/1000), the principal root of 2^(1000.5*i), about 0.999997254512+0.00234328161588*i (right 0.769017463424+0.639227769225*i); also 2^sqrt(-2-10^-3), 3^sqrt(-1-10^-9). Takes the rule only where it holds, decided on the doubles of b and s with a margin at the cut (as patch 0018), except for a negative real b with a real s (the CAS view, complex mode off), where im(s*ln(b)) = s*pi and the rule holds for -1 < s <= 1, s = 1 decided exactly, realness by Giac's is_real where the doubles are near the axis ((-pi)^(3/2) = sqrt(-pi)*(-pi), acosh(-2) = ln(-sqrt(3)-2) as before); elsewhere the power stays as typed and its evalf is the principal value. b or s with no numeric value, and every rule with r = 0 (an integer power), keep today's form (2^(i/1000) = (2^i)^(1/1000), 2^(sqrt(2)/7) = (2^sqrt(2))^(1/7)).
 # Changed by Pascaline contributors, 2026-11-01
 --- a/src/gen.cc
 +++ b/src/gen.cc
-@@ -6901,6 +6901,35 @@
+@@ -6901,6 +6901,44 @@
      return im==0?1:2;
    }
  
@@ -11,6 +11,8 @@
 +  // mode Giac takes (-b)^s and exp(i*pi*s/d), so im(s*ln(-b))); the rule took any b and s, so 2^sqrt(-1-10^-3), Giac's
 +  // 2^(10*i*sqrt(10010)/1000), became (2^(10*i*sqrt(10010)))^(1/1000), the principal root of 2^(1000.5*i): another
 +  // branch. Decided on the doubles with a margin at the cut, as patch 0018; b or s with no numeric value keep the rule.
++  // A negative real b with a real s has im(s*ln(b)) = s*pi exactly: the rule holds for -1 < s <= 1, s = 1 decided on s
++  // itself (the margin would leave out (-pi)^(3/2) = sqrt(-pi)*(-pi) in the CAS view, where complex mode is off).
 +  static bool pow_double_parts(const gen & g,double & re,double & im){
 +    if (g.type==_DOUBLE_){
 +      re=g._DOUBLE_val; im=0;
@@ -31,6 +33,13 @@
 +      return true;
 +    if (bre==0 && bim==0)
 +      return true;
++    // A negative real b: its double can carry a rounding imaginary part (evalf of (-pi)^3 at Digits > 14), so a b near
++    // the negative axis is tested exactly (Giac's is_real, im(b) = 0); s too, when its double is near the real axis.
++    if (bre<0 && (bim==0 || (std::abs(bim)<=1e-9*std::abs(bre) && b.is_real(contextptr)))){
++      bim=0;
++      if (sim==0 || (std::abs(sim)<=1e-9*std::abs(sre) && s.is_real(contextptr)))
++        return is_one(s) || (sre>-1+1e-9 && sre<1-1e-9); // im(s*ln(b)) = s*pi
++    }
 +    double t=sim*std::log(std::hypot(bre,bim))+sre*std::atan2(bim,bre); // im(s*ln(b))
 +    return std::abs(t)<M_PI*(1-1e-9);
 +  }
@@ -38,7 +47,7 @@
    gen pow(const gen & base,const gen & exponent,GIAC_CONTEXT){
      if (base.type==_VECT && exponent.type==_VECT && (base.subtype==_SET__VECT || exponent.subtype==_SET__VECT)){
        return _symmetric_difference(makesequence(base,exponent),contextptr);
-@@ -7259,8 +7288,11 @@
+@@ -7259,8 +7297,11 @@
  	int q=superexponent.val / subexponent_deno.val;
  	int r=superexponent.val % subexponent_deno.val;
  	gen res(1);

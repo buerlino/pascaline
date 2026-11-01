@@ -751,4 +751,6 @@ Digits:=40:; pc("g149-keep-2-pow-sqrt-neg1.5-12",'(2^sqrt(-(15/10^1)))',(6607877
 Digits:=40:; pc("g149-keep-pi-pow-i-sqrt2000-over-3-12",'(pi^(i*sqrt(2000)/3))',-(212501277577/10^12)-(977160788728/10^12)*i,5/10^13+5/10^13);
 // g140f2-fisher_cdf-4-6-2-30 (precision.yaml, oracle)
 Digits:=40:; pc("g140f2-fisher_cdf-4-6-2-30",'(fisher_cdf(4,6,2))',(786339025406080799666805497709/10^30),5/10^31);
+// g149-cas-keep-forms (precision.yaml g149-cas-keep-acosh-neg2, g149-cas-keep-ln-neg-pi-pow-3/2, g149-cas-keep-sqrt-neg-pi-cubed, derived)
+Digits:=40:; pc("g149-cas-keep-forms",'when(string(acosh(-2))=="ln(-2+sqrt(-2+1)*sqrt(-2-1))" and string(ln((-pi)^(3/2)))=="ln(-sqrt(-pi)*pi)" and string(sqrt((-pi)^3))=="sqrt((-pi)^3)",1,0)',1,1/10^30);
 print("pascaline-check: "+pasfail+" of "+pasn+" failed");
