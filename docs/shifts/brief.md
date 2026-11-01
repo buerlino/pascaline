@@ -55,13 +55,10 @@ Tonight's queue (one lane, to 07:00) comes first, then each lane's table; With t
 `ANDROID_SERIAL=HA24BZ2Y` for both lanes, `--until 09:00`; CORE DEVICE after each pass. Not the weekly extreme night: row 408 waits. A step whose "After" is not merged is skipped.
 
 ### Lane A queue (ron's UI)
-Milestone reviews (section 0): after R50e; after R24d.
+Milestone reviews (section 0): after R50e; after R24d (with R108's gallery group "Decimal comma in apps").
 
 | Step | What | Agent, model | Branch | After |
 |---|---|---|---|---|
-| 321 | [R107](packages/R107.md) every hardware key press counts | ron, Sonnet | `p1/ron-presscount-hw` | – |
-| 322 | [R108](packages/R108.md) the decimal comma in Solve and the Num tables | ron, Sonnet | `p1/ron-commanum` | – |
-| 323 | [R99](packages/R99.md) the decimal comma in Solve's and Function's entry | ron, Opus | `p1/ron-commaentry` | – |
 | 324 | [R100](packages/R100.md) copy and paste round-trip with the decimal comma | ron, Opus | `p1/ron-commacopy` | R99 |
 | 325 | [R97](packages/R97.md) App.svelte split below its line | ron, Sonnet | `p1/ron-appsplit` | – |
 | 326 | [R105](packages/R105.md) the core list's visibility check looks at every match | ron, Sonnet | `p1/ron-coreseen` | – |
