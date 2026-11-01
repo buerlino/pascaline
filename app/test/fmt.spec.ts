@@ -44,7 +44,7 @@ test("fmt shows 1/3 in Standard, Scientific, Engineering and back, for that resu
   await expect(lastText(page)).toHaveAttribute("data-text", "0.333333333333");
   await tap(page, ["fmt"]);
   await expect(lastText(page)).toHaveAttribute("data-text", "3.33333333333E-1");
-  await expect(lastText(page).locator(".math")).toHaveAttribute("data-latex", "3.33333333333\\times10^{-1}");
+  await expect(lastText(page).locator(".math")).toHaveAttribute("data-latex", "3.333\\,333\\,333\\,33\\times10^{-1}"); // R55: grouped in the drawing, the text above stays plain
   await tap(page, ["fmt"]);
   await expect(lastText(page)).toHaveAttribute("data-text", "333.333333333E-3");
   await tap(page, ["fmt"]);

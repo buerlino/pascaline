@@ -618,10 +618,10 @@ export class Session {
 
   /** What the history shows for a finished item: Home numbers follow the current digits and format, or the mode
    *  the Format key chose for that item; a CAS result changes only when the Format key has chosen a mode. */
-  display(item: HistoryItem): { text: string; latex: string } {
+  display(item: HistoryItem, grouped = false): { text: string; latex: string } {
     const shown = item.view === "home" || item.fmt !== undefined || item.form !== undefined || item.facts !== undefined;
     if (item.status === "done" && shown) {
-      const r = renderNumeric(item, this.modeOf(item), this.displayContext());
+      const r = renderNumeric(item, this.modeOf(item), this.displayContext(), grouped);
       // R63: a unit row draws ± σ and its unit, set apart, after the number; its text has them too (Copy as shown)
       if (r) return item.units ? withUnit(r, item.units, this.decimalComma ? commaResult : undefined) : r;
     }
