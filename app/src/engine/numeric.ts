@@ -27,6 +27,7 @@ import {
   type PrecisionWarn,
   type PrecisionWhy,
 } from "./format.ts";
+import { binary64Of } from "./binary64.ts";
 import { ICDF_DIGITS, ICDF_FAILED, erfValueText, icdfCalls, icdfPolished } from "./icdf.ts";
 import type { GiacValue } from "./bridge.ts";
 import { callsOf, functionsIn, LIST_TYPE, matrixTyped, type Quoting, splitList, topLevelArgs, wholeCall } from "./giacPrint.ts";
@@ -306,7 +307,18 @@ export function withDigits<T>(giac: Giac, d: number, restore: number, fn: () => 
   }
 }
 
-type Parts = { re: DecimalValue; im: DecimalValue; short?: number };
+/** G140: `double`, a nonzero part is a C double at a precision above a double's (bridge-3's `doubles`); `binary64`, the
+ *  double each part's MPFR print equals (binary64Of; NaN where none), read at such a precision. */
+export type Parts = { re: DecimalValue; im: DecimalValue; short?: number; double?: true; binary64?: readonly [number, number] };
+
+/** G140: element `a` is a double, by bridge-3's flag or by the same binary64 in a part of `a` and of `b` (two
+ *  precisions): an MPFR value left with few bits by a cancellation is a binary64 too (acosh(-1/2)'s real part at 60
+ *  digits, -6.2E-62), but not the same one at the next precision. */
+export function isDouble(a: Parts, b: Parts): boolean {
+  const x = a.binary64;
+  const y = b.binary64;
+  return a.double === true || (x !== undefined && y !== undefined && [0, 1].some((i) => !Number.isNaN(x[i]!) && x[i] === y[i]));
+}
 
 /** A part bridge-3 gave (api.cc partText: an integer or `p/q` in base 10, a float as Giac prints it) as a DecimalValue
  *  of `keep` digits; null if it is not one. */
@@ -338,9 +350,25 @@ export function atParts(v: GiacValue, prec: number, keep: number, n: number): Pa
     if (!a || !b) return null;
     const d = dbl[k] ?? 0;
     const kind = v.kinds?.[k] ?? v.kind;
-    if (d && prec > DOUBLE_DIGITS + 1 && kind !== "float" && kind !== "complex") return "double";
+    const mpfr = prec > DOUBLE_DIGITS + 1;
+    if (d && mpfr && kind !== "float" && kind !== "complex") return "double";
     const short = [d & 1 ? shortDigits(reT, prec) : undefined, d & 2 ? shortDigits(imT, prec) : undefined].filter((x): x is number => x !== undefined);
-    out.push(short.length ? { re: a, im: b, short: Math.min(...short) } : { re: a, im: b });
+    // a part that is 0 has no digits a double could get wrong (DEG cosh(90*i)'s imaginary part)
+    const double = mpfr && ((d & 1 && !isZero(a)) || (d & 2 && !isZero(b)));
+    // read again with the digits Giac printed when `keep` cut them
+    const full = (t: string, x: DecimalValue): DecimalValue | null => (keep >= prec ? x : partValue(t, prec));
+    const part64 = (t: string, x: DecimalValue): number => {
+      const y = full(t, x);
+      return (y && binary64Of(y, prec)) ?? NaN;
+    };
+    const b64 = mpfr ? ([part64(reT, a), part64(imT, b)] as const) : undefined;
+    out.push({
+      re: a,
+      im: b,
+      ...(short.length ? { short: Math.min(...short) } : {}),
+      ...(double ? { double: true as const } : {}),
+      ...(b64 && b64.some((x) => !Number.isNaN(x)) ? { binary64: b64 } : {}),
+    });
   }
   return out;
 }
@@ -635,6 +663,9 @@ function agreedFacts(facts: readonly (ElementFacts | null)[], digits: number, P:
   const under = underflowAt !== undefined && leadingZero.some((z, k) => z && underflowAt(k));
   return facts.map((f, k) => {
     if (f) return f;
+    // G140: a double at P or P + 20 (Giac's evalf of Zeta((1+2*i)/2) is one at any Digits) agrees with itself, so its
+    // two precisions confirm nothing: the facts of an unaudited double, as Giac's numeric integration has them.
+    if (isDouble(A[k]!, B[k]!) || B[k]!.double) return doubleFacts(A[k]!, B[k]!, { re: A[k]!.re, im: A[k]!.im });
     let leading = leadingZero[k]! && !under;
     let reliable = leadingZero[k] ? (leading ? 0 : digits) : confirmedComplex(A[k]!, B[k]!, P, P);
     let value = denoised(A[k]!, B[k]!, P);
@@ -721,11 +752,24 @@ export function floatFacts(
   return facts && exact && exact.length === facts.length ? facts.map((f, k) => exact[k] ?? f) : facts;
 }
 
-/** At most a double's digits of `v` (rounded; a shorter value is kept). */
-function doubleDigits(v: DecimalValue): DecimalValue {
-  if (v.digits.length <= DOUBLE_DIGITS) return v;
-  const r = roundSignificant(v, DOUBLE_DIGITS);
+/** At most `n` digits of `v`, a double's by default (rounded; a shorter value is kept). */
+function doubleDigits(v: DecimalValue, n: number = DOUBLE_DIGITS): DecimalValue {
+  if (v.digits.length <= n) return v;
+  const r = roundSignificant(v, n);
   return { neg: r.neg, digits: r.digits.replace(/0+$/, ""), exp: r.exp, sticky: true };
+}
+
+/**
+ * G140: the facts of an element read as a double at both precisions (isDouble, or bridge-3's flag): an unaudited
+ * double (integratedFacts), unless rule 3 knows how many of the digits Giac printed it confirms (`short`, shortDigits):
+ * then ⚠ with that count, at most a double's, the value rounded to it. Giac prints the double of
+ * negbinomial_cdf(3,1/3,2.5) as 0.20987654320987, where 17/81 is 0.2098765432098765…: 13 digits, not 14.
+ */
+function doubleFacts(a: Parts, b: Parts, value: ComplexValue): ElementFacts {
+  const short = [a.short, b.short].filter((x): x is number => x !== undefined);
+  if (!short.length) return integratedFacts([{ value, exact: false, reliableDigits: null, big: false }])[0]!;
+  const n = Math.min(...short, DOUBLE_DIGITS);
+  return { value: { re: doubleDigits(value.re, n), im: doubleDigits(value.im, n) }, exact: false, reliableDigits: n, warn: "unaudited", big: false };
 }
 
 /**
@@ -769,12 +813,12 @@ function floatFactsOf(
     slot: string,
     asked: (n: number) => number = (n) => Math.max(n, d),
     text: string | null = run,
-  ): { re: DecimalValue; im: DecimalValue; short?: number }[] | null =>
+  ): Parts[] | null =>
     withDigits(giac, d, restoreDigits, () => valueAt(giac, text === null ? name : `${slot}:=(${withAskedPrecision(text, asked)})`, shape, d, P).parts);
   // A non-real value that rests on a replaced function not read through our definitions (DEG, complexReads' hidden).
   const hidden = reads !== null && reads.hidden.length > 0 && nonReal(giac, name) ? reads.hidden : [];
   const unaudited = expr === null || !isAudited(expr, "typed") || hidden.length > 0;
-  const facts = (v: { re: DecimalValue; im: DecimalValue; short?: number }[], reliable: (k: number) => number, warn?: PrecisionWarn): ElementFacts[] =>
+  const facts = (v: Parts[], reliable: (k: number) => number, warn?: PrecisionWarn): ElementFacts[] =>
     v.map((value, k) =>
       zeroUnconfirmed({
         value: { re: value.re, im: value.im },
@@ -933,6 +977,8 @@ function floatPathFactsOf(
   return {
     facts: B.map((b, k) => {
       const value = denoised(A[k]!, b, W);
+      // G140: a double at W or W + 20 agrees with itself (agreedFacts)
+      if (isDouble(A[k]!, b) || b.double) return doubleFacts(A[k]!, b, { re: value.re, im: value.im });
       return zeroUnconfirmed({
         value: { re: value.re, im: value.im },
         exact: false,
@@ -943,7 +989,6 @@ function floatPathFactsOf(
     shape,
   };
 }
-
 
 /**
  * Decisions M4-7: the digits of each element of a result that survive the uncertainty of the stored variables it was

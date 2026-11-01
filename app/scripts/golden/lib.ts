@@ -6,7 +6,7 @@ import { parse } from "yaml";
 import { EngineHost, type LoadedGiac } from "../../src/engine/host.ts";
 import { typed, type Case, type Expect } from "../../src/goldenRun.ts";
 import { defaultHomeSettings, pasdegCommand, type HomeSettings } from "../../src/engine/homeEval.ts";
-import { decimalFromString, formatReal, toText } from "../../src/engine/format.ts";
+import { decimalFromString, formatComplex, formatReal, toText, type DecimalValue } from "../../src/engine/format.ts";
 import { giacMjsPath, loadNodeGiac } from "../../src/engine/nodeGiac.ts";
 import { hasFloat } from "../../src/engine/numeric.ts";
 
@@ -49,12 +49,35 @@ export function report(stage: string, ok: boolean, line: string): void {
 }
 
 /** `expect` (STD at the case's digits) rounded again to n digits, or null when that could round the wrong way
- *  (the dropped part is exactly 5: the case then needs a longer expect). */
+ *  (the dropped part is exactly 5: the case then needs a longer expect). G140: a complex `a+b*i` part by part. */
 export function expectAt(expect: string, n: number): string | null {
+  if (expect.endsWith("i")) return complexAt(expect, n);
   const v = decimalFromString(expect.replace("E", "e"));
   if (!v) return null;
   if (v.digits.slice(n) === "5") return null;
   return toText(formatReal(v, { format: "STD", digits: n }));
+}
+
+/** expectAt of a complex text (`a+b*i`, `a-i`, `b*i`): each part rounded to n digits, printed as format.ts does. */
+function complexAt(expect: string, n: number): string | null {
+  const body = expect.slice(0, -1).replace(/\*$/, "");
+  // the sign between the parts: the last + or - that neither opens the text nor follows an exponent's E
+  let k = -1;
+  for (let j = body.length - 1; j > 0; j--) {
+    if ((body[j] === "+" || body[j] === "-") && body[j - 1] !== "E") {
+      k = j;
+      break;
+    }
+  }
+  const reT = k < 0 ? "0" : body.slice(0, k);
+  const imT = k < 0 ? body : body.slice(k);
+  const part = (t: string): DecimalValue | null => {
+    const v = decimalFromString(t === "" || t === "+" || t === "-" ? `${t}1` : t.replace("+", "").replace("E", "e"));
+    return v && v.digits.slice(n) !== "5" ? v : null;
+  };
+  const re = part(reT);
+  const im = part(imT);
+  return re && im ? formatComplex({ re, im }, { format: "STD", digits: n }).text : null;
 }
 
 export const LOOKS_NUMERIC = /^-?(\d+(\.\d+)?|\.\d+)(E[+-]?\d+)?([+-](\d+(\.\d+)?(E[+-]?\d+)?\*)?i)?$/;

@@ -85,6 +85,9 @@ const CANARIES: [string, string, RegExp, string][] = [
   // which are purely imaginary (CAS evalf(asinh(i/10)) = -1.2E-66+0.100167421162*i)
   ["0023-asin-imaginary-real-part.patch", "giac-2.1.0/src/usual.cc", /^static gen asinasln\(const gen & x,GIAC_CONTEXT\)\{\s*return -cst_i\*ln\(cst_i\*x\+sqrt\(1-x\*x,contextptr\),contextptr\);/, "static gen asinasln(const gen & x,GIAC_CONTEXT){"],
   ["0023-asin-imaginary-real-part.patch", "giac-2.1.0/src/usual.cc", /^static gen asinhasln\(const gen & x,GIAC_CONTEXT\)\{\s*return ln\(x\+sqrt\(x\*x\+1,contextptr\),contextptr\);/, "static gen asinhasln(const gen & x,GIAC_CONTEXT){"],
+  // G140, patch 0024: _evalf's overflow test asks z/z!=1 of a complex double, which rounds (Gamma(1.0+i)), so evalf(Gamma(1+i))
+  // at Digits 14 ran again at 30 digits, where Gamma has no complex MPFR path, and stayed Gamma(1.0000000000000+i)
+  ["0024-evalf-complex-double-workaround.patch", "giac-2.1.0/src/usual.cc", /^bool need_workaround\(const gen & g\)\{\s*if \(g\.type==_REAL \|\| \(g\.type==_CPLX && g\._CPLXptr->type==_REAL && \(g\._CPLXptr\+1\)->type==_REAL\)\)\s*return false;\s*if \(g\.type<=_CPLX\)\s*return g!=0 && g\/g!=1;/, "bool need_workaround(const gen & g){"],
   // G135, patch 0019: atan keeps an exact argument on its cut symbolic (atan(2*i)), which Giac's cos rule reads on the other side
   ["0019-atan-exact-cut.patch", "giac-2.1.0/src/usual.cc", /atan\(b,contextptr\)\),_SEQ__VECT\)\);\s*gen tmp=evalf_double\(e,0,contextptr\);\s*if \(tmp\.type==_DOUBLE_\)\{/, "return symbolic(at_program,gen(makevecteur(a,0,atan(b,contextptr)),_SEQ__VECT));"],
   // G135, patch 0019: cos(atan(f)) = sqrt(1/(f^2+1)) takes the other root where f^2+1 is a negative real (cos(quote(atan(2*i))) = i*sqrt(3)/3)
