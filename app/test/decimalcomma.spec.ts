@@ -187,3 +187,29 @@ test("Function: a Num start typed 0 , 5 with the keys starts the table at 0,5; a
   await tap(page, ["@menu", "d1", "dot", "d2", "enter"]); // ,2
   await expect(firstX).toHaveAttribute("data-x", "0.2");
 });
+
+// R99f1: selecting an unknown puts its value on the line in the mark's form; an Enter on the untouched line changes nothing.
+test("Solve: selecting x (2,5) shows 2{,}5 on the line, Enter keeps 2.5 with no notice; point mode shows 2.5", async ({ page }) => {
+  const row = (name: string) => page.locator(`[data-testid="solve-table"] tr[data-name="${name}"]`);
+  await tap(page, ["@place", "d4", "@symb"]);
+  await tap(page, ["shift", "x", "shift", "dot", "d2", "x", "enter", "@num"]);
+  await row("x").locator("th button").tap();
+  await tap(page, ["esc", "d2", "dot", "d5", "enter"]);
+  await expect(row("x").locator("td")).toHaveAttribute("data-value", "2.5");
+  await row("y").locator("th button").tap();
+  await row("x").locator("th button").tap();
+  await expect(page.getByTestId("entry-label")).toHaveText("x=");
+  expect(await entryValue(page)).toBe("2{,}5");
+  await tap(page, ["enter"]);
+  await expect(page.getByTestId("notice")).toHaveCount(0);
+  expect(await entryValue(page)).toBe("");
+  await expect(row("x").locator("td")).toHaveAttribute("data-value", "2.5");
+  await expect(row("x").locator("td")).toHaveText("2,5");
+  await page.evaluate(() => window.pascaline.session.setDecimalMark("point"));
+  await row("y").locator("th button").tap();
+  await row("x").locator("th button").tap();
+  expect(await entryValue(page)).toBe("2.5");
+  await tap(page, ["enter"]);
+  await expect(page.getByTestId("notice")).toHaveCount(0);
+  await expect(row("x").locator("td")).toHaveAttribute("data-value", "2.5");
+});
