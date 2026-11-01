@@ -59,9 +59,6 @@ Milestone reviews (section 0): after R50e; after R24d (with R108's gallery group
 
 | Step | What | Agent, model | Branch | After |
 |---|---|---|---|---|
-| 326 | [R105](packages/R105.md) the core list's visibility check looks at every match | ron, Sonnet | `p1/ron-coreseen` | – |
-| 327 | [R104](packages/R104.md) `± n %` after a number in the unit view | ron, Opus | `p1/ron-m5-pmpercent` | R71 |
-| 328 | [R101](packages/R101.md) the Alpha slot in CAS shows what Alpha types | ron, Sonnet | `p1/ron-alphaslot` | R97 |
 | 329 | [R102](packages/R102.md) spoken names and strings | ron, Sonnet | `p1/ron-strings` | R97 |
 
 ### Lane B queue (the release, then the engine)

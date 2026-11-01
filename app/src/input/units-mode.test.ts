@@ -42,6 +42,21 @@ describe("units mode (R28)", () => {
     expect(() => units("5\\placeholder[u1]{}\\to")).toThrow("→ needs the end slot after it");
     expect(() => units("5\\placeholder[u1]{}+6\\placeholder[u1]{}")).toThrow("unit slot u1 appears twice");
   });
+  it("R104: ± n % after a number is σ = |value|·n/100 in its unit, a literal σ; elsewhere % keeps its meaning", () => {
+    expect(units("250\\pm0.4\\%\\placeholder[u1]{}").giac).toBe("pasupm(250,1)*pasu1");
+    expect(units("2\\pm10\\%").giac).toBe("pasupm(2,0.2)");
+    expect(units("-2\\pm10\\%").giac).toBe("pasupm(-2,0.2)");
+    expect(units("0.004\\pm2.5\\%").giac).toBe("pasupm(0.004,0.0001)");
+    expect(units("1.5\\emark3\\pm2\\%\\placeholder[u1]{}").giac).toBe("pasupm(1.5e3,30)*pasu1");
+    expect(units("2\\emark-9\\pm1\\%").giac).toBe("pasupm(2e-9,2e-11)");
+    expect(units("4.7\\pm5\\emark-1\\%").giac).toBe("pasupm(4.7,0.0235)");
+    expect(units("2\\tfrac12\\pm10\\%").giac).toBe("pasupm((2+1/2),(2+1/2)*10/100)");
+    expect(units("12\\pm0.5\\placeholder[u1]{}\\%").giac).toBe("pasupm(12,0.5)*pasu1/100");
+    expect(() => units("5\\%\\pm1")).toThrow("± goes right after a number"); // a percentage is not a number with a σ
+    expect(latexToGiacInfo("5\\%").giac).toBe("5/100");
+    expect(() => units("\\pm5\\%")).toThrow("± goes right after a number");
+    expect(() => units("5\\pm x\\%\\placeholder[u1]{}")).toThrow("± needs a plain number after it");
+  });
   it("R71: the ± key (Shift + `,`) inserts \\pm, which units mode reads as pasupm and every other mode refuses", () => {
     const comma = keyboard.byId.get("comma");
     if (!comma) throw new Error("comma key missing");

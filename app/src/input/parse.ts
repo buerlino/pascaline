@@ -9,6 +9,7 @@ import type { Json } from "./emit.ts";
 import { bigOp, integral, limit, matrix, tryDerivative, tryPartial, type CalcParser } from "./parseCalculus.ts";
 import { ABS_LIKE, BASE_PREFIX, CONSTS, FACTOR_CMDS, FUNCS, GREEK, INVERSE, LOGIC_FUNCS, NAMED_FUNCS, RELATION, letterName,
   type ParseInfo, type ParseOptions, type UnitsInfo } from "./parseTables.ts";
+import { percentSigma } from "./pmPercent.ts";
 import { ARING, CARET, EMARK, LOGIC, promptId, tokenize, type Tok } from "./tokenize.ts";
 
 export { GREEK, LETTER_NAMES, type ParseInfo, type ParseOptions, type UnitsInfo } from "./parseTables.ts";
@@ -510,7 +511,8 @@ class Parser implements CalcParser {
 
   /**
    * R28, units mode: after a number, `\pm σ` makes it an uncertain value, `pasupm(value,σ)` (G18; σ a plain number,
-   * the standard uncertainty in the slot's unit), and a prompt is its unit slot, `pasu<i>` multiplying it.
+   * the standard uncertainty in the slot's unit; R104: `\pm n\%` is σ = |value|·n/100), and a prompt is its unit slot,
+   * `pasu<i>` multiplying it.
    */
   private unitsAfter(n: Json): Json {
     if (!this.units) return n;
@@ -520,7 +522,11 @@ class Parser implements CalcParser {
       const t = this.peek();
       if (t?.t !== "num" || t.gap) throw parseError("parse.pmNeedsSigma");
       this.pos++;
-      v = ["Call", "pasupm", n, this.isCmd(EMARK) ? this.eNumber(t.v) : { num: t.v.replace(/^0+(?=\d)/, "") }];
+      const sigma: Json = this.isCmd(EMARK) ? this.eNumber(t.v) : { num: t.v.replace(/^0+(?=\d)/, "") };
+      // R104: `± n %` is σ = |value|·n/100 in the value's unit (G18), so % here is part of the σ
+      const pct = this.isCmd("%");
+      if (pct) this.pos++;
+      v = ["Call", "pasupm", n, pct ? percentSigma(n, sigma) : sigma];
     }
     const id = promptId(this.peek());
     if (id !== undefined) {

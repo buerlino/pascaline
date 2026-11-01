@@ -102,12 +102,15 @@ function braceArgs(src: string): string {
 }
 
 /** `\pm` and a number right after position `j` (spaces allowed): the σ belongs to the number before it (R28), so the
- *  slot goes after the σ. Returns the end of the σ, or `j`. */
+ *  slot goes after the σ, and after its `\%` (R104: `± n %`). Returns the end of the σ, or `j`. */
 function afterSigma(s: string, j: number): number {
   const m = /^\s*\\pm\s*/.exec(s.slice(j));
   if (!m) return j;
   const k = j + m[0].length;
-  return /^(?:\d|\.)/.test(s.slice(k)) ? numberEnd(s, k) : j;
+  if (!/^(?:\d|\.)/.test(s.slice(k))) return j;
+  const e = numberEnd(s, k);
+  const pct = /^\s*\\%/.exec(s.slice(e));
+  return pct ? e + pct[0].length : e;
 }
 
 /** The end of a one-line exponent at `i`: a sign, then a number, a group or one character. */
