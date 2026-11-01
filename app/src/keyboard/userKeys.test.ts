@@ -3,6 +3,7 @@
 import { describe, expect, it } from "vitest";
 import { legend } from "../i18n/index.ts";
 import { stamp, unstamp, USER_KEYS, type Kv } from "../state/storage.ts";
+import { MIGRATIONS } from "../state/migrations.ts";
 import { actionFor, KeyboardSpecError, keyboard, labelFor, loadKeyboard, type Key } from "./keyboard.ts";
 import { letterOf } from "../views/sheetKeys.ts";
 import { USER_KEY_IDS, USER_LAYERS, UserKeys } from "./userKeys.svelte.ts";
@@ -130,7 +131,7 @@ describe("user keys (R15b)", () => {
 
   it("is a stamped record (docs/04 6.2): it comes back from the store's stamp unchanged", () => {
     const v = { u1: { primary: sinh } };
-    expect(unstamp(USER_KEYS, stamp(v))).toEqual({ value: v, upgraded: false });
+    expect(unstamp(USER_KEYS, stamp(v), MIGRATIONS)).toEqual({ value: v, upgraded: false });
   });
 });
 

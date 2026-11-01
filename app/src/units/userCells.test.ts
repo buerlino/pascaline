@@ -3,6 +3,7 @@
 // stamped store, a restart, a reset, a pair (MPa), an emptied leg, and a damaged record.
 import { describe, expect, it } from "vitest";
 import { stamp, unstamp, type Kv } from "../state/storage.ts";
+import { MIGRATIONS } from "../state/migrations.ts";
 import { UnitPad } from "./pad.ts";
 import { CELL_KEYS, UNIT_PAD_CELLS, UnitCells } from "./userCells.svelte.ts";
 
@@ -52,7 +53,7 @@ describe("the user cells (R24d)", () => {
     c.set("u6", "tap", null); // emptied
     expect(kv.data.get(UNIT_PAD_CELLS)).toEqual({ u5: { tap: { unit: "h" }, down: { unit: "min", label: "min" } }, u6: { tap: null } });
     // the real store stamps what it is given and unstamps on read (storage.ts): the record round-trips
-    expect(unstamp(UNIT_PAD_CELLS, stamp(kv.data.get(UNIT_PAD_CELLS))).value).toEqual(kv.data.get(UNIT_PAD_CELLS));
+    expect(unstamp(UNIT_PAD_CELLS, stamp(kv.data.get(UNIT_PAD_CELLS)), MIGRATIONS).value).toEqual(kv.data.get(UNIT_PAD_CELLS));
 
     const again = new UnitCells(kv); // a restart
     expect(again.textOf("u5", "tap")).toBe("d"); // (before the read: the default)

@@ -230,3 +230,44 @@ test("a kept line whose chip entry is missing comes back without that chip, stil
   await tap(next, ["enter"]);
   await expect(lastResult(next).locator(".result")).toHaveAttribute("data-text", "1"); // derived: 0.5 + 2/4
 });
+
+test("a definitions log stamped 2 is migrated at start, its steps loaded on demand (R103; G46's 2 → 3 step)", async ({ page }) => {
+  await open(page, "");
+  // version 2's helper pasexp is gone from the engine (G46): only the step's rewrite to exp gives the value 1
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve, reject) => {
+        const req = indexedDB.open("pascaline", 1);
+        req.onerror = () => reject(req.error);
+        req.onsuccess = () => {
+          const tx = req.result.transaction("kv", "readwrite");
+          const value = [{ name: "A", kind: "var", cmds: ["A:=(pasexp(0))"], angle: "rad", preview: "1", view: "home", time: 0 }];
+          tx.objectStore("kv").put({ "@pascaline": 2, value }, "defs");
+          tx.oncomplete = () => resolve();
+          tx.onerror = () => reject(tx.error);
+        };
+      }),
+  );
+  const next = await relaunch(page, "");
+  await engineReady(next);
+  await next.evaluate(() => window.pascaline.entry.ready);
+  await tap(next, ["alpha", "vars", "enter"]); // A
+  await expect(lastResult(next).locator(".result")).toHaveAttribute("data-text", "1"); // derived: exp(0)
+  // written back under today's stamp, migrated
+  await expect
+    .poll(() =>
+      next.evaluate(
+        () =>
+          new Promise<unknown>((resolve, reject) => {
+            const req = indexedDB.open("pascaline", 1);
+            req.onerror = () => reject(req.error);
+            req.onsuccess = () => {
+              const r = req.result.transaction("kv").objectStore("kv").get("defs");
+              r.onsuccess = () => resolve([r.result?.["@pascaline"], r.result?.value?.[0]?.cmds]);
+              r.onerror = () => reject(r.error);
+            };
+          }),
+      ),
+    )
+    .toEqual([4, ["A:=(exp(0))"]]);
+});

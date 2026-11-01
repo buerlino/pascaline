@@ -16,7 +16,7 @@ import {
   type UserName,
 } from "./port.ts";
 
-import { safePrecision } from "../engine/homeEval.ts";
+import { safePrecision } from "../engine/homeDefaults.ts";
 
 /** An echo cell: the Giac text that would be evaluated. */
 function echo(display: string): HomeResult {

@@ -6,9 +6,9 @@
 // engine/giacPrint.ts (G105: one string skip, one bracket walk, one name pattern), which has no imports of its own, so
 // the engine side may use this file too.
 import { closing, firstNameIn, isNameChar, leadingName, mapNames, mapNumbers, names, opening, type Quoting, stringEnd, topLevelArgs, withoutStrings } from "../engine/giacPrint.ts";
+import { PASDEG } from "./pasdeg.ts";
 
-/** The engine name that holds the degree factor. Reserved: the parser and the library refuse it as a user name. */
-export const PASDEG = "pasdeg";
+export { PASDEG };
 
 /**
  * Commands that take an angle: the index of that argument, and the number of arguments the form must have (0: any).
