@@ -130,7 +130,7 @@ test("3 , ᴇ 3 types no 1 and gives what 3.ᴇ3 gives in point mode; max(1;ᴇ3
   await resultIs(page, "1000", 3);
 });
 
-test("max(1,5) in point mode gives 5; after Settings › Numbers › Decimal mark: Comma, the recalled entry still gives 5 (R57f1: parsing never depends on the mark)", async ({ page }) => {
+test("max(1,5) in point mode gives 5; after Settings › Numbers › Decimal mark: Comma, the row and the recalled entry show max(1;5) and still give 5 (R57f1, R100)", async ({ page }) => {
   await page.evaluate(() => window.pascaline.session.setDecimalMark("point"));
   await maxCall(page);
   await tap(page, ["d1", "comma", "d5"]);
@@ -148,11 +148,49 @@ test("max(1,5) in point mode gives 5; after Settings › Numbers › Decimal mar
   await tap(page, ["esc", "esc", "esc"]);
   await expect(page.getByTestId("menu")).toHaveCount(0);
   expect(await page.evaluate(() => window.pascaline.session.settings.decimalMark)).toBe("comma");
+  // R100 (owner, 2026-10-31): the row and the recalled line draw the argument comma as ;
+  const row = page.locator('.item[data-status="done"]').first().locator("button.in .math");
+  await expect(row).toHaveAttribute("data-latex", /1;5/);
   await tap(page, ["up"]);
   await page.getByTestId("row-actions").getByRole("button", { name: "Recall" }).tap();
-  expect(await entryValue(page)).toMatch(/1,5/);
+  expect(await entryValue(page)).toMatch(/1;5/);
   await tap(page, ["enter"]);
   await resultIs(page, "5", 2);
+  await page.evaluate(() => window.pascaline.session.setDecimalMark("point"));
+  await expect(row).toHaveAttribute("data-latex", /1,5/);
+});
+
+// R100 (vr-1, P5): a root copied from an app in comma mode pastes into Home as the same value. Expected: the readout
+// itself (the oracle's sqrt(2) = 1.41421356237309504880… is appcopy.spec's).
+test("Function: Plot › ☰ Root, Copy, then Home, Shift+Copy, Enter gives the same root", async ({ page }) => {
+  await tap(page, ["@symb"]);
+  await expect(page.getByTestId("entry-label")).toHaveText("F1(x)=");
+  await tap(page, ["x", "pow", "d2", "right", "sub", "d2", "enter", "@plot"]);
+  await page.waitForFunction(() => window.pascaline.plot.board !== undefined);
+  await tap(page, Array<string>(10).fill("right")); // x = 1
+  await tap(page, ["@menu", "d1"]); // Root
+  await expect(page.getByTestId("readout-x")).toHaveText("1,41421356237");
+  await tap(page, ["copy"]);
+  await expect.poll(() => clipboard(page)).toMatch(/^1,414213562373095048801/);
+  const text = await clipboard(page);
+  await tap(page, ["@home", "shift", "copy"]);
+  await expect.poll(() => entryValue(page)).toBe(text.replace(",", "{,}"));
+  await tap(page, ["enter"]);
+  await resultIs(page, "1,41421356237", 1);
+});
+
+// R100 (fh-6): a list as comma-mode Copy writes it pastes back (derived: 1,5 = 3/2, 2,25 = 9/4)
+test("a pasted {1,5;2,25} is the list 1,5 and 2,25; a pasted {1,5} is refused", async ({ page }) => {
+  await setClipboard(page, "{1,5;2,25}");
+  await tap(page, ["shift", "copy"]);
+  await expect.poll(() => entryValue(page)).toBe("\\left\\{1{,}5;2{,}25\\right\\}");
+  await tap(page, ["enter"]);
+  await resultIs(page, "{1,5;2,25}", 1);
+  await tap(page, ["copy"]);
+  await expect.poll(() => clipboard(page)).toBe("{3/2;9/4}");
+  await setClipboard(page, "{1,5}");
+  await tap(page, ["shift", "copy"]);
+  await expect(page.getByTestId("notice")).toHaveText("Paste: not a number");
 });
 
 // R99 (bu-3): the . key types MathLive's {,} in the apps too; their Num entry reads it as the mark (derived: y = 2·2,5 = 5).
