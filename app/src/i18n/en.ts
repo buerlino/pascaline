@@ -105,6 +105,7 @@ export const en = {
   "error.syntax": "Syntax error",
   "error.engine": "The calculation failed",
   "error.memory": "Out of memory: the engine was restarted",
+  "error.ansTooLong": "Ans: the last result is too long to reuse (over 2 kB)",
   "engine.starting": "Starting the engine…",
   "engine.error": "The engine failed to start.",
   /** The update line (A49): a new version of the web build is installed and waits for the user's Restart. */
