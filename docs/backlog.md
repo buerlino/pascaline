@@ -13,7 +13,7 @@ The one place for "where are we and what's left", one or two lines per open item
 | Milestone 4: Find and trust | Engine side done (marks, 30 digits, chips, copy, defs, the Find index, the size test, A4a); Find's UI: R4a, R4b built; A4b next |
 | Milestone 5: Units | Built: the evaluator on Giac (P15), the pad, the entry and Find in a slot (R24a–R24d), the result's alternatives, chip, view and way back (R60–R63), ± (R71). Next: R92 (the units menu's Tools and Const tabs) |
 | Milestone 6: Structure | Not started (EN5–EN7, Help) |
-| MVP release | v0.1.0, the APK and the website from one tag: lane B (brief section 0) |
+| MVP release | v0.1.0, the APK and the website from one tag, on Sun 11-15 if the bar is met: [release-0.1.0.md](release-0.1.0.md) (owner, 2026-11-01) |
 
 `phase-1` and `master` are on GitHub; `master` was last fast-forwarded to `phase-1` on 2026-10-14 (`ef857a6`). Work continues on `phase-1`.
 
@@ -25,7 +25,7 @@ The one place for "where are we and what's left", one or two lines per open item
 4. **From daily use:** the key sequence that left ⌫ stuck "at log" (F39); connect your phone for A9 (F41, no vibration); more points into [feedback.md](feedback.md).
 5. **The new application id** (`io.github.buerlino.pascaline`): the next APK installs as a second app; copy what you need from the old one, then uninstall `org.pascaline.app`. Android's own backup is off (A23).
 6. **Tap "Allow USB debugging"** on a device when it shows `unauthorized`.
-7. **v0.1.0** (decisions.md "The release path"): make the release key off this laptop, fill A7's table (A7.md); allow tags `v*` in Settings → Environments → `github-pages` before A45's deploy; read the usage meter each morning and at each lane start (tripwire 85 %); fast-forward `master` and push before the tag. **A49/A52, switching a broken web worker off:** `app/pwa/README.md` (the kill run on the deployed tag, up to 90 min; the fixed tag's normal run brings the worker back).
+7. **v0.1.0** (the days: [release-0.1.0.md](release-0.1.0.md)): on 11-02 the release key off this laptop and A7's table (A7.md), tags `v*` in Settings → Environments → `github-pages`, the domain on Pages; the test tag on 11-03; go or slip on 11-14; read the usage meter each morning and at each lane start (tripwire 85 %). **A49/A52, switching a broken web worker off:** `app/pwa/README.md` (the kill run on the deployed tag, up to 90 min; the fixed tag's normal run brings the worker back).
 8. **Later:** the outside rounds (two 30-minute rounds after R4b and R24c, [r18](research/r18-outside-test.md); R70, the press counter, is built); at milestone 5, time ten tasks by hand (E-notation against units).
 
 ### Upstream reports (owner; drafts in `../outreach/upstream-reports.md`)
@@ -94,7 +94,7 @@ The one place for "where are we and what's left", one or two lines per open item
 - **C3. CI** (needs your OK); **C4. F-Droid recipe:** untested end to end; `npm ci` after `prebuild` needs an offline rework; two drifts from build.sh in `fdroid/README.md`.
 
 ### MVP release (docs/02 section 8; not scheduled)
-- **R1. v0.1.0, the APK and the website from one tag** (left: A7, A8; decisions.md "The release path"). **R2. Play testing track:** never published without your OK. **R3. Screenshots and store graphics.** **R4. The help pass** (About: R87; one APK hash from two `./build.sh --unsigned` runs: annabell, A7).
+- **R1. v0.1.0, the APK and the website from one tag** (left: A7, A8; the bar: [release-0.1.0.md](release-0.1.0.md)). **R2. Play testing track:** never published without your OK. **R3. Screenshots and store graphics.** **R4. The help pass** (About: R87; one APK hash from two `./build.sh --unsigned` runs: annabell, A7).
 
 ### v1 and later
 In docs/02 section 8; P8 defers most of v1 behind the engineer core. v1: Statistics, Inference, Parametric/Polar/Sequence, Spreadsheet, Finance, Linear/Triangle solvers, RPN. v2: Geometry, Advanced Graphing, 3D, Explorers.
