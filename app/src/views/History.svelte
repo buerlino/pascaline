@@ -12,6 +12,7 @@
   let {
     items,
     display,
+    input = (item) => item.latex,
     mark,
     onrecall,
     oninsert,
@@ -23,6 +24,8 @@
     /** P4: the row picked with Up from an empty entry line (index into items), or null. */
     selected?: number | null;
     display: (item: HistoryItem) => { text: string; latex: string };
+    /** The input as drawn (R100: `;` for its argument commas in comma mode); by default as stored. */
+    input?: (item: HistoryItem) => string;
     /** The `=` / `≈` / `⚠ n` before a number result (docs/04 2.4); null for a non-number. */
     mark: (item: HistoryItem) => MarkInfo | null;
     /** Tapping an entry puts it back on the line, with the values of its chips. */
@@ -140,7 +143,7 @@
       oncontextmenu={(e) => e.preventDefault()}
       data-selected={selected !== null && k + items.length - shown.length === selected ? "true" : undefined}>
       <button type="button" class="in" title={t("history.recall")} onclick={() => tapped(() => onrecall(item))}>
-        <Math latex={item.latex} />
+        <Math latex={input(item)} />
       </button>
       <div class="out" data-testid="result">
         {#if item.status === "pending"}

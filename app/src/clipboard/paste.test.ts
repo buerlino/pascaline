@@ -26,6 +26,15 @@ describe("parsePastedNumber", () => {
     expect(latex("1.5", { decimalComma: true })).toBeUndefined();
     expect(latex("1,5e-3", { decimalComma: true })).toBe("1{,}5\\emark-3");
   });
+  it("R100 (fh-6): with the decimal comma a list is read with ; between the elements; {1,5} stays refused", () => {
+    const c = { decimalComma: true };
+    expect(latex("{1,5;2,25}", c)).toBe("\\left\\{1{,}5;2{,}25\\right\\}");
+    expect(latexToGiac(latex("{1,5;2,25}", c) ?? "")).toBe(latexToGiac("\\left\\{1.5,2.25\\right\\}"));
+    expect(latex("{1;2}", c)).toBe("\\left\\{1;2\\right\\}");
+    expect(latex("{}", c)).toBe("\\left\\{\\right\\}");
+    for (const s of ["{1,5}", "{1,5,2}", "{1.5;2}", "{1,5;}", "{1,5;{2}}"]) expect(parsePastedNumber(s, c), s).toBeNull();
+    expect(parsePastedNumber("{1;2}"), "point mode: ; is no list separator").toBeNull();
+  });
   it("reads complex numbers a+b*i", () => {
     expect(latex("1+2*i")).toBe("1+2\\imaginaryI");
     expect(latex("1-2i")).toBe("1-2\\imaginaryI");

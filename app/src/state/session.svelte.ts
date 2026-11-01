@@ -31,6 +31,7 @@ import {
 import { defaultLook, validLook, type Look } from "../theme/look.ts";
 import { idbKv, type Kv } from "./storage.ts";
 import { TapCounter } from "./taps.svelte.ts";
+import { commaInput } from "../entry/commaInput.ts";
 import { casItem, chipFactsOf, chipOf, FULL_LIMIT, homeItem, ITEMS_LIMIT } from "./results.ts";
 
 export type View = "home" | "cas";
@@ -444,6 +445,10 @@ export class Session {
   /** The comma is the decimal mark (R57): the keys, the parser, the drawn results and Copy read this. */
   get decimalComma(): boolean {
     return this.settings.decimalMark === "comma";
+  }
+  /** A row's input as drawn and recalled: `;` for its argument commas in comma mode (R100, display only). */
+  input(item: HistoryItem): string {
+    return this.decimalComma ? commaInput(item.latex) : item.latex;
   }
   setFmtMode(mode: FmtMode, on: boolean): void {
     const ticked = new Set(this.settings.fmtCycle);

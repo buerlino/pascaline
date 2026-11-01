@@ -123,7 +123,7 @@
   let clipLoading: Promise<ClipActions> | undefined;
   function loadClip(): Promise<ClipActions> {
     clipLoading ??= import("./clipboard/actions.svelte.ts").then((m) => {
-      const c = new m.ClipActions(session, shell, entry, { insert: insertResult, recall: (item) => entry.set(item.latex, item.chips) });
+      const c = new m.ClipActions(session, shell, entry, { insert: insertResult, recall: (item) => entry.set(session.input(item), item.chips) });
       shell.clip = c;
       shell.homeMenu = () => c.menu();
       clip = c;
@@ -412,8 +412,9 @@
           items={session.items}
           selected={picked}
           display={(item) => session.display(item)}
+          input={(item) => session.input(item)}
           mark={(item) => session.mark(item)}
-          onrecall={(item) => { picked = null; entry.set(item.latex, item.chips); }}
+          onrecall={(item) => { picked = null; entry.set(session.input(item), item.chips); }}
           oninsert={(item) => { picked = null; insertResult(item); }}
           oncancel={() => void cancel()}
           onlongpress={(item) => withClip((c) => c.openRowMenu(item))}

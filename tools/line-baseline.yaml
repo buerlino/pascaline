@@ -6,4 +6,4 @@ app/src/engine/numeric.ts: 1087   # G140: the double rule in atParts (Parts.doub
 app/src/engine/host.ts: 1271
 app/src/engine/homeEval.ts: 834
 app/src/engine/host.test.ts: 908
-app/src/App.svelte: 806   # R70: the press counter hooks (counted(), countScreenTaps, Keypad oncount), +4 over 800; the logic is in state/pressCount.ts. R107: the hardware symbol, dead key and leave hooks on their own lines (+2)
+app/src/App.svelte: 807   # R70: the press counter hooks (counted(), countScreenTaps, Keypad oncount), +4 over 800; the logic is in state/pressCount.ts. R107: the hardware symbol, dead key and leave hooks on their own lines (+2). R100: the history row's input drawn and recalled with ; in comma mode (History's input prop; +1)

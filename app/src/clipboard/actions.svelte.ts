@@ -7,6 +7,7 @@ import { tc } from "./strings.ts";
 import type { AppShell } from "../apps/shell.svelte.ts";
 import type { MenuItem } from "../apps/types.ts";
 import type { HistoryItem, Session } from "../state/session.svelte.ts";
+import { commaResult } from "../state/displayMode.ts";
 import { copyExact } from "./exact.ts";
 import type { ClipboardPort } from "./port.ts";
 import type { CopySource, TextOptions } from "./text.ts";
@@ -137,7 +138,8 @@ export class ClipActions {
         this.say(tc("clip.noExact"));
         return false;
       }
-      return this.put(exact);
+      // R100: an exact list ({3/2,2}) with the decimal comma separates its elements by `;`, as Copy does
+      return this.put(exact !== undefined && this.opts.decimalComma ? commaResult(exact, false) : exact);
     });
   }
   copyLatex(item?: HistoryItem): Promise<boolean> {
