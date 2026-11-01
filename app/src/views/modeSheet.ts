@@ -193,7 +193,7 @@ export function settingsSections(session: Session, env: SettingsEnv = {}): MenuI
     section("counters", t("settings.counters"), tapsItems(session), () => {
       return t("settings.counters.value", { n: String(session.taps.counts.presses) }); // (a reset replaces the object)
     }),
-    section("help", aboutText("help"), helpItems()),
+    section("help", aboutText("help"), helpItems(env)),
   ];
 }
 

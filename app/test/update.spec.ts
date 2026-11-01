@@ -59,7 +59,7 @@ test.describe("an older build's data (ef857a6) in today's app", () => {
   test.beforeEach(async ({ page }) => {
     expect(snapshot.build).toBe("ef857a6");
     await seed(page);
-    await page.goto("/");
+    await page.goto("/?tips=off");
     await page.waitForFunction(() => customElements.get("math-field") !== undefined && window.pascaline !== undefined);
     await page.evaluate(() => window.pascaline.entry.ready);
     await page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 30_000 });

@@ -24,7 +24,7 @@ test("history survives a reload and is drawn without calling the engine", async 
 });
 
 test("keys pressed before MathLive has loaded are queued and replayed", async ({ page }) => {
-  await page.goto("/?engine=fake");
+  await page.goto("/?engine=fake&tips=off");
   await page.locator('[data-key="d1"]').waitFor();
   await tap(page, ["d1", "div", "d3"]);
   await page.waitForFunction(() => window.pascaline.entry.field !== undefined, undefined, { timeout: 20_000 });
@@ -147,7 +147,7 @@ test("keys typed while the kept line loads go after it", async ({ page }) => {
   await tap(page, ["d2"]);
   await hide(page);
   const next = await page.context().newPage();
-  await next.goto("/?engine=fake");
+  await next.goto("/?engine=fake&tips=off");
   await next.locator('[data-key="d3"]').waitFor();
   await tap(next, ["d3", "d4"]);
   await next.waitForFunction(() => window.pascaline?.entry.field !== undefined, undefined, { timeout: 20_000 });
@@ -167,7 +167,7 @@ test("a hide while the field still loads after a kill keeps the stored line", as
     await new Promise((res) => setTimeout(res, 3000));
     await r.continue();
   });
-  await slow.goto("/?engine=fake");
+  await slow.goto("/?engine=fake&tips=off");
   await slow.locator('[data-key="d3"]').waitFor();
   await slow.waitForTimeout(800);
   expect(await slow.evaluate(() => window.pascaline.entry.field)).toBeUndefined();

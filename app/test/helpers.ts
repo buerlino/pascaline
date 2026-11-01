@@ -67,7 +67,8 @@ export async function tap(page: Page, ids: string[]): Promise<void> {
 export const entryValue = (page: Page): Promise<string> => page.evaluate(() => window.pascaline.entry.value);
 
 export async function open(page: Page, query = "engine=fake"): Promise<void> {
-  await page.goto(`/?${query}`);
+  // R15c4: a fresh profile shows the first-start tips over the app; every other test runs without them (`tips=on` keeps them)
+  await page.goto(`/?${query}${query.includes("tips=") ? "" : "&tips=off"}`);
   await page.waitForFunction(() => customElements.get("math-field") !== undefined && window.pascaline !== undefined);
   await page.evaluate(() => window.pascaline.entry.ready);
   await page.waitForTimeout(150);

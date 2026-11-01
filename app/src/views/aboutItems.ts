@@ -5,6 +5,7 @@
 import type { MenuItem, SubMenu } from "../apps/types.ts";
 import { aboutText as t } from "../i18n/enAbout.ts";
 import { aboutData, aboutLoading, type AboutData } from "./aboutData.svelte.ts";
+import type { SettingsEnv } from "./yourKeys.ts";
 
 export const REPO_URL = "https://github.com/buerlino/pascaline";
 const LICENCE = "GPL-3.0-or-later";
@@ -68,9 +69,11 @@ function aboutRows(d: AboutData): MenuItem[] {
   ];
 }
 
-/** The rows of the Help and about section. (R15c4 adds "Show the first-start tips" above them.) */
-export function helpItems(): MenuItem[] {
+/** The rows of the Help and about section: "Show the first-start tips" (R15c4; only where the app gives it) above About and Parts. */
+export function helpItems(env: SettingsEnv = {}): MenuItem[] {
+  const tips = env.tips;
   return [
+    ...(tips ? [{ id: "tips", label: t("tips.row"), run: () => tips() }] : []),
     { id: "about", label: t("title"), hint: t("hint"), submenu: lazy(t("aboutTitle"), aboutRows) },
     { id: "parts", label: t("parts"), hint: t("partsHint"), submenu: lazy(t("partsTitle"), partRows, { longPreview: true }) },
   ];
