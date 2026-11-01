@@ -59,8 +59,6 @@ Milestone reviews (section 0): after R50e; after R24d (with R108's gallery group
 
 | Step | What | Agent, model | Branch | After |
 |---|---|---|---|---|
-| 330 | [R102](packages/R102.md) spoken names and strings | ron, Sonnet | `p1/ron-strings` | – |
-| 331 | [R62](packages/R62.md) the unit result view drawn | ron, Sonnet | `p1/ron-m5-unitresult` | – |
 | 332 | [R63](packages/R63.md) the way back from the unit view | ron, Opus | `p1/ron-m5-unitback` | R62 |
 | 333 | [R15c4](packages/R15c4.md) first-start tips | ron, Sonnet | `p1/ron-m4a-tips` | – |
 | 334 | [R55](packages/R55.md) digit groups in drawn results | ron, Sonnet | `p1/ron-m4a-digitgroups` | R15c4 |
