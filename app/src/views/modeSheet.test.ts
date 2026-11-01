@@ -278,6 +278,19 @@ describe("Help and about (R87)", () => {
     expect(s.level.items.every((x) => x.submenu)).toBe(true);
   });
 
+  it("with the app's tips (R15c4) the first row shows the first-start tips again (the other test: without them there is no such row)", () => {
+    const shown = vi.fn();
+    const s = new Sheet("mode", "Mode", () => modeItems(session, { tips: shown }), { remember: false });
+    s.pickNumber(5);
+    s.pickNumber(5); // (no Your keys or Data here: Help and about is the fifth section)
+    expect(s.level.items.map((x) => x.id)).toEqual(["tips", "about", "parts"]);
+    expect(s.level.items[0]?.label).toBe("Show the first-start tips");
+    const p = s.activate(0);
+    expect(p.kind).toBe("run"); // the shell closes the sheet, then runs it
+    if (p.kind === "run") p.item.run?.();
+    expect(shown).toHaveBeenCalledTimes(1);
+  });
+
   it("About: the version from package.json, the licence, the source URL; the licence opens its text", async () => {
     const s = settings(5);
     s.pickNumber(1);

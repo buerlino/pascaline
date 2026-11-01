@@ -11,6 +11,7 @@ The owner's other open items are in [backlog.md](backlog.md), "Needs the user". 
 
 - **R50e, on the phone:** (1) the first frame reads the Android default (Dark) from `window.Capacitor` in the inline script; if the bridge is not there yet at that point, a first start with nothing stored shows System for one frame, then Dark (later starts read the mirror). Look at a first start after "clear data". (2) Android's status and navigation bar colours stay open (not in R50e).
 
+- **R15c4, the first-start tips (day check):** the overlay shows on a fresh profile after the keypad is drawn; the flag `tipsSeen` is stored when it is shown, so a kill before "Got it" still counts as seen. Every e2e test opens with `?tips=off` (helpers.ts `open`; the device core run uses the same helper); a deep link with `tips=off` hides it for anyone. Look at it on the phone: the ring positions at 360 px and in the small-phone gallery shot; whether the dim is dark enough in the light theme.
 
 
 ## Decided proposals

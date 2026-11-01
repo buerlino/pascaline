@@ -61,6 +61,7 @@
       type="button"
       class="place"
       data-testid="place"
+      data-tip="place"
       data-app={shell.app ?? ""}
       data-view={shell.app === null ? session.view : shell.view}
       aria-label={t("status.place", { place })}
@@ -110,7 +111,7 @@
         <button type="button" class="chip" data-testid="chip-digits" onclick={() => onmode("digits")}>{session.settings.digits}</button>
       </span>
     </span>
-    <button type="button" class="menubtn" data-testid="menu-button" aria-label={t("status.menu")} onclick={() => onpress(MENU_KEY, "primary")}>☰</button>
+    <button type="button" class="menubtn" data-testid="menu-button" data-tip="menu" aria-label={t("status.menu")} onclick={() => onpress(MENU_KEY, "primary")}>☰</button>
     <!-- the busy ring is drawn on an aria-hidden tile: a screen reader hears the job from this hidden line (R102) -->
     {#if busy}<span class="sr" role="status" data-testid="busy-status">{t("status.busy")}</span>{/if}
   </header>

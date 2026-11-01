@@ -18,6 +18,8 @@ export interface SettingsEnv {
   /** Settings › Data (R38a, R38b): runs a backup action on the clipboard code, which shows its notice and opens the
    *  restore sheet (App.svelte's withClip: it waits for that code when the sheet opened before it came). */
   data?(run: (c: ClipActions) => void | Promise<void>): void;
+  /** Settings › Help and about › Show the first-start tips (R15c4): the overlay over the app (App.svelte). */
+  tips?(): void;
 }
 
 /** The places and sheets a slot can hold. */

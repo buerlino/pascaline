@@ -51,7 +51,7 @@ test.describe("by keys", () => {
   });
 
   test("About › Licence opens the GPL text as a level that scrolls; ▼ pages down, ◀ goes back onto the same row", async ({ page }) => {
-    await tap(page, ["d2", "d3"]);
+    await tap(page, ["d2", "d2"]);
     // the first licence text loads its lazy chunk; under the full run's load that took more than the default 5 s once (pipeline run 350)
     await expect(text(page)).toContainText("GNU GENERAL PUBLIC LICENSE", { timeout: 20_000 });
     await expect(title(page)).toHaveText("Help and about › About › GPL-3.0-or-later");
@@ -67,13 +67,13 @@ test.describe("by keys", () => {
     await expect(row(page, "licence")).toHaveAttribute("data-active", "true");
   });
 
-  test("a digit pressed while the About data loads waits for its rows (R8): 1 2 typed at once still opens the GPL text", async ({ page }) => {
+  test("a digit pressed while the About data loads waits for its rows (R8): 2 2 typed at once still opens the GPL text", async ({ page }) => {
     // the full e2e run under load (pipeline run 349) lost the 2 on the level that still showed Loading…
     await page.route(/virtual:about|about-[\w-]+\.js/, async (r) => {
       await new Promise((done) => setTimeout(done, 800));
       await r.continue();
     });
-    await tap(page, ["d2", "d3"]);
+    await tap(page, ["d2", "d2"]);
     await expect(text(page)).toContainText("GNU GENERAL PUBLIC LICENSE");
     await expect(title(page)).toHaveText("Help and about › About › GPL-3.0-or-later");
   });

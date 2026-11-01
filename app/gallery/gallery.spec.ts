@@ -337,6 +337,29 @@ const shots: Shot[] = [
     },
   },
   ...settingsShots(),
+  // ---- R15c4: the first-start tips, over a Home with history (opened from Settings › Help and about, as a fresh profile shows them)
+  {
+    id: "home-tips",
+    group: "First-start tips (R15c4)",
+    title: "The tips: the screen dimmed, the place name and ☰ ringed, one line for each, Got it",
+    setup: async (p) => {
+      await someHistory(p);
+      await tap(p, ["@mode", "d5", "d7"]);
+      await p.getByTestId("menu").locator('[data-id="tips"]').tap();
+      await p.getByTestId("tips").waitFor();
+    },
+  },
+  {
+    id: "home-tips-small",
+    group: "First-start tips (R15c4)",
+    title: "The tips at the small phone (360 × 740)",
+    viewport: { width: 360, height: 740 },
+    setup: async (p) => {
+      await tap(p, ["@mode", "d5", "d7"]);
+      await p.getByTestId("menu").locator('[data-id="tips"]').tap();
+      await p.getByTestId("tips").waitFor();
+    },
+  },
   ...padShots(),
   ...unitFindShots(),
   ...unitResultShots(),
