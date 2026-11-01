@@ -203,12 +203,12 @@ test.describe("by touch", () => {
   });
 
   test("past seven rows the list scrolls with its count", async ({ page }) => {
-    await page.evaluate(async () => {
+    await page.evaluate(async (path) => {
       const { session, userKeys } = window.pascaline;
-      const m = (await import(/* @vite-ignore */ "/src/views/modeSheet.ts")) as typeof import("../src/views/modeSheet.ts");
+      const m = (await import(/* @vite-ignore */ path)) as typeof import("../src/views/modeSheet.ts");
       const presets = await m.presetsFor(session, userKeys);
       for (let i = 1; i <= 8; i++) presets.capture(`Job ${i}`);
-    });
+    }, "/src/views/modeSheet.ts");
     await page.setViewportSize({ width: 360, height: 740 });
     await tap(page, ["@mode", "d5"]);
     await expect(title(page)).toHaveText("Mode › Presets");

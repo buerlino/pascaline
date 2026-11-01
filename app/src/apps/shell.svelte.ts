@@ -26,6 +26,13 @@ interface Place {
 export type PaletteId = "tmpl" | "rel" | "sym";
 const PALETTE_IDS: readonly string[] = ["tmpl", "rel", "sym"] satisfies PaletteId[];
 
+/** The entry line asks for a name (R89): Enter offers the line, Esc cancels; the asker clears `prompt` when done. */
+export interface EntryPrompt {
+  readonly label: string;
+  enter(latex: string): void;
+  cancel(): void;
+}
+
 export class AppShell {
   /** The open app, or null for Home/CAS. */
   app = $state<AppId | null>(null);
@@ -36,6 +43,8 @@ export class AppShell {
   sheet = $state.raw<Sheet | null>(null);
   /** Set while an app's code is loading (the view shows a short note). */
   loading = $state<AppId | null>(null);
+  /** A name typed in the entry line under its label (R89, a preset's name): route.ts gives it Enter and Esc. */
+  prompt = $state.raw<EntryPrompt | null>(null);
 
   /** Copy, paste and share (set by App.svelte); apps reach it through AppHost.copy. */
   clip: { copyRaw(text: string | undefined, notice?: string): Promise<boolean>; say(message: string): void } | undefined;
@@ -78,6 +87,7 @@ export class AppShell {
   }
   /** The entry line belongs to the open view (undefined label = no entry line, e.g. Plot). */
   get entryLabel(): string | undefined {
+    if (this.prompt) return this.prompt.label;
     const a = this.instance;
     return a ? a.entryLabel(this.view) : undefined;
   }

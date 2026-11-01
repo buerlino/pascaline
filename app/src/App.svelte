@@ -206,7 +206,7 @@
   }
 
   /** What Settings › Your keys needs (R4b): the slots, and Find to pick a slot's content from. */
-  const settingsEnv = { get userKeys() { return userKeys; }, tips: showTips, chooseFor: (id: string, layer: Layer): void => openFind({ id, layer }), data: withClip }; // data: Settings › Data (R38a, R38b; as a long press on a history row: waits for the clipboard and Mode code if the sheet opened before they came; no import of its own in the start chunk)
+  const settingsEnv = { get userKeys() { return userKeys; }, get shell() { return shell; }, get entry() { return entry; }, notice: (m: string) => withClip((c) => c.say(m)), tips: showTips, chooseFor: (id: string, layer: Layer): void => openFind({ id, layer }), data: withClip }; // data: Settings › Data (R38a, R38b; as a long press on a history row: waits for the clipboard and Mode code if the sheet opened before they came; no import of its own in the start chunk)
   /** Settings as the ☰ menus' last row opens it (R49): one per session, its rows read the settings on every draw. */
   let settingsMenu: SubMenu | undefined;
   /** A user key that holds Settings, or a ☰ menu's last row before the Mode code is in: Mode › Settings, on its first
@@ -241,8 +241,9 @@
   /** Run `open` at once when the lists are loaded; else after the load, with every key meanwhile waiting in the queue
    *  (decisions.md R8), so none of them lands on the line before the sheet is there. */
   function onModeSheet(open: (m: ModeSheetCode) => void): void {
-    if (loaders.modeSheet && sheetChunk.C) return open(loaders.modeSheet);
-    sheetLoad = Promise.all([loadModeSheet(), loadSheetView()]).then(
+    if (loaders.modeSheet?.presetsAsked() && sheetChunk.C) return open(loaders.modeSheet);
+    // R89: Mode's Preset row waits for the presets (a second at most)
+    sheetLoad = Promise.all([loadModeSheet().then((m) => m.presetsReady(session, userKeys).then(() => m)), loadSheetView()]).then(
       ([m]) => {
         sheetLoad = null;
         open(m);

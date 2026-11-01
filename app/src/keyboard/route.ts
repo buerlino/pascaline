@@ -4,7 +4,7 @@
 // a key pressed while an app's or a sheet's code loads waits in the queue (decisions.md R8), and every other key runs
 // its action on the entry line, the app or the app shell. Plain functions over a context object (RouteCtx) that
 // App.svelte gives them; this module draws nothing and holds no state of its own.
-import type { AppShell } from "../apps/shell.svelte.ts";
+import type { AppShell, EntryPrompt } from "../apps/shell.svelte.ts";
 import type { NavDir } from "../apps/types.ts";
 import type { ClipActions } from "../clipboard/actions.svelte.ts";
 import { startsWithAns } from "../entry/ans.ts";
@@ -389,12 +389,28 @@ function modifier(c: RouteCtx, name: "shift" | "alpha", layer: Layer | undefined
   else if (layer === "shift") s.flickShiftLock();
 }
 
+/** A name on the line (R89, shell.prompt): Enter offers it, Esc cancels, C empties the line (never the history); a key
+ *  that goes elsewhere cancels it first. False: the key does its usual job. */
+function promptKey(c: RouteCtx, p: EntryPrompt, name: Special): boolean {
+  if (name === "enter") p.enter(c.entry.value);
+  else if (name === "esc") p.cancel();
+  else if (name === "clear") c.entry.clear();
+  else {
+    if (name !== "none") p.cancel();
+    return false;
+  }
+  return true;
+}
+
 /** The key's action in the layer it was pressed in. */
 export function run(c: RouteCtx, key: Key, mods: Mods): void {
   const { session, shell, entry } = c;
   const action = actionFor(key, mods.shift, mods.alpha, session.settings.entry === "line", c.casKeys);
   if (!action) return c.dead();
-  if (shell.app === null && historyKey(c, action)) return;
+  const prompt = shell.prompt;
+  if (prompt && action.kind === "special" && promptKey(c, prompt, action.name)) return;
+  if (shell.app === null && !prompt && historyKey(c, action)) return;
+  if (prompt && action.kind === "type" && action.text === " ") return entry.run({ kind: "insert", latex: "\\ " }); // a name keeps its spaces
   if (action.kind === "special") return special(c, action.name);
   if (shell.app !== null) {
     const dir = action.kind === "cmd" ? NAV[action.name] : undefined;
@@ -402,12 +418,12 @@ export function run(c: RouteCtx, key: Key, mods: Mods): void {
     if (!shell.showsEntry) return c.dead(); // a view without an entry line (Plot) ignores typing, ⇤ ⇥ and Undo
     if (action.kind === "insert" && action.latex === ANS_CHIP) return c.dead(); // Ans belongs to Home and CAS
     if (action.kind === "insert" && action.units) return c.dead(); // ± (R71) is read by the unit view, from the Home or CAS line
-  } else if (entry.value === "" && key.id === "frac" && layerOf(mods) === "primary") {
+  } else if (!prompt && entry.value === "" && key.id === "frac" && layerOf(mods) === "primary") {
     // a b/c on an empty line (R10): the last result in its next form (decimal ↔ fraction, a+bi ↔ polar), as on the
     // G2; while typing it is the stacked fraction below
     void session.cycleForm();
     return;
-  } else if (entry.value === "" && startsWithAns(key.id, layerOf(mods)) && session.hasResult()) {
+  } else if (!prompt && entry.value === "" && startsWithAns(key.id, layerOf(mods)) && session.hasResult()) {
     entry.insertAns(); // docs/04 2.8: an operator (or Store ▶) on an empty line starts with Ans
   }
   entry.run(action);
