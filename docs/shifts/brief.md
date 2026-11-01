@@ -20,7 +20,7 @@
 
 **No package yet** (backlog, by reach): F73 (it waited for the end of the freeze), F80, F85, F70, F71; the background stream F62, G94, F106; what G116 finds. S20 (the MPFI spike) by day.
 
-**The night review of 2026-10-30** ([its note](../research/night-review-2026-10-31.md) section 2): 28 packages (R93–R106, G139–G148, A52–A55), S1 lines F146–F154; section 0c takes its order a few rows at a time.
+**The night review** (owner, 2026-11-01; `/night-review`, `.claude/skills/night-review/`): beside the lanes on Mon 11-02, Fri 11-06, Mon 11-09 and Fri 11-13, the last whose packages the lanes can build before 2026-11-17; its packages wait in its open note (`docs/research/night-review-<date>`, section 2), and section 0c takes them a few rows at a time.
 
 **Why this order:** the lanes first (A47a–A47c): every later run uses them; silent wrong numbers by reach; R91 before R49 and A49 (room in the start chunk; A49 handles its chunks); A43 → A7 (stored data safe before the first signed release); R87 and A49 before A45 (owner, 2026-10-29); R15c3 and R49 before R4b (R4b fills the user keys in R49's levels); the units right after R86, R57, R50e (owner, 2026-10-29).
 
