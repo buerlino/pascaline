@@ -62,6 +62,6 @@ describe("slotFormula (R24c)", () => {
     );
     expect(slotFormula("\\ans\\times2").slots).toEqual(["u1"]); // Ans is no result chip here: the unit view has no Ans value
     const chips = { "res:3": { value: "42", exact: true } };
-    expect(latexToGiacInfo(slotFormula("\\res{3}{42}\\times2").latex, { units: true, chips }).giac).toBe("(42)*pasu1*2*pasu2");
+    expect(latexToGiacInfo(slotFormula("\\res{3}{42}\\times2").latex, { units: true, chips }).giac).toBe("((42)*pasu1)*(2*pasu2)");
   });
 });

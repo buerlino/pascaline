@@ -68,10 +68,10 @@ describe("units mode (R28)", () => {
   it("R63: a \\res chip is a number: the slot after it multiplies it, a σ chip is an uncertain value, and Home still refuses a slot", () => {
     const chips = { "res:1": { value: "50*pi", exact: true }, "res:2": { value: "4936/125", exact: false, unc: "sqrt(1548381)/1000" } };
     const r = latexToGiacInfo("\\res{1}{0.157}\\placeholder[u1]{}\\times2\\placeholder[u2]{}", { units: true, chips });
-    expect(r.giac).toBe("(50*pi)*pasu1*2*pasu2");
+    expect(r.giac).toBe("((50*pi)*pasu1)*(2*pasu2)");
     expect(r.units).toEqual({ slots: ["u1", "u2"], consts: [] });
     // R61's σ in the unit shown goes in as G18's uncertain value, so the unit view keeps it (never a σ silently dropped)
-    expect(latexToGiacInfo("\\res{2}{39.488}\\placeholder[u1]{}\\times2", { units: true, chips }).giac).toBe("pasupm((4936/125),(sqrt(1548381)/1000))*pasu1*2");
+    expect(latexToGiacInfo("\\res{2}{39.488}\\placeholder[u1]{}\\times2", { units: true, chips }).giac).toBe("(pasupm((4936/125),(sqrt(1548381)/1000))*pasu1)*2");
     expect(latexToGiacInfo("\\res{2}{39.488}\\times2", { units: true, chips }).giac).toBe("pasupm((4936/125),(sqrt(1548381)/1000))*2");
     expect(() => latexToGiacInfo("\\res{1}{0.157}\\placeholder[u1]{}", { chips })).toThrow(/unexpected token at 'placeholder'/);
     expect(() => latexToGiacInfo("\\res{1}{0.157}\\pm1", { units: true, chips })).toThrow("± goes right after a number");

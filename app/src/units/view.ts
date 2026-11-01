@@ -6,6 +6,7 @@
 // open.ts), never through the entry line. Plain TS (no runes): a change calls `host.changed()`. Evaluation: the parser's units mode (R28) on the formula, the slots' tokens,
 // then Calc.units(). Loaded with the unit view.
 import type { ChipTable } from "../input/chips.ts";
+import { chipUnit } from "../input/chipUnit.ts";
 import { latexToGiacInfo } from "../input/latex-to-giac.ts";
 import { unitText } from "../i18n/enUnits.ts";
 import { END, slotFormula, type SlotFormula } from "../input/unitFormula.ts";
@@ -36,6 +37,8 @@ export interface ViewHost {
   dead(): void;
   /** The active slot, the reading or what is shown changed: draw them (units/panel.ts). */
   changed(): void;
+  /** R63: a result is in (as shown: the unit a tapped chip names): it becomes Home's history row of this visit. */
+  result?(q: Quantity): void;
 }
 
 /** The active slot's look: drawn inline, since a class does not reach into the field's shadow root. */
@@ -43,6 +46,8 @@ const ACTIVE = "background:var(--pick);border-radius:4px";
 
 /** The slots a line keeps (docs/04 4.3 "The way back": the units key shows them again), by the line's LaTeX. */
 const kept = new Map<string, Readonly<Record<string, UnitSlot>>>();
+/** R63: the line kept slots in this session (they come before a stored unit row's). */
+export const hasKept = (line: string): boolean => kept.has(line);
 
 export class UnitView {
   readonly line: string;
@@ -107,18 +112,22 @@ export class UnitView {
     return s.kind === "result" && s.dimension !== "" ? Math.min(s.alts.length, this.#fit ?? s.alts.length) : 0;
   }
 
-  constructor(catalogue: SlotCatalogue, line: string, chips: ChipTable, host: ViewHost) {
+  /** `seed`: the slots to start with (a picked unit row's, R63); else the ones this line kept. A slot after a result
+   *  chip that neither fills starts with the chip's unit (R63, r17 section 2), which the user can change. */
+  constructor(catalogue: SlotCatalogue, line: string, chips: ChipTable, host: ViewHost, seed?: Readonly<Record<string, UnitSlot>>) {
     this.line = line;
     this.formula = slotFormula(line);
     this.ids = [...this.formula.slots, END];
     this.#cat = catalogue;
     this.#chips = chips;
     this.#host = host;
-    const from = kept.get(line);
+    const from = seed ?? kept.get(line);
+    const after = this.formula.chips ?? {};
     for (const id of this.ids) {
       let m: SlotModel;
       try {
-        m = new SlotModel(catalogue, from?.[id]);
+        const key = after[id];
+        m = new SlotModel(catalogue, from?.[id] ?? (key !== undefined ? chipUnit(chips[key])?.slot : undefined));
       } catch {
         m = new SlotModel(catalogue); // (a kept slot the catalogue no longer reads: empty)
       }
@@ -312,7 +321,9 @@ export class UnitView {
       // the chip's own text is the unit (the index's symbol for ton is s_ton)
       const p = this.#picked;
       const q = !("error" in got) && p && got.shownSlot && JSON.stringify(got.shownSlot) === JSON.stringify(p.slot) ? { ...got, unit: p.text } : got;
-      if (run === this.#run) this.shown = shownOf(q, this.#host.format(), alts);
+      if (run !== this.#run) return;
+      this.shown = shownOf(q, this.#host.format(), alts);
+      if (!("error" in q)) this.#host.result?.(q);
     } catch (e) {
       if (run === this.#run) this.shown = { kind: "message", text: unitText("units.engine") };
     }
@@ -320,13 +331,31 @@ export class UnitView {
 
   /** Esc: the line keeps its slots. */
   keep(): void {
+    const slots = this.filled();
+    if (Object.keys(slots).length) kept.set(this.line, slots);
+    else kept.delete(this.line);
+  }
+
+  /** The complete, filled slots and end slot by prompt id. */
+  filled(): Record<string, UnitSlot> {
     const slots: Record<string, UnitSlot> = {};
     for (const id of this.ids) {
       const m = this.#models.get(id) as SlotModel;
       if (!m.empty && m.check().ok) slots[id] = m.slot;
     }
-    if (Object.keys(slots).length) kept.set(this.line, slots);
-    else kept.delete(this.line);
+    return slots;
+  }
+
+  /** R63: the request as a history row draws it: each filled slot's unit after its number, then → and the end slot's;
+   *  an empty slot (no unit) is left out. */
+  drawn(): string {
+    let latex = this.formula.latex;
+    for (const id of this.ids) {
+      const m = this.#models.get(id) as SlotModel;
+      const body = m.empty || !m.check().ok ? "" : `\\,${m.latex}`;
+      latex = latex.replace(id === END ? `\\to\\placeholder[${END}]{}` : `\\placeholder[${id}]{}`, () => (id === END && body ? `\\to${body}` : body));
+    }
+    return latex;
   }
 
   #draw(id: string): void {
