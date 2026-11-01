@@ -599,6 +599,27 @@ Digits:=40:; pc("g133f1-asinh-1e20asinh-i-div10-12",'(asinh(asinh(i/10)*10^20))'
 // patch 0023-asin-imaginary-real-part.patch
 // g133f1-asinh-1e20asinh-i-div10-30 (precision.yaml, oracle)
 Digits:=40:; pc("g133f1-asinh-1e20asinh-i-div10-30",'(asinh(asinh(i/10)*10^20))',(444439367591324459024448901932/10^28)+(157079632679489661923132169164/10^29)*i,5/10^29+5/10^30);
+// patch 0026-asinh-small-real-exact.patch
+// g151-cbrt-asinh-1e-100-30 (precision.yaml, oracle)
+Digits:=40:; pc("g151-cbrt-asinh-1e-100-30",'(surd(asinh(10^-100),3))',(464158883361277889241007635092/10^63),5/10^64);
+// patch 0026-asinh-small-real-exact.patch
+// g151-cbrt-asinh-1e-200-12 (precision.yaml, oracle)
+Digits:=40:; pc("g151-cbrt-asinh-1e-200-12",'(surd(asinh(10^-200),3))',(215443469003/10^78),5/10^79);
+// patch 0026-asinh-small-real-exact.patch
+// g151-cbrt-asinh-1e-200-30 (precision.yaml, oracle)
+Digits:=40:; pc("g151-cbrt-asinh-1e-200-30",'(surd(asinh(10^-200),3))',(215443469003188372175929356652/10^96),5/10^97);
+// patch 0026-asinh-small-real-exact.patch
+// g151-cbrt-asinh-3e-300-12 (precision.yaml, oracle)
+Digits:=40:; pc("g151-cbrt-asinh-3e-300-12",'(surd(asinh(3*10^-300),3))',(144224957031/10^111),5/10^112);
+// patch 0026-asinh-small-real-exact.patch
+// g151-cbrt-asinh-3e-300-30 (precision.yaml, oracle)
+Digits:=40:; pc("g151-cbrt-asinh-3e-300-30",'(surd(asinh(3*10^-300),3))',(144224957030740838232163831078/10^129),5/10^130);
+// patch 0026-asinh-small-real-exact.patch
+// g151-cbrt-asinh-1e-300-12 (precision.yaml, derived)
+Digits:=40:; pc("g151-cbrt-asinh-1e-300-12",'(surd(asinh(10^-300),3))',(1/10^100),5/10^112);
+// patch 0026-asinh-small-real-exact.patch
+// g151-cbrt-asinh-1e-300-30 (precision.yaml, derived)
+Digits:=40:; pc("g151-cbrt-asinh-1e-300-30",'(surd(asinh(10^-300),3))',(1/10^100),5/10^130);
 // patch 0025-pow-root-extract-branch.patch
 // g149-2-pow-sqrt-neg1-1e-3-30 (precision.yaml, oracle)
 Digits:=40:; pc("g149-2-pow-sqrt-neg1-1e-3-30",'(2^sqrt(-1-10^-3))',(769017463424123741195787586319/10^30)+(639227769225278966928345479449/10^30)*i,5/10^31+5/10^31);
