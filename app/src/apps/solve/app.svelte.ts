@@ -16,6 +16,7 @@ import { parseFailText } from "../../input/errors.ts";
 import { parseLatex } from "../../input/parse.ts";
 import { numberSource } from "../../clipboard/source.ts";
 import { tc } from "../../clipboard/strings.ts";
+import { commaResult } from "../../state/displayMode.ts";
 import { t } from "../../i18n/index.ts";
 import { parseDec, plainNumber, showDecimal } from "../decimal.ts";
 import { decimalFromString } from "../../engine/format.ts";
@@ -122,7 +123,11 @@ export class SolveApp implements AppInstance {
   }
   fmtValue(name: string): string {
     const s = this.host.settings;
-    return showDecimal(this.value(name), s.digits, engineFormat(s.format));
+    return this.mark(showDecimal(this.value(name), s.digits, engineFormat(s.format)));
+  }
+  /** R108: a drawn number or root with the decimal comma when that is the mark (as Home draws it). */
+  mark(text: string): string {
+    return this.host.settings.decimalMark === "comma" ? commaResult(text, false) : text;
   }
 
   // ---- framework hooks
@@ -178,7 +183,7 @@ export class SolveApp implements AppInstance {
 
   // ---- Copy (docs/04 section 2.6): the full value of a root; Menu: as shown
   copyText(view: ViewId): Promise<string | undefined> | undefined {
-    return view === "num" && this.selected ? this.fullOf(this.selected) : undefined;
+    return view === "num" && this.selected ? this.fullOf(this.selected).then((s) => this.mark(s)) : undefined;
   }
   /** Every confirmed digit of the unknown's value (the engine's, when a solve gave it), else the stored value. */
   async fullOf(name: string): Promise<string> {
@@ -186,7 +191,7 @@ export class SolveApp implements AppInstance {
     return this.copies[name] ?? this.value(name);
   }
   async copyValue(name: string, shown = false): Promise<void> {
-    this.host.copy(shown ? this.fmtValue(name) : await this.fullOf(name));
+    this.host.copy(shown ? this.fmtValue(name) : this.mark(await this.fullOf(name)));
   }
   private settling: Promise<void> = Promise.resolve();
   /** Waits for keepFull; a failed copy load leaves the stored value as the known. */
