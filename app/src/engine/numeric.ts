@@ -665,7 +665,7 @@ function agreedFacts(facts: readonly (ElementFacts | null)[], digits: number, P:
     if (f) return f;
     // G140: a double at P or P + 20 (Giac's evalf of Zeta((1+2*i)/2) is one at any Digits) agrees with itself, so its
     // two precisions confirm nothing: the facts of an unaudited double, as Giac's numeric integration has them.
-    if (isDouble(A[k]!, B[k]!) || B[k]!.double) return integratedFacts([{ value: { re: A[k]!.re, im: A[k]!.im }, exact: false, reliableDigits: null, big: false }])[0]!;
+    if (isDouble(A[k]!, B[k]!) || B[k]!.double) return doubleFacts(A[k]!, B[k]!, { re: A[k]!.re, im: A[k]!.im });
     let leading = leadingZero[k]! && !under;
     let reliable = leadingZero[k] ? (leading ? 0 : digits) : confirmedComplex(A[k]!, B[k]!, P, P);
     let value = denoised(A[k]!, B[k]!, P);
@@ -752,11 +752,24 @@ export function floatFacts(
   return facts && exact && exact.length === facts.length ? facts.map((f, k) => exact[k] ?? f) : facts;
 }
 
-/** At most a double's digits of `v` (rounded; a shorter value is kept). */
-function doubleDigits(v: DecimalValue): DecimalValue {
-  if (v.digits.length <= DOUBLE_DIGITS) return v;
-  const r = roundSignificant(v, DOUBLE_DIGITS);
+/** At most `n` digits of `v`, a double's by default (rounded; a shorter value is kept). */
+function doubleDigits(v: DecimalValue, n: number = DOUBLE_DIGITS): DecimalValue {
+  if (v.digits.length <= n) return v;
+  const r = roundSignificant(v, n);
   return { neg: r.neg, digits: r.digits.replace(/0+$/, ""), exp: r.exp, sticky: true };
+}
+
+/**
+ * G140: the facts of an element read as a double at both precisions (isDouble, or bridge-3's flag): an unaudited
+ * double (integratedFacts), unless rule 3 knows how many of the digits Giac printed it confirms (`short`, shortDigits):
+ * then ⚠ with that count, at most a double's, the value rounded to it. Giac prints the double of
+ * negbinomial_cdf(3,1/3,2.5) as 0.20987654320987, where 17/81 is 0.2098765432098765…: 13 digits, not 14.
+ */
+function doubleFacts(a: Parts, b: Parts, value: ComplexValue): ElementFacts {
+  const short = [a.short, b.short].filter((x): x is number => x !== undefined);
+  if (!short.length) return integratedFacts([{ value, exact: false, reliableDigits: null, big: false }])[0]!;
+  const n = Math.min(...short, DOUBLE_DIGITS);
+  return { value: { re: doubleDigits(value.re, n), im: doubleDigits(value.im, n) }, exact: false, reliableDigits: n, warn: "unaudited", big: false };
 }
 
 /**
@@ -965,7 +978,7 @@ function floatPathFactsOf(
     facts: B.map((b, k) => {
       const value = denoised(A[k]!, b, W);
       // G140: a double at W or W + 20 agrees with itself (agreedFacts)
-      if (isDouble(A[k]!, b) || b.double) return integratedFacts([{ value: { re: value.re, im: value.im }, exact: false, reliableDigits: null, big: false }])[0]!;
+      if (isDouble(A[k]!, b) || b.double) return doubleFacts(A[k]!, b, { re: value.re, im: value.im });
       return zeroUnconfirmed({
         value: { re: value.re, im: value.im },
         exact: false,

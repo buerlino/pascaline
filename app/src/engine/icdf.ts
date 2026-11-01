@@ -126,8 +126,10 @@ export const ICDF_DEFINITIONS: Readonly<Record<string, string>> = {
     // (normald_icdf below 1E-16 is a different number on each call: -8.58, -8.65 for 10^-20, right -9.26).
     "if (md) dx:=(t[3]-(p-1/2))/t[2]; else { if (lo) w:=t[0]; else w:=t[1]; if (not(w>0)) break; " +
     "dx:=(ln(w)-ln(q))*w/t[2]; if (not(lo)) dx:=-dx; } " +
-    // χ² and Fisher live on x > 0 and have power-law tails at 0: the step is taken in ln x.
-    "if (k==2 or k==3) x:=x*exp(-dx/x); else x:=x-dx; if (abs(dx)<=tol*max(abs(x),when(k==0,b,when(k==1,1,0)))) { ok:=1; break; } } } " +
+    // χ² and Fisher live on x > 0 and have power-law tails at 0: the step is taken in ln x, and dx becomes the step x
+    // made (G140f2: dx is in units of the old x, so from a start far below the root, Giac's fisher_icdf(3,4,10^-20) of
+    // 1.4E-64 on some calls, the first step of 3.4E-14 counted as 1.7E-62 and stopped Newton 13 digits short).
+    "if (k==2 or k==3) { w:=x; x:=x*exp(-dx/x); dx:=x-w; } else x:=x-dx; if (abs(dx)<=tol*max(abs(x),when(k==0,b,when(k==1,1,0)))) { ok:=1; break; } } } " +
     `if (ok==1) { t:=pasicdft(k,a,b,x); if (md) r:=t[3]-(p-1/2); else { if (lo) r:=t[0]-p; else r:=q-t[1]; } ` +
     `if (type(${ICDF_DIGITS})==integer) d:=${ICDF_DIGITS}; else d:=Digits-10; if (abs(r)>q*10^(-d)) ok:=0; } ` +
     `if (ok==0) { ${ICDF_FAILED}:=1; return x0; } return x; }`,
