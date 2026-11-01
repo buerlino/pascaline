@@ -9,6 +9,8 @@ here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 script="${1:-$here/pipeline.sh}"
 integ="$(git worktree list --porcelain | awk '/^worktree /{w=$2} /^branch refs\/heads\/phase-1$/{print w}')"
 [[ -n "$integ" ]] || { echo "no phase-1 worktree" >&2; exit 1; }
+# A55: the sandbox runs below use made-up ids of a package's shape (T1, Q1, ...) with no package file; only this variable lets them through
+export PASCALINE_ALLOW_UNPACKAGED_IDS=1
 fails=0; count=0
 fail() { echo "FAIL: $*" >&2; fails=$((fails + 1)); }
 re='^### (ron|gorge|annabell|sandra), ([A-Z][0-9]+[a-z0-9]*):.*branch `([^`]+)`'
@@ -870,6 +872,81 @@ out="$(cd "$sb9" && env -u PASCALINE_COORD SB7="$sb9" SBK="$sbk" ANDROID_SERIAL=
 got="$(grep -E '^(acquire|release) (integ|nodemods|host-cpu) device-9|^BUILD' "$sbk/locks.log" | sed -E 's/ started=.*//; s/ device-9//' | paste -sd, -)"
 want='acquire integ,acquire nodemods,acquire host-cpu,BUILD NO_LOCK=1,release host-cpu,release nodemods,release integ'
 [[ "$got" == "$want" ]] || fail "A54: the device build is not under host-cpu inside integ and nodemods with NO_LOCK=1: got '$got', want '$want'; $out"
+
+# A55: a run with no package file stops before the worker; a worker that questions its own task stops before the audit; the two idle shell tests are run
+nopkg() { env -u PASCALINE_ALLOW_UNPACKAGED_IDS "$script" "$@" 2>&1; }
+# (a) A46's call shape: a task text, --id of a package's shape, no docs/shifts/packages/<ID>.md on phase-1
+out="$(nopkg annabell "Annabell, A9998: some task text" --id A9998 --dry-run)"; rc=$?
+grep -qE '^RESULT #[0-9]+ A9998: NOT MERGED \(no package file for A9998\)$' <<<"$out" && [[ $rc -eq 1 ]] || fail "A55: a task text with a package's id and no package file is not stopped (rc $rc): $out"
+grep -q '^DRY RUN' <<<"$out" && fail "A55: the run with no package file got past the guard: $out"
+out="$(nopkg annabell "x" --id A9998b --branch p1/annabell-x --dry-run)"; rc=$?
+grep -qF 'NOT MERGED (no package file for A9998b)' <<<"$out" || fail "A55: an id with a letter suffix is not guarded: $out"
+# (b) a pass's FIX line: the id ends in f<n>, the branch is the package's own
+for fixid in R82f2 G112f1 A47bf1; do
+  out="$(nopkg ron "FIX: the audit found x" --id "$fixid" --branch p1/ron-x --dry-run)"; rc=$?
+  [[ $rc -eq 0 ]] && grep -q "DRY RUN: pipeline run [0-9]*, package $fixid," <<<"$out" || fail "A55: the FIX id $fixid is stopped (rc $rc): $out"
+done
+# (c) a task text with no --id; an id that is not a package's shape
+out="$(nopkg ron "free text, no id" --dry-run)"; rc=$?
+[[ $rc -eq 0 ]] && grep -q 'package task,' <<<"$out" || fail "A55: a task text with no --id is stopped (rc $rc): $out"
+out="$(nopkg ron "free text" --id probe-1 --dry-run)"; rc=$?
+[[ $rc -eq 0 ]] || fail "A55: an id that is not a package's shape is stopped (rc $rc): $out"
+# (d) a package id with its file: by the id alone, and a text run for an existing package
+out="$(nopkg ron "$ron_pkg" --id "$ron_pkg" --dry-run)"; rc=$?
+[[ $rc -eq 0 ]] && grep -q "package $ron_pkg," <<<"$out" || fail "A55: a package id with its file is stopped (rc $rc): $out"
+out="$(nopkg ron "task text for an existing package" --id "$ron_pkg" --branch p1/ron-y --dry-run)"; rc=$?
+[[ $rc -eq 0 ]] || fail "A55: a text run for a package that has its file is stopped (rc $rc): $out"
+# the sandbox: the guard also stops a real (not dry) run, with a run number, a log line and no worker
+sb10="$tmp/sb10"; mkdir -p "$sb10/bin" "$sb10/tools" "$sb10/docs/shifts" "$sb10/app/node_modules/x"; git init -q -b main "$sb10"
+cp "$sb/tools/devlock.sh" "$sb10/tools/"; cp "$sb/bin/npm" "$sb10/bin/"; : > "$sb10/docs/shifts/brief.md"; echo t > "$sb10/app/keep"
+cat > "$sb10/bin/claude" <<'STUB'
+#!/bin/sh
+case "$*" in
+  *"--agent sofia"*) echo audited >> "$SB10/audit-called"; echo APPROVED;;
+  *) echo "worker called" >> "$SB10/worker-called"; echo w >> w.txt; git add w.txt; git -c user.name=t -c user.email=t@t commit -qm work; printf '%s\n' "$SB_REPLY";;
+esac
+STUB
+chmod +x "$sb10/bin/claude"; git -C "$sb10" add -A; gc "$sb10" init; git -C "$sb10" branch phase-1
+sb10run() { (cd "$sb10" && env -u PASCALINE_ALLOW_UNPACKAGED_IDS PATH="$sb10/bin:$PATH" SB10="$sb10" GIAC_OUT="$sb10/engine" "$script" "$@" 2>&1); }
+out="$(sb10run annabell "task text" --id A46 --branch p1/annabell-a46 --checks none)"; rc=$?
+grep -qE '^RESULT #1 A46: NOT MERGED \(no package file for A46\)$' <<<"$out" && [[ $rc -eq 1 ]] || fail "A55: the sandbox run with no package file is not stopped (rc $rc): $out"
+[[ ! -e "$sb10/worker-called" ]] || fail "A55: the worker ran although the package file is missing"
+grep -q 'pipeline #1 A46: NOT MERGED (no package file for A46)' "$sb10/.coord/log.md" || fail "A55: the stop is not logged"
+# (e) the worker questions its own task (the text of .coord/log.md:4248)
+rm -f "$sb10/worker-called"
+export SB_REPLY='- **Open question:** please regenerate the bundle with the A46 block. Branch `p1/annabell-imestate` suggests an IME-state package.'
+out="$(sb10run annabell "task text" --id probe-e1 --branch p1/annabell-e1 --checks none --no-merge)"; rc=$?
+grep -qE '^RESULT #[0-9]+ probe-e1: NOT MERGED \(the worker questioned its task' <<<"$out" && [[ $rc -eq 1 ]] || fail "A55: a worker that asks for the bundle to be regenerated is not stopped (rc $rc): $out"
+[[ ! -e "$sb10/audit-called" ]] || fail "A55: the audit ran after the worker questioned its task"
+export SB_REPLY=$'Last commit abc1234; done.\nOpen question: Needs the user: should Enter in Num refill the line? Default kept (decisions.md).'
+out="$(sb10run annabell "task text" --id probe-e2 --branch p1/annabell-e2 --checks none --no-merge)"; rc=$?
+grep -qE '^RESULT #[0-9]+ probe-e2: APPROVED, not merged' <<<"$out" && [[ $rc -eq 0 ]] || fail "A55: an Open question that is a 'Needs the user' item stops the run (rc $rc): $out"
+[[ -e "$sb10/audit-called" ]] || fail "A55: the audit did not run for a run whose open question is a Needs-the-user item"
+unset SB_REPLY
+# the reply check itself
+printf 'x\nOpen question: the package file is missing from the bundle\n' > "$tmp/q-a"; printf 'Open questions: Needs the user: use x or y?\n' > "$tmp/q-b"; printf 'done, no questions\n' > "$tmp/q-c"
+printf -- '- Open question: the task text is empty, please resend the spec\n' > "$tmp/q-d"
+task_questioned "$tmp/q-a" && task_questioned "$tmp/q-d" || fail "A55: task_questioned misses a worker that says its task is missing"
+printf 'Open question: the spec says empty list → what should Ans show?\nOpen question: the task wants an empty state; which wording?\n' > "$tmp/q-e"
+printf 'Last commit abc.\nOpen questions:\n- please regenerate the bundle with the A46 block\n\nOther text\n' > "$tmp/q-f"
+printf 'Open questions:\n- Needs the user: use x or y?\n- the spec is fine\n\nplease regenerate the bundle (not a question)\n' > "$tmp/q-g"
+task_questioned "$tmp/q-e" && fail "A55: task_questioned stops an Open question about a maths spec that says empty"
+task_questioned "$tmp/q-f" || fail "A55: task_questioned misses a bullet under an Open questions heading"
+task_questioned "$tmp/q-g" && fail "A55: task_questioned reads past the blank line after the heading, or stops a Needs-the-user bullet"
+task_questioned "$tmp/q-b" && fail "A55: task_questioned stops a Needs-the-user question"
+task_questioned "$tmp/q-c" && fail "A55: task_questioned stops a reply with no question"
+# (f) the two idle shell tests are in SELFTESTS (run by `pipeline.sh selftest` and the shell check) and in tools/README.md
+for t in tools/manifest-backup.test.sh tools/release-gate.test.sh; do
+  printf '%s\n' "${SELFTESTS[@]}" | grep -qx "$t" || fail "A55: $t is not in SELFTESTS"
+  [[ -x "$here/../$t" ]] || fail "A55: $t is not executable"
+  grep -qF "$(basename "$t")" "$here/../tools/README.md" || fail "A55: tools/README.md does not name $t"
+done
+# --restore-real puts .orig.real back and leaves .orig (the night setting) untouched
+sa="$tmp/sa"; mkdir -p "$sa/bin" "$sa/devices"; printf 'STAY_ON=7\nSCREEN_OFF=2147483647\n' > "$sa/devices/S1.orig"; printf 'STAY_ON=0\nSCREEN_OFF=60000\n' > "$sa/devices/S1.orig.real"
+printf '#!/bin/sh\ncase "$*" in *get-state*) echo device;; *"settings put"*) echo "$*" >> "%s/puts";; esac\n' "$sa" > "$sa/bin/adb"; chmod +x "$sa/bin/adb"
+PATH="$sa/bin:$PATH" PASCALINE_COORD="$sa" "$here/../tools/stay-awake.sh" S1 --restore-real >/dev/null 2>&1; r1=$?
+[[ $r1 -eq 0 ]] && grep -q 'stay_on_while_plugged_in 0' "$sa/puts" && grep -q 'STAY_ON=7' "$sa/devices/S1.orig" && [[ -f "$sa/devices/S1.orig.real" ]] || fail "A55: --restore-real does not put .orig.real back and leave .orig alone"
+grep -qF 'tools/stay-awake.sh <serial> --restore' "$here/../tools/README.md" && grep -q '\.orig\.real' "$here/../tools/README.md" && grep -q '\.orig\.real' "$here/../tools/stay-awake.sh" || fail "A55: stay-awake.sh and tools/README.md do not say what .orig and .orig.real hold"
 
 [[ $fails -eq 0 ]] || { echo "pipeline.test.sh: $fails failure(s) in $count packages" >&2; exit 1; }
 echo "pipeline.test.sh: ok ($count packages)"
