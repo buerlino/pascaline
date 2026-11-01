@@ -42,5 +42,5 @@ export function unitNoteText(n: UnitNote): string {
 
 /** G41: the why-line of a σ shown with ⚠. */
 export function unitWhyText(w: UncWhy): string {
-  return unitText(w === "order2" ? "units.why.order2" : "units.why.singular");
+  return unitText(w === "order2" ? "units.why.order2" : w === "jump" ? "units.why.jump" : "units.why.singular");
 }

@@ -131,7 +131,9 @@ export type UncWhy =
   /** The second-order part is more than 10 % of σ²: first order does not hold here. */
   | "order2"
   /** An input's x ± 2σ reaches a point where f or its derivative is not defined. */
-  | "singular";
+  | "singular"
+  /** G143: an input's x ± 2σ reaches a jump of a step function (floor, ceil, round, trunc, frac, sign, Heaviside). */
+  | "jump";
 
 /** σ² = Σᵢ (∂f/∂xᵢ)² uᵢ² + Σᵢ Σⱼ [½ (∂²f/∂xᵢ∂xⱼ)² + ∂f/∂xᵢ · ∂³f/∂xᵢ∂xⱼ²] uᵢ² uⱼ² over independent inputs (G18, G41;
  *  GUM 5.1.2, note), in the same unit as the value. */
