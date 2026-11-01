@@ -420,6 +420,11 @@ export const PATCHED_IDS = new Map([
   ["g59-neg-base-complex-power-30", "0025-pow-root-extract-branch.patch"],
   ["g59f1-neg-base-complex-power-nodec-12", "0025-pow-root-extract-branch.patch"],
   ["g59f1-neg-base-complex-power-nodec-30", "0025-pow-root-extract-branch.patch"],
+  // G150 (F141): a negative base to the power atanh(x), x > 1, as sqrt((-b)^(2*atanh(x))) (stock: the negation); the
+  // g150-neg2-pow-atanh-3-* guards pass on stock and stay in the check file; g137-neg-0.001-pow-atanh-1.000000001-12 is typed as LaTeX
+  ["g150-neg-1e-15-pow-atanh-1.000000001-12", "0025-pow-root-extract-branch.patch"],
+  ["g150-neg-1e-15-pow-atanh-1.000000001-30", "0025-pow-root-extract-branch.patch"],
+  ["g150-neg-0.001-pow-atanh-1.000000001-30", "0025-pow-root-extract-branch.patch"],
 ]);
 // G122: Giac's exact answer is right (patch 0014), but pc()'s evalf of it at Digits 40 cancels the digits of a large k*pi
 // (asin(cos(30!)) = -pi/2+30!-k*pi with k of 32 digits keeps about 7, -pi/2+10^50-k*pi none); Home raises the precision
