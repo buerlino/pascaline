@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 # v0.1.0: the bar and the dates
 
-The owner, 2026-11-01: "I want to release a good version as 0.1.0, I'm in no rush; the only rush is 2026-11-17, when Claude Max runs out." This page holds what "good" means for v0.1.0 and the days to it. How a release is made is decisions.md "The release path" (and `docs/release.md` once A8 writes it); what is still open is in [backlog.md](backlog.md). Rewrite this page in place as items are met; it moves to the archive after the tag.
+The owner, 2026-11-01: "I want to release a good version as 0.1.0, I'm in no rush; the only rush is 2026-11-17, when Claude Max runs out." This page holds what "good" means for v0.1.0 and the days to it. How a release is made is decisions.md "The release path" (and A8's release how-to once it is written); what is still open is in [backlog.md](backlog.md). Rewrite this page in place as items are met; it moves to the archive after the tag.
 
 ## The bar (all of it, on the commit that is tagged)
 1. **The mechanics are proven early.** A7 and A8 merged; the throwaway tag `v0.0.1-test` ended in a pre-release whose APK verifies against `android/release-cert.sha256`, and it did **not** deploy the website (A8, step 2: a tag with a `-` skips Pages); `pascaline-calc.org` serves the Pages site; the `github-pages` environment allows `v*` (on 11-01 it allowed only `master`).
@@ -20,7 +20,7 @@ The owner, 2026-11-01: "I want to release a good version as 0.1.0, I'm in no rus
 | 11-03 to Wed 11-11 | The lanes as brief section 0, with point 3's fixes first in lane B; A4b on the Tab One by day; the milestone reviews; night reviews 2 (Fri 11-06) and 3 (Mon 11-09). | lanes, owner |
 | Thu 11-12 | **The freeze for v0.1.0:** from this night on both lanes run only fixes for the bar; the rest of the queues waits for v0.1.1. | owner |
 | 11-12 to Sat 11-14 | Release-candidate nights on the Tab One and the Fairphone; the morning checks of 11-13 and 11-14; night review 4 (Fri 11-13) files only bar items. | lanes, owner |
-| Sat 11-14, morning | **Go or slip:** the owner reads the bar. A missed item: fix it by 11-15, or ship with it named in the notes, or slip past 11-17 (the release is then made by hand from docs/release.md). | owner |
+| Sat 11-14, morning | **Go or slip:** the owner reads the bar. A missed item: fix it by 11-15, or ship with it named in the notes, or slip past 11-17 (the release is then made by hand from A8's release how-to). | owner |
 | Sun 11-15, by day | Bump versionCode 1 / versionName 0.1.0 (A48's three files) in one commit; fast-forward `master` to `phase-1` and push; push the tag `v0.1.0`; check the APK's SHA-256 and certificate and the website. | owner |
 | Mon 11-16 to Tue 11-17 | Room for a v0.1.1 while the lanes still run. | lanes, owner |
 
