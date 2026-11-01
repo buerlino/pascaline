@@ -32,7 +32,7 @@ import { defaultLook, validLook, type Look } from "../theme/look.ts";
 import { idbKv, type Kv } from "./storage.ts";
 import { TapCounter } from "./taps.svelte.ts";
 import { commaInput } from "../entry/commaInput.ts";
-import { casItem, chipFactsOf, chipOf, FULL_LIMIT, HISTORY_LIMIT, homeItem, ITEMS_LIMIT } from "./results.ts";
+import { casItem, chipFactsOf, chipOf, FULL_LIMIT, HISTORY_LIMIT, homeItem, ITEMS_LIMIT, withUnit } from "./results.ts";
 import type { UnitRow } from "../units/types.ts";
 
 export type View = "home" | "cas";
@@ -622,8 +622,8 @@ export class Session {
     const shown = item.view === "home" || item.fmt !== undefined || item.form !== undefined || item.facts !== undefined;
     if (item.status === "done" && shown) {
       const r = renderNumeric(item, this.modeOf(item), this.displayContext());
-      const u = item.units?.latex; // R63: a unit row draws ± σ and its unit, set apart, after the number
-      if (r) return typeof u === "string" ? { text: r.text, latex: r.latex + (this.decimalComma ? commaResult(u, true) : u) } : r;
+      // R63: a unit row draws ± σ and its unit, set apart, after the number; its text has them too (Copy as shown)
+      if (r) return item.units ? withUnit(r, item.units, this.decimalComma ? commaResult : undefined) : r;
     }
     // (R57) what the engine wrote, with the decimal comma, is drawn as the numbers above
     if (item.status === "done" && this.decimalComma) return { text: commaResult(item.text, false), latex: commaResult(item.resultLatex, true) };

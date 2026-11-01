@@ -78,6 +78,7 @@ describe.skipIf(!giacAvailable())("the unit row (R63, real Giac)", () => {
       dim: "m1",
       dimText: "L",
       latex: unitLatex("m"),
+      text: " m",
       input: "2\\times\\pi\\times25\\,\\mathrm{mm}\\to\\,\\mathrm{m}",
       chip: quantityChip(q),
     });
@@ -97,7 +98,7 @@ describe.skipIf(!giacAvailable())("the unit row (R63, real Giac)", () => {
     const back = r.home[0] as HistoryItem;
     expect(r.chipFor(back)).toEqual(quantityChip(q));
     expect(r.lastChip("home")).toEqual(quantityChip(q)); // Ans after a unit result is the same chip
-    expect(r.display(back)).toEqual({ text: "0.157079632679", latex: `0.157079632679${unitLatex("m")}` });
+    expect(r.display(back)).toEqual({ text: "0.157079632679 m", latex: `0.157079632679${unitLatex("m")}` });
     expect(r.mark(back)?.mark).toBe("≈");
     expect(rowSlots(back)).toEqual({ u2: MM, end: M });
   });
@@ -108,6 +109,7 @@ describe.skipIf(!giacAvailable())("the unit row (R63, real Giac)", () => {
     expect(row.inexactInput).toBe(true);
     expect(row.units?.unc).toEqual({ text: "1.2", shown: "39.5 ± 1.2" });
     expect(row.units?.latex).toBe(`\\pm1.2${unitLatex("m²")}`);
+    expect(row.units?.text).toBe(" ± 1.2 m²"); // R63f1: Copy as shown and the row's data-text keep σ and the unit
     const s = await session(memKv());
     putRow(s, row);
     const it = s.home[0] as HistoryItem;
@@ -121,8 +123,10 @@ describe.skipIf(!giacAvailable())("the unit row (R63, real Giac)", () => {
     s2.flushHistory();
     expect((await session(kv)).home[0]?.facts?.uncDigits).toBe(1);
     expect(s.chipFor(it)).toMatchObject({ value: "4936/125", exact: false, unc: "sqrt(1548381)/1000" });
+    expect(s.display(it).text).toBe("39.488 ± 1.2 m²");
     s.setDecimalMark("comma");
     expect(s.display(it).latex).toContain("\\pm1{,}2");
+    expect(s.display(it).text).toBe("39,488 ± 1,2 m²");
   });
 
   it("a stored row that lost its shape gives no chip and no slots, never a wrong one", async () => {
@@ -134,9 +138,11 @@ describe.skipIf(!giacAvailable())("the unit row (R63, real Giac)", () => {
     const units = hist.home[0]?.["units"] as Record<string, unknown>;
     units["chip"] = { value: "pi/20", exact: true, unc: "1" }; // exact with a σ: not ours (R61)
     units["slots"] = { u2: { tokens: [{ unit: "m m" }] }, end: "m", x9: M };
+    units["text"] = 5; // not a string: the text adds nothing, the drawn unit stays (R63f1)
     const r = await session(kv);
     const back = r.home[0] as HistoryItem;
     expect(r.chipFor(back)).toBeUndefined();
     expect(rowSlots(back)).toBeUndefined();
+    expect(r.display(back)).toEqual({ text: "0.157079632679", latex: `0.157079632679${unitLatex("m")}` });
   });
 });

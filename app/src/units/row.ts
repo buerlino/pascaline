@@ -42,6 +42,7 @@ export function unitRow({ line, chips, q, slots, input, digits }: RowIn): Omit<H
     ...(q.unc ? { unc: { text: q.unc.text, shown: q.unc.shown, ...(q.unc.why ? { why: q.unc.why } : {}) } } : {}),
     ...(q.note ? { note: q.note } : {}),
     latex: sigma + (q.unit ? unitLatex(q.unit) : ""),
+    text: (q.unc ? ` ± ${q.unc.text}` : "") + (q.unit ? ` ${q.unit}` : ""),
     input,
     ...(chip ? { chip } : {}),
   };

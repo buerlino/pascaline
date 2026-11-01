@@ -7,7 +7,7 @@
 // chip's unit. Expected values: oracle (mpmath, tasks.yaml t04: 2π·0.025 = 0.1570796326794896619…, so 4π·0.025 =
 // 0.3141592653589793238…) and derived (t10: 12.34·3.2 = 39.488, σ² = 1.548381 by G41, decisions.md R61).
 import { expect, test, type Page } from "@playwright/test";
-import { entryValue, flick, open, tap } from "./helpers.ts";
+import { entryValue, flick, open, tap, useClipboardLock } from "./helpers.ts";
 
 const up = (page: Page): Promise<unknown> =>
   page.waitForFunction(() => window.pascaline.unitView !== undefined && document.activeElement === window.pascaline.unitView.element && document.querySelector('[data-pad="unit"]') !== null);
@@ -45,8 +45,11 @@ async function t04(page: Page): Promise<void> {
   await tap(page, ["enter", "d1", "d9"]);
   await flick(page, "enter", "up");
   await expect(page.getByTestId("unit-unit")).toHaveText("mm");
-  await chip(page, "m").tap();
-  await expect(result(page)).toHaveAttribute("data-text", "0.157079632679");
+  // under load a tap can land while the row is still being drawn and do nothing: tap again until the result is in m
+  await expect(async () => {
+    if ((await result(page).getAttribute("data-unit")) !== "m") await chip(page, "m").tap({ timeout: 1000 });
+    await expect(result(page)).toHaveAttribute("data-text", "0.157079632679", { timeout: 1000 });
+  }).toPass({ timeout: 10_000 });
   await expect(page.getByTestId("unit-unit")).toHaveText("m");
 }
 
@@ -73,7 +76,7 @@ test.describe("the way back from the unit view (R63)", () => {
     await page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
   });
 
-  test("2π·25 mm, tap m, pick the row: the chip reads 0.157079632679 with m set apart, and chip × 2 in Home is ≈ 0.314159265359, unit dropped", async ({ page }) => {
+  test("2π·25 mm, tap m, pick the row: the row reads 0.157079632679 m, the chip 0.157079632679 with m set apart, and chip × 2 in Home is ≈ 0.314159265359, unit dropped", async ({ page }) => {
     await t04(page);
     // one row for this visit of the view, holding its last result (the m alternative), its line, slots and summary
     const row = await page.evaluate(() => {
@@ -82,7 +85,7 @@ test.describe("the way back from the unit view (R63)", () => {
     });
     expect(row).toEqual({ latex: "2\\times\\pi\\times25", status: "done", unit: "m", dim: "m1", slots: ["end", "u2"] });
     await expect(page.locator("article.item")).toHaveCount(1);
-    await expect(lastRow(page).locator(".result")).toHaveAttribute("data-text", "0.157079632679");
+    await expect(lastRow(page).locator(".result")).toHaveAttribute("data-text", "0.157079632679 m");
     await expect(lastRow(page).getByTestId("mark")).toHaveText("≈");
     expect(await lastRow(page).locator(".out .math").getAttribute("data-latex")).toContain("\\text{m}");
     await leaveView(page);
@@ -132,6 +135,21 @@ test.describe("the way back from the unit view (R63)", () => {
     await expect(page.getByTestId("unit-unit")).toHaveText("m");
   });
 
+  // Fix round 2 (run 466): a unit row whose chip is missing (σ with no chip text, or a stored chip that fails its check)
+  // goes on the line as Home's number alone, never with its ± σ or unit LaTeX
+  test("t10's row with no chip: ▲ Enter puts 39.488 alone on the line", async ({ page }) => {
+    await t10(page);
+    await leaveView(page);
+    await page.evaluate(() => {
+      const u = window.pascaline.session.home.at(-1)?.units;
+      if (u) delete u.chip;
+    });
+    expect(await page.evaluate(() => window.pascaline.session.chipFor(window.pascaline.session.home.at(-1)!))).toBeUndefined();
+    await page.evaluate(() => window.pascaline.entry.clear());
+    await tap(page, ["up", "enter"]);
+    await expect.poll(() => entryValue(page)).toBe("39.488");
+  });
+
   test("t10's row: chip × 2 is never = and carries uncDigits; the chip keeps σ in m²", async ({ page }) => {
     await t10(page);
     await expect(lastRow(page).getByTestId("mark")).toHaveText("≈");
@@ -163,7 +181,7 @@ test.describe("the way back from the unit view (R63)", () => {
     await page.reload();
     await page.waitForFunction(() => window.pascaline?.session.engineState === "ready", undefined, { timeout: 20_000 });
     await expect(page.locator('[data-status="done"]')).toHaveCount(1);
-    await expect(lastRow(page).locator(".result")).toHaveAttribute("data-text", "0.157079632679");
+    await expect(lastRow(page).locator(".result")).toHaveAttribute("data-text", "0.157079632679 m");
     expect(await lastRow(page).locator(".out .math").getAttribute("data-latex")).toContain("\\text{m}");
     expect(await page.evaluate(() => window.pascaline.session.chipFor(window.pascaline.session.home.at(-1)!))).toEqual(before);
     await page.evaluate(() => window.pascaline.entry.ready);
@@ -206,5 +224,26 @@ test.describe("the way back from the unit view (R63)", () => {
     await flick(page, "enter", "up");
     await expect(result(page)).toHaveAttribute("data-text", "72");
     await expect(result(page)).toHaveAttribute("data-unit", "km/h");
+  });
+});
+
+// R63f1: Copy as shown gives the row as drawn, ± σ and the unit too (the clipboard is one for the whole browser)
+test.describe("Copy as shown on a unit row (R63f1)", () => {
+  test.use({ permissions: ["clipboard-read", "clipboard-write"] });
+  test.describe.configure({ mode: "serial" });
+  useClipboardLock(); // first hook, so the lock is held before the page opens
+  test.beforeEach(async ({ page }) => {
+    await open(page, "");
+    await page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
+  });
+
+  test("t10's row reads 39.488 ± 1.2 m², and Menu → Copy as › As shown copies that", async ({ page }) => {
+    await t10(page);
+    await leaveView(page);
+    await expect(lastRow(page).locator(".result")).toHaveAttribute("data-text", "39.488 ± 1.2 m²");
+    await tap(page, ["@menu", "d6"]);
+    await expect(page.getByTestId("menu")).toBeVisible();
+    await page.getByRole("menuitem", { name: /^\d As shown$/ }).click();
+    await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toBe("39.488 ± 1.2 m²");
   });
 });

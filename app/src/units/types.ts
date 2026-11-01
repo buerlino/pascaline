@@ -193,6 +193,8 @@ export interface UnitRow {
   note?: UnitNote;
   /** What the row draws after Home's number: ± σ, then the unit set apart (smaller, muted, upright). */
   latex: string;
+  /** The same as plain text (R63f1: ` ± σ m²`), joined to Home's number for Copy as shown and the row's data-text. */
+  text: string;
   /** The request as the row draws it: the line with each filled slot's unit after its number, and → the end slot. */
   input: string;
   /** R61's quantityChip; absent when the result gives none (the row then goes on the line as drawn). */
