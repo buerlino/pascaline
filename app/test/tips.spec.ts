@@ -80,13 +80,13 @@ test("a key press only closes the tips; so does a tap on the keypad, and Android
   expect(await page.evaluate(() => window.pascaline.session.taps.counts.presses)).toBe(0);
   await page.evaluate(() => window.pascaline.entry.ready);
   // the Settings row shows them again (below); a tap on a key under the overlay closes it and presses nothing
-  await tap(page, ["@mode", "d5", "d7"]);
+  await tap(page, ["@mode", "d6", "d7"]);
   await page.getByTestId("menu").locator('[data-id="tips"]').tap();
   await expect(tips(page)).toBeVisible();
   await page.mouse.click(206, 700); // the keypad is under the overlay
   await expect(tips(page)).toHaveCount(0);
   expect(await entryValue(page)).toBe("");
-  await tap(page, ["@mode", "d5", "d7"]);
+  await tap(page, ["@mode", "d6", "d7"]);
   await page.getByTestId("menu").locator('[data-id="tips"]').tap();
   await expect(tips(page)).toBeVisible();
   await page.evaluate(() => history.back());
@@ -99,7 +99,7 @@ test("Settings › Help and about: its first row shows the tips again, after the
   await open(page); // tips=off: nothing shown
   await page.waitForTimeout(500);
   await expect(tips(page)).toHaveCount(0);
-  await tap(page, ["@mode", "d5", "d7"]);
+  await tap(page, ["@mode", "d6", "d7"]);
   const rows = page.getByTestId("menu").getByRole("menuitem");
   await expect(rows.first()).toHaveAttribute("data-id", "tips");
   await expect(rows.first()).toContainText("Show the first-start tips");

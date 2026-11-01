@@ -20,7 +20,7 @@ const state = (page: Page): Promise<State> =>
 const ready = (page: Page): Promise<unknown> => page.waitForFunction(() => window.pascaline?.session.engineState === "ready", undefined, { timeout: 30_000 });
 
 async function dataSection(page: Page): Promise<void> {
-  await tap(page, ["@mode", "d5"]);
+  await tap(page, ["@mode", "d6"]);
   await page.getByTestId("menu").locator('[data-id="data"]').tap();
   await expect(page.getByTestId("sheet-title")).toHaveText("Mode › Settings › Data");
 }
