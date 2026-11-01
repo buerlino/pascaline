@@ -64,6 +64,8 @@ export const en = {
   "function.notFunction": "Enter an expression in x, not an equation",
   "num.start": "Start:",
   "num.step": "Step:",
+  "num.notNumber": "Not a number",
+  "num.zeroStep": "The step cannot be 0",
   "num.setStart": "Start value",
   "num.setStep": "Step",
   "num.empty": "Switch on a function in Symb to see its table.",

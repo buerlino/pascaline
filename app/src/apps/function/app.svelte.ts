@@ -148,7 +148,9 @@ export class FunctionApp implements AppInstance {
     } else if (view === "num") {
       const s = plainNumber(latex);
       const d = s === undefined ? undefined : parseDec(s);
-      if (!d || (this.num.edit === "step" && d.m === 0n)) return;
+      // R99: a refused value says why, never a silent return
+      if (!d) return this.host.notice(t("num.notNumber"));
+      if (this.num.edit === "step" && d.m === 0n) return this.host.notice(t("num.zeroStep"));
       if (this.num.edit === "start") {
         this.num.start = decText(d);
         this.num.top = 0;

@@ -131,7 +131,8 @@ export function tokenize(src: string): Tok[] {
       } else if (name in OPEN_CMD) out.push({ t: "open", v: OPEN_CMD[name] as string });
       else if (name in CLOSE_CMD) out.push({ t: "close", v: CLOSE_CMD[name] as string });
       else out.push({ t: "cmd", v: name });
-    } else if (isDigit(c) || (c === "." && isDigit(src[i + 1]))) {
+    } else if (isDigit(c) || (c === "." && isDigit(src[i + 1])) || (commaAt(src, i) && isDigit(src[i + 3]))) {
+      // a digit, or a decimal mark before a digit: ".5" and, R99, "{,}5" (the . key in comma mode) are 0.5
       let j = i;
       while (isDigit(src[j])) j++;
       const comma = commaAt(src, j);

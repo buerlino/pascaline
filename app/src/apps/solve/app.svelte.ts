@@ -154,7 +154,10 @@ export class SolveApp implements AppInstance {
         return;
       }
       const v = plainNumber(latex);
-      if (v === undefined) return;
+      if (v === undefined) {
+        this.host.notice(t("num.notNumber")); // R99: never a silent refusal
+        return;
+      }
       this.values = { ...this.values, [this.selected]: v };
       this.dropCopy(this.selected);
       this.warned = { ...this.warned, [this.selected]: false };
