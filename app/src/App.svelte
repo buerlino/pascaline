@@ -19,6 +19,7 @@
   import type { HistoryItem, Session, View } from "./state/session.svelte.ts";
   import { counted, countScreenTaps } from "./state/pressCount.ts";
   import { createLoaders, type FindCode, type ModeSheetCode } from "./appLoaders.ts";
+  import { tipsDue } from "./state/tips.ts";
   import History from "./views/History.svelte";
   import StatusLine from "./views/StatusLine.svelte";
   /** Set while the first Mode or Settings open waits for that code. */
@@ -41,6 +42,9 @@
     onClip: (c) => (clip = c),
   });
   const { loadModeSheet, loadFind, loadClip } = loaders;
+
+  // R15c4: the first-start tips, a lazy chunk (views/tipsHost.ts) shown once on a fresh profile and again from Settings › Help and about.
+  const showTips = (): void => void import("./views/tipsHost.ts").then((m) => m.showTips(), () => {});
 
   const sheetOpen = $derived(shell.sheet !== null);
   $effect(() => void (userKeys.decimalComma = entry.decimalComma = session.decimalComma)); // R57: the `.` and `,` keys' faces (keypad, tap, hardware key)
@@ -73,6 +77,8 @@
     entry.onSymbol = counted(count, (ch) => entry.run({ kind: "insert", latex: ch }));
     entry.onDead = counted(count, dead);
     entry.onPress = counted(count, () => {}); // R107f1: a leaving ) or | is a press that needs nothing more
+    // the first start (R15c4): once the keypad is drawn and the browser is idle, so the tips never compete with the start
+    void tipsDue(location.search).then((due) => due && ("requestIdleCallback" in window ? requestIdleCallback(showTips, { timeout: 2000 }) : setTimeout(showTips, 500)));
     return countScreenTaps(count);
   });
   let host: HTMLElement | undefined = $state();
@@ -200,7 +206,7 @@
   }
 
   /** What Settings › Your keys needs (R4b): the slots, and Find to pick a slot's content from. */
-  const settingsEnv = { get userKeys() { return userKeys; }, chooseFor: (id: string, layer: Layer): void => openFind({ id, layer }), data: withClip }; // data: Settings › Data (R38a, R38b; as a long press on a history row: waits for the clipboard and Mode code if the sheet opened before they came; no import of its own in the start chunk)
+  const settingsEnv = { get userKeys() { return userKeys; }, tips: showTips, chooseFor: (id: string, layer: Layer): void => openFind({ id, layer }), data: withClip }; // data: Settings › Data (R38a, R38b; as a long press on a history row: waits for the clipboard and Mode code if the sheet opened before they came; no import of its own in the start chunk)
   /** Settings as the ☰ menus' last row opens it (R49): one per session, its rows read the settings on every draw. */
   let settingsMenu: SubMenu | undefined;
   /** A user key that holds Settings, or a ☰ menu's last row before the Mode code is in: Mode › Settings, on its first

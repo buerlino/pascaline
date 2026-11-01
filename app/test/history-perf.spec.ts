@@ -7,7 +7,7 @@ import { tap } from "./helpers.ts";
 const N = 200;
 
 test("200 stored entries: only the newest are drawn, Enter renders just the new one, earlier ones load on scroll", async ({ page }) => {
-  await page.goto("/?engine=fake");
+  await page.goto("/?engine=fake&tips=off");
   await page.waitForFunction(() => window.pascaline !== undefined);
   // Seed the store directly (the same shape Session writes), then reload so the app restores it.
   await page.evaluate(async (n) => {

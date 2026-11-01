@@ -156,7 +156,7 @@ test.describe("the first frame", () => {
       await held;
       await route.abort();
     });
-    await page.goto("/?engine=fake", { waitUntil: "commit" });
+    await page.goto("/?engine=fake&tips=off", { waitUntil: "commit" });
     await page.waitForFunction(() => document.documentElement.getAttribute("data-family") === "nord");
     expect(await page.evaluate(() => window.pascaline)).toBeUndefined(); // the app has not started
     await expect.poll(() => page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--bg").trim())).toBe(mirrorBg);
@@ -179,7 +179,7 @@ test.describe("the first frame", () => {
       await held;
       await route.abort();
     });
-    await page.goto("/?engine=fake", { waitUntil: "commit" });
+    await page.goto("/?engine=fake&tips=off", { waitUntil: "commit" });
     await page.waitForFunction(() => document.documentElement.getAttribute("data-brightness") === "light");
     release();
   });

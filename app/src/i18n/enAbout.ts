@@ -3,6 +3,7 @@
 // (views/aboutItems.ts), so the start chunk does not carry it. English only so far.
 export const enAbout = {
   "help": "Help and about",
+  "tips.row": "Show the first-start tips",
   "title": "About Pascaline",
   "aboutTitle": "About",
   "hint": "Version, source, GPL-3.0",

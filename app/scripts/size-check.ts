@@ -118,7 +118,7 @@ export const LAZY_VIEWS = ["src/views/Sheet.svelte"];
  *  and the palette cells (loaded with the sheet's view), the result tidy-up, the palettes with their names. R70f1: how a
  *  key acts on the entry line's field, and the field's set-up (entry/field.ts, loaded with MathLive). R97: the update
  *  note's button and style (views/UpdateNote.svelte), which show only when an update waits. */
-export const LAZY_PARTS = ["src/views/sheetKeys.ts", "src/views/tmplSheet.ts", "src/render/tidy.ts", "src/keyboard/shiftPalettes.ts", "src/units/open.ts", "src/entry/field.ts", "src/state/handOver.ts", "src/views/UpdateNote.svelte"];
+export const LAZY_PARTS = ["src/views/sheetKeys.ts", "src/views/tmplSheet.ts", "src/render/tidy.ts", "src/keyboard/shiftPalettes.ts", "src/units/open.ts", "src/entry/field.ts", "src/state/handOver.ts", "src/views/UpdateNote.svelte", "src/views/tipsHost.ts"];
 
 /** R91's pin: the start chunk is at most this many bytes gzip, 1 kB under the budget of 61 kB, so the Settings base
  *  (R49, R86, R57) has room. A package that needs more raises the pin with a reason, here and in docs/04 8.3.
@@ -196,8 +196,13 @@ export const LAZY_PARTS = ["src/views/sheetKeys.ts", "src/views/tmplSheet.ts", "
  *  stored one checked by validChips (Session.chipFor, also Ans at Enter). The row's builder, its slots' check and the
  *  units key's prefill are in the unit view's chunk; it imports the session as types only (a value import of
  *  session.svelte.ts from that chunk made Rolldown split shared modules out of the start chunk: 61.36 kB). The pin is
- *  60.54 + 0.05 kB. */
-export const START_PIN_GZIP = 60_590;
+ *  60.54 + 0.05 kB.
+ *  60.59 → 60.94 kB (R15c4): phase-1 6747238 measures 60.58 kB gzip (171.04 kB raw), the branch 60.89 kB (171.52 kB raw,
+ *  +0.31 kB): the first-start tips' decision (state/tips.ts: the flag read at start and the `tips=off` check), the
+ *  lazy import of the overlay with its preload entries, and the Settings row's callback in App.svelte. The overlay
+ *  (views/tipsHost.ts, tips.css, i18n/enTips.ts) is a lazy chunk in plain DOM, so none of Svelte's runtime goes into
+ *  the start chunk for it (a component did: +0.47 kB). The pin is 60.89 + 0.05 kB. */
+export const START_PIN_GZIP = 60_940;
 
 /** Failures for the start chunk's row when it is over the pin. */
 export function checkStartPin(row: Row): string[] {

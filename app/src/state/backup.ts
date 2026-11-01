@@ -32,8 +32,9 @@ export const BACKUP_KEYS: readonly string[] = [
 ];
 
 /** Keys of docs/04 6.2 that stay out: `defsStarts` is per install (restored, it could make the engine skip the replay,
- *  G19); `backup.undo` (R38b) is the restore's own safety copy. */
-export const LEFT_OUT: readonly string[] = ["defsStarts", "backup.undo"];
+ *  G19); `backup.undo` (R38b) is the restore's own safety copy; `tipsSeen` (R15c4) belongs to this install: a restore
+ *  on a new one shows the first-start tips once. */
+export const LEFT_OUT: readonly string[] = ["defsStarts", "backup.undo", "tipsSeen"];
 
 export interface Backup {
   "pascaline-backup": 1;
