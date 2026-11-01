@@ -5,7 +5,7 @@
 //   node tools/docs-check.mjs
 //
 // 1. Links: every relative Markdown link in every Markdown file of the repo resolves to a file or directory
-//    (anchors are not checked), and every `docs/….md` path a live doc names exists.
+//    (anchors are not checked), and every `docs/….md` path a live doc names exists, or an open package names it.
 // 2. Budgets: the whole brief (28 kB; owner, 2026-10-19), backlog.md, decisions.md, docs/04 and every package file in docs/shifts/packages/ stay within their size.
 // 3. Ids (A22): no two package files share the id of their heading, no two backlog bug lines (`- **F<n>.**`) share one.
 // 4. Live research notes (A22): docs/research/*.md (not the archive) hold at most 150 kB together, and each opens with a
@@ -60,12 +60,15 @@ for (const f of [...mdFiles, ...untracked]) {
   }
 }
 // Bare docs paths (`docs/shifts/rules.md`) in the live docs and the agents' files. Not checked: the archive (its
-// history) and the package texts (docs/shifts/packages/), which name the files they create.
+// history) and the package texts (docs/shifts/packages/), which name the files they create; a live doc may name such
+// a file before it exists (docs/release.md, which A8 writes), but only while an open package names it.
+const DOCS_PATH = /(?<![\w./-])docs\/[\w./-]+\.md\b/g;
+const planned = new Set(mdFiles.filter((f) => f.startsWith(`${PACKAGES}/`)).flatMap((f) => [...read(f).matchAll(DOCS_PATH)].map((m) => m[0])));
 const live = mdFiles.filter((f) => !/^(docs\/archive|spike|docs\/shifts\/packages)\//.test(f));
 for (const f of live) {
-  for (const m of read(f).matchAll(/(?<![\w./-])docs\/[\w./-]+\.md\b/g)) {
+  for (const m of read(f).matchAll(DOCS_PATH)) {
     links++;
-    if (!existsSync(join(repo, m[0]))) failures.push(`path: ${f} names ${m[0]}, which does not exist`);
+    if (!existsSync(join(repo, m[0])) && !planned.has(m[0])) failures.push(`path: ${f} names ${m[0]}, which does not exist (nor does an open package name it)`);
   }
 }
 
