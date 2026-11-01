@@ -23,10 +23,19 @@ async function launch(): Promise<Page> {
   return page;
 }
 
-/** A fresh state: our app's data cleared (pm clear stops the app too), then a cold start. */
+/**
+ * A fresh state: our app's data cleared (pm clear stops the app too), then a cold start. A fresh profile has not seen the
+ * first-start tips (R15c4), so the overlay is due and takes the case's first key or tap; close it with "Got it" first.
+ * Only here: a relaunch calls launch() alone, the flag is stored by then.
+ */
 async function fresh(): Promise<Page> {
   await device.shell(`pm clear ${PKG}`);
-  return launch();
+  const page = await launch();
+  const tips = page.getByTestId("tips");
+  await tips.waitFor({ state: "visible", timeout: 15_000 });
+  await page.getByTestId("tips-got-it").tap();
+  await tips.waitFor({ state: "detached", timeout: 10_000 });
+  return page;
 }
 
 test.beforeAll(async () => {
