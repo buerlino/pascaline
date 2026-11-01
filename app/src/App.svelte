@@ -61,7 +61,7 @@
   // The shell paints first; main.ts then loads MathLive, which puts the field into this element.
   onMount(() => {
     if (host) entry.setHost(host);
-    const count = (): void => session.taps.press(); // R70: a hardware key and a tap on the screen are presses too (docs/04 5.2)
+    const count = (): void => session.taps.press(); // R70, R107: a hardware key (`<` `>` `!` and a dead one too) and a tap are presses (docs/04 5.2)
     // R45: a hardware Enter is the Enter key (a picked row, an open sheet), not a bare submit
     entry.onEnter = counted(count, () => {
       const key = keyboard.byId.get("enter");
@@ -83,7 +83,9 @@
     shell.openSettings = openSettings;
     shell.settingsMenu = () => (modeSheet ? (settingsMenu ??= modeSheet.settingsMenu(session, settingsEnv)) : undefined); // (R49)
     shell.homeView = () => (session.view === "cas" ? "cas" : "home"); // the last row of every Menu
-    entry.onDead = dead;
+    entry.onSymbol = counted(count, (ch) => entry.run({ kind: "insert", latex: ch }));
+    entry.onDead = counted(count, dead);
+    entry.onPress = counted(count, () => {}); // R107f1: a leaving ) or | is a press that needs nothing more
     return countScreenTaps(count);
   });
   let host: HTMLElement | undefined = $state();
