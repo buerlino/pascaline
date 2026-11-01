@@ -73,12 +73,3 @@ export function putRow(s: Session, row: Omit<HistoryItem, "id">, id?: number): n
  *  for a row that is no unit row or holds none. */
 export const rowSlots = (item: HistoryItem | undefined): Record<string, UnitSlot> | undefined =>
   validSlots((item?.units as { slots?: unknown } | undefined)?.slots);
-
-/** The last unit row in Home whose line is `line` (the line recalled, or typed again, after a relaunch). */
-export function rowFor(s: Session, line: string): HistoryItem | undefined {
-  for (let i = s.home.length - 1; i >= 0; i--) {
-    const item = s.home[i] as HistoryItem;
-    if (item.units && item.latex === line && item.status === "done") return item;
-  }
-  return undefined;
-}

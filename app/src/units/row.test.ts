@@ -14,7 +14,7 @@ import { buildJob } from "./build.ts";
 import { quantityChip } from "./chip.ts";
 import { factorTable } from "./factors.ts";
 import { unitLatex } from "../input/chipUnit.ts";
-import { putRow, rowFor, rowSlots, unitRow } from "./row.ts";
+import { putRow, rowSlots, unitRow } from "./row.ts";
 import { isUnitError, type Quantity, type UnitRequest } from "./types.ts";
 
 const item = (kind: string, id: string, x: Record<string, string>): IndexItem =>
@@ -100,8 +100,6 @@ describe.skipIf(!giacAvailable())("the unit row (R63, real Giac)", () => {
     expect(r.display(back)).toEqual({ text: "0.157079632679", latex: `0.157079632679${unitLatex("m")}` });
     expect(r.mark(back)?.mark).toBe("≈");
     expect(rowSlots(back)).toEqual({ u2: MM, end: M });
-    expect(rowFor(r, "2\\times\\pi\\times25")).toBe(back);
-    expect(rowFor(r, "2")).toBeUndefined();
   });
 
   it("t10: never =, σ drawn after the number, the chip keeps σ", async () => {

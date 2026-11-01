@@ -46,8 +46,6 @@ const ACTIVE = "background:var(--pick);border-radius:4px";
 
 /** The slots a line keeps (docs/04 4.3 "The way back": the units key shows them again), by the line's LaTeX. */
 const kept = new Map<string, Readonly<Record<string, UnitSlot>>>();
-/** R63: the line kept slots in this session (they come before a stored unit row's). */
-export const hasKept = (line: string): boolean => kept.has(line);
 
 export class UnitView {
   readonly line: string;

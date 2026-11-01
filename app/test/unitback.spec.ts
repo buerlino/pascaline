@@ -164,4 +164,31 @@ test.describe("the way back from the unit view (R63)", () => {
     await pickLast(page);
     expect(await lineChip(page)).toEqual(before);
   });
+
+  // Fix round 1 (run 459): only the picked row seeds the slots. The same line typed again after a relaunch is a new
+  // request: its slots start empty, so k m ÷ h gives 72 km/h, not km/h written after the stored km/h (1/s², unitresult.spec).
+  test("after a relaunch, the units key on the same line typed again starts with empty slots", async ({ page }) => {
+    await tap(page, ["d7", "d2"]);
+    await unitsKey(page);
+    await tap(page, ["d4", "d9", "div"]);
+    await flick(page, "d3", "up");
+    await flick(page, "enter", "up");
+    await expect(result(page)).toHaveAttribute("data-unit", "km/h");
+    await leaveView(page);
+    await page.waitForTimeout(800); // the store write is debounced (400 ms) and asynchronous
+    await page.reload();
+    await page.waitForFunction(() => window.pascaline?.session.engineState === "ready", undefined, { timeout: 20_000 });
+    await expect(page.locator('[data-status="done"]')).toHaveCount(1); // the stored unit row is back before the key
+    await page.evaluate(() => window.pascaline.entry.ready);
+    await page.evaluate(() => window.pascaline.entry.clear());
+    await tap(page, ["d7", "d2"]);
+    await unitsKey(page);
+    expect(await slotText(page, "u1")).toBe("");
+    expect(await slotText(page, "end")).toBe("");
+    await tap(page, ["d4", "d9", "div"]);
+    await flick(page, "d3", "up");
+    await flick(page, "enter", "up");
+    await expect(result(page)).toHaveAttribute("data-text", "72");
+    await expect(result(page)).toHaveAttribute("data-unit", "km/h");
+  });
 });
