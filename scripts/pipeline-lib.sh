@@ -156,7 +156,17 @@ lock_wait() {
   locks="${coord:-${PASCALINE_COORD:-$(cd "$(git rev-parse --git-common-dir)/.." && pwd)/.coord}}/locks"
   holder="$(cat "$locks/$res/owner" 2>/dev/null || echo '?')"
   _lib_log "$pre waiting for $res ($holder)"
-  if tools/devlock.sh acquire "$res" "$owner" "$wait" >/dev/null 2>&1; then
+  # The wait runs in a session of its own and is waited for as a background job (A54f1): bash runs a trapped TERM, HUP or INT only
+  # after a foreground command returns, so a foreground wait of up to 7200 s held the signal back until night.sh's KILL; `wait <pid>`
+  # returns at once, the trap runs owned_kill (which ends the waiter before any lock is dropped) and the job exits.
+  local pid rc=0
+  setsid tools/devlock.sh acquire "$res" "$owner" "$wait" >/dev/null 2>&1 </dev/null &
+  pid=$!
+  owned_sessions+=("$pid")
+  wait "$pid" || rc=$?
+  session_kill "$pid" || true
+  owned_forget "$pid"
+  if [[ $rc -eq 0 ]]; then
     _lib_log "$pre $res taken after a wait of $((SECONDS - t0)) s"; return 0
   fi
   _lib_log "$pre $res still busy after a wait of $((SECONDS - t0)) s"; return 1
@@ -219,6 +229,12 @@ owned_kill() {
     if session_kill "$s"; then wait "$s" 2>/dev/null || true; fi
   done
   owned_sessions=()
+}
+# owned_forget <sid>: takes one session out of the registry.
+owned_forget() {
+  local s keep=()
+  for s in "${owned_sessions[@]}"; do [[ "$s" == "$1" ]] || keep+=("$s"); done
+  owned_sessions=("${keep[@]}")
 }
 # own_traps: a signal ends the child sessions first, then the job (its EXIT trap drops the locks).
 own_traps() {

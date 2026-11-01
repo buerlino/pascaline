@@ -823,6 +823,42 @@ printf '#!/bin/sh\necho $$ > "$SBK/child.pid"; trap '"'"'sleep 1; touch "$SBK/ch
 chmod +x "$sbe/engine/giac/build-wasm.sh" "$sbe/bin/"*; git -C "$sbe" add -A; gc "$sbe" init; git -C "$sbe" branch phase-1
 killcase K4 TERM "$sbe" 6002 "" none; killcase K5 HUP "$sbe" 6002 "" none; killcase K6 timeout "$sbe" 6002 "" none
 
+# A54f1: a TERM (or the outer timeout) during a lock wait ends the run at once: the trap is not held back by a foreground devlock
+# acquire. The stub devlock holds integ and blocks host-cpu (its first try, wait 0, is busy; the waiting one sleeps 300 s).
+sbw="$tmp/sbw"; mkdir -p "$sbw/bin" "$sbw/tools" "$sbw/docs/shifts" "$sbw/app/node_modules/x"; git init -q -b main "$sbw"
+cat > "$sbw/tools/devlock.sh" <<'STUB'
+#!/bin/sh
+echo "$1 $2 $3" >> "$SBW/locks.log"
+if [ "$1" = acquire ] && [ "$2" = host-cpu ]; then
+  if [ "${4:-0}" = 0 ]; then exit 1; fi
+  touch "$SBW/waiting"; exec sleep 6003
+fi
+exit 0
+STUB
+cp "$sbk/bin/claude" "$sbw/bin/"; printf '#!/bin/sh\n[ "$1" = ci ] && mkdir -p node_modules/x\nexit 0\n' > "$sbw/bin/npm"
+chmod +x "$sbw/tools/devlock.sh" "$sbw/bin/"*; : > "$sbw/docs/shifts/brief.md"; echo t > "$sbw/app/keep"
+git -C "$sbw" add -A; gc "$sbw" init; git -C "$sbw" branch phase-1
+waitcase() {  # <id> <TERM|timeout>
+  local kid="$1" how="$2" p i rc=0 t0=$SECONDS
+  rm -f "$sbw/waiting" "$sbw/locks.log"; : > "$sbw/locks.log"
+  if [[ "$how" == timeout ]]; then
+    (cd "$sbw" && PATH="$sbw/bin:$PATH" SBW="$sbw" GIAC_OUT="$sbw/engine" timeout -k 20 8 "$script" ron "sandbox task" --id "$kid" --branch "p1/${kid,,}" --checks typecheck > "$sbw/out-$kid" 2>&1) & p=$!
+  else
+    (cd "$sbw" && PATH="$sbw/bin:$PATH" SBW="$sbw" GIAC_OUT="$sbw/engine" exec "$script" ron "sandbox task" --id "$kid" --branch "p1/${kid,,}" --checks typecheck > "$sbw/out-$kid" 2>&1) & p=$!
+    for i in $(seq 1 300); do [[ -e "$sbw/waiting" ]] && break; sleep 0.1; done
+    t0=$SECONDS; kill -TERM "$p" 2>/dev/null
+  fi
+  for i in $(seq 1 150); do kill -0 "$p" 2>/dev/null || break; sleep 0.2; done  # at most 30 s; a run still alive then is killed
+  if kill -0 "$p" 2>/dev/null; then fail "A54f1: $how: the run is still alive 30 s after the signal"; pkill -KILL -P "$p" 2>/dev/null; kill -KILL "$p" 2>/dev/null; fi
+  wait "$p" || rc=$?
+  [[ -e "$sbw/waiting" ]] || fail "A54f1: $how: the run never blocked in the host-cpu wait: $(tail -n 3 "$sbw/out-$kid" 2>/dev/null)"
+  (( SECONDS - t0 <= 30 )) || fail "A54f1: $how: the run took $((SECONDS - t0)) s to end during a lock wait"
+  [[ "$how" != timeout || $rc -eq 124 ]] || fail "A54f1: the outer timeout did not end the run with 124 (rc $rc)"
+  grep -q '^release integ ' "$sbw/locks.log" || fail "A54f1: $how: release integ was not logged: $(tr '\n' ';' < "$sbw/locks.log")"
+  [[ "$(ps -eo args | grep -c "[s]leep 6003")" -eq 0 ]] || { fail "A54f1: $how: the waiting acquire is left"; pkill -f "sleep 6003" || true; }
+}
+waitcase W1 TERM; waitcase W2 timeout
+
 # A54: the device step builds under host-cpu, taken after integ and nodemods, with build.sh's own lock off
 sb9="$tmp/sb9"; mkdir -p "$sb9/bin" "$sb9/tools" "$sb9/docs/shifts"; git init -q -b main "$sb9"
 cp "$sbk/tools/devlock.sh" "$sb9/tools/"; cp "$sb7/tools/core-device.sh" "$sb9/tools/"; cp "$sb7/bin/adb" "$sb9/bin/"
