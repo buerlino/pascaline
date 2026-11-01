@@ -84,7 +84,7 @@ const STEPS_LOAD_ITEMS = new Set(["precision/prec-g44f2f1-chisquare_icdf-1-0.95-
 /** Golden flags sub-tests that run out of golden/engine.ts's spawnSync timeout under load: 40 gunzips of the Giac tarball. */
 const FLAGS_LOAD_ITEMS = /^(?:patch-canary\.ts|canaries\.mjs): timed out after \d+ s$/;
 
-/** A wall-clock test: the Find 16 ms/key test, the golden units p95 bar, two golden steps cases and two flags sub-tests (A51), solve.spec.ts persistence, the clipboard poll, the G78 timing case, Home's acos deadline, the G83 library restore and first call, the Esc-before-Working test; FLAKES 1: G39's 3*int(1/x), the CAS -> Home budget, 10^1000000+7, the parser fuzz, Working… after 150 ms.
+/** A wall-clock test: the Find 16 ms/key test, the golden units p95 bar, the golden invariants 60 s limit (G154f1), two golden steps cases and two flags sub-tests (A51), solve.spec.ts persistence, the clipboard poll, the G78 timing case, Home's acos deadline, the G83 library restore and first call, the Esc-before-Working test; FLAKES 1: G39's 3*int(1/x), the CAS -> Home budget, 10^1000000+7, the parser fuzz, Working… after 150 ms.
  *  Not the golden g58-factorial cases: the golden log names only the stage ("FAIL precision: n/m active match"), the case id is on a plain line above it. */
 export function isTiming(check: Check, item: Item): boolean {
   if (check === "vitest") {
@@ -109,7 +109,11 @@ export function isTiming(check: Check, item: Item): boolean {
   if (item.file === "flags") return FLAGS_LOAD_ITEMS.test(item.title);
   // units: every case matched (n/n) and only the p95 bar was missed
   const m = /(\d+)\/(\d+) match/.exec(item.title);
-  return item.file === "units" && !!m && m[1] === m[2] && /p95 [\d.]+ ms \(≤/.test(item.title);
+  if (item.file === "units") return !!m && m[1] === m[2] && /p95 [\d.]+ ms \(≤/.test(item.title);
+  // invariants (G154f1; 71.9 s against 60 under the other lane, 42.8 s alone): no new failure and none now passing, and
+  // only the seconds limit at the line's end was missed
+  const inv = /; \d+ known failures, 0 new, 0 now passing; ([\d.]+) s \(< (\d+)\)$/.exec(item.title);
+  return item.file === "invariants" && !!inv && Number(inv[1]) >= Number(inv[2]);
 }
 
 /** The runner's own failure count against the items we parsed (vitest: failed files; e2e: failed tests); null when they agree or there is no summary. */
