@@ -23,11 +23,10 @@ describe("slotFormula (R24c)", () => {
     expect(slotFormula("250\\pm0.4\\%").latex).toBe("250\\pm0.4\\%\\placeholder[u1]{}\\to\\placeholder[end]{}");
     expect(slotFormula("250\\pm0.4\\%+1").slots).toEqual(["u1", "u2"]);
   });
-  it("no slot inside a power, a subscript, a name, a chip or a root's index", () => {
+  it("no slot inside a power, a subscript, a name, a constant or a root's index", () => {
     expect(slotFormula("5^{2}").latex).toBe("5\\placeholder[u1]{}^{2}\\to\\placeholder[end]{}"); // (5 u)²: the parser reads a slot only right after a number (R28)
     expect(slotFormula("x^{3}+x_{2}").slots).toEqual([]);
     expect(slotFormula("x23").slots).toEqual([]);
-    expect(slotFormula("\\res{3}{42}\\times2").latex).toBe("\\res{3}{42}\\times2\\placeholder[u1]{}\\to\\placeholder[end]{}");
     expect(slotFormula("\\const{c}{c}").slots).toEqual([]);
     expect(slotFormula("\\sqrt[3]{8}").latex).toBe("\\sqrt[3]{8\\placeholder[u1]{}}\\to\\placeholder[end]{}");
   });
@@ -51,5 +50,18 @@ describe("slotFormula (R24c)", () => {
     expect(giac("0+1")).toBe("0*pasu1+1*pasu2");
     expect(giac("\\cos\\left(0\\pm0.1\\right)")).toBe("cos(pasdeg*(pasupm(0,0.1)*pasu1))"); // (pasdeg: the mode's angle, set by the engine)
     expect(latexToGiacInfo(slotFormula("20").latex, { units: true }).units).toEqual({ slots: ["u1"], consts: [], end: "end" });
+  });
+  it("R63: a \\res chip is a number with a slot after it (r17 section 6), named by the chip it follows", () => {
+    expect(slotFormula("\\res{3}{42}\\times2")).toEqual({
+      latex: "\\res{3}{42}\\placeholder[u1]{}\\times2\\placeholder[u2]{}\\to\\placeholder[end]{}",
+      slots: ["u1", "u2"],
+      chips: { u1: "res:3" },
+    });
+    expect(slotFormula("\\res{1}{0.1\\htmlStyle{color:var(--muted)}{\\,\\text{m}}}^{2}").latex).toBe(
+      "\\res{1}{0.1\\htmlStyle{color:var(--muted)}{\\,\\text{m}}}\\placeholder[u1]{}^{2}\\to\\placeholder[end]{}",
+    );
+    expect(slotFormula("\\ans\\times2").slots).toEqual(["u1"]); // Ans is no result chip here: the unit view has no Ans value
+    const chips = { "res:3": { value: "42", exact: true } };
+    expect(latexToGiacInfo(slotFormula("\\res{3}{42}\\times2").latex, { units: true, chips }).giac).toBe("(42)*pasu1*2*pasu2");
   });
 });
