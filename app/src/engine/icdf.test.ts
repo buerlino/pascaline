@@ -118,6 +118,14 @@ describe.skipIf(!giacAvailable())("icdf polish (real Giac)", () => {
       giac.eval("purge(pasicdft0,pasicdftn)");
     }
   });
+  it("G140f2: a start far below the root of a power-law tail is polished, not stopped after one step in ln x", () => {
+    icdfPolished(giac, "");
+    // Giac's fisher_icdf(3,4,10^-20) is a different double on each call (1.4458027522523e-64 and 5.3850365366432e-186
+    // among them); mpmath 3.35978946638644696532444191624405706220859…E-14 (prec-g44-fisher_icdf-3-4-1e-20)
+    for (const x0 of ["1.4458027522523e-64", "5.3850365366432e-186", "3.253195983544e-14"]) {
+      expect(at40(`pasicdf(3,3,4,10^-20,${x0})`)).toMatchObject({ value: expect.stringMatching(/^0\.33597894663864469653244419162440570622\d*e-13$/), failed: false });
+    }
+  });
   it("G44f1: erf and erfc at Giac's Digits (oracle: mpmath, prec-g44f1 cases)", () => {
     // Giac's own erf(1e-12) at 40 digits is 1e-12; mpmath 1.12837916709551257389615852699515…E-12
     expect(at40(erfValueText(giac, "erf(1.0e-12)", "printed"))).toMatchObject({ value: expect.stringMatching(/^0\.1128379167095512573896158526995\d*e-11$/), failed: false });
