@@ -22,4 +22,12 @@ describe("uncertainty text (G18)", () => {
     expect(shownWithUncertainty("1.5", "0", "1.5")).toBe("1.5 ± 0");
     expect(shownWithUncertainty("6.6743E-11", "1.5e-15", "6.6743E-11")).toBe("6.67430E-11 ± 1.5E-15");
   });
+  it("a value rounded to 0 at a place above 1 is written 0 (G143, be-7)", () => {
+    expect(shownWithUncertainty("5", "1234", "5")).toBe("0 ± 1200");
+    expect(shownWithUncertainty("5", "1.2E15", "5")).toBe("0 ± 1.2E15");
+    expect(shownWithUncertainty("-5", "1234", "-5")).toBe("0 ± 1200");
+    // controls: a value that rounds to a digit keeps its zeros; a 0 below 1 keeps σ's places
+    expect(shownWithUncertainty("50", "1234", "50")).toBe("100 ± 1200");
+    expect(shownWithUncertainty("0.004", "0.28", "0.004")).toBe("0.00 ± 0.28");
+  });
 });

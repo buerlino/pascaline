@@ -24,6 +24,7 @@ export const enUnits = {
   // G41: the why-line of a σ shown with ⚠ (docs/04 4.3).
   "units.why.order2": "first order does not hold here",
   "units.why.singular": "the interval reaches a singular point",
+  "units.why.jump": "the interval reaches a jump",
   // R24a: the slot model's refusals (a pad press that cannot go into the slot) and the reading in words. {u} is a
   // unit's name in words ("kilometer"), {p} a power ("−1/2").
   "units.slot.prefixAlone": "A prefix needs a unit after it",

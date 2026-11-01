@@ -28,8 +28,9 @@ function roundTo(d: Dec, place: number): bigint {
 }
 
 /** Digits `m` at the place `k`, written as text: plain for a nearby magnitude, else mantissa E exponent, with every
- *  digit kept (so "0.10" and "1.20E-9" keep their zero). */
+ *  digit kept (so "0.10" and "1.20E-9" keep their zero). A 0 at a place of 1 or above is "0" (G143: not "000"). */
 function write(neg: boolean, m: bigint, k: number): string {
+  if (m === 0n && k >= 0) return "0";
   const digits = m.toString();
   const e10 = digits.length - 1 + k;
   const sign = neg && m !== 0n ? "-" : "";
