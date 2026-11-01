@@ -96,6 +96,32 @@ test.describe("replay", () => {
     await expect(value).toHaveText("0");
   });
 
+  // R107f1: a hardware key counts 1 through the real wiring (docs/04 5.2): < > ! (onSymbol), a dead key (onDead) and a
+  // bracket closed from inside its pair (hwkeys.ts `leave`); its auto-repeat (KeyboardEvent.repeat) counts 0.
+  test("hardware < > !, a dead key and a leaving ) each count 1, and a repeat counts 0", async ({ page }) => {
+    await page.locator("math-field").focus();
+    const press = async (key: string, repeat = false): Promise<void> => {
+      await page.keyboard.down(key);
+      if (repeat) await page.keyboard.down(key); // the second down of a held key is an auto-repeat (repeat: true)
+      await page.keyboard.up(key);
+    };
+    for (const key of ["<", ">", "!", "$"]) {
+      const before = await pressed(page);
+      await press(key);
+      expect(await pressed(page), `${key} counts 1`).toBe(before + 1);
+      await press(key, true);
+      expect(await pressed(page), `${key} held: the first down counts 1, the repeat 0`).toBe(before + 2);
+    }
+    await press("("); // opens the pair: 1 press
+    const open = await pressed(page);
+    await press(")"); // typed inside the pair: it leaves it (hwkeys.ts line 98), 1 press
+    expect(await pressed(page), "a ) that leaves its pair counts 1").toBe(open + 1);
+    await press("(");
+    const again = await pressed(page);
+    await press(")", true); // first down leaves and counts 1, its auto-repeat is no new press
+    expect(await pressed(page), "a held ) counts once").toBe(again + 1);
+  });
+
   // A flick step (R9) replays as a flick, not as Shift + key: 2×π with π flicked up from its key.
   test("a flick step replays as a flick", async ({ page }) => {
     const steps: Step[] = ["d2", "mul", { up: "d3" }, "enter"];

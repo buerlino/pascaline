@@ -34,10 +34,11 @@ describe("hardwareKey passes KeyboardEvent.repeat on (R70f1: a held key counts o
     const t: HwTarget = {
       field: {} as HwTarget["field"],
       decimalComma: false,
-      run: () => {},
+      onSymbol: () => {},
       onKey: (id, layer, repeat) => void keys.push([id, layer, repeat]),
       onLetter: () => {},
       onDead: () => {},
+      onPress: () => {},
     };
     return { t, keys };
   };
@@ -55,5 +56,22 @@ describe("hardwareKey passes KeyboardEvent.repeat on (R70f1: a held key counts o
     hardwareKey(ev("x", false), t);
     hardwareKey(ev("x", true), t);
     expect(letters).toEqual([["x", false], ["x", true]]);
+  });
+  it("a palette symbol (< > !) goes to onSymbol with the repeat flag, and nothing else runs", () => {
+    const { t, keys } = target();
+    const symbols: [string, boolean][] = [];
+    t.onSymbol = (ch, repeat) => void symbols.push([ch, repeat]);
+    for (const ch of ["<", ">", "!"]) hardwareKey(ev(ch, false), t);
+    hardwareKey(ev("<", true), t);
+    expect(symbols).toEqual([["<", false], [">", false], ["!", false], ["<", true]]);
+    expect(keys).toEqual([]);
+  });
+  it("a dead key's repeat flag reaches onDead", () => {
+    const { t } = target();
+    const dead: boolean[] = [];
+    t.onDead = (repeat) => void dead.push(repeat);
+    hardwareKey(ev("$", false), t);
+    hardwareKey(ev("$", true), t);
+    expect(dead).toEqual([false, true]);
   });
 });
