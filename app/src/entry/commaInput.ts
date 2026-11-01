@@ -10,5 +10,3 @@ export function commaInput(latex: string): string {
   return latex.replace(/\{,\}|\\,|,/g, (m) => (m === "," ? ";" : m));
 }
 
-/** The input LaTeX of a history row as it is drawn and recalled: commaInput in comma mode, else as stored. */
-export const shownInput = (latex: string, decimalComma: boolean): string => (decimalComma ? commaInput(latex) : latex);

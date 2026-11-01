@@ -174,8 +174,12 @@ export const LAZY_PARTS = ["src/views/sheetKeys.ts", "src/views/tmplSheet.ts", "
  *  59.81 → 59.87 kB (R99): phase-1 d578f5b measures 59.80 kB gzip (168.85 kB raw), the branch merged with it 59.82 kB
  *  (168.87 kB raw, +0.02 kB): `{,}` before a digit starts a number in the tokenizer (Home's parser) and the apps' host
  *  gets `notice` (AppHost, shell.svelte.ts); the words of the refusal are a lazy table (i18n/enNum.ts, loaded with
- *  Solve and Function; in en.ts they measured 59.84 kB). The pin is 59.82 + 0.05 kB. */
-export const START_PIN_GZIP = 59_870;
+ *  Solve and Function; in en.ts they measured 59.84 kB). The pin is 59.82 + 0.05 kB.
+ *  59.87 → 60.00 kB (R100): phase-1 8f294fc measures 59.81 kB gzip (168.87 kB raw), the branch 59.95 kB (169.12 kB raw,
+ *  +0.14 kB): in comma mode a history row's input is drawn, and recalled, with `;` for its argument commas (owner,
+ *  2026-10-31): the rewrite (entry/commaInput.ts), Session.input and History's input prop are on the start's own drawing
+ *  of the stored history, so they cannot load later. The pin is 59.95 + 0.05 kB. */
+export const START_PIN_GZIP = 60_000;
 
 /** Failures for the start chunk's row when it is over the pin. */
 export function checkStartPin(row: Row): string[] {

@@ -16,7 +16,6 @@
   import * as route from "./keyboard/route.ts";
   import type { RouteCtx } from "./keyboard/route.ts";
   import { resultToEntry } from "./render/insertable.ts";
-  import { shownInput } from "./entry/commaInput.ts";
   import type { UserKeys } from "./keyboard/userKeys.svelte.ts";
   import { noDigit } from "./state/displayMode.ts";
   import type { HistoryItem, Session, View } from "./state/session.svelte.ts";
@@ -124,7 +123,7 @@
   let clipLoading: Promise<ClipActions> | undefined;
   function loadClip(): Promise<ClipActions> {
     clipLoading ??= import("./clipboard/actions.svelte.ts").then((m) => {
-      const c = new m.ClipActions(session, shell, entry, { insert: insertResult, recall: (item) => entry.set(shownInput(item.latex, session.decimalComma), item.chips) });
+      const c = new m.ClipActions(session, shell, entry, { insert: insertResult, recall: (item) => entry.set(session.input(item), item.chips) });
       shell.clip = c;
       shell.homeMenu = () => c.menu();
       clip = c;
@@ -413,9 +412,9 @@
           items={session.items}
           selected={picked}
           display={(item) => session.display(item)}
-          input={(item) => shownInput(item.latex, session.decimalComma)}
+          input={(item) => session.input(item)}
           mark={(item) => session.mark(item)}
-          onrecall={(item) => { picked = null; entry.set(shownInput(item.latex, session.decimalComma), item.chips); }}
+          onrecall={(item) => { picked = null; entry.set(session.input(item), item.chips); }}
           oninsert={(item) => { picked = null; insertResult(item); }}
           oncancel={() => void cancel()}
           onlongpress={(item) => withClip((c) => c.openRowMenu(item))}
