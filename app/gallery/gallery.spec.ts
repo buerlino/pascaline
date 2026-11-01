@@ -470,7 +470,7 @@ const shots: Shot[] = [
 ];
 
 // R82f2 (F118): the status line at the small phone's and the Fairphone 6's width, in every place and state.
-type BarState = { angle?: "deg"; format?: "pfx" | "eng"; digits?: number; mod?: "shift" | "shiftLock" | "alpha" | "alphaLock" | "lowerLock"; starting?: true };
+type BarState = { angle?: "deg"; format?: "pfx" | "eng"; digits?: number; mod?: "shift" | "shiftLock" | "alpha" | "alphaLock" | "lowerLock" | "shiftAlpha"; starting?: true };
 const BAR_CASES: readonly [string, string, BarState][] = [
   ["home", "Home", {}],
   ["cas", "CAS", { mod: "shift" }],
@@ -479,6 +479,8 @@ const BAR_CASES: readonly [string, string, BarState][] = [
   ["function:num", "Function, Num, ⇧ locked", { mod: "shiftLock" }],
   ["solve:symb", "Solve, Symb, α once", { mod: "alpha" }],
   ["solve:num", "Solve, Num, DEG, ENG 10, lower-case lock", { angle: "deg", format: "eng", digits: 10, mod: "lowerLock" }],
+  ["cas", "CAS, Alpha once (types lower case: a)", { mod: "alpha" }],
+  ["cas", "CAS, Shift + Alpha (types capitals: α)", { mod: "shiftAlpha" }],
   ["home", "Home, the engine starting", { starting: true }],
   ["function:symb", "Function, Symb, the engine starting", { starting: true }],
 ];
@@ -495,9 +497,9 @@ async function barState(page: Page, place: string, st: BarState): Promise<void> 
       if (st.format) s.settings.format = st.format;
       if (st.digits) s.settings.digits = st.digits;
       const m = st.mod;
-      if (m === "shift" || m === "shiftLock" || m === "lowerLock") s.shift = true;
+      if (m === "shift" || m === "shiftLock" || m === "lowerLock" || m === "shiftAlpha") s.shift = true;
       if (m === "shiftLock") s.shiftLock = true;
-      if (m === "alpha" || m === "alphaLock" || m === "lowerLock") s.alpha = true;
+      if (m === "alpha" || m === "alphaLock" || m === "lowerLock" || m === "shiftAlpha") s.alpha = true;
       if (m === "alphaLock" || m === "lowerLock") s.alphaLock = true;
       if (m === "lowerLock") s.capsLock = true;
       if (st.starting) s.engineState = "starting";
@@ -508,7 +510,7 @@ async function barState(page: Page, place: string, st: BarState): Promise<void> 
 for (const width of [360, 372])
   for (const [place, title, st] of BAR_CASES)
     shots.push({
-      id: `bar-${width}-${place.replace(":", "-")}${st.starting ? "-starting" : ""}`,
+      id: `bar-${width}-${place.replace(":", "-")}${st.mod ? `-${st.mod}` : ""}${st.starting ? "-starting" : ""}`,
       group: `Status line at ${width} px (R82f2)`,
       title,
       viewport: { width, height: 800 },

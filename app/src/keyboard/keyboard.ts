@@ -334,7 +334,11 @@ export function actionFor(key: Key, shift: boolean, alpha: boolean, oneLine = fa
  *  swapped: Alpha alone is lower case, Shift + Alpha the capital. Shared by the action and the legend. A free key's
  *  Alpha slot is the user's own text (R15c3): the case rule does not touch it. */
 const lowerCase = (key: Key, shift: boolean, alpha: boolean, cas: boolean): boolean =>
-  alpha && shift !== cas && !key.user && key.actions.alpha?.kind === "type";
+  alphaLower(shift, alpha, cas) && !key.user && key.actions.alpha?.kind === "type";
+
+/** Alpha is on and types lower case in this view (R101): the keys use it, and so does the status line's ⇧ α slot (`a`
+ *  when true, `α` when Alpha types capitals). Home: Shift + Alpha; CAS (`cas`, R58): Alpha alone. */
+export const alphaLower = (shift: boolean, alpha: boolean, cas: boolean): boolean => alpha && shift !== cas;
 
 function layerAction(key: Key, shift: boolean, alpha: boolean, cas: boolean): Action | undefined {
   if (alpha) {
