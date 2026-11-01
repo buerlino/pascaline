@@ -8,7 +8,7 @@
 //   undef, is a number asked for and not found: refused "overflow" when its value is an infinity, else "no value found"
 //   (lostNumber).
 // - G84 (backlog F60): a value that reads as 0 while Giac's exact answer is not 0 (exp(-10^30), past MPFR's exponent
-//   range) is refused "underflow", as an overflow is (underflow).
+//   range) is refused "underflow", as an overflow is (underflow); G154 (F139): only when Giac can state its size.
 // Runs synchronously next to the engine; only erasable TypeScript syntax.
 import { callsIn, type Refusal } from "./converge.ts";
 import { MAX_EVAL_DIGITS, type ElementFacts, type Giac, type Shape } from "./numeric.ts";
@@ -159,6 +159,10 @@ export function zeroElements(slot: string, facts: readonly ElementFacts[], shape
   return facts.flatMap((f, k) => (!f.exact && isZero(f.value.re) && isZero(f.value.im) && !checked?.has(k) ? [elementAt(slot, shape, k)] : []));
 }
 
+/** G154: Giac's test that `e` (MPFR's 0 at every precision) has a size it can state at `P` digits (underflow). */
+const SIZED = (e: string, P: number): string =>
+  `(pasx->type(pasx)==real and pasx-pasx==0)(evalf(re(lnexpand(ln(${e}))),${P})) or (pasx->pasx!=0 and pasx-pasx==0)(evalf((${e})^(1/10^1000),${P}))`;
+
 /**
  * F60: whether one of `elements` (Giac texts of values that read as 0) is an underflow: a number too small for MPFR's
  * exponent range (exp(-10^30)), not a 0. Decided on Giac's exact answer, not on a float (bug-patterns family 3): its
@@ -167,13 +171,18 @@ export function zeroElements(slot: string, facts: readonly ElementFacts[], shape
  * digits read (an exact 0 that Giac cannot prove, cos(pi/7)-cos(2*pi/7)+cos(3*pi/7)-1/2, is about 1E-41 at 40 digits
  * and stays ⚠ 0), and again at MAX_EVAL_DIGITS: a cancellation (exp(10^-70)-1, 1E-70, 0 at P, P+20 and P+40) has
  * digits there, an underflow has none at any precision; it stays ⚠ 0 (precision.yaml prec-zero-cancel). Without `P`
- * (null) the 0 is a double's, where MPFR found no value. One engine call per element, only for those that read as 0; a
- * call Giac interrupts (an error) decides nothing.
+ * (null) the 0 is a double's, where MPFR found no value. G154 (F139): with `P`, MPFR's 0 at every precision is an
+ * underflow only when Giac can state a size for it (SIZED): the real part of lnexpand(ln(e)) is a finite float at P
+ * (-10^30 for exp(-10^30), -10^30+ln(sin(1)) for exp(-10^30)*sin(1)), or e^(10^-1000) a finite float that is not 0
+ * (exp(w/10^1000) for exp(w), w complex: exp(cosh(asin(π)/pasdeg)), whose ln Giac leaves alone). An exact 0 Giac cannot
+ * prove has neither (re(asin(i/10)), MPFR's 0 since patch 0023: -infinity and 0) and stays ⚠ 0, as does an underflow
+ * whose size Giac cannot state (a sum of two). One engine call per element, only for those that read as 0, the size
+ * asked last in the same call; a call Giac interrupts (an error) decides nothing.
  */
 export function underflow(giac: Giac, elements: readonly string[], P: number | null): boolean {
   return elements.some((e) => {
-    const nonzero = `when(normal(${e})==0,0,1)`;
-    const q = P === null ? nonzero : `when(evalf(${e},${P})==0,when(evalf(${e},${MAX_EVAL_DIGITS})==0,${nonzero},0),0)`;
+    const nonzero = (then: string): string => `when(normal(${e})==0,0,${then})`;
+    const q = P === null ? nonzero("1") : `when(evalf(${e},${P})==0,when(evalf(${e},${MAX_EVAL_DIGITS})==0,${nonzero(`when(${SIZED(e, P)},1,0)`)},0),0)`;
     return giac.eval(q).trim() === "1";
   });
 }
