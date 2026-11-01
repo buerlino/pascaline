@@ -166,9 +166,11 @@ const nameLatex = (name: string): string => name.replace(/[\\{}]/g, "").replace(
 function askName(host: PresetsHost, start: string, save: (name: string) => void, said: (name: string) => string): void {
   const { shell, entry } = host;
   if (!shell || !entry) return;
+  shell.prompt?.cancel(); // a name still being typed (a tap went elsewhere): its line comes back first, and is the one kept
   const line = entry.value;
   const chips = entry.chips;
   const end = (): void => {
+    if (shell.prompt !== prompt) return; // ended already
     shell.prompt = null;
     entry.set(line, chips);
   };
@@ -182,8 +184,9 @@ function askName(host: PresetsHost, start: string, save: (name: string) => void,
     end();
     say(host, said(name));
   };
-  shell.prompt = {
+  const prompt: EntryPrompt = {
     label: pt("name"),
+    cancel: end,
     key: (a) => {
       if (a.kind !== "special") entry.run(a.kind === "type" && a.text === " " ? { kind: "insert", latex: "\\ " } : a);
       else if (a.name === "enter") offer();
@@ -196,6 +199,7 @@ function askName(host: PresetsHost, start: string, save: (name: string) => void,
       return true;
     },
   };
+  shell.prompt = prompt;
   entry.set(nameLatex(start));
 }
 

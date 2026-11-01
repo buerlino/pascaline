@@ -137,5 +137,14 @@ describe("Mode's Preset row", () => {
     expect(shell.prompt).toBeNull();
     expect(line).toBe("12");
     expect(notices).toEqual(["Saved Lab", "There is already a preset named lab"]);
+    save();
+    key({ kind: "type", text: "La" });
+    save(); // Save again while a name is typed (a tap opened Mode): the first name ends, its line is the one kept
+    expect(line).toBe("");
+    shell.prompt?.cancel();
+    expect(shell.prompt).toBeNull();
+    expect(line).toBe("12");
+    shell.prompt?.cancel(); // nothing to end
+    expect(line).toBe("12");
   });
 });

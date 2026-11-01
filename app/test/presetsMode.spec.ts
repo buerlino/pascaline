@@ -202,6 +202,30 @@ test.describe("by touch", () => {
     expect(await angle(page)).toBe("deg");
   });
 
+  test("a tap elsewhere ends the naming: the format chip, then Save again, then Esc gives the line back; the place name too", async ({ page }) => {
+    await tap(page, ["d1", "d2", "@mode", "d5", "d1"]);
+    await page.keyboard.type("La");
+    expect(await entryValue(page)).toBe("La");
+    await page.getByTestId("chip-format").tap(); // a sheet opens: the half-typed name goes, the line comes back
+    await expect(label(page)).toHaveCount(0);
+    expect(await entryValue(page)).toBe("12");
+    await tap(page, ["d5", "d1"]); // Save again
+    await expect(label(page)).toHaveText("Preset name");
+    await tap(page, ["esc"]);
+    await expect(label(page)).toHaveCount(0);
+    expect(await entryValue(page)).toBe("12"); // never "La"
+    await tap(page, ["@mode", "d5", "d1"]);
+    await page.keyboard.type("La");
+    await tap(page, ["@place"]);
+    await expect(page.getByTestId("apps")).toBeVisible();
+    await expect(label(page)).toHaveCount(0);
+    expect(await entryValue(page)).toBe("12");
+    await tap(page, ["esc"]);
+    await expect(page.getByTestId("apps")).toHaveCount(0);
+    expect(await entryValue(page)).toBe("12");
+    expect(await historyRows(page)).toBe(0);
+  });
+
   test("past seven rows the list scrolls with its count", async ({ page }) => {
     await page.evaluate(async (path) => {
       const { session, userKeys } = window.pascaline;
