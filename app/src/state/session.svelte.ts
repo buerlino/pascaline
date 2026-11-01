@@ -498,7 +498,7 @@ export class Session {
       text: "",
       approximate: false,
       ...(Object.keys(kept).length ? { chips: kept } : {}),
-      ...(Object.values(table).some((c) => c.unit) ? { unitDropped: true } : {}),
+      ...(Object.values(kept).some((c) => c.unit) || (ans?.unit && /\\ans(?![a-zA-Z])/.test(latex)) ? { unitDropped: true } : {}), // R63: a chip on the line, or Ans used
       startedAt: performance.now(),
     });
     // Read and write through the proxy in the list from here on.

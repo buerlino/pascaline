@@ -103,6 +103,22 @@ test.describe("the way back from the unit view (R63)", () => {
     expect(ans).toEqual({ value: "1/20*pi", exact: true, unit: { text: "m", dim: "m1", slot: { tokens: [{ unit: "m" }] } } });
   });
 
+  test("after a unit result, a line without its chip or Ans gets no unit-dropped note; Ans × 2 does", async ({ page }) => {
+    await t04(page);
+    await leaveView(page);
+    await page.evaluate(() => window.pascaline.entry.clear());
+    await tap(page, ["d1", "add", "d1", "enter"]);
+    await expect(page.locator('[data-status="done"]')).toHaveCount(2);
+    await expect(lastRow(page).locator(".result")).toHaveAttribute("data-text", "2");
+    await expect(lastRow(page).getByTestId("unit-dropped")).toHaveCount(0);
+    // the unit row is the last result again: × on an empty line starts with Ans (docs/04 2.8), which is its chip
+    await page.evaluate(() => window.pascaline.session.home.splice(-1, 1));
+    await tap(page, ["mul", "d2", "enter"]);
+    await expect(page.locator('[data-status="done"]')).toHaveCount(2);
+    await expect(lastRow(page).locator(".result")).toHaveAttribute("data-text", "0.314159265359");
+    await expect(lastRow(page).getByTestId("unit-dropped")).toHaveText("unit dropped: Home has no units");
+  });
+
   test("the units key on chip × 2 fills the slot after the chip with m; the 2 keeps its own empty slot", async ({ page }) => {
     await t04(page);
     await leaveView(page);

@@ -66,7 +66,7 @@ describe.skipIf(!giacAvailable())("the unit row (R63, real Giac)", () => {
   /** t04 with the view: 2π·25 mm shown in m (the m alternative is the end slot). */
   const t04 = (): Quantity => units({ formula: "2*pi*25*pasu1", slots: [MM], end: M });
   const t04row = (q: Quantity) =>
-    unitRow({ line: "2\\times\\pi\\times25", chips: {}, q, slots: { u2: MM, end: M }, input: "2\\times\\pi\\times25\\,\\mathrm{mm}\\to\\,\\mathrm{m}" });
+    unitRow({ line: "2\\times\\pi\\times25", chips: {}, q, slots: { u2: MM, end: M }, input: "2\\times\\pi\\times25\\,\\mathrm{mm}\\to\\,\\mathrm{m}", digits: 12 });
 
   it("t04: Home's number and facts, the request, the summary and R61's chip", () => {
     const q = t04();
@@ -104,7 +104,7 @@ describe.skipIf(!giacAvailable())("the unit row (R63, real Giac)", () => {
 
   it("t10: never =, σ drawn after the number, the chip keeps σ", async () => {
     const q = units({ formula: "pasupm(12.34,0.05)*pasu1*pasupm(3.2,0.1)*pasu2", slots: [M, M] });
-    const row = unitRow({ line: "12.34\\pm0.05\\times3.2\\pm0.1", chips: {}, q, slots: { u1: M, u2: M }, input: "" });
+    const row = unitRow({ line: "12.34\\pm0.05\\times3.2\\pm0.1", chips: {}, q, slots: { u1: M, u2: M }, input: "", digits: 12 });
     expect(row.inexactInput).toBe(true);
     expect(row.units?.unc).toEqual({ text: "1.2", shown: "39.5 ± 1.2" });
     expect(row.units?.latex).toBe(`\\pm1.2${unitLatex("m²")}`);
@@ -112,6 +112,14 @@ describe.skipIf(!giacAvailable())("the unit row (R63, real Giac)", () => {
     putRow(s, row);
     const it = s.home[0] as HistoryItem;
     expect(s.mark(it)?.mark).not.toBe("=");
+    // σ = 1.2 (R61's uncDigits, uncDigitsOf: exp 1 − exp 0), as the row worked out from the chip carries it: the digits
+    // of 39.488 past σ's first are not confirmed (R40 mutes them from this fact); kept across a relaunch
+    expect(it.facts?.uncDigits).toBe(1);
+    const kv = memKv();
+    const s2 = await session(kv);
+    putRow(s2, row);
+    s2.flushHistory();
+    expect((await session(kv)).home[0]?.facts?.uncDigits).toBe(1);
     expect(s.chipFor(it)).toMatchObject({ value: "4936/125", exact: false, unc: "sqrt(1548381)/1000" });
     s.setDecimalMark("comma");
     expect(s.display(it).latex).toContain("\\pm1{,}2");

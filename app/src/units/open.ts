@@ -76,7 +76,7 @@ export async function openUnits(c: RouteCtx, row?: HistoryItem): Promise<void> {
     remember: (dim, slot) => writeTarget(idbKv, dim, slot).then(() => undefined),
     dead: () => c.dead(),
     changed: () => panel.draw(),
-    result: (q) => void (rowId = putRow(c.session, unitRow({ line, chips, q, slots: view.filled(), input: view.drawn() }), rowId)),
+    result: (q) => void (rowId = putRow(c.session, unitRow({ line, chips, q, slots: view.filled(), input: view.drawn(), digits: c.session.settings.digits }), rowId)),
   };
   let made: UnitView | undefined;
   const panel = makePanel(() => made);

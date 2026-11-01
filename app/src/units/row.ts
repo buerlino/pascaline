@@ -8,6 +8,7 @@ import type { ChipTable } from "../input/chips.ts";
 import { unitLatex, validSlots } from "../input/chipUnit.ts";
 import { homeResultToLatex } from "../render/home.ts";
 import { HISTORY_LIMIT, homeItem } from "../state/results.ts";
+import { uncDigitsOf } from "../engine/constUnc.ts";
 // (types only from the session: a value import of it from this lazy chunk makes Rolldown split modules out of the
 // start chunk, +0.8 kB gzip there)
 import type { HistoryItem, Session } from "../state/session.svelte.ts";
@@ -23,10 +24,12 @@ export interface RowIn {
   slots: Record<string, UnitSlot>;
   /** The request as drawn (UnitView.drawn). */
   input: string;
+  /** The digits setting the result was worked out at (σ's `uncDigits` counts the shown value's digits). */
+  digits: number;
 }
 
 /** The row of a unit result (no id yet: putRow gives it one). */
-export function unitRow({ line, chips, q, slots, input }: RowIn): Omit<HistoryItem, "id"> {
+export function unitRow({ line, chips, q, slots, input, digits }: RowIn): Omit<HistoryItem, "id"> {
   // a σ (an uncertain input or a constant with one) or a value flagged inexact went in: never "=" (as quantityChip)
   const inexact = q.unc !== undefined || q.value.facts.inexact === true;
   const chip = quantityChip(q);
@@ -42,13 +45,17 @@ export function unitRow({ line, chips, q, slots, input }: RowIn): Omit<HistoryIt
     input,
     ...(chip ? { chip } : {}),
   };
+  // σ's digits (R61): the shown value's digits past σ's first are not confirmed, as for a chip with σ in Home
+  const home = homeItem(q.value, inexact);
+  const n = q.value.value && q.unc?.value.value ? uncDigitsOf(q.value.value.re, q.unc.value.value.re, Math.trunc(q.value.digits ?? digits)) : null;
+  if (n !== null && home.facts) home.facts = { ...home.facts, uncDigits: n };
   return {
     view: "home",
     latex: line,
     status: "done",
     resultLatex: homeResultToLatex(q.value.display),
     text: q.value.display,
-    ...homeItem(q.value, inexact),
+    ...home,
     ...(inexact ? { inexactInput: true } : {}),
     ...(Object.keys(chips).length ? { chips } : {}),
     units,
