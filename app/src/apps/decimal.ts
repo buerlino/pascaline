@@ -23,9 +23,12 @@ export function parseDec(s: string): Dec | undefined {
   return { m: r[1] === "-" ? -m : m, scale };
 }
 
-/** The entry line as a plain decimal: "-0.5", "1.5\\emark3" (1.5ᴇ3), "1.5\\times10^{3}" → "1.5e3"; undefined if it is not one. */
+/** The entry line as a plain decimal: "-0.5", "1.5\\emark3" (1.5ᴇ3), "1.5\\times10^{3}" → "1.5e3"; undefined if it is not one.
+ *  MathLive's decimal comma "{,}" is the decimal mark in either mode, as for the parser (R57f1, R99): "2{,}5" → "2.5"; a bare
+ *  comma is never a number. */
 export function plainNumber(latex: string): string | undefined {
   const s = latex
+    .replace(/\{,\}/g, ".")
     .replace(/\\emark|\u1D07/, "e")
     .replace(/\\times\s*10\^\{([^}]*)\}/, "e$1")
     .replace(/\\times\s*10\^(\d)/, "e$1")
