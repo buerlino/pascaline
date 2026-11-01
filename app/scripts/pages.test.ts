@@ -62,8 +62,19 @@ describe(".github/workflows/pages.yml", () => {
     expect(build).toBeGreaterThan(-1);
     expect(i).toBeGreaterThan(build);
     expect(i).toBeLessThan(upload);
-    // no other step may mention the kill worker or the input
-    expect(s.filter((x) => /kill/.test(`${x.run ?? ""}${x.if ?? ""}`)).length).toBe(1);
+    // no other step may mention the kill worker; the only other step that reads the input is the golden gate (A52f1)
+    expect(s.filter((x) => /kill/.test(x.run ?? "")).length).toBe(1);
+    expect(s.filter((x) => /kill/.test(x.if ?? "")).map((x) => x.name)).toEqual(["Golden gate on the release engine", step.name]);
+  });
+
+  it("A52f1: the golden step is skipped on a kill run; the version check runs on every run", () => {
+    const s = steps("build");
+    const golden = s.find((x) => /npm run golden/.test(x.run ?? ""));
+    expect(golden?.if).toMatch(/^\$\{\{\s*inputs\.kill\s*!=\s*true\s*\}\}$|^inputs\.kill\s*!=\s*true$/);
+    const ver = s.find((x) => /check-version\.sh/.test(x.run ?? ""));
+    expect(ver).toBeDefined();
+    expect(ver?.if).toBeUndefined();
+    expect(text).toMatch(/#.*kill run.*golden/i);
   });
 
   it("A52: top-level permissions are contents: read only; only the deploy job has pages: write and id-token: write", () => {
