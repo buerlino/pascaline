@@ -334,7 +334,7 @@ f7="$(ls "$fk"/.tasks/flakes-*.md 2>/dev/null | head -n1)"
 [[ -n "$f7" ]] && grep -q "src/a.test.ts suite > case one" "$f7" && grep -q '^| 5 |' "$f7" || fail "A37: .tasks/flakes-<date>.md is missing or lacks the test and the per-run load rows"
 rm -rf "$fk/.tasks"/flakes-*; echo 0 > "$fk/cnt"
 out="$(FAKE_MOVE=1 fkrun "git -C $fk/.claude/worktrees/phase-1 -c user.name=t -c user.email=t@t commit -q --allow-empty -m move; true")"
-grep -q 'FLAKES 7: ABORTED (HEAD moved before run 2' <<<"$out" || fail "A37: a moved HEAD does not abort the census: $out"
+grep -q 'FLAKES 7: ABORTED (HEAD moved during run 1' <<<"$out" || fail "A37/A54: a HEAD that moves during a run does not abort the census: $out"
 # one title twice in one run's file counts once; a failure in 1 of 2 runs is flaky, not always failing
 printf 'a\tt\na\tt\n' > "$tmp/d1"; : > "$tmp/d2"
 [[ "$(flaky_items 2 "$tmp/d1" "$tmp/d2")" == $'1/2\ta\tt' ]] || fail "A37: a duplicate line in one run counts twice"
@@ -769,6 +769,64 @@ grep -q '^--no-install playwright test ' "$cd8/npx-args" 2>/dev/null || fail "A5
 rm -f "$cd8/npx-args" "$cd8/app/node_modules/.bin/playwright"
 out="$(ANDROID_SERIAL=TESTSERIAL PATH="$cd8/bin:$PATH" "$cd8/tools/core-device.sh" 2>&1)"; rc=$?
 [[ $rc -ne 0 && ! -e "$cd8/npx-args" ]] && grep -q 'no Playwright in .*app/node_modules' <<<"$out" || fail "A56: a missing Playwright does not stop core-device.sh at once (rc $rc): $out"
+
+# A54: a HEAD that moves during a census run drops that run (it is neither clean nor flaky) and ends the census
+rm -rf "$fk/.tasks"/flakes-*; echo 0 > "$fk/cnt"
+out="$(FAKE_MOVE=1 fkrun "$fk/fakev.sh")"
+grep -q 'FLAKES 7: ABORTED (HEAD moved during run 2' <<<"$out" || fail "A54: a census run during which HEAD moved is not dropped: $out"
+grep -q 'vitest 1 of 5 runs clean, e2e 1 of 5' <<<"$out" || fail "A54: the dropped run is counted: $out"
+
+# A54: the pipeline owns its children. A run killed (TERM, HUP, an outer timeout) during a check releases integ and host-cpu only
+# after the check's child has exited, and leaves no child (the stub check starts `timeout 900 sleep`, which moves itself into its own
+# process group, as the real checks do).
+sbk="$tmp/sbk"; mkdir -p "$sbk/bin" "$sbk/tools" "$sbk/docs/shifts" "$sbk/app/node_modules/x"; git init -q -b main "$sbk"
+cat > "$sbk/tools/devlock.sh" <<'STUB'
+#!/bin/sh
+echo "$1 $2 $3 started=$([ -e "$SBK/child.pid" ] && echo y || echo n) exited=$([ -e "$SBK/child-exited" ] && echo y || echo n)" >> "$SBK/locks.log"
+exit 0
+STUB
+cat > "$sbk/bin/npm" <<'STUB'
+#!/bin/sh
+case "$*" in
+  ci*) mkdir -p node_modules/x; exit 0;;
+  *typecheck*) echo $$ > "$SBK/child.pid"; trap 'sleep 1; touch "$SBK/child-exited"; exit 0' TERM HUP INT; timeout 900 sleep 6001 & wait;;
+esac
+exit 0
+STUB
+cp "$sb/bin/claude" "$sbk/bin/"; chmod +x "$sbk/tools/devlock.sh" "$sbk/bin/"*; : > "$sbk/docs/shifts/brief.md"; echo t > "$sbk/app/keep"
+git -C "$sbk" add -A; gc "$sbk" init; git -C "$sbk" branch phase-1
+killcase() {  # <id> <TERM|HUP|timeout>
+  local kid="$1" how="$2" p i rc=0 bad
+  rm -f "$sbk/child.pid" "$sbk/child-exited" "$sbk/locks.log"; : > "$sbk/locks.log"
+  if [[ "$how" == timeout ]]; then
+    (cd "$sbk" && PATH="$sbk/bin:$PATH" SBK="$sbk" GIAC_OUT="$sbk/engine" timeout -k 20 12 "$script" ron "sandbox task" --id "$kid" --branch "p1/${kid,,}" --checks typecheck > "$sbk/out-$kid" 2>&1) & p=$!
+  else
+    (cd "$sbk" && PATH="$sbk/bin:$PATH" SBK="$sbk" GIAC_OUT="$sbk/engine" exec "$script" ron "sandbox task" --id "$kid" --branch "p1/${kid,,}" --checks typecheck > "$sbk/out-$kid" 2>&1) & p=$!
+    for i in $(seq 1 300); do [[ -e "$sbk/child.pid" ]] && break; sleep 0.1; done
+    kill "-$how" "$p" 2>/dev/null
+  fi
+  wait "$p" || rc=$?
+  [[ -e "$sbk/child.pid" ]] || fail "A54: $how: the stub check never started: $(tail -n 3 "$sbk/out-$kid" 2>/dev/null)"
+  [[ "$how" != timeout || $rc -eq 124 ]] || fail "A54: the outer timeout did not end the run with 124 (rc $rc)"
+  bad="$(grep -E '^release .* started=y exited=n' "$sbk/locks.log" || true)"
+  [[ -z "$bad" ]] || fail "A54: $how: a lock was released while the check's child still ran: $(tr '\n' ';' <<<"$bad")"
+  grep -q '^release host-cpu .* started=y exited=y' "$sbk/locks.log" || fail "A54: $how: host-cpu was not released after the child exited: $(tr '\n' ';' < "$sbk/locks.log")"
+  grep -q '^release integ .* started=y exited=y' "$sbk/locks.log" || fail "A54: $how: integ was not released after the child exited: $(tr '\n' ';' < "$sbk/locks.log")"
+  [[ "$(ps -eo args | grep -c '[s]leep 6001')" -eq 0 ]] || { fail "A54: $how: a child of the check is left"; pkill -f 'sleep 6001' || true; }
+}
+killcase K1 TERM; killcase K2 HUP; killcase K3 timeout
+
+# A54: the device step builds under host-cpu, taken after integ and nodemods, with build.sh's own lock off
+sb9="$tmp/sb9"; mkdir -p "$sb9/bin" "$sb9/tools" "$sb9/docs/shifts"; git init -q -b main "$sb9"
+cp "$sbk/tools/devlock.sh" "$sb9/tools/"; cp "$sb7/tools/core-device.sh" "$sb9/tools/"; cp "$sb7/bin/adb" "$sb9/bin/"
+: > "$sb9/docs/shifts/brief.md"; printf 'node_modules/\ndist/\n' > "$sb9/.gitignore"
+printf '#!/bin/sh\necho "BUILD NO_LOCK=${NO_LOCK:-}" >> "$SBK/locks.log"\nmkdir -p app/node_modules/x dist && echo apk > dist/pascaline.apk\n' > "$sb9/tools/device-build.sh"
+sed -i '/install\*/d' "$sb9/bin/adb"; chmod +x "$sb9/bin/adb" "$sb9/tools/"*; git -C "$sb9" add -A; gc "$sb9" init; git -C "$sb9" branch phase-1
+: > "$sbk/locks.log"; rm -f "$sbk/child.pid" "$sbk/child-exited"
+out="$(cd "$sb9" && env -u PASCALINE_COORD SB7="$sb9" SBK="$sbk" ANDROID_SERIAL=TESTSERIAL PATH="$sb9/bin:$PATH" "$script" device 9 2>&1)"
+got="$(grep -E '^(acquire|release) (integ|nodemods|host-cpu) device-9|^BUILD' "$sbk/locks.log" | sed -E 's/ started=.*//; s/ device-9//' | paste -sd, -)"
+want='acquire integ,acquire nodemods,acquire host-cpu,BUILD NO_LOCK=1,release host-cpu,release nodemods,release integ'
+[[ "$got" == "$want" ]] || fail "A54: the device build is not under host-cpu inside integ and nodemods with NO_LOCK=1: got '$got', want '$want'; $out"
 
 [[ $fails -eq 0 ]] || { echo "pipeline.test.sh: $fails failure(s) in $count packages" >&2; exit 1; }
 echo "pipeline.test.sh: ok ($count packages)"
