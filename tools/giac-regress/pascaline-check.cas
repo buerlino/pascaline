@@ -741,6 +741,14 @@ Digits:=40:; pc("g133-acos-tiny-complex-30",'(acos(1/10^20+i/10^20))',(157079632
 Digits:=40:; pc("g133f1-asinh-5asin-i-div3-12",'(asinh(asin(i/3)*5))',(107623936313/10^11)+(157079632679/10^11)*i,5/10^12+5/10^12);
 // g133f1-asinh-5asin-i-div3-30 (precision.yaml, oracle)
 Digits:=40:; pc("g133f1-asinh-5asin-i-div3-30",'(asinh(asin(i/3)*5))',(107623936313497218446641260308/10^29)+(157079632679489661923132169164/10^29)*i,5/10^30+5/10^30);
+// g149-keep-sqrt-neg1-1e-3-12 (precision.yaml, oracle)
+Digits:=40:; pc("g149-keep-sqrt-neg1-1e-3-12",'(sqrt(-1-10^-3))',(100049987506/10^11)*i,5/10^12);
+// g149-keep-2-pow-sqrt-neg3/2-12 (precision.yaml, oracle)
+Digits:=40:; pc("g149-keep-2-pow-sqrt-neg3/2-12",'(2^sqrt(-3/2))',(660787797961/10^12)+(750572771999/10^12)*i,5/10^13+5/10^13);
+// g149-keep-2-pow-sqrt-neg1.5-12 (precision.yaml, oracle)
+Digits:=40:; pc("g149-keep-2-pow-sqrt-neg1.5-12",'(2^sqrt(-(15/10^1)))',(660787797961/10^12)+(750572771999/10^12)*i,5/10^13+5/10^13);
+// g149-keep-pi-pow-i-sqrt2000-over-3-12 (precision.yaml, oracle)
+Digits:=40:; pc("g149-keep-pi-pow-i-sqrt2000-over-3-12",'(pi^(i*sqrt(2000)/3))',-(212501277577/10^12)-(977160788728/10^12)*i,5/10^13+5/10^13);
 // g140f2-fisher_cdf-4-6-2-30 (precision.yaml, oracle)
 Digits:=40:; pc("g140f2-fisher_cdf-4-6-2-30",'(fisher_cdf(4,6,2))',(786339025406080799666805497709/10^30),5/10^31);
 print("pascaline-check: "+pasfail+" of "+pasn+" failed");

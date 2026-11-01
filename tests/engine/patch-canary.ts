@@ -88,6 +88,9 @@ const CANARIES: [string, string, RegExp, string][] = [
   // G140, patch 0024: _evalf's overflow test asks z/z!=1 of a complex double, which rounds (Gamma(1.0+i)), so evalf(Gamma(1+i))
   // at Digits 14 ran again at 30 digits, where Gamma has no complex MPFR path, and stayed Gamma(1.0000000000000+i)
   ["0024-evalf-complex-double-workaround.patch", "giac-2.1.0/src/usual.cc", /^bool need_workaround\(const gen & g\)\{\s*if \(g\.type==_REAL \|\| \(g\.type==_CPLX && g\._CPLXptr->type==_REAL && \(g\._CPLXptr\+1\)->type==_REAL\)\)\s*return false;\s*if \(g\.type<=_CPLX\)\s*return g!=0 && g\/g!=1;/, "bool need_workaround(const gen & g){"],
+  // G149, patch 0025: pow writes b^(n*s/d) as ((b^s)^(1/d))^r*(b^s)^q for any b and s, another branch where im(s*ln(b)) is
+  // past pi (2^sqrt(-1-10^-3) = (2^(10*i*sqrt(10010)))^(1/1000), the root of 2^(1000.5*i))
+  ["0025-pow-root-extract-branch.patch", "giac-2.1.0/src/gen.cc", /gen res\(1\);\s*if \(r\)\{\s*if \(complex_mode\(contextptr\) && fastsign\(base,contextptr\)==-1\)\{/, "// extract integral powers in a product exponent"],
   // G135, patch 0019: atan keeps an exact argument on its cut symbolic (atan(2*i)), which Giac's cos rule reads on the other side
   ["0019-atan-exact-cut.patch", "giac-2.1.0/src/usual.cc", /atan\(b,contextptr\)\),_SEQ__VECT\)\);\s*gen tmp=evalf_double\(e,0,contextptr\);\s*if \(tmp\.type==_DOUBLE_\)\{/, "return symbolic(at_program,gen(makevecteur(a,0,atan(b,contextptr)),_SEQ__VECT));"],
   // G135, patch 0019: cos(atan(f)) = sqrt(1/(f^2+1)) takes the other root where f^2+1 is a negative real (cos(quote(atan(2*i))) = i*sqrt(3)/3)
