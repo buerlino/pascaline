@@ -59,8 +59,6 @@ Milestone reviews (section 0): after R50e; after R24d.
 
 | Step | What | Agent, model | Branch | After |
 |---|---|---|---|---|
-| 319 | [R109](packages/R109.md) the Esc-before-Working test holds under load | ron, Sonnet | `p1/ron-escunderload` | – |
-| 320 | [R95](packages/R95.md) one writer per browser profile (web) | ron, Opus | `p1/ron-onewriter` | R106, R93 |
 | 321 | [R107](packages/R107.md) every hardware key press counts | ron, Sonnet | `p1/ron-presscount-hw` | – |
 | 322 | [R108](packages/R108.md) the decimal comma in Solve and the Num tables | ron, Sonnet | `p1/ron-commanum` | – |
 | 323 | [R99](packages/R99.md) the decimal comma in Solve's and Function's entry | ron, Opus | `p1/ron-commaentry` | – |
