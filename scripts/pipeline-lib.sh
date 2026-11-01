@@ -260,17 +260,6 @@ own_sh() {
   setsid bash -c "$1" _ "${@:2}" <&0 &
   pid=$!
   owned_sessions+=("$pid")
-  # A58: a wait that passes PASCALINE_LOCK_NOTE seconds (600) logs one line with the holder and how long it has held the lock
-  local noted=0 since hs
-  while kill -0 "$pid" 2>/dev/null; do
-    if [[ $noted -eq 0 ]] && (( SECONDS - t0 >= ${PASCALINE_LOCK_NOTE:-600} )); then
-      noted=1; holder="$(cat "$locks/$res/owner" 2>/dev/null || echo '?')"
-      since="$(date -d "$(cat "$locks/$res/since" 2>/dev/null)" +%s 2>/dev/null || true)"
-      hs="?"; [[ -z "$since" ]] || hs=$(( $(date +%s) - since ))
-      _lib_log "$pre $res held by $holder for $hs s; waited $((SECONDS - t0)) s so far"
-    fi
-    sleep 2 & wait $! || true
-  done
   wait "$pid" || rc=$?
   session_kill "$pid" || true
   for s in "${owned_sessions[@]}"; do [[ "$s" == "$pid" ]] || keep+=("$s"); done
