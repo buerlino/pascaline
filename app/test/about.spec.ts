@@ -120,6 +120,8 @@ test.describe("by touch", () => {
     await row(page, "about").tap();
     await row(page, "credits").tap();
     await expect(text(page)).toContainText("Giac");
+    await expect(text(page)).toContainText("libqalculate by Hanna Knutsson for the names and titles of units and constants and for their numbers");
+    await expect(text(page)).toContainText("find/factors.yaml");
     await sheet(page).getByRole("button", { name: "Close" }).tap();
     await expect(sheet(page)).toHaveCount(0);
   });

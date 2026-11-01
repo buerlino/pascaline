@@ -9,6 +9,7 @@ import { EngineHost } from "../engine/host.ts";
 import { safePrecision } from "../engine/homeEval.ts";
 import { giacAvailable, nodeHost } from "../engine/nodeGiac.ts";
 import type { MathEngine } from "../engine/types.ts";
+import { en } from "../i18n/en.ts";
 import { Session, type HistoryItem } from "./session.svelte.ts";
 import type { Kv } from "./storage.ts";
 
@@ -95,6 +96,23 @@ describe("result chips", () => {
     s.setView("cas");
     await s.submit("\\ans");
     expect(s.cas[0]?.status).toBe("error");
+  });
+
+  it("Ans after a result too long for a chip says so, in the words of the i18n table (R102)", async () => {
+    class LongCalc extends TableCalc {
+      override cas(giac: string): Promise<CasOutcome> {
+        this.seen.push(giac);
+        return Promise.resolve({ ok: true, text: "x".repeat(2100), latex: "x", facts: { exact: false, reliableDigits: null } });
+      }
+    }
+    const s = new Session(new LongCalc({}), memoryKv());
+    s.setView("cas");
+    await s.submit("y");
+    expect(s.cas[0]?.status).toBe("done");
+    await s.submit("\\ans");
+    expect(s.cas[1]?.status).toBe("error");
+    expect(s.cas[1]?.text).toBe(en["error.ansTooLong"]);
+    expect(en["error.ansTooLong"]).toMatch(/too long/);
   });
 
   it("restores stored chips and chip values, dropping malformed ones", async () => {
