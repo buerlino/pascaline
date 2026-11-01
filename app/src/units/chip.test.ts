@@ -52,8 +52,8 @@ describe.skipIf(!giacAvailable())("quantityChip (R61, real Giac)", () => {
     const c = quantityChip(q)!;
     expect(c).toMatchObject({ value: "4936/125", exact: false, unit: { text: "m²", dim: "m2", slot: { tokens: [{ unit: "m", power: "2" }] } } });
     // σ as the evaluator gives it (G18, G41: first and second order), in the same unit: σ² = (3.2·0.05)² + (12.34·0.1)²
-    // + (0.05·0.1)² = 1.548381 (derived by hand), σ = 1.24433958388… The first order alone (tasks.yaml t10) is
-    // 1.244329538345…; both give "39.5 ± 1.2" (report: Needs a decision).
+    // + (0.05·0.1)² = 1.548381 (derived by hand), σ = 1.24433958388…, tasks.yaml t10's since R63 (decisions.md R61); the
+    // first order alone is 1.244329538345…; both give "39.5 ± 1.2".
     expect(c.unc).toBe(q.unc!.value.full);
     expect(c.unc).toBe("sqrt(1548381)/1000");
   });

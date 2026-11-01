@@ -91,7 +91,7 @@ test.describe("the way back from the unit view (R63)", () => {
     // the chip is drawn as the number shown, the unit after it smaller, muted and upright (set apart)
     expect(line).toMatch(/^\\res\{\d+\}\{0\.157079632679\\htmlStyle\{color:var\(--muted\);font-size:smaller\}\{\\,\\text\{m\}\}\}$/);
     // its value: R61's quantityChip, the exact number in the unit shown with its unit as label and slot
-    expect(await lineChip(page)).toEqual({ value: "pi/20", exact: true, unit: { text: "m", dim: "m1", slot: { tokens: [{ unit: "m" }] } } });
+    expect(await lineChip(page)).toEqual({ value: "1/20*pi", exact: true, unit: { text: "m", dim: "m1", slot: { tokens: [{ unit: "m" }] } } });
     await tap(page, ["mul", "d2", "enter"]);
     await expect(page.locator('[data-status="done"]')).toHaveCount(2);
     await expect(lastRow(page).locator(".result")).toHaveAttribute("data-text", "0.314159265359");
@@ -100,7 +100,7 @@ test.describe("the way back from the unit view (R63)", () => {
     // Ans after a unit result is the same chip
     await page.evaluate(() => window.pascaline.session.home.splice(-1, 1));
     const ans = await page.evaluate(() => window.pascaline.session.lastChip("home"));
-    expect(ans).toEqual({ value: "pi/20", exact: true, unit: { text: "m", dim: "m1", slot: { tokens: [{ unit: "m" }] } } });
+    expect(ans).toEqual({ value: "1/20*pi", exact: true, unit: { text: "m", dim: "m1", slot: { tokens: [{ unit: "m" }] } } });
   });
 
   test("the units key on chip × 2 fills the slot after the chip with m; the 2 keeps its own empty slot", async ({ page }) => {
