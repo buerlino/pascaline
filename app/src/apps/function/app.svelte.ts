@@ -5,9 +5,10 @@ import { CalcCancelled, engineFormat, type Calc } from "../../calc/port.ts";
 import { confirmedText, isWarned } from "../../calc/shown.ts";
 import { formatComplex, type ComplexValue, type DecimalValue } from "../../engine/format.ts";
 import { numberSource } from "../../clipboard/source.ts";
-import type { CopySource } from "../../clipboard/text.ts";
+import type { CopySource, TextOptions } from "../../clipboard/text.ts";
 import { t } from "../../i18n/index.ts";
 import { tc } from "../../clipboard/strings.ts";
+import { commaResult } from "../../state/displayMode.ts";
 import { addMul, decText, decToNumber, nearestK, niceStep, parseDec, plainNumber, showDecimal, type Dec } from "../decimal.ts";
 import { slotNames, SlotsState, type SlotsJson } from "../slots.svelte.ts";
 import type { AppHost, AppInstance, MenuItem, NavDir, SubMenu, ViewId } from "../types.ts";
@@ -97,7 +98,14 @@ export class FunctionApp implements AppInstance {
   }
 
   // ---- formatting (Home formatter, current settings)
+  /** R108: a drawn number with the decimal comma when that is the mark (elements `;`, as in Home). */
+  private mark(s: string): string {
+    return this.host.decimalComma === true ? commaResult(s, false) : s;
+  }
   fmt(c: Cell | undefined): string {
+    return this.mark(this.fmtPoint(c));
+  }
+  private fmtPoint(c: Cell | undefined): string {
     if (!c) return "…";
     if (!c.ok) return t("function.undefined");
     // a pole or an undefined value: NaN, as the reference's Num view and Signed area show it (G2 items 19, 22)
@@ -110,10 +118,10 @@ export class FunctionApp implements AppInstance {
   }
   fmtValue(v: ComplexValue): string {
     const s = this.host.settings;
-    return formatComplex(v, { format: engineFormat(s.format), digits: s.digits }).text;
+    return this.mark(formatComplex(v, { format: engineFormat(s.format), digits: s.digits }).text);
   }
   fmtX(x: string): string {
-    return showDecimal(x, this.host.settings.digits, engineFormat(this.host.settings.format));
+    return this.mark(showDecimal(x, this.host.settings.digits, engineFormat(this.host.settings.format)));
   }
 
   // ---- framework hooks
@@ -215,7 +223,7 @@ export class FunctionApp implements AppInstance {
   async readoutFull(l: Readout["lines"][number]): Promise<string | undefined> {
     if (!l.cell) return undefined;
     const { copyFull } = await import("../../clipboard/impl.ts");
-    return this.csvCell(l.cell, copyFull) || undefined;
+    return this.csvCell(l.cell, copyFull, this.textOptions()) || undefined;
   }
   /** Copy a readout line (long press, Menu): full, or as shown. */
   async copyReadout(l: Readout["lines"][number] | undefined, shown = false): Promise<void> {
@@ -232,13 +240,17 @@ export class FunctionApp implements AppInstance {
     if (this.numSlots.length === 0) return undefined;
     const { copyFull, tableCsv } = await import("../../clipboard/impl.ts"); // not needed to start
     const header = ["x", ...this.numSlots.map((s) => this.slots.names[s] ?? "")];
-    const rows = this.numXs.map((x, r) => [x, ...this.numSlots.map((_, c) => this.csvCell(this.numCell(r, c), copyFull))]);
-    return tableCsv(header, rows);
+    const o = this.textOptions();
+    const rows = this.numXs.map((x, r) => [this.mark(x), ...this.numSlots.map((_, c) => this.csvCell(this.numCell(r, c), copyFull, o))]);
+    return tableCsv(header, rows, o);
   }
-  private csvCell(c: Cell | undefined, copyFull: (i: CopySource) => string | undefined): string {
+  private textOptions(): TextOptions {
+    return this.host.decimalComma === true ? { decimalComma: true } : {};
+  }
+  private csvCell(c: Cell | undefined, copyFull: (i: CopySource, o?: TextOptions) => string | undefined, o: TextOptions): string {
     if (!c || !c.ok) return "";
     if (/^[-+]?(infinity|inf|undef)$/.test(c.display)) return "NaN";
-    return copyFull(numberSource(c.display, c)) ?? c.display;
+    return copyFull(numberSource(c.display, c), o) ?? this.mark(c.display);
   }
 
   // ---- Symb

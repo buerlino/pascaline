@@ -516,6 +516,35 @@ for (const width of [360, 372])
       setup: (p) => barState(p, place, st),
     });
 
+// R108: the decimal comma in the Function and Solve Num tables and in Solve's polynomial roots.
+const commaShot = (id: string, title: string, setup: (p: Page) => Promise<void>): void => {
+  shots.push({
+    id,
+    group: "Decimal comma in apps (R108)",
+    title,
+    setup: async (p) => {
+      await p.evaluate(() => window.pascaline.session.setDecimalMark("comma"));
+      await setup(p);
+    },
+  });
+};
+commaShot("comma-function-num", "Function, Num, decimal comma: x and sin(x) with the comma", async (p) => {
+  await tap(p, ["@symb", "sin", "x", "enter", "@num"]);
+  await p.locator('[data-testid="num-table"] td.x').nth(2).waitFor();
+});
+commaShot("comma-solve-num", "Solve, Num, decimal comma: x·eˣ=5 solved, x = 1,32672466524", async (p) => {
+  await tap(p, ["@place", "d4", "@symb", "x", "shift", "ln", "x", "right", "shift", "dot", "d5", "enter", "@num"]);
+  await p.locator('[data-testid="solve-table"] tr[data-name="x"] th button').tap();
+  await tap(p, ["esc", "d1", "enter", "@menu", "d1"]);
+  await p.locator('[data-testid="solve-table"] tr[data-name="x"] td:has-text("1,3267")').waitFor();
+});
+commaShot("comma-solve-roots", "Solve, Num, decimal comma: Polynomial roots of x²-2 = 0", async (p) => {
+  await tap(p, ["@place", "d4", "@symb", "x", "pow", "d2", "right", "sub", "d2", "shift", "dot", "d0", "enter", "@num"]);
+  await p.locator('[data-testid="solve-table"] tr[data-name="x"]').waitFor();
+  await tap(p, ["@menu", "d2"]);
+  await p.locator('[data-testid="solve-roots"] li').nth(1).waitFor();
+});
+
 // A49: the update line, in the status line (a new version of the web build waits for Restart).
 shots.push({
   id: "home-update-line",
