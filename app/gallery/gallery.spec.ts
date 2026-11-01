@@ -5,7 +5,7 @@
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { test, type Page } from "@playwright/test";
 import { parse } from "yaml";
-import { entryValue, open, tap } from "../test/helpers.ts";
+import { entryValue, flick, open, tap } from "../test/helpers.ts";
 
 const OUT = new URL("../test/gallery/", import.meta.url).pathname;
 const THEMES = ["light", "dark"] as const;
@@ -66,6 +66,40 @@ function padShots(): Shot[] {
       },
     })),
   );
+}
+
+/** R62: the unit view's result states of docs/mockups/unit-result.html on the engine, at both sizes: the typed unit kept with
+ *  its row, the row entered by keys, σ, σ with ⚠, a note and a refusal. */
+function unitResultShots(): Shot[] {
+  const plan = async (p: Page, steps: string): Promise<void> => {
+    for (const s of steps.split(" ")) {
+      if (s.startsWith("↑")) await flick(p, s.slice(1), "up");
+      else await tap(p, [s]);
+    }
+  };
+  const units = async (p: Page, line: string[], steps: string): Promise<void> => {
+    await tap(p, line);
+    await flick(p, "tmpl", "up");
+    await p.waitForFunction(() => window.pascaline.unitView !== undefined && document.querySelector('[data-pad="unit"]') !== null);
+    await plan(p, steps);
+    await p.waitForFunction(() => document.querySelector('[data-testid="unit-result"], [data-testid="unit-message"]') !== null);
+  };
+  const sizes = [
+    { tag: "360", group: "The unit result (R62), 360 × 740", viewport: { width: 360, height: 740 } },
+    { tag: "412", group: "The unit result (R62), 412 × 915", viewport: { width: 412, height: 915 } },
+  ];
+  const pm = ["shift", "comma"];
+  const cases: { id: string; title: string; setup: (p: Page) => Promise<void> }[] = [
+    { id: "t02", title: "72 km/h with no end slot: the typed unit is kept, L·T⁻¹ on the right, the row m/s, knot … More…", setup: (p) => units(p, ["d7", "d2"], "d4 d9 div ↑d3 ↑enter") },
+    { id: "t02-row", title: "The same, ▼ entered the row: the first chip is outlined, ◀ ▶ move, Enter picks", setup: async (p) => { await units(p, ["d7", "d2"], "d4 d9 div ↑d3 ↑enter"); await tap(p, ["down", "right"]); } },
+    { id: "t02-tap", title: "After a tap on m/s: = 20 m/s with the end slot filled", setup: async (p) => { await units(p, ["d7", "d2"], "d4 d9 div ↑d3 ↑enter"); await p.getByTestId("unit-alt").first().tap(); await p.waitForFunction(() => document.querySelector('[data-testid="unit-result"]')?.getAttribute("data-unit") === "m/s"); } },
+    { id: "t04", title: "t04: 2π·25 mm, mm kept (≈), the coherent m first in the row", setup: (p) => units(p, ["d2", "mul", "mul", "d2", "d5"], "enter d1 d9 ↑enter") },
+    { id: "t10", title: "t10: σ belongs to the value line, the value and σ muted under it", setup: (p) => units(p, ["d1", "d2", "dot", "d3", "d4", ...pm, "d0", "dot", "d0", "d5", "mul", "d3", "dot", "d2", ...pm, "d0", "dot", "d1"], "d9 enter d9 ↑enter") },
+    { id: "warn", title: "σ with ⚠ (G41): the ⚠ sits before σ, the why-line under it in the warn colour", setup: (p) => units(p, ["cos", "d0", ...pm, "d0", "dot", "d1"], "↑enter") },
+    { id: "note", title: "A note (G40): one line under the value, which stays", setup: (p) => units(p, ["d3", "d0", "d0", "d0", "mul", "d0", "dot", "d1"], "↑x enter d9 enter d9 div d3 ↑enter") },
+    { id: "refusal", title: "A refusal: the message in the value's place, no row, no chip, the slots as typed", setup: (p) => units(p, ["d1", "add", "d1"], "d9 enter d3 ↑enter") },
+  ];
+  return sizes.flatMap((z) => cases.map((c) => ({ id: `unitresult-${c.id}-${z.tag}`, group: z.group, title: c.title, viewport: z.viewport, setup: c.setup })));
 }
 
 /** R24d: Find in a unit slot (the units menu of the empty query, a typed query with "Put on the unit pad"), a user cell being
@@ -305,6 +339,7 @@ const shots: Shot[] = [
   ...settingsShots(),
   ...padShots(),
   ...unitFindShots(),
+  ...unitResultShots(),
   ...lookShots(),
   {
     id: "home-tmpl",
