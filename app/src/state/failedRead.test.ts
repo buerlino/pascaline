@@ -27,6 +27,8 @@ let idb: FakeIdb;
 /** The app's store (`idbKv`), fresh per test: what a failed read blocks lasts for the session (the module). */
 let kv: Kv;
 let storage: typeof import("./storage.ts");
+/** The steps kvGet loads on demand (R103), from the same fresh module graph as `storage`. */
+let migrations: typeof import("./migrations.ts");
 
 beforeEach(async () => {
   idb = fakeIndexedDb();
@@ -36,6 +38,7 @@ beforeEach(async () => {
   vi.stubGlobal("MutationObserver", class { observe(): void {} });
   vi.resetModules();
   storage = await import("./storage.ts");
+  migrations = await import("./migrations.ts");
   kv = storage.idbKv;
   await storage.kvSet("seed", 0); // opens the database and makes the store
 });
@@ -65,17 +68,17 @@ describe("the store's read tells three outcomes apart", () => {
   });
 
   it("a migration step that throws settles the read as could not read, and writes nothing back", async () => {
-    const real = storage.MIGRATIONS[2]!["defs"];
+    const real = migrations.MIGRATIONS[2]!["defs"];
     const before = { "@pascaline": 2, value: 42 };
     store().set("defs", before);
-    storage.MIGRATIONS[2]!["defs"] = () => {
+    migrations.MIGRATIONS[2]!["defs"] = () => {
       throw new Error("step threw");
     };
     try {
       const r = await Promise.race([storage.kvGet("defs"), new Promise((res) => setTimeout(() => res("not settled"), 500))]);
       expect(r).toEqual({ kind: "failed" });
     } finally {
-      storage.MIGRATIONS[2]!["defs"] = real!;
+      migrations.MIGRATIONS[2]!["defs"] = real!;
     }
     await settle();
     expect(store().get("defs")).toEqual(before);

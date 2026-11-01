@@ -4,16 +4,17 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { kvGetRaw } from "./storageRaw.ts";
 import { fakeIndexedDb, type FakeIdb } from "./fakeIdb.ts";
 import { SETTINGS_SCHEMA } from "./session.svelte.ts";
-import { DATA_VERSION, kvGet, kvSet, MIGRATIONS, SETTINGS_SINCE, stamp, unstamp } from "./storage.ts";
+import { DATA_VERSION, kvGet, kvSet, SETTINGS_SINCE, stamp, STEP_KEYS, unstamp } from "./storage.ts";
+import { MIGRATIONS } from "./migrations.ts";
 
 describe("stored values carry a version", () => {
   it("round-trips a stamped value without a write-back", () => {
-    expect(unstamp("history", stamp({ home: [1] }))).toEqual({ value: { home: [1] }, upgraded: false });
-    expect(unstamp("view", stamp("cas"))).toEqual({ value: "cas", upgraded: false });
+    expect(unstamp("history", stamp({ home: [1] }), MIGRATIONS)).toEqual({ value: { home: [1] }, upgraded: false });
+    expect(unstamp("view", stamp("cas"), MIGRATIONS)).toEqual({ value: "cas", upgraded: false });
   });
   it("reads a value stored before versions as version 0 and writes it back", () => {
-    expect(unstamp("defs", [{ name: "a" }])).toEqual({ value: [{ name: "a" }], upgraded: true });
-    expect(unstamp("view", "home")).toEqual({ value: "home", upgraded: true });
+    expect(unstamp("defs", [{ name: "a" }], MIGRATIONS)).toEqual({ value: [{ name: "a" }], upgraded: true });
+    expect(unstamp("view", "home", MIGRATIONS)).toEqual({ value: "home", upgraded: true });
   });
   it("runs the steps for its key from its version up", () => {
     const steps = { 0: { defs: (v: unknown) => String(v).replace("Psi", "Psi_") } };
@@ -22,7 +23,7 @@ describe("stored values carry a version", () => {
     expect(unstamp("defs", stamp("Psi+1"), steps).value).toBe("Psi+1");
   });
   it("keeps a record from a newer version as it is", () => {
-    expect(unstamp("view", { "@pascaline": DATA_VERSION + 1, value: "cas" })).toEqual({ value: "cas", upgraded: false });
+    expect(unstamp("view", { "@pascaline": DATA_VERSION + 1, value: "cas" }, MIGRATIONS)).toEqual({ value: "cas", upgraded: false });
   });
 });
 
@@ -93,6 +94,68 @@ describe("an older build never overwrites newer data (A50)", () => {
     await kvSet("defs", first);
     expect(await kvGet("defs")).toEqual({ kind: "value", value: first });
     expect(JSON.stringify(first)).toContain("D:=(sin((pi/180)*(1)))");
+  });
+});
+
+// R103: the steps (state/migrations.ts, with the angle rewrite) are a lazy chunk: a read loads them only for a record
+// stamped below DATA_VERSION whose key has a step on the way up.
+describe("the migration steps load only for a record that needs one (R103)", () => {
+  let idb: FakeIdb;
+  let loads = 0;
+  let s: typeof import("./storage.ts");
+  beforeEach(async () => {
+    idb = fakeIndexedDb();
+    vi.stubGlobal("indexedDB", idb.factory);
+    loads = 0;
+    vi.resetModules();
+    vi.doMock("./migrations.ts", async (original) => {
+      loads++;
+      return await original();
+    });
+    s = await import("./storage.ts");
+    await s.kvSet("seed", 0); // opens the database and makes the store
+  });
+  afterEach(() => {
+    vi.doUnmock("./migrations.ts");
+    vi.unstubAllGlobals();
+    vi.resetModules();
+  });
+  const put = (key: string, record: unknown): void => void idb.stores.get("kv")!.set(key, record);
+  const settle = (): Promise<void> => new Promise((r) => setTimeout(r, 20));
+
+  it("STEP_KEYS lists exactly the keys of MIGRATIONS, step by step", () => {
+    for (let v = 0; v < DATA_VERSION; v++) expect([...(STEP_KEYS[v] ?? [])].sort(), `step ${v} → ${v + 1}`).toEqual(Object.keys(MIGRATIONS[v] ?? {}).sort());
+  });
+
+  it("a current record, an older one with no step for its key, and one past its key's steps load no steps", async () => {
+    put("defs", s.stamp([{ name: "a" }]));
+    put("view", "cas"); // before versions, but view has no step
+    put("library", { "@pascaline": 3, value: "f(x):=pasexp(x)" }); // past the 2 → 3 step: kept as it is
+    expect(await s.kvGet("defs")).toEqual({ kind: "value", value: [{ name: "a" }] });
+    expect(await s.kvGet("view")).toEqual({ kind: "value", value: "cas" });
+    expect(await s.kvGet("library")).toEqual({ kind: "value", value: "f(x):=pasexp(x)" });
+    await settle();
+    expect(loads).toBe(0);
+    expect(idb.stores.get("kv")?.get("view")).toEqual(s.stamp("cas")); // the stamp is still brought up to date
+  });
+
+  it("a version-2 record loads the steps, migrates and is written back stamped today", async () => {
+    put("defs", { "@pascaline": 2, value: [{ name: "f", kind: "fn", cmds: ["f(x):=pasexp(i*x)+sin(x)"], preview: "", view: "home", time: 0 }] });
+    const r = await s.kvGet<{ cmds: string[] }[]>("defs");
+    expect(loads).toBe(1);
+    expect(r.kind === "value" ? r.value[0]!.cmds : []).toEqual(["f(x):=exp(i*x)+sin(pasdeg*(x))"]);
+    await settle();
+    expect(idb.stores.get("kv")?.get("defs")).toEqual(s.stamp(r.kind === "value" ? r.value : null));
+  });
+
+  it("needsSteps: only a key with a step between its stamp and DATA_VERSION", () => {
+    expect(s.needsSteps("defs", { "@pascaline": 2, value: [] })).toBe(true);
+    expect(s.needsSteps("defs", [])).toBe(true); // before versions
+    expect(s.needsSteps("library", { "@pascaline": 2, value: "" })).toBe(true);
+    expect(s.needsSteps("defs", { "@pascaline": 3, value: [] })).toBe(false);
+    expect(s.needsSteps("defs", s.stamp([]))).toBe(false);
+    expect(s.needsSteps("history", { "@pascaline": 0, value: {} })).toBe(false);
+    expect(s.needsSteps("defs", { "@pascaline": DATA_VERSION + 1, value: [] })).toBe(false);
   });
 });
 

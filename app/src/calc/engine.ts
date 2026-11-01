@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // The Calc port on top of gorge's MathEngine (app/src/engine). The only place the views meet it.
-import { defaultHomeSettings } from "../engine/homeEval.ts";
+import { defaultHomeSettings } from "../engine/homeDefaults.ts";
 import {
   defaultCasSettings,
   EngineCancelled,

@@ -10,7 +10,7 @@ import { unitCells, type StoredCells, type UnitCells } from "../units/userCells.
 import { GROUP_FIELDS, migratePresetKeys, nameKey, PRESET_GROUPS, PRESETS_KEY, readPresets, type GroupValues, type Preset, type PresetGroup, type StoredPresets } from "./presetRecord.ts";
 import type { Look } from "../theme/look.ts";
 import type { Session, Settings } from "./session.svelte.ts";
-import { DATA_VERSION, idbKv, unstamp, type MIGRATIONS } from "./storage.ts";
+import { DATA_VERSION, idbKv, unstamp, type Migrations } from "./storage.ts";
 import type { RawRecord } from "./storageRaw.ts";
 
 export { PRESET_GROUPS, PRESETS_KEY, type GroupValues, type Preset, type PresetGroup, type StoredPresets };
@@ -43,8 +43,9 @@ export interface PresetEnv {
   readonly userKeys: UserKeys;
   readonly cells: UnitCells;
   readonly store: PresetStore;
-  /** The migration steps (tests); MIGRATIONS by default. */
-  readonly steps?: typeof MIGRATIONS;
+  /** The migration steps (tests); by default MIGRATIONS, loaded (state/migrations.ts, a lazy chunk, R103) only for a
+   *  record stamped below DATA_VERSION. */
+  readonly steps?: Migrations;
   /** Put a look on the page and settle once the theme's files are in (theme/lookApply.ts applyLook, as main.ts's
    *  session.onLook does, but awaited, so a second apply starts after the first one's look is on the page). */
   readonly showLook?: (look: Look) => Promise<void>;
@@ -130,8 +131,17 @@ export class Presets {
       p.refused = true;
       return p;
     }
-    const up = (key: string, stored: unknown): unknown => (env.steps ? unstamp(key, stored, env.steps) : unstamp(key, stored)).value;
     const from = rec["@pascaline"];
+    let steps = env.steps;
+    if (steps === undefined && from < DATA_VERSION) {
+      try {
+        steps = (await import("./migrations.ts")).MIGRATIONS;
+      } catch {
+        p.refused = true; // the steps did not load: the record is not read, so it is not written over either
+        return p;
+      }
+    }
+    const up = (key: string, stored: unknown): unknown => unstamp(key, stored, steps ?? {}).value;
     // the keys a preset holds are the records of USER_KEYS and UNIT_PAD_CELLS: their own steps run on them too
     const { record } = readPresets(migratePresetKeys(up(PRESETS_KEY, rec), from, (key, value, v) => up(key, { "@pascaline": v, value })));
     p.list = record.presets;
