@@ -3,6 +3,7 @@
 // DATA_VERSION and migrated on read. Every call survives a missing or blocked IndexedDB: the app then simply starts
 // with defaults. A key whose read failed is not written again in that session (R93): its record may still be there.
 import { migrateAngleDefs, migrateAngleText } from "../engine/angleMigration.ts";
+import { guardWrite } from "./writer.ts";
 
 /** The store the session persists to; tests pass an in-memory one. `get` gives undefined for nothing stored and for a
  *  read that failed: the caller keeps its defaults either way, and the app's store (idbKv) then drops every write of
@@ -114,9 +115,14 @@ let persistAsked = false;
 /**
  * Stores `value` under today's stamp, unless the record there is from a newer version (A50): an older build (A49's kill
  * switch, an older APK) never writes over it, so the newer build never migrates its own data again. The session keeps
- * its value in memory. The stamp is read in the same transaction as the write.
+ * its value in memory. The stamp is read in the same transaction as the write. A tab that is not the writer (R95,
+ * writer.ts) writes nothing.
  */
-export async function kvSet(key: string, value: unknown): Promise<void> {
+export function kvSet(key: string, value: unknown): Promise<void> {
+  return guardWrite(() => kvPut(key, value), () => undefined);
+}
+
+async function kvPut(key: string, value: unknown): Promise<void> {
   try {
     const db = await open();
     await new Promise<void>((resolve, reject) => {

@@ -8,6 +8,7 @@ Phase 0 decisions (D1–D9, P1, P2): [spike/DECISIONS.md](../spike/DECISIONS.md)
 The owner's other open items are in [backlog.md](backlog.md), "Needs the user". Once decided, an entry moves to "Decided proposals".
 
 - **G140, rule 3's doubles:** `Psi(1+i)`, `erfc(1+i)` keep ⚠ 12 (a double against its own print), all right; ⚠ with 14 digits would show erfc's wrong 14th. Keep (G140's report).
+- **R95:** keep the reload of Use here, and make "Nothing done in this tab is kept" the read-only note's visible line, not only its tooltip (rows typed while read-only are lost at the reload): yes, or keep them across it in sessionStorage?
 
 - **R94:** keep the newer-version note a history line (as G19's), not vg-8's status line, which has no text slot (Opus pass 32).
 
@@ -59,7 +60,7 @@ The owner's other open items are in [backlog.md](backlog.md), "Needs the user". 
 - **The letters stay on the keys (2026-10-14).** Rule: docs/04 5.1 (the letters; the unassigned Shift cells). Would change if: Alpha taps near zero (P7 point 4); a function in the benchmark needs a key and no cell is free.
 - **The application id is `io.github.buerlino.pascaline` (2026-10-14); the web version lives at `https://pascaline-calc.org/` (2026-10-29).** The id never changes. The PWA is at the domain's root, `www` redirects; GitHub Pages deploys it from a release tag (A45); the docs stay on GitHub. Full text: archive. Would change if: the domain lapses.
 - **Stored data carries a version; one signing key (2026-10-14).** Rule: docs/04 6.2 (the stamp); the throwaway key lives in `~/.cache/pascaline/keys/` for every worktree, so an install over the last keeps its data.
-- **Start chunk: 175 kB raw, 61 kB gzip (owner, 2026-10-27, kept 2026-10-31), pinned at 59.47 kB, measured 59.42 kB** (the deltas per package: archive). Rule: docs/04 8.3 (past the pin, a package raises `START_PIN_GZIP` to its size measured after merging phase-1, plus 0.05 kB for build noise and merges in flight; Opus pass 26). A package's "Done when" names no allowance; its report gives the measured delta, and the pin is the only rule: an older "Done when" that says "the start chunk is unchanged" (R38a) is met under the pin (owner, 2026-10-31; Opus pass 27). `./build.sh --measure` is exempt. Would change if: the Tab One's keyboard-usable time passes 738 ms.
+- **Start chunk: 175 kB raw, 61 kB gzip (owner, 2026-10-27, kept 2026-10-31), pinned at 59.81 kB, measured 59.76 kB** (the deltas per package: archive). Rule: docs/04 8.3 (past the pin, a package raises `START_PIN_GZIP` to its size measured after merging phase-1, plus 0.05 kB for build noise and merges in flight; Opus pass 26). A package's "Done when" names no allowance; its report gives the measured delta, and the pin is the only rule: an older "Done when" that says "the start chunk is unchanged" (R38a) is met under the pin (owner, 2026-10-31; Opus pass 27). `./build.sh --measure` is exempt. Would change if: the Tab One's keyboard-usable time passes 738 ms.
 - **Owner answers of 2026-10-19 (feel).** R34: one shared entry line, as on the G2 (an unentered line follows you between views; after Enter it clears); R43, R7's defaults and A4a points 3 and 4 as built. Full text: archive.
 
 ### Precision, engine and parser
