@@ -23,6 +23,8 @@ export interface AppHost {
   setEntry(latex: string): void;
   /** Put text on the clipboard and say so (Copy, docs/04 section 2.6). `notice` replaces the default "Copied". */
   copy(text: string, notice?: string): void;
+  /** Show a short notice in the stage, as Copy's (R99: a value the Num entry refuses says why). */
+  notice(text: string): void;
 }
 
 /** A place's glyph on the status line's tile (R82f2) and in the apps list (R84): maths-font text, or a drawn icon (Home's house). */

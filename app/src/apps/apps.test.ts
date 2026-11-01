@@ -28,6 +28,18 @@ describe("exact decimal steps", () => {
     expect(plainNumber("\\frac{1}{3}")).toBeUndefined();
     expect(plainNumber("")).toBeUndefined();
   });
+  it("R99 (bu-3): reads MathLive's decimal comma {,} as the mark, as the parser does in either mode; a bare comma is no number", () => {
+    expect(plainNumber("2{,}5")).toBe("2.5");
+    expect(plainNumber("0{,}5")).toBe("0.5");
+    expect(plainNumber("-0{,}25")).toBe("-0.25");
+    expect(plainNumber("1{,}5\\emark3")).toBe("1.5e3");
+    expect(plainNumber("1{,}5\\emark-3")).toBe("1.5e-3");
+    expect(plainNumber("{,}5")).toBe(".5");
+    expect(plainNumber("3{,}")).toBe("3.");
+    expect(plainNumber("2,5")).toBeUndefined();
+    expect(plainNumber("2{,}5{,}3")).toBeUndefined();
+    expect(plainNumber("2{,}5.3")).toBeUndefined();
+  });
   it("picks 1-2-5 steps", () => {
     expect(decText(niceStep(0.2))).toBe("0.2");
     expect(decText(niceStep(0.27))).toBe("0.2");

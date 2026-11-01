@@ -7,6 +7,7 @@ import { formatComplex, type ComplexValue, type DecimalValue } from "../../engin
 import { numberSource } from "../../clipboard/source.ts";
 import type { CopySource, TextOptions } from "../../clipboard/text.ts";
 import { t } from "../../i18n/index.ts";
+import { numText } from "../../i18n/enNum.ts";
 import { tc } from "../../clipboard/strings.ts";
 import { commaResult } from "../../state/displayMode.ts";
 import { addMul, decText, decToNumber, nearestK, niceStep, parseDec, plainNumber, showDecimal, type Dec } from "../decimal.ts";
@@ -148,7 +149,9 @@ export class FunctionApp implements AppInstance {
     } else if (view === "num") {
       const s = plainNumber(latex);
       const d = s === undefined ? undefined : parseDec(s);
-      if (!d || (this.num.edit === "step" && d.m === 0n)) return;
+      // R99: a refused value says why, never a silent return
+      if (!d) return this.host.notice(numText("num.notNumber"));
+      if (this.num.edit === "step" && d.m === 0n) return this.host.notice(numText("num.zeroStep"));
       if (this.num.edit === "start") {
         this.num.start = decText(d);
         this.num.top = 0;

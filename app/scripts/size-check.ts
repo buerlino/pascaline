@@ -170,8 +170,12 @@ export const LAZY_PARTS = ["src/views/sheetKeys.ts", "src/views/tmplSheet.ts", "
  *  59.47 → 59.81 kB (R95): phase-1 1032dfb measures 59.42 kB gzip (167.85 kB raw), the branch 59.76 kB (168.70 kB raw,
  *  +0.34 kB): one writer per browser profile (state/writer.ts): the Web Lock is asked for before the first store write
  *  and every write asks its answer, so it cannot load later; the note, its words and the hand-over are a lazy chunk
- *  (state/handOver.ts). The pin is 59.76 + 0.05 kB. */
-export const START_PIN_GZIP = 59_810;
+ *  (state/handOver.ts). The pin is 59.76 + 0.05 kB.
+ *  59.81 → 59.87 kB (R99): phase-1 d578f5b measures 59.80 kB gzip (168.85 kB raw), the branch merged with it 59.82 kB
+ *  (168.87 kB raw, +0.02 kB): `{,}` before a digit starts a number in the tokenizer (Home's parser) and the apps' host
+ *  gets `notice` (AppHost, shell.svelte.ts); the words of the refusal are a lazy table (i18n/enNum.ts, loaded with
+ *  Solve and Function; in en.ts they measured 59.84 kB). The pin is 59.82 + 0.05 kB. */
+export const START_PIN_GZIP = 59_870;
 
 /** Failures for the start chunk's row when it is over the pin. */
 export function checkStartPin(row: Row): string[] {

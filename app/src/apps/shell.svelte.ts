@@ -38,7 +38,7 @@ export class AppShell {
   loading = $state<AppId | null>(null);
 
   /** Copy, paste and share (set by App.svelte); apps reach it through AppHost.copy. */
-  clip: { copyRaw(text: string | undefined, notice?: string): Promise<boolean> } | undefined;
+  clip: { copyRaw(text: string | undefined, notice?: string): Promise<boolean>; say(message: string): void } | undefined;
   /** The Menu of Home and CAS (set by App.svelte); the apps bring their own. */
   homeMenu: (() => MenuItem[]) | undefined;
   /** Settings as a level of the sheet (set by App.svelte once the Mode code is in; R49): the last row of every Menu
@@ -107,6 +107,7 @@ export class AppShell {
         this.entry.set(latex);
       },
       copy: (text: string, notice?: string) => void this.clip?.copyRaw(text, notice),
+      notice: (text: string) => this.clip?.say(text),
     };
   }
 
