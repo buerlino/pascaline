@@ -5,6 +5,8 @@ Run from the repo root. Shared state (locks, run logs) lives in the **main check
 
 ```bash
 tools/stay-awake.sh <serial>            # keep a device awake, record SoC/RAM/WebView; --restore undoes it
+tools/stay-awake.sh <serial> --restore   # puts back what .coord/devices/<serial>.orig holds: on the night devices that is STAY_ON=7 (the night setting); the device's real setting (STAY_ON=0) is kept in <serial>.orig.real
+tools/stay-awake.sh <serial> --restore-real   # by day: puts back <serial>.orig.real (the real setting) and leaves .orig (STAY_ON=7) alone
 tools/devlock.sh acquire <serial|host-cpu|integ> <owner> [wait_s]   # release / status / break; integ = the phase-1 worktree
 
 tools/device-build.sh [--measure] [--install] [--engine-dir DIR] # build our APK (wraps ./build.sh), prints its path
@@ -18,6 +20,8 @@ tools/device_run.py bench --runs 5                                 # the benchma
 tools/device_run.py page PATH [--wait MARK]                       # a measurement page; its results go to .coord/device-runs.jsonl
 tools/runs_summary.py                                             # medians from .coord/device-runs.jsonl
 tools/check-version.sh [vX.Y.Z]                                   # app/package.json, build.gradle and the F-Droid recipe agree (and equal the tag); test: check-version.test.sh, run by `npm run gate` (A48)
+tools/manifest-backup.test.sh                                     # A23, in SELFTESTS (A55): the manifest keeps android:allowBackup="false" and no backup rules (decisions S8)
+tools/release-gate.test.sh                                        # A42, in SELFTESTS (A55): release-gate.sh --dry-run lists its stages on _out/release
 ```
 
 They use `$ANDROID_SERIAL`: `core-device.sh` requires it, the Python tools default to the Tab One. Smaller helpers (usage in each file's header):
@@ -35,4 +39,4 @@ Desktop probes (no device): `tools/probes/` checks what the engine, the parser a
 
 Docs check (no device): `node tools/docs-check.mjs` checks every Markdown link and the docs' size budgets; `npm run gate` runs it (S7).
 
-Release gate (A42): `tools/release-gate.sh` runs the golden gate, the canaries and the core list on `_out/release` (the engine the APK carries), rebuilding it first unless its `.release-key` stamp matches; one line per stage, last line `RELEASE GATE PASSED` or `RELEASE GATE FAILED: <stages>`. Test: `tools/release-gate.test.sh`. Needs `npm run index` done in the checkout; run it when the host is quiet (under load, `invariants` and core c46/c47 time out).
+Release gate (A42): `tools/release-gate.sh` runs the golden gate, the canaries and the core list on `_out/release` (the engine the APK carries), rebuilding it first unless its `.release-key` stamp matches; one line per stage, last line `RELEASE GATE PASSED` or `RELEASE GATE FAILED: <stages>`. Test: `tools/release-gate.test.sh` (A55: run by `pipeline.sh selftest` and the `shell` check with the others, as is `tools/manifest-backup.test.sh`, A23's guard that `android:allowBackup="false"` stays in the manifest, decisions S8). Needs `npm run index` done in the checkout; run it when the host is quiet (under load, `invariants` and core c46/c47 time out).
