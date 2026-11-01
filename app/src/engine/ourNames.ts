@@ -7,11 +7,11 @@ import { mapNames, type Quoting } from "./giacPrint.ts";
 /** Giac's own `mod` is the modular-number constructor (an error as a call); Find's `mod` is irem (Euclidean,
  *  never negative: irem(-7,3) = 2), so the written word is renamed to our pasmod (homeEval.ts ENGINE_DEFINITIONS:
  *  irem for integers, and the same remainder for a rational, where irem is an error). G42: median and percentile are ours
- *  too (the median of an even list, percentile unevaluated in Giac; `median` is a reserved word there). */
-export const CALL_NAME: Readonly<Record<string, string>> = { mod: "pasmod", irem: "pasmod", median: "pasmedian", percentile: "paspercentile" };
+ *  too (the median of an even list, percentile unevaluated in Giac; `median` is a reserved word there); G155: so is sem. */
+export const CALL_NAME: Readonly<Record<string, string>> = { mod: "pasmod", irem: "pasmod", median: "pasmedian", percentile: "paspercentile", sem: "passem" };
 
 /** The word the export writes back for our name (`irem` and `mod` are the same function; `mod` is the written one). */
-const WRITTEN_NAME: Readonly<Record<string, string>> = { pasmod: "mod", pasmedian: "median", paspercentile: "percentile" };
+const WRITTEN_NAME: Readonly<Record<string, string>> = { pasmod: "mod", pasmedian: "median", paspercentile: "percentile", passem: "sem" };
 
 /** Renames the calls `name(` in Giac text by `map`: whole names, calls only (a name not followed by an opening bracket,
  *  or part of a longer name or a `.name`, stays), outside strings. */
@@ -27,7 +27,7 @@ function renameCalls(text: string, map: Readonly<Record<string, string>>, q: Quo
   }, q);
 }
 
-/** Giac text with the user's `mod`, `irem`, `median` and `percentile` calls read as our definitions, as the parser does. */
+/** Giac text with the user's `mod`, `irem`, `median`, `percentile` and `sem` calls read as our definitions, as the parser does. */
 export function renameOurCalls(text: string): string {
   return renameCalls(text, CALL_NAME, "typed");
 }

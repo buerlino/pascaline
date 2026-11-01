@@ -16,7 +16,7 @@ const qalc = join(process.env.PASCALINE_QALC_DL_DIR ?? join(repo, "engine/qalc/_
 const have = existsSync(giac) && existsSync(qalc);
 const required = process.env.FIND_INDEX === "required";
 
-const INDEX_SHA256 = "ccd54489c5c9bb9fb3ae8df636421d316d53e137a88a2daec250b62be4c162f2"; // G111: 167 more Giac entries left out (graphics, graphs, strings, debugger); before them G80's f9602d6b…, the G67 bytes 9807d9e1…
+const INDEX_SHA256 = "fa87cda8d38534e6363a67741b822402a8868955821f20d6f386aee8cf3a5fba"; // G155: the sem row (before it ccd54489…); G111: 167 more Giac entries left out (graphics, graphs, strings, debugger); before them G80's f9602d6b…, the G67 bytes 9807d9e1…
 
 describe("factors.yaml", () => {
   it("exists", () => {

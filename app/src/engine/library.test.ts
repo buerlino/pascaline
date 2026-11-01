@@ -384,6 +384,18 @@ describe.skipIf(!giacAvailable())("our function names in library files (G54, rea
     expect(back.ok && exportLibrary(back.log).text).toBe(out);
   });
 
+  it("G155: sem is ours too: the export writes sem( back, and the file reads back the same (derived: sem of 2,4,4,4,5,5,7,9 is sqrt(4/7))", async () => {
+    const h = await fresh();
+    const t = "// pascaline library 3\n// standard error\nm(L):=sem(L)\n";
+    const r = importLibrary(h, parseLibrary(t, parse), []);
+    expect(r.ok && r.log[0]!.cmds[0]).toBe("m(L):=passem(L)");
+    const out = exportLibrary(r.ok ? r.log : []).text;
+    expect(out).toContain("m(L):=sem(L)");
+    expect(out).not.toContain("passem");
+    const back = importLibrary(await fresh(), parseLibrary(out, parse), []);
+    expect(back.ok && exportLibrary(back.log).text).toBe(out);
+  });
+
   it("G105f2: a variable holding the string C:\\ in a list keeps it after a relaunch (derived: C, colon, backslash is size 3)", async () => {
     const h = await fresh();
     const log = applyDefChanges([], h.cas('L:=["C:"+char(92),1]', defaultCasSettings).defs);
@@ -413,9 +425,11 @@ describe("renameOurCalls (no engine)", () => {
     expect(renameOurCalls('median(L)+mod (a,b)+irem(1,2)+percentile(L,5)')).toBe("pasmedian(L)+pasmod (a,b)+pasmod(1,2)+paspercentile(L,5)");
     expect(renameOurCalls('"median(x)"+median+x.mod(2)+mymedian(L)+pasmedian(L)+1e3+1e3median(L)')).toBe('"median(x)"+median+x.mod(2)+mymedian(L)+pasmedian(L)+1e3+1e3*pasmedian(L)');
     expect(renameOurCalls("2median(L)+2.5mod(a,b)")).toBe("2*pasmedian(L)+2.5*pasmod(a,b)");
+    expect(renameOurCalls("sem(L)+2sem(L)+sem+passem(L)+mysem(L)")).toBe("passem(L)+2*passem(L)+sem+passem(L)+mysem(L)");
   });
   it("writeUserNames is the inverse", () => {
     expect(writeUserNames("pasmedian(L)+pasmod(a,b)+paspercentile(L,5)")).toBe("median(L)+mod(a,b)+percentile(L,5)");
+    expect(writeUserNames("passem(L)")).toBe("sem(L)");
   });
   it("G105f1, G105f2: the export reads a log command as typed: beside a backslash string, pasmod is written mod (source: derived)", () => {
     // Giac prints the string C:\ (size 3) as "C:\" (probed on 76f0e04); the snapshot stores it typed (typedFromPrinted)
