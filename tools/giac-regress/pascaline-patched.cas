@@ -620,6 +620,15 @@ Digits:=40:; pc("g151-cbrt-asinh-1e-300-12",'(surd(asinh(10^-300),3))',(1/10^100
 // patch 0026-asinh-small-real-exact.patch
 // g151-cbrt-asinh-1e-300-30 (precision.yaml, derived)
 Digits:=40:; pc("g151-cbrt-asinh-1e-300-30",'(surd(asinh(10^-300),3))',(1/10^100),5/10^130);
+// patch 0027-atanh-small-real-exact.patch
+// g153-ln-atanh-9-over-1e1001-30 (precision.yaml, oracle)
+Digits:=40:; pc("g153-ln-atanh-9-over-1e1001-30",'(ln(atanh(9/10^1001)))',-(230269045350970351031921895567/10^26),5/10^27);
+// patch 0027-atanh-small-real-exact.patch
+// g153-cbrt-atanh-1e-100-12 (precision.yaml, oracle)
+Digits:=40:; pc("g153-cbrt-atanh-1e-100-12",'(surd(atanh(10^-100),3))',(464158883361/10^45),5/10^46);
+// patch 0027-atanh-small-real-exact.patch
+// g153-cbrt-atanh-neg-1e-200-30 (precision.yaml, oracle)
+Digits:=40:; pc("g153-cbrt-atanh-neg-1e-200-30",'(surd(atanh(-10^-200),3))',-(215443469003188372175929356652/10^96),5/10^97);
 // patch 0025-pow-root-extract-branch.patch
 // g149-2-pow-sqrt-neg1-1e-3-30 (precision.yaml, oracle)
 Digits:=40:; pc("g149-2-pow-sqrt-neg1-1e-3-30",'(2^sqrt(-1-10^-3))',(769017463424123741195787586319/10^30)+(639227769225278966928345479449/10^30)*i,5/10^31+5/10^31);

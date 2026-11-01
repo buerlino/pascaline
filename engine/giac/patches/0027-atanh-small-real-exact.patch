@@ -1,0 +1,17 @@
+# Upstream: giac 2.1.0 usual.cc atanh. For an exact real x the exact path returns ln((1+x)/(1-x))/2, whose evalf at Digits cancels -log10|x| digits: atanh(89999/10^1003) at Digits 40 = -4.59e-41 and at Digits 60 an exact 0 (right 8.9999e-999), so ln(atanh(89999/10^1003)) at Digits 40 was -92.88+3.14*i and at Digits 60 -infinity, and Home fell back to a double, -70.0078652366+3.14159265359*i (right -2298.08529443488825891460699352). Now atanh of an exact real below 1/4 in size (its double; a double that reads 0 too) stays unevaluated, as asinh does since patch 0026 (G151), and evalf takes the MPFR atanh. A float x, a free x and |x| >= 1/4 keep the form (CAS atanh(1/2) = ln(3)/2). The double branch (std::log((1+x)/(1-x))/2) cancels the same way for a small double and is not changed here (the app reads atanh at MPFR digits).
+# Changed by Pascaline contributors, 2026-11-01
+--- a/src/usual.cc
++++ b/src/usual.cc
+@@ -3242,6 +3242,12 @@
+     gen a,b;
+     if (is_algebraic_program(e,a,b))
+       return symbolic(at_program,gen(makevecteur(a,0,atanh(b,contextptr)),_SEQ__VECT));
++    // Pascaline patch 0027 (G153): an exact real x of size below 1/4 (its double; a double that reads 0, 89999/10^1003,
++    // too): the exact form ln((1+x)/(1-x))/2 cancels -log10|x| digits at evalf (atanh(89999/10^1003) at Digits 40 was
++    // -4.6e-41, at Digits 60 an exact 0), so Home's ln(atanh(89.999/1E1000)) read noise (-70.0+3.14*i, right -2298.085).
++    // atanh keeps it unevaluated, as patch 0026 does for asinh, and evalf takes MPFR's atanh. A float x keeps today's path.
++    if (small_exact_real(e,contextptr))
++      return symbolic(at_atanh,e);
+     return rdiv(ln(rdiv(1+e,1-e,contextptr),contextptr),plus_two);
+     // return symbolic(at_atanh,e);
+   }
