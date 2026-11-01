@@ -749,6 +749,10 @@ Digits:=40:; pc("g149-keep-2-pow-sqrt-neg3/2-12",'(2^sqrt(-3/2))',(660787797961/
 Digits:=40:; pc("g149-keep-2-pow-sqrt-neg1.5-12",'(2^sqrt(-(15/10^1)))',(660787797961/10^12)+(750572771999/10^12)*i,5/10^13+5/10^13);
 // g149-keep-pi-pow-i-sqrt2000-over-3-12 (precision.yaml, oracle)
 Digits:=40:; pc("g149-keep-pi-pow-i-sqrt2000-over-3-12",'(pi^(i*sqrt(2000)/3))',-(212501277577/10^12)-(977160788728/10^12)*i,5/10^13+5/10^13);
+// g150-neg2-pow-atanh-3-12 (precision.yaml, oracle)
+Digits:=40:; pc("g150-neg2-pow-atanh-3-12",'((-2)^atanh(3))',-(521463863103/10^14)+(751225242598/10^14)*i,5/10^15+5/10^15);
+// g150-neg2-pow-atanh-3-30 (precision.yaml, oracle)
+Digits:=40:; pc("g150-neg2-pow-atanh-3-30",'((-2)^atanh(3))',-(521463863103264518691827672313/10^32)+(751225242598145474189531533631/10^32)*i,5/10^33+5/10^33);
 // g140f2-fisher_cdf-4-6-2-30 (precision.yaml, oracle)
 Digits:=40:; pc("g140f2-fisher_cdf-4-6-2-30",'(fisher_cdf(4,6,2))',(786339025406080799666805497709/10^30),5/10^31);
 // g149-cas-keep-forms (precision.yaml g149-cas-keep-acosh-neg2, g149-cas-keep-ln-neg-pi-pow-3/2, g149-cas-keep-sqrt-neg-pi-cubed, g149f1-cas-keep-*, derived)
