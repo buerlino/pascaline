@@ -100,7 +100,7 @@ export class FunctionApp implements AppInstance {
   // ---- formatting (Home formatter, current settings)
   /** R108: a drawn number with the decimal comma when that is the mark (elements `;`, as in Home). */
   private mark(s: string): string {
-    return this.host.decimalComma === true ? commaResult(s, false) : s;
+    return this.host.settings.decimalMark === "comma" ? commaResult(s, false) : s;
   }
   fmt(c: Cell | undefined): string {
     return this.mark(this.fmtPoint(c));
@@ -245,7 +245,7 @@ export class FunctionApp implements AppInstance {
     return tableCsv(header, rows, o);
   }
   private textOptions(): TextOptions {
-    return this.host.decimalComma === true ? { decimalComma: true } : {};
+    return this.host.settings.decimalMark === "comma" ? { decimalComma: true } : {};
   }
   private csvCell(c: Cell | undefined, copyFull: (i: CopySource, o?: TextOptions) => string | undefined, o: TextOptions): string {
     if (!c || !c.ok) return "";

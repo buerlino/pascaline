@@ -14,13 +14,11 @@ export type NavDir = "up" | "down" | "left" | "right";
 /** What the framework gives an app. */
 export interface AppHost {
   readonly calc: Calc;
-  /** The calculator settings (digits, angle, format); reactive. */
-  readonly settings: CalcSettings;
+  /** The calculator settings (digits, angle, format); reactive. `decimalMark` (R108): "comma" = an app draws and copies its numbers with the decimal comma (R57). */
+  readonly settings: CalcSettings & { readonly decimalMark?: "point" | "comma" };
   readonly kv: Kv;
   /** The user's variables and functions (the stored ones included); reactive. Apps pick the functions out for the parser (R56b). */
   readonly userNames: readonly UserName[];
-  /** R108: the decimal comma is the mark (Settings › Numbers); an app draws and copies its numbers with it. Absent = the point. */
-  readonly decimalComma?: boolean;
   /** Put LaTeX on the shared entry line (e.g. the selected slot, to edit it). Marks the line as unedited. */
   setEntry(latex: string): void;
   /** Put text on the clipboard and say so (Copy, docs/04 section 2.6). `notice` replaces the default "Copied". */

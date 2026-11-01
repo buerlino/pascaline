@@ -51,7 +51,7 @@ session.saveDelayMs = 400;
 // Settings › Appearance (R50e): the stored look goes on the page once the settings are read, and on every change; the
 // inline script of index.html has already shown it (lazy chunk, off the start).
 session.onLook = (look) => void import("./theme/lookApply.ts").then((m) => m.applyLook(look)).catch(() => {});
-const shell = new AppShell(calc, idbKv, entry, () => session.settings, () => session.userNames, () => session.decimalComma);
+const shell = new AppShell(calc, idbKv, entry, () => session.settings, () => session.userNames);
 const place = shell.restorePlace();
 const settingsRead = session.restoreSettings();
 // the free keys U1–U3 (R15b): their defaults are drawn first, the user's slots replace them when read

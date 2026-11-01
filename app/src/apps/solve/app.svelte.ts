@@ -127,7 +127,7 @@ export class SolveApp implements AppInstance {
   }
   /** R108: a drawn number or root with the decimal comma when that is the mark (as Home draws it). */
   mark(text: string): string {
-    return this.host.decimalComma === true ? commaResult(text, false) : text;
+    return this.host.settings.decimalMark === "comma" ? commaResult(text, false) : text;
   }
 
   // ---- framework hooks

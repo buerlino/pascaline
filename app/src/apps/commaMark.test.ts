@@ -7,7 +7,7 @@ import { SolveApp } from "./solve/app.svelte.ts";
 
 const make = (decimalComma: boolean | undefined): SolveApp => {
   const settings = { digits: 12, angle: "rad", format: "std" };
-  const h = { settings, decimalComma, kv: { get: async () => undefined, set: async () => undefined }, userNames: [], setEntry: () => undefined, copy: () => undefined };
+  const h = { settings: { ...settings, ...(decimalComma === undefined ? {} : { decimalMark: decimalComma ? "comma" : "point" }) }, kv: { get: async () => undefined, set: async () => undefined }, userNames: [], setEntry: () => undefined, copy: () => undefined };
   return new SolveApp(h as unknown as AppHost);
 };
 
