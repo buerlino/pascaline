@@ -150,7 +150,7 @@ export class SolveApp implements AppInstance {
     } else if (view === "num" && this.selected) {
       // R76f1: Enter empties the line. A line left as the app loaded it (a root's 12-digit display) changes nothing.
       const sel = this.selected;
-      if (latex === "" || latex === numberLatex(this.value(sel))) {
+      if (latex === "" || latex === this.lineOf(sel)) {
         this.host.setEntry("");
         return;
       }
@@ -269,8 +269,13 @@ export class SolveApp implements AppInstance {
     this.loadEntry();
     this.save();
   }
+  /** R99f1: an unknown's value as it goes on the entry line: with the decimal comma on, the comma the dot key types ({,}). */
+  private lineOf(name: string): string {
+    const l = numberLatex(this.value(name));
+    return this.host.settings.decimalMark === "comma" ? commaResult(l, true) : l;
+  }
   private loadEntry(): void {
-    if (this.selected) this.host.setEntry(numberLatex(this.value(this.selected)));
+    if (this.selected) this.host.setEntry(this.lineOf(this.selected));
   }
 
   private async job<T>(run: () => Promise<T>): Promise<T | undefined> {

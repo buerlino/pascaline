@@ -147,6 +147,7 @@ export class FunctionApp implements AppInstance {
       this.define(this.slots.selected, latex);
       this.host.setEntry(this.slots.latex[this.slots.selected] ?? "");
     } else if (view === "num") {
+      if (latex === "") return; // R99f1: an empty line is not a value (no notice; start and step stay, as Solve's Num)
       const s = plainNumber(latex);
       const d = s === undefined ? undefined : parseDec(s);
       // R99: a refused value says why, never a silent return
