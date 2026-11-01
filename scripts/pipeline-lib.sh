@@ -65,28 +65,33 @@ engine_stamp() { cat "$1/.engine-key" 2>/dev/null || true; }
 engine_sha() { sha256sum "$1/giac.wasm" 2>/dev/null | cut -c1-16; }
 # engine_build <worktree holding the sources> <key> <out root> <log>: builds once per key into <root>/key-<key> under the
 # host-cpu lock; a finished build with the right stamp is reused, and the stamp is read again once the lock is held, so two
-# runs that want one key build it once (A47a). Fails with the build log's tail on stdout.
+# runs that want one key build it once (A47a). A54: runs in the main shell (never in $( ): the traps and the registry of own_sh are
+# lost there); the build is a child session the pipeline owns, the lock is host_cpu_take/host_cpu_drop (a held host-cpu is kept).
+# On failure it sets engine_why (the build log's tail, or the lock text) and returns 1; it prints nothing.
+engine_why=""
 engine_build() {
-  local src="$1" key="$2" root="$3" log="$4" dest tmp rc=0
-  dest="$root/key-$key"
+  local src="$1" key="$2" root="$3" log="$4" dest tmp rc=0 took=0
+  dest="$root/key-$key"; engine_why=""
   if [[ -f "$dest/giac.wasm" && "$(engine_stamp "$dest")" == "$key" ]]; then return 0; fi
-  host_cpu_acquire "engine-$key" "engine $key:" || { echo "host-cpu lock busy"; return 1; }
+  [[ $host_cpu_held -eq 1 ]] || took=1
+  host_cpu_take "engine-$key" "engine $key:" || { engine_why="host-cpu lock busy"; return 1; }
   if [[ -f "$dest/giac.wasm" && "$(engine_stamp "$dest")" == "$key" ]]; then  # built by another run while this one waited
-    tools/devlock.sh release host-cpu "engine-$key" >/dev/null || true; return 0
+    [[ $took -eq 0 ]] || host_cpu_drop
+    return 0
   fi
   tmp="$root/.tmp-$key.$$"; rm -rf "$tmp"; mkdir -p "$tmp"
-  GIAC_BUILD_OUT="$tmp" GIAC_BUILD_DIR="$root/.build-$key" timeout 3600 "$src/engine/giac/build-wasm.sh" > "$log" 2>&1 || rc=1
+  own_sh 'GIAC_BUILD_OUT="$1" GIAC_BUILD_DIR="$2" exec timeout -k 60 3600 "$3"' "$tmp" "$root/.build-$key" "$src/engine/giac/build-wasm.sh" > "$log" 2>&1 < /dev/null || rc=1
   if [[ $rc -eq 0 && -f "$tmp/gsl/giac.wasm" ]]; then
     echo "$key" > "$tmp/gsl/.engine-key"
     rm -rf "$dest"; mv "$tmp/gsl" "$dest"
   else rc=1; fi
   rm -rf "$tmp" "$root/.build-$key"
-  tools/devlock.sh release host-cpu "engine-$key" >/dev/null || true
-  [[ $rc -eq 0 ]] || { echo "build-wasm.sh failed: $(tail -n 2 "$log" | tr '\n' ' ' | cut -c1-160)"; return 1; }
+  [[ $took -eq 0 ]] || host_cpu_drop
+  [[ $rc -eq 0 ]] || { engine_why="build-wasm.sh failed: $(tail -n 2 "$log" | tr '\n' ' ' | cut -c1-160)"; return 1; }
 }
 # engine_ensure <worktree holding the sources> <key> <out root> <log>: <root>/key-<key> exists with its stamp (A47a: the pipeline's
 # GIAC_OUT is always such an immutable directory, never gsl). A gsl stamped with the key is copied (a gsl swapped during the copy is
-# noticed by its stamp and the copy dropped); otherwise engine_build builds it.
+# noticed by its stamp and the copy dropped); otherwise engine_build builds it (failure text in engine_why; main shell only).
 engine_ensure() {
   local src="$1" key="$2" root="$3" log="$4" dest tmp
   dest="$root/key-$key"
@@ -151,7 +156,17 @@ lock_wait() {
   locks="${coord:-${PASCALINE_COORD:-$(cd "$(git rev-parse --git-common-dir)/.." && pwd)/.coord}}/locks"
   holder="$(cat "$locks/$res/owner" 2>/dev/null || echo '?')"
   _lib_log "$pre waiting for $res ($holder)"
-  if tools/devlock.sh acquire "$res" "$owner" "$wait" >/dev/null 2>&1; then
+  # The wait runs in a session of its own and is waited for as a background job (A54f1): bash runs a trapped TERM, HUP or INT only
+  # after a foreground command returns, so a foreground wait of up to 7200 s held the signal back until night.sh's KILL; `wait <pid>`
+  # returns at once, the trap runs owned_kill (which ends the waiter before any lock is dropped) and the job exits.
+  local pid rc=0
+  setsid tools/devlock.sh acquire "$res" "$owner" "$wait" >/dev/null 2>&1 </dev/null &
+  pid=$!
+  owned_sessions+=("$pid")
+  wait "$pid" || rc=$?
+  session_kill "$pid" || true
+  owned_forget "$pid"
+  if [[ $rc -eq 0 ]]; then
     _lib_log "$pre $res taken after a wait of $((SECONDS - t0)) s"; return 0
   fi
   _lib_log "$pre $res still busy after a wait of $((SECONDS - t0)) s"; return 1
@@ -175,6 +190,72 @@ nodemods_drop() {
   [[ $nodemods_held -eq 1 ]] || return 0
   tools/devlock.sh release nodemods "$nodemods_owner" >/dev/null 2>&1 || true; nodemods_held=0
 }
+# host_cpu_take <owner> <log prefix> / host_cpu_drop: the job's host-cpu lock, tracked like nodemods so the EXIT trap drops it (A54).
+# Lock order: integ, then nodemods, then host-cpu.
+host_cpu_held=0; host_cpu_owner=""
+host_cpu_take() {
+  [[ $host_cpu_held -eq 0 ]] || return 0
+  host_cpu_acquire "$1" "$2" || return 1
+  host_cpu_held=1; host_cpu_owner="$1"
+}
+host_cpu_drop() {
+  [[ $host_cpu_held -eq 1 ]] || return 0
+  tools/devlock.sh release host-cpu "$host_cpu_owner" >/dev/null 2>&1 || true; host_cpu_held=0
+}
+
+# ---- A54: the pipeline owns its children ----
+# GNU timeout moves itself into a process group of its own, so a signal to the pipeline (night.sh's timeout, a kill) never reached the
+# checks, the agents or the device build, and the EXIT traps freed integ, nodemods and host-cpu under them. Every heavy child now runs
+# in a session of its own (setsid) that the pipeline registers; the TERM, HUP and INT traps and every EXIT trap call owned_kill first,
+# which kills the whole session (timeout's group included) and waits until it is empty, and only then do the traps drop the locks.
+# own_sh and owned_kill work in the main shell only: in $( ) or a pipe the registry and the traps are lost.
+owned_sessions=()
+# session_alive <sid>: succeeds while a process of the session is not a zombie.
+session_alive() { ps -o stat= --sid "$1" 2>/dev/null | grep -qv '^Z'; }
+# session_kill <sid>: TERM to the whole session, KILL after PASCALINE_KILL_GRACE seconds (20), then waits (at most 10 s more) until it is empty.
+session_kill() {
+  local sid="$1" i grace="${PASCALINE_KILL_GRACE:-20}"
+  session_alive "$sid" || return 0
+  pkill -TERM -s "$sid" 2>/dev/null || true
+  for ((i = 0; i < grace * 5; i++)); do session_alive "$sid" || return 0; sleep 0.2; done
+  pkill -KILL -s "$sid" 2>/dev/null || true
+  for ((i = 0; i < 50; i++)); do session_alive "$sid" || return 0; sleep 0.2; done
+  return 1
+}
+# owned_kill: ends every registered session and reaps its leader; the caller's locks are dropped after it.
+owned_kill() {
+  local s
+  for s in "${owned_sessions[@]}"; do
+    if session_kill "$s"; then wait "$s" 2>/dev/null || true; fi
+  done
+  owned_sessions=()
+}
+# owned_forget <sid>: takes one session out of the registry.
+owned_forget() {
+  local s keep=()
+  for s in "${owned_sessions[@]}"; do [[ "$s" == "$1" ]] || keep+=("$s"); done
+  owned_sessions=("${keep[@]}")
+}
+# own_traps: a signal ends the child sessions first, then the job (its EXIT trap drops the locks).
+own_traps() {
+  trap 'owned_kill; exit 143' TERM
+  trap 'owned_kill; exit 129' HUP
+  trap 'owned_kill; exit 130' INT
+}
+# own_sh <script> [args...]: runs `bash -c <script> _ args...` in a session of its own and waits for it; stdin, stdout and stderr are the
+# caller's (redirect the call). Returns its exit code. What the script left running afterwards is killed.
+own_sh() {
+  local pid rc=0 s keep=()
+  setsid bash -c "$1" _ "${@:2}" <&0 &
+  pid=$!
+  owned_sessions+=("$pid")
+  wait "$pid" || rc=$?
+  session_kill "$pid" || true
+  for s in "${owned_sessions[@]}"; do [[ "$s" == "$pid" ]] || keep+=("$s"); done
+  owned_sessions=("${keep[@]}")
+  return $rc
+}
+
 # device_tree <phase-1 worktree> <sha> <dir> (A56): the device runner's own tree, so nothing it reads moves under it: the files
 # tracked at <sha> (git archive) and a hard-link copy of the worktree's app/node_modules; nodemods must be held (the copy reads
 # the phase-1 worktree's node_modules, as a worker start does). Prints "<size of the files> in <s> s"; 1 on a failure.
@@ -220,7 +301,7 @@ selftest_run() {
   : > "$log"
   for t in "${tests[@]}"; do
     echo "== $t" >> "$log"; rc=0
-    (cd "$dir" && env -u PASCALINE_LOCK_PID -u PASCALINE_COORD -u GIAC_OUT -u PW_PORT -u PASCALINE_SELFTEST_TESTS timeout -k 30 1800 "$t") > "$log.one" 2>&1 || rc=$?
+    own_sh 'cd "$1" && shift && exec env -u PASCALINE_LOCK_PID -u PASCALINE_COORD -u GIAC_OUT -u PW_PORT -u PASCALINE_SELFTEST_TESTS timeout -k 30 1800 "$@"' "$dir" "$t" > "$log.one" 2>&1 < /dev/null || rc=$?
     cat "$log.one" >> "$log"
     if [[ $rc -ne 0 ]]; then
       line="$(grep -m1 -E '^FAIL' "$log.one" || tail -n 1 "$log.one")"; [[ $rc -ne 124 ]] || line="timed out after 1800 s"
@@ -282,7 +363,7 @@ red_first() {
   [[ ! -d "$wt/app/src/find/_gen" ]] || { mkdir -p "$scratch/app/src/find"; cp -a "$wt/app/src/find/_gen" "$scratch/app/src/find/"; }
   if [[ ${#files[@]} -gt 0 ]]; then
     ran=1; rc=0
-    (cd "$scratch/app" && eval "${PASCALINE_REDFIRST_VITEST:-FORCE_COLOR=0 NO_COLOR=1 timeout 600 npx vitest run} $(printf '%q ' "${files[@]#app/}")") >> "$log" 2>&1 || rc=$?
+    own_sh 'cd "$1" && eval "$2"' "$scratch/app" "${PASCALINE_REDFIRST_VITEST:-FORCE_COLOR=0 NO_COLOR=1 timeout 600 npx vitest run} $(printf '%q ' "${files[@]#app/}")" >> "$log" 2>&1 < /dev/null || rc=$?
     if [[ $rc -eq 0 ]]; then :
     elif [[ $rc -eq 124 ]]; then err="stage error: vitest timed out on phase-1"
     elif grep -qE '(Test Files|Tests) +[0-9]+ failed' "$log"; then red=1
@@ -290,7 +371,7 @@ red_first() {
   fi
   if [[ -n "${ids// /}" && $red -eq 0 && -z "$err" ]]; then
     ran=1; rc=0
-    (cd "$scratch/app" && GIAC_OUT="$eng" ONLY="$stages" eval "${PASCALINE_REDFIRST_GOLDEN:-timeout 900 node scripts/golden.ts}") >> "$log" 2>&1 || rc=$?
+    own_sh 'cd "$1" && GIAC_OUT="$2" ONLY="$3" eval "$4"' "$scratch/app" "$eng" "$stages" "${PASCALINE_REDFIRST_GOLDEN:-timeout 900 node scripts/golden.ts}" >> "$log" 2>&1 < /dev/null || rc=$?
     if [[ $rc -eq 0 ]]; then :
     elif [[ $rc -eq 124 ]]; then err="stage error: golden timed out on phase-1"
     elif ! grep -q 'GOLDEN GATE FAILED' "$log"; then err="stage error: golden exit $rc on phase-1 without GOLDEN GATE FAILED (engine or environment error?)"
@@ -324,7 +405,8 @@ behaviour_section() {
   local -a engines=()
   [[ -z "$ea" ]] || engines+=("GIAC_MJS_A=$ea/giac.mjs")
   [[ -z "$eb" ]] || engines+=("GIAC_MJS_B=$eb/giac.mjs")
-  body="$(cd "$wt/app" && env "${engines[@]}" timeout -k 30 "${PASCALINE_BEHAVIOUR_SECONDS:-1200}" node "$tool" "$integ" "$wt" 2>&1)" || rc=$?
+  own_sh 'cd "$1" && shift && exec env "$@"' "$wt/app" "${engines[@]}" timeout -k 30 "${PASCALINE_BEHAVIOUR_SECONDS:-1200}" node "$tool" "$integ" "$wt" > "$out.tmp" 2>&1 < /dev/null || rc=$?
+  body="$(cat "$out.tmp")"; rm -f "$out.tmp"
   {
     echo "## Behaviour changes (behaviour-diff.ts: phase-1 against $(basename "$wt"))"
     if [[ $rc -eq 124 || $rc -eq 137 ]]; then echo "timed out after 20 min (judge the diff without it)"

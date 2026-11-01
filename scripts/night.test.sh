@@ -68,7 +68,7 @@ grep -q '\[A\] a' "$tmp/sec.out" && grep -q '\[B\] b' "$tmp/sec.out" && grep -q 
 { for i in $(seq 1 500); do echo "x$i"; done; echo '## 2026-10-30 night, 07:00'; for i in $(seq 1 600); do echo "- 07:00 [B] y$i"; done; } > "$tmp/sec2.md"
 (source "$dir/pipeline-lib.sh"; night_section "$tmp/sec2.md") > "$tmp/sec2.out" 2>/dev/null
 grep -q '^## 2026-10-30 night' "$tmp/sec2.out" && ! grep -q '^x500$' "$tmp/sec2.out" || fail "night_section: a long night does not start at its header"
-grep -q 'night_section "$coord/log.md" | (cd "$integ"' "$dir/pipeline.sh" || fail "pipeline.sh report: the writer does not read the night section"
+grep -qF 'night_section "$coord/log.md" > "$run/input.txt"' "$dir/pipeline.sh" && grep -qF -- '-n report "$prompt" < "$run/input.txt"' "$dir/pipeline.sh" || fail "pipeline.sh report: the writer does not read the night section"  # A54: a file, not a pipe: the writer runs in an owned session
 # night.sh calls `scripts/pipeline.sh selftest` by a relative path: the tests must be the ones next to that script, not the main checkout's
 grep -q 'here="$(cd "$self_dir/.." && pwd)"' "$dir/pipeline.sh" && [[ "$(grep -n 'self_dir=' "$dir/pipeline.sh" | head -n1 | cut -d: -f1)" -lt "$(grep -n '^cd "$main"' "$dir/pipeline.sh" | head -n1 | cut -d: -f1)" ]] || fail "pipeline.sh selftest: the script dir is resolved after cd main"
 

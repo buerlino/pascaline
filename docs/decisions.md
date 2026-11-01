@@ -7,12 +7,6 @@ Phase 0 decisions (D1–D9, P1, P2): [spike/DECISIONS.md](../spike/DECISIONS.md)
 
 The owner's other open items are in [backlog.md](backlog.md), "Needs the user". Once decided, an entry moves to "Decided proposals".
 
-- **R104, a key for `%`:** add a fourth row to the Shift + 9 palette with `%` first (its 24 G2 cells stay), so `250 ± 0.4 %` can be typed on the phone; today no key types `%`, only a hardware keyboard. Yes, or another place?
-
-- **R95:** keep the reload of Use here, and make "Nothing done in this tab is kept" the read-only note's visible line, not only its tooltip (rows typed while read-only are lost at the reload): yes, or keep them across it in sessionStorage?
-
-- **R94:** keep the newer-version note a history line (as G19's), not vg-8's status line, which has no text slot (Opus pass 32).
-
 - **A21, the F-Droid recipe's qalc build (P22):** `fdroid/README.md` names the open answer. Until F-Droid says whether checked-in derived data (`find/factors.yaml`) is acceptable, the recipe keeps its libxml2 and libqalculate builds, unchanged. Yes: before C4 it drops both. No: it runs `tools/find-index/refresh-factors.mjs` and fails on a diff.
 
 - **R50e, on the phone:** (1) the first frame reads the Android default (Dark) from `window.Capacitor` in the inline script; if the bridge is not there yet at that point, a first start with nothing stored shows System for one frame, then Dark (later starts read the mirror). Look at a first start after "clear data". (2) Android's status and navigation bar colours stay open (not in R50e).
@@ -22,7 +16,7 @@ The owner's other open items are in [backlog.md](backlog.md), "Needs the user". 
 ## Decided proposals
 
 ### Pipeline and process
-- **Owner answers of 2026-10-31, evening.** A53's diff stage stays (trigger ten minutes); a kill run skips the golden gate (A52f1); a worker's measurement holds host-cpu at most 10 min at a time (A58); the Opus pass takes integ only for its docs commit (A57, by day; P17's text changes with it); sem in Find (G155, fh-11); fh-7 waits for the unit view in use.
+- **Owner answers of 2026-10-31, evening.** A53's diff stage stays (trigger ten minutes); a kill run skips the golden gate (A52f1, built 2d34033); a worker's measurement holds host-cpu at most 10 min at a time (A58); the Opus pass takes integ only for its docs commit (A57, by day; P17's text changes with it); sem in Find (G155, fh-11); fh-7 waits for the unit view in use.
 - **Owner answers of 2026-10-31 (night review 2026-10-30, [its note](research/night-review-2026-10-31.md) section 6).** The website deploys only a gated build: check-version and the golden gate in `pages.yml` until A8's `release.yml` (A52). A package's "Done when" names no start-chunk allowance (Start chunk); R103, trimmed, measures the inline script. R90 is dropped: R24c brought the unit view. The docs budgets stay; the one-time phone checks live in `tests/core/ONE-TIME.md`. Would change if: A8 gates both deploys.
 - **G125 (Opus pass 5): a bug an earlier merge already fixed.** Its package keeps its tests as regression tests: they must fail on the stock build (`engine/giac/_out/release`) instead of on phase-1, the Opus pass rewrites its "Done when", and the branch merges review-only (`--no-worker`). Would change if: a test passes on stock too.
 - **Owner answers of 2026-10-29.** The start chunk is split (R91); ron runs at night too, the owner reviews at three milestones (brief section 0); the fuzz runs one night a week; `--effort high` with the usage tripwire. Full text: archive. Would change if: the tripwire fires twice in a week, or backlog conflicts cost more than one resolve round a day.
@@ -38,7 +32,7 @@ The owner's other open items are in [backlog.md](backlog.md), "Needs the user". 
 - **Small packages (2026-10-14, the owner's rule).** One concern each, about a day or less, with its own reading list; placed by importance, then dependencies.
 
 ### Feel, keys and screen (milestone 4a)
-- **Owner answers of 2026-10-31, stored data and the comma (night review fh-2, vr-13, vg-8).** Web: one writer per browser profile (Web Locks); a second tab computes but stores nothing until "Use here" (R95). In comma mode a stored input's argument commas are drawn as `;` (display only; L6 stays; R100). An older build that keeps newer stored data in memory says so once on the status line (R94). Would change if: two tabs side by side are wanted on purpose.
+- **Owner answers of 2026-10-31 and 2026-11-01, stored data, the comma and `%` (night review fh-2, vr-13, vg-8).** Web: one writer per browser profile (Web Locks); a second tab computes but stores nothing until "Use here", which reloads it; its note's visible line is "Nothing done in this tab is kept" (R95, 11-01). In comma mode a stored input's argument commas are drawn as `;` (display only; L6 stays; R100). An older build that keeps newer stored data in memory says so once as a history line, as G19's (R94, 11-01: the status line has no text slot). `%` gets a key: a fourth row of the Shift + 9 palette, `%` first; its 24 G2 cells stay (R104, 11-01). Would change if: two tabs side by side are wanted on purpose.
 - **R4b's four defaults, as built (Opus pass 18):** Memory deletes a name without asking (Clear all asks once); a Find pick for a slot closes the sheets; a key's constant keeps its value and σ; Vars is dead without an entry line. Full text: archive.
 - **Settings in the Mode sheet, and presets (owner, 2026-10-27; replaces 2026-10-19's list of rows).** Settings is a level of the pick sheet, seven sections; Shift + Fmt opens Mode; buttons only where they save a press; no long presses. A preset snapshots any user settings, the free keys too. Rule: docs/05 3.4; R49, R85–R89. Would change if: presets are switched under 5 times in 4 weeks (they go).
 - **R15c1 menus (the owner, 2026-10-20): the Home menu (10 rows) and the Plot menu (9) scroll** over the keypad (docs/05 3.1). Full text: archive. Would change if: the scroll feels slow on the APK.
