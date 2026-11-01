@@ -111,6 +111,21 @@ PASCALINE_SLICE_MAX=60 "$DL" slice me-e sleep 30 >/dev/null 2>&1 & sp=$!
 for _ in $(seq 1 50); do "$DL" status | grep -q 'host-cpu: me-e' && break; sleep 0.1; done
 kill -TERM "$sp"; wait "$sp" 2>/dev/null || true
 "$DL" status | grep -q 'no locks held' || fail "slice: a TERM left the lock held"
+# a slice reads the caller's stdin (a background job would get /dev/null)
+out="$(echo piped | "$DL" slice me-f cat 2>&1)" || fail "slice: cat failed: $out"
+grep -q '^piped$' <<<"$out" || fail "slice: the command got no stdin: $out"
+# a waiting acquire gets the lock between two consecutive slices (it polls every 5 s; a loop of slices must not take it back at once)
+mkdir -p "$T/c7"; export PASCALINE_COORD="$T/c7"
+"$DL" slice me-g sleep 2 >/dev/null 2>&1 & sg=$!
+for _ in $(seq 1 50); do "$DL" status | grep -q 'host-cpu: me-g' && break; sleep 0.1; done
+"$DL" acquire host-cpu waiter 30 > "$T/waiter.out" 2>&1 & wp=$!
+wait "$sg"
+rc=0; PASCALINE_SLICE_WAIT=0 "$DL" slice me-h true >/dev/null 2>&1 || rc=$?   # the second slice of the loop, at once
+"$DL" status | grep -q 'host-cpu: waiter' || fail "slice: the waiter did not get host-cpu between two slices (second slice exit $rc): $(cat "$T/waiter.out")"
+[[ $rc -eq 1 ]] || fail "slice: the second slice took host-cpu from the waiter (exit $rc)"
+wait "$wp" 2>/dev/null || true
+"$DL" release host-cpu waiter >/dev/null
+ls -A "$T/c7/locks" | grep -q '^\.waiting' && fail "a waiter marker is left behind"
 unset PASCALINE_COORD
 
 echo "devlock.test.sh: ok"

@@ -46,8 +46,11 @@ case "$cmd" in
         echo "busy: $res held by $(cat "$LOCKS/$res/owner" 2>/dev/null || echo '?')" >&2
         exit 1
       fi
+      # A58: a waiter leaves a marker (its pid) while it polls, so a `slice` that just released the lock knows to hand it over
+      if [[ -z "${wmark:-}" ]]; then wmark="$LOCKS/.waiting-$res.$$"; : > "$wmark"; trap 'rm -f "$wmark"' EXIT; fi
       sleep 5
     done
+    [[ -z "${wmark:-}" ]] || { rm -f "$wmark"; wmark=""; }
     printf '%s\n' "$owner" > "$LOCKS/$res/owner"
     date -Iseconds > "$LOCKS/$res/since"
     # a pid is recorded only when the caller opts in with PASCALINE_LOCK_PID=<its own long-lived pid> (build.sh, pipeline.sh, the
@@ -84,9 +87,17 @@ case "$cmd" in
     max="${PASCALINE_SLICE_MAX:-600}"; swait="${PASCALINE_SLICE_WAIT:-1800}"; self="$(readlink -f "${BASH_SOURCE[0]}")"
     PASCALINE_LOCK_PID=$$ "$self" acquire host-cpu "$name" "$swait" >&2 || exit 1
     cp=""; rc=0
-    trap '[[ -z "$cp" ]] || { kill -TERM "$cp" 2>/dev/null; wait "$cp" 2>/dev/null || true; }; "$self" release host-cpu "$name" >&2 || true' EXIT
+    # after the release, a live waiter (marker .waiting-host-cpu.<pid>, A58) gets the lock before this slice returns: waiters poll every 5 s,
+    # so a loop of slices would take it back within milliseconds; wait (at most 12 s) until someone holds it
+    handoff() {
+      local m w=0 any=0
+      for m in "$LOCKS"/.waiting-host-cpu.*; do [[ -e "$m" ]] && kill -0 "${m##*.}" 2>/dev/null && any=1; done
+      (( any )) || return 0
+      while [[ ! -d "$LOCKS/host-cpu" ]] && (( w < 120 )); do sleep 0.1; w=$((w + 1)); done
+    }
+    trap '[[ -z "$cp" ]] || { kill -TERM "$cp" 2>/dev/null; wait "$cp" 2>/dev/null || true; }; "$self" release host-cpu "$name" >&2 || true; handoff' EXIT
     trap 'exit 143' TERM HUP INT
-    timeout -k 30 "$max" "$@" & cp=$!
+    timeout -k 30 "$max" "$@" <&0 & cp=$!   # <&0: a background job would get /dev/null; the measurement may read a pipe
     wait "$cp" || rc=$?
     cp=""
     if [[ $rc -eq 124 ]]; then echo "slice $name: '$1' ran over $max s and was stopped; host-cpu is released; continue in the next slice" >&2; fi
