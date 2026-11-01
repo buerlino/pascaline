@@ -4,10 +4,10 @@
 **Every package runs through `scripts/pipeline.sh`** (rules section 4): by day the owner starts one package at a time (`scripts/pipeline.sh <agent> "<ID>" --model <m>`, the table gives agent and model) and reads the RESULT line; at night `scripts/night.sh` runs the queue of section 0c. Nobody starts a worker or merges another way (CLAUDE.md). The standing rules in [rules.md](rules.md) apply; where the two differ, this brief wins. Each open package is one file in [packages/](packages/), in the shape the pipeline bundles (section 2). The shape of a package file: the heading `### <agent>, <ID>: <title>, branch \`p1/<agent>-<slug>\``; **Lane** (night-safe = no device, no APK, no eye on the UI; night (the night's device) = the device `night.sh` was started with, only, P23; day = the owner tries it or it changes the pipeline); **Starts when**; **Read** (repo paths get bundled, first 400 lines; the big shared docs by bare name and section); the steps; **Done when** (lines an auditor checks in the diff).
 
 ## 0. State and the path
-`phase-1` at `fa52380` on 2026-10-29, after the fourteenth night ([its report](../archive/shifts/2026-10-29-night-report.md)), and the day-night of 2026-10-29. CORE 66/66 desktop (`2fb13a4`); CORE DEVICE 65/65 on the Fairphone 6 (`35b6dc6`, one case is desktop only). Every merge: `git log --merges --oneline phase-1`; the audits are in the Opus passes' defaults (decisions.md, older ones in [archive/decisions-2026-10.md](../archive/decisions-2026-10.md)) and the night reports ([archive/shifts/](../archive/shifts/)).
+`phase-1` at `5916d8f` on 2026-11-01, after the two-lane night of 2026-10-31 ([its report](2026-11-01-night-report.md)). CORE 66/66 desktop (`be30335`); CORE DEVICE 65/65 on the Tab One (`11ac169`, one case is desktop only). Every merge: `git log --merges --oneline phase-1`; the audits are in the Opus passes' defaults (decisions.md, older ones in [archive/decisions-2026-10.md](../archive/decisions-2026-10.md)) and the night reports ([archive/shifts/](../archive/shifts/)).
 
 ### The path after the freeze (owner, 2026-10-27; decisions.md "P23")
-**The freeze ended** on 2026-10-27, before its count: repeated green runs added nothing, and the mornings' failures were UI (c46: F110, F117), not the engine. **The net stays:** every merge runs the core list (R74; [tests/core/core.yaml](../../tests/core/core.yaml), 66 cases, all active), night.sh runs the device's core list after each Opus pass when the night has a device (A33, A41), and the owner's [morning check](../../tests/core/MORNING.md) runs on the night's device. A red result is a bug to fix (a FIX of the next Opus pass, or a backlog bug line past a day of work), not a gate. **The pace** (owner, 2026-10-27): about two weeks of Claude Max are left (to about 2026-11-10). Each night carries about 9 hours of real work, the most important steps first, so a usage limit late costs the least; the day runs what needs the owner's eye.
+**The freeze ended** on 2026-10-27, before its count: repeated green runs added nothing, and the mornings' failures were UI (c46: F110, F117), not the engine. **The net stays:** every merge runs the core list (R74; [tests/core/core.yaml](../../tests/core/core.yaml), 66 cases, all active), night.sh runs the device's core list after each Opus pass when the night has a device (A33, A41), and the owner's [morning check](../../tests/core/MORNING.md) runs on the night's device. A red result is a bug to fix (a FIX of the next Opus pass, or a backlog bug line past a day of work), not a gate. **The pace** (owner, 2026-10-27; the date 2026-11-01): Claude Max runs to 2026-11-17. Each night carries about 9 hours of real work, the most important steps first, so a usage limit late costs the least; the day runs what needs the owner's eye.
 
 **Two lanes** (owner, 2026-10-29; decisions.md P17 and "Owner answers of 2026-10-29"): once A47a–A47c are merged, lane A (ron's UI) and lane B (the release, then the engine) run around the clock, each with its own table in section 0c, merged through one queue (A47b); until then one run at a time. ron's packages run at night too: the owner's look moves to three milestone reviews (after R87; after R86, R57, R50e; after R24d), and a package's "owner's eye" item joins the next review. Device steps and the owner's acts (a key, a tag, a phone) stay by day. The order:
 1. **Find:** R4a, R91, R15c3, R49, R87 and R4b merged (`git log --merges`); R91's before/after on the Fairphone is in [ONE-TIME.md](../../tests/core/ONE-TIME.md).
@@ -51,32 +51,39 @@ Tonight's queue (one lane, to 07:00) comes first, then each lane's table; With t
 11. **Selftest:** a selftest step is `scripts/pipeline.sh selftest` (from A47a); its line `selftest: PASSED` finishes it; `selftest: FAILED` ends the night: henri answers `SHIFT DONE`, and the owner reads the log.
 12. **No lanes in the morning** (A47c not merged, or a selftest failed): the owner starts `scripts/night.sh` without `--lane`, and henri runs lane B's rows 401–405, then lane A's from 301, as one queue.
 
-### Tonight: 2026-10-31 to Sunday 09:00, both lanes on the Tab One (owner, 2026-10-31)
-`ANDROID_SERIAL=HA24BZ2Y` for both lanes, `--until 09:00`; CORE DEVICE after each pass. Not the weekly extreme night: row 408 waits. A step whose "After" is not merged is skipped.
+### Day shift 2026-11-01, 12:00 to 19:00, both lanes on the Tab One (owner, 2026-11-01)
+`ANDROID_SERIAL=HA24BZ2Y` for both lanes, `--until 19:00`; CORE DEVICE after each pass. Not the weekly extreme night: row 408 waits. A step whose "After" is not merged is skipped. The owner is away until 19:00: follow each Opus pass as written (rule 3).
 
 ### Lane A queue (ron's UI)
 Milestone reviews (section 0): after R50e; after R24d (with R108's gallery group "Decimal comma in apps").
 
 | Step | What | Agent, model | Branch | After |
 |---|---|---|---|---|
-| 329 | [R102](packages/R102.md) spoken names and strings | ron, Sonnet | `p1/ron-strings` | R97 |
+| 330 | [R102](packages/R102.md) spoken names and strings | ron, Sonnet | `p1/ron-strings` | R97 |
+| 331 | [R62](packages/R62.md) the unit result view drawn | ron, Sonnet | `p1/ron-m5-unitresult` | R60 |
+| 332 | [R63](packages/R63.md) the way back from the unit view | ron, Opus | `p1/ron-m5-unitback` | R61, R62, R71 |
+| 333 | [R15c4](packages/R15c4.md) first-start tips | ron, Sonnet | `p1/ron-m4a-tips` | R15c2, R49 |
+| 334 | [R55](packages/R55.md) digit groups in drawn results | ron, Sonnet | `p1/ron-m4a-digitgroups` | R15c4 |
+| 335 | [R89](packages/R89.md) presets in Mode | ron, Opus | `p1/ron-presets` | R88, R86 |
+| 336 | [R33](packages/R33.md) names with a value, marked on the line | ron, Sonnet | `p1/ron-m4a-namemarks` | R4b |
+| 337 | [R36](packages/R36.md) a picked row says why it has its mark | ron, Sonnet | `p1/ron-m4a-why` | G76 |
+| 338 | [R103](packages/R103.md) room in the start chunk | ron, Opus | `p1/ron-startroom` | R93 |
 
 ### Lane B queue (the release, then the engine)
-A7, A8, A9 and [A57](packages/A57.md) (after A58) run by day (section 0); A43 is merged. Step 408 runs only on the weekly extreme night the owner names (not tonight).
+A7, A8, A9 and [A57](packages/A57.md) (after A58) run by day (section 0); A43 is merged. Step 408 runs only on the weekly extreme night the owner names (not today). A54f1 (pass 39's FIX of [A54](packages/A54.md)) runs by day, run 452; lane B's first Opus pass covers it too.
 
 | Step | What | Agent, model | Branch | After |
 |---|---|---|---|---|
 | 408 | [G138](packages/G138.md) the weekly fuzz and its triage | gorge, Opus | `p1/gorge-nightfuzz-1106` | the weekly night |
-| 424 | [A54](packages/A54.md) the pipeline owns its children | annabell, Sonnet | `p1/annabell-ownedchildren` | A53 |
-| 425 | [A55](packages/A55.md) guards that never fire | annabell, Sonnet | `p1/annabell-idleguards` | A54 |
-| 427 | [A58](packages/A58.md) a long measurement lets the checks in between | annabell, Sonnet | `p1/annabell-cpuslices` | A55 |
-| 416 | [G149](packages/G149.md) a real base to a near-imaginary power (F140) | gorge, Opus | `p1/gorge-powimag` | – |
-| 417 | [G150](packages/G150.md) a negative base to a complex power (F141) | gorge, Opus | `p1/gorge-negpowcomplex` | G149 |
-| 418 | [G151](packages/G151.md) the cube root of a tiny asinh (F142) | gorge, Opus | `p1/gorge-cbrttiny` | – |
-| 419 | [G154](packages/G154.md) an unproved exact 0 is not an underflow (F139) | gorge, Opus | `p1/gorge-zeronotunderflow` | – |
-| 428 | [G155](packages/G155.md) the standard error of the mean in Find | gorge, Sonnet | `p1/gorge-sem` | – |
-| 420 | [G153](packages/G153.md) three 30-digit rows of G137 (F155) | gorge, Opus | `p1/gorge-g137rest` | G140, G141 |
-| 421 | [G152](packages/G152.md) acosh's sign and tiny imaginary part (F143, F144) | gorge, Opus | `p1/gorge-acoshsign` | G142 |
+| 429 | [G149f1](packages/G149f1.md) s = 1 keeps the root rule (pass 39) | gorge, Opus | `p1/gorge-powimag` | – |
+| 430 | [A55](packages/A55.md) guards that never fire | annabell, Sonnet | `p1/annabell-idleguards` | A54f1 |
+| 431 | [A58](packages/A58.md) a long measurement lets the checks in between | annabell, Sonnet | `p1/annabell-cpuslices` | A55 |
+| 432 | [G150](packages/G150.md) a negative base to a complex power (F141) | gorge, Opus | `p1/gorge-negpowcomplex` | G149f1 |
+| 433 | [G151](packages/G151.md) the cube root of a tiny asinh (F142) | gorge, Opus | `p1/gorge-cbrttiny` | – |
+| 434 | [G154](packages/G154.md) an unproved exact 0 is not an underflow (F139) | gorge, Opus | `p1/gorge-zeronotunderflow` | – |
+| 435 | [G155](packages/G155.md) the standard error of the mean in Find | gorge, Sonnet | `p1/gorge-sem` | – |
+| 436 | [G153](packages/G153.md) three 30-digit rows of G137 (F155) | gorge, Opus | `p1/gorge-g137rest` | G140, G141 |
+| 437 | [G152](packages/G152.md) acosh's sign and tiny imaginary part (F143, F144) | gorge, Opus | `p1/gorge-acoshsign` | G142 |
 
 ### The commands henri replies with (one per decision; `scripts/night.sh` runs it)
 - `scripts/pipeline.sh <agent> "<ID>" --model <sonnet|opus> --audit-model auto`: the next queue step not done (the queue's skip rule above); `--audit-model opus` where its row says "audit Opus".
