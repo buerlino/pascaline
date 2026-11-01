@@ -72,9 +72,6 @@ A7, A8, A9 and [A57](packages/A57.md) (after A58) run by day (section 0); A43 is
 | Step | What | Agent, model | Branch | After |
 |---|---|---|---|---|
 | 408 | [G138](packages/G138.md) the weekly fuzz and its triage | gorge, Opus | `p1/gorge-nightfuzz-1106` | the weekly night |
-| 414 | [G139](packages/G139.md) `eseries` and `sigfig` decide on the exact value | gorge, Opus | `p1/gorge-eseriesexact` | – |
-| 415 | [G140](packages/G140.md) a non-real special function known only as a double shows ⚠ | gorge, Opus | `p1/gorge-complexdouble` | – |
-| 423 | [G143](packages/G143.md) σ through a step function flagged, a rounded 0 written "0" | gorge, Opus | `p1/gorge-m5-stepsigma` | R61 |
 | 424 | [A54](packages/A54.md) the pipeline owns its children | annabell, Sonnet | `p1/annabell-ownedchildren` | A53 |
 | 425 | [A55](packages/A55.md) guards that never fire | annabell, Sonnet | `p1/annabell-idleguards` | A54 |
 | 426 | [A52f1](packages/A52f1.md) the kill run skips the golden step | annabell, Sonnet | `p1/annabell-killnogolden` | – |

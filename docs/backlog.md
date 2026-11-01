@@ -38,6 +38,7 @@ The one place for "where are we and what's left", one or two lines per open item
 - **F85, no package (G102's Not done; cost only).** A Home input with chips is parsed twice per Enter (G100); the parse is its own bridge-2 call, so G102 could not fold it. Can start (G104 merged).
 - **F80, no package (G99's Not done; probed: `tools/probes/bridge-forms.ts`).** After Home `(BesselJ(1,2))=>y`, `int(y^2,y,0,1)` shows `⚠ 0.333333333333` (right `≈`): Home stores at Digits 40, where `=>` keeps y as `BesselJ(1,2)` unevaluated, and Giac's int with that y errors (Bad Argument Value). `y:=` keeps the float. Test: `boundNames.test.ts` (`it.fails`), seqsweep `12 bound: int…`. Family 8.
 - **F73, no package (it waited for the end of the freeze; owner, 2026-10-24; G103 reads the doubles).** A double in a list shows Giac's text (`[BesselJ(1,2),1/3]`), not numbers with ⚠; no wrong value reaches the screen. Left: `hasFloat` (reads `1..3` and strings). Families 5, 6.
+- **F156, no package (G143's report; Opus pass 36).** Giac rewrites `trunc` of a name as `floor`: CAS `trunc(x)` shows `floor(x)`, `trunc(x)-floor(x)` gives 0, and `subst(trunc(x),x=-13/10)` or `gg:=trunc(yy)` then `yy:=-13/10` gives -2 (right -1). `trunc(-13/10)` and `f(t):=trunc(t)` are right. Families 3, 8.
 - **Night review 2026-10-30:** the rest in [research/night-review-2026-10-31.md](research/night-review-2026-10-31.md).
 
 ### Background stream (extreme inputs; at night, by reach)
