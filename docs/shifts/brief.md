@@ -69,7 +69,6 @@ A7, A8, A9 and [A57](packages/A57.md) (after A58) run by day (section 0); A43 is
 | 408 | [G138](packages/G138.md) the weekly fuzz and its triage | gorge, Opus | `p1/gorge-nightfuzz-1106` | the weekly night |
 | 424 | [A54](packages/A54.md) the pipeline owns its children | annabell, Sonnet | `p1/annabell-ownedchildren` | A53 |
 | 425 | [A55](packages/A55.md) guards that never fire | annabell, Sonnet | `p1/annabell-idleguards` | A54 |
-| 426 | [A52f1](packages/A52f1.md) the kill run skips the golden step | annabell, Sonnet | `p1/annabell-killnogolden` | – |
 | 427 | [A58](packages/A58.md) a long measurement lets the checks in between | annabell, Sonnet | `p1/annabell-cpuslices` | A55 |
 | 416 | [G149](packages/G149.md) a real base to a near-imaginary power (F140) | gorge, Opus | `p1/gorge-powimag` | – |
 | 417 | [G150](packages/G150.md) a negative base to a complex power (F141) | gorge, Opus | `p1/gorge-negpowcomplex` | G149 |
