@@ -41,7 +41,6 @@ The one place for "where are we and what's left", one or two lines per open item
 - **R70 press count, R107 (R70f1's report):** a hardware `<`, `>` or `!` (t.run) and a dead hardware key (onDead) are not counted; docs/04 5.2 counts every press.
 - **R57 comma display in Solve and Num, R108:** in comma mode, Solve's roots and the Function and Solve Num tables still show their values with a point (R57 changed Home, CAS, Copy and Paste only).
 - **F149, G139 (night review be-10).** `eseries(6,√(1500·2200))` = 1500, right 2200. Reach: Find.
-- **F150, G140 (night review be-9).** `Zeta(1/2+i)` ≈, wrong from digit 15. Reach: Find.
 - **F154, G143 (night review be-2; reachable once R24d and R71 merge).** σ through `floor` is `± 0`, no ⚠. Reach: the unit view.
 - **F147, R95 (night review fh-2; web only).** Two tabs overwrite each other's data. Reach: web.
 - **Night review 2026-10-30:** the rest in [research/night-review-2026-10-31.md](research/night-review-2026-10-31.md).
