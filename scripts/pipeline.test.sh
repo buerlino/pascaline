@@ -927,6 +927,12 @@ unset SB_REPLY
 printf 'x\nOpen question: the package file is missing from the bundle\n' > "$tmp/q-a"; printf 'Open questions: Needs the user: use x or y?\n' > "$tmp/q-b"; printf 'done, no questions\n' > "$tmp/q-c"
 printf -- '- Open question: the task text is empty, please resend the spec\n' > "$tmp/q-d"
 task_questioned "$tmp/q-a" && task_questioned "$tmp/q-d" || fail "A55: task_questioned misses a worker that says its task is missing"
+printf 'Open question: the spec says empty list → what should Ans show?\nOpen question: the task wants an empty state; which wording?\n' > "$tmp/q-e"
+printf 'Last commit abc.\nOpen questions:\n- please regenerate the bundle with the A46 block\n\nOther text\n' > "$tmp/q-f"
+printf 'Open questions:\n- Needs the user: use x or y?\n- the spec is fine\n\nplease regenerate the bundle (not a question)\n' > "$tmp/q-g"
+task_questioned "$tmp/q-e" && fail "A55: task_questioned stops an Open question about a maths spec that says empty"
+task_questioned "$tmp/q-f" || fail "A55: task_questioned misses a bullet under an Open questions heading"
+task_questioned "$tmp/q-g" && fail "A55: task_questioned reads past the blank line after the heading, or stops a Needs-the-user bullet"
 task_questioned "$tmp/q-b" && fail "A55: task_questioned stops a Needs-the-user question"
 task_questioned "$tmp/q-c" && fail "A55: task_questioned stops a reply with no question"
 # (f) the two idle shell tests are in SELFTESTS (run by `pipeline.sh selftest` and the shell check) and in tools/README.md
@@ -935,6 +941,11 @@ for t in tools/manifest-backup.test.sh tools/release-gate.test.sh; do
   [[ -x "$here/../$t" ]] || fail "A55: $t is not executable"
   grep -qF "$(basename "$t")" "$here/../tools/README.md" || fail "A55: tools/README.md does not name $t"
 done
+# --restore-real puts .orig.real back and leaves .orig (the night setting) untouched
+sa="$tmp/sa"; mkdir -p "$sa/bin" "$sa/devices"; printf 'STAY_ON=7\nSCREEN_OFF=2147483647\n' > "$sa/devices/S1.orig"; printf 'STAY_ON=0\nSCREEN_OFF=60000\n' > "$sa/devices/S1.orig.real"
+printf '#!/bin/sh\ncase "$*" in *get-state*) echo device;; *"settings put"*) echo "$*" >> "%s/puts";; esac\n' "$sa" > "$sa/bin/adb"; chmod +x "$sa/bin/adb"
+PATH="$sa/bin:$PATH" PASCALINE_COORD="$sa" "$here/../tools/stay-awake.sh" S1 --restore-real >/dev/null 2>&1; r1=$?
+[[ $r1 -eq 0 ]] && grep -q 'stay_on_while_plugged_in 0' "$sa/puts" && grep -q 'STAY_ON=7' "$sa/devices/S1.orig" && [[ -f "$sa/devices/S1.orig.real" ]] || fail "A55: --restore-real does not put .orig.real back and leave .orig alone"
 grep -qF 'tools/stay-awake.sh <serial> --restore' "$here/../tools/README.md" && grep -q '\.orig\.real' "$here/../tools/README.md" && grep -q '\.orig\.real' "$here/../tools/stay-awake.sh" || fail "A55: stay-awake.sh and tools/README.md do not say what .orig and .orig.real hold"
 
 [[ $fails -eq 0 ]] || { echo "pipeline.test.sh: $fails failure(s) in $count packages" >&2; exit 1; }

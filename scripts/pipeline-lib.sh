@@ -315,9 +315,16 @@ selftest_run() {
 package_shaped() { [[ "$1" =~ ^[A-Z][0-9]+[a-z0-9]*$ && ! "$1" =~ f[0-9]+$ ]]; }
 # task_questioned <worker reply file>: succeeds when an "Open question" line of the reply says the worker's own task is missing or wrong
 # (run 312 asked for the bundle to be regenerated with the A46 block, and was merged); a "Needs the user" question is not such a line.
-TASK_QUESTION_RE='((re-?generate|re-?send|re-?build)[^.]*(bundle|spec|task|block))|((bundle|spec|task|package)[^.]*(is |are |was )?(missing|lacks|empty|incomplete|not (found|included|in the bundle)))|(no (package|task) (file|block|text))|(cannot find (the |a )?(package|task))'
+# A line counts only when the task itself is the subject ("the spec says empty list" is a maths question, not this).
+TASK_SUBJECT='(my|the) (task( text| block)?|bundle|package( file)?|spec block)'
+TASK_QUESTION_RE="((re-?generate|re-?send|re-?build)[^.]*(the bundle|the task|the package file|[ -]block))|($TASK_SUBJECT (is|are|was|seems( to be)?|looks|appears( to be)?) (missing|empty|incomplete|wrong|not (found|included|in the bundle)))|($TASK_SUBJECT (lacks|has no) )|(no (package|task) (file|block|text))|(cannot find (the |a )?(package|task))"
+# open_question_lines <reply file>: every line with "open question(s)" and the lines after it up to the next blank line (a heading
+# followed by bullets), one per line.
+open_question_lines() {
+  awk 'tolower($0) ~ /open questions?/ { on = 1; print; next } /^[[:space:]]*$/ { on = 0; next } on { print }' "$1" 2>/dev/null
+}
 task_questioned() {
-  grep -iE 'open questions?' "$1" 2>/dev/null | grep -viE 'needs the user' | grep -qiE "$TASK_QUESTION_RE"
+  open_question_lines "$1" | grep -viE 'needs the user' | grep -qiE "$TASK_QUESTION_RE"
 }
 # shell_selected: succeeds when a changed file (one per line, on stdin) is a pipeline script or a tool script (A47a).
 shell_selected() { grep -qE '^(scripts/|tools/[^/]*\.sh$)'; }

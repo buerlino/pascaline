@@ -6,7 +6,7 @@ Run from the repo root. Shared state (locks, run logs) lives in the **main check
 ```bash
 tools/stay-awake.sh <serial>            # keep a device awake, record SoC/RAM/WebView; --restore undoes it
 tools/stay-awake.sh <serial> --restore   # puts back what .coord/devices/<serial>.orig holds: on the night devices that is STAY_ON=7 (the night setting); the device's real setting (STAY_ON=0) is kept in <serial>.orig.real
-mv .coord/devices/<serial>.orig.real .coord/devices/<serial>.orig && tools/stay-awake.sh <serial> --restore   # by day: the real setting back (put STAY_ON=7 into .orig again before the next night)
+tools/stay-awake.sh <serial> --restore-real   # by day: puts back <serial>.orig.real (the real setting) and leaves .orig (STAY_ON=7) alone
 tools/devlock.sh acquire <serial|host-cpu|integ> <owner> [wait_s]   # release / status / break; integ = the phase-1 worktree
 
 tools/device-build.sh [--measure] [--install] [--engine-dir DIR] # build our APK (wraps ./build.sh), prints its path

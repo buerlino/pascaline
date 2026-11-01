@@ -710,7 +710,7 @@ if [[ $nowork -eq 0 ]]; then
   # A55: a worker that says its task is missing or wrong has not done the package: no checks, no audit
   if task_questioned "$run/worker-0.log"; then
     log "pipeline #$n $id: NOT MERGED (the worker questioned its task); branch $branch kept"
-    echo "RESULT #$n $id: NOT MERGED (the worker questioned its task; branch $branch, worktree $wt kept; reply: $(grep -iE 'open questions?' "$run/worker-0.log" | head -n 1 | cut -c1-120))"; exit 1
+    echo "RESULT #$n $id: NOT MERGED (the worker questioned its task; branch $branch, worktree $wt kept; reply: $(open_question_lines "$run/worker-0.log" | grep -viE 'needs the user' | grep -iE "$TASK_QUESTION_RE" | head -n 1 | cut -c1-120))"; exit 1
   fi
 fi
 if [[ -z "$(git -C "$wt" log --oneline "phase-1..HEAD")" ]]; then
@@ -781,7 +781,7 @@ while :; do
   log "pipeline #$n $id: fix round $rounds done, $(git -C "$wt" log -1 --format=%h)"
   if task_questioned "$run/fix-$rounds.log"; then  # A55: as after the first worker
     log "pipeline #$n $id: NOT MERGED (the worker questioned its task); branch $branch kept"
-    echo "RESULT #$n $id: NOT MERGED (the worker questioned its task; branch $branch, worktree $wt kept; reply: $(grep -iE 'open questions?' "$run/fix-$rounds.log" | head -n 1 | cut -c1-120))"; exit 1
+    echo "RESULT #$n $id: NOT MERGED (the worker questioned its task; branch $branch, worktree $wt kept; reply: $(open_question_lines "$run/fix-$rounds.log" | grep -viE 'needs the user' | grep -iE "$TASK_QUESTION_RE" | head -n 1 | cut -c1-120))"; exit 1
   fi
 done
 
