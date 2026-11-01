@@ -5,6 +5,7 @@
 // ln(ln((10^1003+89999)/(10^1003-89999))/2) showed ⚠ 14 -70.007865236555+3.1415926535898*i at 30 digits (derived: the
 // inner ln(…)/2 is atanh(89999/10^1003) ≈ 9E-999, so the value is about -2298.085, real). A function with no MPFR path
 // (BesselJ(1,2) at 30 digits, Giac's double at every precision) keeps its count.
+// A result with a free name (cos(10^-9)^x) is an expression: the double fallback no longer reads a number for it.
 import { beforeAll, describe, expect, it } from "vitest";
 import { EngineHost } from "./host.ts";
 import { engineGiac, giacAvailable, loadNodeGiac } from "./nodeGiac.ts";
@@ -23,6 +24,14 @@ describe.skipIf(!giacAvailable())("G153: a double fallback after a cancellation 
     expect(r.ok).toBe(true);
     expect(r.facts?.reliableDigits).toBeNull();
     expect(r.facts?.warn).toBe("unchecked");
+  });
+
+  // A result with a free name is an expression, never the double's number (cos(10^-9)^x showed ⚠ 14 1: 1.0^x is 1).
+  it.each([12, 30])("cos(10^-9)^x at %i digits stays an expression", (digits) => {
+    const r = home("cos(10^-9)^x", digits);
+    expect(r.ok).toBe(true);
+    expect(r.value).toBeUndefined();
+    expect(r.display).toBe("cos(1/1000000000)^x");
   });
 
   it("BesselJ(1,2) at 30 digits keeps the double's count (no MPFR path)", () => {

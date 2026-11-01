@@ -897,12 +897,15 @@ const numberLost = (v: GiacValue, P: number): boolean => v.at?.[String(P + 20)] 
 /**
  * The double fallback for an exact result that has no MPFR value (docs/04 section 2.3 #5: `BesselJ(1,2)` at 30
  * digits comes back as text): `evalf` of the stored result with a double. Null when that is not a number either
- * (a symbolic result such as `x+1`). On success the double becomes Ans. G153 (F155): `v`, the exact run's value
+ * (a symbolic result such as `x+1`, or one with a free name at P). On success the double becomes Ans. G153 (F155): `v`, the exact run's value
  * (bridge-3), a number at P and none at P+20: the precision decides whether there is a value at all (a cancellation:
  * ln(ln((10^1003+89999)/(10^1003-89999))/2), -92.9+3.14*i at 40 digits, -infinity at 60), so the double, which cancels
  * more, confirms no digit (it showed ⚠ 14 -70.007865236555+3.1415926535898*i; right -2298.085…).
  */
 export function doubleFallback(giac: Giac, name: string, input: string, digits: number, restoreDigits: number, v?: GiacValue): ElementFacts | null {
+  // G153: a result with a free name at P is no number, though its double may read one (cos(10^-9)^x: 1.0^x is 1).
+  const free = giac.value(`lname(evalf(${name},${valuePrecision(digits)}))`, []);
+  if (free.kind === "list" && (free.elements?.length ?? 0) > 0) return null;
   const out = withDigits(giac, DOUBLE_DIGITS, restoreDigits, () => {
     const r = valueAt(giac, `pasd:=evalf(${name})`, { kind: "scalar" }, DOUBLE_DIGITS, DOUBLE_DIGITS);
     return r.v.kind === "float" || r.v.kind === "complex" ? r.parts : null;
