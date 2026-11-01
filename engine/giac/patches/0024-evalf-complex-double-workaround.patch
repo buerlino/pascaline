@@ -1,0 +1,17 @@
+# Upstream: giac 2.1.0 usual.cc need_workaround, the test _evalf (one argument) makes at Digits <= 14 for an overflow before it evaluates again at 30 digits: for a value of type <= _CPLX it asked g/g!=1, and z/z of a complex double rounds (Gamma(1.0+i) = 0.49801566811836-0.15494982830181*i, z/z-1 = -3.6e-15), so evalf(Gamma(1+i)) at Digits 14 went to 30 digits, where Gamma has no complex MPFR path (its complex branch takes _DOUBLE_ and _FLOAT_ parts only), and stayed Gamma(1.0000000000000+i); Gamma(1.0+i) and evalf(Gamma(1+i),12) gave the double. Now a complex value is tested part by part (an infinity or a NaN in a part still takes the workaround: evalf(exp(800+i)) at Digits 14).
+# Changed by Pascaline contributors, 2026-11-01
+--- a/src/usual.cc
++++ b/src/usual.cc
+@@ -8309,6 +8309,12 @@
+   bool need_workaround(const gen & g){
+     if (g.type==_REAL || (g.type==_CPLX && g._CPLXptr->type==_REAL && (g._CPLXptr+1)->type==_REAL))
+       return false;
++    // Pascaline patch 0024 (G140): a complex value needs the workaround when a part is an overflow (an infinity or a
++    // NaN), tested part by part: z/z of a complex double is not exactly 1 when the division rounds (Gamma(1.0+i):
++    // z/z-1 = -3.6e-15), which sent evalf(Gamma(1+i)) at Digits <= 14 to 30 digits, where Gamma has no complex
++    // MPFR path, so it stayed Gamma(1.0000000000000+i).
++    if (g.type==_CPLX)
++      return need_workaround(*g._CPLXptr) || need_workaround(*(g._CPLXptr+1));
+     if (g.type<=_CPLX)
+       return g!=0 && g/g!=1;
+     if (is_inf(g) || is_undef(g))

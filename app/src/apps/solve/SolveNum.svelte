@@ -41,7 +41,7 @@
     <div class="report" data-testid="solve-report" data-warn={app.report.warn} data-ok={app.report.ok}>
       {#if app.report.roots}
         <ol class="roots" data-testid="solve-roots">
-          {#each app.report.roots as r, i (i)}<li>{@render label(app.report.names[0] ?? "")} = {r}{#if app.report.rootWarns?.[i]}<span class="warn" data-testid="mark" title={t("mark.warn")}> ⚠</span>{/if}</li>{/each}
+          {#each app.report.roots as r, i (i)}<li>{@render label(app.report.names[0] ?? "")} = {app.mark(r)}{#if app.report.rootWarns?.[i]}<span class="warn" data-testid="mark" title={t("mark.warn")}> ⚠</span>{/if}</li>{/each}
         </ol>
       {/if}
       <p class="info" class:late={app.report.info === t("history.working")}>

@@ -42,7 +42,9 @@ describe.skipIf(!giacAvailable())("G99: a bound variable is no read of the store
 
   it("guard: diff(x^3,x) keeps ⚠ inherited: x (its result 3*x^2 names x, and Home shows it evaluated)", () => {
     const r = home("diff(x^3,x)");
-    expect([mark(r), r.facts.why]).toEqual(["⚠", { inherited: ["x"] }]);
+    // G140: 3*x^2 at P is a C double (x holds one, bridge-3's doubles flag), so its facts are an unaudited double's, and the
+    // why names the input's functions off the audited list as well
+    expect([mark(r), r.facts.why]).toEqual(["⚠", { unaudited: ["diff"], inherited: ["x"] }]);
   });
 
   it("guard: CAS evalf(int(x^2,x,0,1)) names int only in its why", () => {

@@ -65,9 +65,11 @@ describe("giac-regress exporter", () => {
     const c = { id: "g75-tanh(1+i)-30", input: "tanh(1+i)", settings: { digits: 30 }, expect: "1.08392332733869454347575206121+0.271752585319511716528843722499*i", mark: "≈", source: "oracle" };
     expect(PATCHED_IDS.get(c.id)).toBe("0003-complex-tanh-mpfr.patch");
     const r = build([["precision.yaml", c]]) as { check: string; patched: string; nCheck: number; nPatched: number };
-    // the case, and the written lines of patch 0006 (im(2*sqrt(x))), patch 0017 (NaN times a complex) and patch 0019 (G135: the cos
-    // rule at a quoted atan(2*i), atan(2*i) and cos(atan(2*i)) in DEG and in GRAD)
-    expect([r.nCheck, r.nPatched]).toEqual([0, 8]);
+    // the case, and the written lines of patch 0006 (im(2*sqrt(x))), patch 0017 (NaN times a complex), patch 0024 (G140:
+    // evalf(Gamma(1+i)) at Digits 14) and patch 0019 (G135: the cos rule at a quoted atan(2*i), atan(2*i) and cos(atan(2*i))
+    // in DEG and in GRAD)
+    expect([r.nCheck, r.nPatched]).toEqual([0, 9]);
+    expect(r.patched).toContain('// patch 0024-evalf-complex-double-workaround.patch\n// g140-evalf-gamma-1+i-14');
     expect(r.patched).toContain('// patch 0003-complex-tanh-mpfr.patch\n// g75-tanh(1+i)-30 (precision.yaml, oracle)');
     expect(r.check).not.toContain("g75-tanh(1+i)-30");
     expect(r.patched).toContain("// patch 0017-mpfr-nan-not-zero.patch");

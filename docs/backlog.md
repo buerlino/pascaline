@@ -19,7 +19,7 @@ The one place for "where are we and what's left", one or two lines per open item
 
 ## Needs the user
 0. **The core list (P23):** cut or extend [tests/core/core.yaml](../tests/core/core.yaml) (66: 51 drafted by sandra, c52–c56 added with you on 2026-10-21, c57–c60 on 2026-10-24, c61–c66 on 2026-10-26; tell a session what to drop or add); do the [morning check](../tests/core/MORNING.md) on the night's device (about 10 minutes, 15 cases; tell the day session what failed); keep the night's device plugged in, unlocked and on the charger (A32, A33). The one-time checks: [ONE-TIME.md](../tests/core/ONE-TIME.md).
-1. **Decisions in [decisions.md](decisions.md) "Needs the user":** A21's F-Droid answer; R50e's Android system bar colours; R94's note.
+1. **Decisions in [decisions.md](decisions.md) "Needs the user":** A21's F-Droid answer; R50e's Android system bar colours; R94's note; R95's read-only note (visible line or rows kept).
 2. **Your outreach steps** (decisions.md P18–P22): send Parisse email 5 (patches 0013–0016 and the regression files at `7438251`, `../outreach/email-parisse-5.md`; 0003–0012 went with email 4, 2026-10-28) after the push; ask F-Droid whether checked-in derived data (`find/factors.yaml`, P22) is fine, before C4; mirror G77's pin (`gh` logged in; the command is in `engine/giac/README.md`).
 3. **G2 questions:** the unanswered items of `tests/golden/G2-CHECKLIST.md` (41, 42, 52, 56, 63–71; each package built a default, named in decisions.md; 63–65 can reverse S14's route R); the optional real-G2 spot checks (`spec/mapping/vc-2026-10-11/SPOT-CHECK.md`).
 4. **From daily use:** the key sequence that left ⌫ stuck "at log" (F39); connect your phone for A9 (F41, no vibration); more points into [feedback.md](feedback.md).
@@ -38,11 +38,7 @@ The one place for "where are we and what's left", one or two lines per open item
 - **F85, no package (G102's Not done; cost only).** A Home input with chips is parsed twice per Enter (G100); the parse is its own bridge-2 call, so G102 could not fold it. Can start (G104 merged).
 - **F80, no package (G99's Not done; probed: `tools/probes/bridge-forms.ts`).** After Home `(BesselJ(1,2))=>y`, `int(y^2,y,0,1)` shows `⚠ 0.333333333333` (right `≈`): Home stores at Digits 40, where `=>` keeps y as `BesselJ(1,2)` unevaluated, and Giac's int with that y errors (Bad Argument Value). `y:=` keeps the float. Test: `boundNames.test.ts` (`it.fails`), seqsweep `12 bound: int…`. Family 8.
 - **F73, no package (it waited for the end of the freeze; owner, 2026-10-24; G103 reads the doubles).** A double in a list shows Giac's text (`[BesselJ(1,2),1/3]`), not numbers with ⚠; no wrong value reaches the screen. Left: `hasFloat` (reads `1..3` and strings). Families 5, 6.
-- **R70 press count, R107 (R70f1's report):** a hardware `<`, `>` or `!` (t.run) and a dead hardware key (onDead) are not counted; docs/04 5.2 counts every press.
-- **R57 comma display in Solve and Num, R108:** in comma mode, Solve's roots and the Function and Solve Num tables still show their values with a point (R57 changed Home, CAS, Copy and Paste only).
-- **F150, G140 (night review be-9).** `Zeta(1/2+i)` ≈, wrong from digit 15. Reach: Find.
 - **F154, G143 (night review be-2; reachable once R24d and R71 merge).** σ through `floor` is `± 0`, no ⚠. Reach: the unit view.
-- **F147, R95 (night review fh-2; web only).** Two tabs overwrite each other's data. Reach: web.
 - **Night review 2026-10-30:** the rest in [research/night-review-2026-10-31.md](research/night-review-2026-10-31.md).
 
 ### Background stream (extreme inputs; at night, by reach)
@@ -56,6 +52,7 @@ The one place for "where are we and what's left", one or two lines per open item
 - **F105, no package.** Home `normald_cdf(0,1,{1/2,3/2})` stays the symbolic `(erf({…})+1)/2`, no numbers (erf of a list in the exact form); honest, no value.
 - **F115, no package (Opus pass 83).** Home `3*int(1/x,x,-1,1)+1` at the default budget shows ⚠ 1 (unchecked), not the refusal the bare `int(1/x,x,-1,1)` gets: the divergence checks need about 20× the steps (`converge.test.ts` uses 20×; golden has only the bare case). Flagged, so honest; family 5.
 - **F128, flaky (G128 run 307, once).** The golden `interrupt` stage: `expand((x+y+z+1)^40)` under timeout 0.2 s took 406 ms against its 400 ms limit (`tests/engine/interrupt-test.mjs`) on a loaded host; passed 3 of 3 under the host-cpu lock. Opus pass 10: SLACK_MS stays; a second sighting puts the stage into `isTiming`.
+- **Flaky under the other lane (Opus passes 32, 34).** The golden `units` stage (p95 5.82 and 7.93 ms, limit 5) and `invariants` (65.5 s, limit 60) failed with every value right while the other lane worked; G139 was left unmerged by it (run 415, check 2). Not rerun by the pipeline (A25 reruns tests only).
 - **F70, no package (to verify: gorge).** Home Σ with a numeric bound fails after about 1 s with "The calculation failed", not a time-limit message: Σ_{x=1}^{100000} 1/x, Σ_{K=1}^{2000} cos(K)/K (desktop, `e0d03ed`); to 10^6 Giac closes it (⚠ 14.3927267229). Whether Home's deadline or an engine error.
 - **F71, no package (to verify: ron).** CAS Σ_{k=1}^{2000} cos(k)/k (3 s) shows its result as raw LaTeX text (`\frac{15111779…`), not drawn (docs/04: never raw engine text); a size cut or MathLive's limit.
 - **F61.** Two-argument `round`/`trunc` work in a double: patch pending (decisions.md G71). Family 4.

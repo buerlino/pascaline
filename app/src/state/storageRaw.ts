@@ -3,6 +3,8 @@
 // imports it.
 // It opens the database itself (the same name, version, store and stamp field as storage.ts, whose own copies are not
 // exported: an export would cost the start chunk bytes; backup.test.ts checks that the two agree).
+import { guardWrite } from "./writer.ts";
+
 const STORE = "kv";
 const STAMP = "@pascaline";
 
@@ -45,9 +47,19 @@ export async function kvGetRaw(key: string): Promise<RawRecord | undefined> {
  * R38b: several records in ONE transaction, so a restore or its Undo is written whole or not at all. It reads the
  * records under `read` as stored (no migration), then `write(stored)` gives each key's new record, put exactly as given
  * (the caller stamps it), or undefined to delete the key. A missing key reads as undefined. When `write` throws, nothing
- * is written and the promise rejects with its error.
+ * is written and the promise rejects with its error. A tab that is not the writer (R95, writer.ts) writes nothing and
+ * rejects.
  */
-export async function kvSetMany(read: readonly string[], write: (stored: Readonly<Record<string, unknown>>) => Readonly<Record<string, unknown>>): Promise<void> {
+export function kvSetMany(read: readonly string[], write: (stored: Readonly<Record<string, unknown>>) => Readonly<Record<string, unknown>>): Promise<void> {
+  return guardWrite(
+    () => putMany(read, write),
+    () => {
+      throw new Error("another tab holds the store");
+    },
+  );
+}
+
+async function putMany(read: readonly string[], write: (stored: Readonly<Record<string, unknown>>) => Readonly<Record<string, unknown>>): Promise<void> {
   const db = await open();
   await new Promise<void>((resolve, reject) => {
     const tx = db.transaction(STORE, "readwrite");

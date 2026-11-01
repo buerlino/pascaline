@@ -2,7 +2,7 @@
 // Which app and view is on screen, and the apps loaded so far. Home and CAS stay in Session; this adds the
 // apps beside them. App code loads on first use (registry.ts); the open app and view are stored like the
 // settings, so the calculator comes back where it was.
-import type { Calc, CalcSettings, UserName } from "../calc/port.ts";
+import type { Calc, UserName } from "../calc/port.ts";
 import { t } from "../i18n/index.ts";
 import type { Kv } from "../state/storage.ts";
 import type { IconId } from "../views/icons.ts";
@@ -52,13 +52,13 @@ export class AppShell {
   readonly calc: Calc;
   private readonly kv: Kv;
   private readonly entry: EntryLine;
-  private readonly settings: () => CalcSettings;
+  private readonly settings: () => AppHost["settings"];
   private readonly userNames: () => readonly UserName[];
   /** What the app last put on the entry line (to tell "edited" from "as loaded"). */
   private entryBase = "";
   private pending = new Map<AppId, Promise<LoadedApp>>();
 
-  constructor(calc: Calc, kv: Kv, entry: EntryLine, settings: () => CalcSettings, userNames: () => readonly UserName[] = () => []) {
+  constructor(calc: Calc, kv: Kv, entry: EntryLine, settings: () => AppHost["settings"], userNames: () => readonly UserName[] = () => []) {
     this.calc = calc;
     this.kv = kv;
     this.entry = entry;
