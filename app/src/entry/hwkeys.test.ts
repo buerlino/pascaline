@@ -38,6 +38,7 @@ describe("hardwareKey passes KeyboardEvent.repeat on (R70f1: a held key counts o
       onKey: (id, layer, repeat) => void keys.push([id, layer, repeat]),
       onLetter: () => {},
       onDead: () => {},
+      onPress: () => {},
     };
     return { t, keys };
   };

@@ -41,6 +41,8 @@ export class EntryController {
   onSymbol: (ch: string, repeat: boolean) => void = (ch) => this.run({ kind: "insert", latex: ch });
   /** A hardware key that does nothing (R31): the shell's dead-key feedback (a press all the same, R107). */
   onDead: (repeat: boolean) => void = () => {};
+  /** A hardware `)` or `|` that leaves its pair (R107f1): the cursor moves, App.svelte counts the press. */
+  onPress: (repeat: boolean) => void = () => {};
   /** The line was emptied (Enter, Esc, an app view): main.ts clears the kept line (R34). */
   onClear: () => void = () => {};
 

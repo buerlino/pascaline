@@ -32,6 +32,8 @@ export interface HwTarget {
   onLetter(ch: string, repeat: boolean): void;
   /** A key that does nothing here (docs/05 3.7); it is a press all the same (R107). */
   onDead(repeat: boolean): void;
+  /** A key the handler acts on itself (a `)` or `|` that leaves its pair): a press all the same (R107f1). */
+  onPress(repeat: boolean): void;
 }
 
 /** The keypad key that types each character, and its layer. */
@@ -95,8 +97,10 @@ export function hardwareKey(ev: KeyboardEvent, t: HwTarget): boolean {
     return true;
   }
   if (ch === ")" || ch === "|") {
-    if (leave(mf, ch === ")" ? "(" : "|")) mf.focus();
-    else if (ch === "|") t.onKey("neg", "shift", ev.repeat);
+    if (leave(mf, ch === ")" ? "(" : "|")) {
+      mf.focus();
+      t.onPress(ev.repeat);
+    } else if (ch === "|") t.onKey("neg", "shift", ev.repeat);
     else t.onDead(ev.repeat);
     return true;
   }

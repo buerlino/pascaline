@@ -83,7 +83,9 @@
     shell.openSettings = openSettings;
     shell.settingsMenu = () => (modeSheet ? (settingsMenu ??= modeSheet.settingsMenu(session, settingsEnv)) : undefined); // (R49)
     shell.homeView = () => (session.view === "cas" ? "cas" : "home"); // the last row of every Menu
-    entry.onSymbol = counted(count, (ch) => entry.run({ kind: "insert", latex: ch })); entry.onDead = counted(count, dead);
+    entry.onSymbol = counted(count, (ch) => entry.run({ kind: "insert", latex: ch }));
+    entry.onDead = counted(count, dead);
+    entry.onPress = counted(count, () => {}); // R107f1: a leaving ) or | is a press that needs nothing more
     return countScreenTaps(count);
   });
   let host: HTMLElement | undefined = $state();
