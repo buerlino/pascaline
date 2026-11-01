@@ -7,8 +7,6 @@ Phase 0 decisions (D1–D9, P1, P2): [spike/DECISIONS.md](../spike/DECISIONS.md)
 
 The owner's other open items are in [backlog.md](backlog.md), "Needs the user". Once decided, an entry moves to "Decided proposals".
 
-- **G154, an underflow Giac cannot size:** a value that is MPFR's 0 at every precision is refused "Underflow" only when Giac states a size for it; `exp(-10^30)+exp(-10^31)` has none and shows ⚠ 0 (as before G84) rather than calling an exact 0 an underflow. Keep ⚠ 0 there? Recommended: yes (the rule G154 was given: no size, no underflow).
-
 - **A21, the F-Droid recipe's qalc build (P22):** `fdroid/README.md` names the open answer. Until F-Droid says whether checked-in derived data (`find/factors.yaml`) is acceptable, the recipe keeps its libxml2 and libqalculate builds, unchanged. Yes: before C4 it drops both. No: it runs `tools/find-index/refresh-factors.mjs` and fails on a diff.
 
 - **R50e, on the phone:** (1) the first frame reads the Android default (Dark) from `window.Capacitor` in the inline script; if the bridge is not there yet at that point, a first start with nothing stored shows System for one frame, then Dark (later starts read the mirror). Look at a first start after "clear data". (2) Android's status and navigation bar colours stay open (not in R50e).
