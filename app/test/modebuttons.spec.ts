@@ -50,6 +50,16 @@ test.describe("by touch", () => {
     expect(await setting(page, "angle")).toBe("deg");
   });
 
+  test("the Angle and Format buttons have spoken names, not the short forms (R102)", async ({ page }) => {
+    await page.getByTestId("chip-format").tap();
+    const row = (id: string) => sheet(page).locator(`[data-id="${id}"] [data-testid="row-options"]`);
+    await expect(row("angle").getByRole("button")).toHaveText(["RAD", "DEG"]);
+    await expect(row("angle").getByRole("button", { name: "Radians", exact: true })).toHaveAttribute("aria-pressed", "true");
+    await expect(row("angle").getByRole("button", { name: "Degrees", exact: true })).toHaveAttribute("aria-pressed", "false");
+    for (const name of ["Standard", "Scientific", "Engineering", "Prefixes (k, M, µ …)"]) await expect(row("format").getByRole("button", { name, exact: true })).toHaveCount(1);
+    await expect(row("format").getByRole("button", { name: "Standard", exact: true })).toHaveAttribute("aria-pressed", "true");
+  });
+
   test("the digits chip opens Mode › Significant digits; 20 is one more tap; ◀ from that list goes up to Mode", async ({ page }) => {
     await page.getByTestId("chip-digits").tap();
     await expect(title(page)).toHaveText("Mode › Significant digits");

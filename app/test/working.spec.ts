@@ -35,6 +35,17 @@ const samples = (page: Page): Promise<Sample[]> =>
     return (window as unknown as { __samples: Sample[] }).__samples.map((s) => ({ ...s, t: s.t - start }));
   });
 
+test("a running job has a status line naming it for a screen reader, and it is gone with the job (R102)", async ({ page }) => {
+  await open(page, "engine=fake&delay=800");
+  const busy = page.getByTestId("busy-status");
+  await expect(busy).toHaveCount(0);
+  await tap(page, ["d2", "add", "d3", "enter"]);
+  await expect(busy).toHaveAttribute("role", "status");
+  await expect(busy).toHaveText("Working");
+  await expect(page.locator('[data-status="done"]')).toHaveCount(1);
+  await expect(busy).toHaveCount(0);
+});
+
 test("a job shows Working… and Cancel only after 150 ms, and its row keeps the result's height", async ({ page }) => {
   await open(page, "engine=fake&delay=600");
   await tap(page, ["d1", "enter"]); // a first result, so the row heights below are not the first row's
