@@ -207,6 +207,34 @@ export const LAZY_PARTS = ["src/views/sheetKeys.ts", "src/views/tmplSheet.ts", "
  *  pin is 60.97 + 0.02 kB, the most that keeps it under the 61.00 kB budget with room for the test below. */
 export const START_PIN_GZIP = 60_990;
 
+/** R103 (vr-4): the classic inline scripts of index.html run before the first paint, outside every chunk: the stored look
+ *  (R50e) and the too-old WebView check. Their gzip sizes, each script alone and summed (as the start chunk sums its
+ *  files), are pinned here. 1.53 kB (R103): the build of phase-1 d075b9c measures 1528 B (the look 858 B, the check
+ *  670 B; 2993 B raw), rounded up to the next 0.01 kB, since the look's map of hashed theme files moves a byte or two.
+ *  A package that grows them raises the pin with a reason, here and in docs/04 8.3. */
+export const INLINE_PIN_GZIP = 1_530;
+
+/** The text of each classic inline script (a `<script>` without `src`, not a module) in an HTML page, in order. */
+export function inlineScripts(html: string): string[] {
+  const out: string[] = [];
+  for (const m of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)) {
+    const attrs = m[1] ?? "";
+    if (!/\bsrc\s*=/i.test(attrs) && !/\btype\s*=\s*["']?module/i.test(attrs)) out.push(m[2] ?? "");
+  }
+  return out;
+}
+
+/** The row of index.html's inline scripts, or null when the build has no index.html. */
+function inlineRow(dist: string): Row | null {
+  const index = join(dist, "index.html");
+  if (!existsSync(index)) return null;
+  const scripts = inlineScripts(readFileSync(index, "utf8")).map((t) => Buffer.from(t));
+  const raw = scripts.reduce((n, b) => n + b.length, 0);
+  const gzip = scripts.reduce((n, b) => n + gzipSync(b).length, 0);
+  const failures = gzip > INLINE_PIN_GZIP ? [`Inline scripts: index.html's inline scripts are pinned at ${kB(INLINE_PIN_GZIP)} gzip (R103), now ${kB(gzip)}: they run before the first paint; move work into the bundle, or raise INLINE_PIN_GZIP in size-check.ts with a reason`] : [];
+  return { rule: "Inline scripts", files: ["index.html"], raw, gzip, brotli: 0, rawMax: undefined, gzipMax: INLINE_PIN_GZIP, brotliMax: undefined, failures };
+}
+
 /** Failures for the start chunk's row when it is over the pin. */
 export function checkStartPin(row: Row): string[] {
   return row.gzip > START_PIN_GZIP ? [`${row.rule} is pinned at ${kB(START_PIN_GZIP)} gzip (R91), now ${kB(row.gzip)}: split more out of it, or raise START_PIN_GZIP in size-check.ts with a reason (it stays under the budget of ${kB(row.gzipMax ?? 0)})`] : [];
@@ -277,6 +305,9 @@ export function checkSizes(dist: string): Report {
     if (s.brotliMax !== undefined && brotli > s.brotliMax) failures.push(`${s.rule}: ${kB(brotli)} brotli is over the budget of ${kB(s.brotliMax)} (${s.files.join(", ")})`);
     rows.push({ rule: s.rule, files: s.files, raw, gzip, brotli, rawMax: s.rawMax, gzipMax: s.gzipMax, brotliMax: s.brotliMax, failures });
   }
+  const inline = inlineRow(dist);
+  if (inline !== null) rows.splice(1, 0, inline);
+  else absent.unshift("Inline scripts");
   const missingFailures = missing.map((rule) => `${rule}: no chunk holds src/find/finder.ts (neither a dynamic entry nor a shared chunk named "finder"); the rule measures nothing`);
   return { rows, notBuilt: absent, failures: [...rows.flatMap((r) => r.failures), ...missingFailures] };
 }

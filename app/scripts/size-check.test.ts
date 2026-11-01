@@ -5,7 +5,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { checkLazyParts, checkSizes, checkSplits, checkStartPin, LAZY_PARTS, START_PIN_GZIP, startFiles } from "./size-check.ts";
+import { checkLazyParts, checkSizes, checkSplits, checkStartPin, INLINE_PIN_GZIP, inlineScripts, LAZY_PARTS, START_PIN_GZIP, startFiles } from "./size-check.ts";
 
 const dirs: string[] = [];
 afterEach(() => {
@@ -48,7 +48,30 @@ describe("size-check", () => {
     const r = checkSizes(fakeDist(manifest, files));
     expect(r.failures).toEqual([]);
     expect(r.rows.map((x) => x.rule)).toEqual(["Start chunk", "MathLive chunk", "Find UI chunk", "Precache total"]);
-    expect(r.notBuilt).toEqual(["Unit view chunk", "Find index asset", "qalc wasm + glue"]);
+    expect(r.notBuilt).toEqual(["Inline scripts", "Unit view chunk", "Find index asset", "qalc wasm + glue"]);
+  });
+
+  it("pins index.html's inline scripts at 1.53 kB gzip, each script alone and summed, not the module script (R103, vr-4)", () => {
+    expect(INLINE_PIN_GZIP).toBe(1_530);
+    const page = (a: string, b: string): string =>
+      `<html><head><script>${a}</script></head><body><div id="app"></div><script>\n${b}</script><script type="module" crossorigin src="./assets/index.js"></script><script type="module">import "x";</script></body></html>`;
+    expect(inlineScripts(page("var a = 1;", "var b = 2;")).map((t) => t.trim())).toEqual(["var a = 1;", "var b = 2;"]);
+    const { manifest, files } = base(1000);
+    const withPage = (html: string): string => {
+      const dist = fakeDist(manifest, files);
+      writeFileSync(join(dist, "index.html"), html);
+      return dist;
+    };
+    // base64 of random bytes gzips to about 0.81 of its length: 900 B twice sits under the pin, 1000 B twice over it
+    const text = (n: number): string => randomBytes(n).toString("base64").slice(0, n);
+    const inside = checkSizes(withPage(page(text(900), text(900))));
+    const row = inside.rows.find((x) => x.rule === "Inline scripts")!;
+    expect(row.raw).toBe(1801); // the second script starts with a newline
+    expect(row.gzip).toBeLessThanOrEqual(INLINE_PIN_GZIP);
+    expect(inside.failures).toEqual([]);
+    const over = checkSizes(withPage(page(text(1000), text(1000))));
+    expect(over.rows.find((x) => x.rule === "Inline scripts")!.gzip).toBeGreaterThan(INLINE_PIN_GZIP);
+    expect(over.failures.map((f) => f.split(":")[0])).toEqual(["Inline scripts"]);
   });
 
   it("fails a start chunk over 175 kB raw", () => {
@@ -119,7 +142,7 @@ describe("size-check", () => {
         "src/units/calc.ts": { file: "assets/units.js", src: "src/units/calc.ts", isDynamicEntry: true },
         "src/units/open.ts": { file: "assets/open.js", src: "src/units/open.ts", isDynamicEntry: true },
       },
-      { ...files, "assets/find.js": 30_001, "assets/units.js": 10_000, "assets/open.js": 28_000, "find/index.json": { random: 400_001 }, "qalc/qalc.wasm": { random: 1_000_001 }, "qalc/qalc.mjs": 1000 },
+      { ...files, "assets/find.js": 30_001, "assets/units.js": 10_000, "assets/open.js": 28_000, "find/index.json": { random: 400_001 }, "qalc/qalc.wasm": { random: 1_000_001 }, "qalc/qalc.mjs": 1000, "index.html": 100 },
     );
     const r = checkSizes(dist);
     expect(r.notBuilt).toEqual([]);
