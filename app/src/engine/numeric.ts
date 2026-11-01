@@ -891,12 +891,18 @@ function floatFactsOf(
   return r === null ? null : "facts" in r ? r.facts : r.once;
 }
 
+/** G153: `v` has a number at P and, at P+20 (asked), none. */
+const numberLost = (v: GiacValue, P: number): boolean => v.at?.[String(P + 20)] !== undefined && numbersAt(v, P, P + 2, 1) !== null && numbersAt(v, P + 20, P + 2, 1) === null;
+
 /**
  * The double fallback for an exact result that has no MPFR value (docs/04 section 2.3 #5: `BesselJ(1,2)` at 30
  * digits comes back as text): `evalf` of the stored result with a double. Null when that is not a number either
- * (a symbolic result such as `x+1`). On success the double becomes Ans.
+ * (a symbolic result such as `x+1`). On success the double becomes Ans. G153 (F155): `v`, the exact run's value
+ * (bridge-3), a number at P and none at P+20: the precision decides whether there is a value at all (a cancellation:
+ * ln(ln((10^1003+89999)/(10^1003-89999))/2), -92.9+3.14*i at 40 digits, -infinity at 60), so the double, which cancels
+ * more, confirms no digit (it showed ⚠ 14 -70.007865236555+3.1415926535898*i; right -2298.085…).
  */
-export function doubleFallback(giac: Giac, name: string, input: string, digits: number, restoreDigits: number): ElementFacts | null {
+export function doubleFallback(giac: Giac, name: string, input: string, digits: number, restoreDigits: number, v?: GiacValue): ElementFacts | null {
   const out = withDigits(giac, DOUBLE_DIGITS, restoreDigits, () => {
     const r = valueAt(giac, `pasd:=evalf(${name})`, { kind: "scalar" }, DOUBLE_DIGITS, DOUBLE_DIGITS);
     return r.v.kind === "float" || r.v.kind === "complex" ? r.parts : null;
@@ -906,7 +912,7 @@ export function doubleFallback(giac: Giac, name: string, input: string, digits: 
   return {
     value: out[0]!,
     exact: false,
-    reliableDigits: Math.min(digits, DOUBLE_DIGITS),
+    reliableDigits: v && numberLost(v, valuePrecision(digits)) ? null : Math.min(digits, DOUBLE_DIGITS),
     warn: isAudited(input, "typed") ? "unchecked" : "unaudited",
     big: false,
   };

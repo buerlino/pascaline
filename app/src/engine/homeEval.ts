@@ -790,7 +790,7 @@ export function homeEval(
   if (!facts) {
     // G123 (F123): MPFR's infinity at P is an overflow, whatever a double makes of it (1.000000000000001^(10^50) gave 1.0).
     if (!once && !late() && shape.kind === "scalar" && overflowAt(giac, ans, exactOut, valuePrecision(s.digits))) return refuse("overflow", "exact");
-    const d = shape.kind === "scalar" ? doubleFallback(giac, ans, body, s.digits, s.digits) : null;
+    const d = shape.kind === "scalar" ? doubleFallback(giac, ans, body, s.digits, s.digits, value) : null;
     if (!d) return symbolic();
     // G84 (F60): a double's 0 where MPFR found no value (exp(cosh(asin(π)/pasdeg))) whose exact answer is not 0.
     if (!once && !late() && underflow(giac, zeroElements(`(${exactOut})`, [d], shape), null)) return refuse("underflow", "exact");
