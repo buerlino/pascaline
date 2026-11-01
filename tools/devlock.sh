@@ -6,6 +6,10 @@
 #   tools/devlock.sh release <resource> <owner>
 #   tools/devlock.sh status
 #   tools/devlock.sh break <resource>     # coordinator only, for a lock whose owner is gone
+#   tools/devlock.sh slice <name> <cmd...> # A58: one piece of a long measurement: host-cpu for <name>, <cmd> under
+#                                         # timeout PASCALINE_SLICE_MAX (600 s), host-cpu released after; exit = cmd's (124 = over the limit,
+#                                         # 1 = host-cpu busy for PASCALINE_SLICE_WAIT, 1800 s). A worker holds host-cpu at most 10 minutes
+#                                         # at a time: a longer measurement is a loop of slices, so a waiting check gets the lock between them.
 #
 # <resource> is an adb serial, "host-cpu", "integ" (the phase-1 worktree: merges and interactive edits), or "nodemods" (its app/node_modules: a copy out, an npm ci in; A47bf1). Locks are directories (mkdir is atomic).
 # Locks live in the main checkout's .coord (shared by every git worktree); PASCALINE_COORD overrides.
@@ -19,7 +23,7 @@ COMMON="$(git -C "$REPO" rev-parse --path-format=absolute --git-common-dir 2>/de
 if [[ -n "$COMMON" ]]; then MAIN_REPO="$(dirname "$COMMON")"; else MAIN_REPO="$REPO"; fi
 LOCKS="${PASCALINE_COORD:-$MAIN_REPO/.coord}/locks"
 mkdir -p "$LOCKS"
-cmd="${1:?usage: devlock.sh acquire|release|status|break ...}"
+cmd="${1:?usage: devlock.sh acquire|release|status|break|slice ...}"
 
 case "$cmd" in
   acquire)
@@ -73,6 +77,20 @@ case "$cmd" in
     res="${2:?resource}"
     rm -rf "${LOCKS:?}/$res"
     echo "broke lock $res"
+    ;;
+  slice)
+    name="${2:?name}"; shift 2
+    (( $# )) || { echo "usage: devlock.sh slice <name> <cmd...>" >&2; exit 2; }
+    max="${PASCALINE_SLICE_MAX:-600}"; swait="${PASCALINE_SLICE_WAIT:-1800}"; self="$(readlink -f "${BASH_SOURCE[0]}")"
+    PASCALINE_LOCK_PID=$$ "$self" acquire host-cpu "$name" "$swait" >&2 || exit 1
+    cp=""; rc=0
+    trap '[[ -z "$cp" ]] || { kill -TERM "$cp" 2>/dev/null; wait "$cp" 2>/dev/null || true; }; "$self" release host-cpu "$name" >&2 || true' EXIT
+    trap 'exit 143' TERM HUP INT
+    timeout -k 30 "$max" "$@" & cp=$!
+    wait "$cp" || rc=$?
+    cp=""
+    if [[ $rc -eq 124 ]]; then echo "slice $name: '$1' ran over $max s and was stopped; host-cpu is released; continue in the next slice" >&2; fi
+    exit "$rc"
     ;;
   *) echo "unknown command $cmd" >&2; exit 2 ;;
 esac
