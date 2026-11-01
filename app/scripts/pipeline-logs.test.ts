@@ -91,6 +91,15 @@ describe("golden and e2e logs", () => {
     expect(onlyTiming("golden", units(115, "6.16"))).toBe(false);
     expect(onlyTiming("golden", "PASS units: 116/116 match\n")).toBe(false);
   });
+  const inv = (fresh: number, now: number, secs: string) => `FAIL invariants: 304 inputs, 244 (a) RAD/DEG, 60 (b) 12/30 digits, 40 (c) copy and paste, 12 (d) store; 2 known failures, ${fresh} new, ${now} now passing; ${secs} s (< 60)\n`;
+  it("G154f1: a golden invariants failure only on its 60 s limit is timing; a new or now-passing case is not", () => {
+    expect(failedItems("golden", inv(0, 0, "71.9"))).toHaveLength(1);
+    expect(onlyTiming("golden", inv(0, 0, "71.9"))).toBe(true);
+    expect(onlyTiming("golden", inv(1, 0, "71.9"))).toBe(false);
+    expect(onlyTiming("golden", inv(0, 1, "71.9"))).toBe(false);
+    expect(onlyTiming("golden", inv(1, 0, "42.8"))).toBe(false);
+    expect(onlyTiming("golden", inv(0, 0, "71.9") + "FAIL home: 12/13 match\n")).toBe(false);
+  });
   it("e2e: the copy poll and the solve reload are timing, others are not", () => {
     const l = (f: string, t: string) => `  1) [chromium-phone] › test/${f}:89:1 › ${t} ────────────\n`;
     expect(onlyTiming("e2e", l("copy.spec.ts", "copy → paste gives the value back (P5)"))).toBe(true);

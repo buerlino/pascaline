@@ -74,6 +74,12 @@ describe.skipIf(!giacAvailable())("G78 on the real engine", () => {
     for (const input of ["sin(pi)", "0*exp(-10^30)"]) expect(home(input), input).toMatchObject({ ok: true, display: "0", facts: { exact: true } });
     expect(home("exp(-10^30)*exp(10^30)")).toMatchObject({ ok: true, display: "1" });
     expect(home("cos(pi/7)-cos(2*pi/7)+cos(3*pi/7)-1/2")).toMatchObject({ ok: true, display: "0", facts: { warn: "unchecked" } });
+    // G154 (F139): asin(i*y) and asinh(i*y), |y| <= 1, are purely imaginary, so these real parts are exactly 0; since patch
+    // 0023 Giac gives MPFR's 0 for them at every precision and normal does not prove it. Giac states no size for them, so
+    // they are an exact 0 Giac cannot prove (⚠ 0), not an underflow.
+    for (const input of ["re(asin(i/10))", "re(asinh(i/5))", "re(asin(i))"])
+      for (const digits of [12, 30])
+        expect(host.home(input, { ...defaultHomeSettings, digits, workDigits: Math.max(30, digits + 10) }).result, `${input} ${digits}`).toMatchObject({ ok: true, display: "0", facts: { warn: "unchecked" } });
     // G126: exp(10^-70)-1 is 0 at P and P+20, its value 1.0000…E-70 (derived: x+x^2/2+…) from P+40 on, so the steps go on.
     expect(home("exp(10^-70)-1")).toMatchObject({ ok: true, display: "1E-70", facts: { exact: false, reliableDigits: 40 } });
     expect(home("exp(10^-70)-1").facts).not.toHaveProperty("warn");
@@ -82,13 +88,17 @@ describe.skipIf(!giacAvailable())("G78 on the real engine", () => {
     try {
       // ln(2)+ln(3)-ln(6) is 0 and evaluates to MPFR's exact 0 at 40 digits, but has noise at 1000; exp(10^-70)-1 is
       // 1E-70 (a cancellation, 0 at 40 digits); exp(-10^30) is 0 at any precision.
-      giac.eval("pasU:=[ln(2)+ln(3)-ln(6),exp(-10^30),exp(10^-70)-1,0]");
+      giac.eval("pasU:=[ln(2)+ln(3)-ln(6),exp(-10^30),exp(10^-70)-1,0,re(asin(i/10)),exp(-10^30)*sin(1)]");
       const zero = { re: { neg: false, digits: "", exp: 0, sticky: false }, im: { neg: false, digits: "", exp: 0, sticky: false } };
       const facts = [0, 1].map(() => ({ value: zero, exact: false, reliableDigits: 40, big: false }));
       expect(zeroElements("pasU", facts, { kind: "list", n: 2 })).toEqual(["pasU[0]", "pasU[1]"]);
       expect(underflow(giac, ["pasU[0]"], 40)).toBe(false);
       expect(underflow(giac, ["pasU[1]"], 40)).toBe(true);
       expect(underflow(giac, ["pasU[2]"], 40)).toBe(false);
+      // G154: MPFR's 0 at every precision with no size Giac can state is an exact 0 it cannot prove; exp(-10^30)*sin(1)
+      // has one (-10^30+ln(sin(1)), through lnexpand).
+      expect(underflow(giac, ["pasU[4]"], 40)).toBe(false);
+      expect(underflow(giac, ["pasU[5]"], 40)).toBe(true);
       // A double's 0: Giac's exact 0 is no underflow, exp(-10^30) is.
       expect(underflow(giac, ["pasU[3]"], null)).toBe(false);
       expect(underflow(giac, ["pasU[1]"], null)).toBe(true);
