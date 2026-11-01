@@ -194,6 +194,12 @@ export const ENGINE_DEFINITIONS: Readonly<Record<string, string>> = {
     "if (type(p)!=integer and type(p)!=rational and type(evalf(p))!=DOM_FLOAT) throw(\"percentile: needs a list of real numbers\"); " +
     "if (n==0 or p<0 or p>100) throw(\"percentile: needs a list and 0 <= p <= 100\"); " +
     "r:=p/100*(n-1); k:=floor(r); if (k>=n-1) return s[n-1]; return s[k]+(r-k)*(s[k+1]-s[k]); }",
+  // G155: the standard error of the mean, s/√n with Giac's stddevp (the sample deviation, n−1); exact for exact readings.
+  // Giac has no sem; the parser renames the written word (ourNames.ts CALL_NAME). Fewer than two values have no sample
+  // deviation (Giac's stddevp answers undef): refused here.
+  passem:
+    "passem(l):={ if (type(l)!=DOM_LIST) throw(\"sem: needs a list of values\"); " +
+    "if (size(l)<2) throw(\"sem: needs at least two values\"); return stddevp(l)/sqrt(size(l)); }",
   // G30 (EN7a): n resistors in parallel, 1/(1/a+1/b+…), exact; a zero argument gives exactly 0. Giac hands the
   // arguments of a call to a one-parameter function as one sequence, which [a] makes a list.
   par:
