@@ -35,6 +35,8 @@ export interface ValueOption {
   readonly id: string;
   /** Already translated. */
   readonly label: string;
+  /** Its spoken name when the label is a short form (RAD, STD: R102); already translated. The button's aria-label. */
+  readonly spoken?: string;
   /** This is the current value (the button is marked). */
   readonly selected: boolean;
   /** Set this value. A tap on the button runs it and closes the sheet, like a pick. */

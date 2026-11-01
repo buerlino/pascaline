@@ -17,7 +17,6 @@ export const enData = {
   "restore.none": "Tick at least one part",
   "restore.failed": "Could not restore the backup",
   "restore.undo": "Undo the restore ({time})",
-  "restore.undone": "Restore undone",
   "restore.undoFailed": "Could not undo the restore",
   "restore.rows": "Home {home} · CAS {cas} rows",
   "restore.defs": "{n} definitions",

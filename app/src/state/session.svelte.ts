@@ -502,7 +502,7 @@ export class Session {
     if (!ans && this.hasResult(view) && /\\ans(?![a-zA-Z])/.test(latex)) {
       // A finished result with no chip value (a symbolic text over 2 kB, R44): say why, not "no result yet"
       live.status = "error";
-      live.text = "Ans: the last result is too long to reuse (over 2 kB)";
+      live.text = t("error.ansTooLong");
       this.saveHistory();
       return Promise.resolve();
     }

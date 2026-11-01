@@ -34,10 +34,11 @@ function cycle<T>(all: readonly T[], now: T, by: 1 | -1): T {
 }
 
 /** A button per value (R86): `label` names it, `set` sets it. */
-function buttons<T extends string>(all: readonly T[], get: () => T, set: (v: T) => void, label: (v: T) => string): ValueOption[] {
+function buttons<T extends string>(all: readonly T[], get: () => T, set: (v: T) => void, label: (v: T) => string, spoken?: (v: T) => string): ValueOption[] {
   return all.map((v) => ({
     id: v,
     label: label(v),
+    ...(spoken ? { spoken: spoken(v) } : {}),
     get selected() {
       return get() === v;
     },
@@ -65,7 +66,7 @@ export function modeItems(session: Session, env: SettingsEnv = {}): MenuItem[] {
       id: "angle",
       label: t("mode.angle"),
       get options() {
-        return buttons(ANGLES, () => s.angle, (v) => session.setAngle(v), (v) => v.toUpperCase());
+        return buttons(ANGLES, () => s.angle, (v) => session.setAngle(v), (v) => v.toUpperCase(), (v) => t(`angle.${v}`));
       },
       adjust: (by) => session.setAngle(cycle(ANGLES, s.angle, by)),
     },
@@ -73,7 +74,7 @@ export function modeItems(session: Session, env: SettingsEnv = {}): MenuItem[] {
       id: "format",
       label: t("mode.format"),
       get options() {
-        return buttons(FORMATS, () => s.format, (v) => session.setFormat(v), (v) => v.toUpperCase());
+        return buttons(FORMATS, () => s.format, (v) => session.setFormat(v), (v) => v.toUpperCase(), (v) => t(`format.${v}`));
       },
       adjust: (by) => session.setFormat(cycle(FORMATS, s.format, by)),
     },

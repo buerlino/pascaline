@@ -111,6 +111,8 @@
       </span>
     </span>
     <button type="button" class="menubtn" data-testid="menu-button" aria-label={t("status.menu")} onclick={() => onpress(MENU_KEY, "primary")}>☰</button>
+    <!-- the busy ring is drawn on an aria-hidden tile: a screen reader hears the job from this hidden line (R102) -->
+    {#if busy}<span class="sr" role="status" data-testid="busy-status">{t("status.busy")}</span>{/if}
   </header>
 
 <style>
@@ -125,6 +127,15 @@
     box-shadow: inset 0 -1px 0 var(--line);
     font-size: 14px;
     line-height: 1;
+  }
+  .sr {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
   header button {
     all: unset;
