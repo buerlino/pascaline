@@ -406,6 +406,9 @@ if [[ "$task" =~ ^[A-Z][0-9]+[a-z0-9]*$ ]]; then
 else
   printf '%s\n' "$task" > "$spec_file"
   id="${id:-task}"
+  # A55: a package's own id needs its file on phase-1 (run 312 took A46's task text and merged with no package block); FIX ids and
+  # free ids do not. PASCALINE_ALLOW_UNPACKAGED_IDS is for pipeline.test.sh's sandboxes only.
+  if [[ -z "${PASCALINE_ALLOW_UNPACKAGED_IDS:-}" ]] && package_shaped "$id" && ! p1file "docs/shifts/packages/$id.md"; then no_package="$id"; fi
 fi
 slug="$(tr -cs 'a-z0-9' '-' <<<"${id,,}" | sed 's/^-//; s/-$//')"
 [[ -n "$branch" ]] || branch="p1/$agent-$slug"
@@ -430,6 +433,12 @@ fi
 mkdir -p "$run"
 [[ $dry -eq 1 ]] || echo $$ > "$run/pid"  # gc leaves a run dir whose pid is alive alone
 export PW_PORT="$(job_port "$n")"  # a dev-server port per job (app/playwright.config.ts)
+# A55: no package file: stop before the worker, with a run number and a log line
+if [[ -n "${no_package:-}" ]]; then
+  runno="$n"; why="no package file for $no_package"
+  if [[ $dry -eq 1 ]]; then rm -rf "$run"; else log "pipeline #$n $id: NOT MERGED ($why)"; fi
+  echo "RESULT #$n $id: NOT MERGED ($why)"; exit 1
+fi
 
 # The bundle: spec, the files it names (capped), the report format and the definition of done.
 bundle="$run/spec.md"
@@ -698,6 +707,11 @@ if [[ $nowork -eq 0 ]]; then
   [[ $resumed -eq 0 ]] || merge_phase1
   run_agent "pl-$n-$agent" "$run/worker-0.log" "$agent" "$model" "$effort" "$bundle" "$worker_prompt" "${worker_tools[@]}"
   log "pipeline #$n $id: worker done, $(git -C "$wt" log -1 --format=%h) — $(tail -n 1 "$run/worker-0.log" | cut -c1-120)"
+  # A55: a worker that says its task is missing or wrong has not done the package: no checks, no audit
+  if task_questioned "$run/worker-0.log"; then
+    log "pipeline #$n $id: NOT MERGED (the worker questioned its task); branch $branch kept"
+    echo "RESULT #$n $id: NOT MERGED (the worker questioned its task; branch $branch, worktree $wt kept; reply: $(grep -iE 'open questions?' "$run/worker-0.log" | head -n 1 | cut -c1-120))"; exit 1
+  fi
 fi
 if [[ -z "$(git -C "$wt" log --oneline "phase-1..HEAD")" ]]; then
   log "pipeline #$n $id: NOT MERGED (no commits on $branch)"; echo "RESULT #$n $id: NOT MERGED (no commits; worktree $wt kept)"; exit 1
@@ -765,6 +779,10 @@ while :; do
   fix_prompt="You are $agent on branch $branch in your own worktree, fix round $rounds of 2 for package $id: $reason. On stdin: the failing output or the audit findings, then the task bundle. Fix the cause (not the test), add the regression test where one is missing, run the failing check yourself, commit with git commit -s and your model's trailer, and amend nothing. $no_wait Reply in at most five lines: last commit, what you fixed, anything you could not fix."
   run_agent "fix-$n-$rounds" "$run/fix-$rounds.log" "$agent" "$model" "$effort" "$run/fix-$rounds.in" "$fix_prompt" "${worker_tools[@]}"
   log "pipeline #$n $id: fix round $rounds done, $(git -C "$wt" log -1 --format=%h)"
+  if task_questioned "$run/fix-$rounds.log"; then  # A55: as after the first worker
+    log "pipeline #$n $id: NOT MERGED (the worker questioned its task); branch $branch kept"
+    echo "RESULT #$n $id: NOT MERGED (the worker questioned its task; branch $branch, worktree $wt kept; reply: $(grep -iE 'open questions?' "$run/fix-$rounds.log" | head -n 1 | cut -c1-120))"; exit 1
+  fi
 done
 
 # Still in the queue: merge into phase-1 in its worktree. Only the audited commit is merged, only when the branch points at it

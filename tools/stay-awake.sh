@@ -5,8 +5,14 @@
 #   tools/stay-awake.sh <serial>            # save originals (once), keep screen on, record device info
 #   tools/stay-awake.sh <serial> --restore  # put the saved settings back
 #
-# Only touches: global stay_on_while_plugged_in, system screen_off_timeout. Originals are saved
-# to the main checkout's .coord/devices/<serial>.orig the first time and never overwritten.
+# Only touches: global stay_on_while_plugged_in, system screen_off_timeout. What it saves goes to the main
+# checkout's .coord/devices/<serial>.orig the first time and is never overwritten by this script. On the
+# night's devices (Fairphone 6 4d42e62f, Tab One HA24BZ2Y) the file is kept by hand as the NIGHT setting:
+#   <serial>.orig       STAY_ON=7 (stay on while charging): --restore puts this back, which is what a night wants;
+#   <serial>.orig.real  STAY_ON=0, the device's own setting, set aside by hand (brief 0c rule 2).
+# The way back by day, from the main checkout (one command: the real setting becomes .orig, then --restore):
+#   mv .coord/devices/<serial>.orig.real .coord/devices/<serial>.orig && tools/stay-awake.sh <serial> --restore
+# Before the next night, put STAY_ON=7 back into .orig (the same two files, the other way round).
 set -euo pipefail
 
 SERIAL="${1:?usage: stay-awake.sh <serial> [--restore]}"
