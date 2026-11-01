@@ -1,0 +1,66 @@
+# Upstream: giac 2.1.0 gen.cc pow, "extract integral powers in a product exponent". b^(n*s/d), with n an integer and d an integer denominator in a product exponent, is rewritten as ((b^s)^(1/d))^r*(b^s)^q (n = q*d+r), which is b^(n*s/d) only when im(s*ln(b)) lies in (-pi,pi] (for a negative b in complex mode Giac takes (-b)^s and exp(i*pi*s/d), so im(s*ln(-b))): 2^sqrt(-1-10^-3), Giac's 2^(10*i*sqrt(10010)/1000), became (2^(10*i*sqrt(10010)))^(1/1000), the principal root of 2^(1000.5*i), about 0.999997254512+0.00234328161588*i (right 0.769017463424+0.639227769225*i); also 2^sqrt(-2-10^-3), 3^sqrt(-1-10^-9). Takes the rule only where it holds: s = 1 always keeps it, whatever b is (arg b lies in (-pi,pi], and an integer power of the principal root is the principal power: (-pi)^(3/2) = sqrt(-pi)*(-pi), sqrt(acosh(-1/2)^2), (-1-i/10^20)^(1/2) and the root in asinh(-10^300) keep sqrt as before); otherwise it is decided on the doubles of b and s with a margin at the cut (as patch 0018), except for a negative real b with a real s (the CAS view, complex mode off), where im(s*ln(b)) = s*pi and the rule holds for -1 < s < 1, realness by Giac's is_real where the doubles are near the axis (acosh(-2) = ln(-sqrt(3)-2) as before); elsewhere the power stays as typed and its evalf is the principal value. b or s with no numeric value or a non-finite double part (asinh(-10^1250)), and every rule with r = 0 (an integer power), keep today's form (2^(i/1000) = (2^i)^(1/1000), 2^(sqrt(2)/7) = (2^sqrt(2))^(1/7)).
+# Changed by Pascaline contributors, 2026-11-01
+--- a/src/gen.cc
++++ b/src/gen.cc
+@@ -6901,6 +6901,48 @@
+     return im==0?1:2;
+   }
+ 
++  // Pascaline patch 0025 (G149): b^(n*s/d) (n an integer, d an integer denominator) is ((b^s)^(1/d))^r*(b^s)^q with
++  // n = q*d+r only when (b^s)^(1/d) is b^(s/d), that is when im(s*ln(b)) lies in (-pi,pi] (for a negative b in complex
++  // mode Giac takes (-b)^s and exp(i*pi*s/d), so im(s*ln(-b))); the rule took any b and s, so 2^sqrt(-1-10^-3), Giac's
++  // 2^(10*i*sqrt(10010)/1000), became (2^(10*i*sqrt(10010)))^(1/1000), the principal root of 2^(1000.5*i): another
++  // branch. s = 1 always keeps the rule, whatever b is: arg b lies in (-pi,pi], and an integer power of the principal
++  // root is the principal power (the margin would refuse sqrt(acosh(-1/2)^2) and (-pi)^(3/2) = sqrt(-pi)*(-pi)).
++  // Otherwise decided on the doubles with a margin at the cut, as patch 0018; b or s with no numeric value, or with a
++  // part whose double is not finite, keep the rule. A negative real b with a real s has im(s*ln(b)) = s*pi exactly:
++  // the rule holds for -1 < s < 1 there.
++  static bool pow_double_parts(const gen & g,double & re,double & im){
++    if (g.type==_DOUBLE_){
++      re=g._DOUBLE_val; im=0;
++      return std::isfinite(re);
++    }
++    if (g.type==_CPLX && g._CPLXptr->type==_DOUBLE_ && (g._CPLXptr+1)->type==_DOUBLE_){
++      re=g._CPLXptr->_DOUBLE_val; im=(g._CPLXptr+1)->_DOUBLE_val;
++      return std::isfinite(re) && std::isfinite(im);
++    }
++    return false;
++  }
++
++  static bool pow_root_extract_holds(const gen & b,const gen & s,GIAC_CONTEXT){
++    if (is_one(s))
++      return true;
++    double bre,bim,sre,sim;
++    if (!pow_double_parts(evalf_double(b,1,contextptr),bre,bim) || !pow_double_parts(evalf_double(s,1,contextptr),sre,sim))
++      return true;
++    if (bim==0 && bre>0 && sim==0)
++      return true;
++    if (bre==0 && bim==0)
++      return true;
++    // A negative real b: its double can carry a rounding imaginary part (evalf of (-pi)^3 at Digits > 14), so a b near
++    // the negative axis is tested exactly (Giac's is_real, im(b) = 0); s too, when its double is near the real axis.
++    if (bre<0 && (bim==0 || (std::abs(bim)<=1e-9*std::abs(bre) && b.is_real(contextptr)))){
++      bim=0;
++      if (sim==0 || (std::abs(sim)<=1e-9*std::abs(sre) && s.is_real(contextptr)))
++        return sre>-1+1e-9 && sre<1-1e-9; // im(s*ln(b)) = s*pi
++    }
++    double t=sim*std::log(std::hypot(bre,bim))+sre*std::atan2(bim,bre); // im(s*ln(b))
++    return std::abs(t)<M_PI*(1-1e-9);
++  }
++
+   gen pow(const gen & base,const gen & exponent,GIAC_CONTEXT){
+     if (base.type==_VECT && exponent.type==_VECT && (base.subtype==_SET__VECT || exponent.subtype==_SET__VECT)){
+       return _symmetric_difference(makesequence(base,exponent),contextptr);
+@@ -7259,8 +7301,11 @@
+ 	int q=superexponent.val / subexponent_deno.val;
+ 	int r=superexponent.val % subexponent_deno.val;
+ 	gen res(1);
++	bool negbase=r && complex_mode(contextptr) && fastsign(base,contextptr)==-1;
++	if (r && !pow_root_extract_holds(negbase?-base:base,subexponent_num,contextptr)) // Pascaline patch 0025 (G149)
++	  return new_ref_symbolic(symbolic(at_pow,gen(makenewvecteur(base,exponent),_SEQ__VECT)));
+ 	if (r){
+-	  if (complex_mode(contextptr) && fastsign(base,contextptr)==-1){ // is_strictly_positive(-base,contextptr)){
++	  if (negbase){ // Pascaline patch 0025 (G149): was complex_mode(contextptr) && fastsign(base,contextptr)==-1; is_strictly_positive(-base,contextptr)){
+ 	    gen base1=-base;
+ 	    res=exp((cst_i*cst_pi*subexponent_num)/subexponent_deno,contextptr);
+ 	    res=new_ref_symbolic(symbolic(at_pow,gen(makenewvecteur(pow(base1,subexponent_num,contextptr),inv(subexponent_deno,contextptr)),_SEQ__VECT)))*res;
