@@ -3,17 +3,19 @@
   import { APPS, placeGlyph } from "../apps/registry.ts";
   import type { AppShell } from "../apps/shell.svelte.ts";
   import { t, type MessageKey } from "../i18n/index.ts";
-  import type { Key, Layer } from "../keyboard/keyboard.ts";
+  import { alphaLower, type Key, type Layer } from "../keyboard/keyboard.ts";
   import type { Session } from "../state/session.svelte.ts";
   import { updateOffer } from "../state/updateOffer.svelte.ts";
   import { ICONS } from "./icons.ts";
 
   // R97: the status line, out of App.svelte. Props in, events out; no store of its own.
-  let { session, shell, busy, onpress, onmode }: {
+  let { session, shell, busy, cas, onpress, onmode }: {
     session: Session;
     shell: AppShell;
     /** A job runs (session or app). */
     busy: boolean;
+    /** The CAS view is under the keys, where Alpha alone types lower case (R58). */
+    cas: boolean;
     /** A tap on a control, as the press of a key (the same path as a key press). */
     onpress: (key: Key, layer: Layer) => void;
     /** A tap on a mode chip: the Mode sheet, on that row. */
@@ -38,10 +40,10 @@
   const glyph = $derived(placeGlyph(shell.app ?? session.view));
   /** The tile's ring: a job running, or the engine starting (R82f2: the ⟳ went). */
   const ring = $derived(busy || session.engineState === "starting");
-  /** The ⇧ α slot: one sign, underlined when locked; Alpha with Shift types lower case, shown as `a`. */
+  /** The ⇧ α slot: one sign, underlined when locked; `a` when Alpha types lower case here, `α` when it types capitals (R101). */
   const mod = $derived(
     session.alpha
-      ? { alpha: true, lock: session.alphaLock, text: session.shift ? "a" : "α" }
+      ? { alpha: true, lock: session.alphaLock, text: alphaLower(session.shift, true, cas) ? "a" : "α" }
       : session.shift
         ? { alpha: false, lock: session.shiftLock, text: "⇧" }
         : null,

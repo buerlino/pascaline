@@ -299,7 +299,7 @@
 </script>
 
 <main class="app">
-  <StatusLine {session} {shell} {busy} onpress={press} onmode={openMode} />
+  <StatusLine {session} {shell} {busy} cas={casKeys} onpress={press} onmode={openMode} />
 
   <div class="screen">
     <div class="stage">
