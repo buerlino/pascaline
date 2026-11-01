@@ -13,10 +13,14 @@ export interface SlotFormula {
   latex: string;
   /** The slots' prompt ids in the order written (the end slot is not among them). */
   slots: string[];
+  /** R63: the slots right after a result chip, by id, with the chip's key (`res:3`): the units key fills such a slot with
+   *  the chip's unit (input/chipUnit.ts). Absent when there is none. */
+  chips?: Record<string, string>;
 }
 
 /** Macros whose arguments are a chip's, never numbers of the formula: \res{k}{shown}, \const{id}{symbol}, \unit and
- *  \pfx (two groups each); \placeholder[id]{…}; \mathrm, \operatorname, \text (one group: a name). */
+ *  \pfx (two groups each); \placeholder[id]{…}; \mathrm, \operatorname, \text (one group: a name). A \res chip is a
+ *  number all the same (R63): its slot goes after it. */
 const SKIP_GROUPS: Readonly<Record<string, number>> = { res: 2, const: 2, unit: 2, pfx: 2, placeholder: 1, mathrm: 1, operatorname: 1, text: 1, mathit: 1 };
 
 /** The end of the {…} group that starts at `i` (or of the one character there), as an index after it. */
@@ -126,6 +130,7 @@ export function slotFormula(latex: string): SlotFormula {
   const src = braceArgs(latex.trim());
   if (src === "") return { latex: `1\\placeholder[u1]{}\\to\\placeholder[${END}]{}`, slots: ["u1"] };
   const slots: string[] = [];
+  const chips: Record<string, string> = {};
   let out = "";
   let i = 0;
   /** The last thing written was a name's letter (x2 is a name, not a number with a slot). */
@@ -155,6 +160,14 @@ export function slotFormula(latex: string): SlotFormula {
         }
       }
       out += src.slice(i, j);
+      // R63: a result chip is a number with a slot after it, which the units key fills with the chip's unit
+      const res = macro === "res" ? /^\\res\s*\{(\d+)\}/.exec(src.slice(i, j)) : null;
+      if (res) {
+        const id = `u${slots.length + 1}`;
+        slots.push(id);
+        chips[id] = `res:${res[1] as string}`;
+        out += `\\placeholder[${id}]{}`;
+      }
       i = j;
     } else if (c === "^" || c === "_") {
       // an exponent or a subscript holds no slot (a unit's power is the slot's own)
@@ -179,5 +192,5 @@ export function slotFormula(latex: string): SlotFormula {
       i++;
     }
   }
-  return { latex: `${out}\\to\\placeholder[${END}]{}`, slots };
+  return { latex: `${out}\\to\\placeholder[${END}]{}`, slots, ...(Object.keys(chips).length ? { chips } : {}) };
 }

@@ -3,6 +3,7 @@
 // a UnitRequest; Calc.units() builds it into a UnitJob with the Find index's factors (main thread) and the Giac
 // worker evaluates the job. Types only.
 import type { HomeResult } from "../engine/homeEval.ts";
+import type { Chip } from "../input/chips.ts";
 
 /** One factor of a slot: a Find unit id with an optional Find prefix id and a power. */
 export interface UnitToken {
@@ -174,4 +175,28 @@ export type UnitError =
 
 export function isUnitError<T extends object>(r: T | UnitError): r is UnitError {
   return "error" in r;
+}
+
+/** R63 (docs/04 4.3 "The way back"): what a unit-view result keeps as a Home history row (HistoryItem.units) besides
+ *  Home's own fields, which hold the number and its facts (Quantity.value, by Home's rule). Stored with the history and
+ *  read back unchecked: the chip is checked where it is used (session.chipFor: validChips; its unit through
+ *  input/chipUnit.ts), the slots by units/row.ts rowSlots, and the two LaTeX texts are drawn as a stored result is. */
+export interface UnitRow {
+  /** The request's filled slots and end slot by prompt id (`u2`, `end`): the units key on the row shows them again. */
+  slots: Record<string, UnitSlot>;
+  /** Quantity.unit, .dimension and .dimensionText. */
+  unit: string;
+  dim: string | null;
+  dimText: string | null;
+  /** σ as the view showed it (Uncertainty.text, .shown, .why). */
+  unc?: { text: string; shown: string; why?: UncWhy };
+  note?: UnitNote;
+  /** What the row draws after Home's number: ± σ, then the unit set apart (smaller, muted, upright). */
+  latex: string;
+  /** The same as plain text (R63f1: ` ± σ m²`), joined to Home's number for Copy as shown and the row's data-text. */
+  text: string;
+  /** The request as the row draws it: the line with each filled slot's unit after its number, and → the end slot. */
+  input: string;
+  /** R61's quantityChip; absent when the result gives none (the row then goes on the line as drawn). */
+  chip?: Chip;
 }

@@ -101,6 +101,7 @@ export const en = {
   "history.usesHome": "stored in Home",
   "history.usesCas": "stored in CAS",
   "history.settingReset": "An engine setting this changed was not kept",
+  "history.unitDropped": "unit dropped: Home has no units",
   "history.insert": "Put this result on the entry line",
   "error.syntax": "Syntax error",
   "error.engine": "The calculation failed",

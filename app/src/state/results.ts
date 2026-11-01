@@ -14,6 +14,8 @@ import type { Rational, ResultFacts } from "./displayMode.ts";
 export const FULL_LIMIT = 2048;
 /** A numeric list or matrix keeps its elements in the history (to re-format it); beyond this the item shows no mark. */
 export const ITEMS_LIMIT = 400;
+/** Rows a view's history keeps (in memory and stored); the oldest go first. */
+export const HISTORY_LIMIT = 200;
 
 /** Engine text with a decimal point or an E exponent is rounded digits, not an exact value. */
 const isDigitsText = (t: string): boolean => /\.|\d[eE][+-]?\d/.test(t);
@@ -174,4 +176,16 @@ export function chipFactsOf(named: ChipTable): ChipFactsTable {
   for (const [k, c] of Object.entries(named))
     out[k] = { value: c.value, reliableDigits: c.reliableDigits ?? null, exact: c.exact, ...(c.warn ? { warn: c.warn } : {}), ...(c.unc !== undefined ? { unc: c.unc } : {}) };
   return out;
+}
+
+/** R63f1: Home's number of a unit row with its ± σ and unit after it (units/row.ts UnitRow: `latex` drawn, `text` for
+ *  Copy as shown and the row's data-text). Both are read back unchecked, so one that is not a string adds nothing.
+ *  `comma`: the decimal comma's rewrite (displayMode.ts commaResult), in comma mode. */
+export function withUnit(
+  r: { text: string; latex: string },
+  u: { text?: unknown; latex?: unknown },
+  comma?: (s: string, latex: boolean) => string,
+): { text: string; latex: string } {
+  const add = (s: unknown, latex: boolean): string => (typeof s !== "string" ? "" : comma ? comma(s, latex) : s);
+  return { text: r.text + add(u.text, false), latex: r.latex + add(u.latex, true) };
 }

@@ -133,8 +133,10 @@
   /** L5 and docs/04 2.8: a tapped or picked result goes on the line as a chip that carries its full value. */
   function insertResult(item: HistoryItem): void {
     // a result with no confirmed digit goes on the line as the bare warning mark, never as its unconfirmed number
-    const shown = noDigit(session.mark(item)) ? "⚠" : session.display(item).latex;
     const chip = session.chipFor(item);
+    // a unit row with no chip (R63f1): Home's number alone, never its σ or unit (Home has no units); its chip shows both
+    const { units, ...number } = item;
+    const shown = noDigit(session.mark(item)) ? "⚠" : session.display(units && !chip ? number : item).latex;
     if (chip) entry.insertResult(shown, chip);
     else entry.insert(resultToEntry(shown)); // too long for a chip: as drawn
   }

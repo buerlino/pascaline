@@ -188,8 +188,16 @@ export const LAZY_PARTS = ["src/views/sheetKeys.ts", "src/views/tmplSheet.ts", "
  *  state's visually hidden `role="status"` line in StatusLine.svelte (markup and its few CSS rules; a screen reader
  *  hears the job) and `error.ansTooLong`, the Ans error's text moved from session.svelte.ts into the table. Both are on
  *  the start's own path (the status line is drawn at start; Session.submit runs before any lazy chunk), so neither can
- *  load later. The pin is 60.31 + 0.05 kB. */
-export const START_PIN_GZIP = 60_360;
+ *  load later. The pin is 60.31 + 0.05 kB.
+ *  60.36 → 60.59 kB (R63): phase-1 355153b measures 60.34 kB gzip (170.29 kB raw), the branch 60.54 kB (170.89 kB raw,
+ *  +0.20 kB): a unit-view result is a Home row, so the start's own drawing of the stored history draws its number with
+ *  ± σ and the unit set apart (Session.display), its request with its units (History's drawnInput) and "unit dropped"
+ *  under a row computed from its chip (the flag at Enter, one line in History, its words in en.ts), and its chip is the
+ *  stored one checked by validChips (Session.chipFor, also Ans at Enter). The row's builder, its slots' check and the
+ *  units key's prefill are in the unit view's chunk; it imports the session as types only (a value import of
+ *  session.svelte.ts from that chunk made Rolldown split shared modules out of the start chunk: 61.36 kB). The pin is
+ *  60.54 + 0.05 kB. */
+export const START_PIN_GZIP = 60_590;
 
 /** Failures for the start chunk's row when it is over the pin. */
 export function checkStartPin(row: Row): string[] {
