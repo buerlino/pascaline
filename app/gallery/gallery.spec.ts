@@ -18,11 +18,11 @@ function settingsShots(): Shot[] {
     { id: "-theme", title: "Appearance › Theme: the five families with their dots (a pick keeps the sheet open)", keys: ["d1", "enter"] },
     { id: "-numbers", title: "Settings › Numbers: the Decimal mark (R57), the Fmt cycle (its hint under Standard) and Decimals in Fixed", keys: ["d2"] },
     { id: "-vibration", title: "Settings › Key vibration, switched on (strength disabled with its reason), Try it", keys: ["d3", "d1"] },
-    { id: "-counters", title: "Settings › Counters: the Shift and Alpha counts, since when, Reset", keys: ["d4"] },
-    { id: "-help", title: "Settings › Help and about (R87): the first-start tips row, About Pascaline, Parts we use and their licences", keys: ["d5"] },
-    { id: "-about", title: "Help and about › About Pascaline: version, licence, source, credits", keys: ["d5", "d2"] },
-    { id: "-parts", title: "Help and about › Parts: a row per part of THIRD_PARTY.md with its licence, the copyright line under the list", keys: ["d5", "d3"] },
-    { id: "-licence", title: "Parts › a licence's full text, a level that scrolls", keys: ["d5", "d2", "d2"] },
+    { id: "-counters", title: "Settings › Counters: the presses, the Shift and Alpha counts, the presets switched (R89), since when, Reset", keys: ["d6"] },
+    { id: "-help", title: "Settings › Help and about (R87): the first-start tips row, About Pascaline, Parts we use and their licences", keys: ["d7"] },
+    { id: "-about", title: "Help and about › About Pascaline: version, licence, source, credits", keys: ["d7", "d2"] },
+    { id: "-parts", title: "Help and about › Parts: a row per part of THIRD_PARTY.md with its licence, the copyright line under the list", keys: ["d7", "d3"] },
+    { id: "-licence", title: "Parts › a licence's full text, a level that scrolls", keys: ["d7", "d2", "d2"] },
   ];
   const sizes = [
     { tag: "small", group: "Small phone (360 × 740)", viewport: { width: 360, height: 740 } },
@@ -36,11 +36,96 @@ function settingsShots(): Shot[] {
       viewport: z.viewport,
       setup: async (p: Page) => {
         await someHistory(p);
-        await tap(p, ["@mode", "d5", ...l.keys]);
+        await tap(p, ["@mode", "d6", ...l.keys]);
         await p.locator('[data-id="loading"]').waitFor({ state: "detached" }); // R87: the About chunk has arrived
       },
     })),
   );
+}
+
+/** Two presets saved as the mockup has them (docs/mockups/settings.html section 4): Lab (DEG · ENG 4 · comma, two free
+ *  keys) and Chemistry (RAD · SCI 4 · point, three keys, Graphite), Lab active. */
+async function twoPresets(p: Page): Promise<void> {
+  await p.evaluate(async (path) => {
+    const { session, userKeys } = window.pascaline;
+    const m = (await import(/* @vite-ignore */ path)) as typeof import("../src/views/modeSheet.ts");
+    const presets = await m.presetsFor(session, userKeys);
+    const set = (id: string, label: string): void => userKeys.set(id, "primary", { label, action: { type: label } });
+    session.setAngle("rad");
+    session.setFormat("sci");
+    session.setDigits(4);
+    set("u1", "mol");
+    set("u2", "pH");
+    set("u3", "M");
+    presets.capture("Chemistry", ["mode", "numbers", "keys"]);
+    userKeys.reset();
+    session.setAngle("deg");
+    session.setFormat("eng");
+    session.setDecimalMark("comma");
+    set("u1", "sinh");
+    set("u2", "kWh");
+    await presets.apply(presets.capture("Lab"));
+  }, "/src/views/modeSheet.ts");
+  await settle(p);
+}
+
+/** R89: the presets in Mode, and R86's worst case (DEG, PFX 30, one line), at the small phone and the Fairphone 6. */
+function presetShots(): Shot[] {
+  const cases: { id: string; title: string; setup: (p: Page) => Promise<void> }[] = [
+    {
+      id: "mode-worst",
+      title: "Mode (R86): buttons for Angle, Format and Entry with DEG, PFX 30 and One line; Digits with its list; Preset; Settings ›",
+      setup: async (p) => {
+        await p.evaluate(() => {
+          const s = window.pascaline.session;
+          s.setAngle("deg");
+          s.setFormat("pfx");
+          s.setDigits(30);
+          s.setEntry("line");
+        });
+        await tap(p, ["@mode"]);
+      },
+    },
+    {
+      id: "presets-mode",
+      title: "Mode (R89): row 5 is Preset, the active one with what it holds; ◀ ▶ apply the next at once; Settings is row 6",
+      setup: async (p) => {
+        await twoPresets(p);
+        await tap(p, ["@mode"]);
+      },
+    },
+    {
+      id: "presets-list",
+      title: "Mode › Presets: the presets with what each holds, the active one ticked; Save the current setup; Edit the presets ›",
+      setup: async (p) => {
+        await twoPresets(p);
+        await tap(p, ["@mode", "d5"]);
+      },
+    },
+    {
+      id: "presets-page",
+      title: "Presets › Edit › Lab: the five groups as ticks with their values, Update from the current setup, Rename or delete ›",
+      setup: async (p) => {
+        await twoPresets(p);
+        await tap(p, ["@mode", "d5", "d4", "d2"]);
+      },
+    },
+    {
+      id: "presets-naming",
+      title: "Naming a preset: the sheet closed, the entry line under the label Preset name",
+      setup: async (p) => {
+        await someHistory(p);
+        await tap(p, ["@mode", "d5", "d1"]);
+        await p.keyboard.type("Chemistry");
+        await settle(p);
+      },
+    },
+  ];
+  const sizes = [
+    { tag: "small", group: "Small phone (360 × 740)", viewport: { width: 360, height: 740 } },
+    { tag: "fp6", group: "Fairphone 6 (372 × 767)", viewport: { width: 372, height: 767 } },
+  ];
+  return sizes.flatMap((z) => cases.map((c) => ({ id: `home-${c.id}-${z.tag}`, group: z.group, title: c.title, viewport: z.viewport, setup: c.setup })));
 }
 type Theme = (typeof THEMES)[number];
 
@@ -128,7 +213,7 @@ function unitFindShots(): Shot[] {
     { id: "leg", title: "A user cell being set: U1's tap, flick up and flick down", setup: (p) => inSlot(p, ["math", ...type("mpa"), "right", "d1"]) },
     { id: "set", title: "The unit pad with MPa put on U1's flick up (the legend) and the slot unchanged", setup: (p) => inSlot(p, ["math", ...type("mpa"), "right", "d1", "d2"]) },
     { id: "empty", title: "An empty user cell opens Find (U1's tap emptied in Settings first)", setup: async (p) => {
-      await tap(p, ["@mode", "d5", "d4"]);
+      await tap(p, ["@mode", "d6", "d4"]);
       await p.locator('[data-id="unitcells"]').tap();
       await p.locator('[data-id="u1:primary"]').tap();
       await p.locator('[data-id="empty"]').tap();
@@ -136,7 +221,7 @@ function unitFindShots(): Shot[] {
       await inSlot(p, ["u1"]);
     } },
     { id: "settings", title: "Settings › Your keys › Unit pad cells: U1–U6 with a tap, a flick up (⇧) and a flick down (α)", setup: async (p) => {
-      await tap(p, ["@mode", "d5", "d4"]);
+      await tap(p, ["@mode", "d6", "d4"]);
       await p.locator('[data-id="unitcells"]').tap();
     } },
   ];
@@ -300,7 +385,7 @@ const shots: Shot[] = [
   {
     id: "home-mode",
     group: "Home",
-    title: "Mode sheet (Shift + Apps) over the keypad: each value with ◀ ▶ for the thumb",
+    title: "Mode sheet (Shift + Fmt) over the keypad: buttons for Angle, Format and Entry, Digits with its list, Preset, Settings ›",
     setup: async (p) => {
       await someHistory(p);
       await tap(p, ["@mode"]);
@@ -319,7 +404,7 @@ const shots: Shot[] = [
   {
     id: "home-mode-small",
     group: "Small phone (360 × 740)",
-    title: "Mode sheet over the keypad, with ◀ ▶ for the thumb",
+    title: "Mode sheet over the keypad: buttons for Angle, Format and Entry, Digits with its list, Preset, Settings ›",
     viewport: { width: 360, height: 740 },
     setup: async (p) => {
       await someHistory(p);
@@ -337,6 +422,7 @@ const shots: Shot[] = [
     },
   },
   ...settingsShots(),
+  ...presetShots(),
   // ---- R15c4: the first-start tips, over a Home with history (opened from Settings › Help and about, as a fresh profile shows them)
   {
     id: "home-tips",
@@ -344,7 +430,7 @@ const shots: Shot[] = [
     title: "The tips: the screen dimmed, the place name and ☰ ringed, one line for each, Got it",
     setup: async (p) => {
       await someHistory(p);
-      await tap(p, ["@mode", "d5", "d7"]);
+      await tap(p, ["@mode", "d6", "d7"]);
       await p.getByTestId("menu").locator('[data-id="tips"]').tap();
       await p.getByTestId("tips").waitFor();
     },
@@ -355,7 +441,7 @@ const shots: Shot[] = [
     title: "The tips at the small phone (360 × 740)",
     viewport: { width: 360, height: 740 },
     setup: async (p) => {
-      await tap(p, ["@mode", "d5", "d7"]);
+      await tap(p, ["@mode", "d6", "d7"]);
       await p.getByTestId("menu").locator('[data-id="tips"]').tap();
       await p.getByTestId("tips").waitFor();
     },
