@@ -18,6 +18,7 @@ import { numberSource } from "../../clipboard/source.ts";
 import { tc } from "../../clipboard/strings.ts";
 import { commaResult } from "../../state/displayMode.ts";
 import { t } from "../../i18n/index.ts";
+import { numText } from "../../i18n/enNum.ts";
 import { parseDec, plainNumber, showDecimal } from "../decimal.ts";
 import { decimalFromString } from "../../engine/format.ts";
 import { slotNames, SlotsState, type SlotsJson } from "../slots.svelte.ts";
@@ -155,7 +156,7 @@ export class SolveApp implements AppInstance {
       }
       const v = plainNumber(latex);
       if (v === undefined) {
-        this.host.notice(t("num.notNumber")); // R99: never a silent refusal
+        this.host.notice(numText("num.notNumber")); // R99: never a silent refusal
         return;
       }
       this.values = { ...this.values, [this.selected]: v };
