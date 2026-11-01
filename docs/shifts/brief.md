@@ -73,8 +73,6 @@ A7, A8, A9 and [A57](packages/A57.md) run by day (section 0); A43 and A58 are me
 | Step | What | Agent, model | Branch | After |
 |---|---|---|---|---|
 | 408 | [G138](packages/G138.md) the weekly fuzz and its triage | gorge, Opus | `p1/gorge-nightfuzz-1106` | the weekly night |
-| 432 | [G150](packages/G150.md) a negative base to a complex power (F141) | gorge, Opus | `p1/gorge-negpowcomplex` | G149f1 |
-| 433 | [G151](packages/G151.md) the cube root of a tiny asinh (F142) | gorge, Opus | `p1/gorge-cbrttiny` | – |
 | 434 | [G154](packages/G154.md) an unproved exact 0 is not an underflow (F139) | gorge, Opus | `p1/gorge-zeronotunderflow` | – |
 | 435 | [G155](packages/G155.md) the standard error of the mean in Find | gorge, Sonnet | `p1/gorge-sem` | – |
 | 436 | [G153](packages/G153.md) three 30-digit rows of G137 (F155) | gorge, Opus | `p1/gorge-g137rest` | G141 |
