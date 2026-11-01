@@ -8,6 +8,7 @@ import type { AppShell } from "../apps/shell.svelte.ts";
 import type { NavDir } from "../apps/types.ts";
 import type { ClipActions } from "../clipboard/actions.svelte.ts";
 import { startsWithAns } from "../entry/ans.ts";
+import { shownInput } from "../entry/commaInput.ts";
 import type { EntryController } from "../entry/controller.ts";
 import { ANS_CHIP } from "../entry/macros.ts";
 import { canPick, pickAfter, pickAtOrBefore } from "../state/pickRows.ts";
@@ -201,7 +202,7 @@ export function historyKey(c: RouteCtx, action: ActionBody): boolean {
   }
   if (action.name === "enter" && item) {
     if (item.status === "done") c.insertResult(item);
-    else c.entry.set(item.latex, item.chips); // the line is empty while picking: the entry comes back with its chips
+    else c.entry.set(shownInput(item.latex, c.session.decimalComma), item.chips); // the line is empty while picking: the entry comes back with its chips
     return true;
   }
   return false;
