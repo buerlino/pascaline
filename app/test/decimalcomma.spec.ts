@@ -160,6 +160,20 @@ test("max(1,5) in point mode gives 5; after Settings › Numbers › Decimal mar
   await expect(row).toHaveAttribute("data-latex", /1,5/);
 });
 
+// R100 fix round 1: the units key on a picked row puts its input on the line as the row draws it, not as it was typed.
+test("the units key on the row max(1,5), typed in point mode, puts max(1;5) on the line in comma mode", async ({ page }) => {
+  await page.evaluate(() => window.pascaline.session.setDecimalMark("point"));
+  await maxCall(page);
+  await tap(page, ["d1", "comma", "d5", "enter"]);
+  await resultIs(page, "5", 1);
+  await page.evaluate(() => window.pascaline.session.setDecimalMark("comma"));
+  await tap(page, ["up", "shift", "tmpl"]);
+  await expect(page.getByTestId("unit-view")).toBeVisible();
+  expect(await entryValue(page)).toMatch(/1;5/);
+  await tap(page, ["esc"]);
+  await expect(page.getByTestId("unit-view")).toBeHidden();
+});
+
 // R100 (vr-1, P5): a root copied from an app in comma mode pastes into Home as the same value. Expected: the readout
 // itself (the oracle's sqrt(2) = 1.41421356237309504880… is appcopy.spec's).
 test("Function: Plot › ☰ Root, Copy, then Home, Shift+Copy, Enter gives the same root", async ({ page }) => {
