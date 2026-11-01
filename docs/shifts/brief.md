@@ -4,7 +4,7 @@
 **Every package runs through `scripts/pipeline.sh`** (rules section 4): by day the owner starts one package at a time (`scripts/pipeline.sh <agent> "<ID>" --model <m>`, the table gives agent and model) and reads the RESULT line; at night `scripts/night.sh` runs the queue of section 0c. Nobody starts a worker or merges another way (CLAUDE.md). The standing rules in [rules.md](rules.md) apply; where the two differ, this brief wins. Each open package is one file in [packages/](packages/), in the shape the pipeline bundles (section 2). The shape of a package file: the heading `### <agent>, <ID>: <title>, branch \`p1/<agent>-<slug>\``; **Lane** (night-safe = no device, no APK, no eye on the UI; night (the night's device) = the device `night.sh` was started with, only, P23; day = the owner tries it or it changes the pipeline); **Starts when**; **Read** (repo paths get bundled, first 400 lines; the big shared docs by bare name and section); the steps; **Done when** (lines an auditor checks in the diff).
 
 ## 0. State and the path
-`phase-1` at `a1d2eaa` on 2026-11-01, after the day shift of 2026-11-01 ([its report](2026-11-01-night-report-2.md)). CORE 66/66 desktop (`d1a9ca5`); CORE DEVICE 3/65 on the Tab One (`8acd1fe`): R15c4's first-start tips cover the device runner's fresh profile (R15c4f1); 65/65 before R15c4 (`42319a8`, one case is desktop only). Every merge: `git log --merges --oneline phase-1`; the audits are in the Opus passes' defaults (decisions.md, older ones in [archive/decisions-2026-10.md](../archive/decisions-2026-10.md)) and the night reports ([archive/shifts/](../archive/shifts/)).
+`phase-1` at `a1d2eaa` on 2026-11-01, after the day shift of 2026-11-01 ([its report](2026-11-01-night-report-2.md)). CORE 66/66 desktop (`d1a9ca5`); CORE DEVICE 3/65 on the Tab One (`8acd1fe`): R15c4's first-start tips cover the device runner's fresh profile (R15c4f1, merged `d8b88e4`: the next CORE DEVICE is its test); 65/65 before R15c4 (`42319a8`, one case is desktop only). Every merge: `git log --merges --oneline phase-1`; the audits are in the Opus passes' defaults (decisions.md, older ones in [archive/decisions-2026-10.md](../archive/decisions-2026-10.md)) and the night reports ([archive/shifts/](../archive/shifts/)).
 
 ### The path after the freeze (owner, 2026-10-27; decisions.md "P23")
 **The freeze ended** on 2026-10-27, before its count: repeated green runs added nothing, and the mornings' failures were UI (c46: F110, F117), not the engine. **The net stays:** every merge runs the core list (R74; [tests/core/core.yaml](../../tests/core/core.yaml), 66 cases, all active), night.sh runs the device's core list after each Opus pass when the night has a device (A33, A41), and the owner's [morning check](../../tests/core/MORNING.md) runs on the night's device. A red result is a bug to fix (a FIX of the next Opus pass, or a backlog bug line past a day of work), not a gate. **The pace** (owner, 2026-10-27; the date 2026-11-01): Claude Max runs to 2026-11-17. Each night carries about 9 hours of real work, the most important steps first, so a usage limit late costs the least; the day runs what needs the owner's eye.
@@ -52,16 +52,13 @@ Tonight's queue (one lane, to 07:00) comes first, then each lane's table; With t
 12. **No lanes in the morning** (A47c not merged, or a selftest failed): the owner starts `scripts/night.sh` without `--lane`, and henri runs lane B's rows 401–405, then lane A's from 301, as one queue.
 
 ### Night 2026-11-01 to 11-02, to 05:30, both lanes on the Tab One (owner, 2026-11-01)
-`ANDROID_SERIAL=HA24BZ2Y` for both lanes, `--until 05:30` (the closing pass and the report take 1.5 to 2 h more); CORE DEVICE after each pass. Not the weekly extreme night: row 408 waits. A step whose "After" is not merged is skipped; "–" was checked against the merges on 2026-11-01. The FIX lines of Opus passes 42 and 43 are rows 438, 339 and 340: package files with the prompts verbatim, run first. The owner is away: follow each Opus pass as written (rule 3).
+`ANDROID_SERIAL=HA24BZ2Y` for both lanes, `--until 05:30` (the closing pass and the report take 1.5 to 2 h more); CORE DEVICE after each pass. Not the weekly extreme night: row 408 waits. A step whose "After" is not merged is skipped; "–" was checked against the merges on 2026-11-01. The FIX lines of Opus passes 42 and 43 (row 438; R15c4f1 and R63f2 merged) run first. The owner is away: follow each Opus pass as written (rule 3).
 
 ### Lane A queue (ron's UI)
 Milestone reviews (section 0): after R50e; after R24d (with R108's gallery group "Decimal comma in apps").
 
 | Step | What | Agent, model | Branch | After |
 |---|---|---|---|---|
-| 339 | [R15c4f1](packages/R15c4f1.md) the device core run closes the first-start tips | ron, Sonnet | `p1/ron-tipsdevice` | – |
-| 340 | [R63f2](packages/R63f2.md) Share session writes a unit row with its units | ron, Sonnet | `p1/ron-unitshare` | – |
-| 338 | [R103](packages/R103.md) room in the start chunk | ron, Opus | `p1/ron-startroom` | – |
 | 341 | [R111](packages/R111.md) the second tab's note shows that nothing is kept | ron, Sonnet | `p1/ron-writernote` | – |
 | 342 | [R110](packages/R110.md) a `%` key, row 4 of the Shift + 9 palette | ron, Sonnet | `p1/ron-percentkey` | R103 |
 | 335 | [R89](packages/R89.md) presets in Mode | ron, Opus | `p1/ron-presets` | – |

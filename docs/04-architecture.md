@@ -3,7 +3,7 @@
 
 *sandra, 2026-10-12; the probe results and the regression list are in [research/r12-evidence.md](research/r12-evidence.md). **This document supersedes [02-architecture-plan.md](02-architecture-plan.md) wherever the two differ.** docs/02 stays the record of the original plan and of the reasoning that still holds (solver choice in section 4, licence and F-Droid in sections 10–11). Binding inputs: [rules-core.md](rules-core.md) (goal, three principles, hard rules), [03-feature-analysis.md](03-feature-analysis.md) (the owner's design rules), [decisions.md](decisions.md) P8. A claim about the code cites the file or a probe (`tools/probes/`, its README; Appendix A); **(to verify)** marks what was not checked, with who checks it and how (Appendix C).*
 
-How to read each area: **state** (verified), **decision** (one, with the reason), **alternatives** (one line each), **budgets and gates**, **risks**, **what would change it**. Section 8 has the component diagram, the interfaces and the budget table.
+Each area: **state** (verified), **decision** (with the reason), **alternatives**, **budgets and gates**, **risks**, **what would change it**. Section 8: the component diagram, the interfaces, the budgets.
 
 ## 0. The decisions on one page
 
@@ -51,7 +51,7 @@ The top risks are in section 9.
 | P5 | Copy | copy → paste gives the same value to every confirmed digit | e2e test per copy action (EN4) |
 
 ### 1.2 Every module against the goal
-What each module does for speed and trust, what is still open against the goal and what it costs, as of 2026-10-18: [research/r12-evidence.md](research/r12-evidence.md) section 5. The open points are backlog packages; the costs are 8.3's budgets.
+Each module's speed, trust, open points and cost as of 2026-10-18: [research/r12-evidence.md](research/r12-evidence.md) section 5; open points are backlog packages, costs 8.3's budgets.
 
 ---
 
@@ -231,8 +231,8 @@ Budgets: 8.3. Risks: alias quality (only the query test and real use show it); t
 
 There is no separate Units app (P11): units are added *after* the formula, in unit slots, in the unit view opened by the units key (decisions.md P11, S1; layout and press counts: `docs/archive/r7-unit-slots.md`, `docs/archive/r9-unit-pad.md`). **P15 (2026-10-14; checked by G15, 4.1):** Giac does the unit arithmetic in the worker that is already loaded, with the Find index's exact factors; libqalculate is used only at build time, as the index's source. Our parser decides what reaches Giac, and the evaluator checks the result.
 
-### 4.1 Evidence: units on Giac (G15's probe, 2026-10-15)
-`tools/probes/units-giac.mjs`: exact in Giac, median 0.5 ms; [research/r12-evidence.md](research/r12-evidence.md) section 2, [archive](archive/04-architecture-2026-10.md) 4.1.
+### 4.1 Evidence: units on Giac (G15)
+Exact, median 0.5 ms (`tools/probes/units-giac.mjs`): r12 section 2, [archive](archive/04-architecture-2026-10.md) 4.1.
 
 ### 4.2 Decision: the unit evaluator on the Giac worker (P15)
 There is no third worker. The unit view's arithmetic is a `units` request in worker 1, beside `home`, so Cancel works as in Home: terminate, respawn and replay the definitions. The factor table (units' `si` and `dim`, prefixes' powers of ten) comes from the Find index. It loads with the unit view, never in the start chunk.
@@ -347,7 +347,7 @@ One IndexedDB database `pascaline`, store `kv` (`state/storage.ts`). Keys:
 | `presets` | R88 (`state/presetRecord.ts`): `{ presets: [{ id, name, groups }], active, next }`; groups `mode`, `numbers`, `look`, `vibration`, `keys` (the `userKeys` and `unitPadCells` records, migrated with them) |
 | `units.targets`, `units.history` | the last target per dimension; the unit view's history (milestone 5) |
 
-**Every value is stamped** with `DATA_VERSION` (`storage.ts`): `{ "@pascaline": n, value }`; a value without the stamp is version 0. On read, the key's `MIGRATIONS` steps run from its version up and the value is written back. A save never overwrites a newer version's record, and each step is safe twice (A50). A failed read is not "nothing stored" (R93): the caller keeps its defaults and that key is not written for the session. One writer per browser profile: the tab holding the Web Lock `pascaline-writer` writes the store; other tabs compute and write nothing, with a note and Use here (R95); without `navigator.locks` every tab writes. Raise the version with a step when a stored shape or the meaning of stored Giac text changes (Φ → `Phi_`). **Replay budget:** 8.3 (`replayMs`, inside the engine-ready bar).
+**Every value is stamped** with `DATA_VERSION` (`storage.ts`): `{ "@pascaline": n, value }`; a value without the stamp is version 0. On read, the key's `MIGRATIONS` steps (`state/migrations.ts`, loaded on demand, R103) run from its version up and the value is written back. A save never overwrites a newer version's record, and each step is safe twice (A50). A failed read is not "nothing stored" (R93): the caller keeps its defaults and that key is not written for the session. One writer per browser profile: the tab holding the Web Lock `pascaline-writer` writes the store; other tabs compute and write nothing, with a note and Use here (R95); without `navigator.locks` every tab writes. Raise the version with a step when a stored shape or the meaning of stored Giac text changes (Φ → `Phi_`). **Replay budget:** 8.3 (`replayMs`, inside the engine-ready bar).
 
 **The backup** (R11, `archive/r11-files.md`): one JSON file of each record as stored, stamped (without `defsStarts`, `backup.undo`, `tipsSeen`); a restore checks the file, refusing at the first fault (newer format or part, bad stamp, unknown part, validator), then replaces the ticked keys in one transaction, keeps old ones in `backup.undo` for Undo, reloads (R38b).
 
@@ -427,7 +427,8 @@ The types live in the code; this is the map. Views see `Calc` (`app/src/calc/por
 
 | Item | Budget | State | Enforced by |
 |---|---|---|---|
-| Start chunk | ≤ 175 kB raw, ≤ 61 kB gzip; pin 60.99 kB gzip | 60.97 kB gzip after R55 (R63 60.59, R15c4 60.94, R55 60.99; deltas: size-check.ts). The pin `START_PIN_GZIP` holds: a package growing the chunk past it raises it in its diff to its size after merging phase-1 plus 0.05 kB, with the reason, and reports both sizes, never past 61 kB; `LAZY_PARTS` must stay dynamic chunks (R91). `tools/probes/start-chunk.mjs` lists bytes per source | size test (`npm run size`) |
+| Start chunk | ≤ 175 kB raw, ≤ 61 kB gzip; pin 58.44 kB gzip | 58.39 kB gzip after R103 (deltas: size-check.ts). The pin `START_PIN_GZIP` holds: a package growing the chunk past it raises it in its diff to its size after merging phase-1 plus 0.05 kB, with the reason, and reports both sizes, never past 61 kB; `LAZY_PARTS` must stay dynamic chunks (R91). `tools/probes/start-chunk.mjs` lists bytes per source | size test (`npm run size`) |
+| Inline scripts of `index.html` (run before the first paint, outside the start chunk) | pin 1.53 kB gzip (`INLINE_PIN_GZIP`; per script, summed) | 1.53 kB (R103: look 858 B, WebView check 670 B) | size test |
 | MathLive chunk (after the keypad) | ≤ 830 kB raw | 807.74 kB (2026-10-18) | size test |
 | Find UI chunk | ≤ 30 kB raw | 8.04 kB raw (R24df2): the chunk that holds `src/find/finder.ts` (dynamic entry or shared chunk); a build without it fails | size test |
 | Find index asset | ≤ 400 kB raw, ≤ 100 kB gzip | 325.7 / 67.1 kB (2026-10-15) | size test (once Find loads it) |
@@ -453,7 +454,7 @@ The types live in the code; this is the map. Views see `Calc` (`app/src/calc/por
 1. **Correlated numeric errors in Giac** (2.3 #2): the agreement check catches most wrong digits, not all. Mitigation: tier-0 audit with domain-edge golden cases, upstream reports, `⚠` rather than silence.
 2. **Find quality** depends on aliases and real queries, not code. Mitigation: the query gate from day one and the owner adding misses.
 3. **A wrong unit factor or a missed unit check** (misread names, mismatched sums, offset-unit arithmetic). Mitigation: chips only, the generator's round-trip check, the evaluator's single-term and temperature checks (P15), `units.yaml`.
-4. **Tab One budgets for the new work** (Find per key, the unit view's first result) are desktop estimates until annabell measures them.
+4. **Tab One budgets** for Find per key and the unit view's first result are desktop estimates until measured (Appendix C).
 5. **Pace on parser- and keyboard-heavy work** (03 risk 5). Mitigation: each token lands with its round-trip case.
 6. **The entry's rules drift apart** (5.5; F34 came from three models of a box). Mitigation: one model in `entry/boxes.ts`, the cursor and ⌫ grids, one key path (R43, R45).
 

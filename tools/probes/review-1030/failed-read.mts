@@ -4,7 +4,8 @@
 // throws inside r.onsuccess: does kvGet settle?
 // From the repo root: node tools/probes/review-1030/failed-read.mts
 import { fakeIndexedDb } from "../../../app/src/state/fakeIdb.ts";
-import { kvGet, kvSet, MIGRATIONS, stamp } from "../../../app/src/state/storage.ts";
+import { kvGet, kvSet, stamp } from "../../../app/src/state/storage.ts";
+import { MIGRATIONS } from "../../../app/src/state/migrations.ts";
 
 const idb = fakeIndexedDb();
 let failNext = false;
