@@ -7,5 +7,5 @@ app/src/engine/host.ts: 1271
 app/src/engine/homeEval.ts: 834
 app/src/engine/host.test.ts: 908
 app/src/App.svelte: 806   # R70: the press counter hooks (counted(), countScreenTaps, Keypad oncount), +4 over 800; the logic is in state/pressCount.ts. R107: the hardware symbol, dead key and leave hooks on their own lines (+2)
-scripts/pipeline.sh: 812   # A54: the owned process group (run_owned, the TERM/HUP traps), host-cpu around the device build, the census locks; +12 over 800
-scripts/pipeline.test.sh: 832   # A54: the tests for the owned children, the device build under host-cpu and the census HEAD check; +32 over 800
+scripts/pipeline.sh: 812   # A54: the owned process group (own_sh, the TERM/HUP traps), host-cpu around the device build, the census locks; +12 over 800
+scripts/pipeline.test.sh: 839   # A54: the tests for the owned children, the device build under host-cpu and the census HEAD check; +39 over 800

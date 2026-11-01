@@ -795,13 +795,13 @@ exit 0
 STUB
 cp "$sb/bin/claude" "$sbk/bin/"; chmod +x "$sbk/tools/devlock.sh" "$sbk/bin/"*; : > "$sbk/docs/shifts/brief.md"; echo t > "$sbk/app/keep"
 git -C "$sbk" add -A; gc "$sbk" init; git -C "$sbk" branch phase-1
-killcase() {  # <id> <TERM|HUP|timeout>
-  local kid="$1" how="$2" p i rc=0 bad
+killcase() {  # <id> <TERM|HUP|timeout> [<sandbox> <sleep marker> <GIAC_OUT> <checks>]: the check case by default; K4-K6 kill an engine build
+  local kid="$1" how="$2" sbk="${3:-$sbk}" mark="${4:-6001}" gout="${5-$sbk/engine}" chk="${6:-typecheck}" p i rc=0 bad
   rm -f "$sbk/child.pid" "$sbk/child-exited" "$sbk/locks.log"; : > "$sbk/locks.log"
   if [[ "$how" == timeout ]]; then
-    (cd "$sbk" && PATH="$sbk/bin:$PATH" SBK="$sbk" GIAC_OUT="$sbk/engine" timeout -k 20 12 "$script" ron "sandbox task" --id "$kid" --branch "p1/${kid,,}" --checks typecheck > "$sbk/out-$kid" 2>&1) & p=$!
+    (cd "$sbk" && PATH="$sbk/bin:$PATH" SBK="$sbk" GIAC_OUT="$gout" timeout -k 20 12 "$script" ron "sandbox task" --id "$kid" --branch "p1/${kid,,}" --checks "$chk" > "$sbk/out-$kid" 2>&1) & p=$!
   else
-    (cd "$sbk" && PATH="$sbk/bin:$PATH" SBK="$sbk" GIAC_OUT="$sbk/engine" exec "$script" ron "sandbox task" --id "$kid" --branch "p1/${kid,,}" --checks typecheck > "$sbk/out-$kid" 2>&1) & p=$!
+    (cd "$sbk" && PATH="$sbk/bin:$PATH" SBK="$sbk" GIAC_OUT="$gout" exec "$script" ron "sandbox task" --id "$kid" --branch "p1/${kid,,}" --checks "$chk" > "$sbk/out-$kid" 2>&1) & p=$!
     for i in $(seq 1 300); do [[ -e "$sbk/child.pid" ]] && break; sleep 0.1; done
     kill "-$how" "$p" 2>/dev/null
   fi
@@ -812,9 +812,16 @@ killcase() {  # <id> <TERM|HUP|timeout>
   [[ -z "$bad" ]] || fail "A54: $how: a lock was released while the check's child still ran: $(tr '\n' ';' <<<"$bad")"
   grep -q '^release host-cpu .* started=y exited=y' "$sbk/locks.log" || fail "A54: $how: host-cpu was not released after the child exited: $(tr '\n' ';' < "$sbk/locks.log")"
   grep -q '^release integ .* started=y exited=y' "$sbk/locks.log" || fail "A54: $how: integ was not released after the child exited: $(tr '\n' ';' < "$sbk/locks.log")"
-  [[ "$(ps -eo args | grep -c '[s]leep 6001')" -eq 0 ]] || { fail "A54: $how: a child of the check is left"; pkill -f 'sleep 6001' || true; }
+  [[ "$(ps -eo args | grep -c "[s]leep $mark")" -eq 0 ]] || { fail "A54: $how: a child of the check is left"; pkill -f "sleep $mark" || true; }
 }
 killcase K1 TERM; killcase K2 HUP; killcase K3 timeout
+# the engine build is such a child too (a managed engine: GIAC_OUT unset; the stub build-wasm.sh sleeps in a `timeout` group of its own);
+# it runs in the main shell under host_cpu_take, so the signal is not held back and host-cpu is dropped after the build has exited
+sbe="$tmp/sbe"; mkdir -p "$sbe/bin" "$sbe/tools" "$sbe/docs/shifts" "$sbe/app/node_modules/x" "$sbe/engine/giac/patches"; git init -q -b main "$sbe"
+cp "$sbk/tools/devlock.sh" "$sbe/tools/"; cp "$sb/bin/claude" "$sb/bin/npm" "$sbe/bin/"; : > "$sbe/docs/shifts/brief.md"; echo t > "$sbe/app/keep"
+printf '#!/bin/sh\necho $$ > "$SBK/child.pid"; trap '"'"'sleep 1; touch "$SBK/child-exited"; exit 0'"'"' TERM HUP INT; timeout 900 sleep 6002 & wait\n' > "$sbe/engine/giac/build-wasm.sh"
+chmod +x "$sbe/engine/giac/build-wasm.sh" "$sbe/bin/"*; git -C "$sbe" add -A; gc "$sbe" init; git -C "$sbe" branch phase-1
+killcase K4 TERM "$sbe" 6002 "" none; killcase K5 HUP "$sbe" 6002 "" none; killcase K6 timeout "$sbe" 6002 "" none
 
 # A54: the device step builds under host-cpu, taken after integ and nodemods, with build.sh's own lock off
 sb9="$tmp/sb9"; mkdir -p "$sb9/bin" "$sb9/tools" "$sb9/docs/shifts"; git init -q -b main "$sb9"

@@ -366,7 +366,7 @@ fi
 # A47a: the shell tests of the scripts next to this one; further options are ignored (night.sh appends --audit-model auto).
 if [[ "${1:-}" == "selftest" ]]; then
   here="$(cd "$self_dir/.." && pwd)"; out="$tasks/selftest-$(date +%F-%H%M%S).log"; t0=$SECONDS
-  if r="$(selftest_run "$here" "$out")"; then :; fi
+  selftest_run "$here" "$out" > "$out.res" || true; r="$(cat "$out.res")"  # not $( ): own_sh needs the main shell (A54)
   log "pipeline selftest: $r ($((SECONDS - t0)) s; $out)"
   echo "RESULT selftest: $r"; [[ "$r" == PASSED ]] && exit 0 || exit 1
 fi
@@ -517,10 +517,10 @@ if [[ $engine_managed -eq 1 ]]; then
     if [[ "$(engine_stamp "$engine_root/gsl")" != "$p1key" ]]; then
       log "pipeline #$n $id: shared engine is not phase-1's ($p1key); rebuilding first"
       t0=$SECONDS
-      why="$(engine_build "$integ" "$p1key" "$engine_root" "$engine_log")" && engine_promote "$engine_root" "$p1key" || die "engine build: ${why:-promote failed}"
+      engine_build "$integ" "$p1key" "$engine_root" "$engine_log" && engine_promote "$engine_root" "$p1key" || die "engine build: ${engine_why:-promote failed}"
       log "pipeline #$n $id: shared engine rebuilt: key $p1key, giac.wasm sha256 $(engine_sha "$engine_root/gsl") ($((SECONDS - t0)) s)"
     fi
-    why="$(engine_ensure "$integ" "$p1key" "$engine_root" "$engine_log")" || die "engine build (phase-1, key $p1key): $why"
+    engine_ensure "$integ" "$p1key" "$engine_root" "$engine_log" || die "engine build (phase-1, key $p1key): $engine_why"
     integ_drop
   fi
 fi
@@ -539,9 +539,9 @@ setup_node_modules "$wt"
 # A28: GIAC_OUT for the worker, the fix rounds and the checks: the shared engine, or the build of the branch's own key.
 select_engine() {
   [[ $engine_managed -eq 1 ]] || return 0
-  local k t0=$SECONDS why; k="$(engine_key "$wt" HEAD)"
+  local k t0=$SECONDS; k="$(engine_key "$wt" HEAD)"
   if [[ "$k" != "$p1key" && "$(engine_stamp "$engine_root/key-$k")" != "$k" ]]; then log "pipeline #$n $id: building the branch's engine, key $k (phase-1: $p1key)"; fi
-  why="$(engine_ensure "$wt" "$k" "$engine_root" "$engine_log")" || die "engine build: $why"
+  engine_ensure "$wt" "$k" "$engine_root" "$engine_log" || die "engine build: $engine_why"
   export GIAC_OUT="$engine_root/key-$k"
   runlog "engine: key $k, GIAC_OUT=$GIAC_OUT ($((SECONDS - t0)) s)"
 }
@@ -725,7 +725,7 @@ queue_enter() {
   first_entry=0
   if [[ $engine_managed -eq 1 ]]; then  # phase-1's engine as it is now (red-first; promoted by the last merge, so usually a copy)
     p1key="$(engine_key "$main" phase-1)"
-    why="$(engine_ensure "$integ" "$p1key" "$engine_root" "$engine_log")" || die "engine build (phase-1, key $p1key): $why"
+    engine_ensure "$integ" "$p1key" "$engine_root" "$engine_log" || die "engine build (phase-1, key $p1key): $engine_why"
   fi
   select_engine  # the merge may have changed the key
 }
@@ -797,12 +797,12 @@ fi
 # A28: a merge that changed the engine's key moves the shared engine to that build (old one kept as gsl.prev), still in the queue
 # (A47b), so the next run's start finds it.
 if [[ $rc -eq 0 && $engine_managed -eq 1 ]]; then
-  mkey="$(engine_key "$main" phase-1)"
+  mkey="$(engine_key "$main" phase-1)"; engine_why=""
   if [[ "$mkey" != "$merge_key_before" ]]; then
-    if [[ "$(engine_key "$integ" HEAD)" == "$mkey" ]] && why="$(engine_build "$integ" "$mkey" "$engine_root" "$engine_log")" && engine_promote "$engine_root" "$mkey"; then
+    if [[ "$(engine_key "$integ" HEAD)" == "$mkey" ]] && engine_build "$integ" "$mkey" "$engine_root" "$engine_log" && engine_promote "$engine_root" "$mkey"; then
       log "pipeline #$n $id: shared engine is now key $mkey, giac.wasm sha256 $(sha256sum "$engine_root/gsl/giac.wasm" | cut -d' ' -f1) (old kept as gsl.prev)"
     else
-      log "pipeline #$n $id: engine promotion FAILED for key $mkey (${why:-promote failed}); the next start rebuilds it"
+      log "pipeline #$n $id: engine promotion FAILED for key $mkey (${engine_why:-promote failed}); the next start rebuilds it"
     fi
   fi
 fi

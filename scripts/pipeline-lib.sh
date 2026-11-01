@@ -65,28 +65,33 @@ engine_stamp() { cat "$1/.engine-key" 2>/dev/null || true; }
 engine_sha() { sha256sum "$1/giac.wasm" 2>/dev/null | cut -c1-16; }
 # engine_build <worktree holding the sources> <key> <out root> <log>: builds once per key into <root>/key-<key> under the
 # host-cpu lock; a finished build with the right stamp is reused, and the stamp is read again once the lock is held, so two
-# runs that want one key build it once (A47a). Fails with the build log's tail on stdout.
+# runs that want one key build it once (A47a). A54: runs in the main shell (never in $( ): the traps and the registry of own_sh are
+# lost there); the build is a child session the pipeline owns, the lock is host_cpu_take/host_cpu_drop (a held host-cpu is kept).
+# On failure it sets engine_why (the build log's tail, or the lock text) and returns 1; it prints nothing.
+engine_why=""
 engine_build() {
-  local src="$1" key="$2" root="$3" log="$4" dest tmp rc=0
-  dest="$root/key-$key"
+  local src="$1" key="$2" root="$3" log="$4" dest tmp rc=0 took=0
+  dest="$root/key-$key"; engine_why=""
   if [[ -f "$dest/giac.wasm" && "$(engine_stamp "$dest")" == "$key" ]]; then return 0; fi
-  host_cpu_acquire "engine-$key" "engine $key:" || { echo "host-cpu lock busy"; return 1; }
+  [[ $host_cpu_held -eq 1 ]] || took=1
+  host_cpu_take "engine-$key" "engine $key:" || { engine_why="host-cpu lock busy"; return 1; }
   if [[ -f "$dest/giac.wasm" && "$(engine_stamp "$dest")" == "$key" ]]; then  # built by another run while this one waited
-    tools/devlock.sh release host-cpu "engine-$key" >/dev/null || true; return 0
+    [[ $took -eq 0 ]] || host_cpu_drop
+    return 0
   fi
   tmp="$root/.tmp-$key.$$"; rm -rf "$tmp"; mkdir -p "$tmp"
-  GIAC_BUILD_OUT="$tmp" GIAC_BUILD_DIR="$root/.build-$key" timeout 3600 "$src/engine/giac/build-wasm.sh" > "$log" 2>&1 || rc=1
+  own_sh 'GIAC_BUILD_OUT="$1" GIAC_BUILD_DIR="$2" exec timeout -k 60 3600 "$3"' "$tmp" "$root/.build-$key" "$src/engine/giac/build-wasm.sh" > "$log" 2>&1 < /dev/null || rc=1
   if [[ $rc -eq 0 && -f "$tmp/gsl/giac.wasm" ]]; then
     echo "$key" > "$tmp/gsl/.engine-key"
     rm -rf "$dest"; mv "$tmp/gsl" "$dest"
   else rc=1; fi
   rm -rf "$tmp" "$root/.build-$key"
-  tools/devlock.sh release host-cpu "engine-$key" >/dev/null || true
-  [[ $rc -eq 0 ]] || { echo "build-wasm.sh failed: $(tail -n 2 "$log" | tr '\n' ' ' | cut -c1-160)"; return 1; }
+  [[ $took -eq 0 ]] || host_cpu_drop
+  [[ $rc -eq 0 ]] || { engine_why="build-wasm.sh failed: $(tail -n 2 "$log" | tr '\n' ' ' | cut -c1-160)"; return 1; }
 }
 # engine_ensure <worktree holding the sources> <key> <out root> <log>: <root>/key-<key> exists with its stamp (A47a: the pipeline's
 # GIAC_OUT is always such an immutable directory, never gsl). A gsl stamped with the key is copied (a gsl swapped during the copy is
-# noticed by its stamp and the copy dropped); otherwise engine_build builds it.
+# noticed by its stamp and the copy dropped); otherwise engine_build builds it (failure text in engine_why; main shell only).
 engine_ensure() {
   local src="$1" key="$2" root="$3" log="$4" dest tmp
   dest="$root/key-$key"
