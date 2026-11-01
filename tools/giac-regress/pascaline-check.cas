@@ -311,6 +311,18 @@ Digits:=40:; pc("g84-keep-zero-times",'(0*exp(-10^30))',0,1/10^30);
 Digits:=40:; pc("g84-keep-exp-cancel",'(exp(-10^30)*exp(10^30))',1,5/10^12);
 // g123-keep-pow-1e15 (home.yaml, oracle)
 Digits:=40:; pc("g123-keep-pow-1e15",'((1000000000000001/10^15)^(10^15))',(271828182846/10^11),5/10^12);
+// g154-zero-re-asin-i10-12 (home.yaml, derived)
+Digits:=40:; pc("g154-zero-re-asin-i10-12",'(re(asin(i/10)))',0,1/10^30);
+// g154-zero-re-asin-i10-30 (home.yaml, derived)
+Digits:=40:; pc("g154-zero-re-asin-i10-30",'(re(asin(i/10)))',0,1/10^30);
+// g154-zero-re-asinh-i5-12 (home.yaml, derived)
+Digits:=40:; pc("g154-zero-re-asinh-i5-12",'(re(asinh(i/5)))',0,1/10^30);
+// g154-zero-re-asinh-i5-30 (home.yaml, derived)
+Digits:=40:; pc("g154-zero-re-asinh-i5-30",'(re(asinh(i/5)))',0,1/10^30);
+// g154-zero-re-asin-i-12 (home.yaml, derived)
+Digits:=40:; pc("g154-zero-re-asin-i-12",'(re(asin(i)))',0,1/10^30);
+// g154-zero-re-asin-i-30 (home.yaml, derived)
+Digits:=40:; pc("g154-zero-re-asin-i-30",'(re(asin(i)))',0,1/10^30);
 // g78-keep-int-exp-inf (home.yaml, derived)
 Digits:=40:; pc("g78-keep-int-exp-inf",'(int(exp(-x),x,0,inf))',1,5/10^12);
 // g78-keep-piecewise (home.yaml, derived)
