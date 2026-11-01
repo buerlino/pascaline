@@ -7,6 +7,8 @@ Phase 0 decisions (D1–D9, P1, P2): [spike/DECISIONS.md](../spike/DECISIONS.md)
 
 The owner's other open items are in [backlog.md](backlog.md), "Needs the user". Once decided, an entry moves to "Decided proposals".
 
+- **G154, an underflow Giac cannot size:** a value that is MPFR's 0 at every precision is refused "Underflow" only when Giac states a size for it; `exp(-10^30)+exp(-10^31)` has none and shows ⚠ 0 (as before G84) rather than calling an exact 0 an underflow. Keep ⚠ 0 there? Recommended: yes (the rule G154 was given: no size, no underflow).
+
 - **R62, t02 and t04 on the chip:** the chips are built; `tasks.yaml` keeps the pad plans (15 and 14 presses) as `tasks-lib.ts` cannot replay a chip tap. Add the step and the M4-2 plans (9 and 12)? Recommended: yes.
 
 - **A21, the F-Droid recipe's qalc build (P22):** `fdroid/README.md` names the open answer. Until F-Droid says whether checked-in derived data (`find/factors.yaml`) is acceptable, the recipe keeps its libxml2 and libqalculate builds, unchanged. Yes: before C4 it drops both. No: it runs `tools/find-index/refresh-factors.mjs` and fails on a diff.
