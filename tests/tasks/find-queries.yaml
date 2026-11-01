@@ -109,6 +109,8 @@ queries:
   - { query: "average", expect: "fn:mean" }
   - { query: "median", expect: "fn:median", note: "tier 1 until the even-length rule is settled (find/functions.yaml)" }
   - { query: "stdev", expect: "fn:stddevp", note: "the sample standard deviation (n−1); Giac's stddevp" }
+  - { query: "standard error", expect: "fn:sem", note: "G155: s/√n, our passem" }
+  - { query: "sem", expect: "fn:sem", note: "G155" }
   - { query: "variance", expect: "fn:variance" }
   - { query: "normal cdf", expect: "fn:normald_cdf" }
   - { query: "integral", expect: "fn:int" }
