@@ -6,6 +6,7 @@ import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { test, type Page } from "@playwright/test";
 import { parse } from "yaml";
 import { entryValue, flick, open, tap } from "../test/helpers.ts";
+import { entryShots, lookShots } from "./looks.ts";
 
 const OUT = new URL("../test/gallery/", import.meta.url).pathname;
 const THEMES = ["light", "dark"] as const;
@@ -231,32 +232,6 @@ function unitFindShots(): Shot[] {
   );
 }
 
-/** R50e: Home with some history and the Shift key on, in each family (light and dark come with every shot), then the two switches. */
-function lookShots(): Shot[] {
-  const set = (patch: Record<string, unknown>) => async (p: Page) => {
-    await someHistory(p);
-    await tap(p, ["shift"]);
-    await p.evaluate((o) => {
-      const s = window.pascaline.session;
-      s.settings.look = { ...s.settings.look, ...o };
-      s.onLook?.({ ...s.settings.look });
-    }, patch);
-    await p.waitForFunction((f) => document.documentElement.getAttribute("data-family") === f, patch["family"] ?? "pascaline");
-    await p.waitForTimeout(400); // the lazy CSS is in
-  };
-  return [
-    ...(["pascaline", "graphite", "solarized", "gruvbox", "nord"] as const).map((family) => ({
-      id: `look-${family}`,
-      group: "Themes (R50e): every family, Shift on",
-      title: family[0]!.toUpperCase() + family.slice(1),
-      setup: set({ family, brightness: "system" }),
-    })),
-    { id: "look-contrast", group: "Themes (R50e): the switches", title: "Pascaline, High contrast", setup: set({ contrast: true }) },
-    { id: "look-plain", group: "Themes (R50e): the switches", title: "Pascaline, Plain keys (bold is Shift, italic is Alpha)", setup: set({ plain: true }) },
-    { id: "look-nord-both", group: "Themes (R50e): the switches", title: "Nord, High contrast and Plain keys together", setup: set({ family: "nord", contrast: true, plain: true }) },
-  ];
-}
-
 interface Shot {
   readonly id: string;
   readonly group: string;
@@ -267,6 +242,8 @@ interface Shot {
   readonly viewport?: { width: number; height: number };
   /** Only the top of the screen, this many CSS px (the status line shots, R82f2). */
   readonly clip?: number;
+  /** Only this element (looks.ts, R116). */
+  readonly element?: string;
 }
 
 const ready = async (page: Page): Promise<void> => {
@@ -453,7 +430,8 @@ const shots: Shot[] = [
   ...padShots(),
   ...unitFindShots(),
   ...unitResultShots(),
-  ...lookShots(),
+  ...lookShots(someHistory),
+  ...entryShots(),
   {
     id: "home-tmpl",
     group: "Home",
@@ -748,7 +726,8 @@ for (const shot of shots)
         await shot.setup(page);
         await settle(page);
         const file = `${shot.id}.${theme}.png`;
-        await page.screenshot({ path: OUT + file, ...(shot.clip && { clip: { x: 0, y: 0, width: shot.viewport?.width ?? 412, height: shot.clip } }) });
+        if (shot.element) await page.locator(shot.element).screenshot({ path: OUT + file, animations: "disabled" });
+        else await page.screenshot({ path: OUT + file, ...(shot.clip && { clip: { x: 0, y: 0, width: shot.viewport?.width ?? 412, height: shot.clip } }) });
         files[theme] = file;
       } finally {
         await context.close();
