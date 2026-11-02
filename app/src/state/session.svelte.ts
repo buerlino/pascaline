@@ -33,7 +33,7 @@ import { idbKv, type Kv } from "./storage.ts";
 import { TapCounter } from "./taps.svelte.ts";
 import { commaInput } from "../entry/commaInput.ts";
 import { casItem, chipFactsOf, chipOf, HISTORY_LIMIT, homeItem, withUnit } from "./results.ts";
-import type { RemovedKind, RemovedRows } from "./removedRows.ts";
+import type { Copies, RemovedKind, RemovedRows } from "./removedRows.ts";
 import { restoredItem } from "./storedItem.ts";
 import type { UnitRow } from "../units/types.ts";
 
@@ -672,7 +672,7 @@ export class Session {
   }
 
   /** What the last Clear or Delete took in each view, one level per view, until that view's next Enter (R98, R119). */
-  private copies = $state.raw<Readonly<Record<View, RemovedRows | null>>>({ home: null, cas: null });
+  private copies = $state.raw<Copies>({ home: null, cas: null });
   /** The open view's copy (History draws its note). */
   get undoCopy(): RemovedRows | null {
     return this.copies[this.view];
@@ -753,7 +753,7 @@ export class Session {
     }
     const keep = (xs: HistoryItem[]): HistoryItem[] =>
       $state.snapshot(xs).filter((i) => i.status === "done" || i.status === "error").slice(-HISTORY_LIMIT);
-    const undo = removedCode?.storedCopies($state.snapshot([this.copies.home, this.copies.cas]) as (RemovedRows | null)[]);
+    const undo = removedCode?.storedCopies($state.snapshot(this.copies) as Copies);
     void this.kv.set("history", { home: keep(this.home), cas: keep(this.cas), ...(undo ? { undo } : {}) });
   }
   /** The stored history (up to HISTORY_LIMIT entries per view); the app reads it after the keypad is drawn. */
@@ -773,12 +773,10 @@ export class Session {
       this.home.splice(0, 0, ...home);
       this.cas.splice(0, 0, ...cas);
       // A Clear or Delete before the read kept places in the list without the stored rows, now in front (a copy means its code is in)
-      const front = (c: RemovedRows | null): RemovedRows | null => c && (removedCode?.shifted(c, (c.view === "home" ? home : cas).length) ?? null);
-      this.copies = { home: front(this.copies.home), cas: front(this.copies.cas) };
+      if (removedCode) this.copies = removedCode.front(this.copies, home.length, cas.length);
       // R98: the stored Undo copies (one per view, R119), unless an Enter or a Clear before the read (or meanwhile) changed the history
       const m = hist.undo && !this.savePending ? await loadRemoved() : undefined;
-      const read = m?.readCopies(hist.undo, (i) => restoredItem(i, this.nextId++), HISTORY_LIMIT) ?? [];
-      for (const copy of read) if (!this.savePending) this.setCopy(copy.view, copy);
+      if (m && !this.savePending) this.copies = m.withStored(this.copies, hist.undo, (i) => restoredItem(i, this.nextId++), HISTORY_LIMIT);
     }
     this.historyRead = true;
     if (this.savePending) {

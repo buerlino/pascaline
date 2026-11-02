@@ -19,6 +19,8 @@ export interface RemovedRows {
   /** In list order. */
   rows: RemovedRow[];
 }
+/** The session's copies, one per view (R119). */
+export type Copies = Readonly<Record<View, RemovedRows | null>>;
 /** The copy as the history record holds it: the stored rows only, each at its place among the stored rows. */
 export interface StoredRemoved {
   view: View;
@@ -46,28 +48,31 @@ export function putBack(list: HistoryItem[], rows: readonly { at: number; item: 
   for (const r of rows) list.splice(Math.min(r.at, list.length), 0, r.item);
 }
 
-/** The copy with every place moved down by `n`: the stored history's read put `n` rows in front of the list it was taken
- *  from (a Clear or Delete before the read, R98). */
-export const shifted = (c: RemovedRows, n: number): RemovedRows => ({ ...c, rows: c.rows.map((r) => ({ ...r, at: r.at + n, storedAt: r.storedAt + n })) });
+/** The copies with every place moved down by the rows the stored history's read put in front of the list each was
+ *  taken from (`home`, `cas`: a Clear or Delete before the read, R98). */
+export function front(cs: Copies, home: number, cas: number): Copies {
+  const by = (c: RemovedRows | null, n: number): RemovedRows | null => c && { ...c, rows: c.rows.map((r) => ({ ...r, at: r.at + n, storedAt: r.storedAt + n })) };
+  return { home: by(cs.home, home), cas: by(cs.cas, cas) };
+}
 
 /** The copies for the store (a snapshot; one per view, R119); undefined when none of their rows is stored. */
-export function storedCopies(cs: readonly (RemovedRows | null)[]): StoredRemoved[] | undefined {
-  const out = cs.flatMap((c) => {
+export function storedCopies(cs: Copies): StoredRemoved[] | undefined {
+  const out = [cs.home, cs.cas].flatMap((c) => {
     const rows = (c?.rows ?? []).filter((r) => storable(r.item)).map((r) => ({ at: r.storedAt, item: r.item }));
     return c && rows.length ? [{ view: c.view, kind: c.kind, rows }] : [];
   });
   return out.length ? out : undefined;
 }
 
-/** The stored copies read back: a list of them (R119), or one copy alone (a record from before R119), at most one per
- *  view; each well formed (readCopy) or dropped. */
-export function readCopies(x: unknown, restore: (i: HistoryItem) => HistoryItem, limit: number): RemovedRows[] {
-  const out: RemovedRows[] = [];
+/** `cs` with the stored copies read back into their views: a list of them (R119), or one copy alone (a record from
+ *  before R119); each well formed (readCopy) or dropped, the first one per view kept. */
+export function withStored(cs: Copies, x: unknown, restore: (i: HistoryItem) => HistoryItem, limit: number): Copies {
+  const out: Partial<Record<View, RemovedRows>> = {};
   for (const one of Array.isArray(x) ? x : [x]) {
-    const c = out.some((o) => o.view === (one as Partial<StoredRemoved> | null)?.view) ? null : readCopy(one, restore, limit);
-    if (c) out.push(c);
+    const c = readCopy(one, restore, limit);
+    if (c) out[c.view] ??= c;
   }
-  return out;
+  return { ...cs, ...out };
 }
 
 /** A stored copy read back: every row well formed, at most `limit` rows, or no copy at all (the history itself is read
