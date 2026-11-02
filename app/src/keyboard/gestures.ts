@@ -9,7 +9,7 @@ export const PAD_KEYS: readonly PadDir[] = ["up", "down", "left", "right"];
 /** A key flick (P7 points 2 and 3, P11): up = the key's shift function, down = its letter. No left/right flicks. */
 export type Flick = "up" | "down";
 
-/** A slide of this many CSS pixels up or down from the touch point arms a flick (the bubble, the haptic tick). */
+/** A slide of this many CSS pixels up or down from the touch point arms a flick (the bubble; no extra haptic, R112). */
 export const FLICK_PX = 20;
 /** An armed flick slid back nearer the touch point than this is cancelled: nothing fires on the lift. */
 export const CANCEL_PX = 12;
@@ -25,26 +25,16 @@ export type Touch = "tap" | Flick | "cancelled";
 export class FlickTracker {
   state: Touch = "tap";
 
-  /** The finger is (dx, dy) from where it went down. True when a flick became armed (or changed direction): the tick. */
-  move(dx: number, dy: number): boolean {
+  /** The finger is (dx, dy) from where it went down. `state` tells whether a flick is armed (the bubble reads it). */
+  move(dx: number, dy: number): void {
     const ady = Math.abs(dy);
     const dir: Flick = dy < 0 ? "up" : "down";
     if (this.state === "up" || this.state === "down") {
-      if (ady < CANCEL_PX) {
-        this.state = "cancelled";
-        return false;
-      }
-      if (dir !== this.state && ady >= FLICK_PX) {
-        this.state = dir;
-        return true;
-      }
-      return false;
+      if (ady < CANCEL_PX) this.state = "cancelled";
+      else if (dir !== this.state && ady >= FLICK_PX) this.state = dir;
+      return;
     }
-    if (ady >= FLICK_PX && ady >= Math.abs(dx)) {
-      this.state = dir;
-      return true;
-    }
-    return false;
+    if (ady >= FLICK_PX && ady >= Math.abs(dx)) this.state = dir;
   }
 }
 

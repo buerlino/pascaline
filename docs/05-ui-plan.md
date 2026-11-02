@@ -119,6 +119,7 @@ The layout stays. Only the drawing changes:
 - **Legends get their own space** (fixes finding 1): every key reserves a legend line above the face; Shift legend top-right, Alpha top-left (as now), the face lower. In the top cluster the faces become shorter where they would not fit: `Home/CAS` → `Home` with the CAS key beside it, or the face shrinks to fit (one rule: never cut, never overlap).
 - **Contrast at least 4.5:1** for every face and legend in every layer and every theme (fixes finding 3). A test computes it from the CSS tokens.
 - **Dead keys** (today `special: none`) dim only in the layers where they do nothing. A press on one gives a short double haptic and no other effect.
+- **Key vibration is one pulse per touch, at finger-down**: a trackpad step, an armed flick and a held ⌫'s repeat make none; a dead key's double pulse is the only second pulse (owner, 2026-11-02, R112).
 - **Press feedback** within one frame: the key darkens while the finger is down (keys fire on lift because of flicks, P11, so the feedback must start on touch).
 
 *Built in R6 (2026-10-13): the legend line, the fit rule (faces and legends shrink, `app/src/keyboard/fit.ts`) and the contrast test (`app/src/style.test.ts`); dead keys dim per layer. The double haptic on a dead key came with R13 (2026-10-13): Menu in Symb, Tmpl in Plot, Fmt in an app, `special: none` keys and typing in Plot.*

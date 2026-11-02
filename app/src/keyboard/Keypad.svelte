@@ -43,7 +43,7 @@
     onpress: (key: Key, layer?: Layer) => void;
     /** One press was made, as docs/04 5.2 counts them (R70): a tap, a flick, a drag, a held ⌫ once. */
     oncount?: () => void;
-    /** A finger went down, a gesture made a step, or a flick became armed: the haptic tick. */
+    /** A finger went down on the pad: the key vibration, one pulse per touch (R112). A drag step or an armed flick makes none. */
     ontouch?: () => void;
   } = $props();
 
@@ -223,7 +223,7 @@
       for (const dir of g.steps.move(ev.clientX - g.x0, ev.clientY - g.y0)) step(dir);
     } else if (g.kind === "key" && g.key) {
       const before = g.flick.state;
-      if (g.flick.move(ev.clientX - g.x0, ev.clientY - g.y0)) ontouch(); // the tick at the threshold
+      g.flick.move(ev.clientX - g.x0, ev.clientY - g.y0);
       if (g.flick.state !== before) showBubble(ev.pointerId, g);
     }
   }
@@ -231,7 +231,6 @@
   function step(dir: PadDir): void {
     const key = keyboard.byId.get(dir);
     if (!key) return;
-    ontouch();
     onpress(key, "primary");
   }
 

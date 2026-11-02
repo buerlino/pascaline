@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // R9 flicks (docs/decisions.md P7 points 2 and 3, P11): flick up = the key's shift function, flick down = its letter,
-// the lock flicks on Shift and Alpha, the bubble and tick, one motion with no wait, two thumbs, the tap counter, and
+// the lock flicks on Shift and Alpha, the bubble, one motion with no wait, two thumbs, the tap counter, and
 // keys typed while an app loads keeping their layer. Synthetic touches through CDP, as in gestures.spec.ts.
 import { expect, test, type CDPSession, type Page } from "@playwright/test";
 import { entryValue, flick, open, recordVibrations, tap, touch, vibrations } from "./helpers.ts";
@@ -74,7 +74,7 @@ test("a key that does nothing in the open view gives a double haptic: Tmpl in Pl
   await expect.poll(async () => (await vibrations(page)).length - b2).toBe(3);
 });
 
-test("while sliding, the bubble shows what will fire, with one tick at the threshold; back to the middle cancels", async ({ page }) => {
+test("while sliding, the bubble shows what will fire, no tick at the threshold (R112); back to the middle cancels", async ({ page }) => {
   const before = (await vibrations(page)).length;
   const f = await touch(page, "dot");
   expect((await vibrations(page)).length - before).toBe(1); // the touch
@@ -83,7 +83,7 @@ test("while sliding, the bubble shows what will fire, with one tick at the thres
   await f.move(0, -35, 3);
   await expect(bubble(page)).toHaveText("=");
   await expect(bubble(page)).toHaveAttribute("data-dir", "up");
-  expect((await vibrations(page)).length - before).toBe(2); // + the tick at the threshold
+  expect((await vibrations(page)).length - before).toBe(1); // armed: the bubble, no second pulse (R112)
   await f.move(0, 30, 4); // through the middle to the other side: the letter… (dot has none: the plain key's face)
   await expect(bubble(page)).toHaveAttribute("data-dir", "down");
   await f.move(0, 2, 3); // back to the middle
