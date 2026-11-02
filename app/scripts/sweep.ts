@@ -14,8 +14,8 @@ import { spawnSync } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { loadKnown, splitNightly } from "./sweep-known.ts";
-import { invariantsStage, type InvariantFailure } from "./invariants.ts";
+import { FAILING_KINDS, loadKnown, splitNightly, sweepFailures } from "./sweep-known.ts";
+import { invariantsStage } from "./invariants.ts";
 import { childrenOf } from "../../tools/probes/sweep/edges.ts";
 import { reportMarkdown, shrink } from "../../tools/probes/sweep/nightly.ts";
 import { oracleFor, pythonFor, Runner, runsOf, sweep } from "../../tools/probes/sweep/run.ts";
@@ -48,9 +48,7 @@ const tOracle = performance.now();
 const { judged, refused, restarts } = await sweep(runs, oracles, DEADLINE_MS);
 
 const count_ = (k: string): number => judged.filter((j) => j.verdict.kind === k).length;
-const failures: InvariantFailure[] = judged
-  .filter((j) => j.verdict.kind === "wrong" || j.verdict.kind === "novalue" || j.verdict.kind === "hang")
-  .map((j) => ({ id: `${j.angle} ${j.digits} ${j.latex}`, check: j.verdict.check ?? j.verdict.kind, detail: j.verdict.detail ?? "" }));
+const failures = sweepFailures(judged);
 const bareWarn = judged.filter((j) => j.verdict.kind === "ok" && j.verdict.detail === "⚠ without a count").length;
 const judgedNumbers = judged.filter((j) => j.verdict.kind === "ok" || j.verdict.kind === "wrong").length;
 const secs = (performance.now() - t0) / 1000;
@@ -62,7 +60,7 @@ if (nightly) {
   const idOf = (j: { angle: string; digits: number; latex: string }): string => `${j.angle} ${j.digits} ${j.latex}`;
   const bad = judged
     .map((j, i) => ({ run: j, oracle: oracles[i]!, id: idOf(j), check: j.verdict.check ?? j.verdict.kind }))
-    .filter(({ run: j }) => ["wrong", "novalue", "hang", "crash"].includes(j.verdict.kind));
+    .filter(({ run: j }) => FAILING_KINDS.includes(j.verdict.kind));
   const split = splitNightly(bad, known, new Set(judged.map(idOf)));
   const failed = split.fresh;
   for (const k of split.nowPassing) console.log(`NOW PASSING (nightly row, remove it from tests/golden/sweep-nightly-known.yaml) ${k.id} [${k.check}] (${k.package})`);
