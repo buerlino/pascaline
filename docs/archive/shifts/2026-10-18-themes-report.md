@@ -29,7 +29,7 @@ This answers feedback #53 and #55. The decisions.md entry ("R50: themes", as Cho
   - `checks()`: every pair the app draws.
 
   It prints 40/40 pass. Use `--css` to print every combination as a CSS block. Keep the probe and the mockup in step until the generator (R50c) owns the code.
-- **The roles:** today's tokens in `app/src/style.css` plus six new ones, listed in R50a: `--approx` (≈), `--warn` (⚠), `--pick` (the picked row), `--focus` (focus ring and caret), `--key-on` and `--on-key-on` (a key that is on).
+- **The roles:** today's tokens in `app/src/style.css` plus six new ones, listed in R50a: `--approx` (≈), `--warn` (⚠), `--pick` (the picked row; since R116 also the entry line's bracket box and selection, at least 1.3:1 from --panel), `--focus` (focus ring and caret; since R116 the caret is --alpha), `--key-on` and `--on-key-on` (a key that is on).
 - **The contrast rules** (from `style.test.ts`, extended):
 
   | Pair | Normal | High contrast |
