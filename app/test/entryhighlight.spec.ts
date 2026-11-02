@@ -23,35 +23,50 @@ async function setLook(page: Page, family: string, brightness: "dark" | "light")
   await page.waitForTimeout(300); // the lazy family file is in (the box and the tokens are read together after it)
 }
 
-/** What the entry line draws, as rgb() strings, next to what the tokens say. */
+/** What the entry line draws, as rgb() strings, next to what the tokens say. Every lookup throws when its value is
+ *  missing (an unset token or MathLive variable, an empty computed value), so no check can pass on an inherited colour. */
 function colours(page: Page, testid?: string) {
   return page.evaluate((id) => {
-    const rgb = (value: string, prop: "color" | "backgroundColor" = "color"): string => {
+    const SENTINEL = "rgb(1, 2, 3)";
+    /** A colour value as the browser computes it; inside a wrapper of a colour no theme uses, so a value that does not
+     *  resolve (it would inherit) throws instead of passing as the page's text colour. */
+    const rgb = (value: string, what: string): string => {
+      if (!value.trim()) throw new Error(`${what}: empty value`);
+      const w = document.createElement("div");
+      w.style.color = SENTINEL;
       const d = document.createElement("div");
-      d.style[prop] = value;
-      document.body.append(d);
-      const v = getComputedStyle(d)[prop];
-      d.remove();
-      return v;
+      d.style.color = value;
+      w.append(d);
+      document.body.append(w);
+      const out = getComputedStyle(d).color;
+      w.remove();
+      if (out === SENTINEL) throw new Error(`${what}: ${value} does not resolve`);
+      return out;
     };
+    const root = getComputedStyle(document.documentElement);
+    const tok = (name: string): string => rgb(root.getPropertyValue(`--${name}`), `--${name}`);
     const mf = id ? document.querySelector<HTMLElement>(`[data-testid="${id}"]`) : window.pascaline.entry.field;
     const sr = mf?.shadowRoot;
     if (!sr) throw new Error("no field");
     const cont = sr.querySelector(".ML__container");
-    const v = (name: string): string => (cont ? getComputedStyle(cont).getPropertyValue(name).trim() : "");
+    if (!cont) throw new Error("no .ML__container");
+    const v = (name: string): string => rgb(getComputedStyle(cont).getPropertyValue(name), name);
     const box = sr.querySelector(".ML__contains-highlight");
     const sel = sr.querySelector(".ML__selection");
     const glyph = sr.querySelector(".ML__selected");
+    // the bracket's own glyphs: MathLive colours the ( and ) of the pair that holds the cursor (not the box, an empty div)
+    const brackets = [...sr.querySelectorAll(".ML__contains-caret.ML__open, .ML__contains-caret.ML__close")].map((e) => getComputedStyle(e).color);
     return {
-      pick: rgb("var(--pick)"),
-      alpha: rgb("var(--alpha)"),
-      text: rgb("var(--text)"),
+      pick: tok("pick"),
+      alpha: tok("alpha"),
+      text: tok("text"),
       box: box ? getComputedStyle(box).backgroundColor : "no box",
-      boxVar: rgb(v("--_contains-highlight-background-color")),
-      bracket: rgb(v("--_contains-highlight-color")),
-      caret: rgb(v("--_caret-color")),
-      selVar: rgb(v("--_selection-background-color")),
-      selColor: rgb(v("--_selection-color")),
+      boxVar: v("--_contains-highlight-background-color"),
+      bracketVar: v("--_contains-highlight-color"),
+      brackets,
+      caret: v("--_caret-color"),
+      selVar: v("--_selection-background-color"),
+      selColor: v("--_selection-color"),
       sel: sel ? getComputedStyle(sel).backgroundColor : "no selection",
       glyph: glyph ? getComputedStyle(glyph).color : "no glyph",
     };
@@ -68,7 +83,7 @@ for (const [system, look] of [["light", "dark"], ["dark", "light"], ["dark", "da
       const c = await colours(page);
       expect(c.box, "the box of the bracket that holds the cursor").toBe(c.pick);
       expect(c.caret, "the caret").toBe(c.alpha);
-      expect(c.bracket, "the bracket's own glyphs").toBe(c.text);
+      expect(c.brackets, "the bracket's own glyphs, ( and )").toEqual([c.text, c.text]);
       await page.evaluate(() => window.pascaline.entry.field?.executeCommand("extendSelectionBackward"));
       const s = await colours(page);
       expect(s.sel, "the selection").toBe(s.pick);
@@ -82,5 +97,5 @@ test("the unit view's field (dark look, light system) takes the same mapping", a
   await tap(page, ["d1", "shift", "tmpl"]);
   await page.getByTestId("unit-field").waitFor();
   const c = await colours(page, "unit-field");
-  expect([c.boxVar, c.selVar, c.caret, c.selColor, c.bracket]).toEqual([c.pick, c.pick, c.alpha, c.text, c.text]);
+  expect([c.boxVar, c.selVar, c.caret, c.selColor, c.bracketVar]).toEqual([c.pick, c.pick, c.alpha, c.text, c.text]);
 });
