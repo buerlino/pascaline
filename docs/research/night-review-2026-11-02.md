@@ -19,7 +19,7 @@
 
 S1 root causes: vg-2 (`sem` with a second list), be-1 (one unit chip used twice is two σ inputs), be-2 = vg-3 (`piecewise`/`when` missing from the unit view's jump list), vg-1 (patch 0025 and a base whose double is not finite). The worst entry surprise, vbu-1: on the APK's default Dark look with Android in light mode, what is typed inside a bracket is invisible while the cursor is in it (MathLive's own highlight, #EEF1F8, unthemed; device strips in the run's `probes/device/`).
 
-## 2. The queue (the owner, 2026-11-02: as proposed; rows 442–456 and A4b's day row placed, the rest still this queue)
+## 2. The queue (the owner, 2026-11-02: as proposed; rows 442–463 and A4b's day row placed, the rest still this queue)
 By the owner's priorities (bar, keys and entry, R92, polish, the AI port, the sync folder, the study, after v0.1.0), then dependencies. Package files: `docs/shifts/packages/<id>.md`.
 - **Lane B (the bar, then the engine):** placed: G157 (442), R114 (443) → G158 `sem` one list (444) → R115 one chip once (445) → G162 fuzz cancellation families (446, merge before Wed 11-04) → G159 piecewise/when jumps (447); then → A63 kill run needs a tag (after A8) → G161 VA, var, gauge units → G163 the unit view's chunks → G164 sample library (day).
 - **The weekly extreme night, Wed 11-04 (placed):** G148, G141, G142, G156 (rows 448–451; G152 waits on G142), then G160 (452, patch 0025, huge base), then G138 (row 408, after G162).
