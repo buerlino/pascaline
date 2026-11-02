@@ -331,6 +331,6 @@ test("a one-letter Vars function owns its pair: p(‸3) ⌫ gives 3, and p(3) En
   expect(await entryValue(page)).toMatch(/^\\operatorname\{(?:\\mathrm\{p\}|p)\}\\left\(3\\right\)$/);
   await tap(page, ["left", "bksp"]);
   expect(await entryValue(page)).toBe("3");
-  await tap(page, ["bksp", "vars", "d1", "d3", "enter"]);
+  await tap(page, ["esc", "vars", "d1", "d3", "enter"]); // Esc clears the line
   await expect(page.locator('[data-testid="result"]').last().locator(".result")).toHaveAttribute("data-text", "9");
 });

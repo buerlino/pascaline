@@ -16,10 +16,10 @@ import type { FindItem } from "./types.ts";
 const NO_INDEX = { items: [] };
 
 /** What an item inserts: a variable as the name the keys would type, a function as a call with the cursor in its
- *  argument (a single letter is typed as it is, a longer name as `\operatorname`, which the parser reads as a call). */
+ *  argument, as `\operatorname` whatever the name's length: the parser reads it as a call and the box model as a name
+ *  that owns its pair (R117: a one-letter `p\left(#0\right)` was a letter and a plain pair, so ⌫ left p3, p·3). */
 function insertOf(n: UserName): string {
-  if (n.kind === "var") return homeResultToLatex(n.name);
-  return n.name.length === 1 ? `${n.name}\\left(#0\\right)` : functionInsert(`fn:${n.name}`);
+  return n.kind === "var" ? homeResultToLatex(n.name) : functionInsert(`fn:${n.name}`);
 }
 
 /** A name as a Find live item (types.ts: kind `var` or `userfn`). Its value text is searched too (`desc`). */

@@ -8,7 +8,7 @@
 // leaves (R43, bug F34): `nextBox`. Public MathLive API only; offsets and boxes as in boxes.ts (an atom's parts come
 // before it, one level deeper).
 import type { MathfieldElement } from "mathlive";
-import { DIFF, NAME, THIN, depthAt, dmsMark, endsBox, latexAt } from "./boxes.ts";
+import { DIFF, THIN, depthAt, dmsMark, endsBox, isName, latexAt } from "./boxes.ts";
 
 type Field = Pick<MathfieldElement, "getElementInfo" | "lastOffset" | "position" | "selectionIsCollapsed" | "executeCommand" | "getValue">;
 
@@ -44,7 +44,8 @@ const intD = (mf: Field, o: number): boolean =>
 /**
  * True if a key typed at position `c` lands in a box. Not a stop: inside a name (`\operatorname`, the i and eˣ atoms), right
  * after ∫'s upright d (a digit there joins it: `\mathrm{d7}`), right before a mark (`if `, ∫'s `\,` d, ∂, the evaluate-at
- * subscript), and between a function name and its bracket (G2 item 50).
+ * subscript), and between a function name and its bracket (G2 item 50). AND, OR and XOR are no function names
+ * (R117): the cursor stops between one and a bracket typed after it.
  */
 export function isStop(mf: Field, c: number): boolean {
   if (NO_BOX.test(owner(mf, c))) return false;
@@ -53,7 +54,7 @@ export function isStop(mf: Field, c: number): boolean {
   const next = atomAfter(mf, c);
   if (MARK_AHEAD.test(next)) return false;
   if (before === THIN && next === DIFF) return false;
-  return !(NAME.test(before) && next.startsWith("\\left"));
+  return !(isName(before) && next.startsWith("\\left"));
 }
 
 const STEP: Readonly<Record<string, "moveToNextChar" | "moveToPreviousChar">> = {

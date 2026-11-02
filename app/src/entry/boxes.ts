@@ -14,8 +14,11 @@ import type { MathfieldElement } from "mathlive";
 type Field = Pick<MathfieldElement, "getElementInfo" | "lastOffset">;
 
 export const PLACEHOLDER = "\\placeholder{}";
-/** A function name a key inserts together with its pair: the name goes with the brackets. */
-export const NAME =
+/**
+ * A function name a key inserts together with its pair: the name goes with the brackets. The infix words (INFIX) match
+ * too, so read a name with `isName`.
+ */
+const NAME =
   /^\\(?:operatorname\{(?:\\mathrm\{[^{}]*\}|[^{}]*)\}|(?:arc)?(?:sin|cos|tan|cot|sec|csc)h?|ln|log|lg|exp|lim|sum|prod|det|gcd|lcm|max|min|arg|Re|Im)(?![A-Za-z])/;
 /** A name whose parts are letters, not boxes. */
 export const LETTERS = /^\\(?:operatorname|mathrm)\{/;
@@ -35,6 +38,14 @@ const IF_MARK = ["\\text{i}", "\\text{f}", "\\text{ }"];
 export const LOG_BASE = /^\\(?:log|ln)_/;
 /** EQ's name: a comma splits its bracket into two boxes (R26h). */
 const EQ_NAME = /^\\operatorname\{(?:\\mathrm\{EQ\}|EQ)\}$/;
+/**
+ * The words of Shift + 6 that stand between their operands (R117): AND, OR and XOR. They are no function and own no pair
+ * (spec/keyboard.yaml `relations` inserts them alone), so a bracket typed after one is a plain pair. NOT and EQ are calls.
+ */
+const INFIX = ["AND", "OR", "XOR"];
+const INFIX_WORD = new RegExp(`^\\\\operatorname\\{(?:\\\\mathrm\\{(?:${INFIX.join("|")})\\}|(?:${INFIX.join("|")}))\\}$`);
+/** True if the atom's latex `l` is a function name that owns the pair after it: no infix word (R117). */
+export const isName = (l: string): boolean => NAME.test(l) && !INFIX_WORD.test(l);
 /** DMS's marks: degrees ° minutes ′ seconds ″ (R26h). */
 const DEG = "\\degree";
 const MIN = "\\prime";
