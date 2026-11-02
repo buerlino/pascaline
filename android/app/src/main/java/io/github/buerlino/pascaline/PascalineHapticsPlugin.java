@@ -3,6 +3,7 @@ package io.github.buerlino.pascaline;
 
 import android.content.Context;
 import android.os.Build;
+import android.os.VibrationAttributes;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.util.Log;
@@ -15,6 +16,11 @@ import com.getcapacitor.annotation.CapacitorPlugin;
  * Key vibration with a settable strength (app/src/input/haptics.ts). vibrate({ms, amplitude 1..255}) uses
  * VibrationEffect.createOneShot on API 26+ when the motor has amplitude control, and plain vibrate(ms) otherwise.
  * Needs only the normal permission android.permission.VIBRATE.
+ *
+ * A9 (F41): from API 33 the pulse names its usage, USAGE_PHYSICAL_EMULATION (a key that feels like a key). A pulse
+ * without attributes has the usage UNKNOWN, and Android 13+ plays each usage at its own intensity setting: on the
+ * owner's Fairphone 6 (Android 16) UNKNOWN and TOUCH were OFF, and dumpsys listed every pulse as ignored_for_settings.
+ * The app's own Key vibration switch is the user's choice here, so the system's touch-feedback switch does not mute it.
  */
 @CapacitorPlugin(name = "PascalineHaptics")
 public class PascalineHapticsPlugin extends Plugin {
@@ -36,7 +42,13 @@ public class PascalineHapticsPlugin extends Plugin {
         try {
             boolean ctl = Build.VERSION.SDK_INT >= 26 && vibrator.hasAmplitudeControl();
             if (Build.VERSION.SDK_INT >= 26) {
-                vibrator.vibrate(VibrationEffect.createOneShot(ms, ctl ? amp : VibrationEffect.DEFAULT_AMPLITUDE));
+                VibrationEffect effect = VibrationEffect.createOneShot(ms, ctl ? amp : VibrationEffect.DEFAULT_AMPLITUDE);
+                if (Build.VERSION.SDK_INT >= 33) {
+                    VibrationAttributes attrs = VibrationAttributes.createForUsage(VibrationAttributes.USAGE_PHYSICAL_EMULATION);
+                    vibrator.vibrate(effect, attrs);
+                } else {
+                    vibrator.vibrate(effect);
+                }
             } else {
                 vibrator.vibrate(ms);
             }
