@@ -79,3 +79,15 @@ test("a letter inside a chip is never marked, whatever the chip shows", async ({
   expect(l.colours[0]).not.toBe(l.mark);
   expect(l.colours[1]).toBe(l.mark);
 });
+
+test("a power of the name is marked, a subscripted letter is another name and is not", async ({ page }) => {
+  await storeX(page);
+  await page.evaluate(() => {
+    const mf = window.pascaline.entry.field;
+    if (mf) mf.value = "x^{2}+x_{1}";
+  });
+  await expect.poll(async () => (await letters(page)).texts).toEqual(["x", "x"]);
+  const l = await letters(page);
+  expect(l.colours[0]).toBe(l.mark);
+  expect(l.colours[1]).not.toBe(l.mark);
+});

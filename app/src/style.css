@@ -4,6 +4,8 @@
    the first paint. --approx ≈, --warn ⚠, --pick the picked row, --focus focus ring and caret, --key-on and
    --on-key-on a key that is on, --on-error the label on an --error ground. */
 :root {
+  /* R33: a name that holds a value, on the entry line (entry/namemarks.ts); the ≈ colour until a theme gets its own */
+  --name-mark: var(--approx);
   /* a key that does nothing in the layer shown is dimmed (--text-dead), still at least 3:1 */
   /* keypad legend line above each key face, and the key side padding */
   --legend-h: 12px;

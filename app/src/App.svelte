@@ -47,6 +47,7 @@
   const showTips = (): void => void import("./views/tipsHost.ts").then((m) => m.showTips(), () => {});
 
   const sheetOpen = $derived(shell.sheet !== null);
+  $effect(() => entry.setNames(session.userNames)); // R33: the stored names are drawn in their colour on the line
   $effect(() => void (userKeys.decimalComma = entry.decimalComma = session.decimalComma)); // R57: the `.` and `,` keys' faces (keypad, tap, hardware key)
 
   // The shell paints first; main.ts then loads MathLive, which puts the field into this element.
