@@ -14,6 +14,10 @@ History only: read it when a decision is questioned. What still binds is in [../
 6. **Release:** new work (the AI port, the sync folder, R92) ships if ready by the freeze, only the bar gates; polish first, with R92 first in lane A; the weekly fuzz night is Wed 11-04. Would change if: the bar slips past 11-14.
 7. **Later:** plots of user functions after v0.1.0; milestone 6 kept whole (EN5–EN7, context Help); the v1 list stays on the backlog; history 200 rows; no backup reminder; 100 % offline. Would change if: the owner says so.
 
+### Shortened 2026-11-02 (Opus pass 52) to make room for G158's default, as it stood
+From "Units" (Defaults):
+- **R92, the units menu's Constants and Tools (Opus pass 51):** the last two rows, after the categories, so no row moves. A constant goes on Home's line at its cursor (Find's pick path, R61's chip); the view leaves with its slots, they follow the new line text, and it opens again. Five Tools rows for the six G2 tools (CONVERT and UFACTOR are the end slot); UPART's row is disabled ("not built yet") until its place is built. Would change if: the owner's R24d review wants a constant at the active slot or the G2's order.
+
 ### Shortened 2026-11-02 (Opus pass 51) to make room for R92's and R116's defaults, as they stood
 From "Units" (Defaults):
 - **R61 (Opus pass 28):** a unit result's σ chip is an independent input of σ, as a constant (G26), also beside the constant it came from; one chip used twice is one input; a σ of 0 is none. Its σ is G41's: t10's is sqrt(1.548381) = 1.24433958388 (`tests/tasks/tasks.yaml`). Would change if: a chip keeps its inputs' basis (G81).
