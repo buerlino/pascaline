@@ -153,7 +153,7 @@ export class Level {
   }
 
   /** R110: the cell ▼ came from onto a short last row, so ▲ goes back to it (cleared by the next move). */
-  private shortRow: { from: number; to: number } | undefined;
+  private from: number | undefined;
 
   private gridMove(by: number, column: boolean): void {
     const n = this.items.length;
@@ -164,18 +164,18 @@ export class Level {
       return;
     }
     let next = this.highlight + by;
+    const from = this.from;
+    this.from = undefined;
     if (column) {
       // round the ends of the column: from the last row back to the first, and the other way
       const col = this.highlight % cols;
       const last = col + cols * Math.floor((n - 1 - col) / cols);
-      const lastRow = Math.floor((n - 1) / cols);
-      const back = this.shortRow;
-      this.shortRow = undefined;
-      if (by < 0 && back?.to === this.highlight) next = back.from; // R110: ▲ from the short row's cell goes back to where ▼ came from
-      else if (by > 0 && next >= n && Math.floor(this.highlight / cols) === lastRow - 1) {
-        // R110: ▼ onto a last row that is short (Shift + 9's % under the first column): its nearest cell, and ▲ remembers the column
-        next = lastRow * cols + Math.min(col, (n - 1) % cols);
-        this.shortRow = { from: this.highlight, to: next };
+      const lastRow = n - 1 - ((n - 1) % cols);
+      // R110: ▼ onto a last row that is short (Shift + 9's % under the first column) goes to its nearest cell, ▲ back to where it came from
+      if (by < 0 && from !== undefined && this.highlight >= lastRow) next = from;
+      else if (next >= n && this.highlight < lastRow) {
+        this.from = this.highlight;
+        next = Math.min(n - 1, lastRow + col);
       } else if (next < 0) next = last;
       else if (next >= n) next = col;
     } else next = (next + n) % n;
