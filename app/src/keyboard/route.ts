@@ -394,6 +394,7 @@ export function run(c: RouteCtx, key: Key, mods: Mods): void {
   const { session, shell, entry } = c;
   const action = actionFor(key, mods.shift, mods.alpha, session.settings.entry === "line", c.casKeys);
   if (!action) return c.dead();
+  if (shell.prompt?.key(action)) return; // a name on the line (R89)
   if (shell.app === null && historyKey(c, action)) return;
   if (action.kind === "special") return special(c, action.name);
   if (shell.app !== null) {

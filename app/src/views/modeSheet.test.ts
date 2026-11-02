@@ -17,10 +17,10 @@ const memoryKv = (): Kv => {
 };
 let session: Session;
 const mode = (at?: string) => new Sheet("mode", "Mode", () => modeItems(session), { remember: false, at });
-/** Mode, 5, then the section numbered `n` (none: the Settings level). */
+/** Mode, 6, then the section numbered `n` (none: the Settings level). */
 const settings = (n?: number): Sheet => {
   const s = mode();
-  s.pickNumber(5);
+  s.pickNumber(6);
   if (n !== undefined) s.pickNumber(n);
   return s;
 };
@@ -217,7 +217,7 @@ describe("Settings, a level of the sheet (R49)", () => {
     expect(s.activate(at(s, "mark"))).toEqual({ kind: "stay" }); // a tap steps it on
     expect(session.settings.decimalMark).toBe("comma");
   });
-  it("a digit key on the Decimal mark row steps it and stays (Shift Fmt 5 2 1 reaches it by keys)", () => {
+  it("a digit key on the Decimal mark row steps it and stays (Shift Fmt 6 2 1 reaches it by keys)", () => {
     const s = settings(2);
     expect(s.pickNumber(1)).toEqual({ kind: "stay" });
     expect(session.settings.decimalMark).toBe("comma");
@@ -281,7 +281,7 @@ describe("Help and about (R87)", () => {
   it("with the app's tips (R15c4) the first row shows the first-start tips again (the other test: without them there is no such row)", () => {
     const shown = vi.fn();
     const s = new Sheet("mode", "Mode", () => modeItems(session, { tips: shown }), { remember: false });
-    s.pickNumber(5);
+    s.pickNumber(6);
     s.pickNumber(5); // (no Your keys or Data here: Help and about is the fifth section)
     expect(s.level.items.map((x) => x.id)).toEqual(["tips", "about", "parts"]);
     expect(s.level.items[0]?.label).toBe("Show the first-start tips");
@@ -344,7 +344,7 @@ describe("Settings › Your keys (R4b)", () => {
     const userKeys = new UserKeys(memoryKv());
     const chosen: string[] = [];
     const s = new Sheet("mode", "Mode", () => modeItems(session, { userKeys, chooseFor: (id, layer) => void chosen.push(`${id}:${layer}`) }), { remember: false });
-    s.pickNumber(5);
+    s.pickNumber(6);
     return { s, userKeys, chosen };
   };
 
@@ -446,7 +446,7 @@ describe("Settings › Data (R38a)", () => {
     resetUndoTime(null); // no kept copy of a restore (R38b)
     const clip = { saveBackup: async () => void saved.push("save") } as unknown as ClipActions;
     const s = new Sheet("mode", "Mode", () => modeItems(session, { userKeys, data: (run) => void run(clip) }), { remember: false });
-    s.pickNumber(5);
+    s.pickNumber(6);
     expect(s.level.items.map((x) => x.id)).toEqual(["appearance", "numbers", "vibration", "keys", "data", "counters", "help"]);
     s.pickNumber(5);
     expect(s.level.items.map((x) => x.id)).toEqual(["backup", "restore"]);

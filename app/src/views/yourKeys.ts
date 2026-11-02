@@ -3,6 +3,7 @@
 // Shift and Alpha layers, eighteen slots. A row per slot opens its level: Find (the pick sets the slot), a place or a
 // sheet (Home, CAS, Apps, Menu, Mode, Settings), or empty. Pressing a free key while the list is open highlights its
 // row (route.ts, Sheet.goKey). The slots are in the stamped store under USER_KEYS (keyboard/userKeys.svelte.ts).
+import type { PresetsHost } from "./presetsView.svelte.ts";
 import type { MenuItem } from "../apps/types.ts";
 import type { ClipActions } from "../clipboard/actions.svelte.ts";
 import { findText as t } from "../i18n/enFind.ts";
@@ -12,7 +13,7 @@ import { USER_KEY_IDS, USER_LAYERS, type UserKeys } from "../keyboard/userKeys.s
 import { CELL_KEYS, LEG_OF, unitCells } from "../units/userCells.svelte.ts";
 
 /** What Settings › Your keys needs from the app: the slots, and Find to pick a slot's content from (App.svelte). */
-export interface SettingsEnv {
+export interface SettingsEnv extends PresetsHost {
   readonly userKeys?: UserKeys;
   chooseFor?(id: string, layer: Layer): void;
   /** Settings › Data (R38a, R38b): runs a backup action on the clipboard code, which shows its notice and opens the

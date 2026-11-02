@@ -46,11 +46,11 @@ const OPENERS: Record<string, (page: Page) => Promise<void>> = {
     await expect(page.getByTestId("sheet-title")).toHaveText("Mode › Significant digits");
   },
   "mode settings": async (page) => {
-    await tap(page, ["@mode", "d5"]);
+    await tap(page, ["@mode", "d6"]);
     await expect(page.getByTestId("sheet-title")).toHaveText("Mode › Settings");
   },
   "mode settings numbers": async (page) => {
-    await tap(page, ["@mode", "d5", "d2"]);
+    await tap(page, ["@mode", "d6", "d2"]);
     await expect(page.getByTestId("sheet-title")).toHaveText("Mode › Settings › Numbers");
   },
   tmpl: (page) => tap(page, ["tmpl"]),
@@ -129,13 +129,13 @@ test.describe("at 412 × 915", () => {
       await expect(page.getByTestId("sheet-count")).toHaveCount(0);
     });
 
-  test("a list row never goes below the floor of 36 px, and a value row's ◀ ▶ buttons are at least 44 × 44 px (R86: only Digits and Settings' rows have them)", async ({ page }) => {
+  test("a list row never goes below the floor of 36 px, and a value row's ◀ ▶ buttons are at least 44 × 44 px (R86: only Digits, Preset (R89) and Settings' rows have them)", async ({ page }) => {
     await openSheet(page, "mode digits");
     for (const b of await sheet(page).getByRole("menuitem").evaluateAll((els) => els.map((e) => e.getBoundingClientRect().height)))
       expect(b).toBeGreaterThanOrEqual(36);
     await tap(page, ["esc"]);
     const buttons = sheet(page).locator('[data-testid="step-down"], [data-testid="step-up"]');
-    await expect(buttons).toHaveCount(2); // digits only: angle, format and entry have a button per value (R86)
+    await expect(buttons).toHaveCount(4); // Digits and Preset (R89): angle, format and entry have a button per value (R86)
     for (const b of await buttons.evaluateAll((els) => els.map((e) => e.getBoundingClientRect())))
       expect(b.width >= 44 && b.height >= 44).toBe(true);
   });

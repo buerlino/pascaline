@@ -276,7 +276,7 @@ test("Shift and Alpha do nothing while the Mode sheet is open, and Esc goes back
 
 test("the last row of the Mode sheet opens Settings as its next level, on its first row; Esc goes back, ☰ closes it", async ({ page }) => {
   await open(page);
-  await tap(page, ["@mode", "d5"]);
+  await tap(page, ["@mode", "d6"]);
   await expect(page.getByTestId("sheet-title")).toHaveText("Mode › Settings"); // R49: a level of the same sheet
   await tap(page, ["esc"]);
   await expect(page.getByTestId("sheet-title")).toHaveText("Mode");

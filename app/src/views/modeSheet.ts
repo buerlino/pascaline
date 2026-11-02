@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // The Mode sheet's list and Settings, its next level (docs/05 3.4 with section 7; R49). Mode (one sheet, sheet.svelte.ts)
-// holds what changes in a session: angle, format, digits, entry. Settings holds what is set once, in sections: the
+// holds what changes in a session: angle, format, digits, entry, the preset (R89). Settings holds what is set once, in sections: the
 // Format key's cycle, the key vibration, the counters. A row with a value is changed in place: ◀ ▶ step it, a digit key
 // or a tap steps it forward; in Mode Enter closes, in Settings it stays. No native <select> or number input: the keypad
 // drives all of it.
@@ -17,7 +17,8 @@ import { dataSection } from "./dataSection.svelte.ts";
 import { BRIGHTNESS, validLook, type Look } from "../theme/look.ts";
 import { familyOf, FAMILIES, stepped } from "../theme/lookView.ts";
 import { yourKeysItems, yourKeysValue, type SettingsEnv } from "./yourKeys.ts";
-/** The presets' model (R88) is part of this chunk; R89 draws it in Mode. */
+import { presetRow, switchedRow } from "./presetsView.svelte.ts";
+/** The presets' model (R88) is part of this chunk; R89 draws it in Mode (views/presetsView.svelte.ts). */
 export { presetsFor } from "../state/presets.svelte.ts";
 
 const ANGLES: readonly AngleUnit[] = ["rad", "deg"];
@@ -95,6 +96,7 @@ export function modeItems(session: Session, env: SettingsEnv = {}): MenuItem[] {
       },
       adjust: (by) => session.setEntry(cycle(ENTRIES, s.entry, by)),
     },
+    presetRow(session, env), // R89: row 5, the active preset; Settings is row 6
     { id: "settings", label: t("mode.settings"), submenu: settingsMenu(session, env) },
   ];
 }
@@ -318,6 +320,7 @@ function tapsItems(session: Session): MenuItem[] {
     { id: "presses", label: t("settings.taps.presses"), keep: true, get value() { return String(taps.counts.presses); } },
     { id: "shift", label: t("settings.taps.shift"), keep: true, get value() { return String(taps.counts.shift); } },
     { id: "alpha", label: t("settings.taps.alpha"), keep: true, get value() { return String(taps.counts.alpha); } },
+    switchedRow(session), // R88, R89: the presets applied
     { id: "since", label: t("settings.taps.since"), keep: true, get value() { return taps.counts.since || "—"; } },
     { id: "reset", label: t("settings.taps.reset"), keep: true, run: () => taps.reset() },
   ];
