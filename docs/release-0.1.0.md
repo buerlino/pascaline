@@ -15,7 +15,7 @@ The owner, 2026-11-01: "I want to release a good version as 0.1.0, I'm in no rus
 ## The days (2026; the owner took them on 2026-11-01)
 | When | What | Who |
 |---|---|---|
-| Mon 11-02, by day | The release key off this laptop and A7's table; `v*` in Settings → Environments → `github-pages` (done); `pascaline-calc.org` already points to Pages (checked again 11-02, `http` and `www` redirect to `https://pascaline-calc.org/`) (checked 11-01: Pages' four addresses, `www` to buerlino.github.io, a valid certificate; "Site not found" until the first deploy; this laptop's Tailscale DNS answers 0.0.0.0 for it, so allow it there to look); A7 runs. Night review 1. | owner, annabell |
+| Mon 11-02, by day | The release key off this laptop and A7's table (done); `v*` in Settings → Environments → `github-pages` (done); `pascaline-calc.org` already points to Pages (checked again 11-02, `http` and `www` redirect to `https://pascaline-calc.org/`) (checked 11-01: Pages' four addresses, `www` to buerlino.github.io, a valid certificate; "Site not found" until the first deploy; this laptop's Tailscale DNS answers 0.0.0.0 for it, so allow it there to look); A7 runs. Night review 1. | owner, annabell |
 | Tue 11-03, by day | A8 and the owner's test tag `v0.0.1-test` (point 1); the owner's Pages run by hand on it; then the test release and tag are deleted. | annabell, owner |
 | 11-03 to Wed 11-11 | The lanes as brief section 0, with point 3's fixes first in lane B; A4b on the Tab One by day; the milestone reviews; night reviews 2 (Fri 11-06) and 3 (Mon 11-09). | lanes, owner |
 | Thu 11-12 | **The freeze for v0.1.0:** from this night on both lanes run only fixes for the bar; the rest of the queues waits for v0.1.1. | owner |

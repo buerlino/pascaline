@@ -19,13 +19,13 @@ The one place for "where are we and what's left", one or two lines per open item
 
 ## Needs the user
 0. **The core list (P23):** cut or extend [tests/core/core.yaml](../tests/core/core.yaml) (66 cases; tell a session what to drop or add); do the [morning check](../tests/core/MORNING.md) on the night's device (about 10 minutes, 15 cases; tell the day session what failed); keep the night's device plugged in, unlocked and on the charger (A32, A33). The one-time checks: [ONE-TIME.md](../tests/core/ONE-TIME.md).
-1. **Decisions in [decisions.md](decisions.md) "Needs the user":** none open (A21, R50e, R15c4 decided 2026-11-02).
+1. **Decisions in [decisions.md](decisions.md) "Needs the user":** none open (A21, R50e, R15c4 and Opus pass 50's defaults decided 2026-11-02).
 2. **Your outreach steps** (decisions.md P18–P22): send Parisse email 5 (patches 0013–0026 and the regression files at `a330698`, pushed; `../outreach/email-parisse-5.md`; 0003–0012 went with email 4, 2026-10-28); mirror G77's pin (`gh` logged in; the command is in `engine/giac/README.md`).
 3. **G2 questions:** the unanswered items of `tests/golden/G2-CHECKLIST.md` (41, 42, 52, 56, 63–71; each package built a default, named in decisions.md; 63–65 can reverse S14's route R); the optional real-G2 spot checks (`spec/mapping/vc-2026-10-11/SPOT-CHECK.md`).
 4. **From daily use:** the key sequence that left ⌫ stuck "at log" (F39); A9 (F41) felt on the Fairphone 2026-11-02; feel R112 (one pulse per touch, merged) on the next build; more points into [feedback.md](feedback.md).
 5. **The new application id** (`io.github.buerlino.pascaline`): the next APK installs as a second app; copy what you need from the old one, then uninstall `org.pascaline.app`. Android's own backup is off (A23).
 6. **Tap "Allow USB debugging"** on a device when it shows `unauthorized`.
-7. **v0.1.0** (the days: [release-0.1.0.md](release-0.1.0.md)): on 11-02 the release key off this laptop and A7's table (A7.md), tags `v*` in Settings → Environments → `github-pages`, the domain on Pages; the test tag on 11-03; go or slip on 11-14; read the usage meter each morning and at each lane start (tripwire 85 %). **A49/A52, switching a broken web worker off:** `app/pwa/README.md` (the kill run on the deployed tag, up to 90 min; the fixed tag's normal run brings the worker back).
+7. **v0.1.0** (the days: [release-0.1.0.md](release-0.1.0.md)): the release key, A7's table, `v*` on `github-pages` and the domain done 11-02 (A7 runs that afternoon); the test tag on 11-03; go or slip on 11-14; read the usage meter each morning and at each lane start (tripwire 85 %). **A49/A52, switching a broken web worker off:** `app/pwa/README.md` (the kill run on the deployed tag, up to 90 min; the fixed tag's normal run brings the worker back).
 8. **Later:** the outside rounds (two 30-minute rounds after R4b and R24c, [r18](research/r18-outside-test.md); R70, the press counter, is built); at milestone 5, time ten tasks by hand (E-notation against units).
 
 ### Upstream reports (owner; drafts in `../outreach/upstream-reports.md`)
