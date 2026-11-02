@@ -7,7 +7,7 @@
 import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { expect, test, type Page } from "@playwright/test";
-import { flick, open, tap } from "./helpers.ts";
+import { flick, open, recordVibrations, tap, vibrations } from "./helpers.ts";
 
 type Tok = { prefix?: string; unit: string; power?: string };
 /** The view is up once its pad is on the keys and its field has the focus (it loads with its first open). */
@@ -184,6 +184,37 @@ test.describe("the unit view from the keys", () => {
     expect(await tokens(page, "u1")).toEqual({ tokens: [{ unit: "m" }] });
     await expect(page.locator('[data-key="d9"][data-pad="unit"]')).toBeVisible();
   });
+});
+
+test("⌫ on an empty slot steps back to the slot before (as ⌫ at the start of a box on the entry line); on the first slot, and Shift + ⌫ anywhere, a dead key with the double pulse (R118, bu-11)", async ({ page }) => {
+  await recordVibrations(page);
+  await open(page, "engine=fake");
+  await page.evaluate(() => window.pascaline.session.setHaptics({ on: true, ms: 10 }));
+  await tap(page, ["d1", "add", "d2"]);
+  await unitsKey(page);
+  await tap(page, ["d4", "d9", "enter"]);
+  expect(await activeId(page)).toBe("u2");
+  /** The pulses `keys` give: one per key down, two more for a dead key. */
+  const pulses = async (keys: string[]): Promise<number> => {
+    const before = (await vibrations(page)).length;
+    await tap(page, keys);
+    await page.waitForTimeout(150);
+    return (await vibrations(page)).length - before;
+  };
+  expect(await pulses(["bksp"]), "a step back is no dead key").toBe(1);
+  expect(await activeId(page)).toBe("u1");
+  expect(meant(await tokens(page, "u1")), "the slot before keeps its tokens").toBe("k:m");
+  expect(await pulses(["bksp"])).toBe(1);
+  expect(meant(await tokens(page, "u1")), "the next ⌫ removes its last token").toBe("");
+  await tap(page, ["bksp"]); // the armed k
+  expect(await page.evaluate(() => window.pascaline.unitView?.view.model("u1")?.empty)).toBe(true);
+  expect(await pulses(["bksp"]), "⌫ on the first slot, empty: dead").toBe(3);
+  expect(await activeId(page)).toBe("u1");
+  await tap(page, ["d9", "enter"]);
+  await tap(page, ["shift"]);
+  expect(await pulses(["bksp"]), "Shift + ⌫ (Del): a slot has nothing after its last token").toBe(3);
+  expect(await activeId(page)).toBe("u2");
+  await expect(shown(page)).toBeVisible();
 });
 
 // The probe's 50 units, as the probe itself types them (tools/probes/unit-presses.mjs --json, flicks): each sequence,

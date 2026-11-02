@@ -70,7 +70,7 @@ export async function openUnits(c: RouteCtx, row?: HistoryItem): Promise<void> {
       void import("./find.ts").then((m) => {
         if (current?.view !== view) return;
         const more = dim === undefined ? { constant, tools: unitTools(view.shown, { end: () => view.toEnd(), alt: (a) => void view.pickAlt(a), alts: () => view.down(), home }) } : {};
-        m.showUnitFind({ shell: c.shell, index, cat, apply: (a) => view.apply(a), refresh: () => (unitPad.model = new UnitPad(unitCells.userSet())), ...more }, into, dim);
+        m.showUnitFind({ shell: c.shell, index, cat, apply: dim === undefined ? (a) => view.apply(a) : (a) => view.pickMore(a), refresh: () => (unitPad.model = new UnitPad(unitCells.userSet())), ...more }, into, dim);
       }),
     format: () => ({ format: engineFormat(c.session.settings.format), digits: c.session.settings.digits }),
     alternatives: async (q, req) => {

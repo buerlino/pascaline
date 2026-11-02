@@ -15,7 +15,7 @@ import type { Alternative } from "./alternatives.ts";
 import type { PadEmit } from "./pad.ts";
 import { shownOf, type Shown } from "./result.ts";
 import type { CellLeg } from "./userCells.svelte.ts";
-import { SlotModel, type Reading, type SlotCatalogue } from "./slot.ts";
+import { SlotModel, type PadAction, type Reading, type SlotCatalogue } from "./slot.ts";
 import type { Quantity, UnitError, UnitRequest, UnitSlot } from "./types.ts";
 
 export { shownOf, type Shown } from "./result.ts";
@@ -68,8 +68,9 @@ export class UnitView {
   #shown: Shown = { kind: "none" };
   #run = 0;
   #row = -1;
-  /** R62: "More…" opened Find on the end slot: the pick that completes it evaluates. */
-  #more = false;
+  /** R62: "More…" opened Find on the end slot: "asked" until a pick comes (the view stays as it was, R118), then
+   *  "picking": the pick replaced the end slot, and the press that completes it evaluates. */
+  #more: false | "asked" | "picking" = false;
   /** R62: the chip last tapped: while the end slot is still its slot, the result reads the unit as the chip did ("ton", "cal"). */
   #picked: Alternative | undefined;
   #fit: number | undefined;
@@ -170,10 +171,12 @@ export class UnitView {
       default: {
         // A slot press (a pick from Find too): an evaluation still running answers for the slots it was asked with,
         // so its result is dropped (R24cf1).
-        this.#run++;
-        this.#picked = undefined;
+        if (this.#more === "asked") this.#more = false; // (Find of More… closed without a pick: an ordinary press)
         const m = this.#models.get(this.activeId) as SlotModel;
         const r = m.apply(e);
+        if (r.ok && r.back) return this.#back(); // (nothing changed: a running evaluation still answers)
+        this.#run++;
+        this.#picked = undefined;
         if (!r.ok) {
           this.shown = { kind: "message", text: r.message };
           return this.#host.dead();
@@ -181,7 +184,7 @@ export class UnitView {
         this.shown = { kind: "none" };
         this.#draw(this.activeId);
         this.#read();
-        if (this.#more && this.activeId === END && m.check().ok) void this.evaluate();
+        if (this.#more === "picking" && this.activeId === END && m.check().ok) void this.evaluate();
       }
     }
   }
@@ -276,19 +279,32 @@ export class UnitView {
     this.#read();
   }
 
-  /** "More…": the end slot is cleared and Find opens on this dimension's units; the pick evaluates. */
+  /** "More…": Find opens on this dimension's units. The view stays as it is (the result, the end slot) until a unit is
+   *  picked (`pickMore`), so Find closed without a pick leaves it as it was (R118). */
   more(dimension: string): void {
-    const was = this.activeId;
-    this.#models.set(END, new SlotModel(this.#cat));
-    this.active = this.ids.length - 1;
-    this.#run++;
-    this.#picked = undefined;
-    this.shown = { kind: "none" };
-    this.#draw(was);
-    this.#draw(END);
-    this.#read();
-    this.#more = true;
+    this.#more = "asked";
     this.#host.find(undefined, dimension);
+  }
+
+  /** A pick from More…'s Find: its first press replaces the end slot, which becomes the active one; the press that
+   *  completes the slot evaluates. */
+  pickMore(a: PadAction): void {
+    if (this.#more === "asked") {
+      const was = this.activeId;
+      this.#models.set(END, new SlotModel(this.#cat));
+      this.#row = -1;
+      this.active = this.ids.length - 1;
+      this.#draw(was);
+      this.#draw(END);
+      this.#more = "picking";
+    }
+    this.apply(a);
+  }
+
+  /** ⌫ on an empty slot: to the slot before, whose next ⌫ removes its last token; on the first slot a dead key. */
+  #back(): void {
+    if (this.active === 0) return this.#host.dead();
+    this.#move(-1);
   }
 
   #move(by: -1 | 1): void {

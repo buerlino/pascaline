@@ -195,12 +195,13 @@ describe("r9 2.6: ⌫ removes the last token", () => {
     s.apply(U("s"));
     expect(s.slot).toEqual({ tokens: [{ unit: "m" }, { unit: "s" }], per: 1 });
   });
-  it("down to an empty slot, and on an empty slot nothing", () => {
+  it("down to an empty slot; on an empty slot it asks to step back (R118: the view goes to the slot before, as ⌫ at the start of a box on the entry line)", () => {
     const s = typed([U("J"), PER, P("k"), U("g"), POW(2)]);
-    for (let i = 0; i < 5; i++) s.apply(DEL);
+    for (let i = 0; i < 5; i++) expect(s.apply(DEL)).toEqual({ ok: true });
     expect(s.empty).toBe(true);
-    expect(s.apply(DEL)).toEqual({ ok: true });
+    expect(s.apply(DEL)).toEqual({ ok: true, back: true });
     expect(s.slot).toEqual({ tokens: [] });
+    expect(s.empty).toBe(true);
   });
 });
 

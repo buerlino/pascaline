@@ -19,7 +19,9 @@ export type PadAction =
   | { do: "sqrt" }
   | { do: "delete" };
 
-export type SlotResult = { ok: true } | { ok: false; key: UnitMessageKey; message: string };
+/** `back`: ⌫ on an empty slot changed nothing; the view steps to the slot before (R118, as ⌫ at the start of a box on
+ *  the entry line), or the key is dead on the first slot. */
+export type SlotResult = { ok: true; back?: true } | { ok: false; key: UnitMessageKey; message: string };
 
 /** What the model needs of one Find unit or prefix: its symbol as LaTeX, its name in words, and from the Find index
  *  its exact factor to SI base units (`si`, "1/1000", "16129*pi/10^14") and a unit's dimension key (`dim`). */
@@ -174,6 +176,7 @@ function powerText(f: Factor, negate: boolean): string {
 const refuse = (key: UnitMessageKey, vars?: Readonly<Record<string, string>>): SlotResult =>
   ({ ok: false, key, message: unitText(key, vars) });
 const OK: SlotResult = { ok: true };
+const BACK: SlotResult = { ok: true, back: true };
 
 export class SlotModel {
   readonly #cat: SlotCatalogue;
@@ -247,6 +250,7 @@ export class SlotModel {
         return OK;
       }
       case "delete": {
+        if (this.empty) return BACK;
         if (this.#pending.length) this.#pending.pop();
         else if (this.#per !== undefined && this.#per === this.#factors.length) this.#per = undefined;
         else {

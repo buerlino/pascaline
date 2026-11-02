@@ -153,7 +153,7 @@ describe("the alternatives row on the view (R62)", () => {
     expect(row).toEqual(["ft", "m"]);
   });
 
-  it("More… clears the end slot and opens Find on the dimension; a fit of 1 puts More… at index 1", async () => {
+  it("More… opens Find on the dimension and keeps the view until the pick (R118); a fit of 1 puts More… at index 1", async () => {
     const t = make();
     t.view.apply({ do: "unit", id: "m" });
     await t.view.evaluate();
@@ -164,9 +164,10 @@ describe("the alternatives row on the view (R62)", () => {
     expect(t.view.row).toBe(1);
     await t.view.next();
     expect(t.found).toEqual(["m1"]);
-    expect(t.view.model("end")?.empty).toBe(true);
-    expect(t.view.shown).toEqual({ kind: "none" });
-    t.view.apply({ do: "unit", id: "ft" }); // the pick from Find lands in the end slot and evaluates
+    expect(t.view.model("end")?.empty).toBe(true); // (it was: m was typed in the first slot)
+    expect(t.view.shown.kind).toBe("result");
+    expect(t.view.row).toBe(1);
+    t.view.pickMore({ do: "unit", id: "ft" }); // the pick from More…'s Find lands in the end slot and evaluates
     await Promise.resolve();
     expect(t.requests.at(-1)?.end).toEqual({ tokens: [{ unit: "ft" }] });
   });
