@@ -12,6 +12,7 @@ import { defaultCasSettings } from "../../app/src/engine/types.ts";
 import { solveRequest } from "../../app/src/engine/solve.ts";
 import { parseLibrary } from "../../app/src/engine/library.ts";
 import { DATA_VERSION } from "../../app/src/state/storage.ts";
+import { LIBRARY_FORMAT } from "../../app/src/state/libraryFormat.ts";
 import { applyDefChanges, type DefEntry } from "../../app/src/engine/defs.ts";
 
 const { giac, bridge } = await loadNodeGiac();
@@ -27,7 +28,7 @@ const cas = (t: string): string => {
 };
 const lib = (body: string): string => {
   try {
-    return `accepted ${parseLibrary(`// pascaline library ${DATA_VERSION}\n// d\n${body}\n`).defs.map((d) => d.name).join(",")}`;
+    return `accepted ${parseLibrary(`// pascaline library ${DATA_VERSION}\n// d\n${body}\n`, host.parse, LIBRARY_FORMAT).defs.map((d) => d.name).join(",")}`;
   } catch (e) {
     return `refused: ${(e as Error).message}`;
   }
