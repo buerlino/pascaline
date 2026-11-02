@@ -4,7 +4,7 @@
 // second Enter was accepted while the first job ran on. fh-1: one press emptied up to 200 rows for good.
 import { describe, expect, it } from "vitest";
 import { FakeCalc } from "../calc/fake.ts";
-import { Session } from "./session.svelte.ts";
+import { loadRemoved, Session } from "./session.svelte.ts";
 import type { Kv } from "./storage.ts";
 
 function memoryKv(): Kv & { data: Map<string, unknown>; writes: string[] } {
@@ -26,6 +26,7 @@ function memoryKv(): Kv & { data: Map<string, unknown>; writes: string[] } {
 async function session(delay = 0, kv: Kv = memoryKv()): Promise<Session> {
   const s = new Session(new FakeCalc(delay), kv);
   await s.restoreHistory();
+  await loadRemoved(); // main.ts fetches it when idle; once in, Clear and Delete act at once
   return s;
 }
 const inputs = (s: Session): string[] => s.items.map((i) => i.latex);

@@ -156,7 +156,7 @@
   }
 
   function clearKey(): void {
-    if (shell.app === null && entry.value === "") session.clearHistory();
+    if (shell.app === null && entry.value === "") void session.clearHistory();
     else entry.clear();
   }
 

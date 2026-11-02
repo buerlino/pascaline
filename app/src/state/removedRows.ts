@@ -2,9 +2,8 @@
 // The Undo copy of Clear history and Delete (R98): what the last such act took out of a view's list, one level, with
 // the place of each row, so Undo puts every row back where it was. The session keeps it in memory and in the stored
 // history record (one write, so a relaunch keeps it); the next Enter, or a Clear that finds nothing to take, drops it.
+// A lazy chunk (out of the start chunk): it imports types only, so the bundler keeps the start's modules in one file.
 import type { HistoryItem, View } from "./session.svelte.ts";
-import { HISTORY_LIMIT } from "./results.ts";
-import { restoredItem } from "./storedItem.ts";
 
 export type RemovedKind = "clear" | "delete";
 /** A row taken out: its index in the list then (`at`), and its index among the rows the store keeps (`storedAt`). */
@@ -52,10 +51,11 @@ export function storedCopy(c: RemovedRows | null): StoredRemoved | undefined {
   return c && rows.length ? { view: c.view, kind: c.kind, rows } : undefined;
 }
 
-/** A stored copy read back: every row well formed, or no copy at all (the history itself is read as before). */
-export function readCopy(x: unknown, nextId: () => number): RemovedRows | null {
+/** A stored copy read back: every row well formed, at most `limit` rows, or no copy at all (the history itself is read
+ *  as before); `restore` reads each row as the history's rows are read (storedItem.ts, with a fresh id). */
+export function readCopy(x: unknown, restore: (i: HistoryItem) => HistoryItem, limit: number): RemovedRows | null {
   const c = x && typeof x === "object" ? (x as Partial<StoredRemoved>) : {};
-  if ((c.view !== "home" && c.view !== "cas") || (c.kind !== "clear" && c.kind !== "delete") || !Array.isArray(c.rows) || c.rows.length === 0 || c.rows.length > HISTORY_LIMIT) return null;
+  if ((c.view !== "home" && c.view !== "cas") || (c.kind !== "clear" && c.kind !== "delete") || !Array.isArray(c.rows) || c.rows.length === 0 || c.rows.length > limit) return null;
   const ok = c.rows.every(
     (r: unknown) => {
       const o = r as { at?: unknown; item?: Partial<HistoryItem> } | null;
@@ -63,5 +63,5 @@ export function readCopy(x: unknown, nextId: () => number): RemovedRows | null {
     },
   );
   if (!ok) return null;
-  return { view: c.view, kind: c.kind, rows: c.rows.map((r) => ({ at: r.at, storedAt: r.at, item: restoredItem(r.item, nextId()) })) };
+  return { view: c.view, kind: c.kind, rows: c.rows.map((r) => ({ at: r.at, storedAt: r.at, item: restore(r.item) })) };
 }

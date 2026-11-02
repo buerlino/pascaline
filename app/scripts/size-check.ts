@@ -222,8 +222,14 @@ export const LAZY_PARTS = ["src/views/sheetKeys.ts", "src/views/tmplSheet.ts", "
  *  in the clipboard chunk (clipboard/whyLine.ts, strings.ts). R36f1 measured it after merging phase-1: phase-1 0dd6086's
  *  start files are 58,507 B gzip (166,290 B raw), the branch 58,568 B (166,509 B raw, +61 B): the line's element and
  *  style in App.svelte and the stored-facts check's `rounded` key (engine/types.ts); no clipboard source is in the start
- *  chunk (tools/probes/start-chunk.mjs). The pin is 58,568 B + 0.05 kB. */
-export const START_PIN_GZIP = 58_618;
+ *  chunk (tools/probes/start-chunk.mjs). The pin is 58,568 B + 0.05 kB.
+ *  R98 (Clear spares a running job; Undo of Clear and Delete): phase-1 fb75a497 is 58.56 kB gzip (166.51 kB raw), the
+ *  branch 59,019 B (167,878 B raw, +0.46 kB): the note row in History.svelte with its two strings, the Undo key's test
+ *  in route.ts, and the session's glue (the copy's field, Clear and Delete waiting for the code, Undo, the stored copy's
+ *  read and write). The copy's code is its own lazy chunk (state/removedRows.ts, 0.51 kB gzip, fetched when idle). With
+ *  it Rolldown puts engine/giacPrint.ts in a chunk of its own beside the entry (its gzip is counted here); a static
+ *  import measured 59.33 kB. The pin is 59,019 B + 0.05 kB. */
+export const START_PIN_GZIP = 59_069;
 
 /** R103 (vr-4): the classic inline scripts of index.html run before the first paint, outside every chunk: the stored look
  *  (R50e) and the too-old WebView check. Their gzip sizes, each script alone and summed (as the start chunk sums its

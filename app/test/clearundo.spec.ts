@@ -11,10 +11,12 @@ const rows = (page: Page) => page.locator("article.item");
 const note = (page: Page) => page.getByTestId("undo-note");
 const menuItem = (page: Page, name: RegExp) => page.getByTestId("menu").getByRole("menuitem", { name });
 
-/** Rows 1, 2, 3 (each finished). */
+/** Rows 1, 2, 3, each finished before the next Enter (an Enter while a job runs is refused). */
 async function three(page: Page): Promise<void> {
-  for (const d of ["d1", "d2", "d3"]) await tap(page, [d, "enter"]);
-  await expect(page.locator('[data-status="done"]')).toHaveCount(3);
+  for (const [k, d] of ["d1", "d2", "d3"].entries()) {
+    await tap(page, [d, "enter"]);
+    await expect(page.locator('[data-status="done"]')).toHaveCount(k + 1);
+  }
 }
 
 const paths: { name: string; act: (page: Page) => Promise<void>; left: string[]; text: string }[] = [

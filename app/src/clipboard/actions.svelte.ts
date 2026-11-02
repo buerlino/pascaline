@@ -265,7 +265,7 @@ export class ClipActions {
       { id: "copyAs", label: tc("clip.copyAs"), disabled: none, reason: why, submenu: { title: tc("clip.copyAs"), items: copies } },
       { id: "paste", label: tc("clip.paste"), run: () => void this.paste() },
       { id: "share", label: tc("clip.share"), disabled: !finished, reason: why, run: () => void this.shareSession() },
-      { id: "clear", label: tc("clip.clear"), disabled: empty, run: () => this.session.clearHistory() },
+      { id: "clear", label: tc("clip.clear"), disabled: empty, run: () => void this.session.clearHistory() },
     ];
   }
 

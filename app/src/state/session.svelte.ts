@@ -33,7 +33,7 @@ import { idbKv, type Kv } from "./storage.ts";
 import { TapCounter } from "./taps.svelte.ts";
 import { commaInput } from "../entry/commaInput.ts";
 import { casItem, chipFactsOf, chipOf, HISTORY_LIMIT, homeItem, withUnit } from "./results.ts";
-import { putBack, readCopy, storedCopy, takeOut, type RemovedKind, type RemovedRows } from "./removedRows.ts";
+import type { RemovedKind, RemovedRows } from "./removedRows.ts";
 import { restoredItem } from "./storedItem.ts";
 import type { UnitRow } from "../units/types.ts";
 
@@ -129,6 +129,12 @@ export interface UsedValue {
   preview: string;
   view: View;
 }
+
+/** R98: the Undo copy's code (removedRows.ts) is out of the start chunk: main.ts fetches it when idle, and the first
+ *  Clear or Delete, or a start that finds a stored copy, waits for it. A failed load is tried again by the next one. */
+let removedCode: typeof import("./removedRows.ts") | undefined;
+export const loadRemoved = (): Promise<typeof import("./removedRows.ts") | undefined> =>
+  import("./removedRows.ts").then((m) => (removedCode = m), () => undefined);
 
 /** R91: the tidy-up of Giac's latex (render/tidy.ts) is only needed once a result is in, so it is a chunk of its own: it
  *  loads beside the first job (and when idle, main.ts), and a failed load is tried again by the next job. */
@@ -652,29 +658,32 @@ export class Session {
   removeItem(item: HistoryItem): boolean {
     const found = this.items.find((i) => i.id === item.id);
     if (!found || found.status === "pending") return false;
-    this.takeRows("delete", (i) => i.id === item.id);
+    void this.takeRows("delete", (i) => i.id === item.id);
     return true;
   }
 
   /** Clear history (R98): the finished, error and note rows go; a running row stays with its Cancel, so Esc still stops
    *  it and Enter is still refused while it runs. Undo brings the rows back; a Clear that finds nothing drops that copy. */
-  clearHistory(): void {
-    this.takeRows("clear", (i) => i.status !== "pending");
+  clearHistory(): Promise<void> {
+    return this.takeRows("clear", (i) => i.status !== "pending");
   }
 
   /** What the last Clear or Delete took, one level, until the next Enter (R98; History draws its note). */
   undoCopy = $state.raw<RemovedRows | null>(null);
-  private takeRows(kind: RemovedKind, take: (i: HistoryItem) => boolean): void {
-    const rows = takeOut(this.items, take);
-    this.undoCopy = rows.length ? { view: this.view, kind, rows } : null;
+  private async takeRows(kind: RemovedKind, take: (i: HistoryItem) => boolean): Promise<void> {
+    const [view, list] = [this.view, this.items];
+    const m = removedCode ?? (await loadRemoved()); // (loaded: no await, the act is done before the next key)
+    if (!m) return; // the code did not load: nothing is taken without its Undo
+    const rows = m.takeOut(list, take);
+    this.undoCopy = rows.length ? { view, kind, rows } : null;
     this.saveHistory(); // the list and the copy in one write
   }
   /** Undo on an empty line, or a tap on the note (R98): the rows the open view's last Clear or Delete took go back in
    *  their places. False: no copy for this view (the line's own undo then runs, P13). */
   undoRemoved(): boolean {
     const c = this.undoCopy;
-    if (!c || c.view !== this.view) return false;
-    putBack(this.items, c.rows);
+    if (!c || c.view !== this.view || !removedCode) return false;
+    removedCode.putBack(this.items, c.rows);
     this.undoCopy = null;
     this.saveHistory();
     return true;
@@ -727,7 +736,7 @@ export class Session {
     }
     const keep = (xs: HistoryItem[]): HistoryItem[] =>
       $state.snapshot(xs).filter((i) => i.status === "done" || i.status === "error").slice(-HISTORY_LIMIT);
-    const undo = storedCopy($state.snapshot(this.undoCopy) as RemovedRows | null);
+    const undo = removedCode?.storedCopy($state.snapshot(this.undoCopy) as RemovedRows | null);
     void this.kv.set("history", { home: keep(this.home), cas: keep(this.cas), ...(undo ? { undo } : {}) });
   }
   /** The stored history (up to HISTORY_LIMIT entries per view); the app reads it after the keypad is drawn. */
@@ -745,8 +754,10 @@ export class Session {
           .map((i) => restoredItem(i, this.nextId++));
       this.home.splice(0, 0, ...keep(hist.home));
       this.cas.splice(0, 0, ...keep(hist.cas));
-      // R98: the stored Undo of Clear or Delete, unless an Enter or a Clear before the read already changed the history
-      if (!this.savePending) this.undoCopy = readCopy(hist.undo, () => this.nextId++);
+      // R98: the stored Undo of Clear or Delete, unless an Enter or a Clear before the read (or meanwhile) changed the history
+      const m = hist.undo && !this.savePending ? await loadRemoved() : undefined;
+      const copy = m?.readCopy(hist.undo, (i) => restoredItem(i, this.nextId++), HISTORY_LIMIT);
+      if (copy && !this.savePending) this.undoCopy = copy;
     }
     this.historyRead = true;
     if (this.savePending) {

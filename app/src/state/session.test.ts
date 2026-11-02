@@ -5,7 +5,7 @@ import { CalcCancelled, type Calc, type CasOutcome, type HomeOutcome, type UserN
 import type { ComplexValue } from "../engine/format.ts";
 import { safePrecision } from "../engine/homeEval.ts";
 import { t } from "../i18n/index.ts";
-import { Session } from "./session.svelte.ts";
+import { loadRemoved, Session } from "./session.svelte.ts";
 import type { Kv } from "./storage.ts";
 
 function memoryKv(): Kv & { data: Map<string, unknown> } {
@@ -112,7 +112,7 @@ describe("Session history", () => {
     const a = new Session(new ValueCalc(), kv);
     await a.restoreHistory();
     await a.submit("2");
-    a.clearHistory();
+    await a.clearHistory();
     expect((kv.data.get("history") as { home: unknown[] }).home).toHaveLength(0);
   });
 });
@@ -123,6 +123,7 @@ describe("deleting a row (R11)", () => {
     const s = new Session(new ValueCalc(), kv);
     await s.restoreHistory();
     for (const e of ["1", "2", "3"]) await s.submit(e);
+    await loadRemoved(); // R98: Delete keeps an Undo copy, whose code main.ts fetches when idle
     const second = s.home[1];
     if (!second) throw new Error("no second row");
     expect(s.removeItem(second)).toBe(true);
