@@ -147,4 +147,18 @@ describe("Settings › Data's last row (R96)", () => {
     await storage.idbKv.get("view");
     expect(row(items()).label).toBe("Not saved: changes are lost when the app closes");
   });
+  it("Not saved in a tab that is not the writer (R95): another tab holds the lock, nothing is written", async () => {
+    vi.stubGlobal("navigator", { storage: { persisted: async () => true } });
+    const writer = await import("./writer.ts"); // the instance storage.ts uses (same module registry)
+    const held = {
+      request: (_n: string, _o: { ifAvailable?: boolean }, cb: (lock: unknown) => Promise<void> | void) => Promise.resolve(cb(null)),
+    }; // writer.test.ts fakeLocks(true): another tab holds `pascaline-writer`
+    writer.claimWriter(() => {}, held);
+    await storage.kvSet("view", "cas");
+    expect(idb.stores.get("kv")?.has("view") ?? false).toBe(false);
+    expect(storage.storeHealth()).toBe("failed");
+    const { items } = await level();
+    await new Promise((r) => setTimeout(r, 20));
+    expect(row(items()).label).toBe("Not saved: changes are lost when the app closes");
+  });
 });
