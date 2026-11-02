@@ -341,7 +341,7 @@
       {@const row = session.items[picked]}
       {#if row}
       {@const why = clip.rowWhy(row)}
-      {#if why}<div class="rowwhy" data-testid="row-why" role="status">{why}</div>{/if}
+      {#if why}<div class="rowwhy" data-testid="row-why">{why}</div>{/if}
       <div class="rowbar" role="toolbar" aria-label={t("history.actions")} data-testid="row-actions">
         {#each clip.rowButtons(row) as b (b.id)}
           <button type="button" disabled={b.disabled} onpointerdown={noFocus} onclick={() => { picked = null; b.run?.(); }}>{b.label}</button>
@@ -485,7 +485,6 @@
     color: var(--muted);
     white-space: nowrap;
     overflow: hidden;
-    text-overflow: ellipsis;
   }
   .rowbar button {
     flex: 1;

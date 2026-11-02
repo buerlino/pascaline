@@ -217,8 +217,10 @@ export const LAZY_PARTS = ["src/views/sheetKeys.ts", "src/views/tmplSheet.ts", "
  *  passed to Settings. Its watch for a tap elsewhere (a sheet, an app, a view) is in the Mode chunk
  *  (views/presetsView.svelte.ts), not a setter on AppShell.sheet (−20 B). The pin was 58.44 + 0.05 kB.
  *  R33 (names marked on the entry line): +20 B for EntryController.setNames and the lazy import of
- *  entry/namemarks.ts (the observer, the paint and the name test are in that lazy chunk); the pin is 58.51 + 0.05 kB. */
-export const START_PIN_GZIP = 58_560;
+ *  entry/namemarks.ts (the observer, the paint and the name test are in that lazy chunk); the pin is 58.51 + 0.05 kB.
+ *  R36 (a picked row says why): ~+10 B for the line's element and its style in App.svelte; the words and the reasons are
+ *  in the clipboard chunk (clipboard/whyLine.ts, strings.ts); the pin is 58.57 + 0.05 kB. */
+export const START_PIN_GZIP = 58_620;
 
 /** R103 (vr-4): the classic inline scripts of index.html run before the first paint, outside every chunk: the stored look
  *  (R50e) and the too-old WebView check. Their gzip sizes, each script alone and summed (as the start chunk sums its
