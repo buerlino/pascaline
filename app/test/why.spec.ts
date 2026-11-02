@@ -69,15 +69,34 @@ test("a constant with a σ: the result uses G (± 1.5·10⁻¹⁵)", async ({ pa
   expect(await picked(page)).toBe("≈ uses G (± 1.5·10⁻¹⁵)");
 });
 
+// R36f1: the stored names behind ≈ are the engine's (why.rounded). Home keeps an exact value exact (docs/04 6.2, 2.8):
+// B from 1/3 lends no facts, so B+1 is 4/3 shown rounded (1/3 + 1 = 4/3, derived). √2·1.0 is exact in Home too (1.0
+// is an exact decimal; the log holds B:=(sqrt(2))), so the float case stores evalf(√2).
+test("Home 1/3 stored to B, then B+1: rounded, the exact value is 4/3", async ({ page }) => {
+  await run(page, "\\frac{1}{3}\\blacktriangleright B", 1);
+  await run(page, "B+1", 2);
+  expect(await picked(page)).toBe("≈ rounded: the exact value is 4/3");
+});
+
 test("a stored float: the result uses B, itself rounded", async ({ page }) => {
-  await run(page, "\\sqrt{2}\\cdot1.0\\blacktriangleright B", 1);
+  await run(page, "\\operatorname{evalf}\\left(\\sqrt{2}\\right)\\blacktriangleright B", 1);
   await run(page, "B+1", 2);
   expect(await picked(page)).toBe("≈ uses B, itself rounded");
 });
 
-test("the row that stores B does not use B", async ({ page }) => {
+test("√2·1.0 is exact in Home: B+1 names its exact value, not B", async ({ page }) => {
   await run(page, "\\sqrt{2}\\cdot1.0\\blacktriangleright B", 1);
+  await run(page, "B+1", 2);
+  expect(await picked(page)).toBe("≈ rounded: the exact value is sqrt(2)+1");
+});
+
+test("the row that stores B does not name B, nor does an earlier row after B is overwritten", async ({ page }) => {
+  await run(page, "\\frac{1}{3}\\blacktriangleright B", 1);
+  await run(page, "B+1", 2);
+  await run(page, "\\operatorname{evalf}\\left(\\sqrt{2}\\right)\\blacktriangleright B", 3);
   expect(await picked(page)).not.toContain("uses B");
+  await tap(page, ["up"]); // the row before: B+1, run while B held 1/3
+  expect((await why(page).innerText()).trim()).toBe("≈ rounded: the exact value is 4/3");
 });
 
 test("the line is gone with the pick, and a result with no mark says nothing", async ({ page }) => {

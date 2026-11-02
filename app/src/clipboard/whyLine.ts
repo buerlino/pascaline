@@ -2,7 +2,6 @@
 // R36 (docs/04 2.4): the one line a picked row gives for its mark. The reasons are the engine's (ValueFacts.why, G22 with
 // G38, G39, G50) and the chip table's (a constant's σ); the words are clipboard/strings.ts. It loads with the row
 // actions, never in the start chunk.
-import { decimalFromString } from "../engine/format.ts";
 import type { MarkInfo } from "../engine/format.ts";
 import type { HistoryItem } from "../state/session.svelte.ts";
 import { copyExact } from "./exact.ts";
@@ -11,12 +10,17 @@ import { tc } from "./strings.ts";
 const SUP = "⁰¹²³⁴⁵⁶⁷⁸⁹";
 const sup = (n: number): string => `${n < 0 ? "⁻" : ""}${[...String(Math.abs(n))].map((d) => SUP[+d]).join("")}`;
 
-/** A standard uncertainty as the line shows it: two significant digits at most, `1.5·10⁻¹⁵`; null if it is not a number. */
+/** A standard uncertainty as the line shows it: every significant digit the chip table holds, neither rounded nor cut,
+ *  a trailing zero kept (CODATA's `1.0E-36` is `1.0·10⁻³⁶`, `0.00015E-11` is `1.5·10⁻¹⁵`); null if it is not a number. */
 export function uncText(unc: string): string | null {
-  const v = decimalFromString(unc.toLowerCase());
-  if (!v || v.digits === "") return null;
-  const d = v.digits.slice(0, 2);
-  return `${d.length > 1 ? `${d[0]}.${d[1]}` : d}·10${sup(v.exp)}`;
+  const m = /^(\d*)\.?(\d*)(?:e([+-]?\d+))?$/.exec(unc.trim().toLowerCase());
+  if (!m || (m[1] === "" && m[2] === "")) return null;
+  const all = (m[1] ?? "") + (m[2] ?? "");
+  const lead = all.search(/[1-9]/);
+  if (lead < 0) return null;
+  const d = all.slice(lead);
+  const exp = (m[1] ?? "").length - 1 - lead + (m[3] ? parseInt(m[3], 10) : 0);
+  return `${d.length > 1 ? `${d[0]}.${d.slice(1)}` : d}·10${sup(exp)}`;
 }
 
 /** The constants a row's chips hold with an uncertainty, as `G (± 1.5·10⁻¹⁵)`, in the order they stand in the entry. */
@@ -31,53 +35,21 @@ function constantsUsed(item: HistoryItem): string[] {
   return out;
 }
 
-/** The stored names (`names`) that the input of `item` mentions as whole names. */
-function namesRead(item: HistoryItem, names: readonly string[]): string[] {
-  return names.filter((n) => new RegExp(`(?<![A-Za-z0-9_\\\\])${n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?![A-Za-z0-9])`).test(item.latex));
-}
-
-/** The row stores `name`: `x\blacktriangleright N` or `N:=…`. */
-const stores = (i: HistoryItem, name: string): boolean => i.latex.endsWith(`\\blacktriangleright ${name}`) || i.latex.startsWith(`${name}:=`);
-
-/** The user's stored names whose value was not exact when `row` ran: the mark of the latest earlier row of this view that
- *  stored the name (a float stored by a row marked ≈ or ⚠ is rounded), else, when no row of this view stores it, the
- *  engine's facts of the name. A name the picked row stores itself, or only a later row stores, is not one it read. */
-export function roundedNames(
-  stored: readonly { name: string; facts?: unknown }[],
-  items: readonly HistoryItem[],
-  markOfRow: (i: HistoryItem) => MarkInfo | null,
-  row?: HistoryItem,
-): string[] {
-  return stored
-    .filter((u) => {
-      if (row && stores(row, u.name)) return false;
-      const storing = items.filter((i) => i.status === "done" && stores(i, u.name));
-      if (!storing.length) return u.facts !== undefined;
-      const before = row ? storing.filter((i) => i.id < row.id) : storing;
-      const last = before.at(-1);
-      if (!last) return false;
-      const m = markOfRow(last);
-      return m ? m.mark !== "=" : u.facts !== undefined;
-    })
-    .map((u) => u.name);
-}
-
 const list = (names: readonly string[]): string => names.join(", ");
 
 /**
- * The line for `item` whose mark is `mark` (null: none). `digits` is the digits setting, `names` the user's stored names
- * that carry facts (a float, or a value that is not exact): one of them in the input is why an `≈` result is rounded.
- * Null when the row has no mark, so no line is drawn.
+ * The line for `item` whose mark is `mark` (null: none). `digits` is the digits setting. The user's stored names behind an
+ * `≈` are the engine's (why.rounded, R36f1: the names that lent inexact facts when the row ran), never read from the
+ * entry text. Null when the row has no mark, so no line is drawn.
  */
-export function whyLine(item: HistoryItem, mark: MarkInfo | null, digits: number, names: readonly string[]): string | null {
+export function whyLine(item: HistoryItem, mark: MarkInfo | null, digits: number): string | null {
   if (!mark) return null;
   if (mark.mark === "=") return `= ${tc("why.exact")}`;
   const why = item.facts?.why;
   if (mark.mark === "≈") {
     const consts = constantsUsed(item);
     if (consts.length) return `≈ ${tc("why.uses")} ${list(consts)}`;
-    const read = namesRead(item, names);
-    if (read.length) return `≈ ${tc("why.uses")} ${list(read)}, ${tc("why.itselfRounded")}`;
+    if (why?.rounded?.length) return `≈ ${tc("why.uses")} ${list(why.rounded)}, ${tc("why.itselfRounded")}`;
     const exact = copyExact(item);
     return `≈ ${tc("why.rounded")}${exact === undefined ? "" : `: ${tc("why.exactIs")} ${exact}`}`;
   }
