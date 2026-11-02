@@ -8,7 +8,7 @@ import type { GiacBridge } from "./bridge.ts";
 import { defaultHomeSettings } from "./homeEval.ts";
 import { defaultCasSettings } from "./types.ts";
 import { giacAvailable, loadNodeGiac } from "./nodeGiac.ts";
-import { rewriteAngles } from "../input/angles.ts";
+import { rewriteAngles } from "./angles.ts";
 import { lostNumber, overflowAt, throughInfinity, underflow, zeroElements } from "./novalue.ts";
 
 describe.skipIf(!giacAvailable())("G78 on the real engine", () => {

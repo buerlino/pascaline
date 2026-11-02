@@ -34,7 +34,7 @@ import { mayAddToList, unaskedPoly } from "./polyvec.ts";
 import { listAsArguments, mayListAsArguments } from "./listargs.ts";
 import { callsIn, floatBounds, giacPair, hasDefiniteIntegral, integratedNumerically, refusalOf } from "./converge.ts";
 import { enEngine } from "../i18n/enEngine.ts";
-import { dropAngleFactor, PASDEG } from "../input/angles.ts";
+import { dropAngleFactor, PASDEG } from "./angles.ts";
 import { askedDigits, DOUBLE_DIGITS, doubleFormsIn, notBuiltin, floatsShown, unauditedIn, floatFacts, hasFloat, integratedFacts, numberLatex, shapeOfValue, valuePrecision, whyOf, withDigits } from "./numeric.ts";
 import { balanced, bracesOf, callsOf, isError, isName, isTimeout, leadingName, LIST_TYPE, namesIn, parsePrinted, typedFromPrinted, wholeCall, wordsOf } from "./giacPrint.ts";
 import { decidedAtDouble, decideTwice, restsOnDecision } from "./decisions.ts";

@@ -208,8 +208,8 @@ export const LAZY_PARTS = ["src/views/sheetKeys.ts", "src/views/tmplSheet.ts", "
  *  pin is 60.97 + 0.02 kB, the most that keeps it under the 61.00 kB budget with room for the test below.
  *  60.99 → 58.44 kB (R103): phase-1 d075b9c measures 60.97 kB gzip (171.69 kB raw), the branch 58.39 kB (165.75 kB raw,
  *  −2.58 kB): the stored data's migration steps load only for a record that has one to run (state/migrations.ts, with
- *  engine/angleMigration.ts), the session reads PASDEG from input/pasdeg.ts, and the start reads Home's defaults from
- *  engine/homeDefaults.ts, so engine/homeEval.ts's graph (input/angles.ts, engine/flags.ts, icdf.ts, stores.ts), which
+ *  engine/angleMigration.ts), the session reads PASDEG from engine/pasdeg.ts, and the start reads Home's defaults from
+ *  engine/homeDefaults.ts, so engine/homeEval.ts's graph (engine/angles.ts, engine/flags.ts, icdf.ts, stores.ts), which
  *  the entry held for the lazy chunks, left the start chunk. The pin is 58.39 + 0.05 kB.
  *  58.44 → 58.49 kB (R89): phase-1 ea6112b's start files measure 58,389 B gzip (165,819 B raw), the branch 58,444 B
  *  (166,009 B raw, +55 B): the presets' name prompt, the part that must be at start: AppShell.prompt (a reactive field

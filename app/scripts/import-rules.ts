@@ -28,8 +28,8 @@ export function importsOf(source: string): Import[] {
 
 /** Rule 1: the engine modules the start chunk may import (value imports). Types and helpers with no further imports of
  *  their own into the worker side: types.ts, format.ts, defs.ts, giacPrint.ts (Giac text, no imports), workerEngine.ts and
- *  protocol.ts (the main-thread client), homeDefaults.ts (Home's defaults, R103). */
-export const START_ENGINE: ReadonlySet<string> = new Set(["types", "format", "defs", "giacPrint", "workerEngine", "protocol", "homeDefaults"].map((n) => `src/engine/${n}.ts`));
+ *  protocol.ts (the main-thread client), homeDefaults.ts (Home's defaults, R103) and pasdeg.ts (the degree factor's name, R103). */
+export const START_ENGINE: ReadonlySet<string> = new Set(["types", "format", "defs", "giacPrint", "workerEngine", "protocol", "homeDefaults", "pasdeg"].map((n) => `src/engine/${n}.ts`));
 
 /** Rule 2: folders src/engine/ may not import from. */
 export const ENGINE_FORBIDDEN = ["views", "state", "keyboard", "entry", "apps", "render", "input", "units"] as const;

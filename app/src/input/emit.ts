@@ -3,7 +3,7 @@
 import { parseError } from "../i18n/enParser.ts";
 import { SerializeError } from "./errors.ts";
 import { CALL_NAME, EQ_DIFF, EQ_INEXACT_FLAG, EQ_VERDICT } from "../engine/ourNames.ts";
-import { ANGLE_IN, ANGLE_OUT, DEGREE, PASDEG, POLAR, POLAR_OUT, RECT, numericLiteral, rectArg, withFactor } from "./angles.ts";
+import { ANGLE_IN, ANGLE_OUT, DEGREE, PASDEG, POLAR, POLAR_OUT, RECT, numericLiteral, rectArg, withFactor } from "../engine/angles.ts";
 
 export { SerializeError };
 

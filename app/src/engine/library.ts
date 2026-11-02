@@ -13,7 +13,7 @@ import { defaultCasSettings, type CasResult } from "./types.ts";
 import { DATA_VERSION } from "../state/storage.ts";
 import { migratedText } from "../state/migrations.ts";
 import { renameOurCalls, writeUserNames } from "./ourNames.ts";
-import { dropAngleFactor, PASDEG, rewriteAngles } from "../input/angles.ts";
+import { dropAngleFactor, PASDEG, rewriteAngles } from "./angles.ts";
 import { isFlagName } from "./flags.ts";
 import { callsOf, isName, names, noneOpen, typedFromPrinted, walk, wordsOf } from "./giacPrint.ts";
 

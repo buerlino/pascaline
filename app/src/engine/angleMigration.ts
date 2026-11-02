@@ -8,7 +8,7 @@
 //   degrees) and keeps the reading whose value matches its preview, the value it showed when it was stored. One that
 //   matches neither (or both) keeps its text.
 // Only erasable TypeScript syntax; no engine import, so the UI side (storage.ts) may use the pure half.
-import { dropAngleFactor, hasAngleFactor, PASDEG, POLAR_OUT, RECT_IN, rewriteAngles } from "../input/angles.ts";
+import { dropAngleFactor, hasAngleFactor, PASDEG, POLAR_OUT, RECT_IN, rewriteAngles } from "./angles.ts";
 import { leadingName, mapNames, opening, type Quoting, renameCalls, withoutStrings } from "./giacPrint.ts";
 
 /** A Giac evaluator (EngineHost's GiacApi has this shape). */
