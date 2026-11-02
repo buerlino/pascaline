@@ -6,7 +6,10 @@ import { giacAvailable, nodeHost } from "./engine/nodeGiac.ts";
 import { applyDefChanges } from "./engine/defs.ts";
 import { defaultCasSettings } from "./engine/types.ts";
 import { importLibrary, parseLibrary } from "./engine/library.ts";
-import { libraryBenchText, runLibraryBench } from "./bench.ts";
+import { libraryBenchPrograms, runLibraryBench } from "./bench.ts";
+
+/** The 200 programs as a library file. */
+const libraryBenchText = (): string => `// pascaline library 1\n${libraryBenchPrograms().map((p, k) => `\n// program ${k + 1}\n${p}\n`).join("")}`;
 
 describe("?bench=library", () => {
   it("submits the 200 programs through the session, one by one", async () => {

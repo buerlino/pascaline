@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Plot-function compiler: LaTeX -> JS (emit-js.ts) against hand-written JS reference functions.
 import { describe, expect, it } from "vitest";
-import { latexToJs, toFn } from "./emit-js.ts";
+import { latexToJs } from "./emit-js.ts";
+
+/** `latex` compiled into a function of x (throws SerializeError for anything not plottable). */
+const toFn = (latex: string): ((x: number) => number) => new Function("x", `return ${latexToJs(latex, ["x"])};`) as (x: number) => number;
 import { compileDefinition } from "../apps/function/compile.ts";
 
 const cases: [string, (x: number) => number][] = [

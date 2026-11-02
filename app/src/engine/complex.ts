@@ -4,11 +4,7 @@
 // through our definition (pasatan); a stored name or user function that calls it is read through a copy
 // (complexReads). Split from numeric.ts (cleanup 2026-10-20, item 13). Synchronous, UI-free; only erasable TypeScript.
 import { AUDITED_FUNCTIONS, namePrint, type Giac } from "./numeric.ts";
-import { functionsIn, leadingName, names, namesIn, programParams, renameCalls, renameNames, topLevelArgs, type Quoting } from "./giacPrint.ts";
-
-function isError(out: string): boolean {
-  return out.startsWith("GIAC_ERROR");
-}
+import { functionsIn, isError, leadingName, names, namesIn, programParams, type Quoting, renameCalls, renameNames, topLevelArgs } from "./giacPrint.ts";
 
 /**
  * G50 (deep check 2026-10-19 D10), G60: our definitions for the functions whose complex values Giac gets wrong. Left:

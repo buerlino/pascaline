@@ -7,7 +7,7 @@
 // Synchronous, UI-free. Only erasable TypeScript syntax.
 import { hasAngleFactor } from "../input/angles.ts";
 import type { Giac } from "./numeric.ts";
-import { callsOf } from "./giacPrint.ts";
+import { callsOf, isError } from "./giacPrint.ts";
 
 const TRIG = ["sin", "cos", "tan", "sec", "csc", "cot"];
 const INVERSE = ["asin", "acos", "atan", "asec", "acsc", "acot"];
@@ -15,10 +15,6 @@ const INVERSE = ["asin", "acos", "atan", "asec", "acsc", "acot"];
 const INERT = "pasdg_";
 const NAMES = [...INVERSE, ...TRIG];
 const INERT_NAMES = NAMES.map((n) => INERT + n);
-
-function isError(out: string): boolean {
-  return out.startsWith("GIAC_ERROR");
-}
 
 /** The text needs the DEG display rule: it calls a trig function or an inverse, and holds no degree factor (a function
  *  body keeps `pasdeg`, so it follows the mode at call time and is drawn without it, R64). */

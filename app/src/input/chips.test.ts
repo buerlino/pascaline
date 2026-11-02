@@ -5,7 +5,8 @@ import { describe, expect, it } from "vitest";
 import { basisOf } from "../engine/constBasis.ts";
 import { chipToGiac } from "./chip-giac.ts";
 import { pruneChips, validChips, type ChipTable } from "./chips.ts";
-import { EQ_INEXACT_FLAG, SerializeError } from "./emit.ts";
+import { SerializeError } from "./emit.ts";
+import { EQ_INEXACT_FLAG } from "../engine/ourNames.ts";
 import { latexToGiac, latexToGiacInfo } from "./latex-to-giac.ts";
 import { chipUnit } from "./chipUnit.ts";
 

@@ -84,9 +84,3 @@ export function latexToJs(latex: string, vars: readonly string[] = ["x"]): strin
 export function jsonToJs(e: Json, vars: readonly string[] = ["x"], deg = false): string {
   return js(e, new Set(vars), deg);
 }
-
-/** Compile `latex` into a function of x. Throws SerializeError for anything not plottable. */
-export function toFn(latex: string): (x: number) => number {
-  const src = latexToJs(latex, ["x"]);
-  return new Function("x", `return ${src};`) as (x: number) => number;
-}

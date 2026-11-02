@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Minimal C API exported from the Giac wasm module. The worker talks only to these.
-// G85 (structured bridge spike, docs/research/structure-hindsight.md 2.1): giac_ctx_get/giac_ctx_set, giac_parse and
+// G85 (structured bridge spike, docs/archive/structure-hindsight.md 2.1): giac_ctx_get/giac_ctx_set, giac_parse and
 // giac_value answer as JSON on the context caseval uses. They change no Giac behaviour (no patch); giac_eval stays.
 #include <emscripten/emscripten.h>
 #include <cmath>

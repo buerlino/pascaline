@@ -4,17 +4,10 @@
 // Plain state, no DOM: the keys reach it through sheetKeys.ts, touch through Sheet.svelte.
 import type { MenuItem } from "../apps/types.ts";
 import type { IconId } from "./icons.ts";
+import { lastPicks } from "./picks.ts";
 
 /** Lists with more items than this get the letter filter (docs/05 3.1: "for lists longer than 10 items"). */
 export const FILTER_ABOVE = 10;
-
-/** The item picked last, per sheet and level (`<sheet id>/<item id>/…`): reopening highlights it (Menu + Enter repeats). */
-const lastPicks = new Map<string, string>();
-
-/** Forget every remembered pick (tests). */
-export function forgetPicks(): void {
-  lastPicks.clear();
-}
 
 /** An item as the sheet shows it: its place in the full list and the number a digit key picks it with. */
 export interface Row {

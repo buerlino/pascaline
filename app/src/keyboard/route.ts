@@ -311,7 +311,7 @@ function replay(c: RouteCtx): void {
 
 const SHEET_KEYS: readonly string[] = ["apps", "menu", "tmpl", "relations", "symbols", "find", "vars", "memory"];
 /** The open sheet is Find (R4a): its keys follow docs/04 3.7 (sheetKeys.ts findKey). */
-export const FIND_SHEET = "find";
+const FIND_SHEET = "find";
 /** Does this key open a sheet? (Mode and Settings load the view with their lists.) */
 function opensSheet(key: Key, mods: Mods): boolean {
   const a = actionFor(key, mods.shift, mods.alpha);

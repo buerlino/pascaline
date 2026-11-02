@@ -50,10 +50,6 @@ export function libraryBenchPrograms(): string[] {
   return out;
 }
 
-export function libraryBenchText(): string {
-  return `// pascaline library 1\n${libraryBenchPrograms().map((p, k) => `\n// program ${k + 1}\n${p}\n`).join("")}`;
-}
-
 /**
  * ?bench=library (A12): seed the 200 library programs into the persisted log, once, the way importLibrary defines them
  * (asGiac, then cas()). Then cold-start the app (tools/device_run.py start): replayMs is the library replay.

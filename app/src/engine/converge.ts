@@ -10,7 +10,7 @@
 // Only inputs that hold one of these calls pay, and an integral pays for the second integral only when f has a real
 // singular point in [a, b]. The checks run next to the engine, synchronously; only erasable TypeScript syntax.
 import { hasFloat, type Giac } from "./numeric.ts";
-import { callsOf, functionsIn, isName, splitList, topLevelArgs, wordsOf } from "./giacPrint.ts";
+import { callsOf, functionsIn, isError, isName, splitList, topLevelArgs, wordsOf } from "./giacPrint.ts";
 
 /** Why a result is refused; the UI shows `error.<code>` from the i18n table (enEngine.ts). */
 /** `undecided` (G57) comes from decisions.ts decideTwice: a decision on a cut Giac cannot make. `divisionByZero`,
@@ -47,7 +47,6 @@ export function callsIn(input: string): Call[] {
   return out;
 }
 
-const isError = (t: string): boolean => t.startsWith("GIAC_ERROR");
 /** Giac's text for "no finite number": undef, or an infinity anywhere in it. */
 const notFinite = (t: string): boolean => t === "undef" || t.includes("infinity") || wordsOf(t).includes("inf");
 /** A result that is a value we may test: no infinity, no undef, no unevaluated call of the same kind left in it. */

@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url";
 import { parse } from "yaml";
 import { describe, expect, it } from "vitest";
 import type { MenuItem } from "../apps/types.ts";
-import { makeIndex } from "../find/finder.ts";
+import { makeIndex } from "../find/testIndex.ts";
 import type { FindItem, IndexItem } from "../find/types.ts";
 import { cellUnitOf, pickActions } from "./find.ts";
 import { productActions, unitsMenu } from "./menu.ts";

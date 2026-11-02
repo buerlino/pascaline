@@ -12,8 +12,7 @@ import type { DefChange } from "./defs.ts";
 import { giacAvailable, loadNodeGiac, nodeHost } from "./nodeGiac.ts";
 import { importLibrary, parseLibrary } from "./library.ts";
 import { formOf, mayStore, programStores, writesThrough } from "./stores.ts";
-import { isOurStore } from "./ourNames.ts";
-import { EQ_DIFF, EQ_INEXACT_FLAG } from "./homeEval.ts";
+import { EQ_DIFF, EQ_INEXACT_FLAG, isOurStore } from "./ourNames.ts";
 
 const setsOf = (defs: DefChange[]): string[] => defs.flatMap((c) => ("set" in c ? [`${c.set.name}=${c.set.cmds.join(";")}`] : []));
 

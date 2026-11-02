@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// G102 canary (docs/research/structure-hindsight.md 2.4): each of bridge-1's 26 fields (app/src/engine/bridge.ts
+// G102 canary (docs/archive/structure-hindsight.md 2.4): each of bridge-1's 26 fields (app/src/engine/bridge.ts
 // GiacContext) is set through `giac_ctx_set`, then Giac's own getter must print the value set, and the host's context
 // set back must read as the host's (flags.ts hostContext). A Giac re-pin that moves, renames or drops a field, or turns a
 // setter into another one, fails here. Needs the engine build (GIAC_OUT or GIAC_MJS, as nodeGiac.ts).

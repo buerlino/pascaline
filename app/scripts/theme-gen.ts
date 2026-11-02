@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // The theme generator (R50c): writes every theme value from the families' own colours (theme-families.ts) by the
-// contrast rules of docs/shifts/2026-10-18-themes-report.md section 2. Output:
+// contrast rules of docs/archive/shifts/2026-10-18-themes-report.md section 2. Output:
 //   - the two start blocks of Pascaline in src/style.css (replaced in place), and
 //   - src/theme/<family>.css, one lazy file per family with all its combinations ([data-contrast="high"],
 //     [data-keys="plain"] and both; the other four families' plain light/dark blocks too).
@@ -210,7 +210,7 @@ export function theme(c: Combo): { t: Palette; fixes: [string, string, string][]
   return { t: withOnError(withPfx(o, c.high), dark), fixes };
 }
 
-// --- the audit: every pair the app draws (docs/shifts/2026-10-18-themes-report.md section 2) ---
+// --- the audit: every pair the app draws (docs/archive/shifts/2026-10-18-themes-report.md section 2) ---
 export interface Check {
   g: string;
   l: string;

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// A time-only miss runs once more (owner, 2026-10-22; decisions.md "g58 timing"): a case whose only problem is
+// A time-only miss runs once more (owner, 2026-10-22; decisions.md "Owner answers of 2026-10-25, afternoon"): a case whose only problem is
 // `took … ms > budgetMs` is run again on the same engine; it fails only if the rerun misses too. The budgets stay.
 
 /** The problem text a missed `budgetMs` gives (stage precision). */

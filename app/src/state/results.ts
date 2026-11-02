@@ -6,7 +6,7 @@
 import type { ChipFactsTable } from "../engine/chipFacts.ts";
 import { decimalFromRational, decimalFromString, type ComplexValue } from "../engine/format.ts";
 import type { ValueFacts } from "../engine/types.ts";
-import { bracesOf } from "../engine/giacPrint.ts";
+import { bracesOf, RATIONAL } from "../engine/giacPrint.ts";
 import type { Chip, ChipTable } from "../input/chips.ts";
 import type { Rational, ResultFacts } from "./displayMode.ts";
 
@@ -19,7 +19,6 @@ export const HISTORY_LIMIT = 200;
 
 /** Engine text with a decimal point or an E exponent is rounded digits, not an exact value. */
 const isDigitsText = (t: string): boolean => /\.|\d[eE][+-]?\d/.test(t);
-const RATIONAL = /^(-?\d+)(?:\/(\d+))?$/;
 /** A plain integer or fraction text as a Rational; undefined for anything else (or a zero denominator). */
 export function rationalOf(text: string | undefined): Rational | undefined {
   const m = text === undefined ? null : RATIONAL.exec(text.trim());
