@@ -543,8 +543,14 @@
     background: var(--panel);
     color: var(--text);
     border: 1px solid var(--line);
-    --caret-color: var(--focus);
+    /* R116: MathLive's highlights as theme tokens, so they follow our look and never the system's scheme (the unit
+       view's field is in .entry too): the caret in the Alpha hue; the box of the bracket that holds the cursor and
+       the selection (never both at once) on --pick, with --text on them */
+    --caret-color: var(--alpha);
+    --contains-highlight-background-color: var(--pick);
+    --contains-highlight-color: var(--text);
     --selection-background-color: var(--pick);
+    --selection-color: var(--text);
   }
   .entry :global(math-field::part(virtual-keyboard-toggle)),
   .entry :global(math-field::part(menu-toggle)) {

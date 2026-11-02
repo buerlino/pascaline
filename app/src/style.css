@@ -1,8 +1,9 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Colour roles per family and brightness (R50b). The values are tools/probes/themes-audit.mjs `--css`; the contrast
    test (src/style.test.ts) reads every [data-family][data-brightness] block. index.html sets both attributes before
-   the first paint. --approx ≈, --warn ⚠, --pick the picked row, --focus focus ring and caret, --key-on and
-   --on-key-on a key that is on, --on-error the label on an --error ground. */
+   the first paint. --approx ≈, --warn ⚠, --pick the picked row and the entry line's bracket box and selection (R116),
+   --focus focus ring, --alpha also the entry line's caret, --key-on and --on-key-on a key that is on, --on-error the
+   label on an --error ground. */
 :root {
   /* R33: a name that holds a value, on the entry line (entry/namemarks.ts); the ≈ colour until a theme gets its own */
   --name-mark: var(--approx);
@@ -31,7 +32,7 @@
   --chip-bg: #1d3070;
   --approx: #86c5ff;
   --warn: #ffc233;
-  --pick: #1a2442;
+  --pick: #1b3246;
   --focus: #ffc233;
   --key-on: #ffc233;
   --on-key-on: #0b1020;
@@ -55,11 +56,11 @@
   --muted: #4a556e;
   --shift: #8a5300;
   --alpha: #0b4fc4;
-  --error: #b3261e;
+  --error: #a8241c;
   --chip-bg: #d8e1fb;
   --approx: #0b4fc4;
-  --warn: #8a4b00;
-  --pick: #dde4f8;
+  --warn: #854800;
+  --pick: #bbcff1;
   --focus: #0025b5;
   --key-on: #0025b5;
   --on-key-on: #ffffff;
