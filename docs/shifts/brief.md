@@ -72,9 +72,6 @@ A8 and [A57](packages/A57.md) run by day. Steps 448–452 and 408 run only on th
 
 | Step | What | Agent, model | Branch | After |
 |---|---|---|---|---|
-| 442 | [G157](packages/G157.md) `trunc` of a name stays `trunc` (F156) | gorge, Opus | `p1/gorge-truncname` | – |
-| 443 | [R114](packages/R114.md) Ctrl+V and every system paste go through our paste (F157) | ron, Opus | `p1/ron-hwpaste` | G157 |
-| 444 | [G158](packages/G158.md) `sem` with a second list is refused (F164) | gorge, Opus | `p1/gorge-semonelist` | R114 |
 | 445 | [R115](packages/R115.md) one result chip used twice is one σ input (F165) | ron, Opus | `p1/ron-chiponce` | G158 |
 | 446 | [G162](packages/G162.md) the fuzz's cancellation families and their oracle | gorge, Opus | `p1/gorge-fuzzedges` | – |
 | 447 | [G159](packages/G159.md) σ through `piecewise` or `when` gets ⚠ at a crossing (F166) | gorge, Opus | `p1/gorge-casejump` | R115 |

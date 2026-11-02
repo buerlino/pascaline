@@ -159,6 +159,7 @@ The defaults that bind code and tests, one line each. A default changes when its
 
 - **The deep check of 2026-10-19 (G38, G57, G48, G39):** a result resting on a numeric decision is decided again at P + 20 and P + 40, refused when undecided; a run-once store is ⚠ without a count; a divergent sum or integral is refused. Rule: docs/04 2.4. Full text: archive.
 - **R36f1 (Opus pass 50): `1.0` is an exact decimal in Home,** so `√2·1.0` stored to B stays exact and B+1's line says "≈ rounded", not "uses B"; `why.rounded` names a stored float (`evalf(√2)`), never one of our names.
+- **G158 (Opus pass 52):** `sem` and `median` refuse a second list or loose values ("needs one list of values"; `median(1,2,3)` too: one rule, Find's syntax is `median(list)`); `percentile`'s wrong count gets our words (G158f1). Weighted sem: when the owner asks.
 
 **Units**
 - **G16:** an exact 0 loses its dimension; terms that cancel exactly are a known gap. **G17:** dB is a field-ratio level (1 Np = 20/ln 10 dB, 1 bel = 10 dB), dBm and dBW to 1 mW and 1 W; °C, °F and the levels alone convert by offset or level; a lone dB, bel or Np with no end slot, a level of a ratio ≤ 0 and a temperature below 0 K are refused.
@@ -169,7 +170,7 @@ The defaults that bind code and tests, one line each. A default changes when its
 - **R60:** the alternatives row (units/alternatives.ts) takes a temperature's three units (absolute K, °C, °F; interval K, Δ°C, Δ°F) and no target; Δ°C is K's Find alias, so its tap shows K. Would change if: R62 labels the alias.
 - **R61 (Opus pass 28):** a unit result's σ chip is an independent input of σ, as a constant (G26), also beside the constant it came from; one chip used twice is one input; a σ of 0 is none. Full text: archive. Would change if: a chip keeps its inputs' basis (G81).
 - **R63:** in the unit view a result chip is a number: a slot after it, filled with its unit, and its σ goes in as pasupm (G18); Ans gets no slot (the unit view has no Ans value). Would change if: the owner wants a chip's σ dropped there.
-- **R92, the units menu's Constants and Tools (Opus pass 51):** the last two rows, after the categories, so no row moves. A constant goes on Home's line at its cursor (Find's pick path, R61's chip); the view leaves with its slots, they follow the new line text, and it opens again. Five Tools rows for the six G2 tools (CONVERT and UFACTOR are the end slot); UPART's row is disabled ("not built yet") until its place is built. Would change if: the owner's R24d review wants a constant at the active slot or the G2's order.
+- **R92, the units menu's Constants and Tools (Opus pass 51):** the last two rows, after the categories; a constant goes on Home's line at its cursor; UPART's row is disabled until built. Full text: archive.
 
 - **The check of 2026-10-19:** a zero term keeps its dimension for the unit check (G35 rewrites G16's "an exact 0 loses its dimension" and the known gap of cancelling terms). Would change if: the per-term check costs more than the 5 ms p95 bar.
 
