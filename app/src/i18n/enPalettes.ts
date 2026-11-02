@@ -58,6 +58,7 @@ export const enPalettes = {
   "sym.phi": "phi",
   "sym.chi": "chi",
   "sym.Omega": "Omega",
+  "sym.percent": "Percent %",
 } as const satisfies Record<string, string>;
 
 /** A palette message; throws on a missing one, like `legend`. */

@@ -496,7 +496,9 @@ relations:
 # rule), so 30° means one thing; ′ and ″ follow it as minutes and seconds. & and Å are refused for now: what & does on
 # the G2 is not known, and Å is the ångström, a unit (units come with the unit view, milestone 5). Greek letters are
 # variable names, never units (μ, Ω) and never Giac's own names (parse.ts GREEK maps β, γ, ε to free names); ε and φ
-# insert \varepsilon and \varphi, the shapes the G2 draws.
+# insert \varepsilon and \varphi, the shapes the G2 draws. R110: the fourth row is ours (the G2's grid is 8 × 3): `%` first
+# (`\%`, a percent of a number, and R104's relative σ after ±); the rest of the row stays empty, and a cell with its own
+# `source` is not the palette's `source: device`.
 symbols:
   columns: 8
   items:
@@ -527,4 +529,6 @@ symbols:
     - { id: phi,     row: 2, col: 5, desc: "phi", insert: "\\varphi", sample: ["2\\varphi", "2*phi"] }
     - { id: chi,     row: 2, col: 6, desc: "chi", insert: "\\chi", sample: ["2\\chi", "2*chi"] }
     - { id: Omega,   row: 2, col: 7, desc: "capital omega", insert: "\\Omega", sample: ["2\\Omega", "2*Omega"] }
+    # row 4: ours, not the G2's (R110, owner 2026-11-01): the cell's own `source` says so; the grid's usual rule reaches it (▼ from `mu` in column 1, ▲ from `fact` wraps to it, ◀ ▶ in reading order)
+    - { id: percent, row: 3, col: 0, desc: "percent", insert: "\\%", sample: ["5\\%", "1/20"], source: assumed }
   source: device
