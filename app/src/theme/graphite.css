@@ -20,7 +20,7 @@
   --chip-bg: #3a3a42;
   --approx: #8fbdf0;
   --warn: #ffb86b;
-  --pick: #35373c;
+  --pick: #33373b;
   --focus: #f2b45a;
   --key-on: #e9b25d;
   --on-key-on: #17181b;
@@ -132,7 +132,7 @@
   --chip-bg: #dcd7ce;
   --approx: #18578b;
   --warn: #873f00;
-  --pick: #cdc7bc;
+  --pick: #c1c9d1;
   --focus: #8a4a00;
   --key-on: #8a4a00;
   --on-key-on: #ffffff;
@@ -184,11 +184,11 @@
   --muted: #41403b;
   --shift: #7b4200;
   --alpha: #185487;
-  --error: #781e13;
+  --error: #7b1e14;
   --chip-bg: #e8e5df;
-  --approx: #124169;
-  --warn: #673000;
-  --pick: #d9d4cb;
+  --approx: #12436b;
+  --warn: #693100;
+  --pick: #cfd6dc;
   --focus: #8a4a00;
   --key-on: #874900;
   --on-key-on: #ffffff;

@@ -20,7 +20,7 @@
   --chip-bg: #1f2229;
   --approx: #eef1f8;
   --warn: #ffc233;
-  --pick: #292f41;
+  --pick: #293041;
   --focus: #eef1f8;
   --key-on: #eef1f8;
   --on-key-on: #0b1020;
@@ -48,7 +48,7 @@
   --chip-bg: #131f49;
   --approx: #86c5ff;
   --warn: #ffc233;
-  --pick: #1b2646;
+  --pick: #162939;
   --focus: #ffc233;
   --key-on: #ffc233;
   --on-key-on: #0b1020;
@@ -72,11 +72,11 @@
   --muted: #a9b3ca;
   --shift: #eef1f8;
   --alpha: #eef1f8;
-  --error: #ff958e;
+  --error: #ff9890;
   --chip-bg: #14161b;
   --approx: #eef1f8;
   --warn: #ffc233;
-  --pick: #232737;
+  --pick: #222836;
   --focus: #eef1f8;
   --key-on: #eef1f8;
   --on-key-on: #0b1020;
@@ -132,7 +132,7 @@
   --chip-bg: #e6ecfc;
   --approx: #093c96;
   --warn: #643600;
-  --pick: #ced8f5;
+  --pick: #c9d9f4;
   --focus: #0025b5;
   --key-on: #0025b5;
   --on-key-on: #ffffff;

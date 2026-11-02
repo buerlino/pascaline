@@ -4,6 +4,7 @@
 // directly in the keypad component, so these tokens are all there is to check.
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { HUE_NEAR, HUE_SAT, PICK_APART } from "../scripts/theme-gen.ts";
 
 const css = readFileSync(new URL("./style.css", import.meta.url), "utf8");
 
@@ -132,8 +133,17 @@ function allThemeBlocks(): [string, Record<string, string>, boolean][] {
     ),
   );
 }
-/** theme-gen.ts PICK_APART: the box stands this far from the entry line's --panel (1.13 was not seen on the Tab One). */
-const APART = 1.3;
+/** HSL hue (degrees) and saturation of a colour. */
+function hueSat(hex: string): [number, number] {
+  const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255) as [number, number, number];
+  const mx = Math.max(r, g, b);
+  const mn = Math.min(r, g, b);
+  if (mx === mn) return [0, 0];
+  const d = mx - mn;
+  const l = (mx + mn) / 2;
+  const h = mx === r ? (g - b) / d + (g < b ? 6 : 0) : mx === g ? (b - r) / d + 2 : (r - g) / d + 4;
+  return [h * 60, l > 0.5 ? d / (2 - mx - mn) : d / (mx + mn)];
+}
 
 describe("entry highlights (R116)", () => {
   const map = entryMap();
@@ -152,7 +162,15 @@ describe("entry highlights (R116)", () => {
       expect(contrast(c("selection-color"), c("selection-background-color")), "selected text").toBeGreaterThanOrEqual(T);
       expect(contrast(c("caret-color"), t["panel"] as string), "caret on the entry line").toBeGreaterThanOrEqual(T);
       expect(contrast(c("caret-color"), c("contains-highlight-background-color")), "caret in the box (non-text)").toBeGreaterThanOrEqual(3);
-      expect(contrast(c("contains-highlight-background-color"), t["panel"] as string), "the box apart from --panel").toBeGreaterThanOrEqual(APART);
-      expect(contrast(c("selection-background-color"), t["panel"] as string), "the selection apart from --panel").toBeGreaterThanOrEqual(APART);
+      expect(contrast(c("contains-highlight-background-color"), t["panel"] as string), "the box apart from --panel").toBeGreaterThanOrEqual(PICK_APART);
+      expect(contrast(c("selection-background-color"), t["panel"] as string), "the selection apart from --panel").toBeGreaterThanOrEqual(PICK_APART);
+    });
+  for (const [sel, t] of blocks40)
+    it(`${sel}: the caret and the box are one hue family (at most ${HUE_NEAR}° apart when both have a hue)`, () => {
+      const [ch, cs] = hueSat(t[map["caret-color"] ?? "-"] ?? "#000000");
+      const [bh, bs] = hueSat(t[map["contains-highlight-background-color"] ?? "-"] ?? "#000000");
+      if (cs <= HUE_SAT || bs <= HUE_SAT) return;
+      const apart = Math.min(Math.abs(ch - bh), 360 - Math.abs(ch - bh));
+      expect(apart, `caret hue ${ch.toFixed(0)}°, box hue ${bh.toFixed(0)}°`).toBeLessThanOrEqual(HUE_NEAR);
     });
 });
