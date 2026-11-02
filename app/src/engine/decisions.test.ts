@@ -70,6 +70,9 @@ const ROWS: readonly Row[] = [
   // a tie Giac proves (sin²+cos² = 1, simplify gives 0): a floor, sign or frac takes its value on the cut ...
   { id: "family:floor-proven-tie", input: "floor(sin(pi/7)^2+cos(pi/7)^2)", digits: 12, rests: true, verdict: "1", why: "floor(1) = 1" },
   { id: "family:sign-proven-tie", input: "sign(sin(pi/7)^2+cos(pi/7)^2-1)", digits: 12, rests: true, verdict: "0", why: "sign(0) = 0" },
+  // G157 (patch 0028): trunc stays unevaluated where Giac cannot prove the sign; the cut is still read on its argument
+  { id: "family:trunc-proven-tie", input: "trunc(-(sin(pi/7)^2+cos(pi/7)^2))", digits: 12, rests: true, verdict: "-1", why: "trunc(-1) = -1" },
+  { id: "family:trunc-unproved-tie", input: "trunc(cos(pi/7)-cos(2*pi/7)+cos(3*pi/7)-1/2-10^-100)", digits: 12, rests: true, verdict: "refused", why: "the argument is -10^-100 (the sum is 1/2), on a cut Giac cannot prove" },
   { id: "family:frac-proven-tie", input: "frac(sin(pi/7)^2+cos(pi/7)^2)", digits: 12, rests: true, verdict: "0", why: "frac(1) = 0" },
   // ... and one with no value to put in its place (Heaviside(0), round at a half, a comparison at 0) stays ⚠ (G57)
   { id: "family:heaviside-proven-tie", input: "Heaviside(sin(pi/7)^2+cos(pi/7)^2-1)", digits: 12, rests: true, verdict: "⚠", why: "Heaviside(0): conventions differ" },
