@@ -15,11 +15,13 @@ interface FakeRequest<T> {
 
 /** One database's records by store and key; tests read and seed `stores` directly. A get of a key in `failGets` ends in
  *  its onerror (R38af2); a key in `failGetsOnce` only for its next get, which takes it out (R93: one failed read, then a
- *  working store). While `failOpens` is above 0, each open ends in its onerror and counts it down (R93). */
+ *  working store). While `failOpens` is above 0, each open ends in its onerror and counts it down (R93). A put of a key
+ *  in `failPuts` ends in its onerror and fails its transaction, as a full disk does (R96). */
 export interface FakeIdb {
   readonly stores: Map<string, Map<string, unknown>>;
   readonly failGets: Set<string>;
   readonly failGetsOnce: Set<string>;
+  readonly failPuts: Set<string>;
   failOpens: number;
   readonly factory: { open(name: string, version: number): FakeRequest<unknown> };
 }
@@ -28,23 +30,30 @@ export function fakeIndexedDb(): FakeIdb {
   const stores = new Map<string, Map<string, unknown>>();
   const failGets = new Set<string>();
   const failGetsOnce = new Set<string>();
+  const failPuts = new Set<string>();
   const fails = (key: string): boolean => failGets.has(key) || failGetsOnce.delete(key);
   const later = (f: () => void): void => void setTimeout(f, 0);
 
   const transaction = (name: string) => {
     let pending = 0;
+    let failed = false;
     const tx = { oncomplete: null as Handler, onerror: null as Handler, error: null as Error | null, objectStore };
     const done = (): void => {
       pending--;
-      if (pending === 0) later(() => tx.oncomplete?.());
+      if (pending === 0 && !failed) later(() => tx.oncomplete?.());
     };
-    function request<T>(run: () => T, fail = false): FakeRequest<T | undefined> {
+    function request<T>(run: () => T, fail = false, failTx = false): FakeRequest<T | undefined> {
       const r: FakeRequest<T | undefined> = { result: undefined, error: null, onsuccess: null, onerror: null };
       pending++;
       later(() => {
         if (fail) {
-          r.error = new Error("fake get failed");
+          r.error = new Error(failTx ? "QuotaExceededError (fake put failed)" : "fake get failed");
           r.onerror?.();
+          if (failTx) {
+            failed = true;
+            tx.error = r.error;
+            tx.onerror?.();
+          }
         } else {
           r.result = run();
           r.onsuccess?.();
@@ -58,7 +67,7 @@ export function fakeIndexedDb(): FakeIdb {
       if (!store) throw new Error(`no store ${s}`);
       return {
         get: (key: string) => request(() => (store.has(key) ? structuredClone(store.get(key)) : undefined), fails(key)),
-        put: (value: unknown, key: string) => request(() => void store.set(key, structuredClone(value))),
+        put: (value: unknown, key: string) => request(() => void store.set(key, structuredClone(value)), failPuts.has(key), true),
         delete: (key: string) => request(() => void store.delete(key)),
       };
     }
@@ -76,6 +85,7 @@ export function fakeIndexedDb(): FakeIdb {
     stores,
     failGets,
     failGetsOnce,
+    failPuts,
     failOpens: 0,
     factory: {
       open() {
