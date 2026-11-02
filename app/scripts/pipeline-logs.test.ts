@@ -77,9 +77,26 @@ describe("timing tests of runs 150 and 152", () => {
     expect(onlyTiming("e2e", l)).toBe(true);
     expect(onlyTiming("e2e", l + "  3) [chromium-phone] › test/working.spec.ts:90:1 › the Cancel key stops a job ──────────\n")).toBe(false);
   });
-  it("golden: the case id is not on the FAIL line, so a g58 failure stays a real failure", () => {
-    const log = "  precision g58-factorial-1e6-30: took 2100 ms > budgetMs 2000\nFAIL precision: 99/100 active match; 0 pending; 40 marks checked\n";
-    expect(onlyTiming("golden", log)).toBe(false);
+  // G153f1: round 2 of run 480 (load), a g58 case that only missed its budgetMs, from the case line above the stage line
+  const g58 = "  precision g58-factorial-1e6-30: took 2119 ms > budgetMs 2000; got error: Stopped: it took too long, expect 8.26393168833124006237664610317E5565708\n";
+  const precision = (n: number, m: number, lines: string) => `  precision g137-acosh-cosh-3sqrt-neg-pi-12: pending (got -i, expect -0.965823754463*i)\n${lines}FAIL precision: ${n}/${m} active match; 6 pending; 642 marks checked\n`;
+  it("golden: a g58 case that only missed its budgetMs is timing, by case", () => {
+    expect(failedItems("golden", precision(868, 869, g58))).toEqual([
+      { file: "precision", title: "g58-factorial-1e6-30: took 2119 ms > budgetMs 2000; got error: Stopped: it took too long, expect 8.26393168833124006237664610317E5565708" },
+    ]);
+    expect(onlyTiming("golden", precision(868, 869, g58))).toBe(true);
+    expect(onlyTiming("golden", precision(99, 100, "  precision g58-factorial-1e6-12: took 2100 ms > budgetMs 2000\n"))).toBe(true);
+  });
+  it("golden: a g58 value or mark mismatch, another case, or a count that does not match is not timing", () => {
+    const wrong = "  precision g58-factorial-1e6-30: got 8.26393168833124006237664610316E5565708, expect 8.26393168833124006237664610317E5565708\n";
+    expect(onlyTiming("golden", precision(868, 869, wrong))).toBe(false);
+    expect(onlyTiming("golden", precision(868, 869, "  precision g58-factorial-1e6-30: took 2119 ms > budgetMs 2000; mark ⚠, expect ≈\n"))).toBe(false);
+    expect(onlyTiming("golden", precision(868, 869, "  precision g58-factorial-1e6-30: took 2119 ms > budgetMs 2000; got 8.3E5565708, expect 8.26393168833124006237664610317E5565708\n"))).toBe(false);
+    expect(onlyTiming("golden", precision(868, 869, "  precision prec-3-UTPN-30: took 2119 ms > budgetMs 2000\n"))).toBe(false);
+    expect(onlyTiming("golden", precision(867, 869, g58 + wrong.replace("1e6-30", "1e6-12")))).toBe(false);
+    expect(onlyTiming("golden", precision(867, 869, g58))).toBe(false);
+    expect(onlyTiming("golden", precision(868, 869, ""))).toBe(false);
+    expect(onlyTiming("golden", precision(868, 869, g58) + "FAIL home: 12/13 match\n")).toBe(false);
   });
 });
 
@@ -126,7 +143,19 @@ describe("golden steps and flags under load (A51)", () => {
   const canary = "PASS step-budget-test: 6 runs interrupted at 506 checks (budget 500, clock ×1 and ×8); with ckbudget 0 the 0.2 s clock interrupts";
   const known = "  steps known (HOME_DEADLINE_MS): precision g58-factorial-1e6-12 [display] input factorial(10^6): desktop \"8.26E5565708\", device \"error: Stopped: it took too long\"\n";
   const finding = (id: string, kind = "mark") => `  steps precision ${id} [${kind}] input chisquare_icdf(1,0.95): desktop "≈", device "⚠"\n`;
-  const steps = (n: number, lines: string, head = canary) => `${known}${lines}FAIL steps: ${head} | 1292 cases, clock ×1 and ×8: ${n} new findings, 2 known\n`;
+  // G153f1: the real stage line since G137f1 (run 480, round 1) ends in ", 5 pending", with a "steps pending:" line above it
+  const pending = "  steps pending: precision g149-deg-sqrt-asinh-asin-3.7-12 [mark] input sqrt(asinh((asin(3.7)/pasdeg))): desktop \"⚠\", device \"≈\"\n";
+  const steps = (n: number, lines: string, head = canary) => `${known}${pending}${lines}FAIL steps: ${head} | 1425 cases, clock ×1 and ×8: ${n} new findings, 2 known, 5 pending\n`;
+  it("G153f1: round 1's two findings, as printed, are timing; another case id is not", () => {
+    const sin = "  steps precision prec-G23-sin-1e2000 [display] input sin(pasdeg*(10^2000)): desktop \"-0.7\", device \"-0.8\"\n";
+    const chi = "  steps precision prec-g44f2f1-chisquare_icdf-1-0.95-12 [mark] input chisquare_icdf(1,0.95): desktop \"≈\", device \"⚠\"\n";
+    expect(failedItems("golden", steps(2, sin + chi))).toEqual([
+      { file: "steps", title: "precision/prec-G23-sin-1e2000" },
+      { file: "steps", title: "precision/prec-g44f2f1-chisquare_icdf-1-0.95-12" },
+    ]);
+    expect(onlyTiming("golden", steps(2, sin + chi))).toBe(true);
+    expect(onlyTiming("golden", steps(2, sin + chi.replace("prec-g44f2f1-chisquare_icdf-1-0.95-12", "prec-g44f2f1-chisquare_icdf-1-0.95-30")))).toBe(false);
+  });
   it("steps: a finding of the two load-only cases is timing, by case", () => {
     const one = steps(1, finding("prec-g44f2f1-chisquare_icdf-1-0.95-12"));
     expect(failedItems("golden", one)).toEqual([{ file: "steps", title: "precision/prec-g44f2f1-chisquare_icdf-1-0.95-12" }]);
