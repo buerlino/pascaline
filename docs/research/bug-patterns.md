@@ -3,7 +3,7 @@
 
 **Status (2026-10-20, markers updated 2026-10-27): reference.** Every bug found to 2026-10-19 by family, and F99–F100 since; a row's state names its package and merge where one exists; the live open bugs are backlog.md's F lines, the rows open on `da7a59c` became F44–F59 ([the consolidation report](../archive/shifts/2026-10-20-sandra-consolidation-report.md) (a)); each family's question is in `.claude/agents/sofia.md`.
 
-*Written 2026-10-19, evening, by Claude (Opus, the owner's session; read and probe only) on `phase-1` `0bd9631`. The owner asked for every bug found and fixed, or still open, grouped so that the groups tell us where to look for the next ones. Sources: the 1063 commits on `phase-1` and the other branches (every `fix` commit, and the fix rounds inside feature merges), docs/backlog.md and its archive, feedback.md, docs/04 2.3 with [r12-evidence.md](r12-evidence.md), the check notes of 2026-10-18 and 2026-10-19, [r14-angle-mode.md](../archive/r14-angle-mode.md), [r16-verification.md](../archive/r16-verification.md) (untracked), the open package files and the shift reports. Rows come from those sources, where each was verified when it was found. The two rows marked **new** come from probes I ran today (section 4).*
+*Written 2026-10-19, evening, by Claude (Opus, the owner's session; read and probe only) on `phase-1` `0bd9631`. The owner asked for every bug found and fixed, or still open, grouped so that the groups tell us where to look for the next ones. Sources: the 1063 commits on `phase-1` and the other branches (every `fix` commit, and the fix rounds inside feature merges), docs/backlog.md and its archive, feedback.md, docs/04 2.3 with [r12-evidence.md](r12-evidence.md), the check notes of 2026-10-18 and 2026-10-19, [r14-angle-mode.md](../archive/r14-angle-mode.md), [r16-verification.md](../archive/r16-verification.md) (untracked), the open package files and the shift reports. Rows come from those sources, where each was verified when it was found. The two rows marked **new** come from probes I ran today (N1, fixed by G67f1).*
 
 **Id notation.** F1–F43 are feedback and backlog bugs. "§2.3 #n" is row n of docs/04 2.3 (r12-evidence section 1). "chk n" is finding n of [check-2026-10-19.md](../archive/shifts/check-2026-10-19.md). D1–D12 and E1–E12 come from the two deep checks. "n18" and "n19 2.x" are the night checks of 2026-10-18 and 2026-10-19. "r16-F1"–"r16-F7" are the sweep of r16-verification.md, renamed here because F1–F7 are already feedback ids. SB1–SB4 are the solver bugs, L8 and L9 the parser gaps of milestone 2. A package id with f1, f2 is a fix package that an Opus pass asked for after the merge.
 
@@ -101,7 +101,7 @@ In all, 224 rows outside family 16: 155 fixed and 69 open or proposed, 2 of them
 | r14 §3, §5 | (with route R) the kept `==` text shows `cos(1*pi/7)`; a user's `pasdeg:=5` makes `sin(x)` into `sin(5x)` | see family 9 | **merged R64 `ce41519`** |
 | **new N1** | CAS `approx_mode:=1` (or `cas_setup(1,…)`): CAS `1/3` and `int(x^2,x,0,1)` give 0.333333333333; Home `1/4` loses its `=`; the line is stored and replayed at every start; `approx_mode:=0` afterwards returns 1 and stores `approx_mode:=(1)` | the host resets `Digits` and the angle per call, but not the other `cas_setup()` fields, and the defs log stores a Giac flag as a user variable | fixed by G67f1 (`b34b8eb`) |
 
-Checked and right today: `Digits:=5` typed in CAS does not leak into Home (the host sets it per call); `complex_mode:=1` and `epsilon:=0.001` changed no Home result I tried (**verified**, section 4).
+Checked and right today: `Digits:=5` typed in CAS does not leak into Home (the host sets it per call); `complex_mode:=1` and `epsilon:=0.001` changed no Home result I tried (**verified** 2026-10-19).
 
 **Hunt.**
 - **Every Giac flag:** the twelve fields of `cas_setup()` (approx_mode, complex_variables, complex_mode, angle_radian, the float format, epsilon and proba_epsilon, Digits, the series limits, increasing_power, and the rest), and `assume`. For each: can a line set it (CAS, Home, a Find insert, a library), does the host reset it per call, does the defs log store it?
@@ -327,6 +327,7 @@ Checked and right today: `Digits:=5` typed in CAS does not leak into Home (the h
 | F32 | no memory cap (up to 2 GB on a 3.9 GB tablet) | fixed G24; the Tab One check is still open |
 | F42 | a long press before the sheet's chunk opened an invisible sheet; the next digit deleted a row | fixed R46f1 `90f27cb` |
 | F99 | the system keyboard opened again on some returns (Fairphone 6) | fixed R81 `a956ede` (a focus() while the window is blurred fires no focusin and is handed back on the return; dropped on the window's focus); the device confirms |
+| A46 | Android itself showed the keyboard on a return (both devices) | fixed A46 `ee7e509` (`stateAlwaysHidden` in the manifest); the IME check on both devices is in `tests/core/ONE-TIME.md` |
 | F100 | Paste right after Copy pasted the clipboard before it (core c50 on desktop) | fixed R74f2 `fa71393` (Copy and Paste run in order) |
 | `5ddd626` | Menu acted on the last result, not the picked row | fixed |
 | `aca4408`, `f6f9893` | ▲ ▼ could pick the safe-start note; a layer that gave way kept a back entry | fixed |
@@ -467,26 +468,12 @@ Not bugs: decided or asked. Users will report them, so each needs our choice, th
 | what an overflow shows | new question (r16-F7) | symbolic text | open |
 | ᴇ after an operator | `2×1ᴇ` (device, item 40) | — | **R68** |
 
-## 4. Leads for the next hunt, ranked
+## 4. Leads for the next hunt
 
-1. **N1: Giac's mode switches typed by the user (fixed by G67f1, `b34b8eb`).** Probe on `0bd9631` with a scratch sequence probe (one `EngineHost`, Home and CAS sharing Giac as in the app):
-   - CAS `approx_mode:=1`: stored as `{name: "approx_mode", kind: "var", cmds: ["approx_mode:=(1)"]}`, so the defs log replays it at every start.
-   - After it, CAS `1/3` and `int(x^2,x,0,1)` give `0.333333333333`, and Home `1/4`, `0.1+0.2` and `2^70` come back with `exactRational: false`: `≈ 0.25` where `= 0.25` is right. The digits stay right; the CAS view loses its exact answers.
-   - CAS `approx_mode:=0` afterwards returns 1 and stores `approx_mode:=(1)`, so typing cannot undo it. Home `approx_mode:=0` stores `approx_mode:=(1)` with the preview 0.
-   - CAS `cas_setup(1,0,0,1,0,[1e-12,1e-15],12,[1,100,0,25],0,1,0,1)` has the same effect, with no log entry.
-   - **Reach:** typing `approx_mode` needs `_`, which no key types (not checked by hand). But the Find index already lists `cas_setup`, `assume`, `purge` and `restart` as tier-1 entries, so R4a makes them one tap away. A library line would reach it too, because the state-word guard (`library.ts:21`) does not list `approx_mode` (N2, inferred).
-   - **Recommendation:** one small gorge package before R4a. The host sets every `cas_setup()` field before each call (as it already does `Digits` and the angle), the defs log never stores a Giac flag name, the library guard lists every flag, and Find marks or hides the state commands. Tests first: the sequences above as golden sequence cases. It needs an id from the owner's list.
-2. **The carrier × fact matrix** (family 1), with the unprobed cells listed there. It is r16's G62.
-3. **Every way into Giac × our rewrites** (families 8 and 9): one corpus through every path. G54 and G55 hold most of it; add the library test lines and the backup restore.
-4. **Branch cuts and hidden doubles** (family 4): a generator near the cuts and a 30/60-digit "same double" test per function. G59, G60, G61.
-5. **Huge inputs to our JS steps** (family 6): a size bound on every BigInt and `regroup` step. G58.
-6. **A census of Giac's output shapes** for the tier-1 functions (family 5), before R4a exposes them.
-7. **The entry grids for every new template** (families 7 and 10), and the read-only prompt edit before R24c.
-8. **Lazy chunks × key kinds** for R4a's Find chunk and R15c's pieces (family 11).
-9. **The unit view's output side and σ correlation** (family 12), before R24c and S11.
+The leads of 2026-10-19 are built (G54–G62, G67f1, S11), except lead 8 (Find's lazy chunk against each key kind), kept in family 11's Hunt; new leads come from each night review's hunts ([the newest note](night-review-2026-11-02.md)).
 
 ## 5. How to rerun
 
 - One line: `node tools/probes/engine.ts '<input>'` with `MODE=cas`, `ANGLE=deg`, `DIGITS=30` or `FACTS=1` as the row needs.
-- A sequence (N1): a scratch script that builds one `EngineHost` from `app/src/engine/host.ts` and calls `host.cas()` and `host.home()` in turn, printing `result` and `defs`. Mine was throwaway; G62 rebuilds it in the repo.
+- A sequence (N1): a scratch script that builds one `EngineHost` from `app/src/engine/host.ts` and calls `host.cas()` and `host.home()` in turn, printing `result` and `defs`.
 - Each family's older rows name their package; the regression cases are in `tests/golden/` and `app/test/` under the ids above.

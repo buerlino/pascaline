@@ -9,9 +9,8 @@ Each is done once, by the owner, or by annabell when a package names it; the dai
 - R85 (merged `1d35189`): on the Fairphone, Shift, Fmt opens Mode on Angle; ▶, Enter gives DEG (the owner).
 - R86 (merged `cf087b9`): on the Fairphone, the pill then SCI sets it and closes; the digits chip then 20; ◀ goes up to Mode (the owner).
 - R50e (merged `e4d6085`): each theme family on the phone for a while; a cold start with a non-default theme shows no flash; a first start after "clear data" is Dark from the first frame (the owner).
-- R81 (F99, merged `a956ede`): the system keyboard stays closed after a return to the app, on the Fairphone (`tools/probes/ime-return.py`, annabell).
-- Removal tests to read: the "stored in Home" line under CAS results (R32), the angle check (R37), library imports (S4), Undo (P13).
-- A46 (`ee7e509`): the system keyboard stays closed after a return to the app, on the Fairphone and the Tab One (`tools/probes/ime-return.py`, annabell; night review lo-9).
+- Removal tests to read: the "stored in Home" line under CAS results (R32), library imports (S4), Undo (P13).
+- R81 (F99, `a956ede`) and A46 (`ee7e509`): the system keyboard stays closed after a return to the app, on the Fairphone and the Tab One (`tools/probes/ime-return.py`, annabell; night review lo-9).
 - R91 (`e80eda0`): the Fairphone's start time before and after the split (annabell; lo-8).
 - R49 (`d60fbfb`): on the Fairphone, the pill, 5, 1 shows Numbers and the pad moves its highlight (the owner; vr-9).
 - R87 (`56d017f`): on the Fairphone, Settings › Help and about › Parts we use (the owner); its two `./build.sh --unsigned` runs give the same APK hash (annabell; vr-9).
