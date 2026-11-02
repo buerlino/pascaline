@@ -13,7 +13,7 @@
 1. **Find:** R4a, R91, R15c3, R49, R87 and R4b merged (`git log --merges`); R91's before/after on the Fairphone is in [ONE-TIME.md](../../tests/core/ONE-TIME.md).
 2. **The Settings base** (owner, 2026-10-27; decisions.md "Settings in the Mode sheet, and presets"; [mockups/settings.html](../mockups/settings.html)): R85, R49, R86, R50e, R57 merged; after the units: R70, R15c4, R38a, R38b, R88, R55, R89 merged → R59; R53; R12b → R12c → R41; R36, R33 → R37, R40.
 3. **The units** (owner, 2026-10-29: right after R86, R57, R50e): R24b, R24c, R24d and G81 merged, R60, R61, R62, R63 and R71 merged → R92 (the units menu's Tools and Const tabs; its package after R61 and R63).
-4. **Lane B, to v0.1.0** (the APK and the website from one tag): A43, A48 and A50 merged, so A7 may start: A7 (signing, the owner's key made off this laptop), A49 and A45 merged, A8 (the owner's test tag); A9 with the owner's phone by day (F41); then wrong numbers by reach, C4. The bar and the days: [release-0.1.0.md](../release-0.1.0.md); from its freeze (Thu 11-12) both lanes run only its fixes.
+4. **Lane B, to v0.1.0** (the APK and the website from one tag): A43, A48 and A50 merged, so A7 may start: A7 (signing, the owner's key made off this laptop), A49 and A45 merged, A8 (the owner's test tag); A9 merged (F41); then wrong numbers by reach, C4. The bar and the days: [release-0.1.0.md](../release-0.1.0.md); from its freeze (Thu 11-12) both lanes run only its fixes.
 5. **Every morning:** the owner's check (MORNING.md, on the night's device when the night had one, about 10 minutes). The day session writes each failed step as a backlog bug line on phase-1 and logs one line in `.coord/log.md`: `- HH:MM morning <date>: clean` or `- HH:MM morning <date>: fails <ids>`.
 
 **The weekly extreme night** (owner, 2026-10-29; replaces the nightly fuzz of 2026-10-27): once a week lane B runs the extreme-input packages (open: G148, G141, G142, then G156) and the fuzz with its triage (G138; each week its text with a new ID); the Opus pass files the backlog lines. Wrong numbers of everyday or medium reach run any time, by reach.
@@ -28,7 +28,6 @@
 
 | # | Package | Agent, model | Lane | Starts when merged | Size |
 |---|---|---|---|---|---|
-| [A9](packages/A9.md) | Key vibration on the owner's phone | annabell, Sonnet | day (device) | the phone connected | ~0.5 d |
 | [A7](packages/A7.md) | Release signing | annabell, Sonnet | day (the owner's key) | A48, A43; the key's table filled | ~0.5 d |
 | [A8](packages/A8.md) | The release workflow | annabell, Opus | day (the owner's test tag) | A7 | ~0.5 d |
 
@@ -59,13 +58,11 @@ Milestone reviews (section 0): after R50e; after R24d (with R108's gallery group
 
 | Step | What | Agent, model | Branch | After |
 |---|---|---|---|---|
-| 337 | [R36](packages/R36.md) a picked row says why it has its mark | ron, Sonnet | `p1/ron-m4a-why` | – |
 | 343 | [R96](packages/R96.md) Settings › Data tells whether the data is kept | ron, Opus | `p1/ron-storehealth` | – |
-| 344 | [R98](packages/R98.md) Clear history keeps a running job and can be undone | ron, Opus | `p1/ron-clearundo` | – |
 | 438 | [R113](packages/R113.md) the first-start tips' rings sit centred on their controls | ron, Sonnet | `p1/ron-tipsrings` | – |
 
 ### Lane B queue (the release, then the engine)
-A7, A8, A9 and [A57](packages/A57.md) run by day (section 0); A43 and A58 are merged. Step 408 runs only on the weekly extreme night the owner names (not today).
+A7, A8 and [A57](packages/A57.md) run by day (section 0); A9, A43 and A58 are merged. Step 408 runs only on the weekly extreme night the owner names (not today).
 
 | Step | What | Agent, model | Branch | After |
 |---|---|---|---|---|

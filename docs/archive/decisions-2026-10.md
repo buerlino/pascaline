@@ -5,6 +5,16 @@ History only: read it when a decision is questioned. What still binds is in [../
 
 ## Decided proposals moved here later
 
+### Shortened 2026-11-02 (Opus pass 50) to make room for R98's, R112's and R36f1's defaults, as they stood
+From "Pipeline and process":
+- **How research reaches the docs (decided 2026-10-20, the owner; H7 and the consolidation).** Rule: rules sections 9 (ids, reachable findings, probe scripts) and 10 (notes with an end, 150 kB); brief 0c step 5 (fix chains) and section 8 (line baseline, A22); the reviewer's questions in `sofia.md`. KhiCAS is read for reuse only for a named need, after a per-file licence check (E5). Would change if: the line baseline blocks a fix two nights running.
+
+From "Precision, engine and parser":
+- **P18 (2026-10-20): Giac evaluates, our layer decides** what is shown (`app/src/engine/`: mark, confirmed digits, refusal, a stored value's facts). No other engine answers at run time; typed input reaches Giac only through our parser, every other way in is Giac text for one reader (P20); our `pas*` definitions are registered workarounds (P19). Rule: docs/04 6.1. Would change if: a feature needs a second engine at run time; the checks push the Tab One's Enter p95 past 150 ms.
+
+From "Feel, keys and screen":
+- **Start chunk: 175 kB raw, 61 kB gzip (owner, 2026-10-27, kept 2026-10-31), pinned** (size-check.ts); index.html's two inline scripts have their own pin, 1.53 kB gzip (rounded up). Rule: docs/04 8.3 (the pin; Opus pass 26). A package's "Done when" names no allowance; its report gives the measured delta, and the pin is the only rule: an older "Done when" that says "the start chunk is unchanged" (R38a) is met under the pin (owner, 2026-10-31; Opus pass 27). `./build.sh --measure` is exempt. Would change if: the Tab One's keyboard-usable time passes 738 ms.
+
 ### Shortened 2026-11-02 (day session) to make room for the owner's answers of 2026-11-02, as it stood
 From "Feel, keys and screen":
 - **Owner answers of 2026-10-31 and 2026-11-01, stored data, the comma and `%` (night review fh-2, vr-13, vg-8).** Web: one writer per browser profile (Web Locks); a second tab computes but stores nothing until "Use here", which reloads it; its note's visible line is "Nothing done in this tab is kept" (R95, 11-01). In comma mode a stored input's argument commas are drawn as `;` (display only; L6 stays; R100). An older build that keeps newer stored data in memory says so once as a history line, as G19's (R94, 11-01: the status line has no text slot). `%` gets a key (R104, 11-01; built by R110: docs/06). Would change if: two tabs side by side are wanted on purpose.
