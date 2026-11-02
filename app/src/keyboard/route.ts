@@ -280,6 +280,12 @@ export function sheetPress(c: RouteCtx, key: Key, layer: Layer | undefined): boo
 // user key that holds anything else waits like the key it stands for.
 const AT_ONCE: readonly string[] = ["esc", "home", "cas", "switch", "apps", "symb", "plot", "num", "settings", "mode"];
 
+/** R114: a system paste's text (Ctrl+V, Shift+Insert, the context menu) takes the Paste key's path, and the keys
+ *  pressed meanwhile wait for it as they do after Paste. */
+export function pasteText(c: RouteCtx, text: string): void {
+  c.withClip((x) => holdKeys(c, x.paste(text)));
+}
+
 /** The keys pressed while `job` runs (Paste reads the clipboard asynchronously) wait for it, as for a load (R8), so
  *  Paste then ÷ divides the pasted number; at most HOLD_MS, so a clipboard that never answers cannot stop the keypad.
  *  Returns the hold for withClip, whose load (when the code is not in yet) waits for it. */
