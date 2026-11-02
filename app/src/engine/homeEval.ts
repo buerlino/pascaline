@@ -326,7 +326,7 @@ export function floatsAsEvalf(text: string): string {
 }
 
 /** G59: `input` with each decimal literal as a float of `at` digits (a short literal alone is read as a double). */
-export function floatLiterals(input: string, at: number): string {
+function floatLiterals(input: string, at: number): string {
   return rewriteDecimals(input, (mant, exp10) => `evalf(${exactRational(mant, exp10)},${at})`, "typed");
 }
 
@@ -480,7 +480,7 @@ function provedRational(giac: Giac, name: string, f: ElementFacts, digits: numbe
 
 /** G38: a result whose decision did not hold at a higher precision: ⚠ without a count, elements too, with the why
  *  "decided at limited precision" (docs/04 2.4 rule 2). */
-export function undecidedResult(r: HomeResult): HomeResult {
+function undecidedResult(r: HomeResult): HomeResult {
   const el = (e: HomeResult): HomeResult => ({ ...e, facts: { ...e.facts, exact: false, reliableDigits: null, warn: "unchecked" }, approximate: true });
   const top = el(r);
   return { ...top, ...(r.items ? { items: r.items.map(el) } : {}), facts: { ...top.facts, why: { ...(r.facts.why ?? {}), decided: true } } };

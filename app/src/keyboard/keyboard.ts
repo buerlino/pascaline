@@ -20,7 +20,7 @@ export type Special =
   | "units"
   /** A key whose function we don't have yet (it keeps its alpha letter): does nothing. */
   | "none";
-export const SPECIALS: readonly Special[] = [
+const SPECIALS: readonly Special[] = [
   "shift", "alpha", "enter", "clear", "esc", "settings", "mode", "apps", "symb", "plot", "num", "menu", "fmt", "copy", "paste", "tmpl",
   "home", "cas", "switch", "relations", "symbols", "find", "vars", "memory", "units", "none",
 ];
@@ -100,7 +100,7 @@ export interface Palette {
 }
 
 /** The palettes by the yaml section that holds them; the template `keyId` of an own cell is `<prefix>:<id>`. */
-export const PALETTES = { palette: "templates", relations: "relations", symbols: "symbols" } as const;
+const PALETTES = { palette: "templates", relations: "relations", symbols: "symbols" } as const;
 const PREFIX: Readonly<Record<keyof typeof PALETTES, string>> = { palette: "tmpl", relations: "rel", symbols: "sym" };
 
 export interface Keyboard {

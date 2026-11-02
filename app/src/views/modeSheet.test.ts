@@ -9,7 +9,8 @@ import type { Kv } from "../state/storage.ts";
 import { UserKeys } from "../keyboard/userKeys.svelte.ts";
 import { unitCells } from "../units/userCells.svelte.ts";
 import { modeItems } from "./modeSheet.ts";
-import { Sheet, forgetPicks } from "./sheet.svelte.ts";
+import { lastPicks } from "./picks.ts";
+import { Sheet } from "./sheet.svelte.ts";
 
 const memoryKv = (): Kv => {
   const data = new Map<string, unknown>();
@@ -30,7 +31,7 @@ const marked = (s: Sheet) => s.level.current?.options?.find((o) => o.selected)?.
 const byId = (s: Sheet, id: string) => s.level.items.find((r) => r.id === id);
 
 beforeEach(() => {
-  forgetPicks();
+  lastPicks.clear();
   session = new Session(new FakeCalc(), memoryKv());
 });
 

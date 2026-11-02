@@ -458,7 +458,7 @@ function zeroUnconfirmed(f: ElementFacts): ElementFacts {
 
 /** Digits of an integer literal from which a root beside it makes Giac's symbolic re and im unsafe (G58: acos(120^7.5)
  *  holds sqrt(30) times a 15-digit integer, and its im() did not return in 20 s; with a 4-digit one it takes 66 ms). */
-export const HEAVY_INT_DIGITS = 13;
+const HEAVY_INT_DIGITS = 13;
 const ROOT_POWER = /\^\(\d+\/\d+\)/;
 const HEAVY_INT = new RegExp(`(?<![\\w.])\\d{${HEAVY_INT_DIGITS},}(?![\\w.])`);
 
@@ -1057,7 +1057,7 @@ export const KEYWORDS: ReadonlySet<string> = new Set([
  *  word alone parses as a call with no argument, so evaluating it to read its print runs it (`restart` alone is
  *  restart(), which purges every name; Home's complex audit asked it of `restart(1)`). Each is a built-in: its print is
  *  `'word'`, never asked. */
-export const RUNS_BARE: ReadonlySet<string> = new Set([
+const RUNS_BARE: ReadonlySet<string> = new Set([
   "Archive", "Circle", "CopyVar", "CyclePic", "del", "DelFold", "DelVar", "deSolve", "DrawFunc", "DrawInv", "DrawParm",
   "DrawPol", "DrawSlp", "DrwCtour", "Exec", "EXPORT", "Fill", "Get", "GetCalc", "giac_assert", "goto", "Graph", "hasard",
   "Input", "InputStr", "label", "Line", "LineHorz", "LineTan", "LineVert", "lis", "lis_phrase", "NewFold", "NewPic",

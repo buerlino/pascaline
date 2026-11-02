@@ -10,7 +10,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 import { keyboard, templates } from "../keyboard/keyboard.ts";
 import { ENGINE_DEFINITIONS } from "../engine/homeEval.ts";
 import { eseriesDefinition } from "../engine/eseries.ts";
-import { SAMPLE_CHIPS } from "./chips.ts";
+import { SAMPLE_CHIPS } from "./testChips.ts";
 import { latexToGiac } from "./latex-to-giac.ts";
 import { rewriteAngles } from "./angles.ts";
 
@@ -122,12 +122,5 @@ describe.skipIf(!giacOut)("LaTeX -> Giac round trip", () => {
         }
       });
     }
-  });
-});
-
-describe("round-trip engine", () => {
-  it("is available (otherwise the keyboard template round trip was skipped)", () => {
-    if (!giacOut) console.warn("roundtrip: no giac.mjs found (set GIAC_OUT or MAIN); template round trips were skipped");
-    expect(true).toBe(true);
   });
 });

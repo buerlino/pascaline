@@ -2,7 +2,7 @@
 // R83: the Menu names its view; a view with no rows of its own points to the view that has them.
 import { beforeEach, describe, expect, it } from "vitest";
 import type { Calc, CalcSettings } from "../calc/port.ts";
-import { forgetPicks } from "../views/sheet.svelte.ts";
+import { lastPicks } from "../views/picks.ts";
 import type { FunctionApp } from "./function/app.svelte.ts";
 import { AppShell } from "./shell.svelte.ts";
 
@@ -25,7 +25,7 @@ function shell(): AppShell {
 const ids = (s: AppShell): string[] => (s.sheet?.level.items ?? []).map((i) => i.id);
 
 describe("R83 the Menu says whose it is", () => {
-  beforeEach(() => forgetPicks());
+  beforeEach(() => lastPicks.clear());
 
   it("names Home and CAS", () => {
     const s = shell();

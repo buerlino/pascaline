@@ -20,13 +20,6 @@ export interface FindIndex {
   readonly byId: ReadonlyMap<string, FindItem>;
 }
 
-/** The index from its items (prepared: every item has its insert). */
-export function makeIndex(raw: readonly IndexItem[]): FindIndex {
-  const prepared = prepare(raw);
-  const items = prepared.items.map((p) => p.item);
-  return { prepared, items, byId: new Map(items.map((it) => [it.id, it])) };
-}
-
 /** The index prepared a slice at a time, each in an idle moment, so the idle load never holds the main thread for
  *  long (a long task there delayed Solve's first Working… frame, working.spec.ts). `hurry()` (a Math press) makes the
  *  rest run at once. Without requestIdleCallback it is prepared in one go. */

@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { SAMPLE_CHIPS } from "../input/chips.ts";
+import { SAMPLE_CHIPS } from "../input/testChips.ts";
 import { latexToGiac } from "../input/latex-to-giac.ts";
 import { parse } from "yaml";
 import { shippedKeyboard, shippedPalettes } from "./shipped.ts";
