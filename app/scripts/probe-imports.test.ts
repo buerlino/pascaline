@@ -42,5 +42,6 @@ describe("probe import check (G144)", () => {
       .map((f) => resolve(root, f));
     const bad = checkImports(files).filter((f) => !(f.file.slice(root.length + 1) in KNOWN));
     expect(bad.map((f) => `${f.file.slice(root.length + 1)}:${f.line} ${f.problem}`)).toEqual([]);
-  });
+    // G146: it reads every probe and its imports; under the full parallel run it took past vitest's 5 s default
+  }, 60_000);
 });
