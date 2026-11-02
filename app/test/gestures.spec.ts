@@ -21,7 +21,7 @@ test.beforeEach(async ({ page }) => {
 const picked = (page: import("@playwright/test").Page) =>
   page.locator('[data-selected="true"] .result');
 
-test("K1 trackpad: a drag steps in 2D with a tick per step; a tap on an edge is one step", async ({
+test("K1 trackpad: a drag steps in 2D with no pulse per step (R112); a tap on an edge is one step", async ({
   page,
 }) => {
   for (let n = 1; n <= 3; n++) {
