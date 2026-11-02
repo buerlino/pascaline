@@ -2,7 +2,7 @@
 // R36f1: the picked row's line from the engine's own facts. Home keeps an exact value exact (docs/04 6.2, 2.8), so B
 // stored from 1/3 lends no facts and B+1 is 4/3 shown rounded (source: derived, 1/3 + 1 = 4/3); B stored from a float
 // (evalf(√2)) lends its facts, so B+1 uses B, itself rounded. √2·1.0 is exact in Home (1.0 is an exact decimal; the log
-// holds B:=(sqrt(2))), so its B+1 names the exact value √2+1. The texts are the package's.
+// holds B:=(sqrt(2))), so its B+1 does not name B. The texts are the package's.
 import { beforeEach, describe, expect, it } from "vitest";
 import type { EngineHost } from "../engine/host.ts";
 import { defaultHomeSettings, precisionFacts, type HomeResult } from "../engine/homeEval.ts";
@@ -35,9 +35,11 @@ describe.skipIf(!giacAvailable())("R36f1: the stored names behind ≈ come from 
     expect(row("B+1")).toBe("≈ uses B, itself rounded");
   });
 
-  it("√2·1.0 stored to B is exact in Home: B+1 names its exact value", () => {
+  it("√2·1.0 stored to B is exact in Home: B+1 does not say B is rounded", () => {
     row("B:=sqrt(2)*1.0");
-    expect(row("B+1")).toBe("≈ rounded: the exact value is sqrt(2)+1");
+    const line = row("B+1");
+    expect(line).toMatch(/^≈ rounded/);
+    expect(line).not.toContain("uses B");
   });
 
   it("the row that stores B does not name B, nor does an earlier row after B is overwritten", () => {

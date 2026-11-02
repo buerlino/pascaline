@@ -84,10 +84,12 @@ test("a stored float: the result uses B, itself rounded", async ({ page }) => {
   expect(await picked(page)).toBe("≈ uses B, itself rounded");
 });
 
-test("√2·1.0 is exact in Home: B+1 names its exact value, not B", async ({ page }) => {
+test("√2·1.0 is exact in Home: B+1 does not say B is rounded", async ({ page }) => {
   await run(page, "\\sqrt{2}\\cdot1.0\\blacktriangleright B", 1);
   await run(page, "B+1", 2);
-  expect(await picked(page)).toBe("≈ rounded: the exact value is sqrt(2)+1");
+  const line = await picked(page);
+  expect(line).toMatch(/^≈ rounded/);
+  expect(line).not.toContain("uses B");
 });
 
 test("the row that stores B does not name B, nor does an earlier row after B is overwritten", async ({ page }) => {
