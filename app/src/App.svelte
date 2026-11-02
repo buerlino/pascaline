@@ -78,6 +78,7 @@
     entry.onSymbol = counted(count, (ch) => entry.run({ kind: "insert", latex: ch }));
     entry.onDead = counted(count, dead);
     entry.onPress = counted(count, () => {}); // R107f1: a leaving ) or | is a press that needs nothing more
+    entry.onPaste = (text) => route.pasteText(ctx, text); // R114: Ctrl+V and every system paste take the Paste key's path
     // the first start (R15c4): once the keypad is drawn and the browser is idle, so the tips never compete with the start
     void tipsDue(location.search).then((due) => due && ("requestIdleCallback" in window ? requestIdleCallback(showTips, { timeout: 2000 }) : setTimeout(showTips, 500)));
     return countScreenTaps(count);

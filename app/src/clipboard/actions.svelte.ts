@@ -150,12 +150,13 @@ export class ClipActions {
     });
   }
 
-  /** Shift + Copy, ☰ → Paste: the clipboard as one number, onto the entry line. */
-  paste(): Promise<boolean> {
-    return this.serial(() => this.pasteNow());
+  /** Shift + Copy, ☰ → Paste: the clipboard as one number, onto the entry line. `text`: a system paste's own text
+   *  (Ctrl+V, Shift+Insert, the context menu; R114), which takes the same path without reading the clipboard. */
+  paste(text?: string): Promise<boolean> {
+    return this.serial(() => this.pasteNow(text));
   }
-  private async pasteNow(): Promise<boolean> {
-    const clip = await (await this.port()).readText();
+  private async pasteNow(text?: string): Promise<boolean> {
+    const clip = text ?? (await (await this.port()).readText());
     if (clip === null) {
       this.say(tc("clip.unavailable"));
       return false;

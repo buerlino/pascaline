@@ -60,3 +60,29 @@ describe("ClipActions Copy exact with the decimal comma", () => {
     expect((await run({ status: "done", latex: "3/2", rational: { n: "3", d: "2" }, full: "3/2", fullExact: true }, true)).clip).toBe("3/2");
   });
 });
+
+// R114: a system paste (Ctrl+V, Shift+Insert, the context menu) brings its own text: the Paste key's path, no clipboard read.
+describe("ClipActions paste of a given text", () => {
+  const make = (comma: boolean) => {
+    let reads = 0;
+    const port: ClipboardPort = { writeText: async () => true, readText: async () => (reads++, "9"), share: async () => false };
+    const inserted: string[] = [];
+    const shell = { app: null, showsEntry: true } as unknown as AppShell;
+    const entry = { insert: (l: string) => void inserted.push(l) } as unknown as EntryController;
+    const c = new ClipActions({ items: [] } as unknown as Session, shell, entry, { insert() {}, recall() {} }, port, () => comma);
+    return { c, inserted, reads: () => reads };
+  };
+  it("enters the given text as the Paste key would, without reading the clipboard", async () => {
+    const m = make(true);
+    expect(await m.c.paste("1,5e-3")).toBe(true);
+    expect(m.inserted).toEqual(["1{,}5\\emark-3"]);
+    expect(m.reads()).toBe(0);
+  });
+  it("refuses an expression with the Paste key's notice and enters nothing", async () => {
+    const m = make(false);
+    expect(await m.c.paste("2*x+1")).toBe(false);
+    expect(m.inserted).toEqual([]);
+    expect(m.c.notice).toBe("Paste: not a number");
+    expect(m.reads()).toBe(0);
+  });
+});

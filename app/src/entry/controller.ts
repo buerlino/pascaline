@@ -46,6 +46,8 @@ export class EntryController {
   onDead: (repeat: boolean) => void = () => {};
   /** A hardware `)` or `|` that leaves its pair (R107f1): the cursor moves, App.svelte counts the press. */
   onPress: (repeat: boolean) => void = () => {};
+  /** A system paste on the field (Ctrl+V, Shift+Insert, the context menu; R114): App.svelte runs the Paste key's path on its text. */
+  onPaste: (text: string) => void = () => {};
   /** The line was emptied (Enter, Esc, an app view): main.ts clears the kept line (R34). */
   onClear: () => void = () => {};
 
@@ -82,6 +84,7 @@ export class EntryController {
       key: (ev) => this.hwKey?.(ev, this) ?? false,
       enter: (repeat) => this.onEnter(repeat),
       escape: (repeat) => this.onEscape(repeat),
+      paste: (text) => this.onPaste(text),
     });
     this.mf = mf;
     void import("./namemarks.ts").then((n) => (this.marks = new n.NameMarks(mf)).setNames(this.stored));
@@ -92,7 +95,7 @@ export class EntryController {
     mf.focus();
     mf.executeCommand("moveToMathfieldEnd");
     while (this.queue.length > 0) this.run(this.queue.shift() as ActionBody);
-    // what MathLive edits itself (a paste, a character outside ASCII); a set of the value is silent
+    // what MathLive edits itself (a character outside ASCII); a set of the value is silent
     mf.addEventListener("input", () => (this.touched = true));
   }
 
