@@ -8,6 +8,7 @@ import { readFileSync } from "node:fs";
 import { EngineHost } from "../app/src/engine/host.ts";
 import { nodeHost } from "../app/src/engine/nodeGiac.ts";
 import { importLibrary, LibError, parseLibrary } from "../app/src/engine/library.ts";
+import { LIBRARY_FORMAT } from "../app/src/state/libraryFormat.ts";
 
 const [cmd, path, ...exprs] = process.argv.slice(2);
 if ((cmd !== "check" && cmd !== "run") || !path) {
@@ -15,8 +16,8 @@ if ((cmd !== "check" && cmd !== "run") || !path) {
   process.exit(2);
 }
 try {
-  const lib = parseLibrary(readFileSync(path));
-  const host = (await nodeHost());
+  const host = await nodeHost();
+  const lib = parseLibrary(readFileSync(path), host.parse, LIBRARY_FORMAT);
   const r = importLibrary(host, lib, []);
   if (!r.ok) {
     console.error(`refused: ${r.error}`);

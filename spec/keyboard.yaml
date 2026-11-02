@@ -26,7 +26,7 @@
 #                                  (every key and layer pressed with 1+2 selected). Every
 #                                  template needs a `sample`: the template filled in, and the Giac text it
 #                                  must mean. The round-trip test runs all samples through our parser and Giac,
-#                                  with Ans = 7 (SAMPLE_CHIPS in app/src/input/chips.ts).
+#                                  with Ans = 7 (SAMPLE_CHIPS in app/src/input/testChips.ts).
 #                                  An insert may carry `units: true` (R71, ±): only the unit view's formula reads it; its
 #                                  sample is read in units mode, and an app dims the key.
 #                                  Any action may carry `line: <action>`, used instead of it when the
