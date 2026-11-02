@@ -90,7 +90,6 @@ The one place for "where are we and what's left", one or two lines per open item
 - The Function app and plots of user functions wait for your word (R56b covers Solve); **R58b** Alpha letters are always names in CAS (G2 item 62 can reverse it).
 - **G9. Number formats against the G2** (item 15): decide in the settings and help pass. **K1:** a pending one-shot Shift is used up by the first drag step. **K5:** the gestures in the help texts.
 - **R107's leftover (Opus pass 35):** a dead hardware key on the unit view's field (`units/open.ts:170`, `:173`, `c.dead()`) counts no press (docs/04 5.2); its keys go through the counted `onKey`.
-- **`tieRisk`** has no reader (`format.ts:130`): G146 drops it.
 - **The pipeline:** `resolve_audit_model` is tested only through dry-run echo lines (Opus pass 20; `want_checks` has its own test since A36); the size test does not cover CSS (25.8 kB raw at 2026-10-12). `tests/engine/patch-canary.ts` unpacks the Giac tarball once per canary (40 times, `member()` of `tools/find-index/state.mjs`), 100 s of CPU alone, so the golden `flags` stage times out under load (A51 counts it as timing): unpack it once. Red-first (`pipeline-lib.sh`) runs vitest on the branch's engine, so an engine test like G133f1's passes there (golden carries the red), and reads ids as `[A-Za-z0-9_.-]`, so older ids with `/` or `^` are invisible to it (G133f1).
 - **C3. CI** (needs your OK); **C4. F-Droid recipe:** untested end to end; `npm ci` after `prebuild` needs an offline rework; two drifts from build.sh in `fdroid/README.md`.
 
