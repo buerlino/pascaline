@@ -25,19 +25,26 @@ export type Touch = "tap" | Flick | "cancelled";
 export class FlickTracker {
   state: Touch = "tap";
 
-  /** The finger is (dx, dy) from where it went down; `state` says what that makes the touch. */
-  move(dx: number, dy: number): void {
+  /** The finger is (dx, dy) from where it went down. True when a flick became armed (or changed direction). */
+  move(dx: number, dy: number): boolean {
     const ady = Math.abs(dy);
     const dir: Flick = dy < 0 ? "up" : "down";
     if (this.state === "up" || this.state === "down") {
       if (ady < CANCEL_PX) {
         this.state = "cancelled";
-        return;
+        return false;
       }
-      if (dir !== this.state && ady >= FLICK_PX) this.state = dir;
-      return;
+      if (dir !== this.state && ady >= FLICK_PX) {
+        this.state = dir;
+        return true;
+      }
+      return false;
     }
-    if (ady >= FLICK_PX && ady >= Math.abs(dx)) this.state = dir;
+    if (ady >= FLICK_PX && ady >= Math.abs(dx)) {
+      this.state = dir;
+      return true;
+    }
+    return false;
   }
 }
 
