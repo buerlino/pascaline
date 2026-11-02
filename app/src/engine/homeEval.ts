@@ -167,7 +167,7 @@ export const ENGINE_DEFINITIONS: Readonly<Record<string, string>> = {
   // G42: Giac's median of an even list is the lower middle, as a float; `median` is also a reserved word, so the
   // parser renames the written word (input/emit.ts CALL_NAME). Sorted, the middle value or the mean of the two middle ones.
   pasmedian:
-    "pasmedian(l):={ local s,n,k; if (type(l)!=DOM_LIST) throw(\"median: needs a list of values\"); " +
+    "pasmedian(l):={ local s,n,k; if (subtype(l)==1) throw(\"median: needs one list of values\"); if (type(l)!=DOM_LIST) throw(\"median: needs a list of values\"); " +
     "for (k:=0;k<size(l);k:=k+1) { if (type(l[k])!=integer and type(l[k])!=rational and type(evalf(l[k]))!=DOM_FLOAT) throw(\"median: needs a list of real numbers\"); } " +
     "s:=sort(l); n:=size(s); if (n==0) throw(\"median: needs at least one value\"); " +
     "if (irem(n,2)==1) return s[(n-1)/2]; return (s[n/2-1]+s[n/2])/2; }",
@@ -182,9 +182,10 @@ export const ENGINE_DEFINITIONS: Readonly<Record<string, string>> = {
     "r:=p/100*(n-1); k:=floor(r); if (k>=n-1) return s[n-1]; return s[k]+(r-k)*(s[k+1]-s[k]); }",
   // G155: the standard error of the mean, s/√n with Giac's stddevp (the sample deviation, n−1); exact for exact readings.
   // Giac has no sem; the parser renames the written word (ourNames.ts CALL_NAME). Fewer than two values have no sample
-  // deviation (Giac's stddevp answers undef): refused here.
+  // deviation (Giac's stddevp answers undef): refused here. G158: so is a call with several arguments (a second list,
+  // loose values), which Giac hands over as one sequence, subtype 1 (stddevp read two lists as values and weights).
   passem:
-    "passem(l):={ if (type(l)!=DOM_LIST) throw(\"sem: needs a list of values\"); " +
+    "passem(l):={ if (subtype(l)==1) throw(\"sem: needs one list of values\"); if (type(l)!=DOM_LIST) throw(\"sem: needs a list of values\"); " +
     "if (size(l)<2) throw(\"sem: needs at least two values\"); return stddevp(l)/sqrt(size(l)); }",
   // G30 (EN7a): n resistors in parallel, 1/(1/a+1/b+…), exact; a zero argument gives exactly 0. Giac hands the
   // arguments of a call to a one-parameter function as one sequence, which [a] makes a list.
