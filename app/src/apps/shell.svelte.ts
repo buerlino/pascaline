@@ -29,7 +29,7 @@ const PALETTE_IDS: readonly string[] = ["tmpl", "rel", "sym"] satisfies PaletteI
 
 /** The entry line asks for a name (R89, views/presetsView.svelte.ts): its label stands over the line, and every key's
  *  action goes to `key` first (true: taken). The asker clears `prompt` when done; `cancel` ends it as Esc does (the line
- *  comes back), run by the shell when a sheet opens or the place or view changes (a tap goes elsewhere). */
+ *  comes back), run by the asker itself when a sheet opens or the app or view changes (a tap goes elsewhere). */
 export interface EntryPrompt {
   readonly label: string;
   key(action: ActionBody): boolean;
@@ -42,16 +42,8 @@ export class AppShell {
   view = $state<ViewId>("symb");
   /** Loaded apps (raw: instances keep their own reactive state). */
   loaded = $state.raw<Partial<Record<AppId, LoadedApp>>>({});
-  /** The open sheet (docs/05 3.1): the Apps list, a view's Menu, or a list such as a history row's actions. A sheet
-   *  that opens ends a name being typed (R89). */
-  get sheet(): Sheet | null {
-    return this.#sheet;
-  }
-  set sheet(s: Sheet | null) {
-    if (s) this.prompt?.cancel();
-    this.#sheet = s;
-  }
-  #sheet = $state.raw<Sheet | null>(null);
+  /** The open sheet (docs/05 3.1): the Apps list, a view's Menu, or a list such as a history row's actions. */
+  sheet = $state.raw<Sheet | null>(null);
   /** Set while an app's code is loading (the view shows a short note). */
   loading = $state<AppId | null>(null);
   /** A name typed in the entry line under its label (R89, a preset's name): route.ts gives it each key's action first. */
@@ -152,7 +144,6 @@ export class AppShell {
 
   /** Open an app at a view (default: the view it was left in, else Symb). */
   open(id: AppId, view?: ViewId): Promise<void> {
-    this.prompt?.cancel();
     this.opening = this.doOpen(id, view);
     return this.opening;
   }
@@ -174,7 +165,6 @@ export class AppShell {
 
   /** Symb / Plot / Num key. From Home or CAS it opens the last app (Function by default). */
   async setView(v: ViewId): Promise<void> {
-    this.prompt?.cancel();
     this.sheet = null;
     if (this.app === null || this.loading !== null) return this.open(this.app ?? this.lastApp ?? "function", v);
     const a = this.instance;
@@ -194,7 +184,6 @@ export class AppShell {
 
   /** Back to Home/CAS (the place name, U2, U3 or the Apps sheet from inside an app). */
   close(): void {
-    this.prompt?.cancel();
     if (this.app !== null) this.lastApp = this.app;
     this.app = null;
     this.sheet = null;

@@ -22,7 +22,7 @@ type Family = Parameters<typeof familyOf>[0];
  *  the clipboard code, whose notice says what happened. */
 export interface PresetsHost {
   readonly userKeys?: UserKeys;
-  readonly shell?: { prompt: EntryPrompt | null };
+  readonly shell?: { prompt: EntryPrompt | null; readonly sheet: unknown; readonly app: unknown; readonly view: unknown };
   readonly entry?: Pick<EntryController, "value" | "chips" | "set" | "run" | "clear">;
   data?(run: (c: ClipActions) => void | Promise<void>): void;
 }
@@ -161,7 +161,7 @@ const nameLatex = (name: string): string => name.replace(/[\\{}]/g, "").replace(
 
 /** The sheet has closed: the entry line takes a name under its label, and every key goes to it first. Enter offers the
  *  name to `save` (a refusal is the notice, and the line stays for another try); Esc cancels; C empties the line, never
- *  the history; the space key types a space; a key that goes elsewhere (a sheet, a place) cancels first. Either way the
+ *  the history; the space key types a space; a key or a tap that goes elsewhere (a sheet, a place) cancels first. Either way the
  *  line then holds what it held before. */
 function askName(host: PresetsHost, start: string, save: (name: string) => void, said: (name: string) => string): void {
   const { shell, entry } = host;
@@ -172,6 +172,7 @@ function askName(host: PresetsHost, start: string, save: (name: string) => void,
   const end = (): void => {
     if (shell.prompt !== prompt) return; // ended already
     shell.prompt = null;
+    queueMicrotask(stop); // (not from inside the watch's own run)
     entry.set(line, chips);
   };
   const offer = (): void => {
@@ -201,6 +202,15 @@ function askName(host: PresetsHost, start: string, save: (name: string) => void,
   };
   shell.prompt = prompt;
   entry.set(nameLatex(start));
+  // a tap that goes elsewhere ends the name as Esc does: a sheet opens, or another app or view (the place name, Plot).
+  // Watched here, in the Mode chunk, so the start chunk's shell carries only the `prompt` field (R89 fix round 2).
+  const app = shell.app;
+  const view = shell.view;
+  const stop = $effect.root(() => {
+    $effect(() => {
+      if (shell.sheet !== null || shell.app !== app || shell.view !== view) end();
+    });
+  });
 }
 
 /** Apply a preset; once its settings are set, the notice names what it holds. */

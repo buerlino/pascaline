@@ -102,7 +102,7 @@ describe("Mode's Preset row", () => {
   it("Save asks for a name on the entry line; Enter saves it, a taken name is refused and the line stays; another key cancels and gives the line back", async () => {
     const { session, presets } = await setup();
     const notices: string[] = [];
-    const shell = { prompt: null as EntryPrompt | null };
+    const shell = { prompt: null as EntryPrompt | null, sheet: null, app: null, view: "symb" };
     let line = "12";
     const entry = {
       get value() {

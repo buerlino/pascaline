@@ -210,8 +210,13 @@ export const LAZY_PARTS = ["src/views/sheetKeys.ts", "src/views/tmplSheet.ts", "
  *  −2.58 kB): the stored data's migration steps load only for a record that has one to run (state/migrations.ts, with
  *  engine/angleMigration.ts), the session reads PASDEG from input/pasdeg.ts, and the start reads Home's defaults from
  *  engine/homeDefaults.ts, so engine/homeEval.ts's graph (input/angles.ts, engine/flags.ts, icdf.ts, stores.ts), which
- *  the entry held for the lazy chunks, left the start chunk. The pin is 58.39 + 0.05 kB. */
-export const START_PIN_GZIP = 58_440;
+ *  the entry held for the lazy chunks, left the start chunk. The pin is 58.39 + 0.05 kB.
+ *  58.44 → 58.49 kB (R89): phase-1 ea6112b's start files measure 58,389 B gzip (165,819 B raw), the branch 58,444 B
+ *  (166,009 B raw, +55 B): the presets' name prompt, the part that must be at start: AppShell.prompt (a reactive field
+ *  the entry label reads), route.ts handing it each key first, the history row's tap ending it, and shell and entry
+ *  passed to Settings. Its watch for a tap elsewhere (a sheet, an app, a view) is in the Mode chunk
+ *  (views/presetsView.svelte.ts), not a setter on AppShell.sheet (−20 B). The pin is 58.44 + 0.05 kB. */
+export const START_PIN_GZIP = 58_490;
 
 /** R103 (vr-4): the classic inline scripts of index.html run before the first paint, outside every chunk: the stored look
  *  (R50e) and the too-old WebView check. Their gzip sizes, each script alone and summed (as the start chunk sums its
