@@ -699,7 +699,7 @@ export class Session {
     return true;
   }
 
-  // ---- persistence (IndexedDB; failures are silent)
+  // ---- persistence (IndexedDB; a failure shows only in Settings › Data, R96)
   async restore(): Promise<void> {
     await this.restoreSettings();
     await this.restoreHistory();

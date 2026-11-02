@@ -112,7 +112,7 @@ describe("Settings › Data's rows", () => {
     let next: File | null = new File(["{}"], "a.json");
     const section = dataSection(env(runs), async () => next);
     const items = section.submenu?.items ?? [];
-    expect(ids(items)).toEqual(["backup", "restore"]); // no kept copy: no Undo row
+    expect(ids(items)).toEqual(["backup", "restore", "store"]); // no kept copy: no Undo row; the store's line last (R96)
     byId(items, "restore").run?.();
     await vi.waitFor(() => expect(runs).toEqual(["restore a.json"]));
     next = null;
@@ -125,7 +125,7 @@ describe("Settings › Data's rows", () => {
     resetUndoTime(time);
     const runs: string[] = [];
     const items = dataSection(env(runs)).submenu?.items ?? [];
-    expect(ids(items)).toEqual(["backup", "restore", "undo"]);
+    expect(ids(items)).toEqual(["backup", "restore", "undo", "store"]);
     expect(byId(items, "undo").label).toBe("Undo the restore (2026-10-31 14:02)");
     byId(items, "undo").run?.();
     expect(runs).toEqual(["undo"]);

@@ -169,6 +169,15 @@ describe("a failed read fails the backup", () => {
     expect(await saveBackup(new Date(2026, 9, 31))).toBe(dataText("backup.saved"));
     expect(saveFile).toHaveBeenCalledTimes(1);
   });
+  it("a saved backup notes its time for Settings › Data (R96); a cancelled or failed one does not", async () => {
+    seed("settings", { digits: 12 });
+    const at = new Date(2026, 10, 2, 9, 30);
+    saveFile.mockResolvedValueOnce("cancelled" as "saved");
+    await saveBackup(at);
+    expect(idb.stores.get("kv")?.has("backup.last")).toBe(false);
+    await saveBackup(at);
+    expect(idb.stores.get("kv")?.get("backup.last")).toEqual(stamp(at.toISOString()));
+  });
 });
 
 // R38af2: storageRaw.ts repeats storage.ts's database, version, store and stamp field (an export would cost the start

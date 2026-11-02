@@ -18,6 +18,7 @@ function settingsShots(): Shot[] {
     { id: "-theme", title: "Appearance › Theme: the five families with their dots (a pick keeps the sheet open)", keys: ["d1", "enter"] },
     { id: "-numbers", title: "Settings › Numbers: the Decimal mark (R57), the Fmt cycle (its hint under Standard) and Decimals in Fixed", keys: ["d2"] },
     { id: "-vibration", title: "Settings › Key vibration, switched on (strength disabled with its reason), Try it", keys: ["d3", "d1"] },
+    { id: "-data", title: "Settings › Data (R38a, R96): Save a backup, Restore from a file, and the last row that says whether the data is kept", keys: ["d5"] },
     { id: "-counters", title: "Settings › Counters: the presses, the Shift and Alpha counts, the presets switched (R89), since when, Reset", keys: ["d6"] },
     { id: "-help", title: "Settings › Help and about (R87): the first-start tips row, About Pascaline, Parts we use and their licences", keys: ["d7"] },
     { id: "-about", title: "Help and about › About Pascaline: version, licence, source, credits", keys: ["d7", "d2"] },

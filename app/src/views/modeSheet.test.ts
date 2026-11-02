@@ -450,7 +450,7 @@ describe("Settings › Data (R38a)", () => {
     s.pickNumber(6);
     expect(s.level.items.map((x) => x.id)).toEqual(["appearance", "numbers", "vibration", "keys", "data", "counters", "help"]);
     s.pickNumber(5);
-    expect(s.level.items.map((x) => x.id)).toEqual(["backup", "restore"]);
+    expect(s.level.items.map((x) => x.id)).toEqual(["backup", "restore", "store"]); // R96: the store's line last
     const picked = s.activate(0);
     expect(picked.kind).toBe("run"); // not a switch: the sheet closes, the notice shows in the stage
     if (picked.kind === "run") picked.item.run?.();

@@ -15,11 +15,14 @@ interface FakeRequest<T> {
 
 /** One database's records by store and key; tests read and seed `stores` directly. A get of a key in `failGets` ends in
  *  its onerror (R38af2); a key in `failGetsOnce` only for its next get, which takes it out (R93: one failed read, then a
- *  working store). While `failOpens` is above 0, each open ends in its onerror and counts it down (R93). */
+ *  working store). While `failOpens` is above 0, each open ends in its onerror and counts it down (R93). A transaction
+ *  that puts a key in `failCommits` fails at its commit, as a full disk does (R96f1): every request succeeds, then the
+ *  transaction rolls back and aborts with a QuotaExceededError, and only its onabort runs (never onerror). */
 export interface FakeIdb {
   readonly stores: Map<string, Map<string, unknown>>;
   readonly failGets: Set<string>;
   readonly failGetsOnce: Set<string>;
+  readonly failCommits: Set<string>;
   failOpens: number;
   readonly factory: { open(name: string, version: number): FakeRequest<unknown> };
 }
@@ -28,15 +31,25 @@ export function fakeIndexedDb(): FakeIdb {
   const stores = new Map<string, Map<string, unknown>>();
   const failGets = new Set<string>();
   const failGetsOnce = new Set<string>();
+  const failCommits = new Set<string>();
   const fails = (key: string): boolean => failGets.has(key) || failGetsOnce.delete(key);
   const later = (f: () => void): void => void setTimeout(f, 0);
 
   const transaction = (name: string) => {
     let pending = 0;
-    const tx = { oncomplete: null as Handler, onerror: null as Handler, error: null as Error | null, objectStore };
+    let commitFails = false;
+    /** What each write replaced, to roll back an aborted commit. */
+    const undo: Array<() => void> = [];
+    const tx = { oncomplete: null as Handler, onerror: null as Handler, onabort: null as Handler, error: null as Error | null, objectStore };
+    const commit = (): void => {
+      if (!commitFails) return tx.oncomplete?.();
+      for (const u of undo.reverse()) u();
+      tx.error = Object.assign(new Error("fake commit failed"), { name: "QuotaExceededError" });
+      tx.onabort?.();
+    };
     const done = (): void => {
       pending--;
-      if (pending === 0) later(() => tx.oncomplete?.());
+      if (pending === 0) later(commit);
     };
     function request<T>(run: () => T, fail = false): FakeRequest<T | undefined> {
       const r: FakeRequest<T | undefined> = { result: undefined, error: null, onsuccess: null, onerror: null };
@@ -56,10 +69,19 @@ export function fakeIndexedDb(): FakeIdb {
     function objectStore(s: string) {
       const store = stores.get(s);
       if (!store) throw new Error(`no store ${s}`);
+      const write = (key: string, change: () => void): void => {
+        const had = store.has(key);
+        const old = store.get(key);
+        undo.push(() => void (had ? store.set(key, old) : store.delete(key)));
+        change();
+      };
       return {
         get: (key: string) => request(() => (store.has(key) ? structuredClone(store.get(key)) : undefined), fails(key)),
-        put: (value: unknown, key: string) => request(() => void store.set(key, structuredClone(value))),
-        delete: (key: string) => request(() => void store.delete(key)),
+        put: (value: unknown, key: string) => {
+          if (failCommits.has(key)) commitFails = true;
+          return request(() => write(key, () => void store.set(key, structuredClone(value))));
+        },
+        delete: (key: string) => request(() => write(key, () => void store.delete(key))),
       };
     }
     if (!stores.has(name)) throw new Error(`no store ${name}`);
@@ -76,6 +98,7 @@ export function fakeIndexedDb(): FakeIdb {
     stores,
     failGets,
     failGetsOnce,
+    failCommits,
     failOpens: 0,
     factory: {
       open() {
