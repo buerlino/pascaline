@@ -185,3 +185,27 @@ test("hardware Backspace takes the same path: 2 + x², two presses give 2", asyn
   await page.keyboard.press("Backspace");
   expect(await entryValue(page)).toBe("2");
 });
+
+// R117 (bu-10, night review 2026-11-02): a typed subscript (Shift + ␣ types _; L1: x_1 is a name) is a script on its base
+// as an exponent is (rule 6): ⌫ never moves it onto the atom before. `1+x_1 ◀ ⌫ ⌫` gave `1+_1`, the 1 on the +. Now ⌫ at
+// the subscript's start steps to the end of the base, the next ⌫ empties the base, which shows □ (selected), then ⌫
+// selects the subscript with its base and ⌫ deletes it. Expected lines derived from the rule.
+for (const [name, keys, before] of [
+  ["1+x_1", ["d1", "add"], "1+"],
+  ["2x_1", ["d2"], "2"],
+  ["x×x_1", ["x", "mul"], "x\\times"],
+  ["ax_1", ["shift", "alpha", "vars"], "a"],
+] as const) {
+  test(`${name} ◀ ⌫ ⌫: the subscript stays on its emptied base, which shows □`, async ({ page }) => {
+    await tap(page, [...keys, "x", "shift", "space", "d1"]);
+    const line = await entryValue(page);
+    expect(line).toMatch(/x_1$/);
+    await tap(page, ["left"]);
+    expect(await bksp(page)).toBe(line); // the subscript's start: to the end of the base, nothing deleted
+    expect(await bksp(page)).toBe(`${before}${PH}_1`);
+    expect(await selected(page)).toBe(PH);
+    expect(await bksp(page)).toBe(`${before}${PH}_1`); // the □ base with a typed subscript: selected first
+    expect(await selected(page)).toBe(`${PH}_1`);
+    expect((await bksp(page)).trim()).toBe(before);
+  });
+}

@@ -237,3 +237,100 @@ test.describe("a finger tap at a name's right edge", () => {
     expect(await entryValue(page)).toBe("");
   });
 });
+
+// R117 (bu-9, night review 2026-11-02): AND, OR and XOR stand between their operands (spec/keyboard.yaml `relations`,
+// inserted with no pair); they are no function, so a bracket typed after one is a plain pair: ⌫ at its start removes the
+// pair and keeps its content, the word stays ("⌫ at a bracket", archive/decisions-2026-10.md), and the cursor stops between
+// the word and the bracket. Before R117 the word went with the pair: `1 AND (0)` ◀ ⌫ gave 10. NOT is a call: its key
+// inserts the pair with the name, which owns it (control). Expected lines are derived from the rule.
+test.describe("AND, OR and XOR own no bracket", () => {
+  test.beforeEach(async ({ page }) => {
+    await open(page);
+  });
+
+  const caretAt = (page: Page): Promise<{ position: number; collapsed: boolean }> =>
+    page.evaluate(() => {
+      const mf = window.pascaline.entry.field;
+      return { position: mf?.position ?? -1, collapsed: mf?.selectionIsCollapsed ?? false };
+    });
+
+  for (const [word, pick] of [["AND", "d6"], ["OR", "mul"], ["XOR", "d2"]] as const) {
+    /** `1 word ( 0` by keys: the line, and the word alone as the field writes it. */
+    async function typed(page: Page): Promise<{ line: string; w: string }> {
+      await tap(page, ["d1", "shift", "d6", pick, "paren", "d0"]);
+      const line = await entryValue(page);
+      const w = line.slice(1, line.indexOf("\\left("));
+      expect(w).toContain(word);
+      expect(line).toBe(`1${w}\\left(0\\right)`);
+      return { line, w };
+    }
+
+    test(`1 ${word} ( 0 ◀ ⌫: the pair goes, the word stays, the cursor where the bracket was`, async ({ page }) => {
+      const { w } = await typed(page);
+      await tap(page, ["left", "bksp"]);
+      expect(await entryValue(page)).toBe(`1${w}0`);
+      expect((await caretAt(page)).collapsed).toBe(true);
+      await tap(page, ["d7"]);
+      expect(await entryValue(page)).toBe(`1${w}70`);
+    });
+
+    test(`1 ${word} ( 0 ⌫ ⌫: the body shows □, then the pair goes and the word stays`, async ({ page }) => {
+      const { w } = await typed(page);
+      await tap(page, ["bksp"]);
+      expect(await entryValue(page)).toBe(`1${w}\\left(\\placeholder{}\\right)`);
+      await tap(page, ["bksp"]);
+      expect(await entryValue(page)).toBe(`1${w}`);
+    });
+
+    test(`1 ${word} ( 0 ◀ ◀ stops between the word and the bracket`, async ({ page }) => {
+      const { w } = await typed(page);
+      await tap(page, ["left", "left", "d7"]);
+      expect(await entryValue(page)).toBe(`1${w}7\\left(0\\right)`);
+    });
+
+    test(`1 ${word} ( 0 ◀ ◀ ⌫ deletes the word alone`, async ({ page }) => {
+      await typed(page);
+      await tap(page, ["left", "left", "bksp"]);
+      expect(await entryValue(page)).toBe("1\\left(0\\right)");
+    });
+
+    test(`1 ${word} ( 0, Del before the word deletes the word alone`, async ({ page }) => {
+      await typed(page);
+      await tap(page, ["left", "left", "left"]); // the body's start, the gap, before the word
+      await tap(page, ["shift", "bksp"]);
+      expect(await entryValue(page)).toBe("1\\left(0\\right)");
+    });
+
+    test(`1 ${word} ( 0 ▶ ⌫: right after the pair ⌫ steps into it and deletes nothing`, async ({ page }) => {
+      const { line, w } = await typed(page);
+      await tap(page, ["right", "bksp"]);
+      expect(await entryValue(page)).toBe(line);
+      await tap(page, ["d7"]);
+      expect(await entryValue(page)).toBe(`1${w}\\left(07\\right)`);
+    });
+  }
+
+  test("control: NOT ( x > 0 ◀ ◀ ◀ ⌫ removes NOT with its pair and keeps x>0 (NOT is a call)", async ({ page }) => {
+    await tap(page, ["shift", "d6", "d1", "x", "shift", "d6", "d9", "d0", "left", "left", "left"]);
+    expect(await entryValue(page)).toContain("NOT");
+    await tap(page, ["bksp"]);
+    expect(await entryValue(page)).toBe("x>0");
+  });
+});
+
+// R117: a user function from Vars owns its pair whatever its length. Before, a one-letter name went in as a letter and a
+// plain pair (`p\left(#0\right)`), so ⌫ at the start of its argument left p3, read as p·3; it now goes in as the call
+// form a longer name has (`\operatorname{p}`), and ⌫ there removes the call and keeps 3. The real engine: p(3) = 9
+// (derived from p(x) := x²).
+test("a one-letter Vars function owns its pair: p(‸3) ⌫ gives 3, and p(3) Enter calls p", async ({ page }) => {
+  await open(page, "");
+  await page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
+  await tap(page, ["shift", "alpha", "emark", "paren", "x", "right", "alpha", "sub", "shift", "dot", "x", "sq", "enter"]); // p(x):=x²
+  await expect(page.locator('[data-status="done"]')).toHaveCount(1);
+  await tap(page, ["vars", "d1", "d3"]);
+  expect(await entryValue(page)).toMatch(/^\\operatorname\{(?:\\mathrm\{p\}|p)\}\\left\(3\\right\)$/);
+  await tap(page, ["left", "bksp"]);
+  expect(await entryValue(page)).toBe("3");
+  await tap(page, ["bksp", "vars", "d1", "d3", "enter"]);
+  await expect(page.locator('[data-testid="result"]').last().locator(".result")).toHaveAttribute("data-text", "9");
+});
