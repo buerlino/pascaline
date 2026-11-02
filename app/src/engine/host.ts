@@ -1078,7 +1078,9 @@ export class EngineHost implements FactsHost {
     const symWhy = symbolicWhy(own, testSides(exactInput));
     // G38: "decided at limited precision"; the value was computed, not compared, so `once` is not said.
     const why0 = pair ? { differ: true } : undecided ? { ...(symWhy && !symWhy.once ? symWhy : {}), decided: true } : symWhy;
-    const why = read?.causes.length ? { ...(why0 ?? {}), inherited: read.causes } : why0;
+    // R36f1: the user's names that lent inexact facts and are not causes, for the ≈ line
+    const lent = { ...(read?.causes.length ? { inherited: read.causes } : {}), ...(read?.rounded.length ? { rounded: read.rounded } : {}) };
+    const why = Object.keys(lent).length ? { ...(why0 ?? {}), ...lent } : why0;
     // G46 (S14 option 2): in DEG the radian text is drawn and copied as a DEG engine prints it; Ans, chips (`full`) and
     // pcasans keep the radian text, which means the same in every mode.
     const deg = s.angle === "deg" && needsDegrees(text) ? backInDegrees(this.giac, text) : null;

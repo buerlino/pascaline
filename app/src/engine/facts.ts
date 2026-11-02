@@ -7,7 +7,7 @@ import type { HomeResult } from "./homeEval.ts";
 import { resultFromFacts } from "./homeEval.ts";
 import { perturbedDigits, valuePrecision, type ElementFacts, type Giac, type Shape } from "./numeric.ts";
 import type { DefEntry, NameFacts } from "./defs.ts";
-import type { InputReads, StoredName } from "./stateRead.ts";
+import { isOurs, type InputReads, type StoredName } from "./stateRead.ts";
 import { callsOf, isName } from "./giacPrint.ts";
 
 /** What the facts functions read from the engine host. */
@@ -78,6 +78,12 @@ function usedBy(host: FactsHost, reads: InputReads): Used[] {
   });
 }
 
+/** R36f1: the user's names among `used` whose facts are not exact and that are not `causes` (why.rounded); never ours
+ *  (a chip `pasr_<k>`, a `pas` helper). */
+function roundedOf(host: FactsHost, used: readonly Used[], causes: readonly string[]): string[] {
+  return used.filter((u) => !u.facts.exact && !causes.includes(u.name) && !isOurs(u.name, (n) => host.byName.has(n))).map((u) => u.name);
+}
+
 /** The merged facts of the names an input read, and the names that lent them. */
 export function readsFacts(host: FactsHost, reads: InputReads): { facts: NameFacts | null; names: string[] } {
   const used = usedBy(host, reads);
@@ -85,16 +91,18 @@ export function readsFacts(host: FactsHost, reads: InputReads): { facts: NameFac
 }
 
 /**
- * G51: the facts a CAS result without a float takes from what its input read, and the names behind a warn (for
- * why.inherited). Null when nothing it read is inexact, and for inputs that store no value (a function definition,
- * purge, assume): those read names without showing a value from them.
+ * G51: the facts a CAS result without a float takes from what its input read, the names behind a warn (for
+ * why.inherited) and the user's other names that lent inexact facts (why.rounded, R36f1). Null when nothing it read is
+ * inexact, and for inputs that store no value (a function definition, purge, assume): those read names without showing
+ * a value from them.
  */
-export function readFacts(host: FactsHost, input: string, reads: InputReads): { facts: NameFacts; causes: string[] } | null {
+export function readFacts(host: FactsHost, input: string, reads: InputReads): { facts: NameFacts; causes: string[]; rounded: string[] } | null {
   if (reads.fn || callsOf(input.trimStart(), ["purge", "assume", "additionally"], "typed")[0]?.at === 0) return null;
   const used = usedBy(host, reads);
   const facts = mergedFacts(used.map((u) => u.facts));
   if (!facts) return null;
-  return { facts, causes: used.filter((u) => u.facts.warn !== undefined).map((u) => u.name) };
+  const causes = used.filter((u) => u.facts.warn !== undefined).map((u) => u.name);
+  return { facts, causes, rounded: roundedOf(host, used, causes) };
 }
 
 /** G49f1: the facts a function keeps: those of the inexact chips and constants its definition held (`lent`, put in as
@@ -151,7 +159,13 @@ export function inherited(host: FactsHost, r: HomeResult, reads: InputReads, exp
   const causes = used
     .filter((u) => u.facts.warn !== undefined || (u.facts.reliableDigits !== null && (u.facts.reliableDigits < digits || lost)))
     .map((u) => u.name);
-  const why = { ...(r.facts.why ?? {}), ...(causes.length ? { inherited: causes } : {}), ...(once ? { once: true as const } : {}) };
+  const rounded = roundedOf(host, used, causes);
+  const why = {
+    ...(r.facts.why ?? {}),
+    ...(causes.length ? { inherited: causes } : {}),
+    ...(rounded.length ? { rounded } : {}),
+    ...(once ? { once: true as const } : {}),
+  };
   return {
     ...b,
     ...(Object.keys(why).length ? { facts: { ...b.facts, why } } : {}),

@@ -283,7 +283,7 @@ describe.skipIf(!giacAvailable())("EngineHost (real Giac)", () => {
       host.home("G:=evalf(sqrt(2))", defaultHomeSettings);
       const r = home(`G+0*${FLIP}`);
       expect(r.facts.warn).toBe("unchecked");
-      expect(r.facts.why).toEqual({ once: true });
+      expect(r.facts.why).toEqual({ rounded: ["G"], once: true }); // R36f1: G is no cause, but it is rounded
     });
     it("once is absent when a warning is already there", () => {
       host.home("G:=evalf(sqrt(2))", defaultHomeSettings);
@@ -318,11 +318,11 @@ describe.skipIf(!giacAvailable())("EngineHost (real Giac)", () => {
       expect(r).toMatchObject({ facts: { warn: "unchecked", why: { once: true } } });
       expect(home("evalf(x-0.54764225985)").facts.why).toEqual({ once: true });
     });
-    it("a stored float without a warning that costs no digits is not a reason", () => {
+    it("a stored float without a warning that costs no digits is not a cause of ⚠, only why the ≈ is rounded (R36f1)", () => {
       host.home("Bn:=evalf(sqrt(2))", defaultHomeSettings); // 39 confirmed digits, no warn: the mark is ≈
       const r = home("Bn*2");
       expect(r.approximate).toBe(true);
-      expect(r.facts.why).toBeUndefined();
+      expect(r.facts.why).toEqual({ rounded: ["Bn"] });
     });
     it("a list result carries why on the top level only", () => {
       host.home("B:=BesselJ(1,2)", defaultHomeSettings);

@@ -312,6 +312,10 @@ export interface PrecisionWhy {
   decided?: boolean;
   /** G39: Giac returned its [exact, numeric] pair for a definite integral, and the two answers differ ("why.pairDiffers"). */
   differ?: boolean;
+  /** R36f1: the user's stored names (never ours) the input read whose value is not exact (a float, or a value from an
+   *  inexact constant or chip) and that are not in `inherited`: why an `≈` result is rounded ("uses B, itself rounded").
+   *  A name stored exact (Home's 1/3) lends no facts, so it is never one. */
+  rounded?: string[];
 }
 
 /** The engine's facts about one result with its value (ValueFacts, so the formatter does not depend on HomeResult). */
