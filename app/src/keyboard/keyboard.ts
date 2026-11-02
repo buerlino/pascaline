@@ -91,8 +91,6 @@ export interface PaletteItem {
   readonly pick?: string;
   /** The parser refuses this cell's insert with a message (a meaning not settled yet). */
   readonly refused: boolean;
-  /** A cell of ours in a palette the G2 gave (R110: `%` in Shift + 9, `assumed`); absent in the built app and on the palette's own cells. */
-  readonly source?: Source;
 }
 
 export interface Palette {
@@ -292,9 +290,7 @@ export function loadPalette(v: unknown, section: string, byId: ReadonlyMap<strin
       if (picks.has(pick)) throw new KeyboardSpecError(`${where}: pick '${pick}' picks two cells`);
       picks.add(pick);
     }
-    const source = it["source"];
-    if (source !== undefined && !SOURCES.includes(source as Source)) throw new KeyboardSpecError(`${where}: unknown source '${String(source)}'`);
-    const extra = { check, refused, ...(pick ? { pick } : {}), ...(source ? { source: source as Source } : {}) };
+    const extra = { check, refused, ...(pick ? { pick } : {}) };
     if (it["key"] !== undefined) {
       if (it["insert"] !== undefined) throw new KeyboardSpecError(`${where}: either 'key' or 'insert', not both`);
       const keyId = str(it, "key", where);

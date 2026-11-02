@@ -296,10 +296,12 @@ describe("keyboard spec", () => {
     p.items.forEach((it, i) => expect([it.row, it.col], it.id).toEqual([Math.floor(i / 8), i % 8]));
     expect(p.items.filter((i) => i.pick !== undefined)).toEqual([]);
     expect(p.items.filter((i) => i.refused).map((i) => i.id)).toEqual(["amp", "aring"]); // Needs a decision (R18 report)
-    // R110: the 24 G2 cells carry the palette's source (device); the % cell says it is ours
+    // R110: the 24 G2 cells carry the palette's source (device); the % cell says in the yaml that it is ours (the loader does not read it)
     const pct = p.items[24] as PaletteItem;
-    expect([pct.id, pct.row, pct.col, pct.source, pct.action.sample]).toEqual(["percent", 3, 0, "assumed", ["5\\%", "1/20"]]);
-    expect(p.items.slice(0, 24).every((i) => i.source === undefined)).toBe(true);
+    expect([pct.id, pct.row, pct.col, pct.action.sample]).toEqual(["percent", 3, 0, ["5\\%", "1/20"]]);
+    const cells = (parse(spec) as { symbols: { source: string; items: { id: string; source?: string }[] } }).symbols;
+    expect(cells.source).toBe("device");
+    expect(cells.items.filter((i) => i.source !== undefined).map((i) => [i.id, i.source])).toEqual([["percent", "assumed"]]);
   });
 
   it("Tmpl opens the palette; a b/c is the fraction while typing", () => {
