@@ -62,6 +62,7 @@ Milestone reviews (section 0): after R50e; after R24d (with R108's gallery group
 | 337 | [R36](packages/R36.md) a picked row says why it has its mark | ron, Sonnet | `p1/ron-m4a-why` | – |
 | 343 | [R96](packages/R96.md) Settings › Data tells whether the data is kept | ron, Opus | `p1/ron-storehealth` | – |
 | 344 | [R98](packages/R98.md) Clear history keeps a running job and can be undone | ron, Opus | `p1/ron-clearundo` | – |
+| 438 | [R113](packages/R113.md) the first-start tips' rings sit centred on their controls | ron, Sonnet | `p1/ron-tipsrings` | – |
 
 ### Lane B queue (the release, then the engine)
 A7, A8, A9 and [A57](packages/A57.md) run by day (section 0); A43 and A58 are merged. Step 408 runs only on the weekly extreme night the owner names (not today).
@@ -70,6 +71,8 @@ A7, A8, A9 and [A57](packages/A57.md) run by day (section 0); A43 and A58 are me
 |---|---|---|---|---|
 | 408 | [G138](packages/G138.md) the weekly fuzz and its triage | gorge, Opus | `p1/gorge-nightfuzz-1106` | the weekly night |
 | 437 | [G152](packages/G152.md) acosh's sign and tiny imaginary part (F143, F144) | gorge, Opus | `p1/gorge-acoshsign` | G142 |
+| 439 | [A60](packages/A60.md) the F-Droid recipe checks `find/factors.yaml` against its qalc build | annabell, Sonnet | `p1/annabell-recipecheck` | – |
+| 440 | [A59](packages/A59.md) Android's splash and system bars take the Dark background (device step) | annabell, Sonnet | `p1/annabell-darkbars` | – |
 
 ### The commands henri replies with (one per decision; `scripts/night.sh` runs it)
 - `scripts/pipeline.sh <agent> "<ID>" --model <sonnet|opus> --audit-model auto`: the next queue step not done (the queue's skip rule above); `--audit-model opus` where its row says "audit Opus".
