@@ -251,6 +251,21 @@ chmod +x "$sb3/bin/adb"
 out="$(cd "$sb3" && ANDROID_SERIAL=TESTSERIAL PATH="$sb3/bin:$PATH" "$script" device 7 2>&1)"; rc=$?
 [[ $rc -eq 0 ]] && grep -q 'DEVICE SKIPPED (screen locked)' <<<"$out" || fail "A33f1: a locked device is not skipped (rc $rc): $out"
 [[ ! -e "$sb3/built" ]] || fail "A33f1: the build ran on a locked device"
+# a keyguard without a PIN (swipe) is dismissed, not skipped: the step goes on to the build (night 2026-11-01, devices 45-49)
+sw="$tmp/sw"; mkdir -p "$sw/bin"
+cat > "$sw/bin/adb" <<STUB
+#!/bin/sh
+case "\$*" in
+  *get-state*) echo device;;
+  *"dumpsys battery"*) echo "  level: 80";;
+  *"wm dismiss-keyguard"*) touch "$sw/dismissed";;
+  *"dumpsys window"*) if [ -e "$sw/dismissed" ]; then echo "  isKeyguardShowing=false"; else echo "  isKeyguardShowing=true"; fi;;
+esac
+exit 0
+STUB
+chmod +x "$sw/bin/adb"
+out="$(cd "$sb3" && ANDROID_SERIAL=TESTSERIAL PATH="$sw/bin:$PATH" "$script" device 8 2>&1)"; rc=$?
+[[ $rc -eq 0 && -e "$sb3/built" ]] && ! grep -q 'screen locked' <<<"$out" || fail "a swipe keyguard is skipped as locked (rc $rc): $out"
 # tools/core-device.sh alone: a locked device exits 4 with the message (a copy in a sandbox, stubbed lock and stay-awake)
 cd4="$tmp/cd4"; mkdir -p "$cd4/tools" "$cd4/app"
 cp "$here/../tools/core-device.sh" "$cd4/tools/"; printf '#!/bin/sh\nexit 0\n' > "$cd4/tools/devlock.sh"; cp "$cd4/tools/devlock.sh" "$cd4/tools/stay-awake.sh"

@@ -239,7 +239,7 @@ if [[ "${1:-}" == "device" ]]; then
     echo "2. $run/tree/tools/devlock.sh acquire ${dev:-<serial>} device-$n-install 600; adb -s ${dev:-<serial>} install -r $run/pascaline.apk (our app only); release"
     echo "3. ANDROID_SERIAL=${dev:-<serial>} $run/tree/tools/core-device.sh   (A32's runner from the run's tree, no lock held: npx --no-install; holds the device lock, stay-awake and restore); the tree removed after a CORE DEVICE line, kept on a skip"
     echo "4. log: - HH:MM pipeline device $n: CORE DEVICE <p>/<a> (known <k>, new <ids or none>) on <sha>"
-    echo "skipped, never failed (exit 0): integ busy for 7200 s, a dirty phase-1 worktree, no device or unauthorized, battery under 10 %, screen locked (KEYCODE_WAKEUP, dumpsys window isKeyguardShowing=true; checked before the build and again before the runner), a build failure -> DEVICE SKIPPED (<why>)"
+    echo "skipped, never failed (exit 0): integ busy for 7200 s, a dirty phase-1 worktree, no device or unauthorized, battery under 10 %, screen locked (KEYCODE_WAKEUP and wm dismiss-keyguard, then dumpsys window isKeyguardShowing=true; checked before the build and again before the runner), a build failure -> DEVICE SKIPPED (<why>)"
     echo "RESULT device $n: DRY RUN"; exit 0
   fi
   ensure_integ; mkdir -p "$run"
@@ -250,8 +250,9 @@ if [[ "${1:-}" == "device" ]]; then
   [[ "$st" == device ]] || skip "device $st"
   bat="$(timeout -k 5 20 adb -s "$dev" shell dumpsys battery 2>/dev/null | tr -d '\r' | awk '/^ *level:/{print $2}')"
   [[ -z "$bat" || "$bat" -ge 10 ]] || skip "battery $bat %"
-  locked() {  # wake does not unlock: a PIN or pattern keeps isKeyguardShowing=true
-    timeout -k 5 20 adb -s "$dev" shell input keyevent KEYCODE_WAKEUP >/dev/null 2>&1 || true; sleep 1
+  locked() {  # wake, then dismiss a keyguard without a PIN (a swipe one, as stay-awake.sh does); a PIN or pattern keeps isKeyguardShowing=true
+    timeout -k 5 20 adb -s "$dev" shell input keyevent KEYCODE_WAKEUP >/dev/null 2>&1 || true
+    timeout -k 5 20 adb -s "$dev" shell wm dismiss-keyguard >/dev/null 2>&1 || true; sleep 1
     local w; w="$(timeout -k 5 20 adb -s "$dev" shell dumpsys window 2>/dev/null | tr -d '\r' || true)"  # captured first: grep -q would SIGPIPE adb
     grep -q 'isKeyguardShowing=true' <<<"$w"
   }
