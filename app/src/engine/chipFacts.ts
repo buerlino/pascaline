@@ -10,6 +10,7 @@ import type { ValueFacts } from "./types.ts";
 import type { NameFacts } from "./defs.ts";
 import { floatsAsEvalf } from "./homeEval.ts";
 import { hasFloat } from "./numeric.ts";
+import { CHIP_PREFIX } from "./ourNames.ts";
 import { mapNames, names } from "./giacPrint.ts";
 import { isZeroText } from "./constBasis.ts";
 import type { SigmaInput } from "./constUnc.ts";
@@ -24,8 +25,6 @@ export interface ChipEntry extends ValueFacts {
 }
 export type ChipFactsTable = Readonly<Record<string, ChipEntry>>;
 
-/** The prefix of a chip sent by name. */
-export const CHIP_PREFIX = "pasr_";
 /** R61: the free symbol a chip with σ is in the σ expression (its `pasr_` name holds its value during the run). */
 const SIGMA_PREFIX = "pasru_";
 

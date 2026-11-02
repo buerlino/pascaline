@@ -10,9 +10,6 @@ import {
   ENGINE_DEFINITIONS,
   WORKER_DEFINITION_NAMES,
   decideFloatTest,
-  EQ_DIFF,
-  EQ_INEXACT_FLAG,
-  EQ_VERDICT,
   floatsAsEvalf,
   homeEval,
   homeSetupCommands,
@@ -39,7 +36,7 @@ import { callsIn, floatBounds, giacPair, hasDefiniteIntegral, integratedNumerica
 import { enEngine } from "../i18n/enEngine.ts";
 import { dropAngleFactor, PASDEG } from "../input/angles.ts";
 import { askedDigits, DOUBLE_DIGITS, doubleFormsIn, notBuiltin, floatsShown, unauditedIn, floatFacts, hasFloat, integratedFacts, numberLatex, shapeOfValue, valuePrecision, whyOf, withDigits } from "./numeric.ts";
-import { balanced, bracesOf, callsOf, isName, leadingName, LIST_TYPE, namesIn, wholeCall, wordsOf, parsePrinted, typedFromPrinted } from "./giacPrint.ts";
+import { balanced, bracesOf, callsOf, isError, isName, isTimeout, leadingName, LIST_TYPE, namesIn, parsePrinted, typedFromPrinted, wholeCall, wordsOf } from "./giacPrint.ts";
 import { decidedAtDouble, decideTwice, restsOnDecision } from "./decisions.ts";
 import { assignmentIn, formIn, formOf, mayStore, programStores, STATE_HEADS, STRING_HEADS, writesThrough, type InputForm, type ProgramStores } from "./stores.ts";
 import { fnFacts, inherited, nameFacts, readFacts, readsFacts, storedFacts, storeFacts, type FactsHost } from "./facts.ts";
@@ -49,7 +46,8 @@ import { SOLVE_HARD_TIMEOUT_S, solveRequest, unknownsOf } from "./solve.ts";
 import { analyze, table } from "./analysis.ts";
 import { UNIT_DEFINITIONS, unitEval } from "../units/evaluate.ts";
 import { constUncDigits, inexactConstsIn, withConstValues, type ConstTable } from "./constUnc.ts";
-import { chipCommand, chipNameFacts, chipSigma, chipsIn, CHIP_PREFIX, literalChip, withChipValues, type ChipFactsTable } from "./chipFacts.ts";
+import { CHIP_PREFIX, EQ_DIFF, EQ_INEXACT_FLAG, EQ_VERDICT } from "./ourNames.ts";
+import { chipCommand, chipNameFacts, chipSigma, chipsIn, literalChip, withChipValues, type ChipFactsTable } from "./chipFacts.ts";
 import type { Quantity, UnitError, UnitJob } from "../units/types.ts";
 import { contextDiff, hostContext, isFlagName, namesFlag, namesUnreadFlag } from "./flags.ts";
 import { contextOf, gated, type GatedGiac } from "./ctxGate.ts";
@@ -124,14 +122,6 @@ export function messageBuffer(): { print: (s: string) => void; messages: () => s
       buf = [];
     },
   };
-}
-
-function isError(out: string): boolean {
-  return out.startsWith("GIAC_ERROR");
-}
-
-function isTimeout(out: string): boolean {
-  return isError(out) && /interrupt/i.test(out);
 }
 
 /** Commands that put Giac into CAS mode (D3). Home's are homeSetupCommands() in homeEval.ts. */

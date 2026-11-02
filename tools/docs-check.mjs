@@ -5,7 +5,7 @@
 //   node tools/docs-check.mjs
 //
 // 1. Links: every relative Markdown link in every Markdown file of the repo resolves to a file or directory
-//    (anchors are not checked), and every `docs/….md` path a live doc names exists.
+//    (anchors are not checked), and every `docs/….md` path a live doc or a tracked source file (G145) names exists.
 // 2. Budgets: the whole brief (28 kB; owner, 2026-10-19), backlog.md, decisions.md, docs/04 and every package file in docs/shifts/packages/ stay within their size.
 // 3. Ids (A22): no two package files share the id of their heading, no two backlog bug lines (`- **F<n>.**`) share one.
 // 4. Live research notes (A22): docs/research/*.md (not the archive) hold at most 150 kB together, and each opens with a
@@ -63,6 +63,18 @@ for (const f of [...mdFiles, ...untracked]) {
 // history) and the package texts (docs/shifts/packages/), which name the files they create.
 const live = mdFiles.filter((f) => !/^(docs\/archive|spike|docs\/shifts\/packages)\//.test(f));
 for (const f of live) {
+  for (const m of read(f).matchAll(/(?<![\w./-])docs\/[\w./-]+\.md\b/g)) {
+    links++;
+    if (!existsSync(join(repo, m[0]))) failures.push(`path: ${f} names ${m[0]}, which does not exist`);
+  }
+}
+
+// Source comments (G145): a `docs/….md` path named in a tracked source file must exist (a doc that moved leaves the comment
+// pointing nowhere). Not checked: the docs themselves and spike/ (history), this check, and the test files (their `docs/x.md` are
+// fixtures).
+const COMMENT_SKIP = /^(docs|spike)\/|^tools\/docs-check\.mjs$|\.test\.[a-z]+$/;
+for (const f of execFileSync("git", ["ls-files"], { cwd: repo, encoding: "utf8" }).split("\n")) {
+  if (!f || COMMENT_SKIP.test(f) || !/\.(ts|tsx|svelte|mjs|js|cjs|py|sh|cc|cpp|h|kt|java|yaml|yml)$/.test(f) || /(^|\/)(node_modules|_gen)\//.test(f) || !existsSync(join(repo, f))) continue;
   for (const m of read(f).matchAll(/(?<![\w./-])docs\/[\w./-]+\.md\b/g)) {
     links++;
     if (!existsSync(join(repo, m[0]))) failures.push(`path: ${f} names ${m[0]}, which does not exist`);

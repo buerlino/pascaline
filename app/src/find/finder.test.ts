@@ -6,7 +6,8 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it, vi } from "vitest";
 import { CATEGORIES, categoryItems } from "./categories.ts";
-import { constChipOf, findMenu, itemRow, makeIndex, makeIndexIdle, pauseWhile, unitNote } from "./finder.ts";
+import { constChipOf, findMenu, itemRow, makeIndexIdle, pauseWhile, unitNote } from "./finder.ts";
+import { makeIndex } from "./testIndex.ts";
 import type { FindItem, IndexItem } from "./types.ts";
 
 const file = join(dirname(fileURLToPath(import.meta.url)), "_gen/find-index.json");

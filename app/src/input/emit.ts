@@ -2,7 +2,7 @@
 // MathJSON (Compute Engine's shape, also produced by our own parser) -> Giac input string.
 import { parseError } from "../i18n/enParser.ts";
 import { SerializeError } from "./errors.ts";
-import { CALL_NAME } from "../engine/ourNames.ts";
+import { CALL_NAME, EQ_DIFF, EQ_INEXACT_FLAG, EQ_VERDICT } from "../engine/ourNames.ts";
 import { ANGLE_IN, ANGLE_OUT, DEGREE, PASDEG, POLAR, POLAR_OUT, RECT, numericLiteral, rectArg, withFactor } from "./angles.ts";
 
 export { SerializeError };
@@ -89,11 +89,6 @@ const REL: Record<string, string> = {
   Equal: "=", Less: "<", LessEqual: "<=", Greater: ">", GreaterEqual: ">=",
 };
 
-/** The Giac name Home and CAS read after a test to learn that a side held a float (engine/homeEval.ts, same name). */
-export const EQ_INEXACT_FLAG = "pasinexact";
-/** R18f2: the difference of a float-side test, and the verdict the engine host sets for it (0 equal, 1 not, 2 open). */
-export const EQ_DIFF = "pasdiff";
-export const EQ_VERDICT = "pasverdict";
 
 /**
  * R18f1: `a == b` and `a ≠ b` as value tests (decisions "2026-10-14 R18 defaults" point 6). Giac's own `==` compares

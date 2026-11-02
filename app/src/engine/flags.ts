@@ -57,7 +57,7 @@ export function contextDiff(got: GiacContext, want: GiacContext): (keyof GiacCon
 /**
  * Giac's words that set a global setting: the `name:=value` flags of its lexer (input_lexer.cc, T_DIGITS), the setters
  * of the context bridge-1 reads, and the ones it cannot read but the mode setup puts back (`timeout`, `ckevery`, `ckbudget`). A name here is
- * never a user's variable or function in the definitions log, and a library may not use it (library.ts STATE_WORDS).
+ * never a user's variable or function in the definitions log, and a library may not use it (library.ts isFlagName).
  */
 export const FLAG_WORDS: readonly string[] = [
   "approx_mode", "complex_mode", "complex_variables", "angle_radian", "Digits", "DIGITS", "epsilon", "proba_epsilon",
@@ -75,11 +75,6 @@ const UNREAD: ReadonlySet<string> = new Set(["timeout", "ckevery", "ckbudget"]);
 /** The text names a Giac setting (outside strings). */
 export function namesFlag(text: string, q: Quoting): boolean {
   return firstNameIn(text, FLAG_SET, q) !== null;
-}
-
-/** The first Giac setting the text names (outside strings), or null. */
-export function flagIn(text: string, q: Quoting): string | null {
-  return firstNameIn(text, FLAG_SET, q);
 }
 
 /** The text names a setting the read cannot see, which only the mode setup puts back. */

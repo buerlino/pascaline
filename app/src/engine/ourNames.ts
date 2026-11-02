@@ -20,7 +20,8 @@ function renameCalls(text: string, map: Readonly<Record<string, string>>, q: Quo
   return mapNames(text, ({ name, at, call }) => {
     if (!call || !Object.hasOwn(map, name)) return null;
     const before = text.charAt(at - 1);
-    // Giac reads `2pasmedian(L)` as the call (2*pasmedian)(L), so the product sign goes in after a number (2median(L))
+    // After a number the product sign goes in (2median(L) → 2*pasmedian(L)): the verifier's smoke runs read `2pasatan(1)` as
+    // 2*pi/4 either way, so this is for clarity, not a Giac need (G145)
     const afterNumber = digit(before) || (before === "." && digit(text.charAt(at - 2)));
     if (before === "." && !afterNumber) return null;
     return (afterNumber ? "*" : "") + map[name]!;
@@ -38,9 +39,19 @@ export function writeUserNames(text: string): string {
   return renameCalls(text, WRITTEN_NAME, "typed");
 }
 
-/** G100: the names our own test helper stores into (input/emit.ts equalityTest: the float flag and the difference,
- *  homeEval.ts EQ_INEXACT_FLAG and EQ_DIFF spell the same): a store into one is not the user's. */
-export const OUR_STORES: readonly string[] = ["pasinexact", "pasdiff"];
+/** Set to 1 by an == or ≠ test that met a float (input/emit.ts equalityTest). Purged, not set to 0, before an input
+ *  runs: `sto` inside the test's function would read a value as the place to store to. EQ_DIFF is purged with it for
+ *  the same reason. G145: the one home of these names and CHIP_PREFIX (the parser, the engine host and the state read import them). */
+export const EQ_INEXACT_FLAG = "pasinexact";
+/** R18f2: where a float-side test leaves its difference (0 equal, 1 not, 2 open is the verdict it reads). */
+export const EQ_DIFF = "pasdiff";
+export const EQ_VERDICT = "pasverdict";
+/** The prefix of a result chip sent by name (G49's `pasr_<k>`, input/chip-giac.ts; engine/chipFacts.ts). */
+export const CHIP_PREFIX = "pasr_";
+
+/** G100: the names our own test helper stores into (input/emit.ts equalityTest: the float flag, the difference and
+ *  the verdict): a store into one is not the user's. */
+export const OUR_STORES: readonly string[] = [EQ_INEXACT_FLAG, EQ_DIFF, EQ_VERDICT];
 
 /** A store target that is one of our helpers' names, not the user's state. */
 export function isOurStore(name: string): boolean {

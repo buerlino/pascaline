@@ -3,7 +3,8 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import type { MenuItem } from "../apps/types.ts";
 import { keyboard, type Key } from "../keyboard/keyboard.ts";
-import { FILTER_ABOVE, Sheet, forgetPicks, matches } from "./sheet.svelte.ts";
+import { lastPicks } from "./picks.ts";
+import { FILTER_ABOVE, Sheet, matches } from "./sheet.svelte.ts";
 import { letterOf, sheetKey } from "./sheetKeys.ts";
 
 const ran: string[] = [];
@@ -16,7 +17,7 @@ const key = (id: string): Key => {
 
 beforeEach(() => {
   ran.length = 0;
-  forgetPicks();
+  lastPicks.clear();
 });
 
 describe("Sheet: picking", () => {

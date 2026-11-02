@@ -9,11 +9,11 @@
 //   the closure over it (facts.ts); the next state part is compared with it.
 // Plain text and pure functions; only erasable TypeScript syntax, so Node runs this file directly.
 import type { GiacParse } from "./bridge.ts";
-import { ENGINE_DEFINITIONS, EQ_DIFF, EQ_INEXACT_FLAG, EQ_VERDICT, WORKER_DEFINITION_NAMES } from "./homeEval.ts";
+import { ENGINE_DEFINITIONS, WORKER_DEFINITION_NAMES } from "./homeEval.ts";
 import { DOUBLE_DIGITS } from "./numeric.ts";
 import { definedName, isName, programParams, type PrintedNode } from "./giacPrint.ts";
 import { COMPLEX_DEFINITIONS } from "./complex.ts";
-import { CHIP_PREFIX } from "./chipFacts.ts";
+import { CHIP_PREFIX, EQ_DIFF, EQ_INEXACT_FLAG, EQ_VERDICT } from "./ourNames.ts";
 import { UNIT_DEFINITIONS } from "../units/evaluate.ts";
 import { aboutsPart } from "./assumed.ts";
 

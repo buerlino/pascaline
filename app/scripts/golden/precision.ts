@@ -43,7 +43,7 @@ export async function stagePrecision(): Promise<void> {
       }
       return { problems };
     };
-    // a time-only miss runs once more on the same engine (decisions.md "g58 timing"); the rerun stands
+    // a time-only miss runs once more on the same engine (decisions.md "Owner answers of 2026-10-25, afternoon"); the rerun stands
     const { problems } = await retryTimeMiss(c.id, attempt);
     if (c.mark) marksChecked++;
     if (c.status === "pending") {

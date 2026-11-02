@@ -7,7 +7,7 @@ import { giacAvailable, loadNodeGiac, nodeHost } from "./nodeGiac.ts";
 import { applyDefChanges, type DefChange, type DefEntry } from "./defs.ts";
 import { defaultCasSettings } from "./types.ts";
 import { defaultHomeSettings } from "./homeEval.ts";
-import { contextDiff, flagIn, hostContext, isFlagName, namesUnreadFlag } from "./flags.ts";
+import { contextDiff, hostContext, isFlagName, namesFlag, namesUnreadFlag } from "./flags.ts";
 import type { GiacApi } from "./host.ts";
 import type { GiacBridge } from "./bridge.ts";
 import { LibError, parseLibrary } from "./library.ts";
@@ -17,9 +17,9 @@ const HEAD = "// pascaline library 1\n";
 
 describe("flag words (no engine)", () => {
   it("finds a setting outside strings and words, not inside a longer name", () => {
-    expect(flagIn("approx_mode:=1", "typed")).toBe("approx_mode");
-    expect(flagIn("f(x):=x+myepsilon", "typed")).toBeNull();
-    expect(flagIn('print("approx_mode")', "typed")).toBeNull();
+    expect(namesFlag("approx_mode:=1", "typed")).toBe(true);
+    expect(namesFlag("f(x):=x+myepsilon", "typed")).toBe(false);
+    expect(namesFlag('print("approx_mode")', "typed")).toBe(false);
     expect(isFlagName("Digits")).toBe(true);
     expect(isFlagName("beam")).toBe(false);
     expect(namesUnreadFlag("timeout 0.001", "typed")).toBe(true);

@@ -451,3 +451,18 @@ export function programParams(text: string, bare = false): string[] | null {
   if (close < 0 || t.slice(1, close).includes("(") || !t.slice(close + 1).trimStart().startsWith("->")) return null;
   return t.slice(1, close).split(",").map((p) => p.trim());
 }
+
+// --- shared reads of an evaluation's text (G145: one home) -------------------------------------------------------------
+
+/** The text is Giac's error output (the worker's `GIAC_ERROR` prefix). */
+export function isError(out: string): boolean {
+  return out.startsWith("GIAC_ERROR");
+}
+
+/** The error is an interrupt: the time or step budget ran out. */
+export function isTimeout(out: string): boolean {
+  return isError(out) && /interrupt/i.test(out);
+}
+
+/** A printed integer or rational (`-7/3`, `12`): groups 1 and 2 are the numerator and the denominator (if any). */
+export const RATIONAL = /^(-?\d+)(?:\/(\d+))?$/;

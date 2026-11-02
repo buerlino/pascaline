@@ -1,19 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // R34 (F30): a line kept from before a kill (entry/keep.ts), read back at start. Loaded lazily, beside MathLive.
+import { groupEnd } from "../input/tokenize.ts";
 import { validChips, type ChipTable } from "../input/chips.ts";
 import { resultToEntry } from "../render/insertable.ts";
 import type { KeptLine } from "./keep.ts";
-
-/** The index after the {…} group that starts at `i`, or -1 if there is none. */
-function groupEnd(s: string, i: number): number {
-  if (s[i] !== "{") return -1;
-  for (let depth = 0; i < s.length; i++) {
-    if (s[i] === "\\") i++;
-    else if (s[i] === "{") depth++;
-    else if (s[i] === "}" && --depth === 0) return i + 1;
-  }
-  return -1;
-}
 
 /**
  * The line without the chips whose value is not in `table` (a damaged store): a result chip becomes the digits it

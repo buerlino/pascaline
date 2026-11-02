@@ -41,7 +41,6 @@ if (import.meta.env.VITE_MEASURE === "1") {
   else if (new URLSearchParams(location.search).get("bench") === "defs") void import("./bench.ts").then((m) => m.runDefsBench(session));
   else if (new URLSearchParams(location.search).get("bench") === "library") void import("./bench.ts").then((m) => m.runLibraryBench(session));
   else if (new URLSearchParams(location.search).get("bench") === "keypad") void import("./keypadBench.ts").then((m) => m.runKeypadBench());
-  else if (new URLSearchParams(location.search).get("bench") === "probe") void import("./deviceProbe.ts").then((m) => m.runDeviceProbe());
   else if (new URLSearchParams(location.search).get("bench") === "solve") void import("./solveBench.ts").then((m) => m.runSolveBench(calc));
   else if (new URLSearchParams(location.search).get("bench") === "find") void import("./findBench.ts").then((m) => m.runFindBench(shell, entry));
   else if (new URLSearchParams(location.search).get("bench") === "golden") void import("./goldenBench.ts").then((m) => m.runGoldenBench());

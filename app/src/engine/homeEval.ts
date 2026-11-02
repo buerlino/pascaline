@@ -27,13 +27,14 @@ import { principalPowers } from "./powers.ts";
 import { dropAngleFactor, hasAngleFactor } from "../input/angles.ts";
 import { decimalFromRational, decimalFromString, formatConfirmed, isZero, ZERO_VALUE, type ComplexValue, type DecimalValue, type PrecisionFacts, type PrecisionWarn, type PrecisionWhy } from "./format.ts";
 import { askedDigits, DOUBLE_DIGITS, doubleFallback, exactFacts, floatFacts, floatPathFacts, integratedFacts, hasFloat, isAudited, doubleFormsIn, unauditedIn, numericDisagrees, notBuiltin, floatsShown, heavySplit, REGROUP_MAX, shapeOfValue, endsEarly, valuePrecision, whyOf, withDigits, type ElementFacts, type Giac, type Shape } from "./numeric.ts";
-import { bracesOf, functionsIn, LIST_TYPE, mapNumbers, matrixTyped, replaceLiteral, wordsOf, type Quoting } from "./giacPrint.ts";
+import { bracesOf, functionsIn, isError, isTimeout, LIST_TYPE, mapNumbers, matrixTyped, type Quoting, replaceLiteral, wordsOf } from "./giacPrint.ts";
 import { plainRows } from "./matrixType.ts";
 import { complexSafe, readsReplaced } from "./complex.ts";
 import { decidedAtDouble, decideTwice, decidingStored, restsOnDecision } from "./decisions.ts";
 import { PLAIN_FORM, type InputForm } from "./stores.ts";
 import { ESERIES_CUT } from "./eseries.ts";
 import { defaultHomeSettings } from "./homeDefaults.ts";
+import { EQ_DIFF, EQ_INEXACT_FLAG, EQ_VERDICT } from "./ourNames.ts";
 
 export type { Giac };
 
@@ -198,14 +199,6 @@ export const ENGINE_DEFINITIONS: Readonly<Record<string, string>> = {
 /** Our names whose definition host.ts builds (tables out of the start chunk): G30 `eseries` and its helper (G139). */
 export const WORKER_DEFINITION_NAMES: readonly string[] = ["eseries", ESERIES_CUT];
 
-/** Set to 1 by an == or ≠ test that met a float (input/emit.ts equalityTest, which spells the same name). Purged, not
- *  set to 0, before an input runs: `sto` inside the test's function would read a value as the place to store to.
- *  EQ_DIFF below is purged with it for the same reason. */
-export const EQ_INEXACT_FLAG = "pasinexact";
-/** R18f2: where a float-side test leaves its difference, and the verdict it reads (input/emit.ts spells the same). */
-export const EQ_DIFF = "pasdiff";
-export const EQ_VERDICT = "pasverdict";
-
 /**
  * R18f2: the verdict for an input holding one == or ≠ test with a float side (EQ_INEXACT_FLAG set by its first run).
  * A float can only be compared to its own digits (decisions "2026-10-14 R18 defaults" point 6), so the test runs again
@@ -333,7 +326,7 @@ export function floatsAsEvalf(text: string): string {
 }
 
 /** G59: `input` with each decimal literal as a float of `at` digits (a short literal alone is read as a double). */
-export function floatLiterals(input: string, at: number): string {
+function floatLiterals(input: string, at: number): string {
   return rewriteDecimals(input, (mant, exp10) => `evalf(${exactRational(mant, exp10)},${at})`, "typed");
 }
 
@@ -347,14 +340,6 @@ function exactRational(mant: string, exp10: number): string {
 
 
 // --- 2. evaluation ---------------------------------------------------------------------------
-
-function isError(out: string): boolean {
-  return out.startsWith("GIAC_ERROR");
-}
-
-function isTimeout(out: string): boolean {
-  return isError(out) && /interrupt/i.test(out);
-}
 
 /**
  * G48 (docs/04 2.4 rule 2): an input that runs once (it stores, or calls a stored function that stores) cannot be
@@ -495,7 +480,7 @@ function provedRational(giac: Giac, name: string, f: ElementFacts, digits: numbe
 
 /** G38: a result whose decision did not hold at a higher precision: ⚠ without a count, elements too, with the why
  *  "decided at limited precision" (docs/04 2.4 rule 2). */
-export function undecidedResult(r: HomeResult): HomeResult {
+function undecidedResult(r: HomeResult): HomeResult {
   const el = (e: HomeResult): HomeResult => ({ ...e, facts: { ...e.facts, exact: false, reliableDigits: null, warn: "unchecked" }, approximate: true });
   const top = el(r);
   return { ...top, ...(r.items ? { items: r.items.map(el) } : {}), facts: { ...top.facts, why: { ...(r.facts.why ?? {}), decided: true } } };
