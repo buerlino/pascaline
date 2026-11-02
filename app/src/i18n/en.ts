@@ -92,6 +92,11 @@ export const en = {
   "history.working": "Working…",
   "history.cancel": "Cancel",
   "history.cancelled": "Cancelled",
+  /** R98: the note under the history after Clear history or Delete; Undo (or a tap on it) brings the rows back. */
+  "history.cleared": "History cleared · Undo",
+  "history.deleted": "Row deleted · Undo",
+  /** R98: Clear or Delete found its Undo code missing (a chunk that will not load), so it removed nothing. */
+  "history.notRemoved": "Not removed: restart the app",
   "mark.exact": "Exact: every digit shown is the value",
   "mark.approx": "Approximate: the digits shown are confirmed",
   "mark.warn": "Warning: fewer digits are confirmed than shown",

@@ -70,9 +70,9 @@ export async function runBench(session: Session): Promise<void> {
   // ?bench=1&keep=1 keeps the persisted history (run twice to seed a full 200-entry history).
   if (!new URLSearchParams(location.search).has("keep")) {
     session.setView("home");
-    session.clearHistory();
+    await session.clearHistory();
     session.setView("cas");
-    session.clearHistory();
+    await session.clearHistory();
   }
   // ?bench=1&digits=N (1–30; docs/04 section 2.5): the digits setting for this run, set directly so a measurement
   // build can time 20 and 30 digits before Settings allows them. Not persisted.

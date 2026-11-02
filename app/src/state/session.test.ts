@@ -5,7 +5,7 @@ import { CalcCancelled, type Calc, type CasOutcome, type HomeOutcome, type UserN
 import type { ComplexValue } from "../engine/format.ts";
 import { safePrecision } from "../engine/homeEval.ts";
 import { t } from "../i18n/index.ts";
-import { Session } from "./session.svelte.ts";
+import { loadRemoved, Session } from "./session.svelte.ts";
 import type { Kv } from "./storage.ts";
 
 function memoryKv(): Kv & { data: Map<string, unknown> } {
@@ -112,7 +112,7 @@ describe("Session history", () => {
     const a = new Session(new ValueCalc(), kv);
     await a.restoreHistory();
     await a.submit("2");
-    a.clearHistory();
+    await a.clearHistory();
     expect((kv.data.get("history") as { home: unknown[] }).home).toHaveLength(0);
   });
 });
@@ -123,12 +123,13 @@ describe("deleting a row (R11)", () => {
     const s = new Session(new ValueCalc(), kv);
     await s.restoreHistory();
     for (const e of ["1", "2", "3"]) await s.submit(e);
+    await loadRemoved(); // R98: Delete keeps an Undo copy, whose code main.ts fetches when idle
     const second = s.home[1];
     if (!second) throw new Error("no second row");
-    expect(s.removeItem(second)).toBe(true);
+    expect(await s.removeItem(second)).toBe(true);
     expect(s.home.map((i) => i.latex)).toEqual(["1", "3"]);
     expect((kv.data.get("history") as { home: { latex: string }[] }).home.map((i) => i.latex)).toEqual(["1", "3"]);
-    expect(s.removeItem(second)).toBe(false); // already gone
+    expect(await s.removeItem(second)).toBe(false); // already gone
   });
 
   it("refuses a row that is still running", async () => {
@@ -137,7 +138,7 @@ describe("deleting a row (R11)", () => {
     const row = s.home[0];
     if (!row) throw new Error("no row");
     row.status = "pending";
-    expect(s.removeItem(row)).toBe(false);
+    expect(await s.removeItem(row)).toBe(false);
     expect(s.home).toHaveLength(1);
   });
 });

@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { FakeCalc } from "../calc/fake.ts";
 import type { CasOutcome, HomeOutcome } from "../calc/port.ts";
 import { safePrecision } from "../engine/homeEval.ts";
-import { Session } from "./session.svelte.ts";
+import { loadRemoved, Session } from "./session.svelte.ts";
 import type { Kv } from "./storage.ts";
 
 /** A Home engine that answers at once (FakeCalc waits); the value does not matter here. */
@@ -100,7 +100,7 @@ describe("the history is written only after it was read (R106)", () => {
     s.flushHistory();
     await new Promise((r) => setTimeout(r, 20)); // past the save timer
     const row = s.home[0];
-    if (row) s.removeItem(row);
+    if (row) void s.removeItem(row);
     s.clearHistory();
     s.flushHistory();
     await tick();
@@ -114,15 +114,55 @@ describe("the history is written only after it was read (R106)", () => {
     kv.data.set("history", seed.data.get("history"));
     const s = new Session(new QuickCalc(), kv);
     await s.submit("5");
-    s.clearHistory(); // before the read started (main.ts reads after two frames)
+    const first = s.clearHistory(); // before the read started (main.ts reads after two frames)
     const reading = s.restoreHistory();
     await s.submit("6");
-    s.clearHistory(); // while the read is in flight
+    const second = s.clearHistory(); // while the read is in flight
     await tick();
     expect(kv.writes).not.toContain("history");
     kv.release();
     await reading;
+    await Promise.all([first, second]); // (R98: a Clear acts once its Undo code is in; it takes the rows of its press)
     expect(s.home.map((i) => i.latex)).toEqual(["1", "2", "3", "4"]);
     expect(latexOf(kv)).toEqual(["1", "2", "3", "4"]);
+  });
+
+  it("a Clear before the read keeps its Undo place behind the stored rows, in memory and across a relaunch (R98)", async () => {
+    const seed = gatedKv();
+    await storeFour(seed);
+    const kv = gatedKv();
+    kv.data.set("history", seed.data.get("history"));
+    await loadRemoved(); // Clear acts at once (main.ts fetches the code when idle)
+    const s = new Session(new QuickCalc(), kv);
+    await s.submit("5"); // Enter, then Shift+Esc, before the stored rows are in
+    expect(await s.clearHistory()).toBe(true);
+    expect(s.home).toEqual([]);
+    kv.release();
+    await s.restoreHistory();
+    expect(s.home.map((i) => i.latex)).toEqual(["1", "2", "3", "4"]);
+    expect(latexOf(kv)).toEqual(["1", "2", "3", "4"]);
+    const b = new Session(new QuickCalc(), kv); // a relaunch between the Clear and the Undo
+    await b.restoreHistory();
+    expect(b.undoRemoved()).toBe(true);
+    expect(b.home.map((i) => i.latex)).toEqual(["1", "2", "3", "4", "5"]);
+    expect(s.undoRemoved()).toBe(true); // and in the session that cleared
+    expect(s.home.map((i) => i.latex)).toEqual(["1", "2", "3", "4", "5"]);
+  });
+
+  it("a Clear whose code arrives after the read takes the rows picked at the press, not the stored ones (R98)", async () => {
+    const seed = gatedKv();
+    await storeFour(seed);
+    const kv = gatedKv();
+    kv.data.set("history", seed.data.get("history"));
+    const s = new Session(new QuickCalc(), kv);
+    await s.submit("5");
+    await s.submit("6");
+    const clearing = s.clearHistory(); // the code may still be loading
+    kv.release();
+    await s.restoreHistory();
+    expect(await clearing).toBe(true);
+    expect(s.home.map((i) => i.latex)).toEqual(["1", "2", "3", "4"]);
+    expect(s.undoRemoved()).toBe(true);
+    expect(s.home.map((i) => i.latex)).toEqual(["1", "2", "3", "4", "5", "6"]);
   });
 });

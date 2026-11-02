@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { dataText } from "../i18n/enData.ts";
-import { backupName, BACKUP_KEYS, LEFT_OUT, makeBackup, saveBackup } from "./backup.ts";
+import { backupName, BACKUP_KEYS, checkBackup, LEFT_OUT, makeBackup, saveBackup, VALIDATORS } from "./backup.ts";
 import { fakeIndexedDb, type FakeIdb } from "./fakeIdb.ts";
 import { DATA_VERSION, stamp } from "./storage.ts";
 import { kvGetRaw, type RawRecord } from "./storageRaw.ts";
@@ -97,6 +97,24 @@ describe("the backup's keys (R38a)", () => {
     // The scan itself still finds the keys behind the named constants and the string keys.
     for (const k of ["userKeys", "taps", "entry", "unitPadCells", "settings", "defs"]) expect(keys.has(k), k).toBe(true);
     for (const [k, where] of keys) expect(BACKUP_KEYS.includes(k) || LEFT_OUT.includes(k), `${k} (${where})`).toBe(true);
+  });
+  it("leaves the history's Undo copy of Clear and Delete out, and the check refuses a history that holds one (R98)", async () => {
+    const row = { id: 1, view: "home", latex: "1", status: "done", resultLatex: "1", text: "1", approximate: false, startedAt: 0 };
+    const undo = { view: "home", kind: "clear", rows: [{ at: 0, item: { ...row, latex: "secret" } }] };
+    const store: Record<string, RawRecord> = { history: { "@pascaline": DATA_VERSION, value: { home: [row], cas: [], undo } } };
+    const b = await makeBackup(async (k) => store[k], new Date("2026-10-31T12:00:00Z"));
+    expect(b.parts["history"]?.value).toEqual({ home: [row], cas: [] });
+    expect(JSON.stringify(b)).not.toContain("secret"); // rows the user removed never leave the device
+    expect((store["history"]?.value as Record<string, unknown>)["undo"]).toEqual(undo); // the store itself is untouched
+    // the audit's case: a copy readCopy would drop at start (`at` not a number) passed the check before
+    const bad = { home: [row], undo: { view: "home", kind: "clear", rows: [{ at: "x", item: 3 }] } };
+    expect(VALIDATORS["history"]?.(bad)).toBe(false);
+    expect(VALIDATORS["history"]?.({ home: [row], undo })).toBe(false);
+    expect(VALIDATORS["history"]?.({ home: [row] })).toBe(true);
+    const file = (v: unknown): Uint8Array =>
+      new TextEncoder().encode(JSON.stringify({ "pascaline-backup": 1, parts: { history: { "@pascaline": DATA_VERSION, value: v } } }));
+    expect(checkBackup(file(bad)).ok).toBe(false);
+    expect(checkBackup(file(b.parts["history"]?.value)).ok).toBe(true); // what makeBackup writes restores
   });
   it("names the file by the date", () => {
     expect(backupName(new Date(2026, 9, 5))).toBe("pascaline-backup-2026-10-05.json");
