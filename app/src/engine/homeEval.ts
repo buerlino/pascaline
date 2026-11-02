@@ -25,7 +25,7 @@ import { listAsArguments } from "./listargs.ts";
 import { backInDegrees, needsDegrees } from "./degrees.ts";
 import { principalPowers } from "./powers.ts";
 import { dropAngleFactor, hasAngleFactor } from "../input/angles.ts";
-import { decimalFromRational, decimalFromString, formatConfirmed, isZero, tieRisk, ZERO_VALUE, type ComplexValue, type DecimalValue, type PrecisionFacts, type PrecisionWarn, type PrecisionWhy } from "./format.ts";
+import { decimalFromRational, decimalFromString, formatConfirmed, isZero, ZERO_VALUE, type ComplexValue, type DecimalValue, type PrecisionFacts, type PrecisionWarn, type PrecisionWhy } from "./format.ts";
 import { askedDigits, DOUBLE_DIGITS, doubleFallback, exactFacts, floatFacts, floatPathFacts, integratedFacts, hasFloat, isAudited, doubleFormsIn, unauditedIn, numericDisagrees, notBuiltin, floatsShown, heavySplit, REGROUP_MAX, shapeOfValue, endsEarly, valuePrecision, whyOf, withDigits, type ElementFacts, type Giac, type Shape } from "./numeric.ts";
 import { bracesOf, functionsIn, LIST_TYPE, mapNumbers, matrixTyped, replaceLiteral, wordsOf, type Quoting } from "./giacPrint.ts";
 import { plainRows } from "./matrixType.ts";
@@ -90,8 +90,6 @@ export interface HomeResult {
   path: HomePath;
   /** True when the shown value comes from floating point, not from the exact result. */
   approximate: boolean;
-  /** A 40-digit expansion ended in 4999…/5000… at the rounding position (double-rounding risk). */
-  tieRisk: boolean;
   exactMs: number;
   totalMs: number;
   /** Set when !ok: "syntax" (Giac could not parse the input), "engine", or a refusal of a number for something that does
@@ -396,7 +394,6 @@ interface Built {
   shape?: [number, number];
   braces?: true;
   facts: ValueFacts;
-  tieRisk: boolean;
   /** The value as a decimal with every confirmed digit up to P (copy, chips). */
   decimal: string;
 }
@@ -413,7 +410,6 @@ function element(f: ElementFacts, digits: number, P: number, path: HomePath, app
     full: formatConfirmed(p, { format: "STD", digits: P })!,
     path,
     approximate,
-    tieRisk: !f.exact && (tieRisk(f.value.re, digits) || (!isZero(f.value.im) && tieRisk(f.value.im, digits))),
     exactMs: 0,
     totalMs: 0,
   };
@@ -434,7 +430,6 @@ function build(facts: ElementFacts[], shape: Shape, digits: number, path: HomePa
       display: e.display,
       value: e.value!,
       facts: e.facts,
-      tieRisk: e.tieRisk,
       decimal: e.full,
     };
   }
@@ -455,7 +450,6 @@ function build(facts: ElementFacts[], shape: Shape, digits: number, path: HomePa
     ...(shp ? { shape: shp } : {}),
     ...(braces ? { braces } : {}),
     facts: { exact: els.every((e) => e.facts.exact), reliableDigits: reliable, ...(warn ? { warn } : {}) },
-    tieRisk: els.some((e) => e.tieRisk),
     decimal: fmt("full"),
   };
 }
@@ -619,7 +613,7 @@ export function homeEval(
     return done({ ok: true, ...rest, facts: why ? { ...facts, why } : facts, ...(exact !== undefined ? { exact } : {}), ...(rational ? { rational } : {}), path, approximate, full });
   };
   const failed = (display: string, path: HomePath, exact?: string): HomeResult =>
-    done({ ok: false, display, ...(exact !== undefined ? { exact } : {}), path, approximate: true, tieRisk: false, facts: { exact: false, reliableDigits: null } });
+    done({ ok: false, display, ...(exact !== undefined ? { exact } : {}), path, approximate: true, facts: { exact: false, reliableDigits: null } });
   const refuse = (code: Refusal, path: HomePath): HomeResult => ({ ...failed(enEngine[`error.${code}`], path), error: code, approximate: false });
 
   const viaFloat = (path: HomePath, exact?: string): HomeResult => {
@@ -643,7 +637,7 @@ export function homeEval(
     if (d === null) return failed(error, path, exact);
     store();
     const why = { unaudited: unauditedIn(asg ? asg.rhs : input, "typed") };
-    if ("text" in d) return done({ ok: true, display: d.text, exact: d.text, path, approximate: true, tieRisk: false, facts: { exact: false, reliableDigits: null, warn: "unaudited", why } });
+    if ("text" in d) return done({ ok: true, display: d.text, exact: d.text, path, approximate: true, facts: { exact: false, reliableDigits: null, warn: "unaudited", why } });
     const b = build(d.facts, d.shape, s.digits, path, true);
     return fromBuilt(b, path, true, exact, b.decimal, why);
   };
@@ -717,7 +711,7 @@ export function homeEval(
     const unchecked = hasFloat(text) || forced !== undefined;
     const warn = decided?.warn ?? forced ?? (unchecked ? "unchecked" : undefined);
     const why = symbolicWhy(warn, testSides(exactBody));
-    return done({ ok: true, display, ...(listed ? { braces: true as const } : {}), exact: text, ...(deg !== null || listed ? { full: text } : {}), ...latex, path: "exact", approximate: inexactTest || unchecked, tieRisk: false, facts: { exact: false, reliableDigits: null, ...(warn ? { warn } : {}), ...(why ? { why } : {}) } });
+    return done({ ok: true, display, ...(listed ? { braces: true as const } : {}), exact: text, ...(deg !== null || listed ? { full: text } : {}), ...latex, path: "exact", approximate: inexactTest || unchecked, facts: { exact: false, reliableDigits: null, ...(warn ? { warn } : {}), ...(why ? { why } : {}) } });
   };
   // G44f1: Giac's inverse distribution function gives ±infinity for some p inside (0, 1) (fisher_icdf(3,4,1-10^-20)):
   // the polish computes the value; when it cannot, Giac's infinity is shown with ⚠. At p = 0 or 1 it is exact.

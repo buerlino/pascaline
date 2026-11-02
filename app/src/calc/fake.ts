@@ -20,7 +20,7 @@ import { safePrecision } from "../engine/homeDefaults.ts";
 
 /** An echo cell: the Giac text that would be evaluated. */
 function echo(display: string): HomeResult {
-  return { ok: true, display, path: "exact", approximate: false, tieRisk: false, exactMs: 0, totalMs: 0, ...safePrecision(display) };
+  return { ok: true, display, path: "exact", approximate: false, exactMs: 0, totalMs: 0, ...safePrecision(display) };
 }
 
 export class FakeCalc implements Calc {

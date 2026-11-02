@@ -45,7 +45,6 @@ export const HOME_KEYS = {
   exact: "given only when `rational` says it is a plain integer or p/q: the Format key's fraction modes read it",
   rational: "read for `exact`",
   path: "the engine's route, for its tests and probes; no view reads it",
-  tieRisk: "unused: no view reads it (docs/04 2.4 item 4)",
   exactMs: "a timing (measurement builds read the engine's own)",
   totalMs: "a timing (measurement builds read the engine's own)",
 } as const satisfies PortKeys<HomeResult>;

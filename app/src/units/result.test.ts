@@ -22,7 +22,6 @@ const num = (s: string, facts: Partial<HomeResult["facts"]> = {}): HomeResult =>
     value: { re: value, im: decimalFromString("0") as typeof value },
     path: "exact",
     approximate: false,
-    tieRisk: false,
     exactMs: 0,
     totalMs: 0,
     facts: { exact: true, reliableDigits: null, ...facts },

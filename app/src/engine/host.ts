@@ -849,7 +849,7 @@ export class EngineHost implements FactsHost {
       if (!(e instanceof GiacSyntaxError)) throw e;
       const ms = performance.now() - t0;
       return {
-        result: { ok: false, display: e.message, path: "float-error", approximate: false, tieRisk: false, exactMs: ms, totalMs: ms, error: "syntax", ...safePrecision(e.message) },
+        result: { ok: false, display: e.message, path: "float-error", approximate: false, exactMs: ms, totalMs: ms, error: "syntax", ...safePrecision(e.message) },
         defs: [],
       };
     }
