@@ -27,8 +27,8 @@ afterEach(() => {
 });
 
 describe("the store records its health (R96)", () => {
-  it("undefined before the first write, kept after a write that completed", async () => {
-    expect(storage.storeHealth()).toBeUndefined();
+  it("kept before the first write (the line reads the same), and after a write that completed", async () => {
+    expect(storage.storeHealth()).toBe("kept");
     await storage.kvSet("view", "cas");
     expect(storage.storeHealth()).toBe("kept");
   });

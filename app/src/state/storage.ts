@@ -122,38 +122,32 @@ export function kvSet(key: string, value: unknown): Promise<void> {
 
 /** R96: how this session's store stands, for Settings › Data: "unread" from a failed read on (R93: that key is not
  *  written again), "failed" while a key's last write did not land (an error or an abort, a newer record there, another
- *  tab the writer), "kept" once a write landed and neither holds. Undefined before the first write. Per key (R96f1): a
- *  write of one key that lands never hides another key's failure; a key leaves `notKept` when its own write lands. In
- *  memory only: no stored key. */
+ *  tab the writer), else "kept" (before the first write too: the line reads the same). Per key (R96f1): a write of one
+ *  key that lands never hides another key's failure; a key leaves `notKept` when its own write lands. In memory only:
+ *  no stored key. */
 export type StoreHealth = "kept" | "failed" | "unread";
 const notKept = new Set<string>();
-let landed = false;
-export const storeHealth = (): StoreHealth | undefined => (unread.size ? "unread" : notKept.size ? "failed" : landed ? "kept" : undefined);
+export const storeHealth = (): StoreHealth => (unread.size ? "unread" : notKept.size ? "failed" : "kept");
 
 async function kvPut(key: string, value: unknown): Promise<void> {
   try {
     const db = await open();
-    // R96: a newer record there is not written over, so this session's value is not kept (false)
-    const put = await new Promise<boolean>((resolve, reject) => {
+    await new Promise<void>((resolve, reject) => {
       const tx = db.transaction(STORE, "readwrite");
       const store = tx.objectStore(STORE);
       const r = store.get(key);
-      let issued = false;
+      let put = false;
       r.onsuccess = () => {
-        if (storedVersion(r.result) > DATA_VERSION) return;
-        store.put(stamp(value), key);
-        issued = true;
+        // R96: a newer record there is not written over, so this session's value is not kept
+        if (!(storedVersion(r.result) > DATA_VERSION)) put = !!store.put(stamp(value), key);
       };
-      // the put is kept only once its transaction commits (R96f1): a commit that fails (a full disk, QuotaExceededError)
-      // aborts it and fires abort alone, never error, so onabort rejects too (as storageRaw.ts does)
-      tx.oncomplete = () => resolve(issued);
-      tx.onerror = () => reject(tx.error ?? new Error("indexedDB put failed"));
-      tx.onabort = () => reject(tx.error ?? new Error("indexedDB write aborted"));
+      // the value is kept only once its transaction commits (R96f1); a commit that fails (a full disk,
+      // QuotaExceededError) aborts it and fires abort alone, never error, so onabort rejects too (as storageRaw.ts
+      // does). The catch below reads no reason, so none is given.
+      tx.oncomplete = () => (put ? resolve : reject)();
+      tx.onerror = tx.onabort = reject;
     });
-    if (put) {
-      notKept.delete(key);
-      landed = true;
-    } else notKept.add(key);
+    notKept.delete(key);
     if (!persistAsked) {
       persistAsked = true;
       void import("./persist.ts").then((m) => m.askPersistOnce()); // after the first stored value (A49); a lazy chunk, off the start chunk
