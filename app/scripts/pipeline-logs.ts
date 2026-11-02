@@ -48,7 +48,7 @@ export function failedItems(check: Check, log: string): Item[] {
     for (const l of lines) {
       const m = /^FAIL\s+([^:\s]+):\s*(.*)$/.exec(l);
       if (!m) continue;
-      const parts = m[1] === "steps" ? stepsItems(lines, m[2]!) : m[1] === "flags" ? flagsItems(m[2]!) : null;
+      const parts = m[1] === "steps" ? stepsItems(lines, m[2]!) : m[1] === "flags" ? flagsItems(m[2]!) : m[1] === "precision" ? precisionItems(lines, m[2]!) : null;
       if (parts) items.push(...parts); else items.push({ file: m[1]!, title: m[2]! });
     }
   }
@@ -56,16 +56,30 @@ export function failedItems(check: Check, log: string): Item[] {
 }
 
 /** A51: the golden `steps` stage fails with one line per new finding above its FAIL line ("  steps <stage> <id> [kind] ..."):
- *  one item per finding (title "<stage>/<id>"). Null (the stage as one item) when its canary failed or the findings printed
- *  are not the number the stage counted. */
+ *  one item per finding (title "<stage>/<id>"). The "  steps known (...)" and "  steps pending:" lines are not findings, and
+ *  the stage line ends in "N new findings, N known, N pending" (G137f1; G153f1). Null (the stage as one item) when its canary
+ *  failed or the findings printed are not the number the stage counted. */
 function stepsItems(lines: string[], title: string): Item[] | null {
-  const n = /: (\d+) new findings, \d+ known$/.exec(title);
+  const n = /: (\d+) new findings, \d+ known(?:, \d+ pending)?$/.exec(title);
   if (!n || !title.startsWith("PASS step-budget-test")) return null;
   const found = lines.flatMap((l) => {
-    const m = /^ {2}steps (?!known )(\S+) (\S+) \[/.exec(l);
+    const m = /^ {2}steps (?!known |pending: )(\S+) (\S+) \[/.exec(l);
     return m ? [{ file: "steps", title: `${m[1]}/${m[2]}` }] : [];
   });
   return found.length === Number(n[1]) && found.length > 0 ? found : null;
+}
+
+/** G153f1: the golden `precision` stage fails with "n/m active match; ..." and one line per failing active case above it
+ *  ("  precision <id>: <problem>; <problem>", app/scripts/golden/precision.ts; a pending case's line reads "<id>: pending").
+ *  One item per failing case (title "<id>: <problems>"); null (the stage as one item) when the lines printed are not m - n. */
+function precisionItems(lines: string[], title: string): Item[] | null {
+  const n = /^(\d+)\/(\d+) active match/.exec(title);
+  if (!n) return null;
+  const found = lines.flatMap((l) => {
+    const m = /^ {2}precision (\S+): (?!pending\b)(.*)$/.exec(l);
+    return m ? [{ file: "precision", title: `${m[1]}: ${m[2]}` }] : [];
+  });
+  return found.length === Number(n[2]) - Number(n[1]) && found.length > 0 ? found : null;
 }
 
 /** A51: the golden `flags` stage joins the last lines of its sub-tests with " | "; a sub-test that failed is a segment
@@ -83,9 +97,13 @@ function flagsItems(title: string): Item[] | null {
 const STEPS_LOAD_ITEMS = new Set(["precision/prec-g44f2f1-chisquare_icdf-1-0.95-12", "precision/prec-G23-sin-1e2000"]);
 /** Golden flags sub-tests that run out of golden/engine.ts's spawnSync timeout under load: 40 gunzips of the Giac tarball. */
 const FLAGS_LOAD_ITEMS = /^(?:patch-canary\.ts|canaries\.mjs): timed out after \d+ s$/;
+/** Golden precision cases of factorial(10^6) that miss their budgetMs under load (G153f1: 2119 ms against 2000 at load,
+ *  well inside it alone): the miss, and at most the stop it gives ("got error: Stopped: it took too long, expect ..."). */
+const PRECISION_LOAD_ITEMS = /^g58-factorial-\S+: took \d+ ms > budgetMs \d+(?:; got error: Stopped: it took too long, expect [^;]*)?$/;
 
-/** A wall-clock test: the Find 16 ms/key test, the golden units p95 bar, the golden invariants 60 s limit (G154f1), two golden steps cases and two flags sub-tests (A51), solve.spec.ts persistence, the clipboard poll, the G78 timing case, Home's acos deadline, the G83 library restore and first call, the Esc-before-Working test; FLAKES 1: G39's 3*int(1/x), the CAS -> Home budget, 10^1000000+7, the parser fuzz, Working… after 150 ms.
- *  Not the golden g58-factorial cases: the golden log names only the stage ("FAIL precision: n/m active match"), the case id is on a plain line above it. */
+/** A wall-clock test: the Find 16 ms/key test, the golden units p95 bar, the golden invariants 60 s limit (G154f1), two golden steps cases and two flags sub-tests (A51), the g58-factorial precision cases that only missed their budgetMs (G153f1), solve.spec.ts persistence, the clipboard poll, the G78 timing case, Home's acos deadline, the G83 library restore and first call, the Esc-before-Working test; FLAKES 1: G39's 3*int(1/x), the CAS -> Home budget, 10^1000000+7, the parser fuzz, Working… after 150 ms.
+ *  The golden g58-factorial cases count only when every failing case line of the precision stage (m - n of them) is such a
+ *  miss; a value or mark mismatch, or another case id, is not timing (G153f1). */
 export function isTiming(check: Check, item: Item): boolean {
   if (check === "vitest") {
     return (item.file.endsWith("find/queries.test.ts") && /takes well under/.test(item.title)) ||
@@ -107,6 +125,7 @@ export function isTiming(check: Check, item: Item): boolean {
   }
   if (item.file === "steps") return STEPS_LOAD_ITEMS.has(item.title);
   if (item.file === "flags") return FLAGS_LOAD_ITEMS.test(item.title);
+  if (item.file === "precision") return PRECISION_LOAD_ITEMS.test(item.title);
   // units: every case matched (n/n) and only the p95 bar was missed
   const m = /(\d+)\/(\d+) match/.exec(item.title);
   if (item.file === "units") return !!m && m[1] === m[2] && /p95 [\d.]+ ms \(≤/.test(item.title);
