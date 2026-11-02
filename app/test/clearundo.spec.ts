@@ -157,3 +157,70 @@ test("Clear while a job runs: its row stays, Esc stops it, and the rows come bac
   await expect(page.locator("article.item").first()).toHaveAttribute("data-status", "done");
   await expect(page.locator("article.item").last()).toHaveAttribute("data-status", "cancelled");
 });
+
+// R119 (night review 2026-11-02, vr-6 = bu-1): a hardware keyboard's Ctrl+Z is the Undo key and Ctrl+Y or
+// Ctrl+Shift+Z the Redo key (keyboard/route.ts), so Ctrl+Z on an empty line brings the cleared rows back too. Before,
+// MathLive took every Ctrl combination for its own undo of the line.
+const focusLine = (page: Page): Promise<void> => page.evaluate(() => window.pascaline.entry.focus());
+const rowBar = (page: Page) => page.getByTestId("row-actions");
+
+test("Ctrl+Z on an empty Home line after a Clear brings the rows back, as the Undo key does", async ({ page }) => {
+  await open(page);
+  await three(page);
+  await tap(page, ["shift", "esc"]);
+  await expect(rows(page)).toHaveCount(0);
+  await focusLine(page);
+  await page.keyboard.press("Control+z");
+  await expect(rows(page)).toHaveCount(3);
+  expect(await texts(page)).toEqual(["1", "2", "3"]);
+  await expect(note(page)).toHaveCount(0);
+  expect(await entryValue(page)).toBe("");
+  await page.keyboard.press("Control+z"); // then the line's own undo (P13): the 3 of the last Enter comes back
+  await expect.poll(() => entryValue(page)).toBe("3");
+  await expect(rows(page)).toHaveCount(3);
+});
+
+test("Ctrl+Z on a line with text is the line's own undo; the copy stays for the empty line", async ({ page }) => {
+  await open(page);
+  await three(page);
+  await tap(page, ["shift", "esc"]);
+  await focusLine(page);
+  await page.keyboard.type("7");
+  await page.keyboard.press("Control+z");
+  await expect.poll(() => entryValue(page)).toBe("");
+  await expect(rows(page)).toHaveCount(0);
+  await expect(note(page)).toBeVisible();
+  await page.keyboard.press("Control+z");
+  await expect(rows(page)).toHaveCount(3);
+});
+
+for (const combo of ["Control+y", "Control+Shift+z"]) {
+  test(`${combo} takes the Redo key's path: it drops a picked row and redoes on the line`, async ({ page }) => {
+    await open(page);
+    await tap(page, ["d1", "enter"]);
+    await expect(page.locator('[data-status="done"]')).toHaveCount(1);
+    await focusLine(page);
+    await page.keyboard.type("5");
+    await page.keyboard.press("Control+z");
+    await expect.poll(() => entryValue(page)).toBe("");
+    await page.keyboard.press("ArrowUp"); // picks the row (P4), as the keypad's Up does
+    await expect(rowBar(page)).toBeVisible();
+    await page.keyboard.press(combo); // any key but the row's own drops the pick, then does its job (route.ts historyKey)
+    await expect(rowBar(page)).toHaveCount(0);
+    await expect.poll(() => entryValue(page)).toBe("5");
+  });
+}
+
+test("each view keeps its own copy: Clear in Home, an Enter in CAS, back in Home, Undo brings Home's rows back", async ({ page }) => {
+  await open(page);
+  await three(page);
+  await tap(page, ["shift", "esc"]);
+  await expect(rows(page)).toHaveCount(0);
+  await page.evaluate(() => window.pascaline.session.setView("cas"));
+  await tap(page, ["d9", "enter"]);
+  await expect(page.locator('[data-status="done"]')).toHaveCount(1);
+  await page.evaluate(() => window.pascaline.session.setView("home"));
+  await expect(note(page)).toHaveText("History cleared · Undo");
+  await tap(page, ["undo"]);
+  expect(await texts(page)).toEqual(["1", "2", "3"]);
+});

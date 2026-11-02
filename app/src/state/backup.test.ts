@@ -116,6 +116,18 @@ describe("the backup's keys (R38a)", () => {
     expect(checkBackup(file(bad)).ok).toBe(false);
     expect(checkBackup(file(b.parts["history"]?.value)).ok).toBe(true); // what makeBackup writes restores
   });
+  it("leaves out both views' Undo copies (R119)", async () => {
+    const row = { id: 1, view: "home", latex: "1", status: "done", resultLatex: "1", text: "1", approximate: false, startedAt: 0 };
+    const undo = [
+      { view: "home", kind: "clear", rows: [{ at: 0, item: { ...row, latex: "secretH" } }] },
+      { view: "cas", kind: "delete", rows: [{ at: 0, item: { ...row, view: "cas", latex: "secretC" } }] },
+    ];
+    const store: Record<string, RawRecord> = { history: { "@pascaline": DATA_VERSION, value: { home: [row], cas: [], undo } } };
+    const b = await makeBackup(async (k) => store[k], new Date("2026-11-03T12:00:00Z"));
+    expect(b.parts["history"]?.value).toEqual({ home: [row], cas: [] });
+    expect(JSON.stringify(b)).not.toMatch(/secret/);
+    expect(VALIDATORS["history"]?.({ home: [row], undo })).toBe(false);
+  });
   it("names the file by the date", () => {
     expect(backupName(new Date(2026, 9, 5))).toBe("pascaline-backup-2026-10-05.json");
   });

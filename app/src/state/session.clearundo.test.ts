@@ -174,3 +174,106 @@ describe("Undo for Clear and Delete (R98, fh-1)", () => {
     expect(b.undoCopy).toBeNull();
   });
 });
+
+// R119 (night review 2026-11-02, bu-6 part b): one copy per view. One copy served both views, so a Clear on Home's rows
+// was dropped by an Enter in CAS, or by a Clear of CAS's empty history, and Home's Undo then found nothing.
+describe("each view keeps its own Undo copy (R119)", () => {
+  it("Clear on Home, an Enter in CAS, back in Home: Undo brings Home's rows back", async () => {
+    const s = await session();
+    for (const x of ["1", "2"]) await s.submit(x);
+    await s.clearHistory();
+    s.setView("cas");
+    await s.submit("c");
+    s.setView("home");
+    expect(s.undoCopy?.kind).toBe("clear");
+    expect(s.undoRemoved()).toBe(true);
+    expect(inputs(s)).toEqual(["1", "2"]);
+  });
+
+  it("a Clear of CAS's empty history leaves Home's copy", async () => {
+    const s = await session();
+    await s.submit("1");
+    await s.clearHistory();
+    s.setView("cas");
+    await s.clearHistory();
+    s.setView("home");
+    expect(s.undoRemoved()).toBe(true);
+    expect(inputs(s)).toEqual(["1"]);
+  });
+
+  it("Clear in both views keeps two copies, each restored in its own view", async () => {
+    const s = await session();
+    await s.submit("h");
+    await s.clearHistory();
+    s.setView("cas");
+    await s.submit("c");
+    await s.clearHistory();
+    expect(s.undoRemoved()).toBe(true);
+    expect(inputs(s)).toEqual(["c"]);
+    s.setView("home");
+    expect(s.undoRemoved()).toBe(true);
+    expect(inputs(s)).toEqual(["h"]);
+    expect(s.undoRemoved()).toBe(false);
+  });
+
+  it("within a view the next Enter or a second Clear drops that view's copy only", async () => {
+    const s = await session();
+    await s.submit("h");
+    await s.clearHistory();
+    s.setView("cas");
+    await s.submit("c");
+    await s.clearHistory();
+    s.setView("home");
+    await s.submit("h2"); // Home's Enter: Home's copy goes
+    expect(s.undoRemoved()).toBe(false);
+    s.setView("cas");
+    expect(s.undoCopy?.kind).toBe("clear");
+    await s.clearHistory(); // CAS's second Clear, on an empty list: CAS's copy goes
+    expect(s.undoCopy).toBeNull();
+    expect(s.undoRemoved()).toBe(false);
+  });
+
+  it("a relaunch keeps Home's copy after an Enter in CAS", async () => {
+    const kv = memoryKv();
+    const a = await session(0, kv);
+    for (const x of ["1", "2"]) await a.submit(x);
+    await a.clearHistory();
+    a.setView("cas");
+    await a.submit("c");
+    const b = await session(0, kv);
+    expect(b.view).toBe("home");
+    expect(inputs(b)).toEqual([]);
+    expect(b.undoRemoved()).toBe(true);
+    expect(inputs(b)).toEqual(["1", "2"]);
+  });
+
+  it("both copies survive a relaunch, each in its own view", async () => {
+    const kv = memoryKv();
+    const a = await session(0, kv);
+    await a.submit("h");
+    await a.clearHistory();
+    a.setView("cas");
+    await a.submit("c");
+    await a.clearHistory();
+    const b = await session(0, kv);
+    b.setView("cas");
+    expect(b.undoRemoved()).toBe(true);
+    expect(inputs(b)).toEqual(["c"]);
+    b.setView("home");
+    expect(b.undoRemoved()).toBe(true);
+    expect(inputs(b)).toEqual(["h"]);
+  });
+
+  it("an old record with one copy reads into the view it belongs to", async () => {
+    const kv = memoryKv();
+    const row = { id: 9, view: "cas", latex: "c", status: "done", resultLatex: "c", text: "c", approximate: false, startedAt: 0 };
+    kv.data.set("history", { home: [], cas: [], undo: { view: "cas", kind: "delete", rows: [{ at: 0, item: row }] } });
+    const s = await session(0, kv);
+    expect(s.undoCopy).toBeNull(); // Home is open: not its copy
+    expect(s.undoRemoved()).toBe(false);
+    s.setView("cas");
+    expect(s.undoCopy?.kind).toBe("delete");
+    expect(s.undoRemoved()).toBe(true);
+    expect(inputs(s)).toEqual(["c"]);
+  });
+});
