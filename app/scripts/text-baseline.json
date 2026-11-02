@@ -1,6 +1,7 @@
 {
   "src/engine/analysis.ts": 1,
   "src/engine/angleMigration.ts": 2,
+  "src/engine/angles.ts": 5,
   "src/engine/complex.ts": 2,
   "src/engine/constBasis.ts": 1,
   "src/engine/converge.ts": 9,

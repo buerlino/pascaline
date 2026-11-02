@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 import { describe, expect, it } from "vitest";
+import { readdirSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { checkDirection, checkImportDirection, ENGINE_EXCEPTIONS, importsOf, startReach } from "./import-rules.ts";
@@ -91,5 +92,13 @@ describe("the real tree (G147)", () => {
   it("holds the direction, every exception named", () => {
     const v = checkImportDirection(app);
     expect(v.failures).toEqual([]);
+  });
+});
+
+describe("the engine README (G147)", () => {
+  it("names every non-test module of src/engine", () => {
+    const readme = readFileSync(resolve(app, "src/engine/README.md"), "utf8");
+    const missing = readdirSync(resolve(app, "src/engine")).filter((f) => /\.ts$/.test(f) && !/\.test\.ts$/.test(f) && !readme.includes(`\`${f}\``));
+    expect(missing).toEqual([]);
   });
 });
