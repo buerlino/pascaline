@@ -10,8 +10,6 @@ import type { GiacParse } from "./bridge.ts";
 import { assignmentIn, stateHeads, valueTargets } from "./stores.ts";
 import { COMPLEX_DEFINITIONS } from "./complex.ts";
 import { defaultCasSettings, type CasResult } from "./types.ts";
-import { DATA_VERSION } from "../state/storage.ts";
-import { migratedText } from "../state/migrations.ts";
 import { renameOurCalls, writeUserNames } from "./ourNames.ts";
 import { dropAngleFactor, PASDEG, rewriteAngles } from "./angles.ts";
 import { isFlagName } from "./flags.ts";
@@ -38,9 +36,17 @@ export interface LibDef {
   line: number;
 }
 export interface LibFile {
-  /** The version in the stamp line (already accepted: at most DATA_VERSION). */
+  /** The version in the stamp line (already accepted: at most the format's version). */
   version: number;
   defs: LibDef[];
+}
+
+/** What the reader needs of the stored data, passed in (G147: the engine imports nothing from state/; state/libraryFormat.ts
+ *  has the app's): the newest version it accepts (DATA_VERSION, state/storage.ts) and the migration steps for a file's text. */
+export interface LibraryFormat {
+  version: number;
+  /** The text below the stamp line, written in version `from`, brought up to `version`. */
+  migrate(text: string, from: number): string;
 }
 
 /** A refusal: the first problem in the file, with its line (0: the file as a whole) and plain words. */
@@ -96,7 +102,7 @@ function definitionOf(block: string, tree: GiacParse): { name: string; kind: "fn
 /** Reads a library file: encoding, size, stamp, blocks, every rule that needs no evaluation (r10 section 1.3). Throws a
  *  LibError for the first problem. A string is taken as the text of a file already decoded. `parse`: Giac's tree of a
  *  text (bridge-2, never evaluated), which says what a body or a test stores (G100). */
-export function parseLibrary(input: Uint8Array | string, parse: (text: string) => GiacParse): LibFile {
+export function parseLibrary(input: Uint8Array | string, parse: (text: string) => GiacParse, format: LibraryFormat): LibFile {
   const bytes = typeof input === "string" ? new TextEncoder().encode(input) : input;
   if (bytes.length > LIB_MAX_BYTES) throw new LibError(0, `the file is over ${LIB_MAX_BYTES / 1024} kB`);
   let text: string;
@@ -107,11 +113,11 @@ export function parseLibrary(input: Uint8Array | string, parse: (text: string) =
   }
   const lines = text.replace(/^﻿/, "").replace(/\r\n?/g, "\n").split("\n");
   const h = HEADER.exec(lines[0]!.trim());
-  if (!h) throw new LibError(1, `the first line must be \`// pascaline library ${DATA_VERSION}\``);
+  if (!h) throw new LibError(1, `the first line must be \`// pascaline library ${format.version}\``);
   const version = Number(h[1]);
-  if (version > DATA_VERSION) throw new LibError(1, `made by a newer Pascaline (version ${version}; this one reads up to ${DATA_VERSION})`);
-  // The same migration steps as the stored defs (storage.ts), on the text below the stamp.
-  const body = migratedText("library", lines.slice(1).join("\n"), version);
+  if (version > format.version) throw new LibError(1, `made by a newer Pascaline (version ${version}; this one reads up to ${format.version})`);
+  // The same migration steps as the stored defs (state/storage.ts), on the text below the stamp.
+  const body = format.migrate(lines.slice(1).join("\n"), version);
   const rest = body.split("\n");
   const defs: LibDef[] = [];
   let lastComment: { text: string; line: number } | null = null;
@@ -328,8 +334,8 @@ function describe(e: DefEntry): string {
 /** The log's functions and exact values as a library file (the same text `parseLibrary` reads). Left out, with the
  *  reason: assumptions and inputs kept as typed (no single name), and values that hold a float (their mark facts have no
  *  place in a library; the backup carries them). Tests are not kept on the phone. */
-export function exportLibrary(log: readonly DefEntry[]): { text: string; skipped: { name: string; why: string }[] } {
-  const out = [`// pascaline library ${DATA_VERSION}`];
+export function exportLibrary(log: readonly DefEntry[], format: LibraryFormat): { text: string; skipped: { name: string; why: string }[] } {
+  const out = [`// pascaline library ${format.version}`];
   const skipped: { name: string; why: string }[] = [];
   for (const e of replayOrder(log)) {
     if (e.kind === "assume" || e.kind === "other") {

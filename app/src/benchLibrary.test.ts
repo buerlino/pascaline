@@ -6,6 +6,7 @@ import { giacAvailable, nodeHost } from "./engine/nodeGiac.ts";
 import { applyDefChanges } from "./engine/defs.ts";
 import { defaultCasSettings } from "./engine/types.ts";
 import { importLibrary, parseLibrary } from "./engine/library.ts";
+import { LIBRARY_FORMAT } from "./state/libraryFormat.ts";
 import { libraryBenchPrograms, runLibraryBench } from "./bench.ts";
 
 /** The 200 programs as a library file. */
@@ -30,7 +31,7 @@ describe("?bench=library", () => {
 
   it.skipIf(!giacAvailable())("defines the same log as importLibrary does (real Giac)", async () => {
     const fresh = async (): Promise<EngineHost> => (await nodeHost());
-    const lib = parseLibrary(libraryBenchText(), (await nodeHost()).parse);
+    const lib = parseLibrary(libraryBenchText(), (await nodeHost()).parse, LIBRARY_FORMAT);
     const imp = importLibrary(await fresh(), lib, []);
     expect(imp.ok && imp.log).toHaveLength(200);
     const h = await fresh();
