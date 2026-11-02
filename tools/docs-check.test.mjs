@@ -98,3 +98,11 @@ test("a live doc linked twice in docs/README.md fails", () => {
   assert.equal(r.code, 1);
   assert.match(r.out, /index: docs\/backlog\.md is linked 2 times/);
 });
+
+test("a source comment naming a missing docs path fails (G145), one naming a real doc passes", () => {
+  const r = run({ ...base, "app/src/x.ts": "// see docs/research/gone.md section 2\nexport {};\n" });
+  assert.equal(r.code, 1);
+  assert.match(r.out, /path: app\/src\/x\.ts names docs\/research\/gone\.md/);
+  const ok = run({ ...base, "app/src/x.ts": "// see docs/research/r9.md section 2\nexport {};\n" });
+  assert.equal(ok.code, 0, ok.out);
+});
