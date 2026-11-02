@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // R24d: the units menu of Find in a slot (spec/units-menu.yaml) on the generated index: the empty query by category, a
 // category's search, the second job of a unit row, the products, a pick as tokens, the marks of a row without an exact
-// factor. Skipped like the query test when the index is missing or holds functions only.
+// factor; R92: the Constants and Tools rows after the categories. Skipped like the query test when the index is missing
+// or holds functions only.
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -11,14 +12,18 @@ import type { MenuItem } from "../apps/types.ts";
 import { makeIndex } from "../find/testIndex.ts";
 import type { FindItem, IndexItem } from "../find/types.ts";
 import { cellUnitOf, pickActions } from "./find.ts";
-import { productActions, unitsMenu } from "./menu.ts";
+import { productActions, unitsMenu, type ConstPick } from "./menu.ts";
+import { unitTools } from "./tools.ts";
 import { SlotModel, slotCatalogue } from "./slot.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const file = join(here, "../find/_gen/find-index.json");
 const raw = existsSync(file) ? (JSON.parse(readFileSync(file, "utf8")) as IndexItem[]) : [];
 const full = raw.some((it) => it.kind === "unit");
-const spec = parse(readFileSync(join(here, "../../../spec/units-menu.yaml"), "utf8")) as { categories: { name: string; first: string[] }[] };
+const spec = parse(readFileSync(join(here, "../../../spec/units-menu.yaml"), "utf8")) as {
+  categories: { name: string; first: string[] }[];
+  constants: { lists: { name: string; items: string[] | "generated" }[] };
+};
 
 describe.skipIf(!full)("products as pad actions", () => {
   const cat = slotCatalogue(makeIndex(raw).items);
@@ -120,5 +125,66 @@ describe.skipIf(!full)("the units menu on the generated index", () => {
     expect(rows.find((r) => r.id === "unit:dB")?.note).toBe("converts only");
     const noFactor = index.items.find((it) => it.kind === "unit" && it.si === undefined && it.id !== "unit:dB" && !/^unit:(dB|Np|bel)/.test(it.id) && it.tier === 0);
     if (noFactor) expect(menu.search(noFactor.names[0] as string).find((r) => r.id === noFactor.id)?.note).toBe("no exact factor");
+  });
+});
+
+describe.skipIf(!full)("R92: the units menu's Constants and Tools", () => {
+  const index = makeIndex(raw);
+  const consts: ConstPick[] = [];
+  const ran: string[] = [];
+  const tools = unitTools({ kind: "none" }, { end: () => void ran.push("end"), alt: () => void ran.push("si"), alts: () => void ran.push("alts"), home: () => void ran.push("home") });
+  const menu = unitsMenu(index, { pick: () => {}, put: () => {}, product: () => {}, constant: (c) => void consts.push(c), tools });
+  const level = (items: readonly MenuItem[], id: string): MenuItem[] => [...(items.find((c) => c.id === id)?.submenu?.items ?? [])];
+
+  it("the empty query ends with Constants and Tools, after every existing row: no row moves, every digit stays", () => {
+    expect(menu.categories.map((c) => c.id)).toEqual(["ucat:prefixes", ...spec.categories.map((c) => `ucat:${c.name}`), "ucat:const", "ucat:tools"]);
+    expect(menu.categories.slice(-2).map((c) => c.label)).toEqual(["Constants", "Tools"]);
+  });
+
+  it("Constants holds the spec's five lists in its order; More is every other Find constant in qalc's order", () => {
+    const lists = level(menu.categories, "ucat:const");
+    expect(lists.map((l) => l.label)).toEqual(spec.constants.lists.map((l) => l.name));
+    expect(lists.map((l) => l.label)).toEqual(["Math", "Chemistry", "Physics", "Quantum", "More"]);
+    expect(level(lists, "uconst:Math").map((r) => r.id)).toEqual(["math:e", "math:pi", "math:i"]);
+    const named = new Set<string>();
+    for (const l of spec.constants.lists) {
+      if (l.name === "Math" || l.items === "generated") continue;
+      const lacking = l.items.filter((id) => !index.byId.has(`const:${id}`));
+      expect(lacking, `${l.name}: ids the index lacks (left out of the menu)`).toEqual([]);
+      expect(level(lists, `uconst:${l.name}`).map((r) => r.id)).toEqual(l.items.filter((id) => index.byId.has(`const:${id}`)).map((id) => `const:${id}`));
+      for (const id of l.items) named.add(`const:${id}`);
+    }
+    const more = index.items.filter((it) => it.kind === "const" && !named.has(it.id)).map((it) => it.id);
+    expect(more.length).toBeGreaterThan(20);
+    expect(level(lists, "uconst:More").map((r) => r.id)).toEqual(more);
+  });
+
+  it("a constant pick goes to the caller with its Find item; Math's e, π and i as Home inserts them", () => {
+    const lists = level(menu.categories, "ucat:const");
+    level(lists, "uconst:Physics").find((r) => r.id === "const:g_0")?.run?.();
+    level(lists, "uconst:Math").forEach((r) => r.run?.());
+    expect(consts.map((c) => ("item" in c ? c.item.id : c.latex))).toEqual(["const:g_0", "\\exponentialE", "\\pi", "\\imaginaryI"]);
+    expect(level(lists, "uconst:Math").map((r) => r.value)).toEqual(["e", "π", "i"]);
+  });
+
+  it("a list searches its own constants by name", () => {
+    const physics = level(menu.categories, "ucat:const").find((l) => l.id === "uconst:Physics");
+    expect(physics?.submenu?.search?.("grav").map((r) => r.id)).toContain("const:g_0");
+    expect(physics?.submenu?.search?.("planck").map((r) => r.id)).toEqual([]);
+  });
+
+  it("Tools has one row per unit tool of the spec; without a result only the end slot runs, the rest says why", () => {
+    const rows = level(menu.categories, "ucat:tools");
+    expect(rows.map((r) => r.id)).toEqual(["utool:end", "utool:si", "utool:alts", "utool:unit", "utool:number"]);
+    expect(rows.map((r) => r.label)).toEqual(["The end slot", "The SI form", "The alternatives", "The unit alone", "The number into Home"]);
+    expect(rows.map((r) => r.disabled ?? false)).toEqual([false, true, true, true, true]);
+    expect(rows[1]?.reason).toBe("needs a result first");
+    rows[0]?.run?.();
+    expect(ran).toEqual(["end"]);
+  });
+
+  it("Settings' cell Find and More… have neither row (no constant handler, no tools)", () => {
+    expect(unitsMenu(index, { pick: () => {} }).categories.map((c) => c.id)).not.toContain("ucat:const");
+    expect(unitsMenu(index, { pick: () => {} }).categories.map((c) => c.id)).not.toContain("ucat:tools");
   });
 });

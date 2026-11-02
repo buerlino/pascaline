@@ -47,6 +47,13 @@ const ACTIVE = "background:var(--pick);border-radius:4px";
 /** The slots a line keeps (docs/04 4.3 "The way back": the units key shows them again), by the line's LaTeX. */
 const kept = new Map<string, Readonly<Record<string, UnitSlot>>>();
 
+/** R92: the line's text changed by a chip put on it from the units menu (a chip adds no slot, so the slot ids keep their
+ *  order): the slots `from` kept go with the new text. */
+export function carry(from: string, to: string): void {
+  const s = kept.get(from);
+  if (s && from !== to) kept.set(to, s);
+}
+
 export class UnitView {
   readonly line: string;
   readonly formula: SlotFormula;
@@ -229,6 +236,16 @@ export class UnitView {
     if (s.kind !== "result") return;
     const alt = s.alts[i];
     if (!alt || i >= this.chips) return this.more(s.dimension);
+    return this.#use(alt, s.dimension);
+  }
+
+  /** R92's Tools › the SI form: a chip of the shown result's row, whether it fits on screen or not. */
+  pickAlt(alt: Alternative): Promise<void> {
+    const s = this.#shown;
+    return s.kind === "result" && s.alts.includes(alt) ? this.#use(alt, s.dimension) : Promise.resolve();
+  }
+
+  async #use(alt: Alternative, dimension: string): Promise<void> {
     const was = this.activeId;
     let m: SlotModel;
     try {
@@ -243,8 +260,20 @@ export class UnitView {
     this.#draw(was);
     this.#draw(END);
     this.#read();
-    await this.#host.remember(s.dimension, alt.slot).catch(() => undefined);
+    await this.#host.remember(dimension, alt.slot).catch(() => undefined);
     await this.evaluate();
+  }
+
+  /** R92's Tools › the end slot: it becomes the active slot (from a slot that cannot be left, its refusal shows). */
+  toEnd(): void {
+    const end = this.ids.length - 1;
+    if (this.#row >= 0) this.up();
+    if (this.active === end || !this.#leavable()) return;
+    const was = this.activeId;
+    this.active = end;
+    this.#draw(was);
+    this.#draw(END);
+    this.#read();
   }
 
   /** "More…": the end slot is cleared and Find opens on this dimension's units; the pick evaluates. */

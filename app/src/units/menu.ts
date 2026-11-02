@@ -3,7 +3,9 @@
 // shows the prefixes and the categories (Length, Area, …) in the G2's order, each listing its `first` units and then
 // every other tier 0 unit of its dimensions; typed letters search units and prefixes (find/rank.ts). A pick is the
 // caller's: units/find.ts turns it into tokens. A product the grids name that Find has no item for (cm^2, Btu/h) is a
-// row too, picked as the factors it is made of. Loaded on the first Math press in a slot (units/find.ts).
+// row too, picked as the factors it is made of. R92: after the categories, so no row moves, Constants (the spec's
+// lists; a pick is the caller's, units/open.ts puts it on Home's line) and Tools (units/tools.ts, the unit view's places).
+// Loaded on the first Math press in a slot (units/find.ts).
 import raw from "../../../spec/units-menu.yaml";
 import type { MenuItem } from "../apps/types.ts";
 import { itemRow, type FindIndex } from "../find/finder.ts";
@@ -11,9 +13,21 @@ import { search } from "../find/rank.ts";
 import type { FindItem } from "../find/types.ts";
 import { unitText, type UnitMessageKey } from "../i18n/enUnits.ts";
 import { slotCatalogue, splitPair, type PadAction, type SlotCatalogue } from "./slot.ts";
+import type { UnitTool } from "./tools.ts";
 
 interface RawCategory { name: string; dims: string[]; first: string[]; hide?: string[] }
-const spec = raw as unknown as { prefixes: { items: string[] }; categories: RawCategory[] };
+interface RawConstList { name: string; items: string[] | "generated" }
+const spec = raw as unknown as { prefixes: { items: string[] }; categories: RawCategory[]; constants: { lists: RawConstList[] } };
+
+/** R92: Math's constants are Home's own, inserted as Home's keys insert them (spec/keyboard.yaml: π, i; e as exp's base). */
+const MATH: Readonly<Record<string, { id: string; latex: string }>> = {
+  e: { id: "e", latex: "\\exponentialE" },
+  "π": { id: "pi", latex: "\\pi" },
+  i: { id: "i", latex: "\\imaginaryI" },
+};
+
+/** A constant picked from the Constants row: a Find constant, or one of Math's as the LaTeX Home inserts. */
+export type ConstPick = { readonly item: FindItem } | { readonly latex: string };
 
 export interface UnitsMenuOptions {
   /** A unit or prefix row was picked. */
@@ -25,6 +39,10 @@ export interface UnitsMenuOptions {
   product?(actions: PadAction[]): void;
   /** R62's "More…": only the units of this dimension key (tier 0 first, then by tier), as one list. */
   dim?: string;
+  /** R92: a constant was picked from the Constants row. Without it the row is left out (Settings, More…). */
+  constant?(c: ConstPick): void;
+  /** R92: the Tools row's tools, as the unit view stands. Without them the row is left out. */
+  tools?: readonly UnitTool[];
 }
 
 /** A product of Find units as the pad presses it: "ft^3" → ft, ³; "Btu/h" → Btu, ÷, h; "in*lbf" → in, lbf; a factor
@@ -96,5 +114,45 @@ export function unitsMenu(index: FindIndex, o: UnitsMenuOptions): { categories: 
     const title = unitText(`units.cat.${cat.name}` as UnitMessageKey);
     categories.push(sub(`ucat:${cat.name}`, title, items, ids));
   }
+  const constant = o.constant;
+  if (constant) categories.push(constantsRow(index, constant));
+  if (o.tools) categories.push(toolsRow(o.tools));
   return { categories, search: (q) => find(q) };
+}
+
+/** R92: Constants, the spec's lists in its order; an id Find lacks is left out; More is every other Find constant in
+ *  the index's (qalc's) order. A list searches its own constants. */
+function constantsRow(index: FindIndex, pick: (c: ConstPick) => void): MenuItem {
+  const named = new Set(spec.constants.lists.flatMap((l) => (l.items === "generated" ? [] : l.items.map((id) => `const:${id}`))));
+  const lists = spec.constants.lists.map((l): MenuItem => {
+    const title = unitText(`units.const.${l.name}` as UnitMessageKey);
+    if (l.name === "Math" && l.items !== "generated") {
+      const items = l.items.flatMap((sym): MenuItem[] => {
+        const m = MATH[sym];
+        return m ? [{ id: `math:${m.id}`, label: unitText(`units.const.${m.id}` as UnitMessageKey), value: sym, run: () => pick({ latex: m.latex }) }] : [];
+      });
+      return { id: `uconst:${l.name}`, label: title, submenu: { title, items } };
+    }
+    const its = l.items === "generated"
+      ? index.items.filter((it) => it.kind === "const" && !named.has(it.id))
+      : l.items.flatMap((id) => index.byId.get(`const:${id}`) ?? []);
+    const ids = new Set(its.map((it) => it.id));
+    const row = (it: FindItem): MenuItem => itemRow(it, (x) => pick({ item: x }));
+    const within = (q: string): MenuItem[] =>
+      search(index.prepared, q, { filter: ["const"], limit: index.items.length }).map((h) => h.item).filter((it) => ids.has(it.id)).slice(0, 50).map(row);
+    return { id: `uconst:${l.name}`, label: title, submenu: { title, items: its.map(row), search: within } };
+  });
+  const title = unitText("units.menu.constants");
+  return { id: "ucat:const", label: title, submenu: { title, items: lists } };
+}
+
+/** R92: Tools, one row per unit tool (units/tools.ts); a tool that cannot run is disabled with its reason. */
+function toolsRow(tools: readonly UnitTool[]): MenuItem {
+  const title = unitText("units.menu.tools");
+  const items = tools.map((t): MenuItem => {
+    const label = unitText(`units.tool.${t.id}`);
+    const run = t.run;
+    return run ? { id: `utool:${t.id}`, label, run } : { id: `utool:${t.id}`, label, disabled: true, ...(t.reason ? { reason: t.reason } : {}) };
+  });
+  return { id: "ucat:tools", label: title, submenu: { title, items } };
 }

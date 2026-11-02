@@ -25,7 +25,9 @@ import { slotCatalogue } from "./slot.ts";
 import { makePanel } from "./panel.ts";
 import { unitCells } from "./userCells.svelte.ts";
 import { putRow, rowSlots, unitRow } from "./row.ts";
-import { UnitView, type ViewHost } from "./view.ts";
+import type { ConstPick } from "./menu.ts";
+import { unitTools } from "./tools.ts";
+import { UnitView, carry, type ViewHost } from "./view.ts";
 
 /** The open unit view (window.pascaline.unitView in the e2e). */
 export interface OpenUnitView {
@@ -51,7 +53,7 @@ export async function openUnits(c: RouteCtx, row?: HistoryItem): Promise<void> {
   const line = c.entry.value;
   const chips = c.entry.chips;
   // MathLive comes with the entry line (its field is up once `ready`): the class is taken from the element registry
-  const [, index, hw] = await Promise.all([c.entry.ready, import("../find/finder.ts").then((m) => m.loadIndex(true)), import("../entry/hwkeys.ts"), unitCells.restore()]);
+  const [, { finder, index }, hw] = await Promise.all([c.entry.ready, import("../find/finder.ts").then(async (m) => ({ finder: m, index: await m.loadIndex(true) })), import("../entry/hwkeys.ts"), unitCells.restore()]);
   const Field = customElements.get("math-field") as typeof MathfieldElement | undefined;
   if (!Field) return c.dead();
   // R63: a picked unit row shows its slots again. Only the picked row: a line typed again (after a relaunch too) is a
@@ -66,7 +68,9 @@ export async function openUnits(c: RouteCtx, row?: HistoryItem): Promise<void> {
     evaluate: (req) => c.shell.calc.units(req, c.session.settings),
     find: (into, dim) =>
       void import("./find.ts").then((m) => {
-        if (current?.view === view) m.showUnitFind({ shell: c.shell, index, cat, apply: (a) => view.apply(a), refresh: () => (unitPad.model = new UnitPad(unitCells.userSet())) }, into, dim);
+        if (current?.view !== view) return;
+        const more = dim === undefined ? { constant, tools: unitTools(view.shown, { end: () => view.toEnd(), alt: (a) => void view.pickAlt(a), alts: () => view.down(), home }) } : {};
+        m.showUnitFind({ shell: c.shell, index, cat, apply: (a) => view.apply(a), refresh: () => (unitPad.model = new UnitPad(unitCells.userSet())), ...more }, into, dim);
       }),
     format: () => ({ format: engineFormat(c.session.settings.format), digits: c.session.settings.digits }),
     alternatives: async (q, req) => {
@@ -77,6 +81,23 @@ export async function openUnits(c: RouteCtx, row?: HistoryItem): Promise<void> {
     dead: () => c.dead(),
     changed: () => panel.draw(),
     result: (q) => void (rowId = putRow(c.session, unitRow({ line, chips, q, slots: view.filled(), input: view.drawn(), digits: c.session.settings.digits }), rowId)),
+  };
+  /** R92: a constant from the units menu goes on Home's line at its cursor (Find's own pick path); the view leaves
+   *  keeping its slots, they go with the new line text, and the view opens again on it. */
+  const constant = (k: ConstPick): void => {
+    if (current?.view !== view) return;
+    close();
+    if ("item" in k) finder.putOnLine(c.entry, k.item);
+    else c.entry.run({ kind: "insert", latex: k.latex });
+    carry(view.line, c.entry.value);
+    void openUnits(c);
+  };
+  /** R92: Tools › the number into Home: the view leaves, the result goes on the line as Home's chip (the way back). */
+  const home = (): void => {
+    const item = rowId === undefined ? undefined : c.session.home.find((r) => r.id === rowId);
+    if (!item || current?.view !== view) return c.dead();
+    close();
+    c.insertResult(item);
   };
   let made: UnitView | undefined;
   const panel = makePanel(() => made);

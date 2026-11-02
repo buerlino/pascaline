@@ -51,6 +51,8 @@ const FAMILIES: readonly { prefix: string; suffixes: readonly string[] | "any"; 
   { prefix: "part.", suffixes: "any", file: "state/backup.ts" }, // a backup part's name, from the part's key
   { prefix: "units.cat.", suffixes: "any", file: "units/menu.ts" }, // a category of the unit tables
   { prefix: "units.cell.", suffixes: ["tap", "up", "down"], file: "units/find.ts" },
+  { prefix: "units.const.", suffixes: "any", file: "units/menu.ts" }, // R92: a constant list of spec/units-menu.yaml, Math's e, pi, i
+  { prefix: "units.tool.", suffixes: ["end", "si", "alts", "unit", "number"], file: "units/menu.ts" }, // R92: a tool's row (units/tools.ts ToolId)
 ];
 
 function sources(dir: string): string[] {
