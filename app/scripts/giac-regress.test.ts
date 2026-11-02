@@ -67,8 +67,11 @@ describe("giac-regress exporter", () => {
     const r = build([["precision.yaml", c]]) as { check: string; patched: string; nCheck: number; nPatched: number };
     // the case, and the written lines of patch 0006 (im(2*sqrt(x))), patch 0017 (NaN times a complex), patch 0024 (G140:
     // evalf(Gamma(1+i)) at Digits 14) and patch 0019 (G135: the cos rule at a quoted atan(2*i), atan(2*i) and cos(atan(2*i))
-    // in DEG and in GRAD); the check file gets G149's written line for the CAS view's exact forms
-    expect([r.nCheck, r.nPatched]).toEqual([1, 9]);
+    // in DEG and in GRAD) and patch 0028 (G157: trunc of a free name stays trunc, a stored trunc(y) reads -1 at y = -13/10);
+    // the check file gets G149's written line for the CAS view's exact forms
+    expect([r.nCheck, r.nPatched]).toEqual([1, 11]);
+    expect(r.patched).toContain('// patch 0028-trunc-toward-zero.patch\n// g157-trunc-name-forms');
+    expect(r.patched).toContain('// patch 0028-trunc-toward-zero.patch\n// g157-stored-trunc-name');
     expect(r.check).toContain('pc("g149-cas-keep-forms",');
     expect(r.patched).toContain('// patch 0024-evalf-complex-double-workaround.patch\n// g140-evalf-gamma-1+i-14');
     expect(r.patched).toContain('// patch 0003-complex-tanh-mpfr.patch\n// g75-tanh(1+i)-30 (precision.yaml, oracle)');
