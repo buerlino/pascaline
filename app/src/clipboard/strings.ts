@@ -30,6 +30,23 @@ const clip = {
   "clip.shared": "Shared",
   "clip.sharedAsCopy": "This device cannot share: copied instead",
   "clip.sessionTitle": "Pascaline session",
+  // R36: the picked row's line (whyLine.ts)
+  "why.exact": "exact",
+  "why.rounded": "rounded",
+  "why.exactIs": "the exact value is",
+  "why.uses": "uses",
+  "why.itselfRounded": "itself rounded",
+  "why.itselfUncertain": "itself uncertain",
+  "why.of": "of",
+  "why.confirmed": "digits confirmed",
+  "why.noDigit": "no digit confirmed",
+  "why.decided": "decided at limited precision",
+  "why.differ": "the exact and numeric answers differ",
+  "why.once": "evaluated once, nothing to compare",
+  "why.isNotChecked": "is not checked",
+  "why.areNotChecked": "are not checked",
+  "why.notChecked": "not checked",
+  "why.notConfirmed": "fewer digits confirmed than shown",
 } as const;
 
 export type ClipKey = keyof typeof clip;

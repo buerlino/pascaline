@@ -6,5 +6,5 @@ app/src/engine/numeric.ts: 1090   # G140: the double rule in atParts (Parts.doub
 app/src/engine/host.ts: 1261
 app/src/engine/homeEval.ts: 806   # G155: passem, our sem definition (6 lines with its comment), beside pasmedian
 app/src/engine/host.test.ts: 908
-scripts/pipeline.sh: 830   # A54: the owned process group (own_sh, the TERM/HUP traps), host-cpu around the device build, the census locks; A55: the no-package-file stop and the questioned-task stop (+18)
-scripts/pipeline.test.sh: 952   # A54, A54f1: the tests for the owned children, the device build under host-cpu, the census HEAD check and a TERM during a lock wait; A55: the guard tests (no package file, questioned task, selftest list), one sandbox (+77)
+scripts/pipeline.sh: 831   # A54: the owned process group (own_sh, the TERM/HUP traps), host-cpu around the device build, the census locks; A55: the no-package-file stop and the questioned-task stop (+18); 40fcffe: wm dismiss-keyguard in the device step's lock check (+1)
+scripts/pipeline.test.sh: 967   # A54, A54f1: the tests for the owned children, the device build under host-cpu, the census HEAD check and a TERM during a lock wait; A55: the guard tests (no package file, questioned task, selftest list), one sandbox (+77); 40fcffe: the swipe-keyguard test (+15)

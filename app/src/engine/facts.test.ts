@@ -4,12 +4,12 @@
 // exact value, a stored ⚠ value read through a function (F63) and a relaunch. BesselJ(1,2) = 0.57672480775687338720
 // (mpmath, precision.yaml g71-gt-besselj-half's note); Home shows it ⚠ 0.576724807757 (prec-5-BesselJ(1,2)-12).
 import { describe, expect, it } from "vitest";
-import { fnFacts, mergedFacts, nameFacts, readFacts, storedFacts } from "./facts.ts";
+import { fnFacts, mergedFacts, nameFacts, readFacts, storedFacts, type FactsHost } from "./facts.ts";
 import { applyDefChanges, type DefEntry, type NameFacts } from "./defs.ts";
 import { defaultHomeSettings, type HomeResult } from "./homeEval.ts";
 import { giacAvailable, nodeHost } from "./nodeGiac.ts";
 import type { EngineHost } from "./host.ts";
-import type { InputReads } from "./stateRead.ts";
+import type { InputReads, StoredName } from "./stateRead.ts";
 
 const EXACT: NameFacts = { exact: true, reliableDigits: null };
 const WARN12: NameFacts = { exact: false, reliableDigits: 12, warn: "unaudited" };
@@ -49,6 +49,15 @@ describe("fnFacts and mergedFacts (G49f1)", () => {
 const seen = (r: HomeResult) => ({ display: r.display, reliableDigits: r.facts.reliableDigits, warn: r.facts.warn });
 const reads = (names: string[]): InputReads => ({ names, targets: [], fn: false });
 
+describe("R36f1: why.rounded names the user's names only", () => {
+  it("a chip (pasr_<k>) lends its facts but is never named", () => {
+    const f: NameFacts = { exact: false, reliableDigits: 20 };
+    const host = { giac: {} as FactsHost["giac"], byName: new Map(), chipFacts: new Map([["pasr_1", f]]), stored: new Map([["V", { names: [], fn: false } as unknown as StoredName]]) };
+    host.byName.set("V", { name: "V", kind: "var", cmds: ["V:=(1.5)"], facts: f } as DefEntry);
+    expect(readFacts(host, "pasr_1*V", reads(["pasr_1", "V"]))).toMatchObject({ causes: [], rounded: ["V"] });
+  });
+});
+
 describe.skipIf(!giacAvailable())("stored names lend their facts (real Giac)", () => {
   /** A host with pb:=BesselJ(1,2), f(t):=t and A6:=1/3 stored at `digits`, and the log they made. */
   const stored = async (digits: number): Promise<{ host: EngineHost; log: DefEntry[]; home: (t: string) => HomeResult }> => {
@@ -78,10 +87,19 @@ describe.skipIf(!giacAvailable())("stored names lend their facts (real Giac)", (
     const { host, log } = await stored(12);
     expect(log.find((e) => e.name === "pb")?.facts).toEqual(WARN12);
     expect(nameFacts(host, "pb", new Set())).toEqual(WARN12);
-    expect(readFacts(host, "pb*2", reads(["pb"]))).toEqual({ facts: { ...WARN12, inexact: true }, causes: ["pb"] });
+    expect(readFacts(host, "pb*2", reads(["pb"]))).toEqual({ facts: { ...WARN12, inexact: true }, causes: ["pb"], rounded: [] });
     // a function definition and purge store no value: they lend nothing (G51)
     expect(readFacts(host, "g(t):=t+pb", { names: ["pb"], targets: [], fn: true })).toBeNull();
     expect(readFacts(host, "purge(pb)", reads(["pb"]))).toBeNull();
+  });
+
+  it("R36f1: a stored float without a warning is no cause but the reason for ≈ (why.rounded); an exact one is neither", async () => {
+    const { host, home } = await stored(12);
+    home("pr:=evalf(sqrt(2))");
+    expect(readFacts(host, "pr*x", reads(["pr", "A6"]))).toMatchObject({ causes: [], rounded: ["pr"] });
+    expect(readFacts(host, "pb*pr", reads(["pb", "pr"]))).toMatchObject({ causes: ["pb"], rounded: ["pr"] });
+    expect(home("pr+A6").facts.why).toEqual({ rounded: ["pr"] });
+    expect(home("A6+1").facts.why).toBeUndefined();
   });
 
   it("F63 (pinned known): at 12 digits pb shows its 12 digits, through f(t):=t one fewer (11: cautious, not wrong)", async () => {

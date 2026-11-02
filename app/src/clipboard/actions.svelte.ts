@@ -9,6 +9,7 @@ import type { MenuItem } from "../apps/types.ts";
 import type { HistoryItem, Session } from "../state/session.svelte.ts";
 import { commaResult } from "../state/displayMode.ts";
 import { copyExact } from "./exact.ts";
+import { whyLine } from "./whyLine.ts";
 import type { ClipboardPort } from "./port.ts";
 import type { CopySource, TextOptions } from "./text.ts";
 
@@ -271,6 +272,12 @@ export class ClipActions {
   /** The row buttons above the entry line: items 1-5 of the list, for the picked row. */
   rowButtons(row: HistoryItem): MenuItem[] {
     return this.menu(row).slice(0, 5);
+  }
+
+  /** R36: the picked row's reason for its mark, one line; null when it has no mark. */
+  rowWhy(row: HistoryItem): string | null {
+    const s = this.session;
+    return whyLine(row, s.mark(row), s.settings.digits);
   }
 
   /** Menu with a picked row (R13): the whole list, acting on that row; ☰ and Menu end it with Settings (R15c1), a long
