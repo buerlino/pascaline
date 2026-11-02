@@ -35,7 +35,8 @@ test("a flick up or down is one pulse and still fires; a tap is one pulse", asyn
 
 test("a dead key keeps its double pulse after the touch", async ({ page }) => {
   await tap(page, ["@symb"]);
-  await expect(page.getByTestId("place")).toHaveAttribute("data-view", "symb");
+  // Fmt is dead only once the app is in (it opens async; before that Fmt cycles the format)
+  await page.waitForFunction(() => window.pascaline.shell.app !== null && window.pascaline.shell.current !== undefined);
   expect(await since(page, () => tap(page, ["fmt"]))).toBe(3); // the touch, then the double
 });
 
