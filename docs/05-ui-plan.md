@@ -101,6 +101,8 @@ One sheet, split by how often a thing changes (owner, 2026-10-27; the picture: [
 - A long result or input scrolls sideways with a fade at the edge that shows there is more; never cut without a sign.
 - The picked row (▲ from an empty line) gets the context bar from 3.3, so its actions are visible, not hidden behind a long press.
 - An error row shows the message on one line, with the part of the input that failed underlined when the parser knows its position.
+- Clear history and Delete (R98): Clear (Shift + Esc on an empty line, ☰ Clear history) removes the finished and error rows only; a running row stays with its Cancel, so Esc still stops it and Enter is refused while it runs. Clear and Delete keep what they took (rows and places, one level, stored with the history so a relaunch keeps it), and a note row says "History cleared · Undo" or "Row deleted · Undo"; a tap on it puts the rows back.
+- One Undo order (R98 with P13): the most recent destructive act comes back first. On an empty line Undo first takes the Clear or Delete copy while there is one, then the line's own undo (P13: the line cleared by Enter or Esc); Redo is always the line's own. On a non-empty line Undo is always the line's own, and the copy waits for an empty line. The next Enter, or a second Clear, drops the copy.
 
 ### 3.6 Find (EN1): the screen design
 

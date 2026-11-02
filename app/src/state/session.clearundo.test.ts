@@ -100,6 +100,18 @@ describe("Undo for Clear and Delete (R98, fh-1)", () => {
     expect((kv.data.get("history") as { undo?: unknown }).undo).toBeUndefined();
   });
 
+  it("the next Enter drops the stored copy at once, while its job still runs", async () => {
+    const kv = memoryKv();
+    const s = await session(300, kv);
+    await s.submit("1");
+    await s.clearHistory();
+    expect((kv.data.get("history") as { undo?: unknown }).undo).toBeDefined();
+    const job = s.submit("2");
+    expect(s.busy).toBe(true);
+    expect((kv.data.get("history") as { undo?: unknown }).undo).toBeUndefined(); // a relaunch now has no Undo
+    await job;
+  });
+
   it("a second Clear drops the copy", async () => {
     const s = await session();
     await s.submit("1");

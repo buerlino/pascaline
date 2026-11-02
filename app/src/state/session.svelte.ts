@@ -435,7 +435,10 @@ export class Session {
    */
   submit(latex: string, giacOverride?: string, chips: ChipTable = {}): Promise<void> | undefined {
     if (latex.trim() === "" || this.busy) return undefined;
-    this.undoCopy = null; // R98: a new input drops the Undo of Clear and Delete (stored with the row when it finishes)
+    if (this.undoCopy) {
+      this.undoCopy = null; // R98: a new input drops the Undo of Clear and Delete, in the store too at once (a relaunch
+      this.saveHistory(); // before a long job ends must not bring it back)
+    }
     const view = this.view;
     const list = view === "home" ? this.home : this.cas;
     // Ans is the view's last result now, at Enter (as on the reference), not when the key was pressed.
