@@ -92,6 +92,9 @@ export const en = {
   "history.working": "Working…",
   "history.cancel": "Cancel",
   "history.cancelled": "Cancelled",
+  /** R98: the note under the history after Clear history or Delete; Undo (or a tap on it) brings the rows back. */
+  "history.cleared": "History cleared · Undo",
+  "history.deleted": "Row deleted · Undo",
   "mark.exact": "Exact: every digit shown is the value",
   "mark.approx": "Approximate: the digits shown are confirmed",
   "mark.warn": "Warning: fewer digits are confirmed than shown",

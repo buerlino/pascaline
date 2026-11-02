@@ -325,6 +325,8 @@
           oninsert={(item) => { picked = null; shell.prompt?.cancel(); insertResult(item); }}
           oncancel={() => void cancel()}
           onlongpress={(item) => withClip((c) => c.openRowMenu(item))}
+          undo={session.undoCopy?.view === session.view ? session.undoCopy.kind : null}
+          onundo={() => { picked = null; session.undoRemoved(); }}
         />
       {:else if shell.current}
         {@const C = shell.current.Root}

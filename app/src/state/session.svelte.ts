@@ -7,8 +7,8 @@ import { ANS_KEY, pruneChips, validChips, type Chip, type ChipTable } from "../i
 import { parseFailText } from "../input/errors.ts";
 import { loadEntry, loadParser } from "../input/parser.ts";
 import { t, type MessageKey } from "../i18n/index.ts";
-import { EngineMemoryError, readValueFacts } from "../engine/types.ts";
-import { decimalToString, type ComplexValue, type MarkInfo, type PrecisionFacts } from "../engine/format.ts";
+import { EngineMemoryError } from "../engine/types.ts";
+import { decimalToString, type ComplexValue, type MarkInfo } from "../engine/format.ts";
 import { homeResultToLatex } from "../render/home.ts";
 import {
   DEFAULT_FMT_CYCLE,
@@ -32,7 +32,9 @@ import { defaultLook, validLook, type Look } from "../theme/look.ts";
 import { idbKv, type Kv } from "./storage.ts";
 import { TapCounter } from "./taps.svelte.ts";
 import { commaInput } from "../entry/commaInput.ts";
-import { casItem, chipFactsOf, chipOf, FULL_LIMIT, HISTORY_LIMIT, homeItem, ITEMS_LIMIT, withUnit } from "./results.ts";
+import { casItem, chipFactsOf, chipOf, HISTORY_LIMIT, homeItem, withUnit } from "./results.ts";
+import { putBack, readCopy, storedCopy, takeOut, type RemovedKind, type RemovedRows } from "./removedRows.ts";
+import { restoredItem } from "./storedItem.ts";
 import type { UnitRow } from "../units/types.ts";
 
 export type View = "home" | "cas";
@@ -128,14 +130,6 @@ export interface UsedValue {
   view: View;
 }
 
-/** A stored `uses` read back from IndexedDB: the well-formed entries only. */
-function validUses(x: unknown): UsedValue[] | undefined {
-  const ok = (Array.isArray(x) ? (x as Partial<UsedValue>[]) : []).filter(
-    (u): u is UsedValue => typeof u?.name === "string" && typeof u.preview === "string" && (u.view === "home" || u.view === "cas"),
-  );
-  return ok.length ? ok : undefined;
-}
-
 /** R91: the tidy-up of Giac's latex (render/tidy.ts) is only needed once a result is in, so it is a chunk of its own: it
  *  loads beside the first job (and when idle, main.ts), and a failed load is tried again by the next job. */
 let tidyChunk: Promise<typeof import("../render/tidy.ts")> | undefined;
@@ -167,33 +161,6 @@ const errorText = (code: CalcError | undefined, fallback: string): string =>
   code ? t(`error.${code}` as MessageKey) : fallback;
 const clamp = (n: number, lo: number, hi: number): number => Math.min(hi, Math.max(lo, Math.round(n)));
 const clampDigits = (n: number): number => Math.min(MAX_DIGITS, Math.max(1, Math.round(n)));
-
-/** Stored facts read back from IndexedDB, through the one mapping for stored facts (readValueFacts: an item stored
- *  before G76 says `exactRational`): kept when they have the shape, else dropped (the item then shows no mark). */
-function validFacts(x: unknown): ResultFacts | undefined {
-  if (!x || typeof x !== "object") return undefined;
-  const f = x as Record<string, unknown>;
-  const exactKey = (o: Record<string, unknown>): boolean => typeof (o["exact"] ?? o["exactRational"]) === "boolean";
-  const facts = readValueFacts(f);
-  if (!facts || !exactKey(f) || f["reliableDigits"] === undefined) return undefined;
-  const d = f["digits"];
-  if (d !== undefined && !(typeof d === "number" && Number.isInteger(d) && d >= 1 && d <= 1000)) return undefined;
-  const items = f["items"];
-  if (items !== undefined && (!Array.isArray(items) || items.length > ITEMS_LIMIT)) return undefined;
-  const els: PrecisionFacts[] = [];
-  for (const it of Array.isArray(items) ? (items as unknown[]) : []) {
-    const e = it && typeof it === "object" ? (it as Record<string, unknown>) : null;
-    const ef = e && exactKey(e) ? readValueFacts(e) : null;
-    if (!e || !ef) return undefined;
-    els.push({ ...ef, ...(e["value"] ? { value: e["value"] as ComplexValue } : {}) });
-  }
-  return {
-    ...facts,
-    ...(d !== undefined ? { digits: d } : {}),
-    ...(Array.isArray(items) ? { items: els } : {}),
-    ...(f["shape"] !== undefined ? { shape: f["shape"] as [number, number] } : {}),
-  };
-}
 
 /**
  * The settings from what was stored (docs/04 6.2): field by field, so a wrong or missing field keeps its default.
@@ -227,27 +194,6 @@ export function migrateSettings(saved: unknown, firstLook: Look = defaultSetting
   s.look = validLook(x["look"], firstLook);
   const newer = typeof x["schema"] === "number" && x["schema"] > SETTINGS_SCHEMA;
   return { settings: s, migrated: !newer && x["schema"] !== SETTINGS_SCHEMA, newer };
-}
-
-/** A stored history item with a fresh id; chip fields that do not have their shape are dropped. */
-function restoredItem(i: HistoryItem, id: number): HistoryItem {
-  const { chips, full, fullExact, drawn, facts, uses, settingReset, ...rest } = i as HistoryItem & { form?: unknown };
-  const { form, ...base } = rest;
-  const out: HistoryItem = { ...base, id };
-  if (isFormStep(form)) out.form = form;
-  const f = validFacts(facts);
-  if (f) out.facts = f;
-  const c = validChips(chips);
-  if (c) out.chips = c;
-  const u = validUses(uses);
-  if (u) out.uses = u;
-  if (settingReset === true) out.settingReset = true;
-  if (typeof full === "string" && full.length <= FULL_LIMIT) {
-    out.full = full;
-    out.fullExact = fullExact === true;
-  }
-  if (typeof drawn === "string" && drawn.length <= FULL_LIMIT) out.drawn = drawn;
-  return out;
 }
 
 /** The look of a first start: Dark in the Android app, System in the PWA; High contrast when the phone asks for more (R50e). */
@@ -483,6 +429,7 @@ export class Session {
    */
   submit(latex: string, giacOverride?: string, chips: ChipTable = {}): Promise<void> | undefined {
     if (latex.trim() === "" || this.busy) return undefined;
+    this.undoCopy = null; // R98: a new input drops the Undo of Clear and Delete (stored with the row when it finishes)
     const view = this.view;
     const list = view === "home" ? this.home : this.cas;
     // Ans is the view's last result now, at Enter (as on the reference), not when the key was pressed.
@@ -701,21 +648,36 @@ export class Session {
     }
   }
 
-  /** Delete one row of the open view (R11). A running row is not deleted: Cancel stops it first. */
+  /** Delete one row of the open view (R11). A running row is not deleted: Cancel stops it first. Undo brings it back (R98). */
   removeItem(item: HistoryItem): boolean {
-    const list = this.items;
-    const k = list.findIndex((i) => i.id === item.id);
-    const found = list[k];
+    const found = this.items.find((i) => i.id === item.id);
     if (!found || found.status === "pending") return false;
-    list.splice(k, 1);
-    this.saveHistory();
+    this.takeRows("delete", (i) => i.id === item.id);
     return true;
   }
 
+  /** Clear history (R98): the finished, error and note rows go; a running row stays with its Cancel, so Esc still stops
+   *  it and Enter is still refused while it runs. Undo brings the rows back; a Clear that finds nothing drops that copy. */
   clearHistory(): void {
-    if (this.view === "home") this.home.length = 0;
-    else this.cas.length = 0;
+    this.takeRows("clear", (i) => i.status !== "pending");
+  }
+
+  /** What the last Clear or Delete took, one level, until the next Enter (R98; History draws its note). */
+  undoCopy = $state.raw<RemovedRows | null>(null);
+  private takeRows(kind: RemovedKind, take: (i: HistoryItem) => boolean): void {
+    const rows = takeOut(this.items, take);
+    this.undoCopy = rows.length ? { view: this.view, kind, rows } : null;
+    this.saveHistory(); // the list and the copy in one write
+  }
+  /** Undo on an empty line, or a tap on the note (R98): the rows the open view's last Clear or Delete took go back in
+   *  their places. False: no copy for this view (the line's own undo then runs, P13). */
+  undoRemoved(): boolean {
+    const c = this.undoCopy;
+    if (!c || c.view !== this.view) return false;
+    putBack(this.items, c.rows);
+    this.undoCopy = null;
     this.saveHistory();
+    return true;
   }
 
   // ---- persistence (IndexedDB; failures are silent)
@@ -765,13 +727,14 @@ export class Session {
     }
     const keep = (xs: HistoryItem[]): HistoryItem[] =>
       $state.snapshot(xs).filter((i) => i.status === "done" || i.status === "error").slice(-HISTORY_LIMIT);
-    void this.kv.set("history", { home: keep(this.home), cas: keep(this.cas) });
+    const undo = storedCopy($state.snapshot(this.undoCopy) as RemovedRows | null);
+    void this.kv.set("history", { home: keep(this.home), cas: keep(this.cas), ...(undo ? { undo } : {}) });
   }
   /** The stored history (up to HISTORY_LIMIT entries per view); the app reads it after the keypad is drawn. */
   async restoreHistory(): Promise<void> {
     // A read that never settles leaves the history unread: nothing then writes over the stored rows. A read that fails
     // reads as nothing stored here, and the store drops every write of `history` for the session (R93, storage.ts).
-    const hist = await this.kv.get<{ home?: HistoryItem[]; cas?: HistoryItem[] }>("history");
+    const hist = await this.kv.get<{ home?: HistoryItem[]; cas?: HistoryItem[]; undo?: unknown }>("history");
     if (hist) {
       // Entries typed before the store answered stay after the restored ones.
       // Fresh ids: entries typed before the store answered already use the low numbers (ids key the list).
@@ -782,6 +745,8 @@ export class Session {
           .map((i) => restoredItem(i, this.nextId++));
       this.home.splice(0, 0, ...keep(hist.home));
       this.cas.splice(0, 0, ...keep(hist.cas));
+      // R98: the stored Undo of Clear or Delete, unless an Enter or a Clear before the read already changed the history
+      if (!this.savePending) this.undoCopy = readCopy(hist.undo, () => this.nextId++);
     }
     this.historyRead = true;
     if (this.savePending) {
