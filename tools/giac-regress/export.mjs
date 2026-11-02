@@ -445,6 +445,16 @@ export const PATCHED_IDS = new Map([
   ["g157-trunc-neg-27/20-1", "0028-trunc-toward-zero.patch"],
   ["g157-trunc-neg-complex", "0028-trunc-toward-zero.patch"],
   ["g71-trunc-neg-2.567-1", "0028-trunc-toward-zero.patch"],
+  // G157f1 (F168): definite integrals of trunc and of a falling floor argument (stock: trunc(x) is floor(x), so 3/2, -3/2, -1,
+  // 3/4, -9/2, -3/8 as floor's integrals; ceil's [1,1.5]); they need 0028 and 0029. g157f1-int-trunc-half-5/2 and
+  // g157f1-int-floor-sym-3/2 pass on stock (trunc is floor on x > 0) and stay in the check file
+  ["g157f1-int-trunc-neg-half-5/2", "0029-int-trunc-split.patch"],
+  ["g157f1-int-trunc-sym-3/2", "0029-int-trunc-split.patch"],
+  ["g157f1-int-trunc-2x+1", "0029-int-trunc-split.patch"],
+  ["g157f1-int-trunc-x-times-x", "0029-int-trunc-split.patch"],
+  ["g157f1-int-trunc-neg-5/2-0", "0029-int-trunc-split.patch"],
+  ["g157f1-int-trunc-neg-9/8-7/8", "0029-int-trunc-split.patch"],
+  ["g157f1-int-ceil-half-3/2", "0029-int-trunc-split.patch"],
 ]);
 // G122: Giac's exact answer is right (patch 0014), but pc()'s evalf of it at Digits 40 cancels the digits of a large k*pi
 // (asin(cos(30!)) = -pi/2+30!-k*pi with k of 32 digits keeps about 7, -pi/2+10^50-k*pi none); Home raises the precision
