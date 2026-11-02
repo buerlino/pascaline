@@ -60,6 +60,8 @@ test("a second tab writes nothing: the first tab's definitions and rows survive 
   // B said it would keep nothing: one line, with Use here
   await expect(note(b)).toBeVisible();
   await expect(note(b).getByRole("button")).toBeVisible();
+  await expect(note(b).getByText("Pascaline is open in another tab")).toBeVisible();
+  await expect(note(b).getByText("Nothing done in this tab is kept")).toBeVisible(); // R111: said in words, not as a title
   await expect(note(c)).toHaveCount(0); // C took the lock: A is gone, B never had it
 });
 
@@ -90,4 +92,19 @@ test("Use here hands the store over: the new tab's definitions are kept, the old
   expect(seen.names).toEqual(["V", "Z"]);
   expect(seen.rows).toEqual(["V:=4", "Z:=2"]);
   await expect(note(c)).toBeVisible(); // B still holds the store
+});
+
+test("the note says in visible text that nothing is kept, and fits one row with Use here at 360 px (R111)", async ({ page: a }) => {
+  await open(a, "");
+  await engineReady(a);
+  const b = await a.context().newPage();
+  await b.setViewportSize({ width: 360, height: 740 });
+  await open(b, "");
+  await engineReady(b);
+  await expect(note(b).getByText("Nothing done in this tab is kept")).toBeVisible();
+  await expect(note(b)).not.toHaveAttribute("title", /.+/);
+  const box = await note(b).boundingBox();
+  const btn = await note(b).getByRole("button").boundingBox();
+  expect(box && btn && btn.x + btn.width <= box.x + box.width).toBe(true);
+  expect(btn && btn.height < 40).toBe(true); // "Use here" stays on one line
 });
