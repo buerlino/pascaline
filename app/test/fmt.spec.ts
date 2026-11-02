@@ -9,7 +9,7 @@ const ready = (page: Page) => page.waitForFunction(() => window.pascaline.sessio
 const sheet = (page: Page) => page.getByTestId("menu");
 /** The Mode sheet (format chip, ▲), 5, then a section of Settings (R49, R50e: 2 Numbers, 3 Key vibration). */
 async function openSettings(page: Page, section: "d2" | "d3"): Promise<void> {
-  await tap(page, ["@mode", "d5", section]);
+  await tap(page, ["@mode", "d6", section]);
   await expect(page.getByTestId("sheet-title")).toHaveText(section === "d2" ? "Mode › Settings › Numbers" : "Mode › Settings › Key vibration");
 }
 /** The Mode sheet (format chip, ▲; Shift + Apps before R15c2). */

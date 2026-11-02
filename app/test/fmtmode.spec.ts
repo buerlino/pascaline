@@ -25,9 +25,9 @@ test("Shift, Fmt, ▶, Enter switches RAD → DEG", async ({ page }) => {
   expect(await angle(page)).toBe("deg");
 });
 
-test("Shift, Fmt, 5 opens Settings", async ({ page }) => {
+test("Shift, Fmt, 6 opens Settings (row 6 since R89)", async ({ page }) => {
   await open(page);
-  await tap(page, ["shift", "fmt", "d5"]);
+  await tap(page, ["shift", "fmt", "d6"]);
   await expect(page.getByTestId("sheet-title")).toHaveText("Mode › Settings");
 });
 

@@ -4,6 +4,7 @@
 // settings, so the calculator comes back where it was.
 import type { Calc, UserName } from "../calc/port.ts";
 import { t } from "../i18n/index.ts";
+import type { ActionBody } from "../keyboard/keyboard.ts";
 import type { Kv } from "../state/storage.ts";
 import type { IconId } from "../views/icons.ts";
 import { Sheet, type Picked } from "../views/sheet.svelte.ts";
@@ -26,6 +27,15 @@ interface Place {
 export type PaletteId = "tmpl" | "rel" | "sym";
 const PALETTE_IDS: readonly string[] = ["tmpl", "rel", "sym"] satisfies PaletteId[];
 
+/** The entry line asks for a name (R89, views/presetsView.svelte.ts): its label stands over the line, and every key's
+ *  action goes to `key` first (true: taken). The asker clears `prompt` when done; `cancel` ends it as Esc does (the line
+ *  comes back), run by the asker itself when a sheet opens or the app or view changes (a tap goes elsewhere). */
+export interface EntryPrompt {
+  readonly label: string;
+  key(action: ActionBody): boolean;
+  cancel(): void;
+}
+
 export class AppShell {
   /** The open app, or null for Home/CAS. */
   app = $state<AppId | null>(null);
@@ -36,6 +46,8 @@ export class AppShell {
   sheet = $state.raw<Sheet | null>(null);
   /** Set while an app's code is loading (the view shows a short note). */
   loading = $state<AppId | null>(null);
+  /** A name typed in the entry line under its label (R89, a preset's name): route.ts gives it each key's action first. */
+  prompt = $state.raw<EntryPrompt | null>(null);
 
   /** Copy, paste and share (set by App.svelte); apps reach it through AppHost.copy. */
   clip: { copyRaw(text: string | undefined, notice?: string): Promise<boolean>; say(message: string): void } | undefined;
@@ -78,6 +90,7 @@ export class AppShell {
   }
   /** The entry line belongs to the open view (undefined label = no entry line, e.g. Plot). */
   get entryLabel(): string | undefined {
+    if (this.prompt) return this.prompt.label;
     const a = this.instance;
     return a ? a.entryLabel(this.view) : undefined;
   }

@@ -18,7 +18,7 @@ test("Settings › Data › Save a backup downloads the envelope with every pres
   await page.evaluate(() => window.pascaline.userKeys.set("u1", "primary", { label: "Home", action: { special: "home" } }));
   await page.waitForTimeout(900); // the writes are debounced and asynchronous
 
-  await tap(page, ["@mode", "d5"]);
+  await tap(page, ["@mode", "d6"]);
   await page.getByTestId("menu").locator('[data-id="data"]').tap();
   await expect(page.getByTestId("sheet-title")).toHaveText("Mode › Settings › Data");
   const download = page.waitForEvent("download");
@@ -57,7 +57,7 @@ test("Save a backup works when the sheet opened before the clipboard code arrive
     await route.continue();
   });
   await open(page, "engine=fake");
-  await tap(page, ["@mode", "d5"]);
+  await tap(page, ["@mode", "d6"]);
   await page.getByTestId("menu").locator('[data-id="data"]').tap();
   await expect(page.getByTestId("sheet-title")).toHaveText("Mode › Settings › Data");
   const download = page.waitForEvent("download");
