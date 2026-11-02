@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // The Undo copy of Clear history and Delete (R98): what the last such act took out of a view's list, one level, with
-// the place of each row, so Undo puts every row back where it was. The session keeps it in memory and in the stored
-// history record (one write, so a relaunch keeps it); the next Enter, or a Clear that finds nothing to take, drops it.
+// the place of each row, so Undo puts every row back where it was. The session keeps one per view (R119) in memory and in
+// the stored history record (one write, so a relaunch keeps it); that view's next Enter, or a Clear there that finds
+// nothing to take, drops it.
 // A lazy chunk (out of the start chunk): it imports types only, so the bundler keeps the start's modules in one file.
 import type { HistoryItem, View } from "./session.svelte.ts";
 
@@ -49,15 +50,29 @@ export function putBack(list: HistoryItem[], rows: readonly { at: number; item: 
  *  from (a Clear or Delete before the read, R98). */
 export const shifted = (c: RemovedRows, n: number): RemovedRows => ({ ...c, rows: c.rows.map((r) => ({ ...r, at: r.at + n, storedAt: r.storedAt + n })) });
 
-/** The copy for the store (a snapshot); undefined when none of its rows is stored. */
-export function storedCopy(c: RemovedRows | null): StoredRemoved | undefined {
-  const rows = (c?.rows ?? []).filter((r) => storable(r.item)).map((r) => ({ at: r.storedAt, item: r.item }));
-  return c && rows.length ? { view: c.view, kind: c.kind, rows } : undefined;
+/** The copies for the store (a snapshot; one per view, R119); undefined when none of their rows is stored. */
+export function storedCopies(cs: readonly (RemovedRows | null)[]): StoredRemoved[] | undefined {
+  const out = cs.flatMap((c) => {
+    const rows = (c?.rows ?? []).filter((r) => storable(r.item)).map((r) => ({ at: r.storedAt, item: r.item }));
+    return c && rows.length ? [{ view: c.view, kind: c.kind, rows }] : [];
+  });
+  return out.length ? out : undefined;
+}
+
+/** The stored copies read back: a list of them (R119), or one copy alone (a record from before R119), at most one per
+ *  view; each well formed (readCopy) or dropped. */
+export function readCopies(x: unknown, restore: (i: HistoryItem) => HistoryItem, limit: number): RemovedRows[] {
+  const out: RemovedRows[] = [];
+  for (const one of Array.isArray(x) ? x : [x]) {
+    const c = out.some((o) => o.view === (one as Partial<StoredRemoved> | null)?.view) ? null : readCopy(one, restore, limit);
+    if (c) out.push(c);
+  }
+  return out;
 }
 
 /** A stored copy read back: every row well formed, at most `limit` rows, or no copy at all (the history itself is read
  *  as before); `restore` reads each row as the history's rows are read (storedItem.ts, with a fresh id). */
-export function readCopy(x: unknown, restore: (i: HistoryItem) => HistoryItem, limit: number): RemovedRows | null {
+function readCopy(x: unknown, restore: (i: HistoryItem) => HistoryItem, limit: number): RemovedRows | null {
   const c = x && typeof x === "object" ? (x as Partial<StoredRemoved>) : {};
   if ((c.view !== "home" && c.view !== "cas") || (c.kind !== "clear" && c.kind !== "delete") || !Array.isArray(c.rows) || c.rows.length === 0 || c.rows.length > limit) return null;
   const ok = c.rows.every(

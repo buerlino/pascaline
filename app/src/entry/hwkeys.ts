@@ -12,8 +12,10 @@
 // - `<`, `>` and `!` insert the Shift palettes' own symbols (Shift + 6, Shift + 9).
 // - Other letters stay name letters. A function's name is reached through Find (R4a), as on the phone.
 // - Every other character (`\ [ ] { } ' " $ % & ? @ ~` and the backtick) does nothing: no key types it.
-// Loaded with MathLive (EntryController.load), outside the start chunk. Ctrl, Alt and Meta combinations stay with
-// MathLive (copy, cut, select all); a paste, Ctrl+V included, is field.ts's paste listener (R114). AltGr characters
+// - Ctrl+Z is the Undo key, Ctrl+Y and Ctrl+Shift+Z the Redo key (R119; Cmd on a Mac): on an empty line Undo brings
+//   back what Clear or Delete took first (R98), which MathLive's own undo never did.
+// Loaded with MathLive (EntryController.load), outside the start chunk. The other Ctrl, Alt and Meta combinations stay
+// with MathLive (copy, cut, select all); a paste, Ctrl+V included, is field.ts's paste listener (R114). AltGr characters
 // count as typed.
 import type { MathfieldElement } from "mathlive";
 import { numberRunStart } from "./numberRun.ts";
@@ -72,6 +74,15 @@ export function controlKey(ev: Pick<KeyboardEvent, "key" | "shiftKey">): readonl
   return arrow && !ev.shiftKey ? [arrow, "primary"] : undefined;
 }
 
+/** R119: the layer of the Undo key that Ctrl+Z ("primary", Undo) or Ctrl+Y and Ctrl+Shift+Z ("shift", Redo) press (Cmd
+ *  for Ctrl on a Mac); undefined for every other key. */
+export function undoKey(ev: Pick<KeyboardEvent, "key" | "ctrlKey" | "metaKey" | "altKey" | "shiftKey">): Layer | undefined {
+  if (!(ev.ctrlKey || ev.metaKey) || ev.altKey) return undefined;
+  const k = ev.key.toLowerCase();
+  if (k === "z") return ev.shiftKey ? "shift" : "primary";
+  return k === "y" && !ev.shiftKey ? "shift" : undefined;
+}
+
 /** The keypad key (and its layer) that types `ch` (R24c: the unit view's field takes the same path). */
 export function keypadKeyOf(ch: string, decimalComma: boolean): readonly [string, Layer] | undefined {
   return KEYS[decimalComma && ch === "," ? "." : ch];
@@ -82,6 +93,11 @@ export function hardwareKey(ev: KeyboardEvent, t: HwTarget): boolean {
   const ch = ev.key;
   const mf = t.field;
   if (!mf || ev.isComposing) return false;
+  const undo = undoKey(ev);
+  if (undo) {
+    t.onKey("undo", undo, ev.repeat);
+    return true;
+  }
   if ((ev.ctrlKey || ev.metaKey || ev.altKey) && !ev.getModifierState("AltGraph")) return false;
   // R45 (F38): Backspace, Delete and the arrows through the shell's path (controlKey). Enter and Escape are left to the
   // controller's own listener (onEnter, onEscape), which presses the same keys.

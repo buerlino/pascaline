@@ -435,11 +435,11 @@ export class Session {
    */
   submit(latex: string, giacOverride?: string, chips: ChipTable = {}): Promise<void> | undefined {
     if (latex.trim() === "" || this.busy) return undefined;
-    if (this.undoCopy) {
-      this.undoCopy = null; // R98: a new input drops the Undo of Clear and Delete, in the store too at once (a relaunch
-      this.saveHistory(); // before a long job ends must not bring it back)
-    }
     const view = this.view;
+    if (this.undoCopy) {
+      this.setCopy(view, null); // R98: a new input drops this view's Undo of Clear and Delete (R119: the other view's stays),
+      this.saveHistory(); // in the store too at once (a relaunch before a long job ends must not bring it back)
+    }
     const list = view === "home" ? this.home : this.cas;
     // Ans is the view's last result now, at Enter (as on the reference), not when the key was pressed.
     const ans = this.lastChip(view);
@@ -671,8 +671,15 @@ export class Session {
     return this.takeRows("clear", (i) => i.status !== "pending");
   }
 
-  /** What the last Clear or Delete took, one level, until the next Enter (R98; History draws its note). */
-  undoCopy = $state.raw<RemovedRows | null>(null);
+  /** What the last Clear or Delete took in each view, one level per view, until that view's next Enter (R98, R119). */
+  private copies = $state.raw<Readonly<Record<View, RemovedRows | null>>>({ home: null, cas: null });
+  /** The open view's copy (History draws its note). */
+  get undoCopy(): RemovedRows | null {
+    return this.copies[this.view];
+  }
+  private setCopy(view: View, c: RemovedRows | null): void {
+    this.copies = { ...this.copies, [view]: c };
+  }
   /** The rows are picked at the press (by id), so a row the stored history's read or an Enter adds while the code loads
    *  stays. Resolves false when the code did not load: nothing is taken without its Undo, and a note in the view says so. */
   private async takeRows(kind: RemovedKind, take: (i: HistoryItem) => boolean): Promise<boolean> {
@@ -684,7 +691,7 @@ export class Session {
       return false;
     }
     const rows = m.takeOut(list, (i) => ids.has(i.id));
-    this.undoCopy = rows.length ? { view, kind, rows } : null;
+    this.setCopy(view, rows.length ? { view, kind, rows } : null);
     this.saveHistory(); // the list and the copy in one write
     return true;
   }
@@ -692,9 +699,9 @@ export class Session {
    *  their places. False: no copy for this view (the line's own undo then runs, P13). */
   undoRemoved(): boolean {
     const c = this.undoCopy;
-    if (!c || c.view !== this.view || !removedCode) return false;
+    if (!c || !removedCode) return false;
     removedCode.putBack(this.items, c.rows);
-    this.undoCopy = null;
+    this.setCopy(this.view, null);
     this.saveHistory();
     return true;
   }
@@ -746,7 +753,7 @@ export class Session {
     }
     const keep = (xs: HistoryItem[]): HistoryItem[] =>
       $state.snapshot(xs).filter((i) => i.status === "done" || i.status === "error").slice(-HISTORY_LIMIT);
-    const undo = removedCode?.storedCopy($state.snapshot(this.undoCopy) as RemovedRows | null);
+    const undo = removedCode?.storedCopies($state.snapshot([this.copies.home, this.copies.cas]) as (RemovedRows | null)[]);
     void this.kv.set("history", { home: keep(this.home), cas: keep(this.cas), ...(undo ? { undo } : {}) });
   }
   /** The stored history (up to HISTORY_LIMIT entries per view); the app reads it after the keypad is drawn. */
@@ -766,12 +773,12 @@ export class Session {
       this.home.splice(0, 0, ...home);
       this.cas.splice(0, 0, ...cas);
       // A Clear or Delete before the read kept places in the list without the stored rows, now in front (a copy means its code is in)
-      const c = this.undoCopy;
-      if (c) this.undoCopy = removedCode?.shifted(c, (c.view === "home" ? home : cas).length) ?? null;
-      // R98: the stored Undo of Clear or Delete, unless an Enter or a Clear before the read (or meanwhile) changed the history
+      const front = (c: RemovedRows | null): RemovedRows | null => c && (removedCode?.shifted(c, (c.view === "home" ? home : cas).length) ?? null);
+      this.copies = { home: front(this.copies.home), cas: front(this.copies.cas) };
+      // R98: the stored Undo copies (one per view, R119), unless an Enter or a Clear before the read (or meanwhile) changed the history
       const m = hist.undo && !this.savePending ? await loadRemoved() : undefined;
-      const copy = m?.readCopy(hist.undo, (i) => restoredItem(i, this.nextId++), HISTORY_LIMIT);
-      if (copy && !this.savePending) this.undoCopy = copy;
+      const read = m?.readCopies(hist.undo, (i) => restoredItem(i, this.nextId++), HISTORY_LIMIT) ?? [];
+      for (const copy of read) if (!this.savePending) this.setCopy(copy.view, copy);
     }
     this.historyRead = true;
     if (this.savePending) {
