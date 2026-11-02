@@ -36,17 +36,27 @@ function namesRead(item: HistoryItem, names: readonly string[]): string[] {
   return names.filter((n) => new RegExp(`(?<![A-Za-z0-9_\\\\])${n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?![A-Za-z0-9])`).test(item.latex));
 }
 
-/** The user's stored names whose value is not exact: the engine's facts of the name, else the mark of the latest row of
- *  this view that stored it (`x\blacktriangleright N` or `N:=…`): a float stored by a row marked ≈ or ⚠ is rounded. */
+/** The row stores `name`: `x\blacktriangleright N` or `N:=…`. */
+const stores = (i: HistoryItem, name: string): boolean => i.latex.endsWith(`\\blacktriangleright ${name}`) || i.latex.startsWith(`${name}:=`);
+
+/** The user's stored names whose value was not exact when `row` ran: the mark of the latest earlier row of this view that
+ *  stored the name (a float stored by a row marked ≈ or ⚠ is rounded), else, when no row of this view stores it, the
+ *  engine's facts of the name. A name the picked row stores itself, or only a later row stores, is not one it read. */
 export function roundedNames(
   stored: readonly { name: string; facts?: unknown }[],
   items: readonly HistoryItem[],
   markOfRow: (i: HistoryItem) => MarkInfo | null,
+  row?: HistoryItem,
 ): string[] {
   return stored
     .filter((u) => {
-      const row = [...items].reverse().find((i) => i.status === "done" && (i.latex.endsWith(`\\blacktriangleright ${u.name}`) || i.latex.startsWith(`${u.name}:=`)));
-      const m = row ? markOfRow(row) : null;
+      if (row && stores(row, u.name)) return false;
+      const storing = items.filter((i) => i.status === "done" && stores(i, u.name));
+      if (!storing.length) return u.facts !== undefined;
+      const before = row ? storing.filter((i) => i.id < row.id) : storing;
+      const last = before.at(-1);
+      if (!last) return false;
+      const m = markOfRow(last);
       return m ? m.mark !== "=" : u.facts !== undefined;
     })
     .map((u) => u.name);

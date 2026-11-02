@@ -41,6 +41,15 @@ test("an unaudited function names itself (normald_icdf with σ < 0, which the po
   expect(await picked(page)).toBe("⚠ normald_icdf is not checked");
 });
 
+// The brief's example normald_icdf(10^-10) is not a ⚠ any more: since G44 the home stage polishes the inverse
+// distribution functions, so the engine's own line is "≈ rounded" (no exact value to name). The "9 of 12 digits confirmed
+// · normald_icdf is not checked" text stays in whyLine.test.ts on hand-built facts.
+test("normald_icdf(10^-10): polished by G44, so ≈ with no exact value", async ({ page }) => {
+  await run(page, "\\operatorname{normald\\_icdf}\\left(10^{-10}\\right)", 1);
+  expect(await picked(page)).toBe("≈ rounded");
+  expect(await page.getByTestId("mark").last().innerText()).toBe("≈");
+});
+
 // G38: Heaviside of a value that sits on its cut is decided by rounding error (floor(sin(10^100)·10^12) at 12 digits is
 // refused since G57, so it has no row to pick); G39: Giac's exact and numeric answers differ.
 test("a decision at limited precision (G38)", async ({ page }) => {
@@ -64,6 +73,11 @@ test("a stored float: the result uses B, itself rounded", async ({ page }) => {
   await run(page, "\\sqrt{2}\\cdot1.0\\blacktriangleright B", 1);
   await run(page, "B+1", 2);
   expect(await picked(page)).toBe("≈ uses B, itself rounded");
+});
+
+test("the row that stores B does not use B", async ({ page }) => {
+  await run(page, "\\sqrt{2}\\cdot1.0\\blacktriangleright B", 1);
+  expect(await picked(page)).not.toContain("uses B");
 });
 
 test("the line is gone with the pick, and a result with no mark says nothing", async ({ page }) => {

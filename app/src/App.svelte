@@ -485,6 +485,7 @@
     color: var(--muted);
     white-space: nowrap;
     overflow: hidden;
+    text-overflow: ellipsis;
   }
   .rowbar button {
     flex: 1;

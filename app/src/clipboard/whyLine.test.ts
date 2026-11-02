@@ -40,6 +40,15 @@ describe("whyLine", () => {
     const names = [{ name: "B" }, { name: "C" }, { name: "D" }, { name: "E", facts: {} }, { name: "F" }];
     expect(roundedNames(names, rows, marks)).toEqual(["B", "D", "E"]);
   });
+  it("the row that stores a name does not use it; a later overwrite does not change an earlier row", () => {
+    const rows = [item({ id: 1, latex: "\\sqrt{2}+B" }), item({ id: 2, latex: "\\sqrt{2}\\cdot1.0\\blacktriangleright B" }), item({ id: 3, latex: "D:=2.5" }), item({ id: 4, latex: "1/3.0\\blacktriangleright B" })];
+    const marks = (): MarkInfo => ({ mark: "≈" });
+    const names = [{ name: "B", facts: {} }, { name: "D", facts: {} }];
+    expect(roundedNames(names, rows, marks, rows[1])).toEqual([]);
+    expect(roundedNames(names, rows, marks, rows[2])).toEqual(["B"]);
+    expect(roundedNames(names, rows, marks, rows[0])).toEqual([]); // B was stored by a later row only
+    expect(roundedNames(names, rows, marks)).toEqual(["B", "D"]);
+  });
   it("⚠ with fewer digits confirmed and an unaudited function: 9 of 12", () => {
     const i = item({ facts: facts({ reliableDigits: 9, warn: "unaudited", why: { unaudited: ["normald_icdf"] } }) });
     expect(line(i, { mark: "⚠", warn: "unaudited" })).toBe("⚠ 9 of 12 digits confirmed · normald_icdf is not checked");

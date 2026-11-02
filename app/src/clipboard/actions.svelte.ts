@@ -277,7 +277,7 @@ export class ClipActions {
   /** R36: the picked row's reason for its mark, one line; null when it has no mark. */
   rowWhy(row: HistoryItem): string | null {
     const s = this.session;
-    return whyLine(row, s.mark(row), s.settings.digits, roundedNames(s.userNames, s.items, (i) => s.mark(i)));
+    return whyLine(row, s.mark(row), s.settings.digits, roundedNames(s.userNames, s.items, (i) => s.mark(i), row));
   }
 
   /** Menu with a picked row (R13): the whole list, acting on that row; ☰ and Menu end it with Settings (R15c1), a long
