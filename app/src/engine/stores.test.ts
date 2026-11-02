@@ -11,6 +11,7 @@ import { defaultCasSettings } from "./types.ts";
 import type { DefChange } from "./defs.ts";
 import { giacAvailable, loadNodeGiac, nodeHost } from "./nodeGiac.ts";
 import { importLibrary, parseLibrary } from "./library.ts";
+import { LIBRARY_FORMAT } from "../state/libraryFormat.ts";
 import { formOf, mayStore, programStores, writesThrough } from "./stores.ts";
 import { EQ_DIFF, EQ_INEXACT_FLAG, isOurStore } from "./ourNames.ts";
 
@@ -30,9 +31,9 @@ describe.skipIf(!giacAvailable())("G100: the stores of an input, from Giac's tre
   });
 
   it("G72: N9's library file is refused (bump increments cnt, which is not local)", () => {
-    expect(() => parseLibrary(N9, bridge.parse)).toThrow(/line 5: the body assigns cnt, which is not local/);
+    expect(() => parseLibrary(N9, bridge.parse, LIBRARY_FORMAT)).toThrow(/line 5: the body assigns cnt, which is not local/);
     const drop = "// pascaline library 1\n// drops\ndrop(x):={ DelVar(cnt); return x; }\n";
-    expect(() => parseLibrary(drop, bridge.parse)).toThrow(/line 3: the body changes the engine's state \(DelVar\)/);
+    expect(() => parseLibrary(drop, bridge.parse, LIBRARY_FORMAT)).toThrow(/line 3: the body changes the engine's state \(DelVar\)/);
   });
 
   for (const [name, body] of [["bumpi", "increment(ci)"], ["bumpp", "ci++"], ["bumpe", "ci+=1"]] as const) {
@@ -57,7 +58,7 @@ describe.skipIf(!giacAvailable())("G100: the stores of an input, from Giac's tre
     expect(value("fs")).toBe("0");
     expect(setsOf(r.defs)).toEqual(["fs=fs:=(0)"]);
     home("purge(fs)");
-    expect(() => parseLibrary("// pascaline library 1\n// d\nf(x):={ f:=0; return x; }\n", bridge.parse)).toThrow(/line 3: the body assigns f, which is not local/);
+    expect(() => parseLibrary("// pascaline library 1\n// d\nf(x):={ f:=0; return x; }\n", bridge.parse, LIBRARY_FORMAT)).toThrow(/line 3: the body assigns f, which is not local/);
   });
 
   it("G66: g3(1) logs n when g3 passes g, whose body stores n, as a value (map); runs once; credited to that input", () => {
@@ -118,8 +119,8 @@ describe.skipIf(!giacAvailable())("G100: the stores of an input, from Giac's tre
 
   it("text-8 (a guard: refused on phase-1 too): a library body approx_mode(1) is refused; text-9: a string holding := is accepted", () => {
     const lib = (d: string) => `// pascaline library 1\n// d\n${d}\n`;
-    expect(() => parseLibrary(lib("f(x):={ approx_mode(1); x }"), bridge.parse)).toThrow(/the body changes the engine's state \(approx_mode\)/);
-    expect(parseLibrary(lib('f(x):={ local s; s:="a\\"b:=1"; x }'), bridge.parse).defs).toHaveLength(1);
+    expect(() => parseLibrary(lib("f(x):={ approx_mode(1); x }"), bridge.parse, LIBRARY_FORMAT)).toThrow(/the body changes the engine's state \(approx_mode\)/);
+    expect(parseLibrary(lib('f(x):={ local s; s:="a\\"b:=1"; x }'), bridge.parse, LIBRARY_FORMAT).defs).toHaveLength(1);
   });
 
   it("a for-in loop stores its variable (Giac leaves the list's last element in it): logged, refused in a library", () => {
@@ -127,7 +128,7 @@ describe.skipIf(!giacAvailable())("G100: the stores of an input, from Giac's tre
     expect(value("kq")).toBe("2");
     expect(setsOf(r.defs)).toEqual(["kq=kq:=(2)"]);
     home("purge(kq)");
-    expect(() => parseLibrary("// pascaline library 1\n// d\nf(n):={ for k in [1,2] do n; od; return n; }\n", bridge.parse)).toThrow(/assigns k, which is not local/);
+    expect(() => parseLibrary("// pascaline library 1\n// d\nf(n):={ for k in [1,2] do n; od; return n; }\n", bridge.parse, LIBRARY_FORMAT)).toThrow(/assigns k, which is not local/);
   });
 
   it("guard: expr(\"q:=5\") logs q (a head that evaluates a string keeps the full read)", () => {
@@ -139,7 +140,7 @@ describe.skipIf(!giacAvailable())("G100: the stores of an input, from Giac's tre
 
   it("an imported library's program keeps its stores on its log entry; a call to it logs nothing", () => {
     const lib = "// pascaline library 1\n// adds\nlibadd(x):={ local s; s:=x+1; return s; }\n";
-    const r = importLibrary(host, parseLibrary(lib, bridge.parse), []);
+    const r = importLibrary(host, parseLibrary(lib, bridge.parse, LIBRARY_FORMAT), []);
     expect(r.ok).toBe(true);
     const e = r.ok ? r.log.find((d) => d.name === "libadd") : undefined;
     expect(e?.stores).toEqual({ writes: [], calls: [] });

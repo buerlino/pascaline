@@ -11,6 +11,7 @@ import { loadNodeGiac } from "../../app/src/engine/nodeGiac.ts";
 import { defaultCasSettings } from "../../app/src/engine/types.ts";
 import { applyDefChanges, type DefEntry } from "../../app/src/engine/defs.ts";
 import { exportLibrary, importLibrary, parseLibrary } from "../../app/src/engine/library.ts";
+import { LIBRARY_FORMAT } from "../../app/src/state/libraryFormat.ts";
 
 const median = (xs: number[]): number => [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)]!;
 
@@ -31,7 +32,7 @@ async function replayMs(make: (i: number) => string, n: number, runs = 5): Promi
 const [cmd, arg] = process.argv.slice(2);
 if (cmd === "check") {
   const { host } = await fresh();
-  const lib = parseLibrary(readFileSync(arg!), host.parse.bind(host));
+  const lib = parseLibrary(readFileSync(arg!), host.parse.bind(host), LIBRARY_FORMAT);
   const t0 = performance.now();
   const r = importLibrary(host, lib, []);
   const ms = performance.now() - t0;
@@ -50,10 +51,10 @@ if (cmd === "check") {
   const { host } = await fresh();
   let log: DefEntry[] = [];
   for (const s of ["beam(q,L):=q*L^2/8", "A:=5", "B:=A*2", "f(x):={\n  local a;\n  a:=x^2;\n  return a+1;\n}", "assume(x>0)", "C:=evalf(sqrt(2))"]) log = applyDefChanges(log, host.cas(s, defaultCasSettings).defs);
-  const file = exportLibrary(log).text;
+  const file = exportLibrary(log, LIBRARY_FORMAT).text;
   console.log(file);
   const back = await fresh();
-  const lib = parseLibrary(file, back.host.parse.bind(back.host));
+  const lib = parseLibrary(file, back.host.parse.bind(back.host), LIBRARY_FORMAT);
   const r = importLibrary(back.host, lib, []);
   if (!r.ok) throw new Error(r.error);
   console.log("round trip:", JSON.stringify(r.plan), "values:", ["beam(2,4)", "B", "f(3)", "C"].map((s) => `${s}=${back.giac.eval(s)}`).join(" "));

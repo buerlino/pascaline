@@ -12,7 +12,7 @@ import { defaultHomeSettings, precisionFacts } from "./homeEval.ts";
 import { defaultCasSettings } from "./types.ts";
 import { markOf } from "./format.ts";
 import { giacAvailable, loadNodeGiac } from "./nodeGiac.ts";
-import { rewriteAngles } from "../input/angles.ts";
+import { rewriteAngles } from "./angles.ts";
 
 describe("converge helpers", () => {
   it("finds the calls, nested ones too, and not a name that ends in the word", () => {

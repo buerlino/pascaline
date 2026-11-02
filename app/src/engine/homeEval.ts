@@ -24,7 +24,7 @@ import { POLY_AT, POLY_AT_ANY_DEPTH, unaskedPoly } from "./polyvec.ts";
 import { listAsArguments } from "./listargs.ts";
 import { backInDegrees, needsDegrees } from "./degrees.ts";
 import { principalPowers } from "./powers.ts";
-import { dropAngleFactor, hasAngleFactor } from "../input/angles.ts";
+import { dropAngleFactor, hasAngleFactor } from "./angles.ts";
 import { decimalFromRational, decimalFromString, formatConfirmed, isZero, ZERO_VALUE, type ComplexValue, type DecimalValue, type PrecisionFacts, type PrecisionWarn, type PrecisionWhy } from "./format.ts";
 import { askedDigits, DOUBLE_DIGITS, doubleFallback, exactFacts, floatFacts, floatPathFacts, integratedFacts, hasFloat, isAudited, doubleFormsIn, unauditedIn, numericDisagrees, notBuiltin, floatsShown, heavySplit, REGROUP_MAX, shapeOfValue, endsEarly, valuePrecision, whyOf, withDigits, type ElementFacts, type Giac, type Shape } from "./numeric.ts";
 import { bracesOf, functionsIn, isError, isTimeout, LIST_TYPE, mapNumbers, matrixTyped, type Quoting, replaceLiteral, wordsOf } from "./giacPrint.ts";
@@ -71,7 +71,7 @@ export const HOME_CLOCK_S = 1.5;
 export const HOME_DEADLINE_MS = 2000;
 
 // G82's step budget, Home's default settings and the placeholder precision facts live in homeDefaults.ts (R103): the
-// app's start (calc/engine.ts, calc/fake.ts) reads them without this module's imports (input/angles.ts and the rest).
+// app's start (calc/engine.ts, calc/fake.ts) reads them without this module's imports (engine/angles.ts and the rest).
 export { defaultHomeSettings, HOME_BUDGET_STEPS, safePrecision } from "./homeDefaults.ts";
 
 /** `numeric`: a value from a numeric method (Solve, Function analysis) at work precision, rounded for display. */
@@ -254,7 +254,7 @@ export function latexShown(giac: Giac, slot: string, text: string): string {
   return hasAngleFactor(text, "printed") ? giac.eval(`latex(quote(${dropAngleFactor(text, "printed")}))`) : giac.eval(`latex(${slot})`);
 }
 
-/** R64, G46 (route R): the degree factor our parser puts in every angle (input/angles.ts): pi/180 in DEG, 1 in RAD.
+/** R64, G46 (route R): the degree factor our parser puts in every angle (engine/angles.ts): pi/180 in DEG, 1 in RAD.
  *  Giac itself always runs in radians, so every path inside it (exp, the hyperbolics, inverse trig, integration,
  *  desolve, limit, series) reads radians, the only mode each was written for (S14, docs/04 2.12). */
 export function pasdegCommand(angle: "rad" | "deg"): string {

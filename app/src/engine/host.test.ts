@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // EngineHost against the real Giac build (skipped when no build is found; see nodeGiac.ts).
-import { engineGiac, type EngineGiac } from "./nodeGiac.ts";
 import { beforeAll, describe, expect, it } from "vitest";
 import { EngineHost, REPLAY_BATCH } from "./host.ts";
 import { defaultHomeSettings, precisionFacts } from "./homeEval.ts";
 import { defaultCasSettings } from "./types.ts";
 import { applyDefChanges } from "./defs.ts";
 import { formatComplex, markOf, type FormatOptions } from "./format.ts";
-import { giacAvailable, loadNodeGiac, nodeHost } from "./nodeGiac.ts";
+import { engineGiac, giacAvailable, loadNodeGiac, nodeHost, type EngineGiac } from "./nodeGiac.ts";
 import { latexToGiac } from "../input/latex-to-giac.ts";
 import { exportLibrary } from "./library.ts";
+import { LIBRARY_FORMAT } from "../state/libraryFormat.ts";
 import { ICDF_DEFINITIONS, icdfPolished } from "./icdf.ts";
 
 describe.skipIf(!giacAvailable())("EngineHost (real Giac)", () => {
@@ -682,7 +682,7 @@ describe.skipIf(!giacAvailable())("G34, G46: a carried value keeps what it showe
     const a = host.home("A34:=exp(i*90)", deg);
     const r = host.home("R35:=sqrt(2)", deg);
     const log = [...a.defs, ...r.defs].flatMap((d) => ("set" in d ? [d.set] : []));
-    const out = exportLibrary(log);
+    const out = exportLibrary(log, LIBRARY_FORMAT);
     expect(out.text).toContain("A34:=(exp(90*i))");
     expect(out.text).toContain("R35:=(sqrt(2))");
     expect(out.skipped).toEqual([]);

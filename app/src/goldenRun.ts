@@ -9,7 +9,7 @@ import { ANS_KEY, type ChipTable } from "./input/chips.ts";
 import { chipsIn, type ChipFactsTable } from "./engine/chipFacts.ts";
 import { constTable, inexactConstsIn, type ConstTable } from "./engine/constUnc.ts";
 import { giacOfEntry } from "./input/entry.ts";
-import { rewriteAngles } from "./input/angles.ts";
+import { rewriteAngles } from "./engine/angles.ts";
 import { applyDefChanges, type DefChange } from "./engine/defs.ts";
 import { namesFlag } from "./engine/flags.ts";
 import { namesAssuming, setsAssumption } from "./engine/assumed.ts";
@@ -111,7 +111,7 @@ export interface Case {
 /**
  * G46: Giac runs in radians and the angle mode lives in the parser's text (R64, `sin(pasdeg*x)`). A case's typed Giac
  * text (`input`, `before`, `beforeHome`, `beforeCas`, step inputs, `eq`, `f`, `g`) is what the user types, so it gets
- * the parser's angle rule (input/angles.ts `rewriteAngles`) as the keys' LaTeX would; `latex` goes through the parser.
+ * the parser's angle rule (engine/angles.ts `rewriteAngles`) as the keys' LaTeX would; `latex` goes through the parser.
  */
 export function typed(c: Case): Case {
   const one = (t: string): string => rewriteAngles(t, "typed");

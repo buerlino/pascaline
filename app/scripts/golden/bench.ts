@@ -2,7 +2,7 @@
 // stage bench
 import { typed } from "../../src/goldenRun.ts";
 import { defaultCasSettings } from "../../src/engine/types.ts";
-import { hasAngleFactor } from "../../src/input/angles.ts";
+import { hasAngleFactor } from "../../src/engine/angles.ts";
 import { cases, freshHost, report } from "./lib.ts";
 
 /** A result text with a trig function in it (the CAS view draws its angle in degrees in DEG). */

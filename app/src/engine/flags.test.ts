@@ -11,6 +11,7 @@ import { contextDiff, hostContext, isFlagName, namesFlag, namesUnreadFlag } from
 import type { GiacApi } from "./host.ts";
 import type { GiacBridge } from "./bridge.ts";
 import { LibError, parseLibrary } from "./library.ts";
+import { LIBRARY_FORMAT } from "../state/libraryFormat.ts";
 import { gated } from "./ctxGate.ts";
 
 const HEAD = "// pascaline library 1\n";
@@ -28,11 +29,11 @@ describe("flag words (no engine)", () => {
 
   it.skipIf(!giacAvailable())("a library's top-level setting, or a body that calls a setter, is refused", async () => {
     const parse = (await loadNodeGiac()).bridge.parse;
-    expect(() => parseLibrary(`${HEAD}// on\napprox_mode:=1\n`, parse)).toThrow(LibError);
-    expect(() => parseLibrary(`${HEAD}// sets it\nf(x):={ approx_mode(1); return x; }\n`, parse)).toThrow(/engine's state \(approx_mode\)/);
-    expect(() => parseLibrary(`${HEAD}// hex\ng(x):={ integer_format(16); return x; }\n`, parse)).toThrow(/integer_format/);
-    expect(() => parseLibrary(`${HEAD}// eps\nh(x):=x+epsilon\n`, parse)).toThrow(/epsilon/);
-    expect(parseLibrary(`${HEAD}// plain\nk(x):=x+1\n`, parse).defs).toHaveLength(1);
+    expect(() => parseLibrary(`${HEAD}// on\napprox_mode:=1\n`, parse, LIBRARY_FORMAT)).toThrow(LibError);
+    expect(() => parseLibrary(`${HEAD}// sets it\nf(x):={ approx_mode(1); return x; }\n`, parse, LIBRARY_FORMAT)).toThrow(/engine's state \(approx_mode\)/);
+    expect(() => parseLibrary(`${HEAD}// hex\ng(x):={ integer_format(16); return x; }\n`, parse, LIBRARY_FORMAT)).toThrow(/integer_format/);
+    expect(() => parseLibrary(`${HEAD}// eps\nh(x):=x+epsilon\n`, parse, LIBRARY_FORMAT)).toThrow(/epsilon/);
+    expect(parseLibrary(`${HEAD}// plain\nk(x):=x+1\n`, parse, LIBRARY_FORMAT).defs).toHaveLength(1);
   });
 });
 

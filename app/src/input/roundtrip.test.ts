@@ -12,7 +12,7 @@ import { ENGINE_DEFINITIONS } from "../engine/homeEval.ts";
 import { eseriesDefinition } from "../engine/eseries.ts";
 import { SAMPLE_CHIPS } from "./testChips.ts";
 import { latexToGiac } from "./latex-to-giac.ts";
-import { rewriteAngles } from "./angles.ts";
+import { rewriteAngles } from "../engine/angles.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const candidates = [

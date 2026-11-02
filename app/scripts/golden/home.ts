@@ -3,7 +3,7 @@
 import { runHomeCase, typed, seqMark, markText } from "../../src/goldenRun.ts";
 import { type HomeResult } from "../../src/engine/homeEval.ts";
 import { type MarkInfo } from "../../src/engine/format.ts";
-import { dropAngleFactor } from "../../src/input/angles.ts";
+import { dropAngleFactor } from "../../src/engine/angles.ts";
 import { ROUNDS, HOME_LIMIT_MS, only, cases, median, freshHost, report, expectAt, lostAnswer } from "./lib.ts";
 
 export async function stageHome(): Promise<void> {

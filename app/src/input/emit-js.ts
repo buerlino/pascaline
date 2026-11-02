@@ -3,7 +3,7 @@
 // fully parenthesised, so the result can be compiled once with new Function and called allocation-free.
 // 1/0 gives Infinity and invalid points (sqrt(-1), ln(-1)) give NaN, which curve renderers treat as a break.
 import { parseError, parseText, type ParseKey, type ParseVars } from "../i18n/enParser.ts";
-import { ANGLE_IN, ANGLE_OUT } from "./angles.ts";
+import { ANGLE_IN, ANGLE_OUT } from "../engine/angles.ts";
 import { FN, oddIndex, oddRootExponent, type Json } from "./emit.ts";
 import { parseLatex } from "./parse.ts";
 
@@ -20,7 +20,7 @@ function num(e: Json): string | undefined {
   return undefined;
 }
 
-/** The angle sets are input/angles.ts's, through the Giac name emit.ts gives the head (one table for both emitters, G87). */
+/** The angle sets are engine/angles.ts's, through the Giac name emit.ts gives the head (one table for both emitters, G87). */
 const angleIn = (h: string, n: number): boolean => h in FN1 && ANGLE_IN[FN[h] ?? ""]?.[0] === 0 && n === 1;
 const angleOut = (h: string, n: number): boolean => h in FN1 && ANGLE_OUT.has(FN[h] ?? "") && n === 1;
 const RAD_PER_DEG = "(Math.PI/180)";
