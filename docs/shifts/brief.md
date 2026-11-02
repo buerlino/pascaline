@@ -11,7 +11,7 @@
 
 **Two lanes** (owner, 2026-10-29; decisions.md P17 and "Owner answers of 2026-10-29"): once A47a–A47c are merged, lane A (ron's UI) and lane B (the release, then the engine) run around the clock, each with its own table in section 0c, merged through one queue (A47b); until then one run at a time. ron's packages run at night too: the owner's look moves to three milestone reviews (after R87; after R86, R57, R50e; after R24d), and a package's "owner's eye" item joins the next review. Device steps and the owner's acts (a key, a tag, a phone) stay by day. The order:
 1. **Find:** R4a, R91, R15c3, R49, R87 and R4b merged (`git log --merges`); R91's before/after on the Fairphone is in [ONE-TIME.md](../../tests/core/ONE-TIME.md).
-2. **The Settings base** (owner, 2026-10-27; decisions.md "Settings in the Mode sheet, and presets"; [mockups/settings.html](../mockups/settings.html)): R85, R49, R86, R50e, R57 merged; after the units: R70, R15c4, R38a, R38b, R88, R55 merged → R59, R89; R53; R12b → R12c → R41; R36, R33 → R37, R40.
+2. **The Settings base** (owner, 2026-10-27; decisions.md "Settings in the Mode sheet, and presets"; [mockups/settings.html](../mockups/settings.html)): R85, R49, R86, R50e, R57 merged; after the units: R70, R15c4, R38a, R38b, R88, R55, R89 merged → R59; R53; R12b → R12c → R41; R36, R33 → R37, R40.
 3. **The units** (owner, 2026-10-29: right after R86, R57, R50e): R24b, R24c, R24d and G81 merged, R60, R61, R62, R63 and R71 merged → R92 (the units menu's Tools and Const tabs; its package after R61 and R63).
 4. **Lane B, to v0.1.0** (the APK and the website from one tag): A43, A48 and A50 merged, so A7 may start: A7 (signing, the owner's key made off this laptop), A49 and A45 merged, A8 (the owner's test tag); A9 with the owner's phone by day (F41); then wrong numbers by reach, C4. The bar and the days: [release-0.1.0.md](../release-0.1.0.md); from its freeze (Thu 11-12) both lanes run only its fixes.
 5. **Every morning:** the owner's check (MORNING.md, on the night's device when the night had one, about 10 minutes). The day session writes each failed step as a backlog bug line on phase-1 and logs one line in `.coord/log.md`: `- HH:MM morning <date>: clean` or `- HH:MM morning <date>: fails <ids>`.
@@ -55,13 +55,11 @@ Tonight's queue (one lane, to 07:00) comes first, then each lane's table; With t
 `ANDROID_SERIAL=HA24BZ2Y` for both lanes, `--until 05:30` (the closing pass and the report take 1.5 to 2 h more); CORE DEVICE after each pass. Not the weekly extreme night: row 408 waits. A step whose "After" is not merged is skipped; "–" was checked against the merges on 2026-11-01. The FIX lines of Opus passes 42 and 43 ran first (G154f1, R15c4f1 and R63f2 merged). The owner is away: follow each Opus pass as written (rule 3).
 
 ### Lane A queue (ron's UI)
-Milestone reviews (section 0): after R50e; after R24d (with R108's gallery group "Decimal comma in apps").
+Milestone reviews (section 0): after R50e; after R24d (with R108's gallery group "Decimal comma in apps"; R89 on the Fairphone: save two presets with different free keys and switch; R111's note at 360 px).
 
 | Step | What | Agent, model | Branch | After |
 |---|---|---|---|---|
-| 341 | [R111](packages/R111.md) the second tab's note shows that nothing is kept | ron, Sonnet | `p1/ron-writernote` | – |
 | 342 | [R110](packages/R110.md) a `%` key, row 4 of the Shift + 9 palette | ron, Sonnet | `p1/ron-percentkey` | R103 |
-| 335 | [R89](packages/R89.md) presets in Mode | ron, Opus | `p1/ron-presets` | – |
 | 336 | [R33](packages/R33.md) names with a value, marked on the line | ron, Sonnet | `p1/ron-m4a-namemarks` | – |
 | 337 | [R36](packages/R36.md) a picked row says why it has its mark | ron, Sonnet | `p1/ron-m4a-why` | – |
 | 343 | [R96](packages/R96.md) Settings › Data tells whether the data is kept | ron, Opus | `p1/ron-storehealth` | – |
