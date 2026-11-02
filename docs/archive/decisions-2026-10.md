@@ -5,6 +5,10 @@ History only: read it when a decision is questioned. What still binds is in [../
 
 ## Decided proposals moved here later
 
+### Shortened 2026-11-02 (day session) to make room for the owner's answers of 2026-11-02, as it stood
+From "Feel, keys and screen":
+- **Owner answers of 2026-10-31 and 2026-11-01, stored data, the comma and `%` (night review fh-2, vr-13, vg-8).** Web: one writer per browser profile (Web Locks); a second tab computes but stores nothing until "Use here", which reloads it; its note's visible line is "Nothing done in this tab is kept" (R95, 11-01). In comma mode a stored input's argument commas are drawn as `;` (display only; L6 stays; R100). An older build that keeps newer stored data in memory says so once as a history line, as G19's (R94, 11-01: the status line has no text slot). `%` gets a key (R104, 11-01; built by R110: docs/06). Would change if: two tabs side by side are wanted on purpose.
+
 ### Shortened 2026-11-01 (Opus pass 43) to make room for R55's and R63's defaults, as they stood
 From "Pipeline and process":
 - **Owner answers of 2026-10-31, evening.** A53's diff stage stays (trigger ten minutes); a kill run skips the golden gate (A52f1, built 2d34033); a worker's measurement holds host-cpu at most 10 min at a time (A58); the Opus pass takes integ only for its docs commit (A57, by day; P17's text changes with it); sem in Find (G155, fh-11); fh-7 waits for the unit view in use.
