@@ -16,6 +16,9 @@ export class EntryController {
   private onField: typeof import("./field.ts").runOnField | undefined;
   /** Backspace, Delete and the printable keys of a hardware keyboard (entry/hwkeys.ts, R26b, R31): loaded with MathLive. */
   private hwKey: typeof import("./hwkeys.ts").hardwareKey | undefined;
+  /** R33: the stored names drawn in their colour (entry/namemarks.ts), made with the field. */
+  private marks: { setNames(names: string[]): void } | undefined;
+  private stored: string[] = [];
   private pendingValue: string | undefined;
   /** R34: the line was set or cleared before the field was up, so a line kept from before a kill no longer applies. */
   private keptStale = false;
@@ -81,6 +84,7 @@ export class EntryController {
       escape: (repeat) => this.onEscape(repeat),
     });
     this.mf = mf;
+    void import("./namemarks.ts").then((n) => (this.marks = new n.NameMarks(mf)).setNames(this.stored));
     if (this.pendingValue !== undefined) mf.value = this.pendingValue;
     this.pendingValue = undefined;
     // Replay the queued keys one by one through the same path as a live keypress. Keys that arrive while
@@ -90,6 +94,11 @@ export class EntryController {
     while (this.queue.length > 0) this.run(this.queue.shift() as ActionBody);
     // what MathLive edits itself (a paste, a character outside ASCII); a set of the value is silent
     mf.addEventListener("input", () => (this.touched = true));
+  }
+
+  /** R33: the names that hold a value (session.userNames); only a single letter is drawn in the stored-name colour. */
+  setNames(names: readonly { name: string }[]): void {
+    this.marks?.setNames((this.stored = names.map((n) => n.name)));
   }
 
   /** The field itself (undefined until MathLive has loaded). */
