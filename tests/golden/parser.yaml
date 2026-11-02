@@ -639,6 +639,8 @@ cases:
   - { id: "pal-arrow-01", latex: "x\\rightarrow x^2", expect: "(x)->x^2", source: "derived", group: "palettes" }
   - { id: "pal-arrow-02", latex: "\\left(x,y\\right)\\rightarrow x+y", expect: "(x,y)->x+y", source: "derived", group: "palettes" }
   - { id: "pal-arrow-03", latex: "2\\rightarrow x", error: true, source: "derived", group: "palettes", note: "a number is not a variable" }
+  - { id: "pal-pct-01", latex: "5\\%", expect: "1/20", source: "derived", group: "palettes", note: "R110: the % cell of Shift + 9 inserts \\%; 5 % is 5/100" }
+  - { id: "pal-pct-02", latex: "50\\%\\times200", expect: "100", source: "derived", group: "palettes", note: "R110: 1/2 of 200" }
   - { id: "pal-deg-01", latex: "30\\degree", expect: "pi/6", source: "derived", group: "palettes", note: "R10's degree rule: degrees in every angle mode" }
   - { id: "pal-deg-02", latex: "30\\degree15\\prime", expect: "121*pi/720", source: "derived", group: "palettes", note: "30.25 degrees" }
   - { id: "pal-deg-03", latex: "30\\degree36\\doubleprime", expect: "3001*pi/18000", source: "derived", group: "palettes", note: "30.01 degrees" }

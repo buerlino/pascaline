@@ -288,6 +288,44 @@ describe("Sheet: grid", () => {
     expect(s.left()).toBe(true); // ◀ moves, it does not close the sheet
     expect(s.level.highlight).toBe(17);
   });
+  it("R110: a short last row (Shift + 9: 24 cells and % under the first column): ▼ from the row above reaches it, ▲ goes back to the column it came from, nothing is unreachable", () => {
+    const sym = (): MenuItem[] => Array.from({ length: 25 }, (_, i) => item(`c${i}`));
+    const s = new Sheet("sym", "Symbols", sym, { columns: 8 });
+    const at = (n: number): number => (s.level.highlight = n);
+    at(16 + 5); // row 2, column 5
+    s.level.move(1);
+    expect(s.level.highlight).toBe(24); // the short row's only cell
+    s.level.move(-1);
+    expect(s.level.highlight).toBe(21); // back to row 2, column 5
+    at(24);
+    s.level.move(-1);
+    expect(s.level.highlight).toBe(16); // no memory (placed by hand): the cell above
+    at(16);
+    s.level.move(1);
+    expect(s.level.highlight).toBe(24);
+    s.level.move(1);
+    expect(s.level.highlight).toBe(0); // round the column
+    s.level.move(-1);
+    expect(s.level.highlight).toBe(24);
+    at(3);
+    s.level.move(-1); // the top of column 3 wraps to its last cell, row 2
+    expect(s.level.highlight).toBe(19);
+    // every cell can be reached with the arrows
+    const seen = new Set<number>([0]);
+    const todo = [0];
+    while (todo.length) {
+      const h = todo.pop() as number;
+      for (const f of [() => s.level.move(1), () => s.level.move(-1), () => s.level.step(1), () => s.level.step(-1)]) {
+        at(h);
+        f();
+        if (!seen.has(s.level.highlight)) {
+          seen.add(s.level.highlight);
+          todo.push(s.level.highlight);
+        }
+      }
+    }
+    expect(seen.size).toBe(25);
+  });
   it("digits do nothing, letters do not filter, Enter picks and the pick is remembered", () => {
     const s = new Sheet("tmpl", "Templates", cells, { columns: 6 });
     expect(s.level.filterable).toBe(false);

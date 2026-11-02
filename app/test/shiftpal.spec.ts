@@ -5,7 +5,7 @@
 // Every cell is picked here by key or by tap and evaluated; the entry strings are what MathLive writes (the parser
 // cases of tests/golden/parser.yaml group "palettes" use them). Expected values derived by hand.
 import { expect, test, type Page } from "@playwright/test";
-import { entryValue, open, tap } from "./helpers.ts";
+import { entryValue, flick, open, tap } from "./helpers.ts";
 
 test.beforeEach(async ({ page }) => {
   await open(page, "");
@@ -118,9 +118,9 @@ test("Shift + 6 by tap: every cell, between 2 and 3", async ({ page }) => {
   }
 });
 
-test("Shift + 9: the 8 × 3 grid has no key labels; digits do nothing; arrows, Enter; the last pick; Esc closes", async ({ page }) => {
+test("Shift + 9: the 8 × 3 grid (and the % of R110) has no key labels; digits do nothing; arrows, Enter; the last pick; Esc closes", async ({ page }) => {
   await tap(page, ["shift", "d9"]);
-  await expect(sheet(page).locator('[role="menuitem"]')).toHaveCount(24);
+  await expect(sheet(page).locator('[role="menuitem"]')).toHaveCount(25);
   await expect(page.getByTestId("sheet-title")).toHaveText("Symbols and Greek");
   await expect(sheet(page).getByTestId("cell-key")).toHaveCount(0);
   await expect(active(page)).toHaveAttribute("data-id", "fact");
@@ -148,7 +148,7 @@ test("Shift + 9 by tap: every cell inserts its symbol, in math mode (a digit typ
     ["second", "\\doubleprime"], ["amp", "\\&"], ["aring", "\\AA"], ["alpha", "\\alpha"], ["beta", "\\beta"],
     ["gamma", "\\gamma"], ["Delta", "\\Delta"], ["delta", "\\delta"], ["epsilon", "\\varepsilon"], ["theta", "\\theta"],
     ["lambda", "\\lambda"], ["mu", "\\mu"], ["rho", "\\rho"], ["Sigma", "\\Sigma"], ["sigma", "\\sigma"], ["tau", "\\tau"],
-    ["phi", "\\varphi"], ["chi", "\\chi"], ["Omega", "\\Omega"],
+    ["phi", "\\varphi"], ["chi", "\\chi"], ["Omega", "\\Omega"], ["percent", "\\%"],
   ];
   for (const [id, latex] of cells) {
     await tap(page, ["esc"]);
@@ -156,6 +156,41 @@ test("Shift + 9 by tap: every cell inserts its symbol, in math mode (a digit typ
     await tap(page, ["d3"]);
     expect(await entryValue(page), id).toBe(`${latex}3`);
   }
+});
+
+// R110: % is a fourth row of ours, under the first column; ▼ from any cell of row 3 reaches it, ▲ goes back to that column
+test("Shift + 9: ▼ from row 3 reaches %, ▲ comes back to the column it left; ▼ again wraps; no cell is unreachable", async ({ page }) => {
+  await tap(page, ["shift", "d9", "down", "down", "right", "right", "right", "right", "right", "right"]);
+  await expect(active(page)).toHaveAttribute("data-id", "chi"); // row 3, column 7
+  await tap(page, ["down"]);
+  await expect(active(page)).toHaveAttribute("data-id", "percent");
+  await expect(page.getByTestId("sheet-hint")).toHaveText("Percent %");
+  await tap(page, ["up"]);
+  await expect(active(page)).toHaveAttribute("data-id", "chi");
+  await tap(page, ["left", "left", "left", "left", "left", "left", "up", "up", "up"]); // mu, then up to the top, then round the column
+  await expect(active(page)).toHaveAttribute("data-id", "percent");
+  await tap(page, ["down"]);
+  await expect(active(page)).toHaveAttribute("data-id", "fact"); // round the column
+  await tap(page, ["left"]);
+  await expect(active(page)).toHaveAttribute("data-id", "percent"); // ◀ from the first cell wraps to the last
+});
+
+test("Shift + 9 %: 5% is 0.05; 250 ± 0.4 % in the unit view with a kPa slot is σ = 1 kPa (R104)", async ({ page }) => {
+  await tap(page, ["d5"]);
+  await tapCell(page, "d9", "percent");
+  expect(await entryValue(page)).toBe("5\\%");
+  await tap(page, ["enter"]);
+  await expect(lastResult(page)).toHaveAttribute("data-text", "0.05"); // Home shows the decimal (the parser reads 1/20)
+  await tap(page, ["d2", "d5", "d0", "shift", "comma", "d0", "dot", "d4", "shift", "d9", "enter"]); // Shift + 9 opens on the last pick, %
+  await expect(sheet(page)).toBeHidden();
+  expect(await entryValue(page)).toBe("250\\pm0.4\\%");
+  await flick(page, "tmpl", "up");
+  await page.waitForFunction(() => window.pascaline.unitView !== undefined && document.querySelector('[data-pad="unit"]') !== null);
+  await tap(page, ["d4", "add"]); // k, Pa
+  await flick(page, "enter", "up");
+  const result = page.getByTestId("unit-result");
+  await expect(result).toContainText("250");
+  await expect(result).toContainText("± 1");
 });
 
 test("Shift + 9 values: 5! = 120; ∞; 30° is 30 in DEG; sin(30°) = 0.5 in RAD; 30°15′36″ = 30.26 in DEG", async ({ page }) => {
