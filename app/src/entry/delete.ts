@@ -13,7 +13,7 @@ import {
   type Box,
   type BoxTemplate,
   PLACEHOLDER,
-  NAME,
+  isName,
   LETTERS,
   MARK,
   LOG_BASE,
@@ -83,7 +83,7 @@ export function deleteAtTemplate(mf: Field, dir: -1 | 1): boolean {
  * already point 5's step into the body (`stepIn`).
  */
 function nameGap(mf: Field, c: number): number | undefined {
-  if (c < 1 || !NAME.test(latexAt(mf, c))) return undefined;
+  if (c < 1 || !isName(latexAt(mf, c))) return undefined;
   const d = depthAt(mf, c);
   let q = c + 1;
   while (q <= mf.lastOffset && depthAt(mf, q) > d) q++;
@@ -140,7 +140,7 @@ function stepIn(mf: Field, c: number, dir: -1 | 1): boolean {
     else {
       const name = latexAt(mf, p);
       // the name must own no box: no parts, or only its letters
-      if (!NAME.test(name) || (p !== c + 1 && !LETTERS.test(name))) return false;
+      if (!isName(name) || (p !== c + 1 && !LETTERS.test(name))) return false;
       q = p + 1;
       while (q <= mf.lastOffset && depthAt(mf, q) > d) q++;
       if (q > mf.lastOffset || !isPair(mf, q) || atomStart(mf, q) !== p) return false;
@@ -181,6 +181,8 @@ function keepBox(mf: Field, c: number, dir: -1 | 1): boolean {
 // the owner 2026-10-15); a press that would empty the base leaves □;
 // ⌫ in an empty base removes the power when its exponent is empty or the key's own (x², x⁻¹) and selects it first
 // when the exponent holds typed content. The bases of eˣ and 10ˣ are the key's own marks and go with the exponent.
+// A typed subscript (`x_1`, Shift + ␣ then 1; R117, bu-10) is kept the same way, as a script with typed content: rule 6
+// says "an exponent or a typed subscript stays on its base". evaluate-at's subscript is deleteAtBoxes'.
 
 /** One power: its base and exponent, as offsets. */
 interface Power {
@@ -194,7 +196,8 @@ interface Power {
   x: "empty" | "own" | "typed";
 }
 
-const isSup = (mf: Field, o: number): boolean => latexAt(mf, o).startsWith("^");
+/** An exponent or a typed subscript (R117: `x_1`, L1's names; MathLive keeps `_…` as it keeps `^…`). */
+const isScript = (mf: Field, o: number): boolean => /^[_^]/.test(latexAt(mf, o));
 
 /** The power whose exponent atom is at `q`, or undefined when it has no base (the line or a box starts there). */
 function powerAt(mf: Field, q: number): Power | undefined {
@@ -203,12 +206,15 @@ function powerAt(mf: Field, q: number): Power | undefined {
   if (b === 0 || depthAt(mf, b) !== d) return undefined;
   const bl = latexAt(mf, b);
   if (bl === "" || bl.startsWith("^") || bl.startsWith("_")) return undefined; // a box's start, or a script on a script
+  // a subscript on a pair is evaluate-at's bounds (deleteAtBoxes); only an exponent has a key's own base or exponent
+  const sup = latexAt(mf, q).startsWith("^");
+  if (!sup && isPair(mf, b)) return undefined;
   let start = atomStart(mf, b);
   let kind: Power["kind"] = "typed";
   if (bl === PLACEHOLDER) kind = "empty";
   else if (isPair(mf, b)) kind = "pair";
-  else if (bl === "\\exponentialE") kind = "mark";
-  else if (bl === "0" && start === b - 1 && b - 1 > 0 && latexAt(mf, b - 1) === "1" && depthAt(mf, b - 1) === d) {
+  else if (sup && bl === "\\exponentialE") kind = "mark";
+  else if (sup && bl === "0" && start === b - 1 && b - 1 > 0 && latexAt(mf, b - 1) === "1" && depthAt(mf, b - 1) === d) {
     // 10ˣ, unless a digit stands before the 10: after one the key puts ×10^□ (R27a), so 110² is a typed power of 110
     const n = b - 2;
     if (n === 0 || depthAt(mf, n) !== d || !isNumberPart(latexAt(mf, n))) {
@@ -217,7 +223,7 @@ function powerAt(mf: Field, q: number): Power | undefined {
     }
   }
   const xl = mf.getValue(b + 1, q - 1, "latex");
-  const x = xl === "" || xl === PLACEHOLDER ? "empty" : kind !== "mark" && /^(?:2|-1|\{-1\})$/.test(xl) ? "own" : "typed";
+  const x = xl === "" || xl === PLACEHOLDER ? "empty" : sup && kind !== "mark" && /^(?:2|-1|\{-1\})$/.test(xl) ? "own" : "typed";
   return { start, base: b, q, kind, x };
 }
 
@@ -227,7 +233,7 @@ function powerOfBase(mf: Field, b: number): Power | undefined {
   const d = depthAt(mf, b);
   let q = b + 1;
   while (q <= mf.lastOffset && depthAt(mf, q) > d) q++;
-  if (q > mf.lastOffset || depthAt(mf, q) !== d || !isSup(mf, q) || atomStart(mf, q) !== b) return undefined;
+  if (q > mf.lastOffset || depthAt(mf, q) !== d || !isScript(mf, q) || atomStart(mf, q) !== b) return undefined;
   const p = powerAt(mf, q);
   return p?.base === b ? p : undefined;
 }
@@ -238,7 +244,7 @@ function powerOfBox(mf: Field, s: number): Power | undefined {
   if (d === 0 || latexAt(mf, s) !== "") return undefined;
   let q = s + 1;
   while (q <= mf.lastOffset && depthAt(mf, q) >= d) q++;
-  if (q > mf.lastOffset || !isSup(mf, q) || atomStart(mf, q) + 1 !== s) return undefined;
+  if (q > mf.lastOffset || !isScript(mf, q) || atomStart(mf, q) + 1 !== s) return undefined;
   return powerAt(mf, q);
 }
 
@@ -271,7 +277,7 @@ function deleteAtPower(mf: Field, c: number, dir: -1 | 1): boolean {
     return true;
   }
   // the exponent atom: ⌫ right after the power, or Del at the end of its exponent
-  if (!sel && isSup(mf, t)) {
+  if (!sel && isScript(mf, t)) {
     const p = powerAt(mf, t);
     if (!p) return false;
     if (dir < 0) toExponent(mf, p, "end");
@@ -539,7 +545,7 @@ function fromStart(mf: Field, c: number): Template | undefined {
   if (isPair(mf, p)) return template(mf, p);
   // the first box of the name's scripts
   const name = latexAt(mf, p);
-  if (!NAME.test(name) || LETTERS.test(name)) return undefined;
+  if (!isName(name) || LETTERS.test(name)) return undefined;
   let q = p + 1;
   while (q <= mf.lastOffset && depthAt(mf, q) > depthAt(mf, p)) q++;
   if (q > mf.lastOffset || !isPair(mf, q) || atomStart(mf, q) !== p) return undefined;
@@ -570,7 +576,7 @@ function template(mf: Field, q: number): Template {
   let start = ps;
   let othersEmpty = true;
   const name = ps > 0 && depthAt(mf, ps) === de ? latexAt(mf, ps) : "";
-  const named = NAME.test(name);
+  const named = isName(name);
   if (named) {
     start = atomStart(mf, ps);
     if (!LETTERS.test(name)) othersEmpty = empty(mf, start + 1, ps - 1);

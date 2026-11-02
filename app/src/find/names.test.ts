@@ -27,7 +27,7 @@ describe("live items", () => {
   it("a variable inserts its name as the keys type it, a function a call with the cursor in the argument", () => {
     expect(liveItem(name("A", "var", "5", 0))).toMatchObject({ id: "var:A", kind: "var", insert: "A", names: ["A"], desc: "5" });
     expect(liveItem(name("b_1", "var", "7", 0)).insert).toBe("b_{1}");
-    expect(liveItem(name("p", "fn", "", 0))).toMatchObject({ id: "userfn:p", kind: "userfn", insert: "p\\left(#0\\right)" });
+    expect(liveItem(name("p", "fn", "", 0))).toMatchObject({ id: "userfn:p", kind: "userfn", insert: "\\operatorname{p}\\left(#0\\right)" });
     expect(liveItem(name("area", "fn", "", 0)).insert).toBe("\\operatorname{area}\\left(#0\\right)");
   });
 });

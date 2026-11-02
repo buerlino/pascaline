@@ -716,7 +716,9 @@ class Parser implements CalcParser {
           if (args.length !== logic.args) throw parseError("parse.logicTakes", { text, count: logic.args === 1 ? "one argument" : `${logic.args} arguments` });
           return [logic.head, ...args];
         }
-        if (text in ABS_LIKE || NAMED_FUNCS.has(text) || text.length > 1) {
+        // a name of one letter too: Vars inserts a user function as `\operatorname{p}\left(…\right)`, the call form
+        // whatever its length (R117), so the box model keeps the name with its pair
+        if (text in ABS_LIKE || NAMED_FUNCS.has(text) || text.length > 0) {
           if (this.peek()?.t === "open" && (this.peek() as Tok).v === "(") {
             this.pos++;
             const args = this.list(")");

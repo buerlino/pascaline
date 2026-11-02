@@ -375,6 +375,8 @@ cases:
   - { id: "functions-13", latex: "f\\left(g\\left(x\\right)\\right)", expect: "f(g(x))", source: "derived", group: "functions" }
   - { id: "functions-14", latex: "\\operatorname{mod}\\left(7,3\\right)", expect: "1", source: "derived", group: "functions" }
   - { id: "functions-15", latex: "\\operatorname{mod}\\left(-7,3\\right)", expect: "2", source: "derived", group: "functions", note: "Find states the remainder is never negative (fn:irem); -7 = -3*3 + 2" }
+  - { id: "functions-16", latex: "\\operatorname{f}\\left(x+1\\right)", expect: "f(x+1)", source: "derived", group: "functions", note: "R117: Vars inserts a one-letter user function in the call form a longer name has" }
+  - { id: "functions-17", latex: "\\operatorname{\\mathrm{f}}\\left(x\\right)", expect: "f(x)", source: "derived", group: "functions", note: "R117: the same call as MathLive writes it back" }
   # --- decimals
   - { id: "decimals-01", latex: "1.5", expect: "3/2", source: "derived", group: "decimals" }
   - { id: "decimals-02", latex: "0.1+0.2", expect: "3/10", source: "derived", group: "decimals" }

@@ -77,7 +77,7 @@ test.describe("Vars", () => {
     await expect(rows(page).first()).toHaveAttribute("data-id", "var:A");
     await tap(page, ["bksp", "d1"]); // empty again: 1 picks the first row, the function p
     await expect(find(page)).toBeHidden();
-    expect(await entryValue(page)).toBe("p\\left(\\placeholder{}\\right)");
+    expect(await entryValue(page)).toBe("\\operatorname{\\mathrm{p}}\\left(\\placeholder{}\\right)"); // the call form (R117)
   });
 
   test("by touch: a tap on a row inserts the name", async ({ page }) => {
