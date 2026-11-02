@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// G85 (structured bridge spike, docs/research/structure-hindsight.md 2.1): typed wrappers for the four JSON exports of
+// G85 (structured bridge spike, docs/archive/structure-hindsight.md 2.1): typed wrappers for the four JSON exports of
 // engine/giac/wasm/api.cc. G99: the host reads names through them, so a module without the exports fails at load
 // (bridgeOf throws NO_BRIDGE); each export is wrapped on its first call.
-// Plain TypeScript with only erasable syntax, so Node runs this file directly (tools/probes/bridge.ts).
+// Plain TypeScript with only erasable syntax, so Node runs this file directly (G85's probe, deleted in G144, is described in docs/archive/structure-hindsight.md 2.1).
 
 /** bridge-1: caseval's context. angle_mode: 0 rad, 1 deg, 2 grad (angle_radian is its rad flag). */
 export interface GiacContext {
