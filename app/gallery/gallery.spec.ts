@@ -471,10 +471,20 @@ const shots: Shot[] = [
   {
     id: "home-symbols",
     group: "Home",
-    title: "Shift + 9 palette (R18): symbols and Greek, 8 × 3, over the keypad",
+    title: "Shift + 9 palette (R18, R110): symbols and Greek, 8 × 3, and % in a fourth row (ours), over the keypad",
     setup: async (p) => {
       await someHistory(p);
-      await tap(p, ["shift", "d9", "down", "right"]);
+      await tap(p, ["shift", "d9", "down", "down", "down"]);
+    },
+  },
+  {
+    id: "home-symbols-small",
+    group: "Small phone (360 × 740)",
+    title: "Shift + 9 palette with the % row (R110), no scroll",
+    viewport: { width: 360, height: 740 },
+    setup: async (p) => {
+      await someHistory(p);
+      await tap(p, ["shift", "d9", "down", "down", "down"]);
     },
   },
   // ---- CAS
