@@ -9,7 +9,7 @@ import { valuePrecision } from "./numeric.ts";
 import { splitList } from "./giacPrint.ts";
 import { defaultSolveSettings, negZero, num, solve1, type SolveSettings } from "./solve1.ts";
 import { IDENT, type KnownValue, type SolveOutcome, type SolveRequest } from "./types.ts";
-import { PASDEG } from "../input/angles.ts";
+import { PASDEG } from "./angles.ts";
 
 /** Giac's own interrupt for one call inside Solve and Function analysis: a safety net only; the
  *  solvers keep their own budgets and the user has Cancel. */

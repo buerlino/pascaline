@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // R64 (route R): the degree mode in the parser's text. Expected texts are the rule itself (derived): an angle argument
-// times pasdeg, an angle result over pasdeg (input/angles.ts); values are checked on the engine in roundtrip.test.ts.
+// times pasdeg, an angle result over pasdeg (engine/angles.ts); values are checked on the engine in roundtrip.test.ts.
 import { describe, expect, it } from "vitest";
-import { latexToGiac } from "./latex-to-giac.ts";
+import { latexToGiac } from "../input/latex-to-giac.ts";
 import { dropAngleFactor, rewriteAngles } from "./angles.ts";
 import { withAngles } from "../units/evaluate.ts";
 

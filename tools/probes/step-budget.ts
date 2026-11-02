@@ -15,7 +15,7 @@ import { createRequire } from "node:module";
 import { EngineHost } from "../../app/src/engine/host.ts";
 import { loadNodeGiac } from "../../app/src/engine/nodeGiac.ts";
 import { defaultHomeSettings, HOME_CLOCK_S, pasdegCommand, type HomeSettings } from "../../app/src/engine/homeEval.ts";
-import { rewriteAngles } from "../../app/src/input/angles.ts";
+import { rewriteAngles } from "../../app/src/engine/angles.ts";
 
 interface Input {
   input: string;

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Probe (S14): the angle mode on every Giac path. Since G46 the app runs route R itself (Giac always in radians; the
 // degree mode lives in the text the parser emits, `sin(pasdeg*(u))`, `(asin(u)/pasdeg)`, with pasdeg = pi/180 in DEG
-// and 1 in RAD). Route "a" is the app's own rule (input/angles.ts), route "b" S14's prototype rewrite (`rewriteAngles`
+// and 1 in RAD). Route "a" is the app's own rule (engine/angles.ts), route "b" S14's prototype rewrite (`rewriteAngles`
 // below): both should be right on every row. Before G46, route "a" was Giac's global angle_radian plus pasexp.
 //   node tools/probes/angle-matrix.ts               # the matrix: every case of the deep check D4–D8, D12 and the check's 1–4
 //   node tools/probes/angle-matrix.ts --golden      # every golden input, today and rewritten: the cases whose result changes
@@ -29,7 +29,7 @@ import { buildJob } from "../../app/src/units/build.ts";
 import { factorTable } from "../../app/src/units/factors.ts";
 import { isUnitError, type Quantity, type UnitError, type UnitJob } from "../../app/src/units/types.ts";
 import { requestOf } from "../../app/scripts/unit-case.ts";
-import { rewriteAngles as appAngles } from "../../app/src/input/angles.ts";
+import { rewriteAngles as appAngles } from "../../app/src/engine/angles.ts";
 import type { IndexItem } from "../../app/src/find/types.ts";
 
 const root = fileURLToPath(new URL("../../", import.meta.url));
@@ -71,7 +71,7 @@ function closing(s: string, open: number): number {
  * change: Giac in radians reads it as pi/180 in every mode.
  */
 export function rewriteAngles(text: string, opts: { trig?: boolean } = {}): string {
-  // R64: the parser's text carries pasdeg already (app/src/input/angles.ts); never apply the factor twice
+  // R64: the parser's text carries pasdeg already (app/src/engine/angles.ts); never apply the factor twice
   if (/(?<![A-Za-z0-9_])pasdeg(?![A-Za-z0-9_])/.test(text)) return text;
   const trig = opts.trig !== false;
   let out = "";

@@ -23,7 +23,9 @@ const { dir, mjs, casTimeoutS } = workerData as { dir: string; mjs: string; casT
 const src = resolve(dir, "app/src");
 const imp = (f: string): Promise<Mod> => import(pathToFileURL(`${src}/${f}`).href) as Promise<Mod>;
 const [hostM, home, fmt, types, node] = await Promise.all([imp("engine/host.ts"), imp("engine/homeEval.ts"), imp("engine/format.ts"), imp("engine/types.ts"), imp("engine/nodeGiac.ts")]);
-const angles = existsSync(`${src}/input/angles.ts`) ? await imp("input/angles.ts") : null;
+// G147: engine/angles.ts since the move; an older tree has it in input/
+const anglesFile = existsSync(`${src}/engine/angles.ts`) ? "engine/angles.ts" : "input/angles.ts";
+const angles = existsSync(`${src}/${anglesFile}`) ? await imp(anglesFile) : null;
 
 const markText = (f: unknown, digits: number): string => {
   try {

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Home's defaults (R103): what the app's start reads of engine/homeEval.ts, without its imports, so the start chunk
-// does not hold homeEval's graph (input/angles.ts, the numeric checks) for the lazy chunks. homeEval re-exports them.
+// does not hold homeEval's graph (engine/angles.ts, the numeric checks) for the lazy chunks. homeEval re-exports them.
 import type { HomeResult, HomeSettings } from "./homeEval.ts";
 
 /** G82: Home's step budget, the count of Giac's checks that equals today's 300 ms on the desktop (with a margin;

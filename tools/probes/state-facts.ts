@@ -33,7 +33,7 @@ import { CHIP_PREFIX } from "../../app/src/engine/ourNames.ts";
 import { chipCommand, chipNameFacts, chipsIn, withChipValues, type ChipFactsTable } from "../../app/src/engine/chipFacts.ts";
 import { inexactConstsIn, type ConstTable } from "../../app/src/engine/constUnc.ts";
 import type { NameFacts } from "../../app/src/engine/defs.ts";
-import { rewriteAngles } from "../../app/src/input/angles.ts";
+import { rewriteAngles } from "../../app/src/engine/angles.ts";
 
 /** The fields of a one-line flow case (`- { id: "…", steps: [ … ], … }`, as home.yaml, precision.yaml and corpus.yaml
  *  write them); no yaml package needed, so the probe runs in a worktree without app/node_modules. */

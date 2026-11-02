@@ -2,10 +2,10 @@
 // R64 (route R, decisions "S14"): the angle mode lives in the text our parser emits. Every command the user types that
 // takes an angle gets its angle times `pasdeg`, and every one that returns an angle gets its result over `pasdeg`;
 // the engine host sets `pasdeg` (Giac always runs in radians, G46: π/180 in DEG, 1 in RAD). The emitter (emit.ts) and
-// the rewrite of Giac text below (the library import, G46's migration) share these tables. Giac text is read through
-// engine/giacPrint.ts (G105: one string skip, one bracket walk, one name pattern), which has no imports of its own, so
-// the engine side may use this file too.
-import { closing, firstNameIn, isNameChar, leadingName, mapNames, mapNumbers, names, opening, type Quoting, stringEnd, topLevelArgs, withoutStrings } from "../engine/giacPrint.ts";
+// the rewrite of Giac text below (the library import, G46's migration) share these tables. It lives in engine/ (G147: the
+// import direction is input/ -> engine/ only); Giac text is read through giacPrint.ts (G105: one string skip, one bracket
+// walk, one name pattern).
+import { closing, firstNameIn, isNameChar, leadingName, mapNames, mapNumbers, names, opening, type Quoting, stringEnd, topLevelArgs, withoutStrings } from "./giacPrint.ts";
 import { PASDEG } from "./pasdeg.ts";
 
 export { PASDEG };

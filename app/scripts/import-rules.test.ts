@@ -1,0 +1,104 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+import { describe, expect, it } from "vitest";
+import { readdirSync, readFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import { checkDirection, checkImportDirection, ENGINE_EXCEPTIONS, importsOf, startReach } from "./import-rules.ts";
+
+const app = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const exceptionSources = (): Record<string, string> =>
+  Object.fromEntries([...new Set(Object.keys(ENGINE_EXCEPTIONS).flatMap((k) => k.split(" -> ")))].map((f) => [f, ""]));
+/** Fixture sources holding every named exception's edge (so none reads as stale), plus `extra`. */
+function tree(extra: Record<string, string>): Record<string, string> {
+  const s = exceptionSources();
+  for (const [k] of Object.entries(ENGINE_EXCEPTIONS)) {
+    const [from, to] = k.split(" -> ") as [string, string];
+    const rel = (to.startsWith("src/units/") ? "../units/" : "./") + to.split("/").pop();
+    s[from] = `${s[from] ?? ""}import { x } from "${rel}";\n`;
+  }
+  for (const [k, v] of Object.entries(extra)) s[k] = k === "src/main.ts" ? v : `${s[k] ?? ""}${v}`;
+  return { "src/main.ts": "", ...s };
+}
+
+describe("importsOf (G147)", () => {
+  it("reads imports, re-exports, bare imports and type imports, not dynamic ones or comments", () => {
+    const src = [
+      'import { a } from "./a.ts";',
+      'import type { B } from "./b.ts";',
+      'export * from "./c.ts";',
+      'export { d } from "./d.ts";',
+      'import "./e.ts";',
+      "import {",
+      "  f,",
+      '} from "./f.ts";',
+      'const g = import("./g.ts");',
+      ' * import { h } from "./h.ts";',
+      '// import { i } from "./i.ts";',
+    ].join("\n");
+    expect(importsOf(src).map((i) => [i.spec, i.type, i.line])).toEqual([
+      ["./a.ts", false, 1],
+      ["./b.ts", true, 2],
+      ["./c.ts", false, 3],
+      ["./d.ts", false, 4],
+      ["./f.ts", false, 6],
+      ["./e.ts", false, 5],
+    ]);
+  });
+});
+
+describe("startReach (G147)", () => {
+  it("follows static value imports, not type imports or import()", () => {
+    const s = { "src/main.ts": 'import "./a.ts"; import type { T } from "./t.ts"; const l = import("./lazy.ts");', "src/a.ts": 'import { z } from "./sub/z.ts";', "src/sub/z.ts": "", "src/t.ts": "", "src/lazy.ts": "" };
+    expect([...startReach(s)].sort()).toEqual(["src/a.ts", "src/main.ts", "src/sub/z.ts"]);
+  });
+});
+
+describe("the import direction (G147)", () => {
+  it("passes a clean tree", () => expect(checkDirection(tree({})).failures).toEqual([]));
+  it("fails when the start chunk reaches a worker-side engine module", () => {
+    const v = checkDirection(tree({ "src/main.ts": 'import "./calc/engine.ts";', "src/calc/engine.ts": 'import { defaultHomeSettings } from "../engine/homeEval.ts";', "src/engine/homeEval.ts": "" }));
+    expect(v.ok).toBe(false);
+    expect(v.failures[0]).toMatch(/src\/calc\/engine\.ts:1: the start chunk reaches src\/engine\/homeEval\.ts/);
+  });
+  it("lets the start chunk reach the allowed engine modules and a lazy chunk reach any", () => {
+    const v = checkDirection(tree({ "src/main.ts": 'import "./calc/engine.ts";', "src/calc/engine.ts": 'import { w } from "../engine/workerEngine.ts"; import("../engine/homeEval.ts"); import type { H } from "../engine/homeEval.ts";', "src/engine/workerEngine.ts": "", "src/engine/homeEval.ts": "" }));
+    expect(v.failures).toEqual([]);
+  });
+  it("fails when a file the start chunk reaches inside engine/ imports a worker-side module", () => {
+    const v = checkDirection(tree({ "src/main.ts": 'import "./engine/workerEngine.ts";', "src/engine/workerEngine.ts": 'import { n } from "./numeric.ts";', "src/engine/numeric.ts": "" }));
+    expect(v.failures.some((f) => f.includes("src/engine/workerEngine.ts:") && f.includes("numeric.ts"))).toBe(true);
+  });
+  it.each(["views", "state", "keyboard", "entry", "apps", "render", "input"])("fails when engine/ imports from %s/", (dir) => {
+    const v = checkDirection(tree({ "src/engine/host.ts": `import { a } from "../${dir}/a.ts";`, [`src/${dir}/a.ts`]: "" }));
+    expect(v.failures.some((f) => f.includes("src/engine/host.ts:") && f.includes(`src/${dir}/a.ts`))).toBe(true);
+  });
+  it("counts a type-only import from a forbidden folder", () => {
+    const v = checkDirection(tree({ "src/engine/host.ts": 'import type { A } from "../state/a.ts";', "src/state/a.ts": "" }));
+    expect(v.ok).toBe(false);
+  });
+  it("lets input/ and state/ import from engine/ (the allowed direction) and engine tests import anything", () => {
+    const v = checkDirection(tree({ "src/input/p.ts": 'import { a } from "../engine/angles.ts";', "src/engine/angles.ts": "", "src/engine/x.test.ts": 'import { a } from "../input/p.ts";' }));
+    expect(v.failures).toEqual([]);
+  });
+  it("fails on a named exception nothing uses any more", () => {
+    const s = tree({});
+    s["src/engine/host.ts"] = "";
+    const v = checkDirection(s);
+    expect(v.failures.some((f) => f.includes("ENGINE_EXCEPTIONS") && f.includes("host.ts -> src/units/"))).toBe(true);
+  });
+});
+
+describe("the real tree (G147)", () => {
+  it("holds the direction, every exception named", () => {
+    const v = checkImportDirection(app);
+    expect(v.failures).toEqual([]);
+  });
+});
+
+describe("the engine README (G147)", () => {
+  it("names every non-test module of src/engine", () => {
+    const readme = readFileSync(resolve(app, "src/engine/README.md"), "utf8");
+    const missing = readdirSync(resolve(app, "src/engine")).filter((f) => /\.ts$/.test(f) && !/\.test\.ts$/.test(f) && !readme.includes(`\`${f}\``));
+    expect(missing).toEqual([]);
+  });
+});

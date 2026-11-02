@@ -7,7 +7,7 @@
 import { FULL_EXACT_MAX, resultFromFacts, toExactLiterals, type HomeResult, type HomeSettings } from "../engine/homeEval.ts";
 import { exactFacts, floatFacts, hasFloat, rationalValue, valuePrecision, type ElementFacts, type Giac } from "../engine/numeric.ts";
 import { callsOf, isError, isNameChar, splitList } from "../engine/giacPrint.ts";
-import { PASDEG } from "../input/angles.ts";
+import { PASDEG } from "../engine/angles.ts";
 import { BASES, dimKeyOf, dimensionText, isExponent, parseDimKey, siSlot, siUnit } from "./dims.ts";
 import { isUnitError, type Quantity, type Uncertainty, type UncVar, type UnitError, type UnitJob, type UnitNote, type UnitSlot } from "./types.ts";
 import { shownWithUncertainty, uncertaintyText } from "./uncertainty.ts";

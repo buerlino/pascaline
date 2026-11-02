@@ -17,7 +17,7 @@ import { fileURLToPath } from "node:url";
 import { EngineHost } from "../../app/src/engine/host.ts";
 import { loadNodeGiac } from "../../app/src/engine/nodeGiac.ts";
 import { defaultHomeSettings, precisionFacts } from "../../app/src/engine/homeEval.ts";
-import { ANGLE_IN, ANGLE_OUT, rewriteAngles } from "../../app/src/input/angles.ts";
+import { ANGLE_IN, ANGLE_OUT, rewriteAngles } from "../../app/src/engine/angles.ts";
 import { markOf } from "../../app/src/engine/format.ts";
 
 const root = fileURLToPath(new URL("../../", import.meta.url));

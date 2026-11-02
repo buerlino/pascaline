@@ -5,7 +5,7 @@
 // degrees (`sin(pi/180*x)` → `sin(x)`) and every inverse returns degrees (`atan(x)` → `pi/180*atan(x)`). Only what is
 // drawn and copied changes; Ans, chips and the stored value keep the radian text, which means the same in every mode.
 // Synchronous, UI-free. Only erasable TypeScript syntax.
-import { hasAngleFactor } from "../input/angles.ts";
+import { hasAngleFactor } from "./angles.ts";
 import type { Giac } from "./numeric.ts";
 import { callsOf, isError } from "./giacPrint.ts";
 

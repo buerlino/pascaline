@@ -13,6 +13,7 @@ import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node
 import { dirname, isAbsolute, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { oracleVenvPython, setupLine, touchesG2 } from "./g2check.ts";
+import { checkImportDirection } from "./import-rules.ts";
 import { countAll, evalOutside, judge, readBaseline, totals, writeBaseline } from "./text-rules.ts";
 import {
   duration, formatLine, playwrightFailedSpecs, retryable, summarizeDocs, summarizeGolden, summarizePlaywright, summarizeCasBack, summarizeSeqSweep, summarizeSize, summarizeSweep, summarizeViewSweep, summarizeFindCensus, summarizeTypecheck, regeneratesIndex, selectsGolden, summarizeVitest, vitestFailures,
@@ -86,7 +87,8 @@ const checks: Check[] = [
     },
   },
   {
-    // G88: text matches over Giac text only go down (scripts/text-baseline.json); no `.eval(` of the Giac API outside engine and units
+    // G88: text matches over Giac text only go down (scripts/text-baseline.json); no `.eval(` of the Giac API outside engine and units;
+    // G147: the import direction
     name: "rules",
     run: () => {
       const { counts, hits } = countAll(app);
@@ -94,7 +96,11 @@ const checks: Check[] = [
         writeBaseline(app, counts);
         return { ok: true, detail: `baseline written: ${JSON.stringify(totals(counts))}` };
       }
-      return judge(counts, readBaseline(app), hits, evalOutside(app));
+      const text = judge(counts, readBaseline(app), hits, evalOutside(app));
+      // G147: the import direction between the main thread and the engine (scripts/import-rules.ts)
+      const direction = checkImportDirection(app);
+      const failures = [...text.failures, ...direction.failures];
+      return failures.length > 0 ? { ok: false, detail: `${failures.length} failed: ${failures.slice(0, 3).join("; ")}`, failures } : { ok: true, detail: `${text.detail}; ${direction.detail}`, failures };
     },
   },
   {
