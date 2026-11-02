@@ -992,3 +992,4 @@ cases:
   - { id: "g157-fn-trunc-neg-1.3", input: "ft157(-13/10)", before: ["ft157(t):=trunc(t)"], oracle: "F(-1)", expect: "-1", mark: "=", source: "derived", note: "control: a stored function evaluates trunc at its argument" }
   - { id: "g157-trunc-sqrt2-3", input: "trunc(sqrt(2)-3)", oracle: "ceil(sqrt(2)-3)", expect: "-1", mark: "=", source: "oracle", note: "control: Giac proves sqrt(2)-3 < 0" }
   - { id: "g157-cas-trunc-sqrt2-3", kind: "cas", input: "trunc(sqrt(2)-3)", expect: "-1", source: "derived", note: "control" }
+  - { id: "g157-cas-diff-trunc-x", kind: "cas", input: "diff(trunc(x),x)", expect: "0", source: "derived", note: "guard: trunc is constant off its jumps, as floor (diff(floor(x),x) = 0); patch 0028 gives trunc floor's derivative, or the unevaluated trunc(x) would leave diff(trunc(x),x) unevaluated (the unit view's j06 differentiates it)" }
