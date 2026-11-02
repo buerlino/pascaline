@@ -36,7 +36,7 @@ for (const input of process.argv.slice(2)) {
   }
   const r = host.home(input, { ...defaultHomeSettings, digits, angle, workDigits: Math.max(30, digits + 10) }).result;
   const ms = (performance.now() - t0).toFixed(1);
-  console.log(JSON.stringify(input), "=>", JSON.stringify({ ok: r.ok, path: r.path, display: r.display, approximate: r.approximate, tieRisk: r.tieRisk, exact: r.exact?.slice(0, 80), error: r.error }));
+  console.log(JSON.stringify(input), "=>", JSON.stringify({ ok: r.ok, path: r.path, display: r.display, approximate: r.approximate, exact: r.exact?.slice(0, 80), error: r.error }));
   if (r.value) console.log("   value re", dec(r.value.re), r.value.im.digits ? `im ${dec(r.value.im)}` : "", `${ms} ms`);
   if (facts) console.log("   facts", JSON.stringify({ facts: r.facts, rational: r.rational, items: r.items?.length, full: r.full.slice(0, 60), fullLength: r.full.length, exactLength: r.exact?.length }));
 }

@@ -125,14 +125,6 @@ export function roundSignificant(v: DecimalValue, n: number): { neg: boolean; di
   return { neg: v.neg, digits: d.toString(), exp: e };
 }
 
-/** The digits after the rounding position look like …4999… or …5000…: a value printed by a float
- *  engine could round the other way (double rounding). Exact values (from rationals) never set it. */
-export function tieRisk(v: DecimalValue, n: number): boolean {
-  // `digits` has no trailing zeros, so 5000… arrives as "5".
-  const rest = v.digits.slice(n, n + 20);
-  return /^49+$/.test(rest) || /^50*$/.test(rest);
-}
-
 function std(v: DecimalValue, n: number): FormattedNumber {
   const r = roundSignificant(v, n);
   if (r.digits === "0") return { neg: false, mantissa: "0", exponent: null };
