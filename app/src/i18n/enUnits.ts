@@ -83,6 +83,27 @@ export const enUnits = {
   "units.cat.Density": "Density",
   "units.cat.Amount": "Amount",
   "units.cat.Data": "Data",
+  // R92: the units menu's last two rows (spec/units-menu.yaml `constants`, `tools`): the constant lists, Math's three
+  // (Home's own e, π, i), and the unit view's places as tools, with the reason a tool cannot run yet.
+  "units.menu.constants": "Constants",
+  "units.menu.tools": "Tools",
+  "units.const.Math": "Math",
+  "units.const.Chemistry": "Chemistry",
+  "units.const.Physics": "Physics",
+  "units.const.Quantum": "Quantum",
+  "units.const.More": "More",
+  "units.const.e": "Euler's number",
+  "units.const.pi": "Pi",
+  "units.const.i": "Imaginary unit",
+  "units.tool.end": "The end slot",
+  "units.tool.si": "The SI form",
+  "units.tool.alts": "The alternatives",
+  "units.tool.unit": "The unit alone",
+  "units.tool.number": "The number into Home",
+  "units.tool.needsResult": "needs a result first",
+  "units.tool.needsUnit": "needs a result with a unit",
+  "units.tool.isSI": "the result is in its SI form",
+  "units.tool.notBuilt": "not built yet",
 } as const satisfies Record<string, string>;
 
 export type UnitMessageKey = keyof typeof enUnits;
