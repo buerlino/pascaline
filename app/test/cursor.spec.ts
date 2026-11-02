@@ -117,12 +117,12 @@ test("by the keys: ◀ from inside sin's bracket goes before sin; ▶ into piece
   expect(await position(page)).toBe(9);
 });
 
-test("the trackpad: three steps left from the end of approx(2) reach the start, one tick per step", async ({ page }) => {
+test("the trackpad: three steps left from the end of approx(2) reach the start, no pulse per step", async ({ page }) => {
   await page.evaluate(() => window.pascaline.session.setHaptics({ on: true }));
   await set(page, "\\operatorname{approx}\\left(2\\right)");
   const before = (await vibrations(page)).length;
   await drag(page, "left", -40, 0); // three steps (12 px each)
-  expect((await vibrations(page)).length - before).toBe(1 + 3); // touch + three steps
+  expect((await vibrations(page)).length - before).toBe(1); // the touch alone: a step is silent (R112)
   expect(await position(page)).toBe(0);
   await tap(page, ["d7"]);
   expect(await entryValue(page)).toBe("7\\operatorname{approx}\\left(2\\right)");

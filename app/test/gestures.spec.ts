@@ -36,11 +36,11 @@ test("K1 trackpad: a drag steps in 2D with a tick per step; a tap on an edge is 
   await tap(page, ["esc"]);
   await expect(page.locator('[data-selected="true"]')).toHaveCount(0);
 
-  // left/right through the text: a tick per step
+  // left/right through the text: no pulse per step (R112)
   await tap(page, ["d1", "d2", "d3", "d4"]);
   const before = (await vibrations(page)).length;
   await drag(page, "left", -40, 0); // three steps (12 px each); the drag leaves the pad, it keeps counting
-  expect((await vibrations(page)).length - before).toBe(1 + 3); // touch + three steps
+  expect((await vibrations(page)).length - before).toBe(1); // the touch alone: a step is silent (R112)
   await tap(page, ["d9"]);
   expect(await entryValue(page)).toBe("19234");
   await tap(page, ["right", "d5"]); // a tap is one step
