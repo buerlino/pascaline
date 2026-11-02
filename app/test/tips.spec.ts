@@ -63,11 +63,30 @@ test("the rings sit on the place name and ☰, measured from their boxes", async
     const b = (await page.getByTestId(target).boundingBox())!;
     // (a ring is kept 2 px inside the screen, so it may start up to 2 px inside the control's box)
     expect(r.x, ring).toBeLessThanOrEqual(b.x + 2);
-    expect(r.y, ring).toBeLessThanOrEqual(b.y + 2);
     expect(r.x + r.width, ring).toBeGreaterThanOrEqual(b.x + b.width - 2);
-    expect(r.y + r.height, ring).toBeGreaterThanOrEqual(b.y + b.height);
     expect(r.width, ring).toBeLessThanOrEqual(b.width + 16);
     expect(r.height, ring).toBeLessThanOrEqual(b.height + 16);
+  }
+});
+
+// R113: the rings are centred on the controls' visible content (the tile and name, the ☰ glyph), not on their padded
+// boxes, and none reaches below the status line by more than the padding (at 360 × 780, the phone check's width).
+test("each ring is centred on its control's content and stays within the status line's padding", async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 780 });
+  await open(page, ON);
+  await expect(tips(page)).toBeVisible();
+  const status = (await page.getByTestId("status").boundingBox())!;
+  for (const [ring, target] of [["tips-ring-place", "place"], ["tips-ring-menu", "menu-button"]] as const) {
+    const r = (await page.getByTestId(ring).boundingBox())!;
+    const c = await page.getByTestId(target).evaluate((e) => {
+      const range = document.createRange();
+      range.selectNodeContents(e);
+      const b = range.getBoundingClientRect();
+      return { mid: b.top + b.height / 2, h: b.height };
+    });
+    expect(c.h, target).toBeGreaterThan(0);
+    expect(Math.abs(r.y + r.height / 2 - c.mid), `${ring}: centre`).toBeLessThanOrEqual(1);
+    expect(r.y + r.height, `${ring}: bottom`).toBeLessThanOrEqual(status.y + status.height + 4);
   }
 });
 
