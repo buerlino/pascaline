@@ -1066,8 +1066,8 @@ export class EngineHost implements FactsHost {
     // A float in a non-number (x-0.54764225985): nobody checked its digits, so ⚠ without a count (G27, docs/04 2.4),
     // as the definitions log records it.
     const unchecked = hasFloat(text) || undecided || unverified;
-    // G51: a result without a float that read a stored name, or called a function, with facts takes their warn and
-    // why.inherited, as `inherited` does for a number; one built from exact names stays unmarked.
+    // G51: a result without a float that read a stored name, or called a function, with facts takes their warn, why.inherited
+    // and (R36f1) why.rounded, as `inherited` does for a number; one built from exact names stays unmarked.
     const post = after();
     const read = readFacts(this, input, post.reads);
     // G71 (N7): Giac's two-argument round and trunc work in a double; the integer trunc(x,0) prints is not exact.
@@ -1078,7 +1078,7 @@ export class EngineHost implements FactsHost {
     const symWhy = symbolicWhy(own, testSides(exactInput));
     // G38: "decided at limited precision"; the value was computed, not compared, so `once` is not said.
     const why0 = pair ? { differ: true } : undecided ? { ...(symWhy && !symWhy.once ? symWhy : {}), decided: true } : symWhy;
-    const why = read?.causes.length ? { ...(why0 ?? {}), inherited: read.causes } : why0;
+    const why = read && (read.causes.length || read.rounded.length) ? { ...(why0 ?? {}), ...(read.causes.length ? { inherited: read.causes } : {}), ...(read.rounded.length ? { rounded: read.rounded } : {}) } : why0;
     // G46 (S14 option 2): in DEG the radian text is drawn and copied as a DEG engine prints it; Ans, chips (`full`) and
     // pcasans keep the radian text, which means the same in every mode.
     const deg = s.angle === "deg" && needsDegrees(text) ? backInDegrees(this.giac, text) : null;
