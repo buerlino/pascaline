@@ -130,18 +130,18 @@ export const storeHealth = (): StoreHealth | undefined => (unread.size ? "unread
 async function kvPut(key: string, value: unknown): Promise<void> {
   try {
     const db = await open();
-    let put = false;
     await new Promise<void>((resolve, reject) => {
       const tx = db.transaction(STORE, "readwrite");
       const store = tx.objectStore(STORE);
       const r = store.get(key);
       r.onsuccess = () => {
-        if ((put = !(storedVersion(r.result) > DATA_VERSION))) store.put(stamp(value), key);
+        // R96: a newer record there is not written over, so this session's value is not kept; a put that then fails
+        // ends in the catch below, which says so
+        health = storedVersion(r.result) > DATA_VERSION ? "failed" : (store.put(stamp(value), key), "kept");
       };
       tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error ?? new Error("indexedDB put failed"));
     });
-    health = put ? "kept" : "failed";
     if (!persistAsked) {
       persistAsked = true;
       void import("./persist.ts").then((m) => m.askPersistOnce()); // after the first stored value (A49); a lazy chunk, off the start chunk
