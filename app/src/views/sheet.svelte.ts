@@ -152,9 +152,6 @@ export class Level {
     this.gridMove(by, false);
   }
 
-  /** R110: the cell ▼ came from onto a short last row, so ▲ goes back to it (cleared by the next move). */
-  private from: number | undefined;
-
   private gridMove(by: number, column: boolean): void {
     const n = this.items.length;
     const cols = this.columns ?? 1;
@@ -164,19 +161,11 @@ export class Level {
       return;
     }
     let next = this.highlight + by;
-    const from = this.from;
-    this.from = undefined;
     if (column) {
       // round the ends of the column: from the last row back to the first, and the other way
       const col = this.highlight % cols;
       const last = col + cols * Math.floor((n - 1 - col) / cols);
-      const lastRow = n - 1 - ((n - 1) % cols);
-      // R110: ▼ from the row above a short last row (Shift + 9's % under the first column) goes to its last cell, ▲ back to where it came from
-      if (by < 0 && from !== undefined) next = from;
-      else if (next >= n && this.highlight < lastRow) {
-        this.from = this.highlight;
-        next = n - 1;
-      } else if (next < 0) next = last;
+      if (next < 0) next = last;
       else if (next >= n) next = col;
     } else next = (next + n) % n;
     this.highlight = next;

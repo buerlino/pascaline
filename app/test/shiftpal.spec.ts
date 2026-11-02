@@ -158,21 +158,38 @@ test("Shift + 9 by tap: every cell inserts its symbol, in math mode (a digit typ
   }
 });
 
-// R110: % is a fourth row of ours, under the first column; ▼ from any cell of row 3 reaches it, ▲ goes back to that column
-test("Shift + 9: ▼ from row 3 reaches %, ▲ comes back to the column it left; ▼ again wraps; no cell is unreachable", async ({ page }) => {
-  await tap(page, ["shift", "d9", "down", "down", "right", "right", "right", "right", "right", "right"]);
-  await expect(active(page)).toHaveAttribute("data-id", "chi"); // row 3, column 7
+// R110: % is a fourth row of ours, under the first column; the grid's usual rule reaches it (▼ off the end of a column wraps
+// to its top, ▲ off the top goes to its last cell, ◀ ▶ go in reading order)
+test("Shift + 9: ▼ down the first column reaches %, ▲ comes back; the column wraps; ◀ ▶ reach it in reading order", async ({ page }) => {
+  await tap(page, ["shift", "d9", "down", "down"]);
+  await expect(active(page)).toHaveAttribute("data-id", "mu");
   await tap(page, ["down"]);
   await expect(active(page)).toHaveAttribute("data-id", "percent");
   await expect(page.getByTestId("sheet-hint")).toHaveText("Percent %");
   await tap(page, ["up"]);
-  await expect(active(page)).toHaveAttribute("data-id", "chi");
-  await tap(page, ["left", "left", "left", "left", "left", "left", "up", "up", "up"]); // mu, then up to the top, then round the column
-  await expect(active(page)).toHaveAttribute("data-id", "percent");
+  await expect(active(page)).toHaveAttribute("data-id", "mu");
+  await tap(page, ["up", "up"]);
+  await expect(active(page)).toHaveAttribute("data-id", "fact");
+  await tap(page, ["up"]);
+  await expect(active(page)).toHaveAttribute("data-id", "percent"); // the top of the column wraps to its last cell
   await tap(page, ["down"]);
-  await expect(active(page)).toHaveAttribute("data-id", "fact"); // round the column
+  await expect(active(page)).toHaveAttribute("data-id", "fact");
   await tap(page, ["left"]);
   await expect(active(page)).toHaveAttribute("data-id", "percent"); // ◀ from the first cell wraps to the last
+  await tap(page, ["left"]);
+  await expect(active(page)).toHaveAttribute("data-id", "Omega");
+  await tap(page, ["right"]);
+  await expect(active(page)).toHaveAttribute("data-id", "percent");
+});
+
+// R110: Shift + 6 (11 cells in 4 columns) keeps the rule it has had since R18
+test("Shift + 6: ▼ from `or` wraps to `ge` at the top of its column", async ({ page }) => {
+  await tap(page, ["shift", "d6", "down", "right", "right", "right"]);
+  await expect(active(page)).toHaveAttribute("data-id", "or");
+  await tap(page, ["down"]);
+  await expect(active(page)).toHaveAttribute("data-id", "ge");
+  await tap(page, ["up"]);
+  await expect(active(page)).toHaveAttribute("data-id", "or");
 });
 
 test("Shift + 9 %: 5% is 0.05; 250 ± 0.4 % in the unit view with a kPa slot is σ = 1 kPa (R104)", async ({ page }) => {

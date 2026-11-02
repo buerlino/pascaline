@@ -288,28 +288,31 @@ describe("Sheet: grid", () => {
     expect(s.left()).toBe(true); // ◀ moves, it does not close the sheet
     expect(s.level.highlight).toBe(17);
   });
-  it("R110: a short last row (Shift + 9: 24 cells and % under the first column): ▼ from the row above reaches it, ▲ goes back to the column it came from, nothing is unreachable", () => {
+  it("R110: a short last row (Shift + 9: 24 cells and % under the first column) has the grid's usual rule: ▼ off the end of a column wraps to its top, ▲ off the top to its last cell; ◀ ▶ reach every cell", () => {
     const sym = (): MenuItem[] => Array.from({ length: 25 }, (_, i) => item(`c${i}`));
     const s = new Sheet("sym", "Symbols", sym, { columns: 8 });
     const at = (n: number): number => (s.level.highlight = n);
-    at(16 + 5); // row 2, column 5
+    at(8);
     s.level.move(1);
-    expect(s.level.highlight).toBe(24); // the short row's only cell
+    s.level.move(1);
+    expect(s.level.highlight).toBe(24); // fact, alpha, mu, %: column 1 reaches the short row's only cell
     s.level.move(-1);
-    expect(s.level.highlight).toBe(21); // back to row 2, column 5
+    expect(s.level.highlight).toBe(16);
     at(24);
-    s.level.move(-1);
-    expect(s.level.highlight).toBe(16); // no memory (placed by hand): the cell above
-    at(16);
-    s.level.move(1);
-    expect(s.level.highlight).toBe(24);
     s.level.move(1);
     expect(s.level.highlight).toBe(0); // round the column
     s.level.move(-1);
-    expect(s.level.highlight).toBe(24);
-    at(3);
-    s.level.move(-1); // the top of column 3 wraps to its last cell, row 2
-    expect(s.level.highlight).toBe(19);
+    expect(s.level.highlight).toBe(24); // the top of column 1 wraps to %
+    at(21);
+    s.level.move(1);
+    expect(s.level.highlight).toBe(5); // column 6 ends at row 3 of 3: wraps to its top
+    s.level.move(-1);
+    expect(s.level.highlight).toBe(21);
+    at(23);
+    s.level.step(1);
+    expect(s.level.highlight).toBe(24); // reading order
+    s.level.step(1);
+    expect(s.level.highlight).toBe(0);
     // every cell can be reached with the arrows
     const seen = new Set<number>([0]);
     const todo = [0];
@@ -325,6 +328,15 @@ describe("Sheet: grid", () => {
       }
     }
     expect(seen.size).toBe(25);
+  });
+  it("R110: Shift + 6's 11 cells in 4 columns keep the rule: ▼ from `or` (row 2, column 4) wraps to `ge` at the top of its column", () => {
+    const rel = (): MenuItem[] => Array.from({ length: 11 }, (_, i) => item(`r${i}`));
+    const s = new Sheet("rel", "Relations", rel, { columns: 4 });
+    s.level.highlight = 7;
+    s.level.move(1);
+    expect(s.level.highlight).toBe(3);
+    s.level.move(-1);
+    expect(s.level.highlight).toBe(7);
   });
   it("digits do nothing, letters do not filter, Enter picks and the pick is remembered", () => {
     const s = new Sheet("tmpl", "Templates", cells, { columns: 6 });
