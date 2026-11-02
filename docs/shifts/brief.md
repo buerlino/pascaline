@@ -52,7 +52,7 @@ Tonight's queue (one lane, to 07:00) comes first, then each lane's table; With t
 12. **No lanes in the morning** (A47c not merged, or a selftest failed): the owner starts `scripts/night.sh` without `--lane`, and henri runs lane B's rows 401–405, then lane A's from 301, as one queue.
 
 ### Night 2026-11-01 to 11-02, to 05:30, both lanes on the Tab One (owner, 2026-11-01)
-`ANDROID_SERIAL=HA24BZ2Y` for both lanes, `--until 05:30` (the closing pass and the report take 1.5 to 2 h more); CORE DEVICE after each pass. Not the weekly extreme night: row 408 waits. A step whose "After" is not merged is skipped; "–" was checked against the merges on 2026-11-01. The FIX lines of Opus passes 42 and 43 (row 438; R15c4f1 and R63f2 merged) run first. The owner is away: follow each Opus pass as written (rule 3).
+`ANDROID_SERIAL=HA24BZ2Y` for both lanes, `--until 05:30` (the closing pass and the report take 1.5 to 2 h more); CORE DEVICE after each pass. Not the weekly extreme night: row 408 waits. A step whose "After" is not merged is skipped; "–" was checked against the merges on 2026-11-01. The FIX lines of Opus passes 42 and 43 ran first (G154f1, R15c4f1 and R63f2 merged). The owner is away: follow each Opus pass as written (rule 3).
 
 ### Lane A queue (ron's UI)
 Milestone reviews (section 0): after R50e; after R24d (with R108's gallery group "Decimal comma in apps").
@@ -73,13 +73,11 @@ A7, A8, A9 and [A57](packages/A57.md) run by day (section 0); A43 and A58 are me
 | Step | What | Agent, model | Branch | After |
 |---|---|---|---|---|
 | 408 | [G138](packages/G138.md) the weekly fuzz and its triage | gorge, Opus | `p1/gorge-nightfuzz-1106` | the weekly night |
-| 438 | [G154f1](packages/G154f1.md) G154 (F139), and a golden time limit missed under load is rerun once | gorge, Opus | `p1/gorge-zeronotunderflow` | – |
-| 435 | [G155](packages/G155.md) the standard error of the mean in Find | gorge, Sonnet | `p1/gorge-sem` | – |
 | 439 | [G144](packages/G144.md) the gate's sweep fails on an engine crash, every probe still loads | gorge, Sonnet | `p1/gorge-loudtools` | – |
 | 440 | [G146](packages/G146.md) unit tests for the decision and stored-facts code | gorge, Opus | `p1/gorge-decisiontests` | – |
 | 441 | [G145](packages/G145.md) one home for duplicated helpers; dead exports out | gorge, Sonnet | `p1/gorge-tidyhelpers` | – |
 | 442 | [G147](packages/G147.md) one import direction between the main thread and the engine | gorge, Sonnet | `p1/gorge-importdir` | R103 |
-| 436 | [G153](packages/G153.md) three 30-digit rows of G137 (F155) | gorge, Opus | `p1/gorge-g137rest` | G141 |
+| 436 | [G153](packages/G153.md) three 30-digit rows of G137 (F155); two done, row 1 waits for G141 | gorge, Opus | `p1/gorge-g137rest` | – (G153f1 merges it) |
 | 437 | [G152](packages/G152.md) acosh's sign and tiny imaginary part (F143, F144) | gorge, Opus | `p1/gorge-acoshsign` | G142 |
 
 ### The commands henri replies with (one per decision; `scripts/night.sh` runs it)
