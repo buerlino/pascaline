@@ -18,8 +18,16 @@ export function giacMjsPath(): string {
   return fileURLToPath(new URL("../../../engine/giac/_out/gsl/giac.mjs", import.meta.url));
 }
 
+/** G146: set by `npm run gate` (ENGINE=required): a missing engine fails the run instead of skipping its tests. */
+export const ENGINE_REQUIRED_ENV = "ENGINE";
+
+/** The engine build is there. With ENGINE=required a missing one throws, so every test file that asks fails to load
+ *  (one check here, not one per file). */
 export function giacAvailable(): boolean {
-  return existsSync(giacMjsPath());
+  const mjs = giacMjsPath();
+  if (existsSync(mjs)) return true;
+  if (process.env[ENGINE_REQUIRED_ENV] === "required") throw new Error(`ENGINE=required and no engine at ${mjs}: set GIAC_OUT (absolute) to a build`);
+  return false;
 }
 
 export async function loadNodeGiac(mjs: string = giacMjsPath()): Promise<LoadedGiac> {

@@ -15,7 +15,6 @@ import {
   formatPolar,
   formatReal,
   roundSignificant,
-  tieRisk,
   toText,
   type FormatOptions,
   type NumberFormat,
@@ -43,12 +42,6 @@ describe("decimalFromString", () => {
     expect(decimalFromString("2.5e-07")).toEqual({ neg: false, digits: "25", exp: -7, sticky: false });
     expect(decimalFromString("0.000")?.digits).toBe("");
     expect(decimalFromString("x+1")).toBeNull();
-  });
-  it("flags a possible double rounding of a float", () => {
-    const v = decimalFromString("0.123449999999");
-    expect(v && tieRisk(v, 4)).toBe(true);
-    const w = decimalFromString("0.123456");
-    expect(w && tieRisk(w, 4)).toBe(false);
   });
 });
 

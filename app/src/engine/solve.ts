@@ -81,9 +81,9 @@ export function numericResult(giac: Giac, expr: string, digits: number, work: nu
   const im = realPart(giac, `im(${expr})`, work);
   if (!re || !im) {
     const text = giac.eval(`evalf(${expr},${digits})`);
-    return { ok: false, display: text, path: "numeric", approximate: true, tieRisk: false, exactMs: 0, totalMs: ms, error: "engine", ...safePrecision(text) };
+    return { ok: false, display: text, path: "numeric", approximate: true, exactMs: 0, totalMs: ms, error: "engine", ...safePrecision(text) };
   }
-  const base = { path: "numeric" as const, approximate: true, tieRisk: false, exactMs: 0, totalMs: ms };
+  const base = { path: "numeric" as const, approximate: true, exactMs: 0, totalMs: ms };
   const re2 = check && realPart(giac, `re(${check.expr})`, check.work);
   const im2 = check && realPart(giac, `im(${check.expr})`, check.work);
   if (re2 && im2) {
