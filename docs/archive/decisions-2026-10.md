@@ -14,6 +14,27 @@ History only: read it when a decision is questioned. What still binds is in [../
 6. **Release:** new work (the AI port, the sync folder, R92) ships if ready by the freeze, only the bar gates; polish first, with R92 first in lane A; the weekly fuzz night is Wed 11-04. Would change if: the bar slips past 11-14.
 7. **Later:** plots of user functions after v0.1.0; milestone 6 kept whole (EN5–EN7, context Help); the v1 list stays on the backlog; history 200 rows; no backup reminder; 100 % offline. Would change if: the owner says so.
 
+### Shortened 2026-11-02 (Opus pass 51) to make room for R92's and R116's defaults, as they stood
+From "Units" (Defaults):
+- **R61 (Opus pass 28):** a unit result's σ chip is an independent input of σ, as a constant (G26), also beside the constant it came from; one chip used twice is one input; a σ of 0 is none. Its σ is G41's: t10's is sqrt(1.548381) = 1.24433958388 (`tests/tasks/tasks.yaml`). Would change if: a chip keeps its inputs' basis (G81).
+
+From "Engine, precision and formats" (Defaults):
+- **G154 (Opus pass 42): no size, no underflow.** A value that is MPFR's 0 at every precision is refused "Underflow" only when Giac states its size; otherwise it shows ⚠ 0: an exact 0 Giac cannot prove (`re(asin(i/10))`) and a sum of underflows (`exp(-10^30)+exp(-10^31)`, backlog F161). Would change if: Giac can size such a sum.
+
+From "Library, release and process" (Defaults):
+- **A45, a criterion on a shared file (Opus pass 19):** a package step that changes `THIRD_PARTY.md` or another shared file (rules section 4) is met by its exact text under "For shared files"; the audit checks that text and does not FIX the file, and the next Opus pass applies it. Would change if: the owner lets workers edit `THIRD_PARTY.md`.
+
+From "Entry and keys" (Defaults):
+- **R98, Clear and Delete (Opus pass 50):** Clear also takes cancelled and note rows (not stored: a relaunch loses them); the Undo copy is one level and belongs to its view (the next Enter, or a second Clear, drops it); a failed load of its code removes nothing and says so; a backup never holds it. Rule: docs/05 3.5.
+
+From "Engine, precision and formats" (Defaults):
+- **R55: digit groups** in a drawn Home or CAS numeric result (history rows, the picked row): the mantissa in threes from the point outward with a thin space, on a side of five or more digits; exponent, prefix and E form stay. Not in the entry line, a chip, Copy or the status line. Would change if: the owner finds the gaps noisy after two weeks (the function goes, no setting).
+- **Solve and Plot:** a root is accepted at relative residual ≤ 1e-15 at 30 digits, else ⚠ (systems: < 1e-6 with ⚠, else no solution); roots in ascending order, complex by real then imaginary part; Plot searches only the visible window; the signed area by Romberg, the exact `int`, then `gaussquad` with ⚠; names in Solve are case-sensitive and start at 0.
+
+From "Library, release and process" (Defaults):
+- **Tests:** the golden gate as docs/04 7.3 (the G2 checklist generated from `tests/golden/g2.yaml`); a pending task's budget is its planned press count, values `derived` or `oracle`; the Tab One Enter benchmark skips only our parser (`?bench=1`); timing tests skip their assertion when the load average exceeds the cores; a ⚠ case showing a wrong value has no `oracle` (G49f2).
+- **The release path (A7, A8, A45, A48; 2026-10-15, owner 2026-10-29):** v0.1.0, APK and website from one tag (`tools/check-version.sh`, A48); golden on the release engine before signing; `sw.js`'s path and scope, the IndexedDB name and the manifest `id` frozen for good; the tag is the owner's act. Full text: archive. Would change if: F-Droid's build needs another version source.
+
 ### Shortened 2026-11-02 (night review, step 8) to make room for the owner's answers, as it stood
 From "Precision, engine and parser":
 - **P19 (2026-10-20): a Giac bug is fixed at its cause:** a local cause gets a patch (numbered by arrival), a canary in `tests/engine/` and a commit link to B. Parisse; a TypeScript workaround needs a cause that is not local, a written reason and a row in the register (S17). 0003 is complex `tanh` (G75). Rule: `docs/rules-core.md`. Would change if: Parisse declines a fix (we carry it); a patch fails at two re-pins.

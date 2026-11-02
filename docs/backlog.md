@@ -11,7 +11,7 @@ The one place for "where are we and what's left", one or two lines per open item
 | **The core freeze (P23)** | **Ended 2026-10-27** (owner). Its net stays: [tests/core/](../tests/core/README.md) (66 everyday tasks, all active) runs on every merge and on the night's device; a red case is a bug to fix. Order of the work: brief section 0. |
 | Milestone 4a: feel (P11) | Built: the entry work, sheets, flicks, Settings in the Mode sheet (R49, R87), history-row actions, R15b–R15c4, the mockups (R12a). Waiting: the palette, the visual pass, results mode, the trust features |
 | Milestone 4: Find and trust | Engine side done (marks, 30 digits, chips, copy, defs, the Find index, the size test, A4a); Find's UI: R4a, R4b built; A4b next |
-| Milestone 5: Units | Built: the evaluator on Giac (P15), the pad, the entry and Find in a slot (R24a–R24d), the result's alternatives, chip, view and way back (R60–R63), ± (R71), the units menu's Constants and Tools (R92) |
+| Milestone 5: Units | Built: the evaluator on Giac (P15), the pad, the entry and Find in a slot (R24a–R24d), the result's alternatives, chip, view and way back (R60–R63), ± (R71), menu Constants and Tools (R92) |
 | Milestone 6: Structure | Not started (EN5–EN7, Help) |
 | MVP release | v0.1.0, the APK and the website from one tag, on Sun 11-15 if the bar is met: [release-0.1.0.md](release-0.1.0.md) |
 
@@ -19,7 +19,7 @@ The one place for "where are we and what's left", one or two lines per open item
 
 ## Needs the user
 0. **The core list (P23):** cut or extend [tests/core/core.yaml](../tests/core/core.yaml) (66 cases; tell a session what to drop or add); do the [morning check](../tests/core/MORNING.md) on the night's device (about 10 minutes, 15 cases; tell the day session what failed); keep the night's device plugged in, unlocked and on the charger (A32, A33). The one-time checks: [ONE-TIME.md](../tests/core/ONE-TIME.md).
-1. **[decisions.md](decisions.md) "Needs the user":** none open (the night review's two decided 2026-11-02).
+1. **[decisions.md](decisions.md) "Needs the user":** none open.
 2. **Your outreach steps** (decisions.md P18–P22): send Parisse email 5 (patches 0013–0026 and the regression files at `a330698`, pushed; `../outreach/email-parisse-5.md`); mirror G77's pin (`gh` logged in; the command is in `engine/giac/README.md`).
 3. **G2 questions:** the unanswered items of `tests/golden/G2-CHECKLIST.md` (41, 42, 52, 56, 63–71; each package built a default, named in decisions.md; 63–65 can reverse S14's route R); the optional real-G2 spot checks (`spec/mapping/vc-2026-10-11/SPOT-CHECK.md`).
 4. **From daily use:** the key sequence that left ⌫ stuck "at log" (F39); feel R112 (one pulse per touch, merged) on the next build; more points into [feedback.md](feedback.md).
@@ -91,7 +91,8 @@ The one place for "where are we and what's left", one or two lines per open item
 - Plots of user functions after v0.1.0 (owner, 2026-11-02; R56b covers Solve); **R58b** Alpha letters are always names in CAS (G2 item 62 can reverse it).
 - **G9. Number formats against the G2** (item 15): decide in the settings and help pass. **K1:** a pending one-shot Shift is used up by the first drag step. **K5:** the gestures in the help texts.
 - **A9's leftover:** the strength slider does nothing on a motor without amplitude control (Fairphone 6); a composition of ticks would give it (owner, 2026-11-02: a package later).
-- **R107's leftover (Opus pass 35):** a dead hardware key on the unit view's field (`units/open.ts:193`, `:196`, `c.dead()`) counts no press (docs/04 5.2); its keys go through the counted `onKey`.
+- **R92's leftover:** UPART (the result's unit alone) is not built; its Tools row is off.
+- **R107's leftover (pass 35):** a dead hardware key on the unit view's field (`units/open.ts`, `c.dead()`) counts no press (docs/04 5.2); its keys go through the counted `onKey`.
 - **The pipeline:** `resolve_audit_model` is tested only through dry-run echo lines; the size test does not cover CSS (25.8 kB raw at 2026-10-12). `tests/engine/patch-canary.ts` unpacks the Giac tarball once per canary (40 times, `member()` of `tools/find-index/state.mjs`), 100 s of CPU alone, so the golden `flags` stage times out under load (A51 counts it as timing): unpack it once. Red-first (`pipeline-lib.sh`) runs vitest on the branch's engine, so an engine test like G133f1's passes there (golden carries the red), and reads ids as `[A-Za-z0-9_.-]`, so older ids with `/` or `^` are invisible to it (G133f1).
 - **C3. CI** (needs your OK); **C4. F-Droid recipe:** untested end to end; `npm ci` after `prebuild` needs an offline rework; two drifts from build.sh in `fdroid/README.md`.
 
