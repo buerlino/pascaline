@@ -29,21 +29,36 @@ android {
     }
     // D9: keep .wasm uncompressed in the APK (mmap-able, about 75 ms off cold start)
     androidResources { noCompress 'wasm' }
-    // Release builds are signed with a throwaway key only when PASCALINE_KEYSTORE names one (never committed).
-    // Without it, assembleRelease produces app-release-unsigned.apk.
-    if (System.getenv('PASCALINE_KEYSTORE')) {
+    // Signing reads the whole key from the environment (A7): PASCALINE_KEYSTORE (file), PASCALINE_KEYSTORE_PASS,
+    // PASCALINE_KEY_ALIAS, PASCALINE_KEY_PASS. The throwaway defaults (alias `throwaway`, password `pascaline-throwaway`)
+    // apply only while PASCALINE_KEY_ALIAS is unset, so dev builds work unchanged; with an alias set, a missing password
+    // fails the build. Nothing is committed. Without PASCALINE_KEYSTORE, assembleRelease produces app-release-unsigned.apk.
+    def keystoreEnv = System.getenv('PASCALINE_KEYSTORE')
+    if (keystoreEnv) {
+        def aliasEnv = System.getenv('PASCALINE_KEY_ALIAS')
+        def storePassEnv = System.getenv('PASCALINE_KEYSTORE_PASS')
+        def keyPassEnv = System.getenv('PASCALINE_KEY_PASS')
+        if (aliasEnv) {
+            if (!storePassEnv || !keyPassEnv) {
+                throw new GradleException('PASCALINE_KEY_ALIAS is set: PASCALINE_KEYSTORE_PASS and PASCALINE_KEY_PASS must be set too')
+            }
+        } else {
+            aliasEnv = 'throwaway'
+            storePassEnv = storePassEnv ?: 'pascaline-throwaway'
+            keyPassEnv = keyPassEnv ?: storePassEnv
+        }
         signingConfigs {
-            throwaway {
-                storeFile file(System.getenv('PASCALINE_KEYSTORE'))
-                storePassword System.getenv('PASCALINE_KEYSTORE_PASS') ?: 'pascaline-throwaway'
-                keyAlias 'throwaway'
-                keyPassword System.getenv('PASCALINE_KEYSTORE_PASS') ?: 'pascaline-throwaway'
+            pascaline {
+                storeFile file(keystoreEnv)
+                storePassword storePassEnv
+                keyAlias aliasEnv
+                keyPassword keyPassEnv
             }
         }
     }
     buildTypes {
         release {
-            if (System.getenv('PASCALINE_KEYSTORE')) { signingConfig signingConfigs.throwaway }
+            if (keystoreEnv) { signingConfig signingConfigs.pascaline }
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
