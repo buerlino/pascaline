@@ -8,7 +8,7 @@ import { latexToGiac } from "../input/latex-to-giac.ts";
 import { parse } from "yaml";
 import { shippedKeyboard, shippedPalettes } from "./shipped.ts";
 import { en } from "../i18n/en.ts";
-import { actionFor, cellsIn, gridPlace, type Key, KeyboardSpecError, keyboard, labelFor, loadKeyboard, loadPalette, MATHS_ROW, templates, withDecimalMark, DECIMAL_COMMA } from "./keyboard.ts";
+import { actionFor, cellsIn, gridPlace, type Key, type PaletteItem, KeyboardSpecError, keyboard, labelFor, loadKeyboard, loadPalette, MATHS_ROW, templates, withDecimalMark, DECIMAL_COMMA } from "./keyboard.ts";
 
 const spec = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "../../../spec/keyboard.yaml"), "utf8");
 
@@ -220,7 +220,7 @@ describe("keyboard spec", () => {
     // R18, Shift + 9: every cell is a character: operators (!, →, °, ′, ″, &), constants (∞) and names (Å, Greek)
     ...Object.fromEntries(
       ["fact", "arrow", "inf", "deg", "minute", "second", "amp", "aring", "alpha", "beta", "gamma", "Delta", "delta", "epsilon",
-        "theta", "lambda", "mu", "rho", "Sigma", "sigma", "tau", "phi", "chi", "Omega"].map((id) => [`sym:${id}/primary/normal`, "a character"]),
+        "theta", "lambda", "mu", "rho", "Sigma", "sigma", "tau", "phi", "chi", "Omega", "percent"].map((id) => [`sym:${id}/primary/normal`, "a character"]),
     ),
   };
   // The one-line forms of xʸ and x²: a bare caret. EntryController.run() brackets a selection in front of it (R17).
@@ -283,7 +283,7 @@ describe("keyboard spec", () => {
     }
   });
 
-  it("Shift + 9 (R18): the G2's symbols and Greek, 8 × 3, no key labels (G2 item 37); ∞ moved here from the key", () => {
+  it("Shift + 9 (R18, R110): the G2's symbols and Greek, 8 × 3, no key labels (G2 item 37); ∞ moved here from the key; % is a fourth row of ours", () => {
     const p = keyboard.symbols;
     expect(keyboard.byId.get("d9")?.actions.shift).toEqual({ kind: "special", name: "symbols" });
     expect(p.columns).toBe(8);
@@ -291,10 +291,17 @@ describe("keyboard spec", () => {
       "!", "\\rightarrow", "\\infty", "\\degree", "\\prime", "\\doubleprime", "\\&", "\\AA",
       "\\alpha", "\\beta", "\\gamma", "\\Delta", "\\delta", "\\varepsilon", "\\theta", "\\lambda",
       "\\mu", "\\rho", "\\Sigma", "\\sigma", "\\tau", "\\varphi", "\\chi", "\\Omega",
+      "\\%", // R110: a fourth row of our own, `%` first
     ]);
     p.items.forEach((it, i) => expect([it.row, it.col], it.id).toEqual([Math.floor(i / 8), i % 8]));
     expect(p.items.filter((i) => i.pick !== undefined)).toEqual([]);
     expect(p.items.filter((i) => i.refused).map((i) => i.id)).toEqual(["amp", "aring"]); // Needs a decision (R18 report)
+    // R110: the 24 G2 cells carry the palette's source (device); the % cell says in the yaml that it is ours (the loader does not read it)
+    const pct = p.items[24] as PaletteItem;
+    expect([pct.id, pct.row, pct.col, pct.action.sample]).toEqual(["percent", 3, 0, ["5\\%", "1/20"]]);
+    const cells = (parse(spec) as { symbols: { source: string; items: { id: string; source?: string }[] } }).symbols;
+    expect(cells.source).toBe("device");
+    expect(cells.items.filter((i) => i.source !== undefined).map((i) => [i.id, i.source])).toEqual([["percent", "assumed"]]);
   });
 
   it("Tmpl opens the palette; a b/c is the fraction while typing", () => {
