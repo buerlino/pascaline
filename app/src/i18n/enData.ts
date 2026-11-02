@@ -8,6 +8,11 @@ export const enData = {
   "backup.saved": "Backup saved",
   "backup.cancelled": "Backup cancelled",
   "backup.failed": "Could not save the backup",
+  // R96: the store's state, the level's last row, with the last backup under it
+  "store.kept": "Kept on this device",
+  "store.mayDelete": "Kept, but the browser may delete it: save a backup",
+  "store.notSaved": "Not saved: changes are lost when the app closes",
+  "store.lastBackup": "Last backup: {date}",
   // R38b: the restore (archive/r11-files.md section 3.4, 3.5)
   "restore.row": "Restore from a file",
   "restore.title": "Restore from a file",

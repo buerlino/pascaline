@@ -117,28 +117,37 @@ let persistAsked = false;
  * writer.ts) writes nothing.
  */
 export function kvSet(key: string, value: unknown): Promise<void> {
-  return guardWrite(() => kvPut(key, value), () => undefined);
+  return guardWrite(() => kvPut(key, value), () => void (health = "failed"));
 }
+
+/** R96: how this session's store stands, for Settings › Data: "kept" after a write that landed, "failed" after one that
+ *  did not (an error, a newer record there, another tab the writer), "unread" from a failed read on (R93: that key is
+ *  not written again). Undefined before the first write. In memory only: no stored key. */
+export type StoreHealth = "kept" | "failed" | "unread";
+let health: StoreHealth | undefined;
+export const storeHealth = (): StoreHealth | undefined => (unread.size ? "unread" : health);
 
 async function kvPut(key: string, value: unknown): Promise<void> {
   try {
     const db = await open();
+    let put = false;
     await new Promise<void>((resolve, reject) => {
       const tx = db.transaction(STORE, "readwrite");
       const store = tx.objectStore(STORE);
       const r = store.get(key);
       r.onsuccess = () => {
-        if (!(storedVersion(r.result) > DATA_VERSION)) store.put(stamp(value), key);
+        if ((put = !(storedVersion(r.result) > DATA_VERSION))) store.put(stamp(value), key);
       };
       tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error ?? new Error("indexedDB put failed"));
     });
+    health = put ? "kept" : "failed";
     if (!persistAsked) {
       persistAsked = true;
       void import("./persist.ts").then((m) => m.askPersistOnce()); // after the first stored value (A49); a lazy chunk, off the start chunk
     }
   } catch {
-    /* not persisted; nothing else to do */
+    health = "failed"; // not persisted: Settings › Data says so (R96)
   }
 }
 

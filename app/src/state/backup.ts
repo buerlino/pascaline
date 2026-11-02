@@ -9,7 +9,7 @@ import { defaultLook, validLook } from "../theme/look.ts";
 import { CELL_KEYS } from "../units/userCells.svelte.ts";
 import { isFmtMode, normalizeCycle } from "./displayMode.ts";
 import { migratePresetKeys, PRESETS_KEY } from "./presetRecord.ts";
-import { DATA_VERSION, unstamp, type Migrations } from "./storage.ts";
+import { DATA_VERSION, kvSet, unstamp, type Migrations } from "./storage.ts";
 import { MIGRATIONS } from "./migrations.ts";
 import { kvGetRaw, type RawRecord } from "./storageRaw.ts";
 
@@ -34,8 +34,8 @@ export const BACKUP_KEYS: readonly string[] = [
 
 /** Keys of docs/04 6.2 that stay out: `defsStarts` is per install (restored, it could make the engine skip the replay,
  *  G19); `backup.undo` (R38b) is the restore's own safety copy; `tipsSeen` (R15c4) belongs to this install: a restore
- *  on a new one shows the first-start tips once. */
-export const LEFT_OUT: readonly string[] = ["defsStarts", "backup.undo", "tipsSeen"];
+ *  on a new one shows the first-start tips once; `backup.last` (R96) is when this install last saved one. */
+export const LEFT_OUT: readonly string[] = ["defsStarts", "backup.undo", "tipsSeen", "backup.last"];
 
 export interface Backup {
   "pascaline-backup": 1;
@@ -63,12 +63,14 @@ export function backupName(now: Date): string {
   return `pascaline-backup-${now.getFullYear()}-${p(now.getMonth() + 1)}-${p(now.getDate())}.json`;
 }
 
-/** Settings › Data › Save a backup: makes the file, hands it to the file port, and returns the notice to show. */
+/** Settings › Data › Save a backup: makes the file, hands it to the file port, notes the time of a saved one
+ *  (`backup.last`, R96), and returns the notice to show. */
 export async function saveBackup(now: Date = new Date()): Promise<string> {
   try {
     const text = JSON.stringify(await makeBackup(kvGetRaw, now));
     const { saveFile } = await import("../clipboard/files.ts");
     const result = await saveFile(backupName(now), "application/json", text);
+    if (result === "saved") await kvSet("backup.last", now.toISOString()); // Settings › Data's "Last backup" (R96)
     return dataText(result === "saved" ? "backup.saved" : result === "cancelled" ? "backup.cancelled" : "backup.failed");
   } catch {
     return dataText("backup.failed");

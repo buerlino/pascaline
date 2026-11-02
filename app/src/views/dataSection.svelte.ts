@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Settings › Data (R38a, R38b): Save a backup, Restore from a file, and Undo the restore while its kept copy exists. Each
-// row runs and closes the sheet, so its notice shows in the stage. The backup and restore code loads on the press
+// row runs and closes the sheet, so its notice shows in the stage. The last row (R96) tells whether the data is kept,
+// with the date of the last backup under it. The backup and restore code loads on the press
 // (clipboard/actions.svelte.ts); this module comes with the Mode sheet's chunk.
 import type { MenuItem } from "../apps/types.ts";
-import { dataText, shownTime } from "../i18n/enData.ts";
+import { dataText, shownTime, type DataKey } from "../i18n/enData.ts";
+import { kvGet, storeHealth } from "../state/storage.ts";
 import type { SettingsEnv } from "./yourKeys.ts";
 
 /** The time of the kept copy (`backup.undo`): undefined until read, null when there is none. A restore and an Undo
@@ -41,6 +43,31 @@ export function pickFile(doc: Document = document): Promise<File | null> {
   });
 }
 
+/** R96: the browser's answer to persisted() (undefined until one came) and the time of the last backup this install
+ *  saved (`backup.last`, written by state/backup.ts; null: none), both read again on each open of the level. */
+let persisted = $state<boolean | undefined>(undefined);
+let lastBackup = $state<string | null>(null);
+function readStoreState(): void {
+  void import("../state/persist.ts").then((m) => m.askPersisted()).then((a) => (persisted = a), () => {});
+  void kvGet<string>("backup.last").then((r) => (lastBackup = r.kind === "value" ? r.value : null));
+}
+
+/** The line (R96): not saved after a write that failed or a read that failed (R93), else kept, on this device only when
+ *  the browser said it keeps the store out of its eviction. Before the first write it reads as kept. */
+export function storeLine(): DataKey {
+  const h = storeHealth();
+  return h === "failed" || h === "unread" ? "store.notSaved" : persisted === true ? "store.kept" : "store.mayDelete";
+}
+
+function storeRow(): MenuItem {
+  return {
+    id: "store",
+    label: dataText(storeLine()),
+    keep: true,
+    ...(lastBackup === null ? {} : { hint: dataText("store.lastBackup", { date: shownTime(lastBackup) }) }),
+  };
+}
+
 function dataItems(env: SettingsEnv, pick: () => Promise<File | null>): MenuItem[] {
   if (undoTime === undefined) readUndoTime();
   const rows: MenuItem[] = [
@@ -55,22 +82,31 @@ function dataItems(env: SettingsEnv, pick: () => Promise<File | null>): MenuItem
     const time = undoTime;
     rows.push({ id: "undo", label: dataText("restore.undo", { time: shownTime(time) }), run: () => env.data?.((c) => c.restoreBackup("undo")) });
   }
+  rows.push(storeRow());
   return rows;
 }
 
-/** Settings' Data section: a row with › whose level reads the kept copy's time on every draw. */
+/** Settings' Data section: a row with › whose level reads the kept copy's time on every draw. Each open gets a level
+ *  of its own (the sheet keeps the one it opened), whose first draw reads the store's state once (R96). */
 export function dataSection(env: SettingsEnv, pick: () => Promise<File | null> = pickFile): MenuItem {
   const title = dataText("data");
   return {
     id: "data",
     label: title,
     value: dataText("data.value"),
-    submenu: {
-      title,
-      remember: false,
-      get items() {
-        return dataItems(env, pick);
-      },
+    get submenu() {
+      let read = false;
+      return {
+        title,
+        remember: false,
+        get items() {
+          if (!read) {
+            read = true;
+            readStoreState();
+          }
+          return dataItems(env, pick);
+        },
+      };
     },
   };
 }
