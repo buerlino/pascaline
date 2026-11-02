@@ -181,6 +181,31 @@ function withPfx(t: Palette, hc: boolean): Palette {
   return { ...t, "key-pfx": get(t, "key-num") };
 }
 
+/** How far the box of the bracket that holds the cursor (--pick, R116) stands from the entry line's --panel: 1.13 on
+ *  Pascaline Dark was "not seen well" on the Tab One (night review 2026-11-02). src/style.test.ts uses the same floor. */
+export const PICK_APART = 1.3;
+/**
+ * R116: --pick is also the box MathLive draws round the bracket that holds the cursor, on the entry line's --panel.
+ * Its lightness moves away from --panel (hue and saturation kept) until the box stands PICK_APART from it; the roles
+ * drawn on a picked row then move as their own floors need (text, muted, the marks: R50b's pairs, unchanged).
+ */
+function withPick(t: Palette, hc: boolean, dark: boolean): Palette {
+  const o: Palette = { ...t };
+  const T = hc ? 7 : 4.5;
+  if (cr(get(o, "pick"), get(o, "panel")) < PICK_APART) {
+    const [h, s, l0] = rgb2hsl(get(o, "pick"));
+    for (let i = 1; i <= 200; i++) {
+      const c = hsl2hex([h, s, dark ? Math.min(1, l0 + i * 0.005) : Math.max(0, l0 - i * 0.005)]);
+      o["pick"] = c;
+      if (cr(c, get(o, "panel")) >= PICK_APART) break;
+    }
+  }
+  o["text"] = ensure(get(o, "text"), getAll(o, [...KEYS, "bg", "panel", "pick", "chip-bg"]), T, dark);
+  o["muted"] = ensure(get(o, "muted"), getAll(o, ["bg", "panel", "key-num", "pick"]), T, dark);
+  for (const r of ["approx", "warn", "error"]) o[r] = ensure(get(o, r), getAll(o, ["bg", "pick"]), T, dark);
+  return o;
+}
+
 /** The label on an --error ground (Cancel and the like): the family's --bg in dark, white in light. Set last, from the final --bg. */
 function withOnError(t: Palette, dark: boolean): Palette {
   return { ...t, "on-error": dark ? get(t, "bg") : "#ffffff" };
@@ -207,7 +232,7 @@ export function theme(c: Combo): { t: Palette; fixes: [string, string, string][]
   let o = t;
   if (c.plain) o = plain(o, dark);
   if (c.high) o = highContrast(o, dark);
-  return { t: withOnError(withPfx(o, c.high), dark), fixes };
+  return { t: withOnError(withPfx(withPick(o, c.high, dark), c.high), dark), fixes };
 }
 
 // --- the audit: every pair the app draws (docs/archive/shifts/2026-10-18-themes-report.md section 2) ---
@@ -235,7 +260,12 @@ export function checks(t: Palette, hc: boolean): Check[] {
   add("Screen", "muted on the picked row", "muted", "pick", T);
   add("Screen", "text on the status line", "text", "panel", T);
   add("Screen", "text on a chip", "text", "chip-bg", T);
-  add("Screen", "focus and cursor on screen (non-text)", "focus", "bg", 3);
+  add("Screen", "focus ring on screen (non-text)", "focus", "bg", 3);
+  // R116: the entry line (App.svelte maps MathLive's highlights): the caret is --alpha, the box of the bracket that
+  // holds the cursor and the selection are --pick, both with --text on them
+  add("Entry", "caret on the entry line", "alpha", "panel", T);
+  add("Entry", "caret in the bracket's box (non-text)", "alpha", "pick", 3);
+  add("Entry", "the bracket's box apart from the entry line", "pick", "panel", PICK_APART);
   for (const k of [...KEYS, "key-pfx"]) {
     for (const f of ["text", "shift", "alpha"]) add("Keys", `${f} on ${k}`, f, k, T);
     add("Keys", `dead face on ${k}`, "text-dead", k, D);
