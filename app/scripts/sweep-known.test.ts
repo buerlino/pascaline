@@ -5,7 +5,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { invariantsStage } from "./invariants.ts";
-import { loadKnown, splitNightly } from "./sweep-known.ts";
+import { loadKnown, splitNightly, sweepFailures } from "./sweep-known.ts";
+import type { VerdictKind } from "../../tools/probes/sweep/judge.ts";
 
 const dir = mkdtempSync(join(tmpdir(), "sweepknown-"));
 mkdirSync(join(dir, "tests/golden"), { recursive: true });
@@ -31,5 +32,14 @@ describe("sweep known rows (A44)", () => {
     const stage = invariantsStage([{ id: "rad 30 g", check: "hang", detail: "" }], known.gate);
     expect(stage.ok).toBe(true);
     expect(stage.lines.join("\n")).not.toContain("NOW PASSING");
+  });
+  it("G144: the gate's failures take a crash as the nightly one does, and a crash row of the gate file hides it", () => {
+    const j = (kind: VerdictKind, latex: string, check?: string) => ({ angle: "rad" as const, digits: 30, latex, verdict: { kind, ...(check ? { check } : {}), detail: "d" } });
+    const judged = [j("ok", "a"), j("wrong", "b", "≈"), j("novalue", "c", "novalue"), j("hang", "d", "hang"), j("crash", "e", "crash"), j("refused", "f"), j("skip", "g"), j("nonnumber", "h")];
+    const failures = sweepFailures(judged);
+    expect(failures.map((f) => `${f.id} [${f.check}]`)).toEqual(["rad 30 b [≈]", "rad 30 c [novalue]", "rad 30 d [hang]", "rad 30 e [crash]"]);
+    expect(invariantsStage(failures, [{ id: "rad 30 d", check: "hang", package: "F62" }]).ok).toBe(false); // crash e is new
+    const stage = invariantsStage(sweepFailures([j("crash", "rad", "crash")]), [{ id: "rad 30 rad", check: "crash", package: "G94" }]);
+    expect(stage.ok).toBe(true);
   });
 });

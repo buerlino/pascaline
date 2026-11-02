@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // G103 (backlog F73): Home reads a value's kind, num/den and elements from bridge-3 (giac_value), not from Giac's print.
-// Each case is one the text readers missed (G85's probe, tools/probes/bridge.ts) and fails on phase-1; the kind each
+// Each case is one the text readers missed (G85's probe, described in docs/archive/structure-hindsight.md 2.1) and fails on phase-1; the kind each
 // test names is the one giac_value gives (checked first). Expected values are derived (exact arithmetic, Giac's types).
 // Skipped when no engine build is found (nodeGiac.ts).
 import { engineGiac } from "./nodeGiac.ts";
