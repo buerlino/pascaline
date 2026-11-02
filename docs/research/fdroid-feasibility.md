@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 # R1: F-Droid feasibility of our wasm build (sandra)
 
-**Status (2026-10-21): reference.** R1, the F-Droid reading of the wasm build; the recipe itself is `fdroid/README.md`, its one open answer is decisions.md "Needs the user" (A21).
+**Status (2026-10-21): reference.** R1, the F-Droid reading of the wasm build; the recipe itself is `fdroid/README.md`, A21 was decided on 2026-11-02 (F-Droid is not asked, decisions.md P22).
 
 *Moved from `spike/research/` on 2026-10-12 (cleanup audit). The `spike/` paths below were archived; they are in `git show 8ff8576:<path>`.*
 

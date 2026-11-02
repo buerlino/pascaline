@@ -53,11 +53,10 @@
 
 ## 6. libqalculate behaviour learned by probing (5.13.1, spike libraries)
 
-- **API:** `Calculator::calculate(str, eo)` (untimed) works on the calling thread; the timed `calculate(MathStructure*, str, msecs, …)` answers "aborted" with `msecs = 0`. `separateToExpression` splits `… to unit`; `convert(m, to, eo)` converts; `MathStructure::isApproximate()` and `PrintOptions::is_approximate` report approximation; `setPrecision(n)` sets the working digits.
-- **Exactness:** the default `APPROXIMATION_TRY_EXACT` gives exact rationals for SI-defined factors (`72 km/h to m/s` = 20, `1 in to mm` = 127/5, `1 lbf to N` = 8896443230521/2000000000000) and flags π, logarithms and uncertainties as approximate.
+libqalculate left the app's build (P22); its API, exactness and data-file notes are in [the 2026-10-12 architecture report](../archive/shifts/2026-10-12-sandra-architecture-report.md). What still bites a reader of `find/factors.yaml`:
+
 - **Silent non-answers:** `1 m + 1 s` returns `1 m + 1 s`; `20 °C * 2` returns 40 °C; `hp` is 745.699987158 W, flagged exact (true 745.69987158227 W).
 - **Names:** `degC` → coulomb·degree, `BTU` → byte·tesla·…, `mu0` → 0 kg, `epsilon0` → 0 J·bit, `NA` → N·A, `R` → röntgen, `h` → hour, `g` → gram, `e` → Euler's number. The real names: `°C`/`oC`, `Btu`, `magnetic_constant`/`μ_0`/`mu_0`, `electric_constant`/`ε_0`/`epsilon_0`, `elementary_charge`, `k_B`, `planck`, `c`.
-- **Data files:** `units.xml.in` has 426 unit definitions (a count of `<unit` gives 982 because of nested references), `variables.xml.in` 166 constants plus 18 built-in, `prefixes.xml.in` 34; names carry flags before `:` (`ar:c,speed_of_light`, `au:Ω,r:ohm,p:ohms`); constants have a `uncertainty` attribute; some are formulas (μ₀ = 2hα/(c e²)), which need qalc to evaluate.
 
 ## 7. MathLive behaviour learned by probing (0.111.1, Playwright Pixel 7 profile, 2026-10-14)
 
@@ -101,15 +100,9 @@
 
   R26a turns the template probe into a test.
 
-## 8. Where docs and code disagreed (2026-10-12), and the lesson
+## 8. Where docs and code disagreed, and the lesson
 
-- The "L7 size test" named in plans did not exist.
-- docs/03 listed `Ans` in Home; no key or parser rule reaches it.
-- docs/03 said 982 units; there are 426 definitions.
-- `rules.md` gave the parser to gorge; ron's agent file, 03 section 8 and the git history give it to ron.
-- `rules.md` said "two principles" after CLAUDE.md had three.
-
-**2026-10-15 (architecture check after 4a's entry work):** sections 1–4 here still described the Python app, inserted results as rounded digits, unstored definitions, digits ≤ 15 and the 2026-10-12 sizes; docs/04 2.4 said "no mark for non-numbers" while 2.9 said every CAS float gets `≈` (the code follows 2.4, so `x-0.54764225985` goes unmarked, docs/04 2.3 #17); docs/04 2.4 promised a reader for `tieRisk` that was never built (and is not needed); R43's text proposed a fourth test for "the end of a box" beside the three in the code (docs/04 5.5); docs/04 section 4 still described the qalc worker after P15; `app/scripts/size-check.ts` still names a "Units app chunk" (P11: the unit view). All fixed in the docs except the size-check label (annabell, with A6) and CLAUDE.md's "Worker 3: libqalculate" line (G15's merge gives the text).
+The lists of 2026-10-12 and 2026-10-15 are in [the 2026-10-12 architecture report](../archive/shifts/2026-10-12-sandra-architecture-report.md) and the git history of this note.
 
 **Lesson:** check claims in the code, the engine and the data, never in the docs alone; cite `file:line` or a probe; mark the rest (to verify) with who checks it and how.
 

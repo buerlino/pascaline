@@ -14,6 +14,10 @@ History only: read it when a decision is questioned. What still binds is in [../
 6. **Release:** new work (the AI port, the sync folder, R92) ships if ready by the freeze, only the bar gates; polish first, with R92 first in lane A; the weekly fuzz night is Wed 11-04. Would change if: the bar slips past 11-14.
 7. **Later:** plots of user functions after v0.1.0; milestone 6 kept whole (EN5–EN7, context Help); the v1 list stays on the backlog; history 200 rows; no backup reminder; 100 % offline. Would change if: the owner says so.
 
+### Shortened 2026-11-02 (night review, step 8) to make room for the owner's answers, as it stood
+From "Precision, engine and parser":
+- **P19 (2026-10-20): a Giac bug is fixed at its cause:** a local cause gets a patch (numbered by arrival), a canary in `tests/engine/` and a commit link to B. Parisse; a TypeScript workaround needs a cause that is not local, a written reason and a row in the register (S17). 0003 is complex `tanh` (G75). Rule: `docs/rules-core.md`. Would change if: Parisse declines a fix (we carry it); a patch fails at two re-pins.
+
 ### Shortened 2026-11-02 (Opus pass 50) to make room for R98's, R112's and R36f1's defaults, as they stood
 From "Pipeline and process":
 - **How research reaches the docs (decided 2026-10-20, the owner; H7 and the consolidation).** Rule: rules sections 9 (ids, reachable findings, probe scripts) and 10 (notes with an end, 150 kB); brief 0c step 5 (fix chains) and section 8 (line baseline, A22); the reviewer's questions in `sofia.md`. KhiCAS is read for reuse only for a named need, after a per-file licence check (E5). Would change if: the line baseline blocks a fix two nights running.
@@ -31,7 +35,7 @@ From "Feel, keys and screen":
 ### Shortened 2026-11-01 (Opus pass 43) to make room for R55's and R63's defaults, as they stood
 From "Pipeline and process":
 - **Owner answers of 2026-10-31, evening.** A53's diff stage stays (trigger ten minutes); a kill run skips the golden gate (A52f1, built 2d34033); a worker's measurement holds host-cpu at most 10 min at a time (A58); the Opus pass takes integ only for its docs commit (A57, by day; P17's text changes with it); sem in Find (G155, fh-11); fh-7 waits for the unit view in use.
-- **Owner answers of 2026-10-31 (night review 2026-10-30, [its note](../research/night-review-2026-10-31.md) section 6).** The website deploys only a gated build: check-version and the golden gate in `pages.yml` until A8's `release.yml` (A52). A package's "Done when" names no start-chunk allowance (Start chunk); R103, trimmed, measures the inline script. R90 is dropped: R24c brought the unit view. The docs budgets stay; the one-time phone checks live in `tests/core/ONE-TIME.md`. Would change if: A8 gates both deploys.
+- **Owner answers of 2026-10-31 (night review 2026-10-30, [its note](night-review-2026-10-31.md) section 6).** The website deploys only a gated build: check-version and the golden gate in `pages.yml` until A8's `release.yml` (A52). A package's "Done when" names no start-chunk allowance (Start chunk); R103, trimmed, measures the inline script. R90 is dropped: R24c brought the unit view. The docs budgets stay; the one-time phone checks live in `tests/core/ONE-TIME.md`. Would change if: A8 gates both deploys.
 
 ### Shortened 2026-11-01 (Opus pass 41) to make room for R63's default, as they stood
 From "Defaults":
