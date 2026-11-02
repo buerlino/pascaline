@@ -5,7 +5,8 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { parse } from "yaml";
-import type { KnownFailure } from "./invariants.ts";
+import type { InvariantFailure, KnownFailure } from "./invariants.ts";
+import type { Verdict } from "../../tools/probes/sweep/judge.ts";
 
 export const GATE_FILE = "tests/golden/sweep-known.yaml";
 export const NIGHTLY_FILE = "tests/golden/sweep-nightly-known.yaml";
@@ -27,4 +28,15 @@ export function splitNightly<T extends { id: string; check: string }>(failures: 
     fresh: failures.filter((f) => !hidden.has(knownKey(f))),
     nowPassing: known.nightly.filter((k) => ran.has(k.id) && !failed.has(knownKey(k))),
   };
+}
+
+/** Verdict kinds that fail a sweep run: the gate and the nightly report take the same four (G144: the gate left `crash` out, so an engine
+ *  crash was counted in the stats line and never failed the stage). */
+export const FAILING_KINDS: readonly string[] = ["wrong", "novalue", "hang", "crash"];
+
+/** The gate's failures of a judged run: every failing verdict as a row id ("<angle> <digits> <latex>") with its check. */
+export function sweepFailures(judged: readonly { angle: string; digits: number; latex: string; verdict: Verdict }[]): InvariantFailure[] {
+  return judged
+    .filter((j) => FAILING_KINDS.includes(j.verdict.kind))
+    .map((j) => ({ id: `${j.angle} ${j.digits} ${j.latex}`, check: j.verdict.check ?? j.verdict.kind, detail: j.verdict.detail ?? "" }));
 }
