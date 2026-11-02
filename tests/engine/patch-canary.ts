@@ -94,6 +94,9 @@ const CANARIES: [string, string, RegExp, string][] = [
   // G151, patch 0026: asinh of an exact real ends in its ln form, which cancels at evalf for a small x
   // (surd(asinh(1/10^100),3) took the noise's sign, the complex root)
   ["0026-asinh-small-real-exact.patch", "giac-2.1.0/src/usual.cc", /if \(keep_acosh_asinh\(contextptr\)\)\s*return symbolic\(at_asinh,e\);\s*return ln\(e\+sqrt\(pow\(e,2\)\+1,contextptr\),contextptr\);/, "gen asinh(const gen & e0,GIAC_CONTEXT){"],
+  // G153, patch 0027: atanh of an exact real ends in its ln form ln((1+x)/(1-x))/2, which cancels at evalf for a small x
+  // (atanh(89999/10^1003) was 0 at 60 digits, so ln of it -infinity and Home's double fallback read noise)
+  ["0027-atanh-small-real-exact.patch", "giac-2.1.0/src/usual.cc", /return symbolic\(at_program,gen\(makevecteur\(a,0,atanh\(b,contextptr\)\),_SEQ__VECT\)\);\s*return rdiv\(ln\(rdiv\(1\+e,1-e,contextptr\),contextptr\),plus_two\);/, "gen atanh(const gen & e0,GIAC_CONTEXT){"],
   // G135, patch 0019: atan keeps an exact argument on its cut symbolic (atan(2*i)), which Giac's cos rule reads on the other side
   ["0019-atan-exact-cut.patch", "giac-2.1.0/src/usual.cc", /atan\(b,contextptr\)\),_SEQ__VECT\)\);\s*gen tmp=evalf_double\(e,0,contextptr\);\s*if \(tmp\.type==_DOUBLE_\)\{/, "return symbolic(at_program,gen(makevecteur(a,0,atan(b,contextptr)),_SEQ__VECT));"],
   // G135, patch 0019: cos(atan(f)) = sqrt(1/(f^2+1)) takes the other root where f^2+1 is a negative real (cos(quote(atan(2*i))) = i*sqrt(3)/3)
@@ -104,8 +107,12 @@ const CANARIES: [string, string, RegExp, string][] = [
 
 const tar = tarball(SOURCES.giac);
 const failures: string[] = [];
+// G153: each file is unpacked once (tar -xzOf reads the whole tarball, about 2 s); one unpack per canary took 107 s for
+// 51 canaries, past the flags stage's 120 s under load.
+const files = new Map<string, string>();
+const read = (file: string): string => files.get(file) ?? files.set(file, member(tar, file)).get(file)!;
 for (const [patch, file, wrong, near] of CANARIES) {
-  const src = member(tar, file);
+  const src = read(file);
   const at = src.indexOf(near);
   const body = at < 0 ? "" : src.slice(at, at + 3000);
   if (at < 0) failures.push(`${patch}: "${near}" not found in ${file}`);

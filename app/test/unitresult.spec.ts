@@ -91,6 +91,19 @@ test.describe("the unit result view (R62)", () => {
     await expect(page.getByTestId("unit-view")).toHaveCount(0);
   });
 
+  test("a redraw of the same result (▼ ▲) keeps the row's chips, so a tap that lands during it still picks (G153 fix round 1)", async ({ page }) => {
+    await kmh(page);
+    const second = (await texts(page))[1] as string;
+    await chips(page).nth(1).evaluate((b) => b.setAttribute("data-kept", ""));
+    await tap(page, ["down"]);
+    await expect(page.locator('[data-testid="unit-alt"][data-focus]')).toHaveCount(1);
+    await tap(page, ["up"]);
+    await expect(page.locator("[data-focus]")).toHaveCount(0);
+    await expect(page.locator('[data-testid="unit-alt"][data-kept]')).toHaveText(second);
+    await chips(page).nth(1).tap();
+    await expect(result(page)).toHaveAttribute("data-unit", second);
+  });
+
   test("2π·25 mm shows ≈ 157.079632679 mm and the m chip gives ≈ 0.157079632679 m (t04)", async ({ page }) => {
     await plan(page, "d2 mul ↑d3 mul d2 d5");
     await unitsKey(page);

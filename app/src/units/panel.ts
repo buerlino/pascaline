@@ -104,12 +104,21 @@ export function makePanel(view: () => UnitView | undefined): Panel {
     more.toggleAttribute("data-focus", v.row === n);
     row.dataset["fit"] = `${n}`;
   };
+  /** The state `below` was built from: a draw with the same state (▼, ▲, a new width) keeps its elements and refits the
+   *  row, since a chip replaced under a finger drops its tap (G153 fix round 1: a tap on the knot chip did nothing). */
+  let built: UnitView["shown"] | undefined;
   const draw = (): void => {
     const v = view();
     if (!v) return;
     element.dataset["slot"] = v.activeId;
     reading.replaceChildren(...v.reading.parts.flatMap((p, i) => [...(i ? [" "] : []), el("span", p.marked ? "rare" : "", undefined, p.text)]));
     const s = v.shown;
+    if (s === built) {
+      const row = below.querySelector<HTMLElement>(".alts");
+      if (row) fitRow(row);
+      return;
+    }
+    built = s;
     const out: HTMLElement[] = [];
     if (s.kind === "message") {
       const m = el("div", "message", "unit-message", s.text);
@@ -119,8 +128,7 @@ export function makePanel(view: () => UnitView | undefined): Panel {
     else if (s.kind === "result") out.push(...resultRows(s, v, fitRow));
     below.replaceChildren(...out);
   };
-  // a new width changes how many chips fit (the first callback is the size at the start: the draws measure it themselves,
-  // and a draw under a finger would drop its tap)
+  // a new width changes how many chips fit (the first callback is the size at the start: the draws measure it themselves)
   let width = -1;
   if (typeof ResizeObserver !== "undefined")
     new ResizeObserver(() => {
