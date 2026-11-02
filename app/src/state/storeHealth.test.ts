@@ -32,13 +32,24 @@ describe("the store records its health (R96)", () => {
     await storage.kvSet("view", "cas");
     expect(storage.storeHealth()).toBe("kept");
   });
-  it("failed after a put that failed (a full disk), kept again once a write lands", async () => {
+  it("failed after a commit that failed (a full disk: abort alone, R96f1), kept again once a write lands", async () => {
     await storage.kvSet("seed", 0); // makes the store
-    idb.failPuts.add("history");
-    await storage.kvSet("history", { home: [] });
+    idb.failCommits.add("history");
+    await storage.kvSet("history", { home: [] }); // settles: onabort rejects
     expect(idb.stores.get("kv")?.has("history")).toBe(false);
     expect(storage.storeHealth()).toBe("failed");
-    idb.failPuts.clear();
+    idb.failCommits.clear();
+    await storage.kvSet("history", { home: [] });
+    expect(storage.storeHealth()).toBe("kept");
+  });
+  it("per key (R96f1): a later write of another key that lands does not hide the failed one", async () => {
+    await storage.kvSet("seed", 0);
+    idb.failCommits.add("history");
+    await storage.kvSet("history", { home: [] });
+    idb.failCommits.clear();
+    await storage.kvSet("settings", { digits: 9 });
+    expect(idb.stores.get("kv")?.has("settings")).toBe(true);
+    expect(storage.storeHealth()).toBe("failed");
     await storage.kvSet("history", { home: [] });
     expect(storage.storeHealth()).toBe("kept");
   });
@@ -146,6 +157,20 @@ describe("Settings › Data's last row (R96)", () => {
     idb.failGetsOnce.add("view");
     await storage.idbKv.get("view");
     expect(row(items()).label).toBe("Not saved: changes are lost when the app closes");
+  });
+  it("Not saved after a commit that failed (a full disk, R96f1), while a later write of another key lands", async () => {
+    vi.stubGlobal("navigator", { storage: { persisted: async () => true } });
+    await storage.kvSet("seed", 0);
+    idb.failCommits.add("history");
+    await storage.kvSet("history", { home: [] });
+    const { items } = await level();
+    await new Promise((r) => setTimeout(r, 20));
+    expect(row(items()).label).toBe("Not saved: changes are lost when the app closes");
+    idb.failCommits.clear();
+    await storage.kvSet("settings", { digits: 9 });
+    expect(row(items()).label).toBe("Not saved: changes are lost when the app closes");
+    await storage.kvSet("history", { home: [] });
+    expect(row(items()).label).toBe("Kept on this device");
   });
   it("Not saved in a tab that is not the writer (R95): another tab holds the lock, nothing is written", async () => {
     vi.stubGlobal("navigator", { storage: { persisted: async () => true } });
