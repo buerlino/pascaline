@@ -1,15 +1,13 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Pure parts of exact-first Home. Every expected value here is `derived` (exact arithmetic by hand).
 import { describe, expect, it } from "vitest";
-import { EQ_DIFF, EQ_INEXACT_FLAG, EQ_VERDICT, toExactLiterals } from "./homeEval.ts";
-import { EQ_DIFF as EMITTED_DIFF, EQ_INEXACT_FLAG as EMITTED_FLAG, EQ_VERDICT as EMITTED_VERDICT, mathJsonToGiac } from "../input/emit.ts";
+import { toExactLiterals } from "./homeEval.ts";
+import { EQ_INEXACT_FLAG } from "./ourNames.ts";
+import { mathJsonToGiac } from "../input/emit.ts";
 import { markOf } from "./format.ts";
 
 describe("the == test's float flag (R18f1)", () => {
   it("is spelled the same in the parser's test form and in Home", () => {
-    expect(EMITTED_FLAG).toBe(EQ_INEXACT_FLAG);
-    expect(EMITTED_DIFF).toBe(EQ_DIFF);
-    expect(EMITTED_VERDICT).toBe(EQ_VERDICT);
     expect(mathJsonToGiac(["EqualTest", "x", 2])).toContain(`sto(1,${EQ_INEXACT_FLAG})`);
   });
   it("makes a true or false resting on a float approximate; other non-numbers stay unmarked", () => {

@@ -12,13 +12,12 @@
 // Runs synchronously next to the engine; only erasable TypeScript syntax.
 import { callsIn, type Refusal } from "./converge.ts";
 import { MAX_EVAL_DIGITS, type ElementFacts, type Giac, type Shape } from "./numeric.ts";
-import { callsOf, firstNameIn, functionsIn, names, type Quoting, withoutStrings } from "./giacPrint.ts";
+import { callsOf, firstNameIn, functionsIn, isError, names, type Quoting, withoutStrings } from "./giacPrint.ts";
 import { isZero } from "./format.ts";
 
 /** The reasons of this module; the UI shows `error.<code>` from the i18n table (enEngine.ts). */
 export type NoValue = Extract<Refusal, "divisionByZero" | "overflow" | "underflow" | "noValue">;
 
-const isError = (t: string): boolean => t.startsWith("GIAC_ERROR");
 const infinite = (t: string): boolean => /infinity/.test(t);
 /** An infinity the user typed: then an infinite part is meant, not a division by zero. */
 const TYPED_INF: ReadonlySet<string> = new Set(["inf", "infinity"]);

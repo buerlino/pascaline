@@ -3,9 +3,7 @@
 import { parseError } from "../i18n/enParser.ts";
 import { equalityTest } from "./emit.ts";
 import { ANS_KEY } from "./chips.ts";
-
-/** The prefix of a result chip sent by name (G49's `pasr_<k>`, engine/chipFacts.ts; kept equal there). */
-const CHIP_PREFIX = "pasr_";
+import { CHIP_PREFIX } from "../engine/ourNames.ts";
 
 /**
  * The Giac name of a result chip that is not exact (R65, deep check D1): `pasr_<k>` for `\res{k}`, `pasr_ans` for Ans.

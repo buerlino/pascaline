@@ -3,17 +3,12 @@
 // integers, a branch), and their second run at P + 20 and P + 40. Split out of numeric.ts (G71). Synchronous, UI-free;
 // only erasable TypeScript syntax.
 import { DOUBLE_DIGITS, hasFloat, namePrint, numbersAt, shapeOfValue, size, valuePrecision, withDigits, type ElementFacts, type Giac, type Shape } from "./numeric.ts";
-import { callsOf, closing, functionsIn, isName, namesIn, type Quoting, topLevelArgs, UNCLOSED, walk, withoutStrings } from "./giacPrint.ts";
+import { callsOf, closing, functionsIn, isError, isName, namesIn, type Quoting, RATIONAL, topLevelArgs, UNCLOSED, walk, withoutStrings } from "./giacPrint.ts";
 import { decimalFromString, isZero, type DecimalValue } from "./format.ts";
 import type { GiacValue } from "./bridge.ts";
 import { ESERIES_CUT } from "./eseries.ts";
 
-const RATIONAL = /^(-?\d+)(?:\/(\d+))?$/;
 const INTEGER = /^\s*\d+\s*$/;
-
-function isError(out: string): boolean {
-  return out.startsWith("GIAC_ERROR");
-}
 
 /**
  * Functions whose result rests on a numeric decision Giac makes at `Digits` inside the exact evaluation: the sign of a

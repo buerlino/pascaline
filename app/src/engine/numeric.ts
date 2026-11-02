@@ -30,7 +30,7 @@ import {
 import { binary64Of } from "./binary64.ts";
 import { ICDF_DIGITS, ICDF_FAILED, erfValueText, icdfCalls, icdfPolished } from "./icdf.ts";
 import type { GiacValue } from "./bridge.ts";
-import { callsOf, functionsIn, LIST_TYPE, matrixTyped, type Quoting, splitList, topLevelArgs, wholeCall } from "./giacPrint.ts";
+import { callsOf, functionsIn, isError, LIST_TYPE, matrixTyped, type Quoting, RATIONAL, splitList, topLevelArgs, wholeCall } from "./giacPrint.ts";
 import { complexReads, complexReplacedIn, complexSafe, forValue, nonReal, purgeReads } from "./complex.ts";
 
 export interface Giac {
@@ -265,8 +265,6 @@ export function size(shape: Shape): number {
 
 // --- reading values -------------------------------------------------------------------------------------------------
 
-const RATIONAL = /^(-?\d+)(?:\/(\d+))?$/;
-
 /** A printed rational (`-7/3`, `12`) as a DecimalValue, with its numerator and denominator lengths. */
 export function rationalValue(text: string, keep?: number): { v: DecimalValue; p: bigint; q: bigint } | null {
   const m = RATIONAL.exec(text.trim());
@@ -290,10 +288,6 @@ export function shortDigits(text: string, asked: number): number | undefined {
   // Fewer than 14 digits: Giac drops trailing zeros, so a short print is a value that fits (round(-2.25,1) prints -2.2).
   if (sig.length < DOUBLE_DIGITS || sig.length > DOUBLE_DIGITS + 1) return undefined;
   return Math.max(0, sig.length - 1);
-}
-
-function isError(out: string): boolean {
-  return out.startsWith("GIAC_ERROR");
 }
 
 /** Runs fn with Giac's Digits set to d, then sets it back to `restore` (G102: through bridge-1 when the Giac has it). */

@@ -29,7 +29,7 @@ export const ARING = "aring";
 export const promptId = (t: Tok | undefined): string | undefined => (t?.t === "cmd" ? t.id : undefined);
 
 /** The end of a `{…}` group starting at `j` (braces balanced, `\{` and `\}` skipped), or -1. */
-function groupEnd(src: string, j: number): number {
+export function groupEnd(src: string, j: number): number {
   if (src[j] !== "{") return -1;
   let depth = 0;
   for (let k = j; k < src.length; k++) {

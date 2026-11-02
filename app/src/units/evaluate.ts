@@ -6,7 +6,7 @@
 // agreement check), so markOf() marks it as Home. Synchronous, UI-free. Only erasable TypeScript syntax.
 import { FULL_EXACT_MAX, resultFromFacts, toExactLiterals, type HomeResult, type HomeSettings } from "../engine/homeEval.ts";
 import { exactFacts, floatFacts, hasFloat, rationalValue, valuePrecision, type ElementFacts, type Giac } from "../engine/numeric.ts";
-import { callsOf, isNameChar, splitList } from "../engine/giacPrint.ts";
+import { callsOf, isError, isNameChar, splitList } from "../engine/giacPrint.ts";
 import { PASDEG } from "../input/angles.ts";
 import { BASES, dimKeyOf, dimensionText, isExponent, parseDimKey, siSlot, siUnit } from "./dims.ts";
 import { isUnitError, type Quantity, type Uncertainty, type UncVar, type UnitError, type UnitJob, type UnitNote, type UnitSlot } from "./types.ts";
@@ -96,10 +96,6 @@ export const UNIT_DEFINITIONS: readonly string[] = [
 
 /** G41: the second-order part above this share of σ² gives ⚠ "first order does not hold here". */
 const ORDER2_SHARE = 0.1;
-
-function isError(out: string): boolean {
-  return out.startsWith("GIAC_ERROR");
-}
 
 /** sin, cos and tan of the formula take an angle (P15), asin, acos, atan, atan2 and the others give one (G40): our
  *  versions. pasua reads the angle in the mode's unit itself and the inverses give rad, so the parser's degree factor
