@@ -255,7 +255,7 @@
     );
   }
 
-  /** A finger went down on the keypad, or a gesture made a step: vibrate when switched on in Settings. */
+  /** A finger went down on the keypad: vibrate when switched on in Settings (one pulse per touch, R112). */
   function touched(): void {
     const h = session.settings.haptics;
     if (h.on) vibrate(h.strength / 100, h.ms);
