@@ -120,6 +120,9 @@ describe("what a cell shows and emits", () => {
     expect(pad.press("d1", "shift")).toBeNull();
     expect(shown(pad, "d1", true, false)).toMatchObject({ dead: true });
     expect(pad.press("math", "shift")).toBeNull();
+    // R118: Shift + ⌫ (Del, a hardware Delete) is dead with the pulse: a slot has no cursor, so nothing is after it
+    expect(pad.press("bksp", "shift")).toBeNull();
+    expect(pad.press("bksp", "alpha")).toBeNull();
   });
 
   it("marks the user cells and emits their units; an empty one is dim with a +", () => {

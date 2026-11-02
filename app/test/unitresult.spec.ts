@@ -181,12 +181,36 @@ test.describe("the unit result view (R62)", () => {
     expect(await page.evaluate(() => window.pascaline.unitView?.view.model("u2")?.slot.tokens[0]?.unit)).toBe("s");
   });
 
-  test("More… clears the end slot and opens Find", async ({ page }) => {
+  test("More… opens Find and keeps the result; Esc there leaves the value line and the end slot as before More… (R118, vr-8)", async ({ page }) => {
+    await kmh(page);
+    const before = await endSlot(page); // (km/h was typed in the first slot and evaluated at once: the end slot is empty)
+    const active = await page.evaluate(() => window.pascaline.unitView?.view.activeId);
+    await page.getByTestId("unit-more").tap();
+    await expect(page.getByTestId("find")).toBeVisible();
+    await expect(page.getByTestId("unit-view")).toBeVisible();
+    await tap(page, ["esc"]);
+    await expect(page.getByTestId("find")).toBeHidden();
+    await expect(page.getByTestId("unit-view")).toBeVisible();
+    await expect(result(page)).toHaveAttribute("data-text", "72");
+    await expect(result(page)).toHaveAttribute("data-unit", "km/h");
+    await expect(mark(page)).toHaveText("=");
+    expect(await endSlot(page)).toBe(before);
+    expect(await page.evaluate(() => window.pascaline.unitView?.view.activeId)).toBe(active);
+    expect(await page.evaluate(() => window.pascaline.unitView?.view.model("u1")?.slot.tokens.length)).toBe(2);
+  });
+
+  test("More…, then a pick in Find: the end slot holds the picked unit and the result is in it", async ({ page }) => {
     await kmh(page);
     await page.getByTestId("unit-more").tap();
-    await expect(page.getByTestId("unit-view")).toBeVisible();
-    expect(await endSlot(page)).toBe("");
-    await expect(page.getByTestId("unit-result")).toHaveCount(0);
+    const find = page.getByTestId("find");
+    await expect(find).toBeVisible();
+    await find.getByRole("menuitem").first().tap();
+    await expect(find).toBeHidden();
+    await expect(result(page)).toBeVisible();
+    const unit = await result(page).getAttribute("data-unit");
+    expect(unit).not.toBe("km/h");
+    expect(await endSlot(page)).not.toBe("");
+    expect(await page.evaluate(() => window.pascaline.unitView?.view.activeId)).toBe("end");
   });
 });
 
