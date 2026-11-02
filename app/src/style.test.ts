@@ -112,3 +112,47 @@ describe("no colour is written directly in the three components", () => {
     expect(readFileSync(new URL("./App.svelte", import.meta.url), "utf8")).not.toMatch(/--selection-background-color:\s*#/);
   });
 });
+
+// R116: the entry line's highlights. App.svelte maps MathLive's variables to theme tokens (one scheme for the caret,
+// the box of the bracket that holds the cursor and the selection); every theme block (style.css and the five lazy
+// family files: every family, brightness, High contrast and Plain keys) meets the floors with that mapping.
+const MATHLIVE = ["caret-color", "contains-highlight-background-color", "contains-highlight-color", "selection-background-color", "selection-color"] as const;
+/** The `--name: var(--token)` pairs of App.svelte's `.entry :global(math-field)` rule. */
+function entryMap(): Record<string, string> {
+  const src = readFileSync(new URL("./App.svelte", import.meta.url), "utf8");
+  const rule = /\.entry :global\(math-field\)\s*\{([^}]*)\}/.exec(src)?.[1] ?? "";
+  return Object.fromEntries([...rule.matchAll(/--([a-z-]+):\s*var\(--([a-z-]+)\)/g)].map((m) => [m[1] as string, m[2] as string]));
+}
+/** Every block of a theme combination, with whether it is High contrast. */
+function allThemeBlocks(): [string, Record<string, string>, boolean][] {
+  const files = ["./style.css", ...["pascaline", "graphite", "solarized", "gruvbox", "nord"].map((f) => `./theme/${f}.css`)];
+  return files.flatMap((f) =>
+    [...readFileSync(new URL(f, import.meta.url), "utf8").matchAll(/:root(\[data-family="[a-z]+"\]\[data-brightness="(?:dark|light)"\](?:\[data-[a-z]+="[a-z]+"\])*)\s*\{([^}]*)\}/g)].map(
+      (m): [string, Record<string, string>, boolean] => [m[1] as string, tokens(m[2] as string), (m[1] as string).includes('data-contrast="high"')],
+    ),
+  );
+}
+/** theme-gen.ts PICK_APART: the box stands this far from the entry line's --panel (1.13 was not seen on the Tab One). */
+const APART = 1.3;
+
+describe("entry highlights (R116)", () => {
+  const map = entryMap();
+  it("every MathLive highlight of the entry line (and the unit view's field, inside .entry) is a theme token", () => {
+    for (const v of MATHLIVE) expect(map[v], `--${v}`).toMatch(/^[a-z-]+$/);
+    expect(map["selection-background-color"]).toBe(map["contains-highlight-background-color"]); // the box and the selection: one ground (never both at once)
+  });
+  const blocks40 = allThemeBlocks();
+  it("reads the 40 theme combinations", () => expect(blocks40).toHaveLength(40));
+  for (const [sel, t, hc] of blocks40)
+    it(`${sel}: the box, the selection and the caret meet the floors, and the box stands apart from --panel`, () => {
+      const T = hc ? 7 : 4.5;
+      const c = (role: string): string => t[map[role] ?? "-"] ?? `missing --${map[role]}`;
+      expect(contrast(t["text"] as string, c("contains-highlight-background-color")), "text in the box").toBeGreaterThanOrEqual(T);
+      expect(contrast(c("contains-highlight-color"), c("contains-highlight-background-color")), "the bracket on its box").toBeGreaterThanOrEqual(T);
+      expect(contrast(c("selection-color"), c("selection-background-color")), "selected text").toBeGreaterThanOrEqual(T);
+      expect(contrast(c("caret-color"), t["panel"] as string), "caret on the entry line").toBeGreaterThanOrEqual(T);
+      expect(contrast(c("caret-color"), c("contains-highlight-background-color")), "caret in the box (non-text)").toBeGreaterThanOrEqual(3);
+      expect(contrast(c("contains-highlight-background-color"), t["panel"] as string), "the box apart from --panel").toBeGreaterThanOrEqual(APART);
+      expect(contrast(c("selection-background-color"), t["panel"] as string), "the selection apart from --panel").toBeGreaterThanOrEqual(APART);
+    });
+});
