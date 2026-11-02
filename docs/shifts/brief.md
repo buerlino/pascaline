@@ -16,7 +16,7 @@
 4. **Lane B, to v0.1.0** (the APK and the website from one tag): A43, A48 and A50 merged, so A7 may start: A7 (signing, the owner's key made off this laptop), A49 and A45 merged, A8 (the owner's test tag); A9 with the owner's phone by day (F41); then wrong numbers by reach, C4. The bar and the days: [release-0.1.0.md](../release-0.1.0.md); from its freeze (Thu 11-12) both lanes run only its fixes.
 5. **Every morning:** the owner's check (MORNING.md, on the night's device when the night had one, about 10 minutes). The day session writes each failed step as a backlog bug line on phase-1 and logs one line in `.coord/log.md`: `- HH:MM morning <date>: clean` or `- HH:MM morning <date>: fails <ids>`.
 
-**The weekly extreme night** (owner, 2026-10-29; replaces the nightly fuzz of 2026-10-27): once a week lane B runs the extreme-input packages (open: G148, G141, G142) and the fuzz with its triage (G138; each week its text with a new ID); the Opus pass files the backlog lines. Wrong numbers of everyday or medium reach run any time, by reach.
+**The weekly extreme night** (owner, 2026-10-29; replaces the nightly fuzz of 2026-10-27): once a week lane B runs the extreme-input packages (open: G148, G141, G142, then G156) and the fuzz with its triage (G138; each week its text with a new ID); the Opus pass files the backlog lines. Wrong numbers of everyday or medium reach run any time, by reach.
 
 **No package yet** (backlog, by reach): F73 (it waited for the end of the freeze), F80, F85, F70, F71; the background stream F62, G94, F106; what G116 finds. S20 (the MPFI spike) by day.
 
@@ -73,11 +73,8 @@ A7, A8, A9 and [A57](packages/A57.md) run by day (section 0); A43 and A58 are me
 | Step | What | Agent, model | Branch | After |
 |---|---|---|---|---|
 | 408 | [G138](packages/G138.md) the weekly fuzz and its triage | gorge, Opus | `p1/gorge-nightfuzz-1106` | the weekly night |
-| 439 | [G144](packages/G144.md) the gate's sweep fails on an engine crash, every probe still loads | gorge, Sonnet | `p1/gorge-loudtools` | – |
-| 440 | [G146](packages/G146.md) unit tests for the decision and stored-facts code | gorge, Opus | `p1/gorge-decisiontests` | – |
 | 441 | [G145](packages/G145.md) one home for duplicated helpers; dead exports out | gorge, Sonnet | `p1/gorge-tidyhelpers` | – |
 | 442 | [G147](packages/G147.md) one import direction between the main thread and the engine | gorge, Sonnet | `p1/gorge-importdir` | R103 |
-| 436 | [G153](packages/G153.md) three 30-digit rows of G137 (F155); two done, row 1 waits for G141 | gorge, Opus | `p1/gorge-g137rest` | – (G153f1 merges it) |
 | 437 | [G152](packages/G152.md) acosh's sign and tiny imaginary part (F143, F144) | gorge, Opus | `p1/gorge-acoshsign` | G142 |
 
 ### The commands henri replies with (one per decision; `scripts/night.sh` runs it)
