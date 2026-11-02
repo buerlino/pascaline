@@ -55,7 +55,7 @@ Tonight's queue (one lane, to 07:00) comes first, then each lane's table; With t
 `ANDROID_SERIAL=HA24BZ2Y` for both lanes, `--until 05:30` (the closing pass and the report take 1.5 to 2 h more); CORE DEVICE after each pass. Not the weekly extreme night: row 408 waits. A step whose "After" is not merged is skipped; "–" was checked against the merges on 2026-11-01. The FIX lines of Opus passes 42 and 43 ran first (G154f1, R15c4f1 and R63f2 merged). The owner is away: follow each Opus pass as written (rule 3).
 
 ### Lane A queue (ron's UI)
-Milestone reviews (section 0): after R50e; after R24d (with R108's gallery group "Decimal comma in apps"; R89 on the Fairphone: save two presets with different free keys and switch; R111's note at 360 px; R33's stored-name colour in each theme, decisions.md "Needs the user").
+Milestone reviews (section 0): after R50e; after R24d (with R108's gallery group "Decimal comma in apps"; R89 on the Fairphone: save two presets with different free keys and switch; R111's note at 360 px; R33's stored-name colour in each theme, decisions.md "Owner answers of 2026-11-02").
 
 | Step | What | Agent, model | Branch | After |
 |---|---|---|---|---|

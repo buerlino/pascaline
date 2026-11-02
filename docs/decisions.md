@@ -11,8 +11,6 @@ The owner's other open items are in [backlog.md](backlog.md), "Needs the user". 
 
 - **R50e, on the phone:** (1) the first frame reads the Android default (Dark) from `window.Capacitor` in the inline script; if the bridge is not there yet at that point, a first start with nothing stored shows System for one frame, then Dark (later starts read the mirror). Look at a first start after "clear data". (2) Android's status and navigation bar colours stay open (not in R50e).
 
-- **R33, the stored-name colour (pass 49):** recommendation: a token of its own per theme, picked by eye after R24d; till then a stored one-letter name takes the ≈ colour (`--name-mark`), lending it the ≈ meaning.
-
 - **R15c4, the first-start tips (day check):** the overlay shows on a fresh profile after the keypad is drawn; the flag `tipsSeen` is stored when it is shown, so a kill before "Got it" still counts as seen. The tests open with `?tips=off` (R15c4f1); a deep link with `tips=off` hides it for anyone. Look at it on the phone: the ring positions at 360 px and in the small-phone gallery shot; whether the dim is dark enough in the light theme.
 
 
@@ -35,7 +33,8 @@ The owner's other open items are in [backlog.md](backlog.md), "Needs the user". 
 - **Small packages (2026-10-14, the owner's rule).** One concern each, about a day or less, with its own reading list; placed by importance, then dependencies.
 
 ### Feel, keys and screen (milestone 4a)
-- **Owner answers of 2026-10-31 and 2026-11-01, stored data, the comma and `%` (night review fh-2, vr-13, vg-8).** Web: one writer per browser profile (Web Locks); a second tab computes but stores nothing until "Use here", which reloads it; its note's visible line is "Nothing done in this tab is kept" (R95, 11-01). In comma mode a stored input's argument commas are drawn as `;` (display only; L6 stays; R100). An older build that keeps newer stored data in memory says so once as a history line, as G19's (R94, 11-01: the status line has no text slot). `%` gets a key (R104, 11-01; built by R110: docs/06). Would change if: two tabs side by side are wanted on purpose.
+- **Owner answers of 2026-10-31 and 2026-11-01 (stored data, the comma, `%`):** built (R95, R100, R94, R110). Full text: archive. Would change if: two tabs side by side are wanted on purpose.
+- **Owner answers of 2026-11-02.** Stored names (R33) get a colour token of their own per theme, picked at the R24d review (`--name-mark` till then). Key vibration (A9, R112): the app's switch alone decides (the plugin names `USAGE_PHYSICAL_EMULATION`, which the system's touch feedback does not mute); one pulse per touch, at finger-down, none for pad steps or flicks (a dead key's double pulse stays); strength on motors without amplitude control: a package later. Would change if: users want the system switch to mute the keys.
 - **R4b's four defaults, as built (Opus pass 18):** Memory deletes a name without asking (Clear all asks once); a Find pick for a slot closes the sheets; a key's constant keeps its value and σ; Vars is dead without an entry line. Full text: archive.
 - **Settings in the Mode sheet, and presets (owner, 2026-10-27; replaces 2026-10-19's list of rows).** Settings is a level of the pick sheet, seven sections; Shift + Fmt opens Mode; buttons only where they save a press; no long presses. A preset snapshots any user settings, the free keys too. Rule: docs/05 3.4; R49, R85–R89. Would change if: presets are switched under 5 times in 4 weeks (they go).
 - **R15c1 menus (the owner, 2026-10-20): the Home menu (10 rows) and the Plot menu (9) scroll** over the keypad (docs/05 3.1). Full text: archive. Would change if: the scroll feels slow on the APK.
