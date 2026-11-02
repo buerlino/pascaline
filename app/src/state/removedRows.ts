@@ -45,6 +45,10 @@ export function putBack(list: HistoryItem[], rows: readonly { at: number; item: 
   for (const r of rows) list.splice(Math.min(r.at, list.length), 0, r.item);
 }
 
+/** The copy with every place moved down by `n`: the stored history's read put `n` rows in front of the list it was taken
+ *  from (a Clear or Delete before the read, R98). */
+export const shifted = (c: RemovedRows, n: number): RemovedRows => ({ ...c, rows: c.rows.map((r) => ({ ...r, at: r.at + n, storedAt: r.storedAt + n })) });
+
 /** The copy for the store (a snapshot); undefined when none of its rows is stored. */
 export function storedCopy(c: RemovedRows | null): StoredRemoved | undefined {
   const rows = (c?.rows ?? []).filter((r) => storable(r.item)).map((r) => ({ at: r.storedAt, item: r.item }));

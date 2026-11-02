@@ -265,8 +265,8 @@ export class Session {
 
   /** Says something once as a history line, in both views (the definitions are shared, and the open view may still be
    *  restoring). Notes are not stored: the saved history keeps finished entries only. */
-  private note(text: string): void {
-    for (const view of ["home", "cas"] as const) {
+  private note(text: string, views: readonly View[] = ["home", "cas"]): void {
+    for (const view of views) {
       (view === "home" ? this.home : this.cas).push({
         id: this.nextId++,
         view,
@@ -657,29 +657,36 @@ export class Session {
     }
   }
 
-  /** Delete one row of the open view (R11). A running row is not deleted: Cancel stops it first. Undo brings it back (R98). */
-  removeItem(item: HistoryItem): boolean {
+  /** Delete one row of the open view (R11). A running row is not deleted: Cancel stops it first. Undo brings it back (R98).
+   *  Resolves false when nothing was deleted (a running row, a row already gone, the Undo code that would not load). */
+  removeItem(item: HistoryItem): Promise<boolean> {
     const found = this.items.find((i) => i.id === item.id);
-    if (!found || found.status === "pending") return false;
-    void this.takeRows("delete", (i) => i.id === item.id);
-    return true;
+    if (!found || found.status === "pending") return Promise.resolve(false);
+    return this.takeRows("delete", (i) => i.id === item.id);
   }
 
   /** Clear history (R98): the finished, error and note rows go; a running row stays with its Cancel, so Esc still stops
    *  it and Enter is still refused while it runs. Undo brings the rows back; a Clear that finds nothing drops that copy. */
-  clearHistory(): Promise<void> {
+  clearHistory(): Promise<boolean> {
     return this.takeRows("clear", (i) => i.status !== "pending");
   }
 
   /** What the last Clear or Delete took, one level, until the next Enter (R98; History draws its note). */
   undoCopy = $state.raw<RemovedRows | null>(null);
-  private async takeRows(kind: RemovedKind, take: (i: HistoryItem) => boolean): Promise<void> {
+  /** The rows are picked at the press (by id), so a row the stored history's read or an Enter adds while the code loads
+   *  stays. Resolves false when the code did not load: nothing is taken without its Undo, and a note in the view says so. */
+  private async takeRows(kind: RemovedKind, take: (i: HistoryItem) => boolean): Promise<boolean> {
     const [view, list] = [this.view, this.items];
+    const ids = new Set(list.filter(take).map((i) => i.id));
     const m = removedCode ?? (await loadRemoved()); // (loaded: no await, the act is done before the next key)
-    if (!m) return; // the code did not load: nothing is taken without its Undo
-    const rows = m.takeOut(list, take);
+    if (!m) {
+      this.note(t("history.notRemoved"), [view]);
+      return false;
+    }
+    const rows = m.takeOut(list, (i) => ids.has(i.id));
     this.undoCopy = rows.length ? { view, kind, rows } : null;
     this.saveHistory(); // the list and the copy in one write
+    return true;
   }
   /** Undo on an empty line, or a tap on the note (R98): the rows the open view's last Clear or Delete took go back in
    *  their places. False: no copy for this view (the line's own undo then runs, P13). */
@@ -755,8 +762,12 @@ export class Session {
           .filter((i) => (i.status === "done" || i.status === "error") && typeof i.latex === "string")
           .slice(-HISTORY_LIMIT)
           .map((i) => restoredItem(i, this.nextId++));
-      this.home.splice(0, 0, ...keep(hist.home));
-      this.cas.splice(0, 0, ...keep(hist.cas));
+      const [home, cas] = [keep(hist.home), keep(hist.cas)];
+      this.home.splice(0, 0, ...home);
+      this.cas.splice(0, 0, ...cas);
+      // A Clear or Delete before the read kept places in the list without the stored rows, now in front (a copy means its code is in)
+      const c = this.undoCopy;
+      if (c) this.undoCopy = removedCode?.shifted(c, (c.view === "home" ? home : cas).length) ?? null;
       // R98: the stored Undo of Clear or Delete, unless an Enter or a Clear before the read (or meanwhile) changed the history
       const m = hist.undo && !this.savePending ? await loadRemoved() : undefined;
       const copy = m?.readCopy(hist.undo, (i) => restoredItem(i, this.nextId++), HISTORY_LIMIT);

@@ -71,7 +71,7 @@ describe("Undo for Clear and Delete (R98, fh-1)", () => {
   it("Delete of one row keeps it; undo puts it back where it was", async () => {
     const s = await session();
     for (const x of ["1", "2", "3"]) await s.submit(x);
-    expect(s.removeItem(s.items[1]!)).toBe(true);
+    expect(await s.removeItem(s.items[1]!)).toBe(true);
     expect(inputs(s)).toEqual(["1", "3"]);
     expect(s.undoCopy?.kind).toBe("delete");
     expect(s.undoRemoved()).toBe(true);
@@ -81,8 +81,8 @@ describe("Undo for Clear and Delete (R98, fh-1)", () => {
   it("a second Delete replaces the copy (one level)", async () => {
     const s = await session();
     for (const x of ["1", "2", "3"]) await s.submit(x);
-    s.removeItem(s.items[0]!);
-    s.removeItem(s.items[0]!);
+    void s.removeItem(s.items[0]!);
+    void s.removeItem(s.items[0]!);
     expect(inputs(s)).toEqual(["3"]);
     expect(s.undoRemoved()).toBe(true);
     expect(inputs(s)).toEqual(["2", "3"]);
@@ -156,7 +156,7 @@ describe("Undo for Clear and Delete (R98, fh-1)", () => {
     const kv = memoryKv();
     const a = await session(0, kv);
     for (const x of ["1", "2", "3"]) await a.submit(x);
-    a.removeItem(a.items[0]!);
+    void a.removeItem(a.items[0]!);
     const b = await session(0, kv);
     expect(inputs(b)).toEqual(["2", "3"]);
     expect(b.undoRemoved()).toBe(true);

@@ -228,8 +228,11 @@ export const LAZY_PARTS = ["src/views/sheetKeys.ts", "src/views/tmplSheet.ts", "
  *  in route.ts, and the session's glue (the copy's field, Clear and Delete waiting for the code, Undo, the stored copy's
  *  read and write). The copy's code is its own lazy chunk (state/removedRows.ts, 0.51 kB gzip, fetched when idle). With
  *  it Rolldown puts engine/giacPrint.ts in a chunk of its own beside the entry (its gzip is counted here); a static
- *  import measured 59.33 kB. The pin is 59,019 B + 0.05 kB. */
-export const START_PIN_GZIP = 59_069;
+ *  import measured 59.33 kB. The pin is 59,019 B + 0.05 kB.
+ *  R98 fix round 2 (audit points 2, 3): 59,108 B (168,152 B raw, +89 B on 92a419e7): Clear and Delete pick their rows by
+ *  id at the press and resolve false with a note ("history.notRemoved") when the Undo code does not load. The pin is
+ *  59,108 B + 0.05 kB. */
+export const START_PIN_GZIP = 59_158;
 
 /** R103 (vr-4): the classic inline scripts of index.html run before the first paint, outside every chunk: the stored look
  *  (R50e) and the too-old WebView check. Their gzip sizes, each script alone and summed (as the start chunk sums its

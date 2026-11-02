@@ -126,10 +126,10 @@ describe("deleting a row (R11)", () => {
     await loadRemoved(); // R98: Delete keeps an Undo copy, whose code main.ts fetches when idle
     const second = s.home[1];
     if (!second) throw new Error("no second row");
-    expect(s.removeItem(second)).toBe(true);
+    expect(await s.removeItem(second)).toBe(true);
     expect(s.home.map((i) => i.latex)).toEqual(["1", "3"]);
     expect((kv.data.get("history") as { home: { latex: string }[] }).home.map((i) => i.latex)).toEqual(["1", "3"]);
-    expect(s.removeItem(second)).toBe(false); // already gone
+    expect(await s.removeItem(second)).toBe(false); // already gone
   });
 
   it("refuses a row that is still running", async () => {
@@ -138,7 +138,7 @@ describe("deleting a row (R11)", () => {
     const row = s.home[0];
     if (!row) throw new Error("no row");
     row.status = "pending";
-    expect(s.removeItem(row)).toBe(false);
+    expect(await s.removeItem(row)).toBe(false);
     expect(s.home).toHaveLength(1);
   });
 });
