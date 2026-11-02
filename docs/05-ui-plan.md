@@ -102,7 +102,7 @@ One sheet, split by how often a thing changes (owner, 2026-10-27; the picture: [
 - The picked row (▲ from an empty line) gets the context bar from 3.3, so its actions are visible, not hidden behind a long press.
 - An error row shows the message on one line, with the part of the input that failed underlined when the parser knows its position.
 - Clear history and Delete (R98): Clear (Shift + Esc on an empty line, ☰ Clear history) removes the finished and error rows only; a running row stays with its Cancel, so Esc still stops it and Enter is refused while it runs. Clear and Delete keep what they took (rows and places, one level, stored with the history so a relaunch keeps it), and a note row says "History cleared · Undo" or "Row deleted · Undo"; a tap on it puts the rows back.
-- One Undo order (R98 with P13): on an empty line Undo first takes the Clear or Delete copy while there is one, then the line's own undo (P13: the line cleared by Enter or Esc); Redo is always the line's own. On a non-empty line Undo is always the line's own, and the copy waits for an empty line. The next Enter, or a second Clear, drops the copy.
+- One Undo order (R98 with P13): on an empty line Undo first takes the Clear or Delete copy while there is one, then the line's own undo (P13: the line cleared by Enter or Esc); Redo is always the line's own. On a non-empty line Undo is always the line's own, and the copy waits for an empty line. The next Enter, or a second Clear, drops the copy. Each view keeps its own copy: only that view's Enter or second Clear drops it (R119). On a hardware keyboard Ctrl+Z is the Undo key and Ctrl+Y or Ctrl+Shift+Z the Redo key (Cmd on a Mac; R119).
 
 ### 3.6 Find (EN1): the screen design
 
@@ -122,6 +122,7 @@ The layout stays. Only the drawing changes:
 - **Contrast at least 4.5:1** for every face and legend in every layer and every theme (fixes finding 3). A test computes it from the CSS tokens.
 - **Dead keys** (today `special: none`) dim only in the layers where they do nothing. A press on one gives a short double haptic and no other effect.
 - **Key vibration is one pulse per touch, at finger-down**: a trackpad step, an armed flick and a held ⌫'s repeat make none; a dead key's double pulse is the only second pulse (owner, 2026-11-02, R112).
+- **The unit view's ⌫ and More… (R118):** ⌫ on an empty slot steps back to the slot before, as on the entry line (its next ⌫ removes that slot's last token); on the first slot it is a dead key. Shift + ⌫ is dead in a slot (no cursor, nothing after the last token). More… opens Find on the dimension's units; the end slot and the result stay until a unit is picked, so Esc there leaves the view as it was.
 - **Press feedback** within one frame: the key darkens while the finger is down (keys fire on lift because of flicks, P11, so the feedback must start on touch).
 
 *Built in R6 (2026-10-13): the legend line, the fit rule (faces and legends shrink, `app/src/keyboard/fit.ts`) and the contrast test (`app/src/style.test.ts`); dead keys dim per layer. The double haptic on a dead key came with R13 (2026-10-13): Menu in Symb, Tmpl in Plot, Fmt in an app, `special: none` keys and typing in Plot.*

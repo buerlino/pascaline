@@ -2,7 +2,7 @@
 // R24c: one map from a hardware control key to the keypad key and layer it presses, for the entry line and the unit
 // view's field (units/open.ts), so Delete is Shift + ⌫ (Del) in both (it was plain ⌫ on the unit view).
 import { describe, expect, it } from "vitest";
-import { controlKey, hardwareKey, type HwTarget } from "./hwkeys.ts";
+import { controlKey, hardwareKey, undoKey, type HwTarget } from "./hwkeys.ts";
 
 const k = (key: string, shiftKey = false) => controlKey({ key, shiftKey });
 
@@ -23,6 +23,24 @@ describe("controlKey", () => {
     expect(k("Escape")).toEqual(["esc", "primary"]);
     expect(k("Home")).toBeUndefined();
     expect(k("a")).toBeUndefined();
+  });
+});
+
+describe("undoKey (R119): Ctrl+Z is the Undo key, Ctrl+Y and Ctrl+Shift+Z the Redo key", () => {
+  const u = (key: string, m: { ctrl?: boolean; meta?: boolean; alt?: boolean; shift?: boolean } = { ctrl: true }) =>
+    undoKey({ key, ctrlKey: m.ctrl ?? false, metaKey: m.meta ?? false, altKey: m.alt ?? false, shiftKey: m.shift ?? false });
+  it("maps the three combinations (and Cmd for Ctrl) to the Undo key's layers", () => {
+    expect(u("z")).toBe("primary");
+    expect(u("Z", { ctrl: true, shift: true })).toBe("shift");
+    expect(u("y")).toBe("shift");
+    expect(u("z", { meta: true })).toBe("primary");
+  });
+  it("leaves every other combination alone", () => {
+    expect(u("z", {})).toBeUndefined();
+    expect(u("z", { ctrl: true, alt: true })).toBeUndefined();
+    expect(u("Y", { ctrl: true, shift: true })).toBeUndefined();
+    expect(u("a")).toBeUndefined();
+    expect(u("c")).toBeUndefined();
   });
 });
 

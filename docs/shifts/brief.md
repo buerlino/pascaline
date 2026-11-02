@@ -59,9 +59,6 @@ Milestone reviews (section 0): after R50e (with R116's gallery groups "Entry hig
 
 | Step | What | Agent, model | Branch | After |
 |---|---|---|---|---|
-| 455 | [R117](packages/R117.md) ⌫ and the cursor around AND, OR, XOR and typed subscripts | ron, Opus | `p1/ron-bkspwords` | R116 |
-| 456 | [R118](packages/R118.md) the unit view: ⌫ on an empty slot, More… then Esc | ron, Opus | `p1/ron-unitslotkeys` | R92 |
-| 457 | [R119](packages/R119.md) an Undo copy per view; Ctrl+Z takes the Undo key's path | ron, Opus | `p1/ron-undoperview` | R114 |
 | 458 | [R120](packages/R120.md) the unit view's result in the decimal comma and digit groups | ron, Opus | `p1/ron-unitcomma` | – |
 | 459 | [R121](packages/R121.md) a unit result that read a stored name as a number says so | ron, Opus | `p1/ron-unitnamenote` | – |
 | 460 | [R122](packages/R122.md) a restore takes an older backup | ron, Opus | `p1/ron-backupold` | – |
