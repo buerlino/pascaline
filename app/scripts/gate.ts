@@ -3,8 +3,9 @@
 // app/_out/gate/<name>.log. Exit 1 on any FAIL.
 //   npm run gate            # typecheck, index (when missing), vitest (FIND_INDEX=required), e2e, golden (when engine or
 //                           # parser code changed against phase-1), sweep (G61, the oracle sweep), seqsweep (G62), casback (G64), viewsweep (G63), findcensus (G110), size test, docs sizes
-//   npm run gate -- --quick # typecheck and vitest only
+//   npm run gate -- --quick # typecheck and vitest only (engine tests skipped, and said so, when no engine build is found)
 //   npm run gate -- --update-text-baseline # rules stage (G88: text matches and `.eval(` outside engine and units are counted): write app/scripts/text-baseline.json (G88)
+// The vitest stage sets ENGINE=required (G146) unless --quick finds no engine build.
 // Environment: GIAC_OUT (absolute; default engine/giac/_out/gsl of this or the main checkout) for e2e and golden,
 // PASCALINE_DL_DIR and PASCALINE_QALC_DL_DIR for `npm run index` (default: the main checkout's), PW_PORT for e2e's dev server, GATE_BASE (default phase-1) for the changed-files diff.
 import { spawnSync } from "node:child_process";
@@ -112,11 +113,15 @@ const checks: Check[] = [
     name: "vitest",
     run: () => {
       const json = join(outDir, "vitest.json");
-      const engine = giacOut(); // the real-engine tests are skipped without it
+      const engine = giacOut();
+      // G146: the full gate requires the engine (ENGINE=required: a missing one fails every engine test file, nodeGiac.ts
+      // giacAvailable); --quick without one skips the engine tests and its line says so.
+      const required = !quick || engine !== null;
       const go = (files: string[] = []): Summary => {
         rmSync(json, { force: true });
-        run("vitest", "npx", ["vitest", "run", "--reporter=json", `--outputFile=${json}`, ...files], { FIND_INDEX: "required", ...(engine ? { GIAC_OUT: engine } : {}) });
-        return summarizeVitest(readJson(json));
+        run("vitest", "npx", ["vitest", "run", "--reporter=json", `--outputFile=${json}`, ...files], { FIND_INDEX: "required", ...(engine ? { GIAC_OUT: engine } : {}), ...(required ? { ENGINE: "required" } : {}) });
+        const s = summarizeVitest(readJson(json));
+        return required ? s : { ...s, detail: `${s.detail}; no engine build: engine tests skipped` };
       };
       const first = go();
       if (first.ok) return first;
