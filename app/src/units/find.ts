@@ -8,7 +8,8 @@ import type { AppShell } from "../apps/shell.svelte.ts";
 import type { FindIndex } from "../find/finder.ts";
 import type { FindItem } from "../find/types.ts";
 import { unitText } from "../i18n/enUnits.ts";
-import { unitsMenu } from "./menu.ts";
+import { unitsMenu, type ConstPick } from "./menu.ts";
+import type { UnitTool } from "./tools.ts";
 import { slotCatalogue, splitPair, type PadAction, type SlotCatalogue } from "./slot.ts";
 import { CELL_KEYS, CELL_LEGS, unitCells, type CellLeg, type CellUnit } from "./userCells.svelte.ts";
 
@@ -63,6 +64,9 @@ export interface UnitFindEnv {
   apply(a: PadAction): void;
   /** The cells changed: draw the pad again. */
   refresh(): void;
+  /** R92: the menu's Constants (a pick goes on Home's line) and Tools; absent: neither row. */
+  constant?(c: ConstPick): void;
+  tools?: readonly UnitTool[];
 }
 
 /** Math in a slot: Find on units. `into`: an empty user cell was pressed, so the pick also sets that cell. `dim`: R62's
@@ -81,6 +85,8 @@ export function showUnitFind(env: UnitFindEnv, into?: { key: string; leg: CellLe
     put: (it) => shell.showMenu(unitText("units.find.cell"), cellRows((key, leg) => set(key, leg, it))),
     product: (acts) => acts.forEach(env.apply),
     ...(dim !== undefined ? { dim } : {}),
+    ...(env.constant && !into ? { constant: env.constant } : {}),
+    ...(env.tools && !into ? { tools: env.tools } : {}),
   });
   shell.showFind(unitText("units.pad.find"), categories, search);
 }

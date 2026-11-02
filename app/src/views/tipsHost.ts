@@ -11,6 +11,7 @@ import { openLayer } from "../input/backLayer.ts";
 import { markTipsSeen } from "../state/tips.ts";
 
 const PAD = 4;
+const EDGE = 1; // a ring stays this far inside the screen
 const SVG = "http://www.w3.org/2000/svg";
 let release: (() => void) | null = null;
 
@@ -59,11 +60,19 @@ export function showTips(): void {
   const measure = (): void => {
     let bottom = 0;
     (["place", "menu"] as const).forEach((id, i) => {
-      const r = document.querySelector(`[data-tip="${id}"]`)?.getBoundingClientRect();
-      if (!r || r.width <= 0) return;
-      // padded, but never off the screen (a ring over the screen's edge would lose its border there)
-      const x = Math.max(2, r.left - PAD), y = Math.max(2, r.top - PAD);
-      const box = { x, y, w: Math.min(innerWidth - 2, r.right + PAD) - x, h: r.bottom + PAD - y };
+      const target = document.querySelector(`[data-tip="${id}"]`);
+      const r = target?.getBoundingClientRect();
+      if (!target || !r || r.width <= 0) return;
+      // The ring is centred on what is drawn in the control (its content box), not on the control's box, which may
+      // reach past the drawing (R113). It is padded by PAD and kept EDGE px inside the screen, evenly above and below.
+      const range = document.createRange();
+      range.selectNodeContents(target);
+      const c = range.getBoundingClientRect();
+      const mid = c.height > 0 ? c.top + c.height / 2 : r.top + r.height / 2;
+      const half = Math.min((c.height > 0 ? c.height : r.height) / 2 + PAD, mid - EDGE);
+      // padded sideways too, but never off the screen (a ring over the screen's edge would lose its border there)
+      const x = Math.max(EDGE, r.left - PAD);
+      const box = { x, y: mid - half, w: Math.min(innerWidth - EDGE, r.right + PAD) - x, h: 2 * half };
       let ring = rings[i];
       if (!ring) {
         ring = rings[i] = el("div", "ring", undefined, root);

@@ -133,6 +133,14 @@ export function bindingOf(it: FindItem): UserBinding {
   return { label, action: c ? { insert: it.insert, chip: { key: constKey(c.id), ...c.chip } } : { insert: it.insert } };
 }
 
+/** A pick on the line (docs/04 3.6): a constant as its chip with value and uncertainty, anything else as its insert. The
+ *  units menu's Constants (R92) put theirs on Home's line through it too. */
+export function putOnLine(entry: Pick<EntryController, "insertConst" | "run">, it: FindItem): void {
+  const c = constChipOf(it);
+  if (c) entry.insertConst(c.id, c.symbol, c.chip);
+  else entry.run({ kind: "insert", latex: it.insert });
+}
+
 const LEG = { primary: "tap", shift: "up", alpha: "down" } as const;
 
 /** The slot a pick sets instead of inserting (Settings › Your keys, R4b). */
@@ -150,9 +158,7 @@ export function showFind(shell: AppShell, entry: EntryController, index: FindInd
   if (slot?.id.startsWith("cell:")) return void import("../units/find.ts").then((m) => m.showCellFind(shell, index, slot.id.slice(5), LEG[slot.layer]));
   const pick = (it: FindItem): void => {
     if (slot) return slot.userKeys.set(slot.id, slot.layer, bindingOf(it));
-    const c = constChipOf(it);
-    if (c) entry.insertConst(c.id, c.symbol, c.chip);
-    else entry.run({ kind: "insert", latex: it.insert });
+    putOnLine(entry, it);
   };
   const { categories, search } = findMenu(index, pick);
   shell.showFind(slot ? t("slot.title") : t("title"), categories, search);
