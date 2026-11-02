@@ -702,6 +702,19 @@ shots.push({
   },
 });
 
+// R111: the second tab's note, two lines and Use here, at the small phone.
+shots.push({
+  id: "home-writer-note-small",
+  group: "Small phone (360 × 740)",
+  title: "The second tab's note: open in another tab, nothing done here is kept, Use here (R111)",
+  viewport: { width: 360, height: 740 },
+  setup: async (p) => {
+    await someHistory(p);
+    await p.evaluate(() => import(/* @vite-ignore */ "/src/state/handOver.ts").then((m) => m.startHandOver(false, () => {}, () => {})));
+    await p.getByTestId("writer-note").waitFor();
+  },
+});
+
 const done: { shot: Shot; files: Partial<Record<Theme, string>> }[] = [];
 
 test.beforeAll(() => {
