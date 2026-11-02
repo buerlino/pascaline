@@ -3,6 +3,7 @@
 # Clean source -> engines -> web app (dist/) -> Capacitor sync -> Gradle -> APK. The F-Droid recipe runs the same steps itself (fdroid/README.md).
 #
 #   ./build.sh [--web] [--dev] [--measure] [--test] [--unsigned] [--engine-dir DIR] [--no-units] [--install [SERIAL]]
+#   ./build.sh --release [--engine-dir DIR] [--install [SERIAL]]
 #
 #   --web            steps 1 and 2 only (engine, Find index, web app), no Android SDK, no Gradle: app/dist for GitHub Pages (A45, .github/workflows/pages.yml)
 #   (default)        engine built with the pinned Debian trixie Emscripten in a container (P2: what every release ships)
@@ -12,15 +13,21 @@
 #   --measure        measurement build: timing marks to logcat (PASCALINE_MEASURE=1); never for release
 #   --test           device test build (A32): the WebView's remote debugging on so Playwright can attach over adb; never for release
 #   --unsigned       leave the APK unsigned (what F-Droid wants); default signs with the throwaway key in ~/.cache/pascaline/keys/ (PASCALINE_KEYS)
+#   --release        the release (A7): signed with the owner's key from PASCALINE_KEYSTORE, PASCALINE_KEYSTORE_PASS, PASCALINE_KEY_ALIAS and PASCALINE_KEY_PASS
+#                    (GitHub secrets in the release workflow, never a file here); fails before any build step when one is missing, the keystore file is
+#                    absent or the alias is `throwaway`, when tools/check-version.sh disagrees (with PASCALINE_RELEASE_TAG as its tag when set), and
+#                    after Gradle unless the APK's certificate equals android/release-cert.sha256 (tools/release-verify.sh deletes it then). Never
+#                    creates or falls back to the throwaway key; refuses --dev, --measure, --test, --unsigned, --no-units and --web. Also writes
+#                    dist/pascaline-<versionName>.apk and .apk.sha256
 #   --install [S]    adb install -r on device S (default $ANDROID_SERIAL or the only device); installs io.github.buerlino.pascaline only
-# Output: dist/pascaline.apk (last line printed); with --web, app/dist. Env: PASCALINE_DL_DIR (Giac/GMP/MPFR/GSL tarball cache), PASCALINE_QALC_DL_DIR (libqalculate tarball cache: names and titles for the Find index), ANDROID_HOME (default ~/Android/Sdk),
+# Output: dist/pascaline.apk (last line printed; --release also dist/pascaline-<versionName>.apk and .apk.sha256); with --web, app/dist. Env: PASCALINE_DL_DIR (Giac/GMP/MPFR/GSL tarball cache), PASCALINE_QALC_DL_DIR (libqalculate tarball cache: names and titles for the Find index), ANDROID_HOME (default ~/Android/Sdk),
 # PASCALINE_KEYS (the throwaway signing key's folder, default ~/.cache/pascaline/keys), NO_LOCK=1 (the caller holds the host-cpu lock).
 set -euo pipefail
 export PASCALINE_LOCK_PID=$$   # A35: tools/devlock.sh records this pid; a lock whose pid is gone is broken by the next acquire
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$ROOT"
 
-DEV=0 WEB=0 MEASURE=0 TEST=0 SIGN=1 INSTALL=0 SERIAL="${ANDROID_SERIAL:-}" ENGINE_DIR="" WITH_UNITS=1
+DEV=0 WEB=0 MEASURE=0 TEST=0 RELEASE=0 SIGN=1 INSTALL=0 SERIAL="${ANDROID_SERIAL:-}" ENGINE_DIR="" WITH_UNITS=1
 while (( $# )); do
   case "$1" in
     --dev) DEV=1; shift ;;
@@ -29,11 +36,25 @@ while (( $# )); do
     --measure) MEASURE=1; shift ;;
     --test) TEST=1; shift ;;
     --unsigned) SIGN=0; shift ;;
+    --release) RELEASE=1; shift ;;
     --engine-dir) ENGINE_DIR="$(cd "$2" && pwd)"; shift 2 ;;
     --install) INSTALL=1; shift; if [[ $# -gt 0 && "$1" != --* ]]; then SERIAL="$1"; shift; fi ;;
     *) echo "unknown option $1" >&2; exit 2 ;;
   esac
 done
+
+# A7: a release has one meaning. Every refusal comes before the lock, the engine and any other step.
+if (( RELEASE )); then
+  refuse=""
+  (( DEV )) && refuse=--dev; (( MEASURE )) && refuse=--measure; (( TEST )) && refuse=--test; (( WEB )) && refuse=--web
+  (( WITH_UNITS )) || refuse=--no-units; (( SIGN )) || refuse=--unsigned
+  [[ -z "$refuse" ]] || { echo "build.sh: --release does not go with $refuse" >&2; exit 2; }
+  tools/release-guard.sh || exit $?
+else
+  # the release key reaches only a --release build: nothing in the caller's environment signs a dev build with it
+  unset PASCALINE_KEYSTORE_PASS PASCALINE_KEY_ALIAS PASCALINE_KEY_PASS
+  (( SIGN )) || unset PASCALINE_KEYSTORE
+fi
 
 export ANDROID_HOME="${ANDROID_HOME:-$HOME/Android/Sdk}"
 export ANDROID_SDK_ROOT="$ANDROID_HOME"
@@ -69,7 +90,9 @@ INDEX_ARGS=(); (( WITH_UNITS )) || INDEX_ARGS=(--no-units)
 (cd app && npx cap sync android >&2)
 
 # 4. Gradle
-if (( SIGN )); then
+if (( RELEASE )); then
+  rm -f dist/pascaline.apk dist/pascaline-*.apk dist/pascaline-*.apk.sha256   # a failed release leaves no APK behind
+elif (( SIGN )); then
   # One key for every checkout and worktree (outside git), so an install over the last one keeps the app's data;
   # android/_keys/ of the main checkout is where it lived until 2026-10-14 and is moved here once.
   KEYS="${PASCALINE_KEYS:-${PASCALINE_CACHE:-$HOME/.cache/pascaline}/keys}"
@@ -108,6 +131,12 @@ if (( SIGN )); then SRC=android/app/build/outputs/apk/release/app-release.apk
 else SRC=android/app/build/outputs/apk/release/app-release-unsigned.apk; fi
 [[ -f "$SRC" ]] || { echo "no APK at $SRC" >&2; exit 1; }
 mkdir -p dist
+if (( RELEASE )); then
+  tools/release-verify.sh "$SRC" >&2 || { rm -f dist/pascaline.apk; exit 1; }   # deletes the APK on a mismatch
+  VNAME="$(sed -n 's/^  "version": *"\([^"]*\)".*/\1/p' app/package.json | head -n1)"
+  cp "$SRC" "dist/pascaline-$VNAME.apk"
+  (cd dist && sha256sum "pascaline-$VNAME.apk" > "pascaline-$VNAME.apk.sha256")
+fi
 cp "$SRC" dist/pascaline.apk
 
 if (( INSTALL )); then
