@@ -206,8 +206,8 @@ test("Shift + 9 %: 5% is 0.05; 250 ± 0.4 % in the unit view with a kPa slot is 
   await tap(page, ["d4", "add"]); // k, Pa
   await flick(page, "enter", "up");
   const result = page.getByTestId("unit-result");
-  await expect(result).toContainText("250");
-  await expect(result).toContainText("± 1");
+  await expect(result).toHaveAttribute("data-unit", "kPa"); // the k tap taken: 250 kPa, not 250000 Pa
+  await expect(result).toHaveText(/^≈?250(\.0)?\s*±\s*1(\.0)?(?![\d.])/); // the view shows "≈250.0 ± 1.0": σ is 1, not 10 or 1.05
 });
 
 test("Shift + 9 values: 5! = 120; ∞; 30° is 30 in DEG; sin(30°) = 0.5 in RAD; 30°15′36″ = 30.26 in DEG", async ({ page }) => {
