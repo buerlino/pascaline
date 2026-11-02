@@ -13,7 +13,8 @@
 // - Other letters stay name letters. A function's name is reached through Find (R4a), as on the phone.
 // - Every other character (`\ [ ] { } ' " $ % & ? @ ~` and the backtick) does nothing: no key types it.
 // Loaded with MathLive (EntryController.load), outside the start chunk. Ctrl, Alt and Meta combinations stay with
-// MathLive (copy, paste, select all); AltGr characters count as typed.
+// MathLive (copy, cut, select all); a paste, Ctrl+V included, is field.ts's paste listener (R114). AltGr characters
+// count as typed.
 import type { MathfieldElement } from "mathlive";
 import { numberRunStart } from "./numberRun.ts";
 import type { Layer } from "../keyboard/keyboard.ts";

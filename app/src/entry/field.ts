@@ -78,6 +78,8 @@ export interface FieldEvents {
   /** A physical Enter or Escape; `repeat` is KeyboardEvent.repeat (a held key's auto-repeat, docs/04 5.2). */
   enter(repeat: boolean): void;
   escape(repeat: boolean): void;
+  /** A system paste on the field (Ctrl+V, Shift+Insert, the context menu), with its text (R114). */
+  paste(text: string): void;
 }
 
 /** Make the field in `host`, set its options and listeners; resolves with it once it is mounted and laid out. */
@@ -119,6 +121,18 @@ export async function makeField(Field: typeof MathfieldElement, host: HTMLElemen
       if (!on.key(ev)) return;
       ev.preventDefault();
       ev.stopPropagation();
+    },
+    { capture: true },
+  );
+  // R114 (F157): every system paste takes the Paste key's path (the comma mode, E notation, a refusal with its notice);
+  // MathLive read the text as maths (1e-3 was e − 3). The capture on the host runs before MathLive's handler; the
+  // text comes with the event, so no clipboard permission is asked. Copy and cut stay MathLive's.
+  mf.addEventListener(
+    "paste",
+    (ev) => {
+      ev.preventDefault();
+      ev.stopPropagation();
+      on.paste(ev.clipboardData?.getData("text/plain") ?? "");
     },
     { capture: true },
   );
