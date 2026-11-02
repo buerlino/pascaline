@@ -4,7 +4,7 @@
 **Every package runs through `scripts/pipeline.sh`** (rules section 4): by day the owner starts one package at a time (`scripts/pipeline.sh <agent> "<ID>" --model <m>`, the table gives agent and model) and reads the RESULT line; at night `scripts/night.sh` runs the queue of section 0c. Nobody starts a worker or merges another way (CLAUDE.md). The standing rules in [rules.md](rules.md) apply; where the two differ, this brief wins. Each open package is one file in [packages/](packages/), in the shape the pipeline bundles (section 2). The shape of a package file: the heading `### <agent>, <ID>: <title>, branch \`p1/<agent>-<slug>\``; **Lane** (night-safe = no device, no APK, no eye on the UI; night (the night's device) = the device `night.sh` was started with, only, P23; day = the owner tries it or it changes the pipeline); **Starts when**; **Read** (repo paths get bundled, first 400 lines; the big shared docs by bare name and section); the steps; **Done when** (lines an auditor checks in the diff).
 
 ## 0. State and the path
-`phase-1` at `a1d2eaa` on 2026-11-01, after the day shift of 2026-11-01 ([its report](2026-11-01-night-report-2.md)). CORE 66/66 desktop (`d1a9ca5`); CORE DEVICE 3/65 on the Tab One (`8acd1fe`): R15c4's first-start tips cover the device runner's fresh profile (R15c4f1, merged `d8b88e4`: the next CORE DEVICE is its test); 65/65 before R15c4 (`42319a8`, one case is desktop only). Every merge: `git log --merges --oneline phase-1`; the audits are in the Opus passes' defaults (decisions.md, older ones in [archive/decisions-2026-10.md](../archive/decisions-2026-10.md)) and the night reports ([archive/shifts/](../archive/shifts/)).
+`phase-1` at `899c4f6` on 2026-11-02, after the day handoff (R36f1, A9, R112, R98 merged; R96 not, its R96f1 runs by day; Opus pass 50). CORE 66/66 desktop (`a48a8fc`); CORE DEVICE 65/65 on the Tab One (`899c4f6`, device 51; device 50 at 09:15 too, R15c4f1's test passed; one case is desktop only). Every merge: `git log --merges --oneline phase-1`; the audits are in the Opus passes' defaults (decisions.md, older ones in [archive/decisions-2026-10.md](../archive/decisions-2026-10.md)) and the night reports ([archive/shifts/](../archive/shifts/)).
 
 ### The path after the freeze (owner, 2026-10-27; decisions.md "P23")
 **The freeze ended** on 2026-10-27, before its count: repeated green runs added nothing, and the mornings' failures were UI (c46: F110, F117), not the engine. **The net stays:** every merge runs the core list (R74; [tests/core/core.yaml](../../tests/core/core.yaml), 66 cases, all active), night.sh runs the device's core list after each Opus pass when the night has a device (A33, A41), and the owner's [morning check](../../tests/core/MORNING.md) runs on the night's device. A red result is a bug to fix (a FIX of the next Opus pass, or a backlog bug line past a day of work), not a gate. **The pace** (owner, 2026-10-27; the date 2026-11-01): Claude Max runs to 2026-11-17. Each night carries about 9 hours of real work, the most important steps first, so a usage limit late costs the least; the day runs what needs the owner's eye.
@@ -13,7 +13,7 @@
 1. **Find:** R4a, R91, R15c3, R49, R87 and R4b merged (`git log --merges`); R91's before/after on the Fairphone is in [ONE-TIME.md](../../tests/core/ONE-TIME.md).
 2. **The Settings base** (owner, 2026-10-27; decisions.md "Settings in the Mode sheet, and presets"; [mockups/settings.html](../mockups/settings.html)): R85, R49, R86, R50e, R57 merged; after the units: R70, R15c4, R38a, R38b, R88, R55, R89 merged → R59; R53; R12b → R12c → R41; R36, R33 → R37, R40.
 3. **The units** (owner, 2026-10-29: right after R86, R57, R50e): R24b, R24c, R24d and G81 merged, R60, R61, R62, R63 and R71 merged → R92 (the units menu's Tools and Const tabs; its package after R61 and R63).
-4. **Lane B, to v0.1.0** (the APK and the website from one tag): A43, A48 and A50 merged, so A7 may start: A7 (signing, the owner's key made off this laptop), A49 and A45 merged, A8 (the owner's test tag); A9 with the owner's phone by day (F41); then wrong numbers by reach, C4. The bar and the days: [release-0.1.0.md](../release-0.1.0.md); from its freeze (Thu 11-12) both lanes run only its fixes.
+4. **Lane B, to v0.1.0** (the APK and the website from one tag): A43, A48 and A50 merged, so A7 may start: A7 (signing, the owner's key made off this laptop), A49 and A45 merged, A8 (the owner's test tag); A9 merged (F41); then wrong numbers by reach, C4. The bar and the days: [release-0.1.0.md](../release-0.1.0.md); from its freeze (Thu 11-12) both lanes run only its fixes.
 5. **Every morning:** the owner's check (MORNING.md, on the night's device when the night had one, about 10 minutes). The day session writes each failed step as a backlog bug line on phase-1 and logs one line in `.coord/log.md`: `- HH:MM morning <date>: clean` or `- HH:MM morning <date>: fails <ids>`.
 
 **The weekly extreme night** (owner, 2026-10-29; replaces the nightly fuzz of 2026-10-27): once a week lane B runs the extreme-input packages (open: G148, G141, G142, then G156) and the fuzz with its triage (G138; each week its text with a new ID); the Opus pass files the backlog lines. Wrong numbers of everyday or medium reach run any time, by reach.
@@ -28,9 +28,10 @@
 
 | # | Package | Agent, model | Lane | Starts when merged | Size |
 |---|---|---|---|---|---|
-| [A9](packages/A9.md) | Key vibration on the owner's phone | annabell, Sonnet | day (device) | the phone connected | ~0.5 d |
-| [A7](packages/A7.md) | Release signing | annabell, Sonnet | day (the owner's key) | A48, A43; the key's table filled | ~0.5 d |
+| [A7](packages/A7.md) | Release signing (lane B, 11-02 afternoon) | annabell, Sonnet | day (the owner's key) | A48, A43; the key's table filled (done) | ~0.5 d |
+| R96f1 | Opus pass 50's FIX of R96 (lane A, 11-02 afternoon; the FIX line in `.coord/log.md`, pass 50) | ron, Opus | day, `p1/ron-storehealth` | – (phase-1 merged in first) | ~0.5 d |
 | [A8](packages/A8.md) | The release workflow | annabell, Opus | day (the owner's test tag) | A7 | ~0.5 d |
+| [A61](packages/A61.md) | What the WebView answers to `persisted()` | annabell, Sonnet | day (the Fairphone) | R96f1 | ~0.2 d |
 
 **Why these models:** Opus where a slip breaks entry, the unit chain or stored data for every later package, or gives a wrong number (P17: the engine, input and units); sandra and sofia run Opus; Sonnet elsewhere (an existing pattern, pinned by tests); the audit model follows P17.
 
@@ -51,24 +52,23 @@ Tonight's queue (one lane, to 07:00) comes first, then each lane's table; With t
 11. **Selftest:** a selftest step is `scripts/pipeline.sh selftest` (from A47a); its line `selftest: PASSED` finishes it; `selftest: FAILED` ends the night: henri answers `SHIFT DONE`, and the owner reads the log.
 12. **No lanes in the morning** (A47c not merged, or a selftest failed): the owner starts `scripts/night.sh` without `--lane`, and henri runs lane B's rows 401–405, then lane A's from 301, as one queue.
 
-### Night 2026-11-01 to 11-02, to 05:30, both lanes on the Tab One (owner, 2026-11-01)
-`ANDROID_SERIAL=HA24BZ2Y` for both lanes, `--until 05:30` (the closing pass and the report take 1.5 to 2 h more); CORE DEVICE after each pass. Not the weekly extreme night: row 408 waits. A step whose "After" is not merged is skipped; "–" was checked against the merges on 2026-11-01. The FIX lines of Opus passes 42 and 43 ran first (G154f1, R15c4f1 and R63f2 merged). The owner is away: follow each Opus pass as written (rule 3).
+### Night 2026-11-02 to 11-03, to 05:30, both lanes on the Tab One (owner, 2026-11-02)
+`ANDROID_SERIAL=HA24BZ2Y` for both lanes, `--until 05:30` (the closing pass and the report take 1.5 to 2 h more); CORE DEVICE after each pass. Not the weekly extreme night: row 408 waits. A step whose "After" is not merged is skipped; "–" was checked against the merges on 2026-11-02. A7 and R96f1 run by day (section 0); a row they did not reach stays for the night. The night review (`/night-review`, review 1) runs beside the lanes. The Fairphone stays with the owner (A61). Follow each Opus pass as written (rule 3).
 
 ### Lane A queue (ron's UI)
 Milestone reviews (section 0): after R50e; after R24d (with R108's gallery group "Decimal comma in apps"; R89 on the Fairphone: save two presets with different free keys and switch; R111's note at 360 px; R33's stored-name colour in each theme, decisions.md "Owner answers of 2026-11-02").
 
 | Step | What | Agent, model | Branch | After |
 |---|---|---|---|---|
-| 337 | [R36](packages/R36.md) a picked row says why it has its mark | ron, Sonnet | `p1/ron-m4a-why` | – |
-| 343 | [R96](packages/R96.md) Settings › Data tells whether the data is kept | ron, Opus | `p1/ron-storehealth` | – |
-| 344 | [R98](packages/R98.md) Clear history keeps a running job and can be undone | ron, Opus | `p1/ron-clearundo` | – |
+| 343 | [R96](packages/R96.md)f1, Opus pass 50's FIX line (only if the day did not start it) | ron, Opus | `p1/ron-storehealth` | – |
 | 438 | [R113](packages/R113.md) the first-start tips' rings sit centred on their controls | ron, Sonnet | `p1/ron-tipsrings` | – |
 
 ### Lane B queue (the release, then the engine)
-A7, A8, A9 and [A57](packages/A57.md) run by day (section 0); A43 and A58 are merged. Step 408 runs only on the weekly extreme night the owner names (not today).
+A7 (11-02 afternoon; row 441 if the day did not start it), A8 and [A57](packages/A57.md) run by day (section 0); A9, A43 and A58 are merged. Step 408 runs only on the weekly extreme night the owner names (not today).
 
 | Step | What | Agent, model | Branch | After |
 |---|---|---|---|---|
+| 441 | [A7](packages/A7.md) release signing (first; only if the day did not start it) | annabell, Sonnet | `p1/annabell-release` | – |
 | 408 | [G138](packages/G138.md) the weekly fuzz and its triage | gorge, Opus | `p1/gorge-nightfuzz-1106` | the weekly night |
 | 437 | [G152](packages/G152.md) acosh's sign and tiny imaginary part (F143, F144) | gorge, Opus | `p1/gorge-acoshsign` | G142 |
 | 439 | [A60](packages/A60.md) the F-Droid recipe checks `find/factors.yaml` against its qalc build | annabell, Sonnet | `p1/annabell-recipecheck` | – |

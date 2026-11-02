@@ -216,15 +216,16 @@ export class ClipActions {
     this.entry.insert("\\blacktriangleright");
     return true;
   }
-  /** Delete: the picked row, else the last row of the view. A running row is not deleted. */
-  deleteRow(row?: HistoryItem): boolean {
+  /** Delete: the picked row, else the last row of the view. A running row is not deleted; when the Undo code does not
+   *  load, nothing is deleted and the history says so (R98). */
+  deleteRow(row?: HistoryItem): Promise<boolean> {
     const i = row ?? this.session.items.at(-1);
-    if (!i) return false;
-    if (!this.session.removeItem(i)) {
+    if (!i) return Promise.resolve(false);
+    if (i.status === "pending") {
       this.say(tc("clip.working"));
-      return false;
+      return Promise.resolve(false);
     }
-    return true;
+    return this.session.removeItem(i);
   }
 
   /** The Home/CAS Menu (docs/05 3.3, S2 rule M2): one fixed list of nine, the same numbers with or without a picked
@@ -265,7 +266,7 @@ export class ClipActions {
       { id: "copyAs", label: tc("clip.copyAs"), disabled: none, reason: why, submenu: { title: tc("clip.copyAs"), items: copies } },
       { id: "paste", label: tc("clip.paste"), run: () => void this.paste() },
       { id: "share", label: tc("clip.share"), disabled: !finished, reason: why, run: () => void this.shareSession() },
-      { id: "clear", label: tc("clip.clear"), disabled: empty, run: () => this.session.clearHistory() },
+      { id: "clear", label: tc("clip.clear"), disabled: empty, run: () => void this.session.clearHistory() },
     ];
   }
 

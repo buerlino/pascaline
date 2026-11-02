@@ -156,7 +156,7 @@
   }
 
   function clearKey(): void {
-    if (shell.app === null && entry.value === "") session.clearHistory();
+    if (shell.app === null && entry.value === "") void session.clearHistory();
     else entry.clear();
   }
 
@@ -255,7 +255,7 @@
     );
   }
 
-  /** A finger went down on the keypad, or a gesture made a step: vibrate when switched on in Settings. */
+  /** A finger went down on the keypad: vibrate when switched on in Settings (one pulse per touch, R112). */
   function touched(): void {
     const h = session.settings.haptics;
     if (h.on) vibrate(h.strength / 100, h.ms);
@@ -325,6 +325,8 @@
           oninsert={(item) => { picked = null; shell.prompt?.cancel(); insertResult(item); }}
           oncancel={() => void cancel()}
           onlongpress={(item) => withClip((c) => c.openRowMenu(item))}
+          undo={session.undoCopy?.view === session.view ? session.undoCopy.kind : null}
+          onundo={() => { picked = null; session.undoRemoved(); }}
         />
       {:else if shell.current}
         {@const C = shell.current.Root}

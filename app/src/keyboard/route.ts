@@ -403,6 +403,8 @@ export function run(c: RouteCtx, key: Key, mods: Mods): void {
     if (!shell.showsEntry) return c.dead(); // a view without an entry line (Plot) ignores typing, ⇤ ⇥ and Undo
     if (action.kind === "insert" && action.latex === ANS_CHIP) return c.dead(); // Ans belongs to Home and CAS
     if (action.kind === "insert" && action.units) return c.dead(); // ± (R71) is read by the unit view, from the Home or CAS line
+  } else if (entry.value === "" && action.kind === "cmd" && action.name === "undo" && session.undoRemoved()) {
+    return; // R98: on an empty line Undo brings back what Clear or Delete took first; then the line's own undo (P13)
   } else if (entry.value === "" && key.id === "frac" && layerOf(mods) === "primary") {
     // a b/c on an empty line (R10): the last result in its next form (decimal ↔ fraction, a+bi ↔ polar), as on the
     // G2; while typing it is the stacked fraction below

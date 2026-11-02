@@ -52,9 +52,19 @@ export async function makeBackup(read: RawReader, now: Date): Promise<Backup> {
   const parts: Record<string, RawRecord> = {};
   for (const key of BACKUP_KEYS) {
     const rec = await read(key);
-    if (rec !== undefined) parts[key] = rec;
+    if (rec !== undefined) parts[key] = key === "history" ? withoutUndo(rec) : rec;
   }
   return { "pascaline-backup": 1, dataVersion: DATA_VERSION, made: now.toISOString(), parts };
+}
+
+/** The history record without its Undo copy of Clear and Delete (R98): rows the user removed never leave the device in
+ *  a backup, and a restored history starts with no Undo (the check refuses a history part that holds one). */
+function withoutUndo(rec: RawRecord): RawRecord {
+  const v = rec.value;
+  if (typeof v !== "object" || v === null || !("undo" in v)) return rec;
+  const rest: Record<string, unknown> = { ...(v as Record<string, unknown>) };
+  delete rest["undo"];
+  return { ...rec, value: rest };
 }
 
 /** `pascaline-backup-YYYY-MM-DD.json`, by the local date. */
@@ -163,7 +173,7 @@ export type Validators = Readonly<Record<string, (value: unknown) => boolean>>;
  * The validators: for each key the check the app runs when it reads that key at start, made strict, so that a row or a
  * field the start would drop is a fault (a restore never loses data silently). Settings: `migrateSettings` keeps every
  * field the part holds. History: `restoreHistory`'s filter (finished rows with their LaTeX, at most HISTORY_LIMIT per
- * view). Definitions: the log's load check (`validDefs`) keeps every entry. Your keys and the unit pad cells: known keys
+ * view), and no Undo copy (R98: never exported). Definitions: the log's load check (`validDefs`) keeps every entry. Your keys and the unit pad cells: known keys
  * and layers, each slot null or a binding their reader keeps. The taps and the presets: their load check (presets:
  * state/presetRecord.ts; a held setting the app cannot read is left alone when the preset is applied, as there). Keys whose start reads field by
  * field with defaults (the apps, the place) and the units keys are checked by type.
@@ -175,6 +185,7 @@ export const VALIDATORS: Validators = {
   entry: (v) => v === null || (isObject(v) && (v["view"] === "home" || v["view"] === "cas") && typeof v["latex"] === "string"),
   history: (v) =>
     isObject(v) &&
+    !("undo" in v) && // R98: a backup never holds the Undo copy of Clear or Delete (makeBackup leaves it out)
     (["home", "cas"] as const).every((view) => {
       const xs = v[view];
       return (

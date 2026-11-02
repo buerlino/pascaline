@@ -18,6 +18,8 @@
     oninsert,
     oncancel,
     onlongpress,
+    undo = null,
+    onundo,
     selected = null,
   }: {
     items: HistoryItem[];
@@ -35,6 +37,9 @@
     oncancel: () => void;
     /** A long press on a finished row: its copy actions (docs/04 2.6). */
     onlongpress?: (item: HistoryItem) => void;
+    /** R98: what the last Clear history or Delete took, while Undo can bring it back: one note row, a tap on it undoes. */
+    undo?: "clear" | "delete" | null;
+    onundo?: () => void;
   } = $props();
 
   // A long press (500 ms; the browser cancels the pointer when the finger starts a scroll) opens the row's actions; the tap that follows the lift is not a tap.
@@ -109,6 +114,7 @@
   $effect(() => {
     void items.length;
     void items.at(-1)?.status;
+    void undo; // the note (R98) is the last row
     if (scroller) scroller.scrollTop = scroller.scrollHeight;
   });
 
@@ -133,7 +139,7 @@
 </script>
 
 <section class="history" aria-label={t("history.label")} bind:this={scroller}>
-  {#if items.length === 0}
+  {#if items.length === 0 && !undo}
     <p class="empty">{t("history.empty")}</p>
   {/if}
   {#if items.length > shown.length}
@@ -184,6 +190,11 @@
     </article>
     {/if}
   {/each}
+  {#if undo}
+    <button type="button" class="undone" data-testid="undo-note" onpointerdown={(e) => e.preventDefault()} onclick={onundo}>
+      {t(undo === "clear" ? "history.cleared" : "history.deleted")}
+    </button>
+  {/if}
 </section>
 
 <style>
@@ -269,6 +280,18 @@
   .working {
     font-size: 14px;
     color: var(--muted);
+  }
+  .undone {
+    all: unset;
+    cursor: pointer;
+    margin-top: auto;
+    align-self: center;
+    font-size: 14px;
+    padding: 6px 12px;
+    color: var(--muted);
+  }
+  .item + .undone {
+    margin-top: 0;
   }
   .strut {
     visibility: hidden;

@@ -336,6 +336,9 @@ const shots: Shot[] = [
       await settle(p);
     },
   },
+  // R98: the note row after Clear history and after ☰ Delete of a row (Undo or a tap on it brings the rows back)
+  { id: "home-cleared", group: "Home", title: "Home after Clear history (R98): the note row", setup: async (p) => { await someHistory(p); await tap(p, ["shift", "esc"]); await p.getByTestId("undo-note").waitFor(); } },
+  { id: "home-deleted", group: "Home", title: "Home after Delete of a row (R98): the note under the rows that stay", setup: async (p) => { await someHistory(p); await p.evaluate(() => window.pascaline.session.removeItem(window.pascaline.session.items[0]!)); await p.getByTestId("undo-note").waitFor(); } },
   {
     id: "home-picked",
     group: "Home",
