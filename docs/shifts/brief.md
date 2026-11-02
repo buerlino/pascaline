@@ -64,12 +64,12 @@ Milestone reviews (section 0): after R50e; after R24d (with R108's gallery group
 | 438 | [R113](packages/R113.md) the first-start tips' rings sit centred on their controls | ron, Sonnet | `p1/ron-tipsrings` | – |
 
 ### Lane B queue (the release, then the engine)
-A7 (11-02 afternoon; row 441 if the day did not start it), A8 and [A57](packages/A57.md) run by day (section 0); A9, A43 and A58 are merged. Step 408 runs only on the weekly extreme night the owner names (not today).
+A7 (11-02 afternoon; row 441 if the day did not start it), A8 and [A57](packages/A57.md) run by day (section 0); A9, A43 and A58 are merged. Step 408 runs only on the weekly extreme night, Wed 11-04 (owner, 2026-11-02).
 
 | Step | What | Agent, model | Branch | After |
 |---|---|---|---|---|
 | 441 | [A7](packages/A7.md) release signing (first; only if the day did not start it) | annabell, Sonnet | `p1/annabell-release` | – |
-| 408 | [G138](packages/G138.md) the weekly fuzz and its triage | gorge, Opus | `p1/gorge-nightfuzz-1106` | the weekly night |
+| 408 | [G138](packages/G138.md) the weekly fuzz and its triage | gorge, Opus | `p1/gorge-nightfuzz-1106` | the weekly night (Wed 11-04) |
 | 437 | [G152](packages/G152.md) acosh's sign and tiny imaginary part (F143, F144) | gorge, Opus | `p1/gorge-acoshsign` | G142 |
 | 439 | [A60](packages/A60.md) the F-Droid recipe checks `find/factors.yaml` against its qalc build | annabell, Sonnet | `p1/annabell-recipecheck` | – |
 | 440 | [A59](packages/A59.md) Android's splash and system bars take the Dark background (device step) | annabell, Sonnet | `p1/annabell-darkbars` | – |
