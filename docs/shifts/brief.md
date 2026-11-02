@@ -71,8 +71,6 @@ A7, A8, A9 and [A57](packages/A57.md) run by day (section 0); A43 and A58 are me
 | Step | What | Agent, model | Branch | After |
 |---|---|---|---|---|
 | 408 | [G138](packages/G138.md) the weekly fuzz and its triage | gorge, Opus | `p1/gorge-nightfuzz-1106` | the weekly night |
-| 441 | [G145](packages/G145.md) one home for duplicated helpers; dead exports out | gorge, Sonnet | `p1/gorge-tidyhelpers` | – |
-| 442 | [G147](packages/G147.md) one import direction between the main thread and the engine | gorge, Sonnet | `p1/gorge-importdir` | R103 |
 | 437 | [G152](packages/G152.md) acosh's sign and tiny imaginary part (F143, F144) | gorge, Opus | `p1/gorge-acoshsign` | G142 |
 
 ### The commands henri replies with (one per decision; `scripts/night.sh` runs it)
