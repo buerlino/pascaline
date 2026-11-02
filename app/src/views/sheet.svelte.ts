@@ -171,11 +171,11 @@ export class Level {
       const col = this.highlight % cols;
       const last = col + cols * Math.floor((n - 1 - col) / cols);
       const lastRow = n - 1 - ((n - 1) % cols);
-      // R110: ▼ onto a last row that is short (Shift + 9's % under the first column) goes to its nearest cell, ▲ back to where it came from
-      if (by < 0 && from !== undefined && this.highlight >= lastRow) next = from;
+      // R110: ▼ from the row above a short last row (Shift + 9's % under the first column) goes to its last cell, ▲ back to where it came from
+      if (by < 0 && from !== undefined) next = from;
       else if (next >= n && this.highlight < lastRow) {
         this.from = this.highlight;
-        next = Math.min(n - 1, lastRow + col);
+        next = n - 1;
       } else if (next < 0) next = last;
       else if (next >= n) next = col;
     } else next = (next + n) % n;
