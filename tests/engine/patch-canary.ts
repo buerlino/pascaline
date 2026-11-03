@@ -101,6 +101,15 @@ const CANARIES: [string, string, RegExp, string][] = [
   // trunc(x,n) floors d*x for either sign (trunc(-27/20,1) = -1.4)
   ["0028-trunc-toward-zero.patch", "giac-2.1.0/src/maple.cc", /if \(is_strictly_positive\(-args,contextptr\)\)\s*return -_floor\(-args,contextptr\);\s*return _floor\(args,contextptr\);\s*\}\s*static const char _trunc_s/, "gen _trunc(const gen & args,GIAC_CONTEXT){"],
   ["0028-trunc-toward-zero.patch", "giac-2.1.0/src/maple.cc", /return _floor\(d\*args\._VECTptr->front\(\),contextptr\)\/d;/, "gen _trunc(const gen & args,GIAC_CONTEXT){"],
+  // G157f1, patch 0029: the definite integral splits floor (ceil as floor) at its jumps but not trunc, so x*trunc(x) is used
+  // across trunc's jumps (int(trunc(x),x,-1/2,5/2) = 3*trunc(x), right 2)
+  ["0029-int-trunc-split.patch", "giac-2.1.0/src/intg.cc", /v\[0\]=ceil2floor\(v\[0\],contextptr,true\);\s*vecteur lfloor\(lop\(v\[0\],at_floor\)\);/, "aorig=borne_inf=v[2];"],
+  // ... a falling a*x+b from a non-integer start takes its first jump at n1-1, one interval late (int(ceil(x),x,1/2,3/2) = 1)
+  ["0029-int-trunc-split.patch", "giac-2.1.0/src/intg.cc", /gen cur=borne_inf,next=\(n1\+stepn-b\)\/a,res=0;\s*if \(stepn==-1 && n1==a\*borne_inf\+b\)\s*n1 -= 1;\s*for \(/, "// find integers of the form a*x+b in [borne_inf,borne_sup]"],
+  // ... the numeric check takes trunc as exactly integrable (its antiderivative x*trunc(x) across the jumps)
+  ["0029-int-trunc-split.patch", "giac-2.1.0/src/intg.cc", /sign_floor_ceil_round_tab\)\.empty\(\) \)\s*return false;\s*if \(f\.type!=_SYMB/, "bool approxint_exact(const gen &f,const gen &x,GIAC_CONTEXT){"],
+  // ... and an exact 0 fails the check against tegral's own error (int(trunc(x),x,-3/2,3/2) = [0,-2.9e-07])
+  ["0029-int-trunc-split.patch", "giac-2.1.0/src/intg.cc", /return simplifier\(exactvalue,contextptr\);\s*\*logptr\(contextptr\) << gettext\("Error while checking exact value with approximate value, returning both!"\)/, "gen ck_int_numerically(const gen & f"],
   // G135, patch 0019: atan keeps an exact argument on its cut symbolic (atan(2*i)), which Giac's cos rule reads on the other side
   ["0019-atan-exact-cut.patch", "giac-2.1.0/src/usual.cc", /atan\(b,contextptr\)\),_SEQ__VECT\)\);\s*gen tmp=evalf_double\(e,0,contextptr\);\s*if \(tmp\.type==_DOUBLE_\)\{/, "return symbolic(at_program,gen(makevecteur(a,0,atan(b,contextptr)),_SEQ__VECT));"],
   // G135, patch 0019: cos(atan(f)) = sqrt(1/(f^2+1)) takes the other root where f^2+1 is a negative real (cos(quote(atan(2*i))) = i*sqrt(3)/3)
