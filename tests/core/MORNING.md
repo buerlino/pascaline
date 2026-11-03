@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 # Morning check (owner, about 10 minutes, on the phone)
 
-The `hand: true` cases of [core.yaml](core.yaml), in plain keys, plus what a script cannot judge. **On the night's device** (the Tab One or the Fairphone 6; owner, 2026-10-24): it carries the test APK of phase-1 that the night checked (A33's device step); a morning without that APK does not count. Start from a fresh Home (Shift Esc clears the history). Tell the day session what failed (date, the case id, what you saw): it writes a backlog bug line on phase-1 and logs `morning <date>: clean` or `morning <date>: fails <ids>` in `.coord/log.md` (brief section 0, "By day" step 3). A clean morning counts toward the end of the freeze (README.md). The feel part below may be done on your phone.
+The `hand: true` cases of [core.yaml](core.yaml), in plain keys, plus what a script cannot judge. **On the night's device** (the Tab One or the Fairphone 6; owner, 2026-10-24): it carries the test APK of phase-1 that the night checked (A33's device step); a morning without that APK does not count. Start from a fresh Home (Shift Esc clears the history). Tell the day session what failed (date, the case id, what you saw): it writes a backlog bug line on phase-1 and logs `morning <date>: clean` or `morning <date>: fails <ids>` in `.coord/log.md` (brief section 0, "By day" step 3). Two clean mornings in a row are point 2 of v0.1.0's bar ([release-0.1.0.md](../../docs/release-0.1.0.md)). The feel part below may be done on your phone.
 
 | Case | Keys | Must show |
 |---|---|---|
