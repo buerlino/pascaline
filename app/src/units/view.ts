@@ -10,10 +10,9 @@ import { chipUnit } from "../input/chipUnit.ts";
 import { latexToGiacInfo } from "../input/latex-to-giac.ts";
 import { unitText } from "../i18n/enUnits.ts";
 import { END, slotFormula, type SlotFormula } from "../input/unitFormula.ts";
-import type { FormatOptions } from "../engine/format.ts";
 import type { Alternative } from "./alternatives.ts";
 import type { PadEmit } from "./pad.ts";
-import { shownOf, type Shown } from "./result.ts";
+import { shownOf, type Shown, type UnitFormat } from "./result.ts";
 import type { CellLeg } from "./userCells.svelte.ts";
 import { SlotModel, type PadAction, type Reading, type SlotCatalogue } from "./slot.ts";
 import type { Quantity, UnitError, UnitRequest, UnitSlot } from "./types.ts";
@@ -28,8 +27,8 @@ export interface ViewHost {
   /** Math: Find on units; a pick comes back through `apply`. `into`: an empty user cell was pressed (R24d), the pick sets it.
    *  `dim`: R62's "More…", only the units of that dimension. */
   find(into?: { key: string; leg: CellLeg }, dim?: string): void;
-  /** R62: the format Home shows numbers in (the digits setting). */
-  format(): FormatOptions;
+  /** R62: the format Home shows numbers in (the digits setting); R120: with the decimal mark and the screen's groups. */
+  format(): UnitFormat;
   /** R62: the row of units the result can be shown in (units/alternatives.ts); none when it cannot be built. */
   alternatives(q: Quantity, req: UnitRequest): Promise<readonly Alternative[]>;
   /** R62: a tap on a chip: the unit last used for the dimension (`units.targets`). */
