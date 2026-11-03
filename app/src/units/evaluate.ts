@@ -52,8 +52,8 @@ const BOOL = "['<','<=','>','>=','==','=','!=','and','or','not','xor','piecewise
  *   false and `v!=3` true, so the evaluated e has lost them), no step function;
  * - pasujc(x,H): 1 when a node of x has a head in H;
  * - pasujk(c) (G159): a condition c of kind 1 at 0 of lhs − rhs when it is one comparison (<, <=, >, >=, ==, =) of
- *   sides that hold none, else kind 3 with c's names (and, or, not, !=, a nested comparison): a jump wherever c holds the
- *   input;
+ *   sides that hold none, else kind 3 with c's names (and, or, not, !=, a nested comparison, a bare name): a jump
+ *   wherever c holds the input (a number or true/false has no name, so no jump);
  * - pasujr(c,q,t,a,s) (G143): 1 when the argument q of a step function of kind c takes a jump value for some t in
  *   a ± 2s: q's range there is read from the ends and the real zeros of q′ that solve() gives inside (a singular point
  *   of q′ inside, an answer solve() cannot give as a list, or a value that is not a real number: 1); kind 3: 1 when q
@@ -91,7 +91,7 @@ export const UNIT_DEFINITIONS: readonly string[] = [
     `for (j:=0;j<size(L);j++) { p:=evalf(L[j]); if (im(p)==0 and abs(p-a)<=2*s) return 1; } return 0; }`,
   `pasujc(x,H):={local o,j; if (type(x)!=DOM_SYMBOLIC) { return 0; } if (member(sommet(x),H)) { return 1; } o:=[op(x)]; ` +
     `for (j:=0;j<size(o);j++) { if (pasujc(o[j],H)) { return 1; } } return 0; }`,
-  `pasujk(c):={local o; if (type(c)!=DOM_SYMBOLIC) { return []; } o:=[op(c)]; ` +
+  `pasujk(c):={local o; if (type(c)!=DOM_SYMBOLIC) { return [3,lname(c)]; } o:=[op(c)]; ` +
     `if (member(sommet(c),${CMP}) and size(o)==2 and !pasujc(o[0],${BOOL}) and !pasujc(o[1],${BOOL})) { return [1,o[0]-o[1]]; } ` +
     `return [3,lname(c)]; }`,
   `pasujl(e,q):={local h,o,r,j; if (type(e)!=DOM_SYMBOLIC) { return []; } h:=sommet(e); o:=[op(e)]; r:=[]; ` +
@@ -395,8 +395,9 @@ export function unitEval(giac: Giac, job: UnitJob, s: HomeSettings): Quantity | 
   const bad = refusal(src, job) ?? refusal(dst, job);
   if (bad) return bad;
   if (dst.kind !== "term") return { error: "engine", detail: "an end slot of 0" };
-  // A result 0 keeps the dimension of its terms (the check's), so `0 m → s` is refused and `0 m` shows m.
-  const dimension = src.kind === "term" ? dimKeyOf(src.exps) : per?.kind === "term" ? dimKeyOf(per.exps) : null;
+  // A result 0 keeps the dimension of its terms (the check's), so `0 m → s` is refused and `0 m` shows m; G159: with no
+  // slot and no constant (no check) nothing holds a dimension, so a 0 is a pure number, as any other value there.
+  const dimension = src.kind === "term" ? dimKeyOf(src.exps) : per?.kind === "term" ? dimKeyOf(per.exps) : job.check === undefined ? "" : null;
   let note: UnitNote | undefined;
   if (dimension !== null && job.end && dimension !== dimKeyOf(dst.exps)) {
     // G40: one rad more or less than the end slot is dropped (rad = 1: ω·r → m/s, τ·θ → J), unless a cycle unit is in.
