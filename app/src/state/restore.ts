@@ -2,7 +2,7 @@
 // R38b (archive/r11-files.md section 3.5): a restore replaces the ticked keys in one IndexedDB transaction, after it kept
 // their records as stored under `backup.undo` for one Undo; the app then reloads and starts from the restored records
 // through its usual paths. Loaded only when the user restores (never in the start chunk).
-import { DATA_VERSION, idbKv } from "./storage.ts";
+import { idbKv, stamp } from "./storage.ts";
 import { kvGetRaw, kvSetMany } from "./storageRaw.ts";
 
 /** The restore's safety copy (backup.ts LEFT_OUT: never exported, kept until the next restore). */
@@ -15,8 +15,6 @@ export interface UndoRecord {
   readonly absent: readonly string[];
 }
 
-const stamped = (value: unknown): unknown => ({ "@pascaline": DATA_VERSION, value });
-
 /** Replace the keys of `parts` (values brought up to DATA_VERSION by the check) and keep what they replace for Undo.
  *  `defsStarts` goes to 0: the next start replays the restored log in full (G19). */
 export function restoreParts(parts: Readonly<Record<string, unknown>>, time: number): Promise<void> {
@@ -28,8 +26,8 @@ export function restoreParts(parts: Readonly<Record<string, unknown>>, time: num
       if (stored[k] === undefined) absent.push(k);
       else records[k] = stored[k];
     }
-    const out: Record<string, unknown> = { [UNDO_KEY]: stamped({ time, records, absent } satisfies UndoRecord), defsStarts: stamped(0) };
-    for (const k of keys) out[k] = stamped(parts[k]);
+    const out: Record<string, unknown> = { [UNDO_KEY]: stamp({ time, records, absent } satisfies UndoRecord), defsStarts: stamp(0) };
+    for (const k of keys) out[k] = stamp(parts[k]);
     return out;
   });
 }
@@ -52,7 +50,7 @@ export function undoRestore(): Promise<void> {
   return kvSetMany([UNDO_KEY], (stored) => {
     const v = (stored[UNDO_KEY] as { value?: Partial<UndoRecord> } | undefined)?.value;
     if (!v || typeof v.records !== "object" || v.records === null || !Array.isArray(v.absent)) throw new Error("no restore to undo");
-    const out: Record<string, unknown> = { ...v.records, [UNDO_KEY]: undefined, defsStarts: stamped(0) };
+    const out: Record<string, unknown> = { ...v.records, [UNDO_KEY]: undefined, defsStarts: stamp(0) };
     for (const k of v.absent) out[k] = undefined;
     return out;
   });

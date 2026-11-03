@@ -43,13 +43,22 @@ export function pickFile(doc: Document = document): Promise<File | null> {
   });
 }
 
-/** R96: the browser's answer to persisted() (undefined until one came) and the time of the last backup this install
- *  saved (`backup.last`, written by state/backup.ts; null: none), both read again on each open of the level. */
+/** R96: the browser's answer to persisted() (undefined until one came) and the times of the last backup this install
+ *  saved (`backup.last`) and offered as a web download (`backup.offered`, R122: the browser does not say whether it
+ *  saved it), both written by state/backup.ts (null: none), read again on each open of the level. */
 let persisted = $state<boolean | undefined>(undefined);
 let lastBackup = $state<string | null>(null);
+let lastOffered = $state<string | null>(null);
 function readStoreState(): void {
   void import("../state/persist.ts").then((m) => m.askPersisted()).then((a) => (persisted = a), () => {});
   void kvGet<string>("backup.last").then((r) => (lastBackup = r.kind === "value" ? r.value : null));
+  void kvGet<string>("backup.offered").then((r) => (lastOffered = r.kind === "value" ? r.value : null));
+}
+
+/** The hint under the line: the newer of the last saved and the last offered backup (ISO times sort as text). */
+function backupHint(): string | undefined {
+  if (lastOffered !== null && (lastBackup === null || lastOffered > lastBackup)) return dataText("store.lastOffered", { date: shownTime(lastOffered) });
+  return lastBackup === null ? undefined : dataText("store.lastBackup", { date: shownTime(lastBackup) });
 }
 
 /** The line (R96): not saved after a write that failed or a read that failed (R93), else kept, on this device only when
@@ -60,12 +69,8 @@ export function storeLine(): DataKey {
 }
 
 function storeRow(): MenuItem {
-  return {
-    id: "store",
-    label: dataText(storeLine()),
-    keep: true,
-    ...(lastBackup === null ? {} : { hint: dataText("store.lastBackup", { date: shownTime(lastBackup) }) }),
-  };
+  const hint = backupHint();
+  return { id: "store", label: dataText(storeLine()), keep: true, ...(hint === undefined ? {} : { hint }) };
 }
 
 function dataItems(env: SettingsEnv, pick: () => Promise<File | null>): MenuItem[] {

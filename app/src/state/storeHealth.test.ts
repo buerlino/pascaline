@@ -137,6 +137,16 @@ describe("Settings › Data's last row (R96)", () => {
     again();
     await vi.waitFor(() => expect(calls.persisted).toBe(2));
   });
+  it("a download the browser only offered reads as offered, unless a saved backup is newer (R122)", async () => {
+    vi.stubGlobal("navigator", { storage: { persisted: async () => true } });
+    await storage.kvSet("backup.last", new Date(2026, 10, 2, 9, 30).toISOString());
+    await storage.kvSet("backup.offered", new Date(2026, 10, 3, 8, 0).toISOString());
+    const first = await level();
+    await vi.waitFor(() => expect(row(first.items()).hint).toBe("Last backup offered: 2026-11-03 08:00"));
+    await storage.kvSet("backup.last", new Date(2026, 10, 3, 9, 0).toISOString());
+    const again = first.open();
+    await vi.waitFor(() => expect(row(again()).hint).toBe("Last backup: 2026-11-03 09:00"));
+  });
   it("Kept, but the browser may delete it, when it does not; no backup: no date", async () => {
     vi.stubGlobal("navigator", { storage: { persisted: async () => false } });
     await storage.kvSet("view", "cas");
