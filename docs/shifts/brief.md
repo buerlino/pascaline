@@ -59,7 +59,6 @@ Milestone reviews (section 0): after R50e (with R116's gallery groups "Entry hig
 
 | Step | What | Agent, model | Branch | After |
 |---|---|---|---|---|
-| 459 | [R121](packages/R121.md) a unit result that read a stored name as a number says so | ron, Opus | `p1/ron-unitnamenote` | – |
 | 461 | [R123](packages/R123.md) presets: a typed name is never the kept line | ron, Opus | `p1/ron-presetname` | – |
 
 ### Lane B queue (the release, then the engine)
