@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // G61: the oracle sweep as a gate stage (r16 section 3.1): random keyboard-LaTeX trees through the parser and Home as the app calls it,
-// each judged against mpmath at 60 and 100 digits (tools/probes/sweep/judge.ts): does the mark tell the truth, is a number shown only
+// each judged against mpmath at 60 and 100 digits, 2k more for literals holding 10^±k (G162; tools/probes/sweep/oracle.py, judge.ts): does the mark tell the truth, is a number shown only
 // where a value exists, does every input answer or refuse within the deadline.
 //   node scripts/sweep.ts                      # the gate stage: fixed seed, SWEEP_COUNT trees (default 1000, about 1.6 runs each), exit 1 on a new failure
 //   node scripts/sweep.ts --nightly [--edges] [--seed N] [--count N]   # report only (exit 0): the seed is the clock (seconds), printed first;

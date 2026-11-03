@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { decimalFromString, ZERO_VALUE, type ComplexValue } from "../src/engine/format.ts";
 import { judge, parseDec, type Oracle, type Shown } from "../../tools/probes/sweep/judge.ts";
 import { generate } from "../../tools/probes/sweep/gen.ts";
-import { childrenOf, EDGE_CLASSES, generateEdges } from "../../tools/probes/sweep/edges.ts";
+import { CANCEL_K, childrenOf, EDGE_CLASSES, generateEdges } from "../../tools/probes/sweep/edges.ts";
 import { oracleFor, pythonFor, runsOf } from "../../tools/probes/sweep/run.ts";
 import { latexToGiac } from "../src/input/latex-to-giac.ts";
 import { spawnSync } from "node:child_process";
@@ -113,6 +113,60 @@ describe("sweep edge generator (G116)", () => {
     expect(out).toHaveLength(sample.length);
     expect(out.filter((o) => o.kind === "value").length).toBeGreaterThan(5);
     for (const o of out) if (o.kind === "skip") expect(o.reason).not.toMatch(/oracle error/);
+  }, 120_000);
+  it("G162: draws each cancellation family with k from 40 to 300", () => {
+    const seen = new Map<string, number>();
+    const cs = generateEdges(20261103, 2000, seen);
+    for (const f of ["cancel0", "cancel1", "cancel2"]) expect([f, seen.get(f) ?? 0]).not.toEqual([f, 0]);
+    const ks: number[] = [];
+    for (const c of cs) {
+      // (1 − cos 10^-k)·10^(2k): the two exponents belong together
+      for (const m of c.latex.matchAll(/\\left\(1-\\cos\\left\(10\^\{-(\d+)\}\\right\)\\right\)\\times 10\^\{(\d+)\}/g)) expect(Number(m[2])).toBe(2 * Number(m[1]));
+      for (const m of c.latex.matchAll(/10\^\{-(\d+)\}/g)) if (Number(m[1]) > 15) ks.push(Number(m[1]));
+    }
+    expect(Math.min(...ks)).toBeGreaterThanOrEqual(CANCEL_K.lo);
+    expect(Math.max(...ks)).toBeLessThanOrEqual(CANCEL_K.hi);
+    expect(Math.min(...ks)).toBeLessThan(80);
+    expect(Math.max(...ks)).toBeGreaterThan(260);
+  });
+  it("G162: the oracle judges the cancellation families at k = 300 and k = 60 (it gave 1.0 there at 60 to 250 digits)", () => {
+    // derived: lim (1+1/n)^(2n) = e², e² = exp(2) by mpmath at 60 digits; (1 − cos h)/h² → 1/2, so the value is 1.5 (the next term, h²/24, is below 10^-100)
+    const e2 = "7.38905609893065022723042746057500781318031557055184732408713";
+    const p = (k: number): string => `POW(mpf('10'),mpf('${k}'))`;
+    const cases = [
+      { mp: `POW((mpf('1'))+(${p(-300)}),(mpf('2'))*(${p(300)}))`, want: e2 },
+      { mp: `POW(mpf('1.${"0".repeat(299)}1'),(mpf('2'))*(${p(300)}))`, want: e2 },
+      { mp: `((mpf('1'))-(COS(${p(-300)})))*(${p(600)})+(mpf('1'))`, want: "1.5" },
+      { mp: `((mpf('1'))-(COS(${p(-60)})))*(${p(120)})+(mpf('1'))`, want: "1.5" },
+    ];
+    const out = oracleFor(
+      cases.map((c) => ({ latex: c.mp, mp: c.mp, angle: "rad" as const, digits: 12 as const })),
+      pythonFor(repo, mainCheckout),
+      resolve(repo, "tools/probes/sweep/oracle.py"),
+    );
+    out.forEach((o, i) => {
+      expect(o.kind, cases[i]!.mp).toBe("value");
+      if (o.kind !== "value") return;
+      // to 50 digits, the judge's tolerance for an `=` (judge.ts), far past the 12 or 30 of an `≈`
+      const d = parseDec(o.re)!;
+      const w = parseDec(cases[i]!.want)!;
+      const e = Math.min(d.e, w.e);
+      const diff = d.m * 10n ** BigInt(d.e - e) - w.m * 10n ** BigInt(w.e - e);
+      expect((diff < 0n ? -diff : diff) * 10n ** 50n <= 10n ** BigInt(-e), `${cases[i]!.mp}: ${o.re}`).toBe(true);
+      expect(o.im).toBe("0.0");
+    });
+  }, 60_000);
+  it("G162: skips a case past the oracle's digit cap with its reason, never judges it at fewer digits", () => {
+    const out = oracleFor([{ latex: "x", mp: "((mpf('1'))-(COS(mpf('1e-2000'))))*(mpf('1e4000'))", angle: "rad", digits: 12 }], pythonFor(repo, mainCheckout), resolve(repo, "tools/probes/sweep/oracle.py"));
+    expect(out[0]).toMatchObject({ kind: "skip" });
+    expect(out[0]!.kind === "skip" ? out[0]!.reason : "").toMatch(/past the oracle's cap/);
+  }, 60_000);
+  it("G162: the oracle values the drawn cancellation trees (none skipped for digits)", () => {
+    const cs = generateEdges(20261103, 400).filter((c) => /10\^\{-([4-9]\d|\d{3})\}|1\.0{39,}1|0\.9{40,}/.test(c.latex)).slice(0, 30);
+    expect(cs.length).toBe(30);
+    const out = oracleFor(cs.map((c) => ({ latex: c.latex, mp: c.mp, angle: "rad" as const, digits: 12 as const })), pythonFor(repo, mainCheckout), resolve(repo, "tools/probes/sweep/oracle.py"));
+    for (const o of out) if (o.kind === "skip") expect(o.reason).not.toMatch(/digits|cap|oracle error/);
+    expect(out.filter((o) => o.kind === "value").length).toBeGreaterThan(10);
   }, 120_000);
   it("leaves the gate's trees for seed 20261021 byte-identical", () => {
     const h = (x: unknown): string => createHash("sha256").update(JSON.stringify(x)).digest("hex");

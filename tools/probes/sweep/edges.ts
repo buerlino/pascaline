@@ -2,7 +2,9 @@
 // G116: the edge generator of the oracle sweep, beside gen.ts (which the gate's fixed seed keeps unchanged). The same Case shape and
 // operator mix, depth up to 3, but the leaves sit where Giac goes wrong: next to branch cuts and singular points (±1 ± 10^-k,
 // cos(π/N), sin(π/2 − π/N), 0 ± 10^-k, π/2 ± 10^-k, 90 ± 10^-k for DEG, negative reals under √, ln and acosh), integers past the
-// double (2^31, 2^53 ± 1, 10^20 + 1, 30!), and huge and tiny magnitudes (1ᴇ±300, 1ᴇ±1000, 10^50). The functions add acosh, atanh and
+// double (2^31, 2^53 ± 1, 10^20 + 1, 30!), and huge and tiny magnitudes (1ᴇ±300, 1ᴇ±1000, 10^50). G162: cancellation families, k from
+// 40 to 300: (1 ± 10^-k)^(c·10^k) (the base typed as a power or as the long decimal 1.000…01), (f(a + 10^-k) − f(a))·10^k + b and
+// (1 − cos 10^-k)·10^(2k) + b (the oracle raises its digits by 2k for them, oracle.py `tens`). The functions add acosh, atanh and
 // the cube root to gen.ts's. Pure; `childrenOf` gives a generated tree's operands, for the smallest subtree that still fails.
 import { lcg, type Case } from "./gen.ts";
 
@@ -13,7 +15,7 @@ interface Node extends Case {
 }
 
 /** Every leaf class; 2,000 trees of one seed hold each at least once (sweep.test.ts). */
-export const EDGE_CLASSES = ["cut", "cospi", "sinpi", "zero", "halfpi", "deg90", "neg", "int", "huge", "tiny", "plain"] as const;
+export const EDGE_CLASSES = ["cut", "cospi", "sinpi", "zero", "halfpi", "deg90", "neg", "int", "huge", "tiny", "plain", "cancel"] as const;
 export type EdgeClass = (typeof EDGE_CLASSES)[number];
 
 const KS = [3, 6, 9, 15];
@@ -54,6 +56,63 @@ function cut(r: () => number): Node {
   const p = tenTo(-k);
   const o = one < 0 ? "-1" : "1";
   return lf(`${o}${plus ? "+" : "-"}${p.latex}`, `(mpf('${o}'))${plus ? "+" : "-"}(${p.mp})`, false, false);
+}
+
+/** G162: the cancellation families' k, 40 to 300 (the oracle's cap, DPS_CAP in oracle.py, allows up to 1000). */
+export const CANCEL_K = { lo: 40, hi: 300 } as const;
+/** The derivative family's f, as LaTeX and mpmath of an argument. */
+const DERIV: { latex: (a: string) => string; mp: (a: string) => string; angle: boolean }[] = [
+  { latex: (a) => `\\sin\\left(${a}\\right)`, mp: (a) => `SIN(${a})`, angle: true },
+  { latex: (a) => `\\cos\\left(${a}\\right)`, mp: (a) => `COS(${a})`, angle: true },
+  { latex: (a) => `\\arctan\\left(${a}\\right)`, mp: (a) => `ATAN(${a})`, angle: true },
+  { latex: (a) => `e^{${a}}`, mp: (a) => `exp(${a})`, angle: false },
+  { latex: (a) => `\\ln\\left(${a}\\right)`, mp: (a) => `LN(${a})`, angle: false },
+  { latex: (a) => `\\sqrt{${a}}`, mp: (a) => `sqrt(${a})`, angle: false },
+  { latex: (a) => `\\sinh\\left(${a}\\right)`, mp: (a) => `sinh(${a})`, angle: false },
+];
+
+/** G162: one cancellation family at a k from CANCEL_K; `family` (0, 1, 2) counts which one was drawn. */
+function cancel(r: () => number, family?: Map<string, number>): Node {
+  const k = CANCEL_K.lo + Math.min(CANCEL_K.hi - CANCEL_K.lo, Math.floor(r() * (CANCEL_K.hi - CANCEL_K.lo + 1)));
+  const f = Math.min(2, Math.floor(r() * 3));
+  family?.set(`cancel${f}`, (family.get(`cancel${f}`) ?? 0) + 1);
+  const small = tenTo(-k);
+  const big = tenTo(k);
+  const b = pick(r, ["1", "2", "0.5"]);
+  if (f === 0) {
+    const plus = r() < 0.5;
+    const c = pick(r, ["1", "2", "-1", "3"]);
+    const typed = r() < 0.5;
+    const base = typed
+      ? (plus ? { latex: `1.${"0".repeat(k - 1)}1`, mp: `mpf('1.${"0".repeat(k - 1)}1')` } : { latex: `0.${"9".repeat(k)}`, mp: `mpf('0.${"9".repeat(k)}')` })
+      : { latex: `1${plus ? "+" : "-"}${small.latex}`, mp: `(mpf('1'))${plus ? "+" : "-"}(${small.mp})` };
+    const ex = c === "1" ? big : { latex: `${c}\\times ${big.latex}`, mp: `(mpf('${c}'))*(${big.mp})` };
+    return lf(`\\left(${base.latex}\\right)^{${ex.latex}}`, `POW(${base.mp},${ex.mp})`, false, false);
+  }
+  if (f === 1) {
+    const g = pick(r, DERIV);
+    const a = pick(r, [
+      { latex: "2", mp: "mpf('2')" },
+      { latex: "0.5", mp: "mpf('0.5')" },
+      { latex: "3", mp: "mpf('3')" },
+    ]);
+    const at = { latex: `${a.latex}+${small.latex}`, mp: `(${a.mp})+(${small.mp})` };
+    return lf(
+      `\\left(${g.latex(at.latex)}-${g.latex(a.latex)}\\right)\\times ${big.latex}+${b}`,
+      `((${g.mp(at.mp)})-(${g.mp(a.mp)}))*(${big.mp})+(mpf('${b}'))`,
+      false,
+      false,
+      g.angle,
+    );
+  }
+  const big2 = tenTo(2 * k);
+  return lf(
+    `\\left(1-\\cos\\left(${small.latex}\\right)\\right)\\times ${big2.latex}+${b}`,
+    `((mpf('1'))-(COS(${small.mp})))*(${big2.mp})+(mpf('${b}'))`,
+    false,
+    false,
+    true,
+  );
 }
 
 function leaf(r: () => number, seen?: Map<string, number>): Node {
@@ -119,6 +178,8 @@ function leaf(r: () => number, seen?: Map<string, number>): Node {
       const k = pick(r, [300, 1000]);
       return lf(`1ᴇ-${k}`, `mpf('1e-${k}')`, false, false);
     }
+    case "cancel":
+      return cancel(r, seen);
     case "plain": {
       const n = pick(r, ["2", "3", "0.5", "10", "\\pi"]);
       return lf(n, n === "\\pi" ? "PI" : `mpf('${n}')`, true, true);
@@ -178,7 +239,7 @@ function remember(n: Node): void {
   n.kids.forEach(remember);
 }
 
-/** `count` edge trees from `seed`, depth up to 3. `seen` (optional) counts the leaf classes drawn. */
+/** `count` edge trees from `seed`, depth up to 3. `seen` (optional) counts the leaf classes drawn, and the cancellation families as `cancel0` to `cancel2`. */
 export function generateEdges(seed: number, count: number, seen?: Map<string, number>): Case[] {
   const r = lcg(seed);
   const out: Case[] = [];

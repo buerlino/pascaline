@@ -1,10 +1,14 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # G61: the sweep's oracle. Reads a JSON list of {"mp": <python expr from gen.ts>, "deg": bool} on stdin and prints a JSON list of
-#   {"kind": "value", "re": "...", "im": "..."}  at 100 digits, when 60 and 100 digits agree to 1e-45 (else 150 and 250 digits, else skip)
+#   {"kind": "value", "re": "...", "im": "..."}  at 100 digits, when 60 and 100 digits agree to 1e-45 (else 150 and 250 digits, else skip);
+#     G162: an input whose exact literals hold a power 10^±k (1ᴇ-300, 10^{300}, a typed 1.000…01) starts both rungs 2k digits higher
+#     (60+2k and 100+2k, then 150+2k and 250+2k): (1-cos 10^-k)·10^(2k) cancels 2k digits, and below that every rung gives the same wrong
+#     value, so the agreement test would pass it. Past DPS_CAP digits the case is skipped with its reason, never judged at fewer.
 #   {"kind": "novalue"}   a pole, a non-finite result
 #   {"kind": "skip", "reason": "..."}   unstable, a convention (negative base to a non-integer power, 0^0), complex in DEG, too slow
 # Run: tests/golden/.venv/bin/python -I tools/probes/sweep/oracle.py < requests.json   (mpmath 1.3.0)
-import json, signal, sys
+import json, re as _re, signal, sys
+from decimal import Decimal, InvalidOperation
 from mpmath import mp, mpf, mpc, sqrt, exp, sinh, cosh, tanh, asinh, acosh, atanh, cbrt, sign, log, pi, e, factorial, fabs, sin, cos, tan, asin, acos, atan, isfinite
 
 
@@ -154,14 +158,40 @@ def agree(a, b):
     return abs(a[0] - b[0]) <= tol and abs(a[1] - b[1]) <= tol
 
 
+# G162: the highest rung (250+2k) a case may need; k up to 1000 (the edge generator's 1ᴇ±1000) stays under the 3 s limit per case
+DPS_CAP = 2250
+_POW10 = _re.compile(r"POW\(mpf\('10'\),mpf\('(-?\d+)'\)\)")
+_LIT = _re.compile(r"mpf\('([^']*)'\)")
+
+
+def tens(expr):
+    """G162: the largest k such that an exact literal of the input holds 10^±k: 10^{k} typed as a power, the exponent of 1ᴇ-k, or the
+    first and last digit of a typed decimal (1.000…01 holds 10^-k, 100…001 holds 10^k)."""
+    k = 0
+    for m in _POW10.finditer(expr):
+        k = max(k, abs(int(m.group(1))))
+    for m in _LIT.finditer(expr):
+        try:
+            t = Decimal(m.group(1)).as_tuple()
+        except InvalidOperation:
+            continue
+        if not isinstance(t.exponent, int):
+            continue
+        k = max(k, abs(t.exponent), abs(t.exponent + len(t.digits) - 1))
+    return k
+
+
 def one(expr):
-    for lo, hi in ((60, 100), (150, 250)):
+    up = 2 * tens(expr)
+    if 250 + up > DPS_CAP:
+        return {"kind": "skip", "reason": f"needs {250 + up} digits (10^±{up // 2}), past the oracle's cap of {DPS_CAP}"}
+    for lo, hi in ((60 + up, 100 + up), (150 + up, 250 + up)):
         a = at(expr, lo)
         b = at(expr, hi)
         if agree(a, b):
             mp.dps = hi
             return {"kind": "value", "re": mp.nstr(b[0], 100), "im": mp.nstr(b[1], 100)}
-    return {"kind": "skip", "reason": "unstable at 60/100 and 150/250 digits"}
+    return {"kind": "skip", "reason": f"unstable at {60 + up}/{100 + up} and {150 + up}/{250 + up} digits"}
 
 
 def main():
