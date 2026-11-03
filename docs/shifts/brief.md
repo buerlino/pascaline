@@ -29,7 +29,8 @@
 | # | Package | Agent, model | Lane | Starts when merged | Size |
 |---|---|---|---|---|---|
 | [A4b](packages/A4b.md) | Find's timing on the Tab One (the bar's point 4) | annabell, Sonnet | day (the Tab One) | – | ~0.2 d |
-| [A8](packages/A8.md) | The release workflow; the tag check takes `vX.Y.Z-test` | annabell, Opus | day (then the test tag `v0.1.0-test`) | A7 | ~0.5 d |
+| [A8](packages/A8.md) | The release workflow (merged 9c7ee4e0; its after-merge steps wait for A8f2, row 472) | annabell, Opus | day (then the test tag `v0.1.0-test`) | A7 | ~0.5 d |
+| [A70](packages/A70.md) | The release APK from the test tag runs on the Tab One | annabell, Sonnet | day (the Tab One) | A8f2, the moved tag's green run | ~0.2 d |
 | [A69](packages/A69.md) | A night stops before the disk is full; runs leave no temp folders | annabell, Sonnet | day (the pipeline) | – | ~0.3 d |
 | [A61](packages/A61.md) | What the WebView answers to `persisted()` | annabell, Sonnet | day (the Fairphone) | R96f1 | ~0.2 d |
 
@@ -74,6 +75,7 @@ A8 and [A57](packages/A57.md) run by day. Steps 448–452 and 408 run only on th
 | Step | What | Agent, model | Branch | After |
 |---|---|---|---|---|
 | 446 | [G162](packages/G162.md) the fuzz's cancellation families and their oracle | gorge, Opus | `p1/gorge-fuzzedges` | – |
+| 472 | [A8f2](packages/A8f2.md) release-verify reads apksigner 37's signer lines (the release run failed on it) | annabell, Opus | `p1/annabell-verifyfmt` | – |
 | 447 | [G159](packages/G159.md) σ through `piecewise` or `when` gets ⚠ at a crossing (F166) | gorge, Opus | `p1/gorge-casejump` | – |
 | 470 | [A63](packages/A63.md) the kill run needs a tag (the bar's point 1) | annabell, Sonnet | `p1/annabell-killtag` | A8 |
 | 462 | [G161](packages/G161.md) Find gets VA and var; gauge units stay gauge | gorge, Opus | `p1/gorge-elecunits` | G159 |
