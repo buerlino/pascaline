@@ -81,6 +81,37 @@ if out="$(verify "$tmp/c.apk" "$tmp/bad.sha256")"; then fail "release-verify: a 
 echo apk > "$tmp/d.apk"; printf '#!/usr/bin/env bash\nexit 1\n' > "$tmp/apksigner"
 if out="$(verify "$tmp/d.apk")"; then fail "release-verify: a failing apksigner passed"; fi
 [[ ! -e "$tmp/d.apk" ]] || fail "release-verify: the APK stays after apksigner failed"
+# A8f2: apksigner 37 prints `V2 Signer: certificate SHA-256 digest:` (and a public key digest, never the certificate);
+# one signer under two schemes prints the same certificate twice; the old `Signer #1` form (35, 36) stays read
+fakelines() {   # fakelines <output line...>: an apksigner that prints exactly these lines
+  { echo '#!/usr/bin/env bash'; for l in "$@"; do printf 'echo %q\n' "$l"; done; } > "$tmp/apksigner"; chmod +x "$tmp/apksigner"
+}
+other="$(tr 'a-f0-9' 'b-f0-9a' <<<"$digest")"
+pass_case() {   # pass_case <name> <output line...>: the pinned certificate passes and the APK stays
+  local name="$1"; shift; echo apk > "$tmp/p.apk"; fakelines "$@"
+  out="$(verify "$tmp/p.apk")" || fail "release-verify, $name: refused: $out"
+  [[ -f "$tmp/p.apk" ]] || fail "release-verify, $name: the APK was deleted on a match"
+}
+fail_case() {   # fail_case <name> <message regex> <output line...>: refused and the APK deleted
+  local name="$1" re="$2"; shift 2; echo apk > "$tmp/f.apk"; fakelines "$@"
+  if out="$(verify "$tmp/f.apk")"; then fail "release-verify, $name: passed"; fi
+  [[ ! -e "$tmp/f.apk" ]] || fail "release-verify, $name: the APK stays"
+  grep -Eq "$re" <<<"$out" || fail "release-verify, $name: no message matching /$re/: $out"
+}
+pass_case "apksigner 37 form" "Verifies" "Verified using v2 scheme (APK Signature Scheme v2): true" \
+  "Number of signers: 1" "V2 Signer: certificate DN: CN=x" "V2 Signer: certificate SHA-256 digest: $digest" \
+  "V2 Signer: public key SHA-256 digest: $other"
+pass_case "one signer, two schemes" "V2 Signer: certificate SHA-256 digest: $digest" "V2 Signer: public key SHA-256 digest: $other" \
+  "V3 Signer: certificate SHA-256 digest: $digest" "V3 Signer: public key SHA-256 digest: $other"
+pass_case "old Signer #1 form" "Signer #1 certificate SHA-256 digest: $digest" "Signer #1 public key SHA-256 digest: $other"
+pass_case "minSdkVersion form" "Signer (minSdkVersion=24, maxSdkVersion=2147483647) certificate SHA-256 digest: $digest"
+fail_case "two certificates" "2 signer certificates" "V2 Signer: certificate SHA-256 digest: $digest" \
+  "V3 Signer: certificate SHA-256 digest: $other"
+fail_case "two signers, old form" "2 signer certificates" "Signer #1 certificate SHA-256 digest: $digest" \
+  "Signer #2 certificate SHA-256 digest: $other"
+fail_case "public key digest alone" "0 signer certificates" "V2 Signer: public key SHA-256 digest: $digest"
+fail_case "37 form, other certificate" "mismatch" "V2 Signer: certificate SHA-256 digest: $other" \
+  "V2 Signer: public key SHA-256 digest: $digest"
 # the committed pin is the owner's certificate
 [[ "$(tr -d ':\n ' < "$root/android/release-cert.sha256" | tr 'A-F' 'a-f')" == "$digest" ]] || fail "android/release-cert.sha256 is not the owner's certificate"
 [[ "$(grep -c . "$root/android/release-cert.sha256")" == 1 ]] || fail "android/release-cert.sha256 is not one line"
