@@ -41,6 +41,15 @@ export interface OpenUnitView {
 
 let current: OpenUnitView | null = null;
 
+/** The chunk of Find on units (Math in a slot, More…): its import starts when the view opens, so a tap waits on no
+ *  module fetch (R121 fix round 2: More… under load showed no Find within 5 s). A failed import is tried again. */
+let findChunk: Promise<typeof import("./find.ts")> | null = null;
+const unitFind = (): Promise<typeof import("./find.ts")> =>
+  (findChunk ??= import("./find.ts").catch((e: unknown) => {
+    findChunk = null;
+    throw e;
+  }));
+
 /** Keys that change place: the unit view closes first, then they do their job. */
 const PLACES: readonly string[] = ["home", "cas", "switch", "apps", "symb", "plot", "num", "settings", "mode"];
 
@@ -52,6 +61,7 @@ export async function openUnits(c: RouteCtx, row?: HistoryItem): Promise<void> {
   if (row) c.entry.set(c.session.input(row), row.chips); // R100: in comma mode its argument commas as `;`
   const line = c.entry.value;
   const chips = c.entry.chips;
+  void unitFind().catch(() => undefined);
   // MathLive comes with the entry line (its field is up once `ready`): the class is taken from the element registry
   const [, { finder, index }, hw] = await Promise.all([c.entry.ready, import("../find/finder.ts").then(async (m) => ({ finder: m, index: await m.loadIndex(true) })), import("../entry/hwkeys.ts"), unitCells.restore()]);
   const Field = customElements.get("math-field") as typeof MathfieldElement | undefined;
@@ -67,7 +77,7 @@ export async function openUnits(c: RouteCtx, row?: HistoryItem): Promise<void> {
     write: (id, latex) => mf.setPromptValue(id, latex, {}),
     evaluate: (req) => c.shell.calc.units(req, c.session.settings),
     find: (into, dim) =>
-      void import("./find.ts").then((m) => {
+      void unitFind().then((m) => {
         if (current?.view !== view) return;
         const more = dim === undefined ? { constant, tools: unitTools(view.shown, { end: () => view.toEnd(), alt: (a) => void view.pickAlt(a), alts: () => view.down(), home }) } : {};
         m.showUnitFind({ shell: c.shell, index, cat, apply: dim === undefined ? (a) => view.apply(a) : (a) => view.pickMore(a), refresh: () => (unitPad.model = new UnitPad(unitCells.userSet())), ...more }, into, dim);
