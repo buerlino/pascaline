@@ -141,6 +141,8 @@ function faultText(e: unknown, name: string): string {
       return pt("fault.noGroups");
     case "newer":
       return pt("fault.newer");
+    case "unreadable":
+      return pt("fault.unreadable");
     case "unknown":
       return pt("fault.unknown");
   }
@@ -160,8 +162,8 @@ export function nameFrom(latex: string): string {
 const nameLatex = (name: string): string => name.replace(/[\\{}]/g, "").replace(/ /g, "\\ ");
 
 /** The sheet has closed: the entry line takes a name under its label, and every key goes to it first. Enter offers the
- *  name to `save` (a refusal is the notice, and the line stays for another try); Esc cancels; C empties the line, never
- *  the history; the space key types a space; a key or a tap that goes elsewhere (a sheet, a place) cancels first. Either way the
+ *  name to `save` (a refusal is the notice, and the line stays for another try); Esc cancels; C empties the name only,
+ *  never the history nor the kept line (R123: the line's own clear would drop it, main.ts onClear); the space key types a space; a key or a tap that goes elsewhere (a sheet, a place) cancels first. Either way the
  *  line then holds what it held before. */
 function askName(host: PresetsHost, start: string, save: (name: string) => void, said: (name: string) => string): void {
   const { shell, entry } = host;
@@ -187,12 +189,13 @@ function askName(host: PresetsHost, start: string, save: (name: string) => void,
   };
   const prompt: EntryPrompt = {
     label: pt("name"),
+    aside: { latex: line, chips },
     cancel: end,
     key: (a) => {
       if (a.kind !== "special") entry.run(a.kind === "type" && a.text === " " ? { kind: "insert", latex: "\\ " } : a);
       else if (a.name === "enter") offer();
       else if (a.name === "esc") end();
-      else if (a.name === "clear") entry.clear();
+      else if (a.name === "clear") entry.set("");
       else {
         if (a.name !== "none") end();
         return false;
@@ -279,15 +282,15 @@ function presetsMenu(session: Session, host: PresetsHost): SubMenu {
       const save: MenuItem = {
         id: "save",
         label: pt("save"),
-        disabled: m.refused,
-        reason: pt("newer"),
+        disabled: m.refused !== null,
+        reason: pt(m.refused ?? "newer"),
         run: () => askName(host, "", (name) => void m.capture(name), (name) => pt("saved", { name })),
       };
       const edit: MenuItem = {
         id: "edit",
         label: pt("edit"),
-        disabled: m.refused || m.list.length === 0,
-        reason: m.refused ? pt("newer") : pt("edit.empty"),
+        disabled: m.refused !== null || m.list.length === 0,
+        reason: pt(m.refused ?? "edit.empty"),
         submenu: { title: pt("edit.title"), remember: false, get items() { return m.list.map((p) => pageRow(m, p, host)); } },
       };
       return [...rows, save, edit];

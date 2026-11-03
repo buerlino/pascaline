@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { EntryPrompt } from "../apps/shell.svelte.ts";
 import type { MenuItem } from "../apps/types.ts";
 import type { ClipActions } from "../clipboard/actions.svelte.ts";
+import type { ChipTable } from "../input/chips.ts";
 import type { ActionBody } from "../keyboard/keyboard.ts";
 import { FakeCalc } from "../calc/fake.ts";
 import { UserKeys } from "../keyboard/userKeys.svelte.ts";
@@ -23,11 +24,12 @@ function store(rec?: RawRecord): PresetStore {
   const s = { rec, read: () => Promise.resolve(s.rec), write: (value: StoredPresets) => ((s.rec = { "@pascaline": DATA_VERSION, value }), Promise.resolve()) };
   return s;
 }
-async function setup(rec?: RawRecord) {
+async function setup(rec?: RawRecord | "unreadable") {
   const kv = memoryKv();
   const session = new Session(new FakeCalc(), kv);
   const userKeys = new UserKeys(kv);
-  const presets = await Presets.open({ session, userKeys, cells: new UnitCells(kv), store: store(rec), showLook: () => Promise.resolve() });
+  const from = rec === "unreadable" ? { ...store(), read: () => Promise.reject(new Error("indexedDB get failed")) } : store(rec);
+  const presets = await Presets.open({ session, userKeys, cells: new UnitCells(kv), store: from, showLook: () => Promise.resolve() });
   setPresetsModel(presets);
   return { session, userKeys, presets };
 }
@@ -98,6 +100,43 @@ describe("Mode's Preset row", () => {
       ["edit", true],
     ]);
     expect(rows[0]?.reason).toBe("Saved by a newer Pascaline: kept as it is");
+  });
+  it("a record that could not be read (R123): no Save and no Edit, and the reason says so, not \"newer\"", async () => {
+    const { session } = await setup("unreadable");
+    const rows = items(presetRow(session, {}));
+    expect(rows.map((r) => [r.id, r.disabled])).toEqual([
+      ["save", true],
+      ["edit", true],
+    ]);
+    expect(rows.map((r) => r.reason)).toEqual(["Could not be read: kept as it is", "Could not be read: kept as it is"]);
+  });
+  it("C while naming clears the name only, never through the line's clear (its kept copy, R123); the prompt holds the line it set aside", async () => {
+    const { session } = await setup();
+    const shell = { prompt: null as EntryPrompt | null, sheet: null, app: null, view: "symb" };
+    let line = "2+3";
+    let clears = 0;
+    const chips = { "res:1": { value: "5", exact: true } } as unknown as ChipTable;
+    const entry = {
+      get value() {
+        return line;
+      },
+      chips,
+      set: (latex: string) => void (line = latex),
+      run: (a: ActionBody) => void (line += a.kind === "type" ? a.text : ""),
+      clear: () => void ((line = ""), clears++),
+    };
+    items(presetRow(session, { shell, entry }))
+      .find((r) => r.id === "save")
+      ?.run?.();
+    shell.prompt?.key({ kind: "type", text: "lab" });
+    expect(shell.prompt?.aside).toEqual({ latex: "2+3", chips });
+    expect(shell.prompt?.key({ kind: "special", name: "clear" })).toBe(true);
+    expect(line).toBe("");
+    expect(clears).toBe(0);
+    shell.prompt?.key({ kind: "special", name: "esc" });
+    expect(shell.prompt).toBeNull();
+    expect(line).toBe("2+3");
+    expect(clears).toBe(0);
   });
   it("Save asks for a name on the entry line; Enter saves it, a taken name is refused and the line stays; another key cancels and gives the line back", async () => {
     const { session, presets } = await setup();

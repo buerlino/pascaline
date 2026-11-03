@@ -62,8 +62,10 @@ entry.onClear = () => keeper.save(null);
 const flush = (): void => {
   session.flushHistory();
   shell.flush();
-  // before the kept line is on the field (or the line was typed or cleared) the stored line stays as it is
-  if (entry.settled) keeper.save(shell.app === null ? lineRecord(session.view, entry.value, entry.chips) : null);
+  // before the kept line is on the field (or the line was typed or cleared) the stored line stays as it is; while a
+  // name is typed on the line (R89), the line it set aside is the one kept (R123)
+  const line = shell.prompt?.aside ?? { latex: entry.value, chips: entry.chips };
+  if (entry.settled) keeper.save(shell.app === null ? lineRecord(session.view, line.latex, line.chips) : null);
 };
 // Leaving the app (a swipe, the app switcher): drop the focus. Android restores focus to the focused element when
 // the app comes back and opens the system keyboard on it, inputmode=none or not (K0, user 2026-10-13). The next key

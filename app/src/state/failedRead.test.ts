@@ -234,7 +234,7 @@ describe("each caller keeps the stored record after one failed read", () => {
     idb.failGetsOnce.add(PRESETS_KEY);
     const session = new Session(new QuickCalc(), kv);
     const p = await Presets.open({ session, userKeys: new UserKeys(kv), cells: new UnitCells(kv), store: idbPresetStore });
-    expect(p.refused).toBe(true);
+    expect(p.refused).toBe("unreadable");
     expect(() => p.capture("New")).toThrow(PresetError);
     await settle();
     expect(store().get(PRESETS_KEY)).toEqual(before);

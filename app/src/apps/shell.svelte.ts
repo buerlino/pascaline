@@ -3,6 +3,7 @@
 // apps beside them. App code loads on first use (registry.ts); the open app and view are stored like the
 // settings, so the calculator comes back where it was.
 import type { Calc, UserName } from "../calc/port.ts";
+import type { ChipTable } from "../input/chips.ts";
 import { t } from "../i18n/index.ts";
 import type { ActionBody } from "../keyboard/keyboard.ts";
 import type { Kv } from "../state/storage.ts";
@@ -29,9 +30,11 @@ const PALETTE_IDS: readonly string[] = ["tmpl", "rel", "sym"] satisfies PaletteI
 
 /** The entry line asks for a name (R89, views/presetsView.svelte.ts): its label stands over the line, and every key's
  *  action goes to `key` first (true: taken). The asker clears `prompt` when done; `cancel` ends it as Esc does (the line
- *  comes back), run by the asker itself when a sheet opens or the app or view changes (a tap goes elsewhere). */
+ *  comes back), run by the asker itself when a sheet opens or the app or view changes (a tap goes elsewhere). `aside` is
+ *  the line it set aside, the one a hide keeps (R34, R123): the name on the line is never kept. */
 export interface EntryPrompt {
   readonly label: string;
+  readonly aside: { readonly latex: string; readonly chips: ChipTable };
   key(action: ActionBody): boolean;
   cancel(): void;
 }
