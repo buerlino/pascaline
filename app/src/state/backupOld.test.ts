@@ -74,12 +74,29 @@ describe("a settings part without a nested field added later (R122, vr-9)", () =
       ["look", "dim", true],
       ["haptics", "ms", 4],
       ["haptics", "pattern", "x"],
+      ["look", "toString", 1], // an inherited name is not a field (`in` found it)
+      ["look", "constructor", 1],
     ] as const) {
       const g = { ...s[group] };
       s[group] = { ...g, [field]: v };
       const r = checkBackup(bytes(f));
       expect(r.ok, `${group}.${field}`).toBe(false);
       s[group] = g;
+    }
+  });
+  it("a `__proto__` field in look or haptics refuses the file, and the check does not throw", () => {
+    const f = fixture("backup-2026-11.json");
+    const s = f.parts["settings"]?.value as Record<string, Record<string, unknown>>;
+    for (const group of ["haptics", "look"] as const) {
+      const g = s[group];
+      s[group] = { ...g, marker: 1 };
+      // JSON.parse makes "__proto__" an own key of the parsed object; JSON.stringify of a literal cannot write it.
+      const raw = new TextEncoder().encode(JSON.stringify(f).replace('"marker":1', '"__proto__":{}'));
+      s[group] = g as Record<string, unknown>;
+      expect(new TextDecoder().decode(raw)).toContain('"__proto__":{}');
+      let r: ReturnType<typeof checkBackup> | undefined;
+      expect(() => (r = checkBackup(raw)), group).not.toThrow();
+      expect(r?.ok, group).toBe(false);
     }
   });
 });

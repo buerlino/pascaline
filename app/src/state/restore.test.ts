@@ -179,7 +179,7 @@ describe("the repeated rules agree with the start's readers", () => {
       null,
       "on",
     ],
-    look: [defaultLook(), defaultLook(true, true), { ...defaultLook(), family: "nope" }, {}, "dark", { plain: true }, { family: "nord", dim: 1 }, { contrast: "yes" }],
+    look: [defaultLook(), defaultLook(true, true), { ...defaultLook(), family: "nope" }, {}, "dark", { plain: true }, { family: "nord", dim: 1 }, { contrast: "yes" }, { family: "nord", toString: 1 }],
   };
   // R122: a nested group (haptics, look) passes when migrateSettings keeps every field it holds; one it lacks is filled.
   const keepsAll = (read: unknown, v: unknown): boolean =>

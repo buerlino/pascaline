@@ -128,9 +128,10 @@ function actionOk(a: unknown): boolean {
   }
 }
 const whole = (x: unknown, lo: number, hi: number): boolean => typeof x === "number" && Number.isInteger(x) && x >= lo && x <= hi;
-/** An object whose every field has a rule that keeps it; a field it lacks is not checked. */
+/** An object whose every field has a rule that keeps it; a field it lacks is not checked. Own rules only: JSON.parse
+ *  makes `"__proto__"` an ordinary key, and `rules["__proto__"]` would be Object.prototype (not a function). */
 const fields = (x: unknown, rules: Readonly<Record<string, (v: unknown) => boolean>>): boolean =>
-  isObject(x) && Object.entries(x).every(([k, v]) => rules[k]?.(v) === true);
+  isObject(x) && Object.entries(x).every(([k, v]) => Object.hasOwn(rules, k) && rules[k]?.(v) === true);
 
 // The start's readers live in the start chunk (session.svelte.ts, keyboard/userKeys.svelte.ts). An import of them from
 // this lazy chunk makes the bundler split the start chunk into six files (59.09 → 60.62 kB gzip, measured in R38b), so
@@ -155,7 +156,7 @@ export const SETTING_RULES: Readonly<Record<string, (x: unknown) => boolean>> = 
   // R122: the nested groups check the fields they hold; a field missing (an older file) is filled by migrateSettings
   // at the next start, as it fills one missing from a stored record. A field this version does not know is a fault.
   haptics: (x) => fields(x, { on: (v) => typeof v === "boolean", strength: (v) => whole(v, 0, 100), ms: (v) => whole(v, 5, 100) }), // HAPTIC_MS_RANGE
-  look: (x) => isObject(x) && Object.entries(validLook(x, defaultLook())).every(([k, v]) => !(k in x) || x[k] === v) && Object.keys(x).every((k) => k in defaultLook()),
+  look: (x) => isObject(x) && Object.entries(validLook(x, defaultLook())).every(([k, v]) => !(k in x) || x[k] === v) && Object.keys(x).every((k) => Object.hasOwn(defaultLook(), k)),
 };
 
 /** state/presetRecord.ts readPresets, strict: the record keeps every preset (a whole id, a name, groups as a non-empty
