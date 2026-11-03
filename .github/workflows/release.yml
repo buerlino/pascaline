@@ -1,0 +1,114 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# A8: the release. A tag v* pushed to GitHub (or Run workflow with an existing tag) builds the release engine and libqalculate in the
+# pinned container (P2), runs the golden gate on that engine, and only then decodes the owner's key and signs the APK (A7:
+# ./build.sh --release, which checks the certificate against android/release-cert.sha256). Last, a GitHub release with the APK and
+# its SHA-256; a pre-release while the major version is 0 or when the tag holds a `-` (the test tag vX.Y.Z-test). A failed step
+# publishes nothing. The owner's checklist: docs/release.md.
+# Secrets (A7; Settings → Secrets and variables → Actions): KEYSTORE_BASE64, KEYSTORE_PASSWORD, KEY_ALIAS, KEY_PASSWORD. They reach one
+# step only, as its env:, never a run: line; the keystore file lives in $RUNNER_TEMP (mode 600) and an always() step deletes it.
+# Every action is pinned by commit SHA (version in the comment); actions/* only, the release is made with gh and GITHUB_TOKEN.
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "The tag to release (vX.Y.Z or vX.Y.Z-<suffix>); it must already be on GitHub"
+        type: string
+        required: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash   # bash -eo pipefail: a failing command in a pipe fails the step
+
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    env:
+      TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+      PASCALINE_DL_DIR: ${{ github.workspace }}/engine/giac/_downloads
+      PASCALINE_QALC_DL_DIR: ${{ github.workspace }}/engine/qalc/_downloads
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: refs/tags/${{ env.TAG }}
+          persist-credentials: false
+      - name: One version (the tag's X.Y.Z equals app/package.json, build.gradle and the F-Droid recipe)
+        run: tools/check-version.sh "$TAG"
+      - name: Fetch the pinned source tarballs (SHA-256 checked by the scripts)
+        run: |
+          (source engine/giac/build-wasm.sh; stage_fetch)
+          engine/qalc/build-wasm.sh fetch
+      - name: Release engine in the pinned container (P2)
+        run: NO_LOCK=1 CONTAINER_ENGINE=podman engine/giac/build-wasm-release.sh
+      - name: Release libqalculate in the pinned container (P2; its checksums go in the release notes)
+        run: |
+          mkdir -p engine/qalc/_work/tmp
+          NO_LOCK=1 CONTAINER_ENGINE=podman engine/qalc/build-wasm.sh release
+      - name: Engine and libqalculate checksums
+        run: cat engine/giac/_out/release/SHA256SUMS engine/qalc/_out/release/SHA256SUMS
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "22"
+      - name: Golden gate on the release engine (GOLDEN GATE PASSED before the key is decoded)
+        working-directory: app
+        run: |
+          npm ci --no-audit --no-fund
+          npm run index
+          GIAC_OUT="$GITHUB_WORKSPACE/engine/giac/_out/release" npm run golden 2>&1 | tee "$RUNNER_TEMP/golden.log"
+          grep -qx 'GOLDEN GATE PASSED' "$RUNNER_TEMP/golden.log"
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: "21"
+      # The only step that sees the key: the secrets are its env:, the keystore exists from here until the always() step below.
+      - name: Signed APK (./build.sh --release)
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          PASCALINE_KEYSTORE: ${{ runner.temp }}/release.jks
+          PASCALINE_KEYSTORE_PASS: ${{ secrets.KEYSTORE_PASSWORD }}
+          PASCALINE_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          PASCALINE_KEY_PASS: ${{ secrets.KEY_PASSWORD }}
+          PASCALINE_RELEASE_TAG: ${{ env.TAG }}
+        run: |
+          (umask 077 && printf '%s' "$KEYSTORE_BASE64" | base64 -d > "$PASCALINE_KEYSTORE")
+          chmod 600 "$PASCALINE_KEYSTORE"
+          unset KEYSTORE_BASE64
+          NO_LOCK=1 ./build.sh --release --engine-dir engine/giac/_out/release
+      - name: Delete the keystore
+        if: always()
+        run: rm -f "$RUNNER_TEMP/release.jks"
+      - name: Publish the GitHub release (a pre-release for 0.x or a tag with a -)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          v="$(node -p 'require("./app/package.json").version')"
+          apk="dist/pascaline-$v.apk"
+          (cd dist && sha256sum -c "pascaline-$v.apk.sha256")
+          pre=()
+          if [[ "$v" == 0.* || "$TAG" == *-* ]]; then pre=(--prerelease); fi
+          notes="$RUNNER_TEMP/notes.md"
+          {
+            echo "Pascaline $TAG, built by the release workflow (run $GITHUB_RUN_ID) from commit $(git rev-parse HEAD)."
+            echo
+            echo "APK SHA-256 (\`sha256sum -c pascaline-$v.apk.sha256\`):"
+            echo '```'; cat "$apk.sha256"; echo '```'
+            echo "Signing certificate SHA-256 (\`apksigner verify --print-certs\`; android/release-cert.sha256):"
+            echo '```'; cat android/release-cert.sha256; echo '```'
+            echo "Engine (Giac, engine/giac/_out/release/SHA256SUMS):"
+            echo '```'; cat engine/giac/_out/release/SHA256SUMS; echo '```'
+            echo "libqalculate (engine/qalc/_out/release/SHA256SUMS):"
+            echo '```'; cat engine/qalc/_out/release/SHA256SUMS; echo '```'
+          } > "$notes"
+          gh release create "$TAG" "$apk" "$apk.sha256" --verify-tag --title "Pascaline $TAG" --notes-file "$notes" "${pre[@]}"

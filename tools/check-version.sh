@@ -2,16 +2,17 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # One version (A48): exit 0 only when app/package.json's version, build.gradle's literal versionName and versionCode, and the
 # F-Droid recipe's newest build entry (highest versionCode) and CurrentVersion / CurrentVersionCode agree; with a tag argument
-# (vX.Y.Z) they also equal the tag. F-Droid's update check reads the Gradle file as text, so a computed value is refused.
-#   tools/check-version.sh [vX.Y.Z]        # CHECK_VERSION_ROOT=<dir> reads another tree (tools/check-version.test.sh)
+# (vX.Y.Z, or a test tag vX.Y.Z-<suffix> with the suffix [0-9A-Za-z.]+, owner 2026-11-03) they also equal the tag's X.Y.Z. F-Droid's
+# update check reads the Gradle file as text, so a computed value is refused.
+#   tools/check-version.sh [vX.Y.Z[-suffix]]   # CHECK_VERSION_ROOT=<dir> reads another tree (tools/check-version.test.sh)
 # Exit: 0 agree, 1 mismatch or unreadable, 2 usage.
 set -uo pipefail
 ROOT="${CHECK_VERSION_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
-tag=""
-if (( $# > 1 )); then echo "usage: check-version.sh [vX.Y.Z]" >&2; exit 2; fi
+tag="" tagname=""
+if (( $# > 1 )); then echo "usage: check-version.sh [vX.Y.Z[-suffix]]" >&2; exit 2; fi
 if (( $# == 1 )); then
-  [[ "$1" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "usage: check-version.sh [vX.Y.Z] (got '$1')" >&2; exit 2; }
-  tag="${1#v}"
+  [[ "$1" =~ ^v([0-9]+\.[0-9]+\.[0-9]+)(-[0-9A-Za-z.]+)?$ ]] || { echo "usage: check-version.sh [vX.Y.Z[-suffix]] (got '$1')" >&2; exit 2; }
+  tag="${BASH_REMATCH[1]}" tagname="$1"
 fi
 
 PKG="$ROOT/app/package.json" GRADLE="$ROOT/android/app/build.gradle" RECIPE="$ROOT/fdroid/io.github.buerlino.pascaline.yml"
@@ -50,7 +51,7 @@ same() {   # same <what> <got> <want>
   [[ "$2" == "$3" ]] || bad "$1 is '$2', package.json says '$3'"
 }
 if [[ -n "$v_pkg" ]]; then
-  [[ -z "$tag" ]] || same "tag" "$tag" "$v_pkg"
+  [[ -z "$tag" ]] || same "tag $tagname: its X.Y.Z" "$tag" "$v_pkg"
   [[ -z "$v_name" ]] || same "build.gradle versionName" "$v_name" "$v_pkg"
   [[ -z "$r_name" ]] || same "recipe newest build versionName" "$r_name" "$v_pkg"
   same "recipe CurrentVersion" "$r_cur" "$v_pkg"
@@ -60,4 +61,4 @@ fi
 [[ -z "$v_code" ]] || same "recipe CurrentVersionCode" "$r_curcode" "$v_code"
 
 if (( errs )); then exit 1; fi
-echo "check-version: ok $v_pkg ($v_code)${tag:+, tag v$tag}"
+echo "check-version: ok $v_pkg ($v_code)${tagname:+, tag $tagname}"

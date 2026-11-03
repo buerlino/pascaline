@@ -15,7 +15,8 @@
 #   --unsigned       leave the APK unsigned (what F-Droid wants); default signs with the throwaway key in ~/.cache/pascaline/keys/ (PASCALINE_KEYS)
 #   --release        the release (A7): signed with the owner's key from PASCALINE_KEYSTORE, PASCALINE_KEYSTORE_PASS, PASCALINE_KEY_ALIAS and PASCALINE_KEY_PASS
 #                    (GitHub secrets in the release workflow, never a file here); fails before any build step when one is missing, the keystore file is
-#                    absent or the alias is `throwaway`, when tools/check-version.sh disagrees (with PASCALINE_RELEASE_TAG as its tag when set), and
+#                    absent or the alias is `throwaway`, when tools/check-version.sh disagrees (with PASCALINE_RELEASE_TAG as its tag when set: vX.Y.Z or
+#                    the test tag vX.Y.Z-<suffix>, only X.Y.Z compared with the version files; .github/workflows/release.yml sets it, A8), and
 #                    after Gradle unless the APK's certificate equals android/release-cert.sha256 (tools/release-verify.sh deletes it then). Never
 #                    creates or falls back to the throwaway key; refuses --dev, --measure, --test, --unsigned, --no-units and --web. Also writes
 #                    dist/pascaline-<versionName>.apk and .apk.sha256

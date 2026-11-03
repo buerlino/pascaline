@@ -6,6 +6,8 @@
 # A52: the build job reads only (contents: read, no stored token); the deploy job alone may write Pages. The kill switch is the
 # dispatch input `kill`: `gh workflow run pages --ref v0.1.0 -f kill=true` puts app/pwa/kill/sw.js over dist/sw.js (app/pwa/README.md).
 # The version check and the golden gate (release engine) run before the upload, so only a gated build is deployed (a kill run skips the golden gate).
+# A8: a tag push whose name holds a - (the test tag vX.Y.Z-test) skips the build job, and with it the deploy, so a test build never reaches
+# pascaline-calc.org by itself; Run workflow on that tag (a dispatch) still builds and deploys it, and the kill run is unchanged.
 name: pages
 
 on:
@@ -27,6 +29,7 @@ concurrency:
 
 jobs:
   build:
+    if: ${{ github.event_name != 'push' || !contains(github.ref_name, '-') }}
     runs-on: ubuntu-24.04
     timeout-minutes: 90
     steps:

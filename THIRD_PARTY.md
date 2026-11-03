@@ -39,12 +39,13 @@ Settings › Help and about (R87) lists every row of these tables with its licen
 | Emscripten (Debian package) | 3.1.69+dfsg-3 (`debian:trixie@sha256:913f6706df59a68922d1dd08f78c2476560a8d367897200a6005b00e5f67c2d5`) | MIT / UIUC (NCSA) | https://packages.debian.org/trixie/emscripten | **release builds** of the engine (decided 2026-10-11, P2; speed condition met 2026-10-11), `engine/giac/build-wasm-release.sh` | – |
 | Gradle | 8.14.3 (distribution SHA-256 `bd711022…3531`, pinned in build.sh) | Apache-2.0 | https://services.gradle.org/distributions/gradle-8.14.3-bin.zip | Android build, downloaded by `build.sh` into `~/.cache/pascaline/`; no wrapper jar in git (F-Droid uses its own Gradle) | – |
 
-## Build and deploy (.github/workflows/pages.yml, not shipped)
+## Build and deploy (.github/workflows/pages.yml and release.yml, not shipped)
 
 | Component | Version | Licence | Source | Use | Copyright |
 |---|---|---|---|---|---|
-| actions/checkout | v7.0.1 (`3d3c42e5aac5ba805825da76410c181273ba90b1`) | MIT | https://github.com/actions/checkout | Pages build | – |
-| actions/setup-node | v7.1.0 (`949feb2413d6458794dcd2491c4babbbce0c15c1`) | MIT | https://github.com/actions/setup-node | Pages build (Node 22) | – |
+| actions/checkout | v7.0.1 (`3d3c42e5aac5ba805825da76410c181273ba90b1`) | MIT | https://github.com/actions/checkout | Pages build, release | – |
+| actions/setup-node | v7.1.0 (`949feb2413d6458794dcd2491c4babbbce0c15c1`) | MIT | https://github.com/actions/setup-node | Pages build, release (Node 22) | – |
+| actions/setup-java | v6.1.0 (`b843ebf9b913146b38da2eaa7aeddf76074ae1ad`) | MIT | https://github.com/actions/setup-java | Release build (Temurin 21) | – |
 | actions/upload-pages-artifact | v5.0.0 (`fc324d3547104276b827a68afc52ff2a11cc49c9`) | MIT | https://github.com/actions/upload-pages-artifact | Pages build | – |
 | actions/deploy-pages | v5.0.1 (`368f82528645a54fb793d4d04e342629a3f51346`) | MIT | https://github.com/actions/deploy-pages | Pages deploy | – |
 
