@@ -67,7 +67,6 @@ A8 and [A57](packages/A57.md) run by day. Steps 448–452 and 408 run only on th
 
 | Step | What | Agent, model | Branch | After |
 |---|---|---|---|---|
-| 445 | [R115](packages/R115.md) one result chip used twice is one σ input (F165) | ron, Opus | `p1/ron-chiponce` | G158 |
 | 446 | [G162](packages/G162.md) the fuzz's cancellation families and their oracle | gorge, Opus | `p1/gorge-fuzzedges` | – |
 | 447 | [G159](packages/G159.md) σ through `piecewise` or `when` gets ⚠ at a crossing (F166) | gorge, Opus | `p1/gorge-casejump` | R115 |
 | 462 | [G161](packages/G161.md) Find gets VA and var; gauge units stay gauge | gorge, Opus | `p1/gorge-elecunits` | G159 |
