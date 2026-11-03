@@ -55,13 +55,11 @@ With the lanes, start both from the phase-1 worktree: `cd .claude/worktrees/phas
 `ANDROID_SERIAL=HA24BZ2Y` for both lanes, `--until 05:30` (the closing pass and the report take 1.5 to 2 h more); CORE DEVICE after each pass. Not the weekly extreme night: row 408 waits. A step whose "After" is not merged is skipped; "–" was checked against the merges on 2026-11-02. Rows 457–463 added by the owner at 19:50. The Fairphone stays with the owner (A61). Follow each Opus pass as written (rule 3).
 
 ### Lane A queue (ron's UI)
-Milestone reviews (section 0): after R50e (with R116's gallery groups "Entry highlights (R116)" and the lifted --pick on the History picked row; R113's rings, gallery home-tips-small); after R24d (with R92's Constants and Tools; R108's gallery group "Decimal comma in apps"; R89 on the Fairphone: save two presets with different free keys and switch; R111's note at 360 px; R33's stored-name colour in each theme, decisions.md "Owner answers of 2026-11-02").
+Milestone reviews (section 0): after R50e (with R116's gallery groups "Entry highlights (R116)" and the lifted --pick on the History picked row; R113's rings, gallery home-tips-small); after R24d (with R92's Constants and Tools; R108's gallery group "Decimal comma in apps"; R89 on the Fairphone: save two presets with different free keys and switch; R111's note at 360 px; R33's stored-name colour in each theme, decisions.md "Owner answers of 2026-11-02"; R120's gallery unitresult-t10-comma).
 
 | Step | What | Agent, model | Branch | After |
 |---|---|---|---|---|
-| 458 | [R120](packages/R120.md) the unit view's result in the decimal comma and digit groups | ron, Opus | `p1/ron-unitcomma` | – |
 | 459 | [R121](packages/R121.md) a unit result that read a stored name as a number says so | ron, Opus | `p1/ron-unitnamenote` | – |
-| 460 | [R122](packages/R122.md) a restore takes an older backup | ron, Opus | `p1/ron-backupold` | – |
 | 461 | [R123](packages/R123.md) presets: a typed name is never the kept line | ron, Opus | `p1/ron-presetname` | – |
 
 ### Lane B queue (the release, then the engine)
