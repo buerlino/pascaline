@@ -52,9 +52,7 @@
   --radius-m: 10px;
   --radius-l: 12px;
   --radius-pill: 16px;
-  /* motion: a sheet rises within docs/05 rule 6's 120 ms */
-  --motion-rise: 100ms;
-  --rise: 12px;
+  /* no motion tokens: the key press is the only motion (R12c), sheets, results and marks appear at once */
   --shadow-sheet: 0 -2px 10px;
   --fade: 28px;
   /* a mask reads only alpha: the opaque end of a fade */

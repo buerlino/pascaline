@@ -378,8 +378,18 @@
     white-space: nowrap;
     line-height: 1.1;
   }
-  .key:active {
-    filter: brightness(1.4);
+  /* The press (R12c): the key's own text colour laid over it at once, no fade, a layer of its own so it shows over every
+     background, Plain keys' and High contrast's too. It is the only motion in the app. */
+  .key:active::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: color-mix(in srgb, var(--text) 32%, transparent);
+    pointer-events: none;
+  }
+  .key.enter:active::after {
+    background: color-mix(in srgb, var(--on-enter) 28%, transparent);
   }
   .key.op {
     background: var(--key-op);
