@@ -29,13 +29,17 @@ export const BACKUP_KEYS: readonly string[] = [
   "app.function",
   "app.solve",
   "units.targets",
-  "units.history",
 ];
+
+/** Parts an older app wrote that this one no longer keeps: an old file's part is skipped, never refused (R122;
+ *  `units.history`: unit results are Home rows since R63). */
+export const DROPPED: readonly string[] = ["units.history"];
 
 /** Keys of docs/04 6.2 that stay out: `defsStarts` is per install (restored, it could make the engine skip the replay,
  *  G19); `backup.undo` (R38b) is the restore's own safety copy; `tipsSeen` (R15c4) belongs to this install: a restore
- *  on a new one shows the first-start tips once; `backup.last` (R96) is when this install last saved one. */
-export const LEFT_OUT: readonly string[] = ["defsStarts", "backup.undo", "tipsSeen", "backup.last"];
+ *  on a new one shows the first-start tips once; `backup.last` (R96) is when this install last saved one, and
+ *  `backup.offered` (R122) when it last offered one as a web download. */
+export const LEFT_OUT: readonly string[] = ["defsStarts", "backup.undo", "tipsSeen", "backup.last", "backup.offered"];
 
 export interface Backup {
   "pascaline-backup": 1;
@@ -74,14 +78,17 @@ export function backupName(now: Date): string {
 }
 
 /** Settings › Data › Save a backup: makes the file, hands it to the file port, notes the time of a saved one
- *  (`backup.last`, R96), and returns the notice to show. */
+ *  (`backup.last`, R96) or of a web download that was only offered (`backup.offered`, R122: the browser does not say
+ *  whether it saved the file), and returns the notice to show. */
 export async function saveBackup(now: Date = new Date()): Promise<string> {
   try {
     const text = JSON.stringify(await makeBackup(kvGetRaw, now));
     const { saveFile } = await import("../clipboard/files.ts");
     const result = await saveFile(backupName(now), "application/json", text);
     if (result === "saved") await kvSet("backup.last", now.toISOString()); // Settings › Data's "Last backup" (R96)
-    return dataText(result === "saved" ? "backup.saved" : result === "cancelled" ? "backup.cancelled" : "backup.failed");
+    if (result === "offered") await kvSet("backup.offered", now.toISOString()); // "Last backup offered" (R122)
+    const notice = { saved: "backup.saved", offered: "backup.offered", cancelled: "backup.cancelled", failed: "backup.failed" } as const;
+    return dataText(notice[result]);
   } catch {
     return dataText("backup.failed");
   }
@@ -121,6 +128,10 @@ function actionOk(a: unknown): boolean {
   }
 }
 const whole = (x: unknown, lo: number, hi: number): boolean => typeof x === "number" && Number.isInteger(x) && x >= lo && x <= hi;
+/** An object whose every field has a rule that keeps it; a field it lacks is not checked. Own rules only: JSON.parse
+ *  makes `"__proto__"` an ordinary key, and `rules["__proto__"]` would be Object.prototype (not a function). */
+const fields = (x: unknown, rules: Readonly<Record<string, (v: unknown) => boolean>>): boolean =>
+  isObject(x) && Object.entries(x).every(([k, v]) => Object.hasOwn(rules, k) && rules[k]?.(v) === true);
 
 // The start's readers live in the start chunk (session.svelte.ts, keyboard/userKeys.svelte.ts). An import of them from
 // this lazy chunk makes the bundler split the start chunk into six files (59.09 → 60.62 kB gzip, measured in R38b), so
@@ -142,9 +153,10 @@ export const SETTING_RULES: Readonly<Record<string, (x: unknown) => boolean>> = 
   digits: (x) => whole(x, 1, 30), // MAX_DIGITS
   fixDecimals: (x) => whole(x, 0, 12),
   fmtCycle: (x) => Array.isArray(x) && canon(normalizeCycle(x.filter(isFmtMode))) === canon(x),
-  haptics: (x) =>
-    isObject(x) && Object.keys(x).length === 3 && typeof x["on"] === "boolean" && whole(x["strength"], 0, 100) && whole(x["ms"], 5, 100), // HAPTIC_MS_RANGE
-  look: (x) => isObject(x) && canon(validLook(x, defaultLook())) === canon(x),
+  // R122: the nested groups check the fields they hold; a field missing (an older file) is filled by migrateSettings
+  // at the next start, as it fills one missing from a stored record. A field this version does not know is a fault.
+  haptics: (x) => fields(x, { on: (v) => typeof v === "boolean", strength: (v) => whole(v, 0, 100), ms: (v) => whole(v, 5, 100) }), // HAPTIC_MS_RANGE
+  look: (x) => isObject(x) && Object.entries(validLook(x, defaultLook())).every(([k, v]) => !(k in x) || x[k] === v) && Object.keys(x).every((k) => Object.hasOwn(defaultLook(), k)),
 };
 
 /** state/presetRecord.ts readPresets, strict: the record keeps every preset (a whole id, a name, groups as a non-empty
@@ -210,7 +222,6 @@ export const VALIDATORS: Validators = {
   "app.function": isObject,
   "app.solve": isObject,
   "units.targets": (v) => typeof v === "object" && v !== null,
-  "units.history": (v) => typeof v === "object" && v !== null,
 };
 
 /** A file that passed: its envelope's facts and each part's value, brought up to DATA_VERSION. */
@@ -262,6 +273,7 @@ export function checkBackup(bytes: Uint8Array, validators: Validators = VALIDATO
   if (format > BACKUP_FORMAT) return no("refuse.newerFormat", undefined, { n: format, max: BACKUP_FORMAT });
   const parts = f["parts"];
   if (!isObject(parts)) return no("refuse.parts");
+  for (const key of DROPPED) delete parts[key]; // an older app's part this one no longer keeps (R122)
   for (const [key, rec] of Object.entries(parts)) {
     if (!BACKUP_KEYS.includes(key)) return no("refuse.unknown", key);
     if (!isObject(rec) || !(STAMP in rec) || !("value" in rec)) return no("refuse.noStamp", key);

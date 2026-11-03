@@ -98,3 +98,55 @@ describe("saveFile", () => {
     expect(await saveFile("a.json", "application/json", "{}")).toBe("failed");
   });
 });
+
+// R122 (bu-7): on the web a backup is "saved" only when the browser's save picker wrote it; a download is only offered.
+describe("saveFile on the web", () => {
+  const clicked: string[] = [];
+  const page = (): void => {
+    clicked.length = 0;
+    const a = { href: "", download: "", click: () => clicked.push(a.download), remove: () => {} };
+    vi.stubGlobal("document", { createElement: () => a, body: { append: () => {} } });
+  };
+  const picker = (handle: () => Promise<unknown>): ReturnType<typeof vi.fn> => {
+    const pick = vi.fn(handle);
+    vi.stubGlobal("showSaveFilePicker", pick);
+    return pick;
+  };
+  const writable = (written: string[], fail = false): unknown => ({
+    createWritable: async () => ({
+      write: async (t: string) => (fail ? Promise.reject(new Error("disk full")) : void written.push(t)),
+      close: async () => {},
+      abort: async () => {},
+    }),
+  });
+  it("without a save picker the download is offered, not saved", async () => {
+    const { saveFile } = await import("./files.ts");
+    cap.native = false;
+    page();
+    expect(await saveFile("a.json", "application/json", "{}")).toBe("offered");
+    expect(clicked).toEqual(["a.json"]);
+  });
+  it("with a save picker: saved once written, cancelled when closed, failed when the write fails", async () => {
+    const { saveFile } = await import("./files.ts");
+    cap.native = false;
+    page();
+    const written: string[] = [];
+    const pick = picker(async () => writable(written));
+    expect(await saveFile("a.json", "application/json", "{}")).toBe("saved");
+    expect(written).toEqual(["{}"]);
+    expect(pick.mock.calls[0]?.[0]).toMatchObject({ suggestedName: "a.json" });
+    picker(() => Promise.reject(new DOMException("closed", "AbortError")));
+    expect(await saveFile("a.json", "application/json", "{}")).toBe("cancelled");
+    picker(async () => writable([], true));
+    expect(await saveFile("a.json", "application/json", "{}")).toBe("failed");
+    expect(clicked).toEqual([]); // no download besides
+  });
+  it("a picker the browser refuses (no user gesture left) falls back to the download", async () => {
+    const { saveFile } = await import("./files.ts");
+    cap.native = false;
+    page();
+    picker(() => Promise.reject(new DOMException("no gesture", "SecurityError")));
+    expect(await saveFile("a.json", "application/json", "{}")).toBe("offered");
+    expect(clicked).toEqual(["a.json"]);
+  });
+});
