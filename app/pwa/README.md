@@ -2,7 +2,7 @@
 
 `sw.js` is the offline worker's template (`vite-plugin-pwa-lite.ts` fills it in and writes `dist/sw.js`). `kill/sw.js` is the kill switch for a deployed worker that misbehaves.
 
-**Switch it off:** run the Pages workflow by hand on the deployed tag with the input `kill` set (the `github-pages` environment's tag rule still applies, so use the tag, not a branch):
+**Switch it off:** run the Pages workflow by hand on the deployed tag with the input `kill` set (the run refuses any ref that is not a tag, in its first step, with the message "A kill run needs the release tag"; the `github-pages` environment's tag rule applies too):
 
 ```
 gh workflow run pages --ref v0.1.0 -f kill=true

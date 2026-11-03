@@ -8,6 +8,7 @@
 # The version check and the golden gate (release engine) run before the upload, so only a gated build is deployed (a kill run skips the golden gate).
 # A8: a tag push whose name holds a - (the test tag vX.Y.Z-test) skips the build job, and with it the deploy, so a test build never reaches
 # pascaline-calc.org by itself; Run workflow on that tag (a dispatch) still builds and deploys it, and the kill run is unchanged.
+# A63: a kill run skips the golden gate because its tag passed it, so its first step refuses any ref that is not a tag.
 name: pages
 
 on:
@@ -33,6 +34,11 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 90
     steps:
+      - name: A kill run needs a tag
+        if: ${{ inputs.kill == true && github.ref_type != 'tag' }}
+        run: |
+          echo "::error::A kill run needs the release tag: pick the tag in 'Use workflow from'"
+          exit 1
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
