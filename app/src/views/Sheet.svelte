@@ -269,19 +269,19 @@
   }
   .sheet {
     position: relative;
-    width: min(calc(100% - 16px), 420px);
-    margin: 0 8px 4px;
+    width: min(calc(100% - var(--sp-4)), var(--sheet-max));
+    margin: 0 var(--sp-2) var(--sp-1);
     background: var(--panel);
-    border: 1px solid var(--line);
-    border-radius: 12px;
-    padding: 4px 6px 6px;
+    border: var(--stroke-thin) solid var(--line);
+    border-radius: var(--radius-l);
+    padding: var(--sp-1) var(--sp-15) var(--sp-15);
     display: flex;
     flex-direction: column;
     box-sizing: border-box;
-    max-height: calc(100% - 8px);
+    max-height: calc(100% - var(--sp-2));
     min-height: 0;
     flex: 0 1 auto;
-    animation: rise 100ms ease-out;
+    animation: rise var(--motion-rise) ease-out;
   }
   /* over the keypad: the keypad's width, square at its bottom edge */
   .keypad .sheet {
@@ -289,12 +289,12 @@
     margin: 0;
     max-height: 100%;
     border-bottom: 0;
-    border-radius: 12px 12px 0 0;
+    border-radius: var(--radius-l) var(--radius-l) 0 0;
     /* R82f1 (F117): at the keypad's bottom edge, with no border there, 2 px below the last row are enough; the 4 px
        this saves let Plot's nine Menu rows fit at their floor on the Fairphone 6 (380 px of room), so none is cut */
-    padding-bottom: 2px;
+    padding-bottom: var(--sp-05);
     pointer-events: auto;
-    box-shadow: 0 -2px 10px color-mix(in srgb, var(--bg) 50%, transparent);
+    box-shadow: var(--shadow-sheet) color-mix(in srgb, var(--bg) 50%, transparent);
   }
   .keypad .sheet.placed {
     position: absolute;
@@ -305,7 +305,7 @@
   }
   @keyframes rise {
     from {
-      transform: translateY(12px);
+      transform: translateY(var(--rise));
       opacity: 0.6;
     }
   }
@@ -317,11 +317,11 @@
   .head {
     display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 2px 4px 2px 8px;
+    gap: var(--sp-15);
+    padding: var(--sp-05) var(--sp-1) var(--sp-05) var(--sp-2);
     color: var(--muted);
-    font-size: 14px;
-    min-height: 32px;
+    font-size: var(--fs-note);
+    min-height: var(--head-h);
     flex: none;
   }
   .title {
@@ -334,11 +334,11 @@
   .ticon {
     display: inline-flex;
     align-items: center;
-    margin-right: -2px;
+    margin-right: calc(-1 * var(--sp-05));
   }
   .ticon :global(svg) {
-    width: 16px;
-    height: 14px;
+    width: var(--icon-w);
+    height: var(--icon-h);
   }
   .gtitle {
     white-space: nowrap;
@@ -354,24 +354,24 @@
   .filter {
     color: var(--text);
     font-weight: 700;
-    padding: 1px 6px;
-    border-radius: 6px;
-    border: 1px solid var(--line);
+    padding: var(--stroke-thin) var(--sp-15);
+    border-radius: var(--radius-s);
+    border: var(--stroke-thin) solid var(--line);
   }
   .count {
     white-space: nowrap;
   }
   .note {
-    margin-left: 6px;
-    font-size: 12px;
+    margin-left: var(--sp-15);
+    font-size: var(--fs-caption);
     color: var(--muted);
     white-space: nowrap;
   }
   .preview {
     flex: none;
-    padding: 4px 8px 0;
-    border-top: 1px solid var(--line);
-    font-size: 13px;
+    padding: var(--sp-1) var(--sp-2) 0;
+    border-top: var(--stroke-thin) solid var(--line);
+    font-size: var(--fs-small);
     color: var(--muted);
     overflow: hidden;
     text-overflow: ellipsis;
@@ -380,15 +380,15 @@
   /* Find in a unit slot (R24d): the row's second job, a button under the preview */
   .put {
     flex: none;
-    margin: 2px 8px 4px;
-    padding: 4px 10px;
-    min-height: 32px;
+    margin: var(--sp-05) var(--sp-2) var(--sp-1);
+    padding: var(--sp-1) var(--sp-25);
+    min-height: var(--head-h);
     align-self: flex-start;
-    border: 1px solid var(--line);
-    border-radius: 6px;
+    border: var(--stroke-thin) solid var(--line);
+    border-radius: var(--radius-s);
     background: none;
     color: var(--text);
-    font-size: 13px;
+    font-size: var(--fs-small);
   }
   .preview.long {
     white-space: pre-line;
@@ -403,17 +403,17 @@
     display: block;
     white-space: pre-wrap;
     overflow-wrap: anywhere;
-    padding: 4px 8px;
-    font-size: 13px;
+    padding: var(--sp-1) var(--sp-2);
+    font-size: var(--fs-small);
     line-height: 1.4;
     color: var(--text);
-    min-height: 120px;
+    min-height: var(--doc-min);
   }
   .icon {
     all: unset;
-    font-size: 22px;
+    font-size: var(--fs-input);
     line-height: 1;
-    padding: 2px 8px;
+    padding: var(--sp-05) var(--sp-2);
     cursor: pointer;
     color: var(--text);
   }
@@ -425,29 +425,25 @@
     overscroll-behavior: contain;
   }
   .list.cut-bottom {
-    mask-image: linear-gradient(to bottom, black calc(100% - 28px), transparent);
+    mask-image: linear-gradient(to bottom, var(--mask-on) calc(100% - var(--fade)), transparent);
   }
   .list.cut-top {
-    mask-image: linear-gradient(to top, black calc(100% - 28px), transparent);
+    mask-image: linear-gradient(to top, var(--mask-on) calc(100% - var(--fade)), transparent);
   }
   .list.cut-top.cut-bottom {
-    mask-image: linear-gradient(to bottom, transparent, black 28px, black calc(100% - 28px), transparent);
+    mask-image: linear-gradient(to bottom, transparent, var(--mask-on) var(--fade), var(--mask-on) calc(100% - var(--fade)), transparent);
   }
   /* a row shrinks with the room (sheetFit.ts): its height is set, the type follows it, 18 px at the normal 42 */
   .row {
     display: flex;
-    gap: 12px;
+    gap: var(--sp-3);
     align-items: center;
     box-sizing: border-box;
-    padding: 0 12px;
-    border-radius: 8px;
-    font-size: calc(var(--row, 42px) * 0.4286);
+    padding: 0 var(--sp-3);
+    border-radius: var(--radius);
+    font-size: calc(var(--row, var(--sheet-row)) * 0.4286);
     cursor: pointer;
     flex-shrink: 0;
-  }
-  .row[data-active="true"] {
-    background: var(--key-num);
-    box-shadow: inset 3px 0 0 var(--shift);
   }
   .row[aria-disabled="true"] {
     cursor: default;
@@ -458,28 +454,28 @@
   }
   .n {
     color: var(--shift);
-    font-size: 14px;
+    font-size: var(--fs-note);
     min-width: 1ch;
   }
   /* the status line's glyph tile at row size (R84) */
   .tile {
     flex: none;
-    width: 36px;
-    height: 28px;
-    border-radius: 6px;
+    width: var(--row-tile-w);
+    height: var(--row-tile-h);
+    border-radius: var(--radius-s);
     background: var(--chip-bg);
     color: var(--text);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 20px;
+    font-size: var(--fs-key);
   }
   .tile.small {
-    font-size: 15px;
+    font-size: var(--fs-ui);
   }
   .tile :global(svg) {
-    width: 16px;
-    height: 15px;
+    width: var(--icon-w);
+    height: calc(var(--icon-h) + var(--stroke-thin));
   }
   .text {
     flex: 1;
@@ -493,8 +489,8 @@
     text-overflow: ellipsis;
   }
   .reason {
-    font-size: 13px;
-    line-height: 16px;
+    font-size: var(--fs-small);
+    line-height: var(--lh-small);
     color: var(--muted);
     white-space: nowrap;
     overflow: hidden;
@@ -504,23 +500,23 @@
   .dots {
     display: flex;
     flex: none;
-    gap: 2px;
-    margin: 0 -2px;
+    gap: var(--sp-05);
+    margin: 0 calc(-1 * var(--sp-05));
   }
   .dots.under {
-    margin: 2px 0 0;
-    height: 12px;
+    margin: var(--sp-05) 0 0;
+    height: var(--sp-3);
     align-items: center;
   }
   .dots i {
-    width: 10px;
-    height: 10px;
+    width: var(--dot);
+    height: var(--dot);
     border-radius: 50%;
-    box-shadow: inset 0 0 0 1px var(--line);
+    box-shadow: inset 0 0 0 var(--stroke-thin) var(--line);
   }
   .value {
     color: var(--shift);
-    font-size: 0.94em;
+    font-size: var(--fs-value);
     white-space: nowrap;
   }
   .row[aria-disabled="true"] .value {
@@ -531,13 +527,13 @@
     all: unset;
     box-sizing: border-box;
     flex: none;
-    width: 44px;
-    height: 44px;
-    margin: 0 -8px;
+    width: var(--touch);
+    height: var(--touch);
+    margin: 0 calc(-1 * var(--sp-2));
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 15px;
+    font-size: var(--fs-ui);
     color: var(--muted);
     cursor: pointer;
   }
@@ -552,27 +548,27 @@
   .seg {
     display: flex;
     flex: none;
-    border: 1px solid var(--line);
-    border-radius: 8px;
+    border: var(--stroke-thin) solid var(--line);
+    border-radius: var(--radius);
     overflow: hidden;
-    margin-right: -4px;
+    margin-right: calc(-1 * var(--sp-1));
   }
   .opt {
     all: unset;
     box-sizing: border-box;
-    min-width: 44px;
-    height: 44px;
-    padding: 0 8px;
+    min-width: var(--touch);
+    height: var(--touch);
+    padding: 0 var(--sp-2);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 14px;
+    font-size: var(--fs-note);
     color: var(--muted);
     white-space: nowrap;
     cursor: pointer;
   }
   .opt + .opt {
-    border-left: 1px solid var(--line);
+    border-left: var(--stroke-thin) solid var(--line);
   }
   .opt[aria-pressed="true"] {
     background: var(--chip-bg);
@@ -592,11 +588,11 @@
   }
   .more {
     color: var(--muted);
-    font-size: 20px;
+    font-size: var(--fs-key);
   }
   .grid {
     display: grid;
-    gap: 4px;
+    gap: var(--sp-1);
     overflow-y: auto;
     min-height: 0;
   }
@@ -610,9 +606,9 @@
     justify-content: center;
     overflow: hidden;
     position: relative; /* clips MathLive's positioned boxes too */
-    border-radius: 8px;
-    border: 1px solid var(--line);
-    font-size: 10px; /* the widest template (piecewise) fits a sixth of a phone's width */
+    border-radius: var(--radius);
+    border: var(--stroke-thin) solid var(--line);
+    font-size: var(--fs-cell); /* the widest template (piecewise) fits a sixth of a phone's width */
     cursor: pointer;
   }
   /* the cells over their keys (Shift + 6): each at its key's box */
@@ -628,23 +624,40 @@
   }
   /* the Shift palettes hold one symbol or word per cell: larger type in lower cells */
   .grid:is([data-grid="rel"], [data-grid="sym"]) button.cell {
-    font-size: 15px;
+    font-size: var(--fs-ui);
   }
   .pick {
     position: absolute;
-    top: 2px;
-    left: 5px;
-    font-size: 11px;
+    top: var(--sp-05);
+    left: calc(var(--sp-1) + var(--stroke-thin));
+    font-size: var(--fs-legend);
     line-height: 1;
     color: var(--shift);
   }
+  /* The highlighted row or cell (R12b): the picked-row roles, as History's picked row: the --pick ground with a --focus
+     edge. Only --text and --muted read on --pick in every theme, so the row's numbers, values and ticks (--shift
+     elsewhere) turn --text on it, and a disabled row's label --muted (style.test.ts). */
+  .row[data-active="true"] {
+    background: var(--pick);
+    box-shadow: inset var(--stroke-thick) 0 0 var(--focus);
+  }
+  .row[data-active="true"] :is(.n, .value, .tick),
+  .row[data-active="true"] :is(.step, .opt):active {
+    color: var(--text);
+  }
+  .row[data-active="true"][aria-disabled="true"] :is(.label, .n, .value, .step) {
+    color: var(--muted);
+  }
   button.cell[data-active="true"] {
-    background: var(--key-num);
-    border-color: var(--shift);
-    box-shadow: inset 0 -3px 0 var(--shift);
+    background: var(--pick);
+    border-color: var(--focus);
+    box-shadow: inset 0 calc(-1 * var(--stroke-thick)) 0 var(--focus);
+  }
+  button.cell[data-active="true"] .pick {
+    color: var(--text);
   }
   .empty {
-    margin: 8px 12px;
+    margin: var(--sp-2) var(--sp-3);
     color: var(--muted);
   }
 </style>

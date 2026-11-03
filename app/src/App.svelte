@@ -416,23 +416,23 @@
     display: flex;
     flex-direction: column;
     height: 100%;
-    max-width: 720px;
+    max-width: var(--app-max);
     margin: 0 auto;
   }
   /* the engine's start and failure notes, in the stage (R82f2: not in the status line) */
   .enginenote {
     position: absolute;
-    top: 8px;
+    top: var(--sp-2);
     left: 50%;
     transform: translateX(-50%);
     z-index: 1;
     margin: 0;
-    padding: 6px 14px;
-    border-radius: 16px;
+    padding: var(--sp-15) var(--sp-35);
+    border-radius: var(--radius-pill);
     background: var(--panel);
-    border: 1px solid var(--line);
+    border: var(--stroke-thin) solid var(--line);
     color: var(--muted);
-    font-size: 14px;
+    font-size: var(--fs-note);
     white-space: nowrap;
     pointer-events: none;
   }
@@ -479,12 +479,12 @@
   }
   .rowbar {
     display: flex;
-    gap: 6px;
-    padding: 4px 12px;
+    gap: var(--sp-15);
+    padding: var(--sp-1) var(--sp-3);
   }
   .rowwhy {
-    padding: 2px 12px 0;
-    font-size: 14px;
+    padding: var(--sp-05) var(--sp-3) 0;
+    font-size: var(--fs-note);
     color: var(--muted);
     white-space: nowrap;
     overflow: hidden;
@@ -492,14 +492,14 @@
   }
   .rowbar button {
     flex: 1;
-    min-height: 44px;
+    min-height: var(--touch);
     font: inherit;
-    font-size: 14px;
-    border-radius: 8px;
-    border: 1px solid var(--line);
+    font-size: var(--fs-note);
+    border-radius: var(--radius);
+    border: var(--stroke-thin) solid var(--line);
     background: var(--panel);
     color: var(--text);
-    padding: 0 4px;
+    padding: 0 var(--sp-1);
   }
   .rowbar button:disabled {
     color: var(--muted);
@@ -507,21 +507,21 @@
   .notice {
     position: relative;
     align-self: center;
-    margin: 0 12px 4px;
-    padding: 6px 14px;
-    border-radius: 16px;
+    margin: 0 var(--sp-3) var(--sp-1);
+    padding: var(--sp-15) var(--sp-35);
+    border-radius: var(--radius-pill);
     background: var(--panel);
-    border: 1px solid var(--line);
+    border: var(--stroke-thin) solid var(--line);
     color: var(--text);
-    font-size: 14px;
+    font-size: var(--fs-note);
   }
   .entry {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 8px 12px;
+    gap: var(--sp-2);
+    padding: var(--sp-2) var(--sp-3);
     /* room for the field before MathLive has loaded, so nothing jumps */
-    min-height: 66px;
+    min-height: var(--entry-h);
   }
   .entry.hidden {
     display: none;
@@ -537,12 +537,12 @@
   .entry :global(math-field) {
     display: block;
     width: 100%;
-    font-size: 28px;
-    padding: 8px 10px;
-    border-radius: 8px;
+    font-size: var(--fs-entry);
+    padding: var(--sp-2) var(--sp-25);
+    border-radius: var(--radius);
     background: var(--panel);
     color: var(--text);
-    border: 1px solid var(--line);
+    border: var(--stroke-thin) solid var(--line);
     /* R116: MathLive's highlights as theme tokens, so they follow our look and never the system's scheme (the unit
        view's field is in .entry too): the caret in the Alpha hue; the box of the bracket that holds the cursor and
        the selection (never both at once) on --pick, with --text on them */

@@ -74,17 +74,45 @@ describe("no colour is written directly in the keypad", () => {
   });
 });
 
-// The sheet (docs/05 3.1): rows on --panel, the highlighted row on --key-num; numbers in --shift, reasons in --muted.
-for (const [theme, t] of blocks) {
-  describe(`sheet contrast, ${theme} theme`, () => {
-    for (const bg of ["panel", "key-num"] as const)
-      it(`on --${bg}: labels, numbers and reason lines at least 4.5:1, a disabled label at least 3:1`, () => {
-        for (const fg of ["text", "shift", "muted"] as const)
-          expect(contrast(t[fg] as string, t[bg] as string), `--${fg} on --${bg}`).toBeGreaterThanOrEqual(4.5);
-        expect(contrast(t["text-dead"] as string, t[bg] as string), `--text-dead on --${bg}`).toBeGreaterThanOrEqual(3);
-      });
+// The sheet (docs/05 3.1): rows on --panel, numbers in --shift, reasons in --muted. The highlighted row or cell takes the
+// picked-row roles (R12b): the --pick ground with a --focus edge; on it the numbers, values and ticks are --text and a
+// disabled label --muted, the two that read on --pick in every theme. Checked in all 40 theme combinations.
+for (const [sel, t] of allThemeBlocks()) {
+  describe(`sheet contrast, ${sel}`, () => {
+    it("on --panel: labels, numbers and reason lines at least 4.5:1, a disabled label at least 3:1", () => {
+      for (const fg of ["text", "shift", "muted"] as const)
+        expect(contrast(t[fg] as string, t["panel"] as string), `--${fg} on --panel`).toBeGreaterThanOrEqual(4.5);
+      expect(contrast(t["text-dead"] as string, t["panel"] as string), "--text-dead on --panel").toBeGreaterThanOrEqual(3);
+    });
+    it("the highlighted row: --text and --muted on --pick at least 4.5:1, its --focus edge at least 3:1 on --panel", () => {
+      for (const fg of ["text", "muted"] as const)
+        expect(contrast(t[fg] as string, t["pick"] as string), `--${fg} on --pick`).toBeGreaterThanOrEqual(4.5);
+      expect(contrast(t["focus"] as string, t["panel"] as string), "--focus on --panel").toBeGreaterThanOrEqual(3);
+    });
   });
 }
+
+describe("the sheet's highlighted row and cell (R12b)", () => {
+  const src = readFileSync(new URL("./views/Sheet.svelte", import.meta.url), "utf8");
+  const style = src.slice(src.indexOf("<style>"));
+  /** The declarations of every rule whose selector names the highlighted row or cell, joined. */
+  const rules = [...style.matchAll(/([^{}]*\[data-active="true"\][^{}]*)\{([^}]*)\}/g)].map((m) => [m[1] as string, m[2] as string] as const);
+  it("take the picked-row roles: --pick ground, --focus edge, no --key-num or --shift", () => {
+    const row = rules.filter(([sel]) => /\.row\[data-active="true"\]\s*$/.test(sel)).map(([, d]) => d).join("");
+    const cell = rules.filter(([sel]) => /cell\[data-active="true"\]\s*$/.test(sel)).map(([, d]) => d).join("");
+    for (const d of [row, cell]) {
+      expect(d).toMatch(/background:\s*var\(--pick\)/);
+      expect(d).toMatch(/var\(--focus\)/);
+    }
+    expect(rules.map(([, d]) => d).join("")).not.toMatch(/--key-num|--shift|--text-dead/);
+  });
+  it("draw its --shift parts in --text and a disabled label in --muted", () => {
+    const on = (part: string, colour: string): boolean =>
+      rules.some(([sel, d]) => sel.includes('.row[data-active="true"]') && sel.includes(part) && d.includes(`color: var(--${colour})`));
+    for (const p of [".n", ".value", ".tick"]) expect(on(p, "text"), p).toBe(true);
+    for (const p of [".label", ".n", ".value"]) expect(on(p, "muted"), `disabled ${p}`).toBe(true);
+  });
+});
 
 describe("no colour is written directly in the sheet", () => {
   it("Sheet.svelte uses tokens only", () => {

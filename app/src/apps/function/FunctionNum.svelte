@@ -68,7 +68,7 @@
     flex: 1;
     min-height: 0;
     overflow: hidden;
-    padding: 0 8px;
+    padding: 0 var(--sp-2);
     touch-action: none;
   }
   table {
@@ -79,14 +79,14 @@
   }
   th,
   td {
-    height: 34px;
-    padding: 0 6px;
+    height: var(--line-h);
+    padding: 0 var(--sp-15);
     text-align: right;
-    border-bottom: 1px solid var(--line);
+    border-bottom: var(--stroke-thin) solid var(--line);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    font-size: 15px;
+    font-size: var(--fs-ui);
   }
   th {
     color: var(--muted);
@@ -97,7 +97,7 @@
     color: var(--muted);
   }
   .empty {
-    margin: 40px auto;
+    margin: var(--sp-10) auto;
     text-align: center;
     color: var(--muted);
   }

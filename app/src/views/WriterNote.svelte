@@ -19,19 +19,19 @@
 <style>
   .writernote {
     flex: none;
-    margin: 6px 8px 0;
-    padding: 4px 4px 4px 14px;
-    min-height: 40px;
+    margin: var(--sp-15) var(--sp-2) 0;
+    padding: var(--sp-1) var(--sp-1) var(--sp-1) var(--sp-35);
+    min-height: var(--slot-h);
     box-sizing: border-box;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 10px;
-    border-radius: 16px;
+    gap: var(--sp-25);
+    border-radius: var(--radius-pill);
     background: var(--panel);
-    border: 1px solid var(--line);
+    border: var(--stroke-thin) solid var(--line);
     color: var(--muted);
-    font-size: 14px;
+    font-size: var(--fs-note);
   }
   .words {
     display: flex;
@@ -40,13 +40,13 @@
     line-height: 1.25;
   }
   .sub {
-    font-size: 12px;
+    font-size: var(--fs-caption);
   }
   button {
     flex: none;
-    padding: 4px 12px;
+    padding: var(--sp-1) var(--sp-3);
     border: 0;
-    border-radius: 12px;
+    border-radius: var(--radius-l);
     background: var(--key-nav);
     color: inherit;
     font: inherit;
