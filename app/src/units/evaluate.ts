@@ -17,6 +17,11 @@ const ANY_DIM = BASES.map((b) => `has(y,${b.symbol})`).join(" or ");
 const ONES = `[${BASES.map(() => "1").join(",")}]`;
 /** G40: the inverse functions that give an angle (the parser's ANGLE_OUT puts `/pasdeg` after each, R64). */
 const INVERSES = ["atan2", "asin", "acos", "atan", "asec", "acsc", "acot"] as const;
+/** G159: the heads of a condition pasujk reads as one comparison; the tests Giac's evaluation decides on a free name;
+ *  every head that makes a truth value or picks a case (a side holding one is not read: kind 3). */
+const CMP = "['<','<=','>','>=','==','=']";
+const EQS = "['==','=','!=']";
+const BOOL = "['<','<=','>','>=','==','=','!=','and','or','not','xor','piecewise','when']";
 
 /**
  * Our Giac definitions for the unit view, loaded once per engine on the first units request:
@@ -40,14 +45,21 @@ const INVERSES = ["atan2", "asin", "acos", "atan", "asec", "acsc", "acot"] as co
  *   [pasuq's answer for σ, the share |b|/(a+b)]; σ² = a + b when that is above 0, else a with the share 2 (first order
  *   fails). pasuq reads σ² and σ is its square root (pasuq on a square root of sums of sin and cos costs 10 ms);
  * - pasusg(e,t,a,s) (G41): 1 when a real point where e (f's derivative in t) is not defined lies within a ± 2s, else 0;
- * - pasujl(e) (G143): the step functions in e, as a flat list [kind, argument, …]: kind 0 jumps where the argument is an
+ * - pasujl(e,q) (G143): the step functions in e, as a flat list [kind, argument, …]: kind 0 jumps where the argument is an
  *   integer (floor, ceil, trunc, iPart, frac, fPart; Giac writes ceil, trunc, round and frac with floor and sign), 2 at
- *   an integer + ½ (round), 1 at 0 (sign, Heaviside);
+ *   an integer + ½ (round), 1 at 0 (sign, Heaviside); G159: each condition of piecewise and when is one comparison read
+ *   by pasujk. q = 1 reads e as typed (quote): only the conditions with ==, = or != (Giac's evaluation makes `v==3`
+ *   false and `v!=3` true, so the evaluated e has lost them), no step function;
+ * - pasujc(x,H): 1 when a node of x has a head in H;
+ * - pasujk(c) (G159): a condition c of kind 1 at 0 of lhs − rhs when it is one comparison (<, <=, >, >=, ==, =) of
+ *   sides that hold none, else kind 3 with c's names (and, or, not, !=, a nested comparison): a jump wherever c holds the
+ *   input;
  * - pasujr(c,q,t,a,s) (G143): 1 when the argument q of a step function of kind c takes a jump value for some t in
  *   a ± 2s: q's range there is read from the ends and the real zeros of q′ that solve() gives inside (a singular point
- *   of q′ inside, an answer solve() cannot give as a list, or a value that is not a real number: 1);
- * - pasuu(g,v,x,u,w) (G41): g's σ for the inputs v at the values x with the standard uncertainties u (lists; w the
- *   equations v=x): pasuo's
+ *   of q′ inside, an answer solve() cannot give as a list, or a value that is not a real number: 1); kind 3: 1 when q
+ *   holds t;
+ * - pasuu(g,v,x,u,w,Q) (G41): g's σ for the inputs v at the values x with the standard uncertainties u (lists; w the
+ *   equations v=x; Q is g as typed, unevaluated, G159): pasuo's
  *   [σ, share] and 2 when an input's x ± 2u reaches a jump of a step function in g (G143), else 1 when it reaches a
  *   singular point of ∂g/∂v (the other inputs at their values, the dimension symbols 1), else 0. Each derivative is
  *   taken once.
@@ -77,16 +89,24 @@ export const UNIT_DEFINITIONS: readonly string[] = [
     `if (q[0]==0) return [[0,q[1]/2,sqrt(q[2])],r]; return [q,r]; }`,
   `pasusg(e,t,a,s):={local L,j,p; L:=singular(e,t); if (type(L)!=DOM_LIST) return 0; ` +
     `for (j:=0;j<size(L);j++) { p:=evalf(L[j]); if (im(p)==0 and abs(p-a)<=2*s) return 1; } return 0; }`,
-  `pasujl(e):={local h,o,r,j; if (type(e)!=DOM_SYMBOLIC) { return []; } h:=sommet(e); o:=[op(e)]; r:=[]; ` +
-    `if (member(h,['floor','ceil','trunc','iPart','frac','fPart'])) { r:=[0,o[0]]; } if (h=='round') { r:=[2,o[0]]; } ` +
-    `if (member(h,['sign','Heaviside'])) { r:=[1,o[0]]; } for (j:=0;j<size(o);j++) { r:=concat(r,pasujl(o[j])); } return r; }`,
-  `pasujr(c,q,t,a,s):={local d,P,R,j,p,V,lo,hi; if (!has(q,t)) { return 0; } P:=[a-2*s,a+2*s]; d:=diff(q,t); ` +
+  `pasujc(x,H):={local o,j; if (type(x)!=DOM_SYMBOLIC) { return 0; } if (member(sommet(x),H)) { return 1; } o:=[op(x)]; ` +
+    `for (j:=0;j<size(o);j++) { if (pasujc(o[j],H)) { return 1; } } return 0; }`,
+  `pasujk(c):={local o; if (type(c)!=DOM_SYMBOLIC) { return []; } o:=[op(c)]; ` +
+    `if (member(sommet(c),${CMP}) and size(o)==2 and !pasujc(o[0],${BOOL}) and !pasujc(o[1],${BOOL})) { return [1,o[0]-o[1]]; } ` +
+    `return [3,lname(c)]; }`,
+  `pasujl(e,q):={local h,o,r,j; if (type(e)!=DOM_SYMBOLIC) { return []; } h:=sommet(e); o:=[op(e)]; r:=[]; ` +
+    `if (q==0 and member(h,['floor','ceil','trunc','iPart','frac','fPart'])) { r:=[0,o[0]]; } if (q==0 and h=='round') { r:=[2,o[0]]; } ` +
+    `if (q==0 and member(h,['sign','Heaviside'])) { r:=[1,o[0]]; } ` +
+    `if (h=='piecewise' or h=='when') { for (j:=0;j+1<size(o);j:=j+2) { if (q==0 or pasujc(o[j],${EQS})) { r:=concat(r,pasujk(o[j])); } } } ` +
+    `for (j:=0;j<size(o);j++) { r:=concat(r,pasujl(o[j],q)); } return r; }`,
+  `pasujr(c,q,t,a,s):={local d,P,R,j,p,V,lo,hi; if (!has(q,t)) { return 0; } if (c==3) { return 1; } P:=[a-2*s,a+2*s]; d:=diff(q,t); ` +
     `if (has(d,t)) { R:=singular(d,t); if (type(R)==DOM_LIST) { for (j:=0;j<size(R);j++) { p:=evalf(R[j]); if (im(p)==0 and abs(p-a)<=2*s) { return 1; } } } ` +
     `R:=solve(d=0,t); if (type(R)!=DOM_LIST) { return 1; } ` +
     `for (j:=0;j<size(R);j++) { if (!has(R[j],t)) { p:=evalf(R[j]); if (im(p)==0 and abs(p-a)<=2*s) { P:=append(P,R[j]); } } } } ` +
     `V:=map(P,p->normal(subst(q,t,p))); for (j:=0;j<size(V);j++) { if (has(V[j],undef) or has(V[j],infinity) or im(evalf(V[j]))!=0) { return 1; } } ` +
     `lo:=min(V); hi:=max(V); if (c==1) { return lo<=0 and hi>=0; } if (c==2) { lo:=lo-1/2; hi:=hi-1/2; } return ceil(lo)<=hi; }`,
-  `pasuu(g,v,x,u,w):={local n,k,m,h,f,d,s1,s2,z,L,i; n:=size(v); s1:=0; s2:=0; z:=0; L:=pasujl(subst(g,${S},${ONES})); ` +
+  `pasuu(g,v,x,u,w,Q):={local n,k,m,h,f,d,s1,s2,z,L,i; n:=size(v); s1:=0; s2:=0; z:=0; ` +
+    `L:=concat(pasujl(subst(g,${S},${ONES}),0),subst(pasujl(Q,1),${S},${ONES})); ` +
     `for (k:=0;k<n;k++) { h:=diff(g,v[k]); d:=subst(h,w); s1:=s1+d^2*u[k]^2; ` +
     `for (m:=0;m<n;m++) { f:=diff(h,v[m]); s2:=s2+(1/2*subst(f,w)^2+d*subst(diff(f,v[m]),w))*u[k]^2*u[m]^2; } ` +
     `for (i:=0;i<size(L) and z==0;i:=i+2) { if (pasujr(L[i],subst(L[i+1],suppress(w,k)),v[k],x[k],u[k])) { z:=2; } } ` +
@@ -267,7 +287,8 @@ function numberOf(giac: Giac, name: string, rerun: string, s: HomeSettings, inex
  * diff at the inputs' values (GUM 5.1.2 with its note): σ² = Σᵢ (∂f/∂xᵢ)² uᵢ² + Σᵢ Σⱼ [½ (∂²f/∂xᵢ∂xⱼ)² +
  * ∂f/∂xᵢ · ∂³f/∂xᵢ∂xⱼ²] uᵢ² uⱼ². f is the result in the shown unit: the formula divided by the end slot's factor, or
  * for a level end slot the level of the ratio itself, so its curvature counts too. σ carries ⚠ (`why`) when an input's
- * x ± 2uᵢ reaches a jump of a step function in f (G143: floor, round, sign, …, whose derivative is 0 off the jumps), else
+ * x ± 2uᵢ reaches a jump of a step function in f (G143: floor, round, sign, …, whose derivative is 0 off the jumps; G159:
+ * a condition of piecewise or when), else
  * a real point where ∂f/∂xᵢ is not defined (Giac's singular(), the other inputs at their values), else when the
  * second-order part is more than 10 % of σ². `valueExpr` is Giac text of the value as shown, `shownValue` its
  * display (kept for a σ of 0). Never "=": the facts of σ carry the approximation.
@@ -281,7 +302,7 @@ function uncertainty(giac: Giac, job: UnitJob, src: Checked, dst: { num: string 
   const level = job.endLog !== undefined && src.kind === "term";
   const G = level ? job.endLog!.replace(/pasux/g, `(subst(${F},[${ones.join(",")}])/(${dst.num}))`) : `(${F})/(${dst.num})`;
   const list = (f: (v: UncVar) => string): string => `[${u.vars.map(f).join(",")}]`;
-  const out = giac.eval(`pasuW:=pasuu(${G},${list((v) => v.name)},${list((v) => `(${lit(v.value)})`)},${list((v) => `(${lit(v.sigma)})`)},${list((v) => `${v.name}=(${lit(v.value)})`)})`);
+  const out = giac.eval(`pasuW:=pasuu(${G},${list((v) => v.name)},${list((v) => `(${lit(v.value)})`)},${list((v) => `(${lit(v.sigma)})`)},${list((v) => `${v.name}=(${lit(v.value)})`)},quote(${G}))`);
   if (isError(out)) return { error: "engine", detail: out };
   const parts = splitList(out);
   const q = parts?.[0] !== undefined ? checked(parts[0]) : null;
