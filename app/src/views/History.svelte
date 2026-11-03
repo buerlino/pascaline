@@ -209,9 +209,10 @@
     padding: var(--sp-2) var(--sp-3);
     display: flex;
     flex-direction: column;
-    /* docs/05 3.5 (R12b): 8 px more between entries than the 10 they had, a thin divider in the middle of it; the rows
-       keep their own heights */
-    --between: calc(var(--sp-25) + var(--sp-2));
+    /* docs/05 3.5 (R12b): a thin divider in the middle of the space between entries; the rows keep their heights. The
+       8 px more space docs/05 asks for waits for the owner: on a phone it moves the first of three rows under the
+       status line (decisions.md, Needs the user) */
+    --between: var(--sp-25);
     gap: var(--between);
   }
   .earlier {
