@@ -474,9 +474,13 @@
     background: transparent;
     opacity: 0.7;
   }
+  /* a zone is a transparent rectangle over the round trackpad: no press layer (its corners would spill past the circle),
+     the glyph going from 0.7 to full opacity is its press */
   .key[data-zone="true"]:active {
-    filter: none;
     opacity: 1;
+  }
+  .key[data-zone="true"]:active::after {
+    content: none;
   }
   /* a key that does nothing in this layer (and only in this layer) is dimmed, still readable */
   .key[data-dead="true"] .main {

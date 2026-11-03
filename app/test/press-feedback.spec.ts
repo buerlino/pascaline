@@ -64,6 +64,34 @@ for (const family of FAMILIES)
       }
     });
 
+// A trackpad zone is a transparent key over a round surface: its press is the glyph's opacity, no rectangle layer
+// (whose corners would spill past the circle).
+for (const m of MODES)
+  test(`a held trackpad zone changes its opacity and draws no layer: ${m.keys}/${m.contrast}`, async ({ page }) => {
+    await open(page);
+    await set(page, "pascaline", "dark", m.keys, m.contrast);
+    const state = (): Promise<{ opacity: string; after: string; bg: string }> =>
+      page.evaluate(() => {
+        const el = document.querySelector<HTMLElement>('.pad [data-key="up"]');
+        if (!el) throw new Error("no key");
+        return {
+          opacity: getComputedStyle(el).opacity,
+          after: getComputedStyle(el, "::after").content,
+          bg: getComputedStyle(el).backgroundColor,
+        };
+      });
+    const box = await page.locator('.pad [data-key="up"]').boundingBox();
+    if (!box) throw new Error("no box for up");
+    const rest = await state();
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.mouse.down();
+    const held = await state();
+    await page.mouse.up();
+    expect(rest.bg).toBe("rgba(0, 0, 0, 0)");
+    expect(Number(held.opacity)).toBeGreaterThan(Number(rest.opacity));
+    expect(["none", "normal"]).toContain(held.after);
+  });
+
 test("no element has a transition or an animation, sheets and tips included", async ({ page }) => {
   const scan = (): Promise<string[]> =>
     page.evaluate(() => {
