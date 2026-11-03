@@ -66,7 +66,8 @@ function sources(dir: string): string[] {
 describe("message tables", () => {
   // enPalettes.ts: its keys are built from the keyboard's palette items (`${id}.${cell}`); "names every palette cell and title" above checks each one
   const tables = readdirSync(join(SRC, "i18n")).filter((f) => /^en[A-Za-z]*\.ts$/.test(f));
-  const checked = tables.filter((f) => f !== "enPalettes.ts");
+  // enKeyNames.ts: its keys are the keyboard's key ids and layers (`<id>`, `<id>.shift`); keyNames.test.ts checks each one (R41)
+  const checked = tables.filter((f) => f !== "enPalettes.ts" && f !== "enKeyNames.ts");
   const files = sources(SRC).filter((f) => !tables.some((t) => f === join(SRC, "i18n", t)));
   const text = files.map((f) => readFileSync(f, "utf8")).join("\n") + "\n" + readFileSync(join(SRC, "../../spec/keyboard.yaml"), "utf8");
   const familyOf = (key: string) => FAMILIES.find((f) => key.startsWith(f.prefix) && (f.suffixes === "any" || f.suffixes.includes(key.slice(f.prefix.length))));

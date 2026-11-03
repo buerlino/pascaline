@@ -15,8 +15,8 @@ describe("key names (R41)", () => {
       for (const l of layers(k)) {
         const n = layerName(k, l, false);
         expect(n, `${k.id} ${l}`).toBeTruthy();
-        // a spoken name is words, not the glyph on the key (an Alpha letter is its own name)
-        if (!(l === "alpha" && LETTER.test(n ?? ""))) expect(n, `${k.id} ${l}`).not.toBe(k.label[l]);
+        // a spoken name is words, not the glyph on the key (a letter, a digit and x are their own name)
+        if (!/^[A-Za-z0-9]$/.test(n ?? "")) expect(n, `${k.id} ${l}`).not.toBe(k.label[l]);
       }
   });
 
