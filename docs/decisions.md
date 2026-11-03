@@ -7,7 +7,7 @@ Phase 0 decisions (D1–D9, P1, P2): [spike/DECISIONS.md](../spike/DECISIONS.md)
 
 The owner's other open items are in [backlog.md](backlog.md), "Needs the user". Once decided, an entry moves to "Decided proposals".
 
-None open (2026-11-02).
+- **2026-11-04 R41: the status line at font scale 2.0 (OPEN).** The keypad fits at 1.5 and 2.0; the status line is 35 px wider than 360 px at 2.0 (fine at 1.5). Recommendation: leave it until a device shows it. Would change if: the device clips Mode or ☰.
 
 ## Decided proposals
 

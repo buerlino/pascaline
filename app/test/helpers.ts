@@ -273,3 +273,22 @@ export async function savePicker(page: Page, kind: "none" | "fake"): Promise<voi
 /** The file the stand-in picker saved last (savePicker "fake"), or undefined. */
 export const savedText = (page: Page): Promise<{ name: string; text: string } | undefined> =>
   page.evaluate(() => (window as unknown as { __saved?: { name: string; text: string } }).__saved);
+
+/**
+ * The Android font scale (A4a point 4, R41): the WebView's text zoom multiplies every px font size and leaves the boxes
+ * alone. Chromium on a desktop has no text zoom, so the `--fs-*` tokens are multiplied here, then the keypad is fitted
+ * again (its effect runs when a modifier changes; on a device the scale is there before the first fit).
+ */
+export async function setFontScale(page: Page, scale: number): Promise<void> {
+  await page.evaluate((s) => {
+    const root = document.documentElement;
+    const cs = getComputedStyle(root);
+    for (const name of ["--fs-cell", "--fs-legend", "--fs-caption", "--fs-small", "--fs-note", "--fs-ui", "--fs-body", "--fs-key-fn", "--fs-glyph", "--fs-key", "--fs-input", "--fs-result", "--fs-entry"]) {
+      const px = parseFloat(cs.getPropertyValue(name));
+      if (px > 0) root.style.setProperty(name, `${px * s}px`);
+    }
+  }, scale);
+  await tap(page, ["shift"]);
+  await page.evaluate(() => window.pascaline.session.clearModifiers());
+  await page.waitForTimeout(100);
+}
