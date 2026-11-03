@@ -281,7 +281,6 @@
     max-height: calc(100% - var(--sp-2));
     min-height: 0;
     flex: 0 1 auto;
-    animation: rise var(--motion-rise) ease-out;
   }
   /* over the keypad: the keypad's width, square at its bottom edge */
   .keypad .sheet {
@@ -302,17 +301,6 @@
     left: 0;
     right: 0;
     max-height: none;
-  }
-  @keyframes rise {
-    from {
-      transform: translateY(var(--rise));
-      opacity: 0.6;
-    }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .sheet {
-      animation: none;
-    }
   }
   .head {
     display: flex;

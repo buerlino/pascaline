@@ -378,8 +378,18 @@
     white-space: nowrap;
     line-height: 1.1;
   }
-  .key:active {
-    filter: brightness(1.4);
+  /* The press (R12c): the key's own text colour laid over it at once, no fade, a layer of its own so it shows over every
+     background, Plain keys' and High contrast's too. It is the only motion in the app. */
+  .key:active::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: color-mix(in srgb, var(--text) 32%, transparent);
+    pointer-events: none;
+  }
+  .key.enter:active::after {
+    background: color-mix(in srgb, var(--on-enter) 28%, transparent);
   }
   .key.op {
     background: var(--key-op);
@@ -464,9 +474,13 @@
     background: transparent;
     opacity: 0.7;
   }
+  /* a zone is a transparent rectangle over the round trackpad: no press layer (its corners would spill past the circle),
+     the glyph going from 0.7 to full opacity is its press */
   .key[data-zone="true"]:active {
-    filter: none;
     opacity: 1;
+  }
+  .key[data-zone="true"]:active::after {
+    content: none;
   }
   /* a key that does nothing in this layer (and only in this layer) is dimmed, still readable */
   .key[data-dead="true"] .main {

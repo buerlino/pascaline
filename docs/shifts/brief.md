@@ -73,7 +73,6 @@ A8 and [A57](packages/A57.md) run by day. Steps 448–452 and 408 run only on th
 
 | Step | What | Agent, model | Branch | After |
 |---|---|---|---|---|
-| 470 | [A63](packages/A63.md) the kill run needs a tag (the bar's point 1) | annabell, Sonnet | `p1/annabell-killtag` | A8 |
 | 462 | [G161](packages/G161.md) Find gets VA and var; gauge units stay gauge | gorge, Opus | `p1/gorge-elecunits` | – |
 | 463 | [G163](packages/G163.md) the unit view's chunks hold no worker evaluator | gorge, Sonnet | `p1/gorge-unitchunk` | G161 |
 | 448 | [G148](packages/G148.md) `approx` of a finite value past the range is an overflow | gorge, Opus | `p1/gorge-approxoverflow` | the weekly night |
@@ -83,7 +82,6 @@ A8 and [A57](packages/A57.md) run by day. Steps 448–452 and 408 run only on th
 | 452 | [G160](packages/G160.md) patch 0025 decides a huge base by its logarithm (F167) | gorge, Opus | `p1/gorge-powbigbase` | the weekly night |
 | 408 | [G138](packages/G138.md) the weekly fuzz and its triage | gorge, Opus | `p1/gorge-nightfuzz-1104` | the weekly night (Wed 11-04) |
 | 437 | [G152](packages/G152.md) acosh's sign and tiny imaginary part (F143, F144) | gorge, Opus | `p1/gorge-acoshsign` | G142 |
-| 471 | [A68](packages/A68.md) `npm run dev` refreshes the Find index | annabell, Sonnet | `p1/annabell-devindex` | – |
 | 439 | [A60](packages/A60.md) the F-Droid recipe checks `find/factors.yaml` against its qalc build | annabell, Sonnet | `p1/annabell-recipecheck` | – |
 | 440 | [A59](packages/A59.md) Android's splash and system bars take the Dark background (device step) | annabell, Sonnet | `p1/annabell-darkbars` | – |
 

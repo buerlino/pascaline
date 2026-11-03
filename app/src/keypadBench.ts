@@ -56,7 +56,7 @@ export async function runKeypadBench(): Promise<void> {
     await sleep(20);
   }
   // a pick sheet: Tmpl opens it over the keypad, Esc closes it. appearMs = dispatch → the .sheet exists in the DOM;
-  // frameMs = dispatch → the frame after the next one; the CSS rise is 100 ms (Sheet.svelte).
+  // frameMs = dispatch → the frame after the next one; the sheet has no rise (R12c), so that frame draws it whole.
   const appear: number[] = [];
   const sheetFrame: number[] = [];
   for (let i = 0; i < N; i++) {
@@ -73,7 +73,7 @@ export async function runKeypadBench(): Promise<void> {
     sheetFrame.push(performance.now() - t0);
     appear.push(seen || NaN);
     mo.disconnect();
-    await sleep(300); // let the 100 ms rise finish
+    await sleep(300);
     tap("esc");
     await sleep(200);
   }
