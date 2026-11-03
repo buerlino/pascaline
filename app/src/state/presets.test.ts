@@ -184,11 +184,23 @@ describe("presets (R88)", () => {
   it("a record stamped newer than DATA_VERSION is refused, and never written over", async () => {
     const newer: StoredPresets = { presets: [{ id: 1, name: "Future", groups: { mode: { angle: "deg" } } }], active: 1, next: 2 };
     const { presets, store } = await setup({ "@pascaline": DATA_VERSION + 1, value: newer });
-    expect(presets.refused).toBe(true);
+    expect(presets.refused).toBe("newer");
     expect(presets.list).toEqual([]);
-    expect(() => presets.capture("Mine", PRESET_GROUPS)).toThrow(PresetError);
+    expect(() => presets.capture("Mine", PRESET_GROUPS)).toThrow(new PresetError("newer"));
     expect(store.writes).toBe(0);
     expect(store.rec?.["@pascaline"]).toBe(DATA_VERSION + 1);
+  });
+
+  it("a read that failed is refused as unreadable (not newer), never written over, and told to the store (R123)", async () => {
+    const kv = memoryKv();
+    const session = new Session(new FakeCalc(), kv);
+    let told = 0;
+    const store = Object.assign(memoryStore(), { read: () => Promise.reject(new Error("indexedDB get failed")), unreadable: () => void told++ });
+    const presets = await Presets.open({ session, userKeys: new UserKeys(kv), cells: new UnitCells(kv), store });
+    expect(presets.refused).toBe("unreadable");
+    expect(told).toBe(1);
+    expect(() => presets.capture("Mine", PRESET_GROUPS)).toThrow(new PresetError("unreadable"));
+    expect(store.writes).toBe(0);
   });
 
   it("an older record migrates: through the steps of presets and of the keys it holds, then written back", async () => {
@@ -204,7 +216,7 @@ describe("presets (R88)", () => {
       },
     };
     const presets = await Presets.open({ session, userKeys, cells: new UnitCells(kv), store, steps });
-    expect(presets.refused).toBe(false);
+    expect(presets.refused).toBeNull();
     expect(presets.active).toBe(3);
     await presets.apply(3);
     expect(userKeys.labelOf(U1, "primary")).toBe("x");
@@ -263,7 +275,7 @@ describe("presets (R88)", () => {
   it("a damaged record holds no presets and breaks nothing", async () => {
     for (const value of [null, 7, "x", { presets: "no" }, { presets: [{ id: "a", name: 3 }, { id: 2, name: "Ok", groups: { mode: { angle: "deg" } } }] }]) {
       const { presets } = await setup({ "@pascaline": DATA_VERSION, value });
-      expect(presets.refused).toBe(false);
+      expect(presets.refused).toBeNull();
       expect(presets.list.every((p) => typeof p.id === "number" && typeof p.name === "string")).toBe(true);
       presets.capture("New", PRESET_GROUPS); // and a new one gets a fresh id
       expect(new Set(presets.list.map((p) => p.id)).size).toBe(presets.list.length);

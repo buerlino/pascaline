@@ -10,14 +10,16 @@ import { unitCells, type StoredCells, type UnitCells } from "../units/userCells.
 import { GROUP_FIELDS, migratePresetKeys, nameKey, PRESET_GROUPS, PRESETS_KEY, readPresets, type GroupValues, type Preset, type PresetGroup, type StoredPresets } from "./presetRecord.ts";
 import type { Look } from "../theme/look.ts";
 import type { Session, Settings } from "./session.svelte.ts";
-import { DATA_VERSION, idbKv, unstamp, type Migrations } from "./storage.ts";
+import { DATA_VERSION, idbKv, readFailed, unstamp, type Migrations } from "./storage.ts";
 import type { RawRecord } from "./storageRaw.ts";
 
 export { PRESET_GROUPS, PRESETS_KEY, type GroupValues, type Preset, type PresetGroup, type StoredPresets };
 
-/** Why a change was refused: an empty or taken name, no group ticked, no such preset, or a record from a newer version
- *  (it is kept as it is, so the newer build finds it again). */
-export type PresetFault = "empty" | "taken" | "noGroups" | "unknown" | "newer";
+/** Why the stored record is not read, and nothing is written over it: it is from a newer version (kept as it is, so the
+ *  newer build finds it again), or its read failed (R93: not "nothing stored"; R123: a reason of its own). */
+export type PresetRefusal = "newer" | "unreadable";
+/** Why a change was refused: an empty or taken name, no group ticked, no such preset, or a refused record. */
+export type PresetFault = "empty" | "taken" | "noGroups" | "unknown" | PresetRefusal;
 export class PresetError extends Error {
   readonly fault: PresetFault;
   constructor(fault: PresetFault) {
@@ -26,16 +28,20 @@ export class PresetError extends Error {
   }
 }
 
-/** Where the record lives: read as stored (its true stamp), written stamped (kvSet never writes over a newer record). */
+/** Where the record lives: read as stored (its true stamp), written stamped (kvSet never writes over a newer record).
+ *  `unreadable`: the record could not be read (the read failed, or the steps that bring it up did not load). */
 export interface PresetStore {
   read(): Promise<RawRecord | undefined>;
   write(value: StoredPresets): Promise<void>;
+  unreadable?(): void;
 }
 export const idbPresetStore: PresetStore = {
   // storageRaw.ts is a chunk of its own (the backup's): a static import would add it to the preload list of the Mode
   // sheet's chunk, which the start chunk carries
   read: () => import("./storageRaw.ts").then((m) => m.kvGetRaw(PRESETS_KEY)),
   write: (value) => idbKv.set(PRESETS_KEY, value),
+  // read raw, outside idbKv: the store's health learns of it here (R123), so Settings › Data says "Not saved" (R96)
+  unreadable: () => readFailed(PRESETS_KEY),
 };
 
 export interface PresetEnv {
@@ -102,8 +108,8 @@ export class Presets {
   list = $state<Preset[]>([]);
   /** The preset last applied, saved or updated; null for none. */
   active = $state<number | null>(null);
-  /** The stored record is from a newer version: it is not read, and nothing is written over it. */
-  refused = $state(false);
+  /** The stored record is not read, and nothing is written over it: from a newer version, or unreadable; null: read. */
+  refused = $state<PresetRefusal | null>(null);
   private next = 1;
   private readonly env: PresetEnv;
   /** Applies run one after the other: the second starts once the first one's look is on the page. */
@@ -113,7 +119,7 @@ export class Presets {
     this.env = env;
   }
 
-  /** The model with its stored record read (migrated and written back when older; refused when newer), once the unit
+  /** The model with its stored record read (migrated and written back when older; refused when newer or unreadable), once the unit
    *  cells' own record is in (a capture before it would hold their defaults). The free keys are read at launch (main.ts,
    *  before the keypad mounts) and not again here: a second read could land after a slot set meanwhile and undo it. */
   static async open(env: PresetEnv): Promise<Presets> {
@@ -123,12 +129,11 @@ export class Presets {
     try {
       rec = await env.store.read();
     } catch {
-      p.refused = true; // a failed read is not "nothing stored" (R93): writing now could lose the user's presets
-      return p;
+      return p.unreadable(); // a failed read is not "nothing stored" (R93): writing now could lose the user's presets
     }
     if (rec === undefined) return p;
     if (rec["@pascaline"] > DATA_VERSION) {
-      p.refused = true;
+      p.refused = "newer";
       return p;
     }
     const from = rec["@pascaline"];
@@ -137,8 +142,7 @@ export class Presets {
       try {
         steps = (await import("./migrations.ts")).MIGRATIONS;
       } catch {
-        p.refused = true; // the steps did not load: the record is not read, so it is not written over either
-        return p;
+        return p.unreadable(); // the steps did not load: the record is not read, so it is not written over either
       }
     }
     const up = (key: string, stored: unknown): unknown => unstamp(key, stored, steps ?? {}).value;
@@ -149,6 +153,13 @@ export class Presets {
     p.next = record.next;
     if (from < DATA_VERSION) p.save();
     return p;
+  }
+
+  /** Refused: the record could not be read (and the store is told, R123). */
+  private unreadable(): Presets {
+    this.refused = "unreadable";
+    this.env.store.unreadable?.();
+    return this;
   }
 
   /** The current setup's values of each group. */
@@ -177,7 +188,7 @@ export class Presets {
   }
 
   private writable(): void {
-    if (this.refused) throw new PresetError("newer");
+    if (this.refused) throw new PresetError(this.refused);
   }
 
   private save(): void {
