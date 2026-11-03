@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// A45: the GitHub Pages workflow stays small and pinned: commit-SHA actions, two triggers, three permissions, one build command.
+// A45: the GitHub Pages workflow stays small and pinned: commit-SHA actions, two triggers, three permissions, one build command;
+// A8: a test tag (a - in its name) is never deployed by its push.
 import { readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -17,6 +18,7 @@ interface Step {
   with?: Record<string, unknown>;
 }
 interface Job {
+  if?: string;
   needs?: string;
   environment?: unknown;
   permissions?: Record<string, string>;
@@ -75,6 +77,14 @@ describe(".github/workflows/pages.yml", () => {
     expect(ver).toBeDefined();
     expect(ver?.if).toBeUndefined();
     expect(text).toMatch(/#.*kill run.*golden/i);
+  });
+
+  it("A8: a tag push whose name holds a - (the test tag vX.Y.Z-test) skips the build job, and so the deploy; a dispatch never skips", () => {
+    expect(wf.jobs["build"]?.if).toBe("${{ github.event_name != 'push' || !contains(github.ref_name, '-') }}");
+    // the deploy job runs only after a build: no if of its own that could run it past a skipped build (always(), !cancelled())
+    expect(wf.jobs["deploy"]?.needs).toBe("build");
+    expect(wf.jobs["deploy"]).not.toHaveProperty("if");
+    expect(text).toMatch(/#.*test tag.*-/i);
   });
 
   it("A52: top-level permissions are contents: read only; only the deploy job has pages: write and id-token: write", () => {
