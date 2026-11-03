@@ -100,6 +100,14 @@ describe("the unit result's alternatives (R60)", () => {
     expect(row(qty("kg1m2s-3", "kvar", "k:var", "MW"), "2000*{k:var}").texts).toEqual(["var", "Mvar"]);
     expect(row(qty("kg1m2s-3", "kW", "k:W", "kW"), "2*{k:W}").texts.slice(0, 3)).toEqual(["W", "hp", "TR"]);
   });
+  it_("G161 fix 1: an energy typed in kVA·h is offered no J, MJ or kWh (a unit of energy is real energy); kW·h keeps them", () => {
+    const kvah = qty("kg1m2s-2", "kVA·h", { tokens: [{ prefix: "k", unit: "VA" }, { unit: "h" }] }, "MJ");
+    const { texts, ctx } = row(kvah, "2*{k:VA}*3*{h}");
+    for (const t of ["J", "MJ", "kWh", "Wh", "Btu", "kcal"]) expect(texts).not.toContain(t);
+    for (const a of alternatives(kvah, ctx)) expect(buildJob(withEnd(ctx.req, a), table)).not.toHaveProperty("powers");
+    const kwh = qty("kg1m2s-2", "kW·h", { tokens: [{ prefix: "k", unit: "W" }, { unit: "h" }] }, "MJ");
+    expect(row(kwh, "2*{k:W}*3*{h}").texts).toContain("J");
+  });
   it_("Θ from 20 °C (shown 293.15 K, absolute): °C, °F", () => {
     const q = qty("K1", "K", "K", "K");
     const { texts, ctx } = row(q, "20*{oC}");

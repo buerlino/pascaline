@@ -215,16 +215,19 @@ function cycleUnit(slots: readonly UnitSlot[]): string | null {
   return null;
 }
 
-/** G161: the power a unit names: VA apparent, var reactive, W real (the units of W, Wh and the other units of power,
- *  hp, TR, dBm). VA, var and W have one dimension but are three quantities (S, Q, P differ by the power factor). */
-const POWER_DIM = "kg1m2s-3";
-const POWER_KIND: Readonly<Record<string, string>> = { VA: "VA", kVA: "VA", MVA: "VA", var: "var", kvar: "var", Mvar: "var", Wh: "W", kWh: "W", MWh: "W" };
+/** G161: the power a unit names: VA apparent, var reactive, W real (every other unit of power or energy: W, hp, TR,
+ *  dBm, Wh, J, cal, Btu, eV). VA, var and W have one dimension but are three quantities (S, Q, P differ by the power
+ *  factor); a unit of energy is real energy, so kVA·h → MJ is refused as kVA·h → kWh is. */
+const REAL_DIMS: ReadonlySet<string> = new Set(["kg1m2s-3", "kg1m2s-2"]);
+const POWER_KIND: Readonly<Record<string, string>> = { VA: "VA", kVA: "VA", MVA: "VA", var: "var", kvar: "var", Mvar: "var" };
 
-/** G161: the kinds of power the slots' units name, in the order typed; a unit with no power in it (V, A, J) names none. */
+/** G161: the kinds of power the slots' units name, in the order typed; a unit with no power in it (V, A, h, N, m)
+ *  names none. */
 export function powerKinds(slots: readonly UnitSlot[], table: FactorTable): string[] {
   const kinds = new Set<string>();
   for (const s of slots) for (const t of s.tokens) {
-    const k = POWER_KIND[t.unit] ?? (table.units.get(t.unit)?.dim === POWER_DIM ? "W" : undefined);
+    const dim = table.units.get(t.unit)?.dim;
+    const k = POWER_KIND[t.unit] ?? (dim !== undefined && REAL_DIMS.has(dim) ? "W" : undefined);
     if (k) kinds.add(k);
   }
   return [...kinds];
