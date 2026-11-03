@@ -6,7 +6,8 @@
 import { confirmedOptions, formatComplex, markOf, type FormatOptions, type Mark } from "../engine/format.ts";
 import { precisionFacts } from "../engine/homeEval.ts";
 import { unitText } from "../i18n/enUnits.ts";
-import { markText } from "../state/displayMode.ts";
+import { groupText } from "../render/groupText.ts";
+import { commaResult, markText } from "../state/displayMode.ts";
 import type { Alternative } from "./alternatives.ts";
 import { unitErrorMessage, unitNoteText, unitWhyText } from "./messages.ts";
 import { isUnitError, type Quantity, type UnitError } from "./types.ts";
@@ -22,7 +23,8 @@ export interface UnitShown {
   kind: "result";
   /** The value line's number: with σ `39.5 ± 1.2` (Uncertainty.shown), else the value at the digits setting. */
   text: string;
-  /** The value alone as the evaluator displays it (the e2e reads it). */
+  /** The value alone as the evaluator displays it, with the decimal comma when it is on and no groups (the result's
+   *  data-text, Copy's rule, R120; the e2e reads it). */
   display: string;
   unit: string;
   /** The mark as Home draws it (`⚠ 3` for fewer confirmed digits); a value with σ is never "=". */
@@ -44,9 +46,20 @@ export interface UnitShown {
   alts: readonly Alternative[];
 }
 
+/** How the host wants numbers drawn: Home's format and digits, R57's decimal comma, and R55's digit groups (the screen
+ *  asks for them; `display`, the result's data-text and Copy's text, never has them). */
+export interface UnitFormat extends FormatOptions {
+  decimalComma?: boolean;
+  grouped?: boolean;
+}
+
 /** A result as the view shows it. `alts` is the row (alternatives.ts), none for a refusal or a pure number. */
-export function shownOf(q: Quantity | UnitError, o: FormatOptions, alts: readonly Alternative[] = []): Shown {
+export function shownOf(q: Quantity | UnitError, u: UnitFormat, alts: readonly Alternative[] = []): Shown {
   if (isUnitError(q)) return { kind: "message", text: unitErrorMessage(q) };
+  const { decimalComma, grouped, ...o } = u;
+  /** R120: a number as the screen draws it (Home's unit row: commaResult, groupDigits) and as Copy writes it. */
+  const comma = (s: string): string => (decimalComma ? commaResult(s, false) : s);
+  const drawn = (s: string): string => comma(grouped ? groupText(s) : s);
   const facts = precisionFacts(q.value);
   const m = markOf(facts, o);
   const mark: Mark = m?.mark === "⚠" ? "⚠" : q.unc ? "≈" : (m?.mark ?? "≈");
@@ -54,21 +67,21 @@ export function shownOf(q: Quantity | UnitError, o: FormatOptions, alts: readonl
   const value = number(q.value);
   const why = q.unc?.why;
   const dimension = q.dimension ?? "";
-  const text = q.unc ? q.unc.shown : value;
+  const text = drawn(q.unc ? q.unc.shown : value);
   const dim = q.dimensionText !== null && q.dimensionText !== "1" && dimension !== "" ? q.dimensionText : undefined;
   return {
     kind: "result",
     text,
-    display: q.value.display,
+    display: comma(q.value.display),
     unit: q.unit,
     mark,
     markText: m ? markText({ ...m, mark }) : mark,
-    ...(q.unc && q.unc.shown.endsWith(q.unc.text) ? { sigma: { head: q.unc.shown.slice(0, q.unc.shown.length - q.unc.text.length), tail: q.unc.text } } : {}),
+    ...(q.unc && q.unc.shown.endsWith(q.unc.text) ? { sigma: { head: drawn(q.unc.shown.slice(0, q.unc.shown.length - q.unc.text.length)), tail: drawn(q.unc.text) } } : {}),
     warn: why !== undefined,
     ...(why ? { why: unitWhyText(why) } : {}),
     ...(q.note ? { note: unitNoteText(q.note) } : {}),
     ...(dim ? { dim } : {}),
-    ...(q.unc ? { sub: unitText("units.result.sub", { value, sigma: number(q.unc.value) }) } : {}),
+    ...(q.unc ? { sub: unitText("units.result.sub", { value: drawn(value), sigma: drawn(number(q.unc.value)) }) } : {}),
     dimension,
     alts: dimension === "" ? [] : alts,
   };
