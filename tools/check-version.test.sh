@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-3.0-or-later
-# Test for tools/check-version.sh (A48): a match passes, each mismatch fails, and a computed versionName is refused.
+# Test for tools/check-version.sh (A48): a match passes, each mismatch fails, and a computed versionName is refused; a test tag
+# vX.Y.Z-<suffix> compares X.Y.Z only (A8).
 # Works on fixture trees in a temp dir (CHECK_VERSION_ROOT), starts nothing. Run: tools/check-version.test.sh
 set -uo pipefail
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -60,6 +61,13 @@ expect "match with the tag" 0 "$tmp/ok" v0.1.0
 expect "wrong tag" 1 "$tmp/ok" v0.1.1
 expect "tag without v" 2 "$tmp/ok" 0.1.0
 expect "a second argument" 2 "$tmp/ok" v0.1.0 extra
+# a test tag (owner, 2026-11-03): vX.Y.Z-<suffix>, suffix [0-9A-Za-z.]+; only X.Y.Z is compared with the files
+expect "test tag" 0 "$tmp/ok" v0.1.0-test
+expect "test tag with digits and dots" 0 "$tmp/ok" v0.1.0-rc.1
+expect "test tag of another version" 1 "$tmp/ok" v0.0.1-test
+expect "empty suffix" 2 "$tmp/ok" v0.1.0-
+expect "suffix with a space" 2 "$tmp/ok" "v0.1.0-a b"
+expect "suffix with a second dash" 2 "$tmp/ok" v0.1.0-a-b
 
 tree "$tmp/m1" 0.0.0 0.1.0 1 0.1.0 1 v0.1.0 0.1.0 1;  expect "package.json differs" 1 "$tmp/m1"
 tree "$tmp/m2" 0.1.0 1.0 1 0.1.0 1 v0.1.0 0.1.0 1;    expect "gradle versionName differs" 1 "$tmp/m2"
