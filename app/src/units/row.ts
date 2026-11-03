@@ -13,6 +13,7 @@ import { uncDigitsOf } from "../engine/constUnc.ts";
 // start chunk, +0.8 kB gzip there)
 import type { HistoryItem, Session } from "../state/session.svelte.ts";
 import { quantityChip } from "./chip.ts";
+import { unitNamesText } from "./messages.ts";
 import type { Quantity, UnitRow, UnitSlot } from "./types.ts";
 
 export interface RowIn {
@@ -41,6 +42,7 @@ export function unitRow({ line, chips, q, slots, input, digits }: RowIn): Omit<H
     dimText: q.dimensionText,
     ...(q.unc ? { unc: { text: q.unc.text, shown: q.unc.shown, ...(q.unc.why ? { why: q.unc.why } : {}) } } : {}),
     ...(q.note ? { note: q.note } : {}),
+    ...(q.names?.length ? { names: unitNamesText(q.names) } : {}),
     latex: sigma + (q.unit ? unitLatex(q.unit) : ""),
     text: (q.unc ? ` ± ${q.unc.text}` : "") + (q.unit ? ` ${q.unit}` : ""),
     input,

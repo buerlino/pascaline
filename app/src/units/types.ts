@@ -117,6 +117,9 @@ export interface Quantity {
   /** G40: a note on how the result was read (i18n, messages.ts unitNoteText): one rad dropped at the end slot, or a
    *  cycle unit (rpm, rev) in a product, whose value counts turns and has no 2π. */
   note?: UnitNote;
+  /** R121: the user names (the definitions log's values) the formula read as pure numbers, in the order they appear: a
+   *  name stands for a value typed earlier, which Home keeps without a unit. Absent when it read none. */
+  names?: string[];
   ms: number;
 }
 
@@ -192,6 +195,8 @@ export interface UnitRow {
   /** σ as the view showed it (Uncertainty.text, .shown, .why). */
   unc?: { text: string; shown: string; why?: UncWhy };
   note?: UnitNote;
+  /** R121: the note on the names the formula read as pure numbers, as the view showed it (messages.ts unitNamesText). */
+  names?: string;
   /** What the row draws after Home's number: ± σ, then the unit set apart (smaller, muted, upright). */
   latex: string;
   /** The same as plain text (R63f1: ` ± σ m²`), joined to Home's number for Copy as shown and the row's data-text. */

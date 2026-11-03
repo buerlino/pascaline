@@ -241,8 +241,12 @@ export const LAZY_PARTS = ["src/views/sheetKeys.ts", "src/views/tmplSheet.ts", "
  *  σ chip as pasupm with the chip's name as third argument (input/parse.ts resultChip and the minus rule of negate,
  *  input/chip-giac.ts CHIP_ANS), and these lines stay in the start chunk with the parser's entry; the builder's check
  *  (units/build.ts uncertainValues, isChipName in engine/ourNames.ts) is in the unit view's chunk. The pin is
- *  59,255 B + 0.05 kB. */
-export const START_PIN_GZIP = 59_305;
+ *  59,255 B + 0.05 kB.
+ *  59.31 → 59.38 kB (R121, R121f1): phase-1 424f3fae holds R115f1's 59,255 B gzip (168,471 B raw); the branch merged with
+ *  it measures 59,330 B (168,704 B raw, +75 B): the Home row's line naming the stored values a unit result read as pure
+ *  numbers, in History.svelte (the text is the row's, written by the lazy units/row.ts; no unit code is in the start
+ *  chunk). The pin is 59,330 B + 0.05 kB. */
+export const START_PIN_GZIP = 59_380;
 
 /** R103 (vr-4): the classic inline scripts of index.html run before the first paint, outside every chunk: the stored look
  *  (R50e) and the too-old WebView check. Their gzip sizes, each script alone and summed (as the start chunk sums its

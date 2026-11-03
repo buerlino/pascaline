@@ -200,6 +200,16 @@ test.describe("the unit result view (R62)", () => {
     expect(await page.evaluate(() => window.pascaline.unitView?.view.model("u1")?.slot.tokens.length)).toBe(2);
   });
 
+  // R121 fix round 2: under the full suite's load More… showed no Find within 5 s, its module fetched only on the tap.
+  test("Find on units is fetched while the view opens, so More… waits on no module (R121 fix round 2)", async ({ page }) => {
+    const asked: string[] = [];
+    page.on("request", (r) => void asked.push(new URL(r.url()).pathname));
+    await kmh(page);
+    await expect.poll(() => asked.includes("/src/units/find.ts")).toBe(true);
+    await page.getByTestId("unit-more").tap();
+    await expect(page.getByTestId("find")).toBeVisible();
+  });
+
   test("More…, then a pick in Find: the end slot holds the picked unit and the result is in it", async ({ page }) => {
     await kmh(page);
     await page.getByTestId("unit-more").tap();

@@ -339,6 +339,15 @@ function chosenUnit(job: UnitJob, dimension: string, si: { text: string; factor:
   return { ...si, slot: siSlot(dimension, si.text) };
 }
 
+/** R121: `q` with the user's stored names its formula read (`read`: the host's, from Giac's tree, in the order they
+ *  appear; asked only for a value). Each is a pure number here: Home keeps a value without its unit. A free name was
+ *  refused before (symbolic). */
+export function withNames(q: Quantity | UnitError, read: () => readonly string[]): Quantity | UnitError {
+  if (isUnitError(q)) return q;
+  const names = read();
+  return names.length ? { ...q, names: [...names] } : q;
+}
+
 /** Evaluates a job in the engine's current (Home) mode. One Giac call when the value is rational; the agreement
  *  check's calls otherwise. */
 export function unitEval(giac: Giac, job: UnitJob, s: HomeSettings): Quantity | UnitError {

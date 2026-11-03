@@ -40,6 +40,7 @@ function resultRows(s: UnitShown, v: UnitView, fit: (row: HTMLElement) => void):
   if (s.sub) out.push(el("div", "sub", "unit-sub", s.sub));
   if (s.why) out.push(el("div", "why", "unit-why", s.why));
   if (s.note) out.push(el("div", "note", "unit-note", s.note));
+  if (s.names) out.push(el("div", "note", "unit-names", s.names));
   if (s.dimension !== "") {
     const row = el("div", "alts", "unit-alts");
     row.setAttribute("role", "toolbar");

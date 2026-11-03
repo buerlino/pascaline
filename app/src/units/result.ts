@@ -9,7 +9,7 @@ import { unitText } from "../i18n/enUnits.ts";
 import { groupText } from "../render/groupText.ts";
 import { commaResult, markText } from "../state/displayMode.ts";
 import type { Alternative } from "./alternatives.ts";
-import { unitErrorMessage, unitNoteText, unitWhyText } from "./messages.ts";
+import { unitErrorMessage, unitNamesText, unitNoteText, unitWhyText } from "./messages.ts";
 import { isUnitError, type Quantity, type UnitError } from "./types.ts";
 
 /** What the view shows under the reading: nothing, a refusal (a slot's or the evaluator's), Working…, or a result. */
@@ -36,6 +36,8 @@ export interface UnitShown {
   warn: boolean;
   why?: string;
   note?: string;
+  /** R121: the note on the names the formula read as pure numbers (Quantity.names). */
+  names?: string;
   /** "L·T⁻¹"; absent for a pure number. */
   dim?: string;
   /** With σ, muted under the value line: the value and σ at the digits setting. */
@@ -80,6 +82,7 @@ export function shownOf(q: Quantity | UnitError, u: UnitFormat, alts: readonly A
     warn: why !== undefined,
     ...(why ? { why: unitWhyText(why) } : {}),
     ...(q.note ? { note: unitNoteText(q.note) } : {}),
+    ...(q.names?.length ? { names: unitNamesText(q.names) } : {}),
     ...(dim ? { dim } : {}),
     ...(q.unc ? { sub: unitText("units.result.sub", { value: drawn(value), sigma: drawn(number(q.unc.value)) }) } : {}),
     dimension,

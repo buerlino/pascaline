@@ -21,6 +21,9 @@ export const enUnits = {
   // G40: the notes under a result (decisions.md "Angles in the unit view").
   "units.note.radDropped": "rad = 1 dropped",
   "units.note.cycle": "{unit} counts turns: the speed at radius r is 2π·r·n",
+  // R121: the names a result read as pure numbers ({names}: at most three, then …).
+  "units.note.name": "{names} has no unit: a Home value",
+  "units.note.names": "{names} have no unit: Home values",
   // G41: the why-line of a σ shown with ⚠ (docs/04 4.3).
   "units.why.order2": "first order does not hold here",
   "units.why.singular": "the interval reaches a singular point",

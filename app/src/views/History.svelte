@@ -184,6 +184,9 @@
       {#if item.settingReset}
         <div class="uses" data-testid="setting-reset">{t("history.settingReset")}</div>
       {/if}
+      {#if item.status === "done" && typeof item.units?.names === "string"}
+        <div class="uses" data-testid="unit-names">{item.units.names}</div>
+      {/if}
       {#if item.unitDropped}
         <div class="uses" data-testid="unit-dropped">{t("history.unitDropped")}</div>
       {/if}

@@ -44,7 +44,7 @@ import { changedPart, changesOf, isOurs, namesOf, namesPart, readsFrom, statePar
 import { applyDefChanges, keyOf, PREVIEW_MAX, replayOrder, type DefChange, type DefEntry, type NameFacts } from "./defs.ts";
 import { SOLVE_HARD_TIMEOUT_S, solveRequest, unknownsOf } from "./solve.ts";
 import { analyze, table } from "./analysis.ts";
-import { UNIT_DEFINITIONS, unitEval } from "../units/evaluate.ts";
+import { UNIT_DEFINITIONS, unitEval, withNames } from "../units/evaluate.ts";
 import { constUncDigits, inexactConstsIn, withConstValues, type ConstTable } from "./constUnc.ts";
 import { CHIP_PREFIX, EQ_DIFF, EQ_INEXACT_FLAG, EQ_VERDICT } from "./ourNames.ts";
 import { chipCommand, chipNameFacts, chipSigma, chipsIn, literalChip, withChipValues, type ChipFactsTable } from "./chipFacts.ts";
@@ -1125,8 +1125,8 @@ export class EngineHost implements FactsHost {
     return analyze(this.giac, req, s);
   }
 
-  /** The unit view (G16, docs/04 4.2): in Home's mode (angle, budget, digits), with our unit definitions loaded on the
-   *  first request. A syntax error or a timeout is an engine error, never a value. */
+  /** The unit view (G16, docs/04 4.2): in Home's mode, with our unit definitions loaded on the first request; R121: its
+   *  tree's stored user names (facts.ts usedBy; no chip) are named. A syntax error or a timeout is an engine error. */
   units(job: UnitJob, s: HomeSettings): Quantity | UnitError {
     this.need(expressionsOf([job.expr, job.check, job.end]));
     if (!this.unitsLoaded) {
@@ -1135,7 +1135,7 @@ export class EngineHost implements FactsHost {
     }
     this.useHomeMode(s);
     try {
-      return unitEval(this.strict, job, s);
+      return withNames(unitEval(this.strict, job, s), () => readsFrom(this.bridge.parse(job.expr)).names.filter((n) => this.stored.has(n) && !this.chipFacts.has(n) && !isOurs(n, (m) => this.byName.has(m))));
     } catch (e) {
       if (e instanceof GiacSyntaxError) return { error: "engine", detail: e.message };
       throw e;
