@@ -7,6 +7,7 @@ import { EngineHost } from "../engine/host.ts";
 import { defaultHomeSettings } from "../engine/homeEval.ts";
 import { giacAvailable, loadNodeGiac } from "../engine/nodeGiac.ts";
 import type { IndexItem } from "../find/types.ts";
+import { latexToGiacInfo } from "../input/latex-to-giac.ts";
 import { buildJob } from "./build.ts";
 import { quantityChip } from "./chip.ts";
 import { factorTable } from "./factors.ts";
@@ -68,6 +69,35 @@ describe.skipIf(!giacAvailable())("quantityChip (R61, real Giac)", () => {
     const q = units({ formula: "1*pasu1+1*pasu2", slots: [{ tokens: [{ unit: "m" }] }, { tokens: [{ unit: "s" }] }] });
     expect(isUnitError(q)).toBe(true);
     expect(quantityChip(q)).toBeUndefined();
+  });
+
+  // R115 (night review 2026-11-02 be-1): R63 puts a σ chip on the unit view's line as an uncertain value; one chip used
+  // twice is one input (decisions R61), a typed ± one input each (G18). Expected (derived): x − x and x/x have σ 0;
+  // x·x is x², σ² = (2·12.34·0.05)² + 2·0.05⁴ (G41), σ = 1.23400506482 (mpmath); two inputs give √2·0.05 = 0.0707.
+  describe("one chip used twice is one input (R115)", () => {
+    const chips = { "res:1": { value: "12.34", unc: "0.05", exact: true }, "res:2": { value: "12.34", unc: "0.05", exact: true } };
+    const shown = (latex: string): string => {
+      const r = latexToGiacInfo(latex, { units: true, chips });
+      const q = units({ formula: r.giac, slots: [] });
+      if (isUnitError(q)) throw new Error(q.error);
+      return q.unc?.shown ?? "no σ";
+    };
+    const chip = "\\res{1}{12.34}";
+    it("chip − chip is 0 ± 0, chip / chip 1 ± 0", () => {
+      expect(shown(`${chip}-${chip}`)).toBe("0 ± 0");
+      expect(shown(`\\frac{${chip}}{${chip}}`)).toBe("1 ± 0");
+    });
+    it("chip · chip shows what (chip)² shows, σ 1.2", () => {
+      expect(shown(`\\left(${chip}\\right)^2`)).toBe("152.3 ± 1.2");
+      expect(shown(`${chip}\\cdot${chip}`)).toBe("152.3 ± 1.2");
+    });
+    it("−chip + chip is 0 ± 0: the minus stays outside the chip's input", () => {
+      expect(shown(`-${chip}+${chip}`)).toBe("0 ± 0");
+    });
+    it("controls: two chips are two inputs, and so are two typed ± values", () => {
+      expect(shown(`${chip}-\\res{2}{12.34}`)).toBe("0.000 ± 0.071");
+      expect(shown("12.34\\pm0.05-\\left(12.34\\pm0.05\\right)")).toBe("0.000 ± 0.071");
+    });
   });
 
   it("a pure number carries no unit", () => {

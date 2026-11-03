@@ -3,7 +3,7 @@
 import { parseError } from "../i18n/enParser.ts";
 import { equalityTest } from "./emit.ts";
 import { ANS_KEY } from "./chips.ts";
-import { CHIP_PREFIX } from "../engine/ourNames.ts";
+import { CHIP_ANS, CHIP_PREFIX } from "../engine/ourNames.ts";
 
 /**
  * The Giac name of a result chip that is not exact (R65, deep check D1): `pasr_<k>` for `\res{k}`, `pasr_ans` for Ans.
@@ -11,7 +11,7 @@ import { CHIP_PREFIX } from "../engine/ourNames.ts";
  * float's (decisions M4-7). The table key the engine takes is the part after the prefix. Undefined: not a result chip.
  */
 export function chipName(key: string): string | undefined {
-  if (key === ANS_KEY) return `${CHIP_PREFIX}ans`;
+  if (key === ANS_KEY) return `${CHIP_PREFIX}${CHIP_ANS}`;
   const m = /^res:(\d+)$/.exec(key);
   return m ? `${CHIP_PREFIX}${m[1]}` : undefined;
 }

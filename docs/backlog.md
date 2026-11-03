@@ -40,7 +40,7 @@ The one place for "where are we and what's left", one or two lines per open item
 - **F73, no package (it waited for the end of the freeze; owner, 2026-10-24; G103 reads the doubles).** A double in a list shows Giac's text (`[BesselJ(1,2),1/3]`), not numbers with ⚠; no wrong value reaches the screen. Left: `hasFloat` (reads `1..3` and strings). Families 5, 6.
 - **F170, no package (G157f1's Not done).** `limit(trunc(x),x,-1,1)` shows = -1 (right 0): Giac's limit substitutes -1, since trunc has no series rule and is not in series.cc's sign/floor/ceil/round list (floor has taylor_floor). Golden `g157f1-limit-trunc-neg1-right` pending. Families 3, 8.
 - **F169, no package (R114's Not done).** The unit view's own field still takes MathLive's paste: Ctrl+V of `1e-3` there is e − 3. Family 7.
-- **F165, R115 (review be-1, `ff37a93f6`).** Unit view, a unit row's chip used twice: chip − chip shows 0.000 ± 0.071 (right 0 ± 0). Rerun: `node tools/probes/review-1102/be-chiptwice.ts`. Family 12.
+- **F165, R115 (review be-1, `ff37a93f6`). Done by R115 (`p1/ron-chiponce`, run 534); the line goes at the merge.** Unit view, a unit row's chip used twice: chip − chip shows 0.000 ± 0.071 (right 0 ± 0). Rerun: `node tools/probes/review-1102/be-chiptwice.ts`. Family 12.
 - **F166, G159 (review be-2, rare, `ff37a93f6`).** Unit view, Find's `piecewise` or `when` with ± in the condition: σ 0 (`± 0`), no ⚠, though x ± 2σ crosses it. Rerun: `bash tools/probes/review-1102/vg-step-sigma.sh`. Family 12.
 - **Night review 2026-11-02:** the rest in [research/night-review-2026-11-02.md](research/night-review-2026-11-02.md).
 
