@@ -993,3 +993,37 @@ cases:
   - { id: "g157-trunc-sqrt2-3", input: "trunc(sqrt(2)-3)", oracle: "ceil(sqrt(2)-3)", expect: "-1", mark: "=", source: "oracle", note: "control: Giac proves sqrt(2)-3 < 0" }
   - { id: "g157-cas-trunc-sqrt2-3", kind: "cas", input: "trunc(sqrt(2)-3)", expect: "-1", source: "derived", note: "control" }
   - { id: "g157-cas-diff-trunc-x", kind: "cas", input: "diff(trunc(x),x)", expect: "0", source: "derived", note: "guard: trunc is constant off its jumps, as floor (diff(floor(x),x) = 0); patch 0028 gives trunc floor's derivative, or the unevaluated trunc(x) would leave diff(trunc(x),x) unevaluated (the unit view's j06 differentiates it)" }
+  # --- G157f1 (backlog F168): the definite integral of trunc. Giac splits only floor (and ceil, as floor) at its jumps
+  # (intg.cc), so after patch 0028 the antiderivative x*trunc(x) was used across trunc's jumps. Values summed by hand,
+  # interval by interval: trunc(u) = n on (n, n+1) for n >= 0, n+1 on (n, n+1) for n < 0 ---------------------------------
+  - { id: "g157f1-int-trunc-neg-half-5/2", input: "int(trunc(x),x,-1/2,5/2)", oracle: "F(2)", expect: "2", mark: "=", source: "derived", note: "0 on (-1/2,1), 1 on (1,2), 2 on (2,5/2): 1+1. Showed = 3*trunc(x) (before patch 0028 floor's 3/2)" }
+  - { id: "g157f1-cas-int-trunc-neg-half-5/2", kind: "cas", input: "int(trunc(x),x,-1/2,5/2)", expect: "2", source: "derived", note: "showed 3*trunc(x)" }
+  - { id: "g157f1-int-trunc-sym-3/2", input: "int(trunc(x),x,-3/2,3/2)", oracle: "F(0)", expect: "0", mark: "=", source: "derived", note: "-1 on (-3/2,-1), 0 on (-1,1), 1 on (1,3/2): -1/2+1/2. Showed = 3*trunc(x)" }
+  - { id: "g157f1-cas-int-trunc-sym-3/2", kind: "cas", input: "int(trunc(x),x,-3/2,3/2)", expect: "0", source: "derived", note: "showed 3*trunc(x)" }
+  - { id: "g157f1-int-trunc-2x+1", input: "int(trunc(2*x+1),x,-3/2,1/2)", oracle: "F(0)", expect: "0", mark: "=", source: "derived", note: "u = 2*x+1 runs over (-2,2), dx = du/2: (-1*1+0+0+1*1)/2. Showed = 2*trunc(2*x+1)" }
+  - { id: "g157f1-cas-int-trunc-2x+1", kind: "cas", input: "int(trunc(2*x+1),x,-3/2,1/2)", expect: "0", source: "derived", note: "showed 2*trunc(2*x+1)" }
+  - { id: "g157f1-int-trunc-x-times-x", input: "int(trunc(x)*x,x,-1/2,3/2)", oracle: "F(5,8)", expect: "0.625", mark: "=", source: "derived", note: "0 on (-1/2,1), x on (1,3/2): (9/4-1)/2. Showed = 9/8" }
+  - { id: "g157f1-cas-int-trunc-x-times-x", kind: "cas", input: "int(trunc(x)*x,x,-1/2,3/2)", expect: "5/8", source: "derived", note: "showed 9/8" }
+  - { id: "g157f1-int-trunc-neg-5/2-0", input: "int(trunc(x),x,-5/2,0)", oracle: "F(-2)", expect: "-2", mark: "=", source: "derived", note: "-2 on (-5/2,-2), -1 on (-2,-1), 0 on (-1,0): -1-1. Showed Giac's pair [-4,-1.99999850795]" }
+  - { id: "g157f1-cas-int-trunc-neg-5/2-0", kind: "cas", input: "int(trunc(x),x,-5/2,0)", expect: "-2", source: "derived", note: "showed [-4,-1.99999850795]" }
+  - { id: "g157f1-int-trunc-half-5/2", input: "int(trunc(x),x,1/2,5/2)", oracle: "F(2)", expect: "2", mark: "=", source: "derived", note: "guard: trunc is floor on x > 0, 0+1+1" }
+  - { id: "g157f1-cas-int-trunc-half-5/2", kind: "cas", input: "int(trunc(x),x,1/2,5/2)", expect: "2", source: "derived", note: "guard" }
+  - { id: "g157f1-int-floor-sym-3/2", input: "int(floor(x),x,-3/2,3/2)", oracle: "F(-3,2)", expect: "-1.5", mark: "=", source: "derived", note: "guard: -2 on (-3/2,-1), -1 on (-1,0), 0 on (0,1), 1 on (1,3/2): -1-1+0+1/2" }
+  - { id: "g157f1-cas-int-floor-sym-3/2", kind: "cas", input: "int(floor(x),x,-3/2,3/2)", expect: "-3/2", source: "derived", note: "guard" }
+  # Found while fixing: the floor split with a falling argument (a*x+b, a < 0) took its first jump one interval late when
+  # the range starts off an integer of a*x+b; ceil goes through floor(-x), and trunc of a proven negative through -floor(-x)
+  - { id: "g157f1-int-trunc-neg-9/8-7/8", input: "int(trunc(x),x,-9/8,-7/8)", oracle: "F(-1,8)", expect: "-0.125", mark: "=", source: "derived", note: "-1 on (-9/8,-1), 0 on (-1,-7/8). Showed Giac's pair [-1/4,-0.125]" }
+  - { id: "g157f1-cas-int-trunc-neg-9/8-7/8", kind: "cas", input: "int(trunc(x),x,-9/8,-7/8)", expect: "-1/8", source: "derived", note: "showed [-1/4,-0.125]" }
+  - { id: "g157f1-int-ceil-half-3/2", input: "int(ceil(x),x,1/2,3/2)", oracle: "F(3,2)", expect: "1.5", mark: "=", source: "derived", note: "1 on (1/2,1), 2 on (1,3/2): 1/2+1. Showed Giac's pair [1,1.5] (stock Giac)" }
+  - { id: "g157f1-cas-int-ceil-half-3/2", kind: "cas", input: "int(ceil(x),x,1/2,3/2)", expect: "3/2", source: "derived", note: "showed [1,1.5]" }
+  - { id: "g157f1-cas-int-floor-neg-x", kind: "cas", input: "int(floor(-x),x,-3/2,-1/2)", expect: "1/2", source: "derived", note: "-x in (1,3/2) gives 1 on (-3/2,-1), -x in (1/2,1) gives 0 on (-1,-1/2). Showed [1,0.5]" }
+  - { id: "g157f1-cas-int-floor-1-2x", kind: "cas", input: "int(floor(-2*x+1),x,0,3/4)", expect: "-1/4", source: "derived", note: "guard: an integer start (-2*x+1 = 1 at 0): 0 on (0,1/2), -1 on (1/2,3/4); right before the fix" }
+  # Fix round 1: only trunc of the integration variable is rewritten; trunc(ag157) of a free name stays trunc, which the
+  # floor form floor(a)+(1-sign(a))/2 is not at an integer a. trunc(x) = -1 on (-3/2,-1), 0 on (-1,-1/2): -trunc(a)/2
+  - { id: "g157f1-cas-int-trunc-x-free-trunc", kind: "cas", input: "int(trunc(x)*trunc(ag157),x,-3/2,-1/2)", expect: "-trunc(ag157)/2", source: "derived", note: "fix round 1 gave -(floor(ag157)+(1-sign(ag157))/2)/2; phase-1 -trunc(ag157)" }
+  - { id: "g157f1-int-trunc-x-free-trunc-0", input: "subst(int(trunc(x)*trunc(ag157),x,-3/2,-1/2),ag157=0)", oracle: "F(0)", expect: "0", mark: "=", source: "derived", note: "-trunc(0)/2. Round 0 of G157f1 gave -1/4 (trunc(a) rewritten as floor(a)+(1-sign(a))/2)" }
+  - { id: "g157f1-cas-int-trunc-x-free-trunc-0", kind: "cas", input: "subst(int(trunc(x)*trunc(ag157),x,-3/2,-1/2),ag157=0)", expect: "0", source: "derived", note: "round 0 of G157f1 gave -1/4" }
+  - { id: "g157f1-int-trunc-x-free-trunc-neg1", input: "subst(int(trunc(x)*trunc(ag157),x,-3/2,-1/2),ag157=-1)", oracle: "F(1,2)", expect: "0.5", mark: "=", source: "derived", note: "-trunc(-1)/2. Round 0 of G157f1 gave 0, phase-1 1" }
+  - { id: "g157f1-cas-int-trunc-x-free-trunc-neg1", kind: "cas", input: "subst(int(trunc(x)*trunc(ag157),x,-3/2,-1/2),ag157=-1)", expect: "1/2", source: "derived", note: "round 0 of G157f1 gave 0, phase-1 1" }
+  - { id: "g157f1-limit-trunc-neg1-right", input: "limit(trunc(x),x,-1,1)", oracle: "F(0)", expect: "0", mark: "=", source: "derived", status: "pending", note: "trunc(x) = 0 on (-1,0), so the limit from the right at -1 is 0. Shows = -1: Giac's limit takes trunc(-1), trunc has no series rule (floor has taylor_floor)" }
+  - { id: "g157f1-cas-limit-trunc-neg1-right", kind: "cas", input: "limit(trunc(x),x,-1,1)", expect: "0", source: "derived", status: "pending", note: "shows -1" }

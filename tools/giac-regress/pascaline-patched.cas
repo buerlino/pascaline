@@ -671,6 +671,30 @@ Digits:=40:; pc("g157-trunc-neg-27/20-1",'(trunc(-27/20,1))',-(13/10^1),5/10^12)
 // patch 0028-trunc-toward-zero.patch
 // g157-trunc-neg-complex (precision.yaml, derived)
 Digits:=40:; pc("g157-trunc-neg-complex",'(trunc(-3/2-5/2*i))',-1-2*i,5/10^12+5/10^12);
+// patch 0029-int-trunc-split.patch
+// g157f1-int-trunc-neg-half-5/2 (precision.yaml, derived)
+Digits:=40:; pc("g157f1-int-trunc-neg-half-5/2",'(int(trunc(x),x,-1/2,5/2))',2,5/10^12);
+// patch 0029-int-trunc-split.patch
+// g157f1-int-trunc-sym-3/2 (precision.yaml, derived)
+Digits:=40:; pc("g157f1-int-trunc-sym-3/2",'(int(trunc(x),x,-3/2,3/2))',0,1/10^30);
+// patch 0029-int-trunc-split.patch
+// g157f1-int-trunc-2x+1 (precision.yaml, derived)
+Digits:=40:; pc("g157f1-int-trunc-2x+1",'(int(trunc(2*x+1),x,-3/2,1/2))',0,1/10^30);
+// patch 0029-int-trunc-split.patch
+// g157f1-int-trunc-x-times-x (precision.yaml, derived)
+Digits:=40:; pc("g157f1-int-trunc-x-times-x",'(int(trunc(x)*x,x,-1/2,3/2))',(625/10^3),5/10^13);
+// patch 0029-int-trunc-split.patch
+// g157f1-int-trunc-neg-5/2-0 (precision.yaml, derived)
+Digits:=40:; pc("g157f1-int-trunc-neg-5/2-0",'(int(trunc(x),x,-5/2,0))',-2,5/10^12);
+// patch 0029-int-trunc-split.patch
+// g157f1-int-trunc-neg-9/8-7/8 (precision.yaml, derived)
+Digits:=40:; pc("g157f1-int-trunc-neg-9/8-7/8",'(int(trunc(x),x,-9/8,-7/8))',-(125/10^3),5/10^13);
+// patch 0029-int-trunc-split.patch
+// g157f1-int-ceil-half-3/2 (precision.yaml, derived)
+Digits:=40:; pc("g157f1-int-ceil-half-3/2",'(int(ceil(x),x,1/2,3/2))',(15/10^1),5/10^12);
+// patch 0029-int-trunc-split.patch
+// g157f1-int-trunc-x-free-trunc-neg1 (precision.yaml, derived)
+Digits:=40:; pc("g157f1-int-trunc-x-free-trunc-neg1",'(subst(int(trunc(x)*trunc(ag157),x,-3/2,-1/2),ag157=-1))',(5/10^1),5/10^13);
 // patch 0006-reim-root-of-unknown-sign.patch
 // g96-cas-im-2sqrt (bench.yaml, derived)
 Digits:=40:; pc("g96-cas-im-2sqrt",'subst(im(2*sqrt(x)),x,-1)',2,1/10^30);
