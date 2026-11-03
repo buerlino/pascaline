@@ -126,6 +126,15 @@ describe("unit view builder (G16)", () => {
     expect(job("3*pasu1-4*pasu2/(5*pasu3)*pasu3", [one("W", "k"), one("var", "k"), one("h")])).toMatchObject({ powers: ["W", "var"] });
     expect(job("3*pasu1/(5*pasu2)*pasu2", [one("W", "k"), one("VA", "k")], one("W"))).toMatchObject({ powers: ["W", "VA"] });
   });
+  it("G161f1 (Opus pass 60, decided): a sum whose terms name different kinds is refused, P/S + Q/S and √(P² + Q²) included", () => {
+    const one = (u: string, prefix?: string) => ({ tokens: [{ ...(prefix ? { prefix } : {}), unit: u }] });
+    const job = (formula: string, slots: ReturnType<typeof one>[], end?: ReturnType<typeof one>) => buildJob({ formula, slots, ...(end ? { end } : {}) }, table);
+    // kinds read from the text cannot tell a ratio from a power in disguise (3 kW + 2 kVA·4 kvar/(1 kvar) adds S to P)
+    expect(job("3*pasu1/(5*pasu2)+4*pasu3/(5*pasu4)", [one("W", "k"), one("VA", "k"), one("var", "k"), one("VA", "k")])).toMatchObject({ powers: ["W", "VA", "var"] });
+    expect(job("3*pasu1+2*pasu2*4*pasu3/(1*pasu4)", [one("W", "k"), one("VA", "k"), one("var", "k"), one("var", "k")])).toMatchObject({ powers: ["W", "VA", "var"] });
+    expect(job("sqrt((3*pasu1)^2+(4*pasu2)^2)", [one("W", "k"), one("var", "k")], one("VA", "k"))).toMatchObject({ powers: ["W", "var", "VA"] });
+    expect(job("sqrt((3*pasu1)^2+(4*pasu2)^2)", [one("W", "k"), one("var", "k")])).toMatchObject({ powers: ["W", "var"] });
+  });
   it("G25: rev is a pure count of cycles and rpm is 1 rev/min", () => {
     expect(table.units.get("rev")).toMatchObject({ si: "1", dim: "" });
     expect(table.units.get("rpm")).toMatchObject({ si: "1/60", dim: "s-1" });
