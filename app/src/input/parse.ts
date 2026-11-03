@@ -220,6 +220,7 @@ class Parser implements CalcParser {
       const f = (e: Json): Json | null => {
         if (!Array.isArray(e)) return null;
         if (e[0] === "Call" && e[1] === "pasupm") {
+          if (e.length > 4) return ["Negate", e]; // R115: a chip's call (with its key) is one input: the sign stays outside
           const v = e[2] as Json;
           return ["Call", "pasupm", Array.isArray(v) && v[0] === "Negate" ? (v[1] as Json) : ["Negate", v], ...e.slice(3)] as Json;
         }
@@ -542,12 +543,14 @@ class Parser implements CalcParser {
   }
 
   /** R63, units mode: a result chip is a number. Its σ (R61: in the unit shown) makes it an uncertain value, G18's
-   *  `pasupm(value,σ)`, so the unit view keeps it; a prompt after it is its unit slot. Elsewhere the chip as it is. */
+   *  `pasupm(value,σ,key)` with the chip's name as its key (R115: one chip used twice is one input, decisions R61), so
+   *  the unit view keeps it; a prompt after it is its unit slot. Elsewhere the chip as it is. */
   private resultChip(key: string): Json {
     const v = this.chip(key, "result chip");
     if (!this.units) return v;
     const unc = this.chips[key]?.unc;
-    return this.slotAfter(unc ? ["Call", "pasupm", v, ["Chip", { str: chipToGiac(unc) }]] : v);
+    const name = chipName(key);
+    return this.slotAfter(unc ? ["Call", "pasupm", v, ["Chip", { str: chipToGiac(unc) }], ...(name ? [["Chip", { str: name }] as Json] : [])] : v);
   }
 
   /**

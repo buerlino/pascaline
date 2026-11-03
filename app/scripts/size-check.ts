@@ -235,8 +235,14 @@ export const LAZY_PARTS = ["src/views/sheetKeys.ts", "src/views/tmplSheet.ts", "
  *  59.16 → 59.24 kB (R96f1): phase-1 a461f046 measures 59,108 B gzip (168,152 B raw); the branch merged with it 59,185 B
  *  (168,255 B raw, +77 B): R96's store health in storage.ts (a set of the keys whose last write did not land, and kvPut
  *  settling on abort; the line itself is in the Mode sheet's chunk). R96 before its fix measured 59,167 B. The pin is
- *  59,185 B + 0.05 kB. */
-export const START_PIN_GZIP = 59_235;
+ *  59,185 B + 0.05 kB.
+ *  59.24 → 59.31 kB (R115f1): phase-1 c28862a6 measures 59,235 B gzip (168,431 B raw); the branch merged with it 59,255 B
+ *  (168,471 B raw, +20 B): R115's chip key in units mode, one result chip used twice is one σ input. The parser writes a
+ *  σ chip as pasupm with the chip's name as third argument (input/parse.ts resultChip and the minus rule of negate,
+ *  input/chip-giac.ts CHIP_ANS), and these lines stay in the start chunk with the parser's entry; the builder's check
+ *  (units/build.ts uncertainValues, isChipName in engine/ourNames.ts) is in the unit view's chunk. The pin is
+ *  59,255 B + 0.05 kB. */
+export const START_PIN_GZIP = 59_305;
 
 /** R103 (vr-4): the classic inline scripts of index.html run before the first paint, outside every chunk: the stored look
  *  (R50e) and the too-old WebView check. Their gzip sizes, each script alone and summed (as the start chunk sums its

@@ -24,7 +24,8 @@ export interface UnitSlot {
 export interface UnitRequest {
   /** Giac text from our parser in units mode: `pasu1`, `pasu2`, … for the slots, `pask1`, … for the constants. A
    *  slot multiplies the number before it (`72*pasu1`). An uncertain value is `pasupm(value,sigma)` (G18): sigma is
-   *  the standard uncertainty in the same unit, and each one is an independent input. */
+   *  the standard uncertainty in the same unit, and each one is an independent input; a result chip's is
+   *  `pasupm(value,sigma,key)`, one input per key (R115: one chip used twice is one input, decisions R61). */
   formula: string;
   /** slots[i] is `pasu<i+1>`. */
   slots: UnitSlot[];
