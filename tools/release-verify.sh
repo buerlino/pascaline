@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-3.0-or-later
 # The signed release APK carries the owner's certificate (A7): `apksigner verify --print-certs` must show exactly one signer
-# whose SHA-256 equals android/release-cert.sha256 (keytool's form with colons; apksigner prints lower case without them, so
-# both are normalised). On any other outcome the APK is deleted and the exit code is 1.
+# certificate whose SHA-256 equals android/release-cert.sha256 (keytool's form with colons; apksigner prints lower case without
+# them, so both are normalised). apksigner 35 and 36 print `Signer #1 certificate SHA-256 digest: <hex>`, 37 prints
+# `V2 Signer: certificate SHA-256 digest: <hex>` (one line per scheme, A8f2): every line with `certificate SHA-256 digest:`
+# counts whatever its prefix, a `public key SHA-256 digest` line never does, and the distinct values must be exactly one.
+# On any other outcome the APK is deleted and the exit code is 1.
 #   tools/release-verify.sh <apk>      # APKSIGNER=<path> and RELEASE_CERT_FILE=<file> override the defaults (tools/test-release-guard.sh)
 set -uo pipefail
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -19,8 +22,9 @@ if [[ -z "$signer" ]]; then
   [[ -n "$signer" ]] || die "no apksigner under ${ANDROID_HOME:-$HOME/Android/Sdk}/build-tools"
 fi
 out="$("$signer" verify --print-certs "$apk" 2>&1)" || die "apksigner verify failed: $out"
-mapfile -t got < <(sed -n 's/^Signer #[0-9]* certificate SHA-256 digest: *//p' <<<"$out")
+mapfile -t got < <(grep -v 'public key' <<<"$out" | sed -n 's/^.*certificate SHA-256 digest: *//p' |
+  while IFS= read -r v; do norm <<<"$v"; echo; done | sort -u)
 (( ${#got[@]} == 1 )) || die "${#got[@]} signer certificates in the APK (one wanted)"
-have="$(norm <<<"${got[0]}")"
+have="${got[0]}"
 [[ "$have" == "$want" ]] || die "certificate mismatch: the APK has $have, android/release-cert.sha256 has $want"
 echo "release-verify: certificate $have ok" >&2
