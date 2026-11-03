@@ -112,6 +112,20 @@ describe("unit view builder (G16)", () => {
     }
     expect(unitErrorMessage({ error: "power" })).toBe("VA, var and W differ by the power factor");
   });
+  it("G161 fix 2: a product or quotient of kinds of power (P/S, Q/P) is a number, not a conversion: no powers; a sum keeps them", () => {
+    const one = (u: string, prefix?: string) => ({ tokens: [{ ...(prefix ? { prefix } : {}), unit: u }] });
+    const job = (formula: string, slots: ReturnType<typeof one>[], end?: ReturnType<typeof one>) => buildJob({ formula, slots, ...(end ? { end } : {}) }, table);
+    for (const ok of [job("3*pasu1/(5*pasu2)", [one("W", "k"), one("VA", "k")]), job("4*pasu1/(3*pasu2)", [one("var", "k"), one("W", "k")]),
+      job("4*pasu1/(5*pasu2)", [one("var", "k"), one("VA", "k")]), job("atan2(4*pasu1,3*pasu2)", [one("var", "k"), one("W", "k")], one("deg")),
+      job("2*pasu1*3*pasu2/(4*pasu3)", [one("VA", "k"), one("h"), one("W", "k")], one("s"))]) {
+      expect("error" in ok).toBe(false);
+      expect(ok).not.toHaveProperty("powers");
+    }
+    // a sum inside a bracket, or a minus, still mixes them; an end slot of another kind too
+    expect(job("(3*pasu1+4*pasu2)*2", [one("W", "k"), one("var", "k")])).toMatchObject({ powers: ["W", "var"] });
+    expect(job("3*pasu1-4*pasu2/(5*pasu3)*pasu3", [one("W", "k"), one("var", "k"), one("h")])).toMatchObject({ powers: ["W", "var"] });
+    expect(job("3*pasu1/(5*pasu2)*pasu2", [one("W", "k"), one("VA", "k")], one("W"))).toMatchObject({ powers: ["W", "VA"] });
+  });
   it("G25: rev is a pure count of cycles and rpm is 1 rev/min", () => {
     expect(table.units.get("rev")).toMatchObject({ si: "1", dim: "" });
     expect(table.units.get("rpm")).toMatchObject({ si: "1/60", dim: "s-1" });

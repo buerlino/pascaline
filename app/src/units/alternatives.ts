@@ -5,7 +5,7 @@
 // `units.targets` (the last unit tapped per dimension) orders the row only; it never changes the unit shown (G25).
 // Main thread, synchronous, no Giac; loaded with the unit view only. Only erasable TypeScript syntax (the golden gate).
 import type { Kv } from "../state/storage.ts";
-import { powerKinds, shownUnits, slotText } from "./build.ts";
+import { endMixesPowers, powerKinds, shownUnits, slotText } from "./build.ts";
 import { BASES, dimKeyOf, isExponent, parseDimKey, powerText, siSlot } from "./dims.ts";
 import type { FactorTable } from "./factors.ts";
 import { cellText, type PadLegUnit, type PadUnitCell } from "./padCells.ts";
@@ -134,7 +134,7 @@ export function alternatives(q: Quantity, ctx: AltContext): Alternative[] {
   const own = kinds.length === 1 && kinds[0] !== "W" ? kinds[0]! : null;
   const inKind = (slot: UnitSlot): UnitSlot => (own ? { ...slot, tokens: slot.tokens.map((t) => (t.unit === "W" ? { ...t, unit: own } : t)) } : slot);
   const add = (slot: UnitSlot, kind: AltKind, text = slotText(slot, ctx.table), key = keyOf(slot)): void => {
-    if (!slot.tokens.length || seen.has(key) || powerKinds([...asTyped.slots, slot], ctx.table).length > 1) return;
+    if (!slot.tokens.length || seen.has(key) || endMixesPowers(asTyped.slots, slot, ctx.table)) return;
     seen.add(key);
     out.push({ slot, text, kind });
   };

@@ -387,12 +387,44 @@ function insideBrackets(f: string, n: { k: number; sum: boolean }): string {
   return out;
 }
 
-/** The UnitJob for a request, or why it is refused before Giac sees it. G161: a job whose units name two kinds of power
- *  (W, VA, var) carries them, for the evaluator's refusal. */
+/** G161: whether an end slot converts into another kind of power than the slots name (kVA → W, kVA·h → MJ); an end
+ *  slot that names none (s, or no power at all) converts nothing between kinds. */
+export function endMixesPowers(slots: readonly UnitSlot[], end: UnitSlot, table: FactorTable): boolean {
+  const to = powerKinds([end], table);
+  return to.length > 0 && powerKinds(slots, table).some((k) => !to.includes(k));
+}
+
+/** G161: whether two terms of one sum (at any depth; a comma separates arguments, atan2(Q, P), not terms) name
+ *  different kinds of power: 3 kW + 4 kvar. A product or quotient (P/S, the power factor) is not a sum. */
+function sumMixesPowers(text: string, kindsOf: (n: number) => readonly string[]): boolean {
+  const termKinds = (t: string): string =>
+    [...new Set([...names(t, "typed")].flatMap((w) => (w.name.startsWith("pasu") ? kindsOf(Number(w.name.slice(4)) - 1) : [])))].sort().join(",");
+  const groups: string[][] = [[]];
+  for (const t of splitTop(text, "terms")) {
+    if (t.startsWith(",")) groups.push([]);
+    groups[groups.length - 1]!.push(t);
+  }
+  if (groups.some((g) => g.length > 1 && new Set(g.map(termKinds).filter(Boolean)).size > 1)) return true;
+  for (let i = 0; i < text.length; i++) {
+    if (!"([".includes(text.charAt(i))) continue;
+    const close = closing(text, i, "typed");
+    if (close < 0) return false;
+    if (sumMixesPowers(text.slice(i + 1, close), kindsOf)) return true;
+    i = close;
+  }
+  return false;
+}
+
+/** The UnitJob for a request, or why it is refused before Giac sees it. G161: a job that converts one kind of power
+ *  (W, VA, var) into another, by its end slot or as terms of one sum, carries the kinds its units name, for the
+ *  evaluator's refusal; a product or quotient of kinds (P/S, Q/P) is let through. */
 export function buildJob(req: UnitRequest, table: FactorTable): UnitJob | UnitError {
   const job = jobOf(req, table);
+  if ("error" in job) return job;
   const powers = powerKinds([...req.slots, ...(req.end ? [req.end] : [])], table);
-  return "error" in job || powers.length < 2 ? job : { ...job, powers };
+  if (powers.length < 2) return job;
+  const mixed = (req.end && endMixesPowers(req.slots, req.end, table)) || sumMixesPowers(req.formula, (n) => (req.slots[n] ? powerKinds([req.slots[n]], table) : []));
+  return mixed ? { ...job, powers } : job;
 }
 
 function jobOf(req: UnitRequest, table: FactorTable): UnitJob | UnitError {

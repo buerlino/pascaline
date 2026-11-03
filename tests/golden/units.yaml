@@ -167,6 +167,8 @@ cases:
   - { id: "p05", input: "3*{k:W}+4*{k:var}", message: "VA, var and W differ by the power factor", source: "derived", note: "real and reactive power do not add (S = √(P² + Q²))" }
   - { id: "p06", input: "2*{k:VA}*3*{h}", oracle: "F(6)", expect: "6", mark: "=", exact: "6", dim: "kg1m2s-2", unit: "kVA·h", source: "derived", note: "one prefixed token: kVA·h is kept as typed (n04)" }
   - { id: "p07", input: "2*{k:VA}*3*{h}", to: "M:J", message: "VA, var and W differ by the power factor", source: "derived", note: "a unit of energy is real energy: kVA·h is not MJ, as it is not kWh (was = 21.6 MJ)" }
+  - { id: "p08", input: "3*{k:W}/(5*{k:VA})", oracle: "F(3,5)", expect: "0.6", mark: "=", exact: "3/5", dim: "", unit: "", source: "derived", note: "G161 fix 2: the power factor P/S is a pure number, not a conversion (was refused)" }
+  - { id: "p09", input: "4*{k:var}/(5*{k:VA})", oracle: "F(4,5)", expect: "0.8", mark: "=", exact: "4/5", dim: "", unit: "", source: "derived", note: "G161 fix 2: sin φ = Q/S (was refused)" }
   # --- G13: the factors and constants where our exact definition replaces qalc's (find/units.yaml checks, override) ---
   - { id: "q01", input: "1*{mmHg}", to: "Pa", oracle: "F('13.5951')*F('0.001')*F('9.80665')*1000", expect: "133.322387415", mark: "=", exact: "26664477483/200000000", source: "derived", note: "13.5951 g/cm³ × 1 mm × 9.80665 m/s² = 133.322387415 Pa (NIST SP 811); qalc has 1 Torr (133.322368… Pa)" }
   - { id: "q02", input: "1*{inHg}", to: "Pa", oracle: "F('13.5951')*F('0.0254')*F('9.80665')*1000", expect: "3386.38864034", mark: "≈", exact: "3386388640341/1000000000", source: "derived", note: "the conventional inch of mercury is 25.4 mmHg; qalc's follows its Torr" }
