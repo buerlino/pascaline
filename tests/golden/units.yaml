@@ -17,7 +17,7 @@
 # Σᵢ Σⱼ [½ (∂²f/∂xᵢ∂xⱼ)² + ∂f/∂xᵢ · ∂³f/∂xᵢ∂xⱼ²] uᵢ² uⱼ²; `unc_why` is the why-line of a σ shown with ⚠ (none when absent):
 # "first order does not hold here" when that term is more than 10 % of σ², "the interval reaches a singular point" when
 # an input's x ± 2σ reaches a point where f or its derivative is not defined, "the interval reaches a jump" when it reaches
-# a jump of a step function (floor, ceil, round, trunc, frac, sign, Heaviside; G143).
+# a jump of a step function (floor, ceil, round, trunc, frac, sign, Heaviside; G143) or a condition of piecewise or when (G159).
 # G40: `notice` is the note a result carries (the text the user reads; none when absent): "rad = 1 dropped" when the end slot
 # differs from the result by one rad, "rpm counts turns: …" on rpm or rev times another dimension.
 # R104: `latex` (optional) is the unit view's entry: the parser's units mode must give `input`'s formula, slots in order.
