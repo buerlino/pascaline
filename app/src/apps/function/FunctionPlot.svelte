@@ -254,10 +254,10 @@
   /* a hint sits in a box at the top of the board, above the axes, never drawn over them */
   .note {
     position: absolute;
-    inset: 8px 12px auto;
+    inset: var(--sp-2) var(--sp-3) auto;
     margin: 0;
-    padding: 8px 12px;
-    border-radius: 8px;
+    padding: var(--sp-2) var(--sp-3);
+    border-radius: var(--radius);
     text-align: center;
     background: var(--panel);
     color: var(--muted);
@@ -266,19 +266,19 @@
   .readout {
     display: flex;
     flex-wrap: wrap;
-    gap: 4px 14px;
-    padding: 6px 12px;
-    border-top: 1px solid var(--line);
+    gap: var(--sp-1) var(--sp-35);
+    padding: var(--sp-15) var(--sp-3);
+    border-top: var(--stroke-thin) solid var(--line);
     font-variant-numeric: tabular-nums;
-    font-size: 15px;
-    min-height: 34px;
+    font-size: var(--fs-ui);
+    min-height: var(--line-h);
   }
   .k {
     color: var(--muted);
   }
   .info {
     flex-basis: 100%;
-    font-size: 13px;
+    font-size: var(--fs-small);
     color: var(--muted);
   }
   .info.warn {

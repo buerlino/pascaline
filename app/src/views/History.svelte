@@ -6,6 +6,7 @@
   import Math from "../render/Math.svelte";
   import { mathlive } from "../render/mathlive.svelte.ts";
   import { markText, noDigit as hasNoDigit } from "../state/displayMode.ts";
+  import { edgeFade } from "./edgeFade.ts";
   import type { MarkInfo } from "../engine/format.ts";
   import type { HistoryItem, UsedValue } from "../state/session.svelte.ts";
 
@@ -153,10 +154,10 @@
       onpointerdown={(e) => pressStart(e, item)} onpointerup={endPress} onpointercancel={endPress}
       oncontextmenu={(e) => e.preventDefault()}
       data-selected={selected !== null && k + items.length - shown.length === selected ? "true" : undefined}>
-      <button type="button" class="in" title={t("history.recall")} onclick={() => tapped(() => onrecall(item))}>
+      <button type="button" class="in" title={t("history.recall")} use:edgeFade onclick={() => tapped(() => onrecall(item))}>
         <Math latex={drawnInput(item)} />
       </button>
-      <div class="out" data-testid="result">
+      <div class="out" data-testid="result" use:edgeFade={item.status}>
         {#if item.status === "pending"}
           <span class="strut" aria-hidden="true">{@html strut}</span>
           <span class="working late">{t("history.working")}</span>
@@ -205,13 +206,17 @@
     flex: 1;
     min-height: 0;
     overflow-y: auto;
-    padding: 8px 12px;
+    padding: var(--sp-2) var(--sp-3);
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    /* docs/05 3.5 (R12b): a thin divider in the middle of the space between entries; the rows keep their heights. The
+       8 px more space docs/05 3.5 asks for is S25 part 3's (on a phone it moves the first of three rows under the
+       status line) */
+    --between: var(--sp-25);
+    gap: var(--between);
   }
   .earlier {
-    min-height: 1px;
+    min-height: var(--stroke-thin);
   }
   .empty {
     margin: auto;
@@ -221,7 +226,7 @@
   .item {
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: var(--sp-05);
     margin-top: auto;
     /* a long press opens the row's actions, not the system's text selection */
     -webkit-user-select: none;
@@ -231,15 +236,27 @@
   .item + .item {
     margin-top: 0;
   }
+  .item {
+    position: relative;
+  }
+  .item + .item::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: calc(var(--between) / -2);
+    border-top: var(--stroke-thin) solid var(--line);
+    pointer-events: none;
+  }
   .item[data-selected="true"] {
-    border-radius: 8px;
+    border-radius: var(--radius);
     background: var(--pick);
-    outline: 2px solid var(--focus);
+    outline: var(--stroke) solid var(--focus);
   }
   .in {
     all: unset;
     cursor: pointer;
-    font-size: 22px;
+    font-size: var(--fs-input);
     color: var(--muted);
     align-self: flex-start;
     max-width: 100%;
@@ -247,12 +264,25 @@
   }
   .out {
     align-self: flex-end;
-    font-size: 26px;
+    font-size: var(--fs-result);
     display: flex;
-    gap: 10px;
+    gap: var(--sp-25);
     align-items: baseline;
     max-width: 100%;
     overflow-x: auto;
+  }
+  /* a long input or result scrolls sideways; the edge with more behind it fades (edgeFade.ts), never cut without a sign */
+  .in:global([data-cut="end"]),
+  .out:global([data-cut="end"]) {
+    mask-image: linear-gradient(to left, transparent, var(--mask-on) var(--fade));
+  }
+  .in:global([data-cut="start"]),
+  .out:global([data-cut="start"]) {
+    mask-image: linear-gradient(to right, transparent, var(--mask-on) var(--fade));
+  }
+  .in:global([data-cut="both"]),
+  .out:global([data-cut="both"]) {
+    mask-image: linear-gradient(to right, transparent, var(--mask-on) var(--fade), var(--mask-on) calc(100% - var(--fade)), transparent);
   }
   .result {
     all: unset;
@@ -260,14 +290,14 @@
     color: var(--text);
   }
   .mark {
-    font-size: 20px;
+    font-size: var(--fs-key);
     color: var(--muted);
     white-space: nowrap;
   }
   .uses {
     align-self: flex-end;
     max-width: 100%;
-    font-size: 14px;
+    font-size: var(--fs-note);
     color: var(--muted);
     white-space: nowrap;
     overflow: hidden;
@@ -281,7 +311,7 @@
   }
   .note,
   .working {
-    font-size: 14px;
+    font-size: var(--fs-note);
     color: var(--muted);
   }
   .undone {
@@ -289,8 +319,8 @@
     cursor: pointer;
     margin-top: auto;
     align-self: center;
-    font-size: 14px;
-    padding: 6px 12px;
+    font-size: var(--fs-note);
+    padding: var(--sp-15) var(--sp-3);
     color: var(--muted);
   }
   .item + .undone {
@@ -305,15 +335,16 @@
     align-self: center;
   }
   .error {
-    font-size: 16px;
+    font-size: var(--fs-body);
+    white-space: nowrap; /* one line (docs/05 3.5); a long message scrolls with the row */
     color: var(--error);
   }
   .cancel {
     font: inherit;
-    font-size: 14px;
-    padding: 4px 12px;
-    border-radius: 6px;
-    border: 1px solid var(--line);
+    font-size: var(--fs-note);
+    padding: var(--sp-1) var(--sp-3);
+    border-radius: var(--radius-s);
+    border: var(--stroke-thin) solid var(--line);
     background: var(--panel);
     color: var(--text);
   }

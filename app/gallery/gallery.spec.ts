@@ -146,7 +146,7 @@ function padShots(): Shot[] {
       title: title as string,
       viewport: z.viewport,
       setup: async (p: Page) => {
-        await p.goto("/?pad=1");
+        await p.goto("/?pad=1&tips=off"); // R15c4: no first-start tips over the keys, as helpers.ts open()
         await p.waitForFunction(() => (window.pascaline?.unitPad?.model ?? null) !== null);
         await ready(p);
         await tap(p, keys as string[]);

@@ -334,8 +334,8 @@
   .pad {
     position: relative;
     display: grid;
-    gap: 6px;
-    padding: 8px;
+    gap: var(--sp-15);
+    padding: var(--sp-2);
     background: var(--panel);
     user-select: none;
     -webkit-user-select: none;
@@ -350,14 +350,14 @@
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: var(--legend-h) 1fr;
-    min-height: 48px;
+    min-height: var(--key-h);
     min-width: 0;
-    padding: 0 var(--key-pad) 2px;
+    padding: 0 var(--key-pad) var(--sp-05);
     border: 0;
-    border-radius: 8px;
+    border-radius: var(--radius);
     color: var(--text);
     font: inherit;
-    font-size: 20px;
+    font-size: var(--fs-key);
     background: var(--key-num);
     -webkit-tap-highlight-color: transparent;
   }
@@ -369,7 +369,7 @@
     justify-self: start;
     height: var(--legend-h);
     line-height: var(--legend-h);
-    font-size: 11px;
+    font-size: var(--fs-legend);
     white-space: nowrap;
   }
   .main {
@@ -386,24 +386,24 @@
   }
   .key.fn {
     background: var(--key-fn);
-    font-size: 17px;
+    font-size: var(--fs-key-fn);
   }
   .key.ctl {
     background: var(--key-ctl);
-    font-size: 16px;
+    font-size: var(--fs-body);
   }
   .key.nav {
-    min-height: 36px;
+    min-height: var(--nav-h);
     background: var(--key-nav);
-    font-size: 15px;
+    font-size: var(--fs-ui);
   }
   /* a free key (U1–U6, R15b, R15c): an empty one is an outlined slot, a set one has a thin edge (the user's own key) */
   .key[data-user="empty"] {
     background: transparent;
-    box-shadow: inset 0 0 0 1px var(--line);
+    box-shadow: inset 0 0 0 var(--stroke-thin) var(--line);
   }
   .key[data-user="set"] {
-    box-shadow: inset 0 0 0 1px var(--muted);
+    box-shadow: inset 0 0 0 var(--stroke-thin) var(--muted);
   }
   /* the unit pad's prefix cells (R24b): their own colour, so the prefix m and the metre m never look alike */
   .key[data-pad="prefix"] {
@@ -411,37 +411,37 @@
   }
   /* High contrast leaves the key colours little room to differ: the prefix cells keep an outline there too */
   :global(:root[data-contrast="high"]) .key[data-pad="prefix"] {
-    box-shadow: inset 0 0 0 1px var(--line);
+    box-shadow: inset 0 0 0 var(--stroke-thin) var(--line);
   }
   .key[data-pad="user"] {
-    box-shadow: inset 0 0 0 1px var(--muted);
+    box-shadow: inset 0 0 0 var(--stroke-thin) var(--muted);
   }
   /* a user cell with a flick down has the letter line in the cluster too: the face's track may shrink to what is left of
      the key's 36 px less its 2 px padding (a fixed track, the face overflows it evenly), so the keys below do not move (docs/03 rule 8) */
   .key[data-pad="user"][data-letters="true"] {
-    grid-template-rows: var(--legend-h) calc(34px - 2 * var(--legend-h)) var(--legend-h);
+    grid-template-rows: var(--legend-h) calc(var(--nav-h) - var(--sp-05) - 2 * var(--legend-h)) var(--legend-h);
   }
   .key[data-pad="empty"] {
     background: transparent;
-    box-shadow: inset 0 0 0 1px var(--line);
+    box-shadow: inset 0 0 0 var(--stroke-thin) var(--line);
   }
   /* the trackpad in the upper cluster: as low as the keys beside it */
   .key[data-zone="true"] {
-    min-height: 36px;
+    min-height: var(--nav-h);
   }
   /* R82: a short screen (bars, a larger font scale) lowers the rows (514 → 460 px), so the header, the keypad and the Plot
      readout still fit the column without a scroll; a taller screen keeps the full rows */
   @media (max-height: 700px) {
     .key {
-      --legend-h: 10px;
-      min-height: 42px;
+      --legend-h: var(--sp-25);
+      min-height: var(--key-h-short);
     }
     .key[data-letters="true"] .main {
       line-height: 1; /* a letter row holds two legend lines: 10 + 20 + 10 + 2 = 42 px */
     }
     .key.nav,
     .key[data-zone="true"] {
-      min-height: 32px;
+      min-height: var(--nav-h-short);
     }
   }
   /* the trackpad (K1): one surface under the four arrow keys, which stay as its tap zones; drawn round, the G2's shape
@@ -457,7 +457,7 @@
     width: 28%;
     height: 30%;
     box-sizing: border-box;
-    border: 1.5px dashed var(--muted);
+    border: var(--stroke-mid) dashed var(--muted);
     border-radius: 50%;
   }
   .key[data-zone="true"] {
@@ -475,7 +475,7 @@
   .key.enter {
     background: var(--key-enter);
     color: var(--on-enter);
-    font-size: 16px;
+    font-size: var(--fs-body);
   }
   .shiftlegend {
     color: var(--shift);
@@ -500,13 +500,13 @@
     color: var(--text-dead);
   }
   .key[aria-pressed="true"] {
-    outline: 2px solid var(--key-on);
+    outline: var(--stroke) solid var(--key-on);
   }
   .alphaed .key[data-key="alpha"][aria-pressed="true"] {
     outline-color: var(--alpha);
   }
   .key[data-locked="true"] {
-    outline-width: 3px;
+    outline-width: var(--stroke-thick);
     background: color-mix(in srgb, var(--alpha) 25%, transparent);
   }
   .key[data-key="shift"][data-locked="true"] {
@@ -517,14 +517,14 @@
   .bubble {
     position: absolute;
     z-index: 5;
-    transform: translate(-50%, calc(-100% - 6px));
-    min-width: 44px;
-    padding: 6px 10px;
-    border-radius: 10px;
+    transform: translate(-50%, calc(-100% - var(--sp-15)));
+    min-width: var(--touch);
+    padding: var(--sp-15) var(--sp-25);
+    border-radius: var(--radius-m);
     background: var(--panel);
-    border: 2px solid var(--shift);
+    border: var(--stroke) solid var(--shift);
     color: var(--shift);
-    font-size: 22px;
+    font-size: var(--fs-input);
     line-height: 1.1;
     text-align: center;
     white-space: nowrap;

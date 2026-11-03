@@ -57,11 +57,11 @@
     flex: 1;
     min-height: 0;
     overflow-y: auto;
-    padding: 4px 8px;
+    padding: var(--sp-1) var(--sp-2);
   }
   .empty {
     color: var(--muted);
-    padding: 8px;
+    padding: var(--sp-2);
   }
   table {
     width: 100%;
@@ -69,11 +69,11 @@
     font-variant-numeric: tabular-nums;
   }
   tr {
-    border-bottom: 1px solid var(--panel);
+    border-bottom: var(--stroke-thin) solid var(--panel);
   }
   tr[data-selected="true"] {
     background: var(--panel);
-    outline: 1px solid var(--focus);
+    outline: var(--stroke-thin) solid var(--focus);
   }
   th {
     width: 25%;
@@ -84,23 +84,23 @@
     all: unset;
     display: block;
     width: 100%;
-    padding: 8px;
+    padding: var(--sp-2);
     color: var(--muted);
     cursor: pointer;
   }
   td {
-    padding: 8px;
+    padding: var(--sp-2);
     text-align: right;
-    font-size: 20px;
+    font-size: var(--fs-key);
   }
   .report {
-    padding: 8px;
-    font-size: 14px;
+    padding: var(--sp-2);
+    font-size: var(--fs-note);
   }
   .roots {
-    margin: 0 0 6px;
-    padding-left: 20px;
-    font-size: 18px;
+    margin: 0 0 var(--sp-15);
+    padding-left: var(--sp-5);
+    font-size: var(--fs-glyph);
     font-variant-numeric: tabular-nums;
   }
   .info {
@@ -109,7 +109,7 @@
   }
   .warn {
     color: var(--warn);
-    font-size: 18px;
-    margin-right: 4px;
+    font-size: var(--fs-glyph);
+    margin-right: var(--sp-1);
   }
 </style>

@@ -120,20 +120,20 @@
   header {
     display: flex;
     align-items: stretch;
-    gap: 6px;
+    gap: var(--sp-15);
     box-sizing: border-box;
-    height: 28px;
-    padding: 0 8px;
+    height: var(--status-h);
+    padding: 0 var(--sp-2);
     /* the line under it as an inset shadow, so the targets keep the full 28 px */
-    box-shadow: inset 0 -1px 0 var(--line);
-    font-size: 14px;
+    box-shadow: inset 0 calc(-1 * var(--stroke-thin)) 0 var(--line);
+    font-size: var(--fs-note);
     line-height: 1;
   }
   .sr {
     position: absolute;
-    width: 1px;
-    height: 1px;
-    margin: -1px;
+    width: var(--stroke-thin);
+    height: var(--stroke-thin);
+    margin: calc(-1 * var(--stroke-thin));
     overflow: hidden;
     clip-path: inset(50%);
     white-space: nowrap;
@@ -146,8 +146,8 @@
   /* the icons come from ICONS through {@html}, outside the component's scope */
   header :global(svg) {
     display: block;
-    width: 16px;
-    height: 14px;
+    width: var(--icon-w);
+    height: var(--icon-h);
   }
   header :global(.math) {
     font-family: "STIX Two Math", "Cambria Math", "Times New Roman", serif;
@@ -160,9 +160,9 @@
     flex: none;
     display: flex;
     align-items: center;
-    gap: 2px;
-    margin-left: -8px;
-    padding: 0 4px 0 8px;
+    gap: var(--sp-05);
+    margin-left: calc(-1 * var(--sp-2));
+    padding: 0 var(--sp-1) 0 var(--sp-2);
     white-space: nowrap;
     font-weight: 700;
     color: var(--text);
@@ -173,34 +173,34 @@
   .tile {
     position: relative;
     flex: none;
-    width: 30px;
-    height: 22px;
-    border-radius: 6px;
+    width: var(--tile-w);
+    height: var(--tile-h);
+    border-radius: var(--radius-s);
     background: var(--chip-bg);
     color: var(--text);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 18px;
+    font-size: var(--fs-glyph);
     font-weight: 400;
   }
   .tile.small {
-    font-size: 13px;
+    font-size: var(--fs-small);
   }
   /* busy or starting: a 2 px ring over the tile, its size unchanged */
   .tile[data-ring="true"]::after {
     content: "";
     position: absolute;
     inset: 0;
-    border: 2px solid var(--alpha);
-    border-radius: 6px;
+    border: var(--stroke) solid var(--alpha);
+    border-radius: var(--radius-s);
     box-sizing: border-box;
   }
   .name {
-    margin-left: 4px;
+    margin-left: var(--sp-1);
   }
   .caret {
-    font-size: 12px;
+    font-size: var(--fs-caption);
     font-weight: 400;
     color: var(--muted);
   }
@@ -209,19 +209,19 @@
     flex: none;
     align-self: center;
     display: flex;
-    gap: 1px;
-    padding: 1px;
-    border: 1px solid var(--line);
-    border-radius: 7px;
+    gap: var(--stroke-thin);
+    padding: var(--stroke-thin);
+    border: var(--stroke-thin) solid var(--line);
+    border-radius: calc(var(--radius-s) + var(--stroke-thin));
   }
   .tab {
-    width: 30px;
-    height: 20px;
-    border-radius: 5px;
+    width: var(--tile-w);
+    height: var(--tab-h);
+    border-radius: calc(var(--radius-s) - var(--stroke-thin));
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 15px;
+    font-size: var(--fs-ui);
     color: var(--muted);
   }
   .tab[aria-selected="true"] {
@@ -231,7 +231,7 @@
   /* the fixed ⇧ α slot: always 16 px, so Shift or Alpha moves nothing */
   .slot {
     flex: none;
-    width: 16px;
+    width: var(--icon-w);
     margin-left: auto;
     display: flex;
     align-items: center;
@@ -240,22 +240,22 @@
   .mod {
     color: var(--shift);
     font-weight: 700;
-    line-height: 16px;
+    line-height: var(--lh-small);
   }
   .mod[data-testid="mod-alpha"] {
     color: var(--alpha);
   }
   .mod[data-lock="true"] {
-    box-shadow: inset 0 -2px 0 currentColor;
+    box-shadow: inset 0 calc(-1 * var(--stroke)) 0 currentColor;
   }
   .menubtn {
     flex: none;
-    width: 36px;
-    margin-right: -8px;
+    width: var(--menu-w);
+    margin-right: calc(-1 * var(--sp-2));
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 17px;
+    font-size: var(--fs-key-fn);
     color: var(--text);
   }
   .menubtn:active {
@@ -264,13 +264,13 @@
   .chips {
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: var(--sp-1);
     flex: none;
     color: var(--muted);
   }
   .chip {
-    padding: 5px 6px;
-    border-radius: 6px;
+    padding: calc(var(--sp-1) + var(--stroke-thin)) var(--sp-15);
+    border-radius: var(--radius-s);
     color: var(--muted);
     font-variant-numeric: tabular-nums;
   }
@@ -280,8 +280,8 @@
   }
   .pill {
     display: flex;
-    border: 1px solid var(--line);
-    border-radius: 7px;
+    border: var(--stroke-thin) solid var(--line);
+    border-radius: calc(var(--radius-s) + var(--stroke-thin));
   }
   /* the update note (UpdateNote.svelte, a lazy chunk) is the line's own element: the slot after it needs no auto margin */
   header :global(.update + .slot) {

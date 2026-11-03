@@ -17,10 +17,10 @@
     cursor: pointer;
     flex: none;
     margin-left: auto;
-    padding: 0 6px;
+    padding: 0 var(--sp-15);
     display: flex;
     align-items: center;
-    font-size: 12px;
+    font-size: var(--fs-caption);
     font-weight: 700;
     white-space: nowrap;
     color: var(--shift);

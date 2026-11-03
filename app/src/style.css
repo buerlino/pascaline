@@ -11,6 +11,78 @@
   /* keypad legend line above each key face, and the key side padding */
   --legend-h: 12px;
   --key-pad: 4px;
+  /* R12b (docs/05 3.10): every size a component draws. No colour or size is written in a .svelte file
+     (src/tokens.test.ts); colours are the theme roles above and in src/theme/. The values are the ones the screens had,
+     so no height changed (owner, 2026-11-02). */
+  /* type scale: entry 28, result 26, input 22, UI 15, legend 11, and the steps between */
+  --fs-cell: 10px;
+  --fs-legend: 11px;
+  --fs-caption: 12px;
+  --fs-small: 13px;
+  --fs-note: 14px;
+  --fs-ui: 15px;
+  --fs-body: 16px;
+  --fs-key-fn: 17px;
+  --fs-glyph: 18px;
+  --fs-key: 20px;
+  --fs-input: 22px;
+  --fs-result: 26px;
+  --fs-entry: 28px;
+  --fs-value: 0.94em;
+  --lh-small: 16px;
+  /* spacing on a 4 px grid (--sp-N is N × 4 px); the half steps keep the heights the screens already had */
+  --sp-05: 2px;
+  --sp-1: 4px;
+  --sp-15: 6px;
+  --sp-2: 8px;
+  --sp-25: 10px;
+  --sp-3: 12px;
+  --sp-35: 14px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-10: 40px;
+  /* strokes: hairlines, edges, rings */
+  --stroke-thin: 1px;
+  --stroke-mid: 1.5px;
+  --stroke: 2px;
+  --stroke-thick: 3px;
+  /* radii */
+  --radius-s: 6px;
+  --radius: 8px;
+  --radius-m: 10px;
+  --radius-l: 12px;
+  --radius-pill: 16px;
+  /* motion: a sheet rises within docs/05 rule 6's 120 ms */
+  --motion-rise: 100ms;
+  --rise: 12px;
+  --shadow-sheet: 0 -2px 10px;
+  --fade: 28px;
+  /* a mask reads only alpha: the opaque end of a fade */
+  --mask-on: #000;
+  /* the parts' own sizes */
+  --app-max: 720px;
+  --sheet-max: 420px;
+  --status-h: 28px;
+  --touch: 44px;
+  --key-h: 48px;
+  --key-h-short: 42px;
+  --nav-h: 36px;
+  --nav-h-short: 32px;
+  --head-h: 32px;
+  --sheet-row: 42px;
+  --line-h: 34px;
+  --slot-h: 40px;
+  --entry-h: 66px;
+  --doc-min: 120px;
+  --tile-w: 30px;
+  --tile-h: 22px;
+  --tab-h: 20px;
+  --row-tile-w: 36px;
+  --row-tile-h: 28px;
+  --menu-w: 36px;
+  --icon-w: 16px;
+  --icon-h: 14px;
+  --dot: 10px;
 }
 :root[data-family="pascaline"][data-brightness="dark"] {
   --bg: #0b1020;

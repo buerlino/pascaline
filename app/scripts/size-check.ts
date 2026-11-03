@@ -246,11 +246,12 @@ export const LAZY_PARTS = ["src/views/sheetKeys.ts", "src/views/tmplSheet.ts", "
  *  it measures 59,330 B (168,704 B raw, +75 B): the Home row's line naming the stored values a unit result read as pure
  *  numbers, in History.svelte (the text is the row's, written by the lazy units/row.ts; no unit code is in the start
  *  chunk). The pin is 59,330 B + 0.05 kB.
- *  59.38 → 59.43 kB (G159): phase-1 8637b0d3 measures 59,370 B gzip (168,784 B raw); the branch merged with it 59,384 B
- *  (168,784 B raw, +0 B raw, +14 B gzip): no start-chunk source changed. G159's change is in units/evaluate.ts (the unit
- *  view's lazy chunk), and the entry names that chunk by its content hash, which compresses 14 B worse. The pin is
- *  59,384 B + 0.05 kB. */
-export const START_PIN_GZIP = 59_434;
+ *  59.38 → 59.65 kB (R12b): phase-1 8637b0d3 measures 59,370 B gzip (168,784 B raw); the branch merged with it 59,600 B
+ *  (169,363 B raw, +230 B), and merged with 534183c1 (G159, whose lazy unit chunk's hash moved the pin to 59,434 B)
+ *  59,593 B (169,363 B raw): views/edgeFade.ts, the action that marks a history input or result scrolled past an edge so
+ *  the row's CSS fades that edge (docs/05 3.5: never cut without a sign), on every row of the first screen. The tokens
+ *  themselves are CSS, not counted here. The pin is 59,600 B + 0.05 kB. */
+export const START_PIN_GZIP = 59_650;
 
 /** R103 (vr-4): the classic inline scripts of index.html run before the first paint, outside every chunk: the stored look
  *  (R50e) and the too-old WebView check. Their gzip sizes, each script alone and summed (as the start chunk sums its

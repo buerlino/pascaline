@@ -56,25 +56,25 @@
     overflow-y: auto;
     list-style: none;
     margin: 0;
-    padding: 4px 8px;
+    padding: var(--sp-1) var(--sp-2);
   }
   .slot {
     display: grid;
-    grid-template-columns: 36px 1fr;
+    grid-template-columns: var(--row-tile-w) 1fr;
     align-items: center;
-    border-radius: 8px;
-    border: 1px solid transparent;
+    border-radius: var(--radius);
+    border: var(--stroke-thin) solid transparent;
   }
   .slot[data-selected="true"] {
     border-color: var(--focus);
     background: var(--panel);
   }
   .toggle {
-    width: 22px;
-    height: 22px;
-    margin: 0 7px;
-    border-radius: 6px;
-    border: 2px solid var(--c);
+    width: var(--tile-h);
+    height: var(--tile-h);
+    margin: 0 calc(var(--sp-15) + var(--stroke-thin));
+    border-radius: var(--radius-s);
+    border: var(--stroke) solid var(--c);
     background: transparent;
   }
   .toggle[aria-checked="true"] {
@@ -84,10 +84,10 @@
     all: unset;
     display: flex;
     align-items: baseline;
-    gap: 8px;
-    min-height: 40px;
-    padding: 4px 8px 4px 0;
-    font-size: 20px;
+    gap: var(--sp-2);
+    min-height: var(--slot-h);
+    padding: var(--sp-1) var(--sp-2) var(--sp-1) 0;
+    font-size: var(--fs-key);
     overflow-x: auto;
     cursor: pointer;
   }
@@ -96,13 +96,13 @@
   }
   .name {
     color: var(--muted);
-    font-size: 15px;
+    font-size: var(--fs-ui);
     white-space: nowrap;
   }
   .error {
     grid-column: 2;
-    font-size: 13px;
+    font-size: var(--fs-small);
     color: var(--error);
-    padding-bottom: 4px;
+    padding-bottom: var(--sp-1);
   }
 </style>
