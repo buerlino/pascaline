@@ -106,7 +106,10 @@ test("C while naming clears the name only: the line comes back after the prompt 
   await tap(page, ["d2", "add", "d3"]);
   await hidden(page, true); // the line is kept
   await hidden(page, false);
-  await startNaming(page, "lab");
+  await tap(page, ["@mode", "d5", "d1"]);
+  await expect(page.getByTestId("entry-label")).toHaveText("Preset name");
+  await tap(page, ["alpha", "vars", "alpha", "math"]); // a return drops the focus: the name by keys (A, B)
+  expect(await entryValue(page)).toBe("AB");
   await tap(page, ["shift", "esc"]); // C
   expect(await entryValue(page)).toBe("");
   await expect(page.getByTestId("entry-label")).toHaveText("Preset name");
