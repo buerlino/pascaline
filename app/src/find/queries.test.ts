@@ -11,21 +11,29 @@ import { gzipSync } from "node:zlib";
 import { parse } from "yaml";
 import { describe, expect, it } from "vitest";
 import { functionInsert, prepare, search } from "./rank.ts";
-import type { IndexItem } from "./types.ts";
+import type { FindContext, IndexItem } from "./types.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const indexFile = join(here, "_gen/find-index.json");
 const indexJson = existsSync(indexFile) ? readFileSync(indexFile, "utf8") : "[]";
 const hasIndex = (JSON.parse(indexJson) as IndexItem[]).some((it) => it.kind === "unit"); // functions only = --no-units
 
-interface Query { query: string; expect: string; note?: string; status?: "pending" }
+interface Query { query: string; expect: string; where?: "slot"; note?: string; status?: "pending" }
 const doc = parse(readFileSync(join(here, "../../../tests/tasks/find-queries.yaml"), "utf8")) as { schema: number; queries: Query[] };
 const active = doc.queries.filter((q) => q.status !== "pending");
+/** G161: `expect: none` rows say what must not be found; the others name the item to find. */
+const found = active.filter((q) => q.expect !== "none");
+const absent = active.filter((q) => q.expect === "none");
+/** A unit slot's Find (app/src/units/menu.ts): units and prefixes only, units first. */
+const SLOT: FindContext = { filter: ["unit", "pfx"], prefer: ["unit"] };
+const ctxOf = (q: Query): FindContext => (q.where === "slot" ? SLOT : {});
 
 describe("find-queries.yaml", () => {
-  it("has 110 active phrases and 8 pending ones, no duplicates", () => {
+  it("has 117 active phrases (3 that find no unit) and 8 pending ones, no duplicates", () => {
     expect(doc.schema).toBe(1);
-    expect(active.length).toBe(110);
+    expect(active.length).toBe(117);
+    expect(absent.length).toBe(3);
+    for (const q of doc.queries) expect([undefined, "slot"], q.query).toContain(q.where);
     expect(doc.queries.length - active.length).toBe(8);
     expect(new Set(doc.queries.map((q) => q.query)).size).toBe(doc.queries.length);
     for (const q of doc.queries) expect(q.query, q.query).toBe(q.query.toLowerCase()); // Find types lower case only
@@ -68,13 +76,13 @@ describe.skipIf(!hasIndex)("Find index and query test", () => {
   });
 
   it("names every expected id of an active phrase", () => {
-    const missing = active.filter((q) => !byId.has(q.expect)).map((q) => `${q.query} -> ${q.expect}`);
+    const missing = found.filter((q) => !byId.has(q.expect)).map((q) => `${q.query} -> ${q.expect}`);
     expect(missing).toEqual([]);
   });
 
   it("ranks every phrase in the top 3, at least 90 % first", () => {
-    const rows = active.map((q) => {
-      const hits = search(index, q.query).slice(0, 3).map((h) => h.item.id);
+    const rows = found.map((q) => {
+      const hits = search(index, q.query, ctxOf(q)).slice(0, 3).map((h) => h.item.id);
       return { q, rank: hits.indexOf(q.expect) + 1, top: hits };
     });
     const first = rows.filter((r) => r.rank === 1).length;
@@ -83,6 +91,11 @@ describe.skipIf(!hasIndex)("Find index and query test", () => {
       + (report.length ? `\n  ${report.join("\n  ")}` : ""));
     expect(rows.filter((r) => r.rank === 0).map((r) => r.q.query)).toEqual([]);
     expect(first / rows.length).toBeGreaterThanOrEqual(0.9);
+  });
+
+  it("finds no unit for a gauge reading (G161: psig is not psi, barg not bar)", () => {
+    const wrong = absent.map((q) => ({ q: q.query, units: search(index, q.query, ctxOf(q)).slice(0, 3).filter((h) => h.item.kind === "unit").map((h) => h.item.id) }));
+    expect(wrong.filter((w) => w.units.length)).toEqual([]);
   });
 
   it("takes well under 16 ms per key on the desktop (the device gate is ?bench=find)", () => {

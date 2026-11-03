@@ -6,6 +6,8 @@
 #   expect  the item id
 #   note    why, where it is not obvious
 #   status  pending: the item arrives in a later milestone (milestone 6); not run, ids are plans
+#   where   slot: searched as a unit slot's Find does (units and prefixes only, units first; app/src/units/menu.ts)
+#   expect  none: no unit is in the top 3 (G161: a gauge reading is never taken for an absolute unit)
 schema: 1
 
 queries:
@@ -35,7 +37,7 @@ queries:
   - { query: "faraday", expect: "const:faraday" }
   - { query: "stefan boltzmann", expect: "const:sigma" }
   - { query: "fine structure", expect: "const:alpha" }
-  # Units (46)
+  # Units (46, and 7 in a slot)
   - { query: "kph", expect: "unit:km/h" }
   - { query: "km/h", expect: "unit:km/h" }
   - { query: "mph", expect: "unit:mph" }
@@ -82,6 +84,14 @@ queries:
   - { query: "revolution", expect: "unit:rev", note: "the cycle unit (G25), no longer a name of tr" }
   - { query: "ton of refrigeration", expect: "unit:TR" }
   - { query: "standard temperature", expect: "const:StdT" }
+  # Electrical power and gauge pressures in a unit slot (G161)
+  - { query: "va", expect: "unit:VA", where: slot, note: "apparent power; in Home va is the variance" }
+  - { query: "kva", expect: "unit:kVA", where: slot }
+  - { query: "var", expect: "unit:var", where: slot, note: "reactive power; in Home var is the variance" }
+  - { query: "kvar", expect: "unit:kvar", where: slot }
+  - { query: "psig", expect: none, where: slot, note: "a gauge reading: not psi (one edit away)" }
+  - { query: "barg", expect: none, where: slot, note: "a gauge reading: not bar" }
+  - { query: "kpag", expect: none, where: slot, note: "a gauge reading: not kPa" }
   # Prefixes (5)
   - { query: "kilo", expect: "pfx:k" }
   - { query: "micro", expect: "pfx:u" }
