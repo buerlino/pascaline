@@ -56,7 +56,7 @@ export const CHIP_ANS = "ans";
 export function isChipName(name: string): boolean {
   if (!name.startsWith(CHIP_PREFIX)) return false;
   const k = name.slice(CHIP_PREFIX.length);
-  return k === CHIP_ANS || /^\d+$/.test(k);
+  return k === CHIP_ANS || (k !== "" && [...k].every((c) => c >= "0" && c <= "9"));
 }
 
 /** G100: the names our own test helper stores into (input/emit.ts equalityTest: the float flag, the difference and
