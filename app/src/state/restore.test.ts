@@ -173,17 +173,24 @@ describe("the repeated rules agree with the start's readers", () => {
       { on: true, strength: 50 },
       { on: true, strength: 50, ms: 15, x: 1 },
       { on: true, strength: 50.5, ms: 15 },
+      { ms: 20 },
+      {},
+      { on: true, ms: 200 },
       null,
       "on",
     ],
-    look: [defaultLook(), defaultLook(true, true), { ...defaultLook(), family: "nope" }, {}, "dark"],
+    look: [defaultLook(), defaultLook(true, true), { ...defaultLook(), family: "nope" }, {}, "dark", { plain: true }, { family: "nord", dim: 1 }, { contrast: "yes" }],
   };
-  it("settings: a field passes exactly when migrateSettings keeps it as it is", () => {
+  // R122: a nested group (haptics, look) passes when migrateSettings keeps every field it holds; one it lacks is filled.
+  const keepsAll = (read: unknown, v: unknown): boolean =>
+    canon(read) === canon(v) ||
+    (!!v && typeof v === "object" && !Array.isArray(v) && Object.entries(v).every(([k, x]) => canon((read as Record<string, unknown>)[k]) === canon(x)));
+  it("settings: a field passes exactly when migrateSettings keeps it, and of a nested group each field it holds, as it is", () => {
     const fields = Object.keys(migrateSettings({}).settings).sort();
     expect(Object.keys(samples).sort()).toEqual(fields); // a new settings field needs its rule (and samples here)
     for (const [f, values] of Object.entries(samples))
       for (const v of values) {
-        const keeps = canon((migrateSettings({ [f]: v }).settings as unknown as Record<string, unknown>)[f]) === canon(v);
+        const keeps = keepsAll((migrateSettings({ [f]: v }).settings as unknown as Record<string, unknown>)[f], v);
         expect(VALIDATORS["settings"]?.({ [f]: v }), `${f}: ${JSON.stringify(v)}`).toBe(keeps);
       }
     expect(VALIDATORS["settings"]?.({ schema: SETTINGS_SCHEMA, ...migrateSettings({}).settings })).toBe(true);

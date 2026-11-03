@@ -5,7 +5,7 @@
 // newer version is refused with its message and nothing changes. The real engine (the definitions replay).
 import { readFileSync } from "node:fs";
 import { devices, expect, test, type Page } from "@playwright/test";
-import { open, tap } from "./helpers.ts";
+import { open, savePicker, tap } from "./helpers.ts";
 
 interface State {
   home: string[];
@@ -43,6 +43,7 @@ async function reloadingTap(page: Page, id: string): Promise<void> {
 test("a backup restores into an empty store as the same state, and Undo gives back the state from before", async ({ page, browser }) => {
   test.setTimeout(120_000);
   await page.setViewportSize({ width: 412, height: 915 });
+  await savePicker(page, "none"); // the file comes back as a download
   await open(page, "");
   await ready(page);
   await tap(page, ["d1", "div", "d3", "enter"]);
@@ -114,6 +115,7 @@ test("a backup restores into an empty store as the same state, and Undo gives ba
 
 test("a file with a part from a newer version is refused with its message, and nothing changes", async ({ page }) => {
   await page.setViewportSize({ width: 412, height: 915 });
+  await savePicker(page, "none");
   await open(page, "engine=fake");
   await page.evaluate(() => window.pascaline.session.setDigits(8));
   await page.waitForTimeout(900);

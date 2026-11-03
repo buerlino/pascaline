@@ -38,8 +38,8 @@ const num = (file, re) => {
 
 // ---- the caps, from the sources
 const DATA_VERSION = num('app/src/state/storage.ts', /export const DATA_VERSION = (\d+);/);
-const HISTORY_LIMIT = num('app/src/state/session.svelte.ts', /const HISTORY_LIMIT = (\d+);/);
-const FULL_LIMIT = num('app/src/state/session.svelte.ts', /export const FULL_LIMIT = (\d+);/);
+const HISTORY_LIMIT = num('app/src/state/results.ts', /export const HISTORY_LIMIT = (\d+);/);
+const FULL_LIMIT = num('app/src/state/results.ts', /export const FULL_LIMIT = (\d+);/);
 const MAX_DEFS = num('app/src/engine/defs.ts', /export const MAX_DEFS = (\d+);/);
 const PREVIEW_MAX = num('app/src/engine/defs.ts', /export const PREVIEW_MAX = (\d+);/);
 const DESC_MAX = num('app/src/engine/defs.ts', /export const DESC_MAX = (\d+);/);
@@ -47,8 +47,8 @@ const LIB_MAX_BYTES = num('app/src/engine/library.ts', /export const LIB_MAX_BYT
 const STAMP = '@pascaline';
 const FORMAT = 'pascaline-backup';
 const FORMAT_VERSION = 1;
-/** The keys a backup holds (r11 section 3.2); `defsStarts` stays out (a per-install crash counter). */
-const KEYS = ['settings', 'view', 'place', 'entry', 'history', 'defs', 'userKeys', 'taps', 'app.function', 'app.solve', 'units.targets', 'units.history'];
+/** The keys a backup holds (app/src/state/backup.ts BACKUP_KEYS, docs/04 6.2); the per-install keys stay out. */
+const KEYS = ['settings', 'view', 'place', 'entry', 'history', 'defs', 'userKeys', 'unitPadCells', 'taps', 'presets', 'app.function', 'app.solve', 'units.targets'];
 
 const stamp = (value) => ({ [STAMP]: DATA_VERSION, value });
 const pad = (s, n) => (s.length >= n ? s.slice(0, n) : s + 'x'.repeat(n - s.length));

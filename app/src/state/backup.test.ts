@@ -199,7 +199,7 @@ describe("a failed read fails the backup", () => {
     seed("settings", { digits: 12 });
     const at = new Date(2026, 10, 3, 9, 30);
     saveFile.mockResolvedValueOnce("offered" as "saved");
-    expect(await saveBackup(at)).toBe(dataText("backup.offered" as never));
+    expect(await saveBackup(at)).toBe(dataText("backup.offered"));
     expect(idb.stores.get("kv")?.has("backup.last")).toBe(false);
     expect(idb.stores.get("kv")?.get("backup.offered")).toEqual(stamp(at.toISOString()));
   });

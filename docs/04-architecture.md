@@ -345,11 +345,12 @@ One IndexedDB database `pascaline`, store `kv` (`state/storage.ts`). Keys:
 | `tipsSeen` | tips shown (R15c4) |
 | `userKeys`, `unitPadCells`, `taps`, `app.function`, `app.solve` | the user keys, the unit pad cells (R24d); the counters (R9 Shift/Alpha, R70 presses, R88 preset applies); per app (R53's `uses` counters) |
 | `presets` | R88 (`state/presetRecord.ts`): `{ presets: [{ id, name, groups }], active, next }`; groups `mode`, `numbers`, `look`, `vibration`, `keys` (the `userKeys` and `unitPadCells` records, migrated with them) |
-| `units.targets`, `units.history` | the last target per dimension; the unit view's history (milestone 5) |
+| `units.targets` | the last target per dimension |
+| `backup.last`, `backup.offered`, `backup.undo` | not backed up |
 
 **Every value is stamped** with `DATA_VERSION` (`storage.ts`): `{ "@pascaline": n, value }`; a value without the stamp is version 0. On read, the key's `MIGRATIONS` steps (`state/migrations.ts`, loaded on demand, R103) run from its version up and the value is written back. A save never overwrites a newer version's record, and each step is safe twice (A50). A failed read is not "nothing stored" (R93): the caller keeps its defaults and that key is not written for the session. One writer per browser profile: the tab holding the Web Lock `pascaline-writer` writes the store; other tabs compute and write nothing, with a note and Use here (R95); without `navigator.locks` every tab writes. Raise the version with a step when a stored shape or the meaning of stored Giac text changes (Φ → `Phi_`). **Replay budget:** 8.3 (`replayMs`, inside the engine-ready bar).
 
-**The backup** (R11, `archive/r11-files.md`): one JSON file of each record as stored, stamped (without `defsStarts`, `backup.undo`, `tipsSeen`, history's `undo`); a restore checks the file, refusing at the first fault (newer format or part, bad stamp, unknown part, validator), then replaces the ticked keys in one transaction, keeps old ones in `backup.undo` for Undo, reloads (R38b).
+**The backup** (R11, `archive/r11-files.md`): one JSON file of each record as stored, stamped (without `defsStarts`, `tipsSeen`, history's `undo`); a restore checks the file, refusing at the first fault (newer format or part, bad stamp, unknown part, validator), then replaces the ticked keys in one transaction, keeps old ones in `backup.undo` for Undo, reloads (R38b).
 
 ### 6.3 Decision: start-up and bytes
 - The sizes and budgets are in 8.3. New code for Find, units, copy and the matrix editor lives in lazy chunks, and so do every Settings page, sheet and the first-start tips (owner, 2026-10-20): the start chunk takes only what draws the first screen, key handlers and marks (the budget: 8.3). `virtual:about` (`vite-plugin-about.ts`, R87): the version, THIRD_PARTY.md's parts and the texts of LICENSES/, 36 kB gzip, loaded when Settings › Help and about › About or Parts is first drawn.
