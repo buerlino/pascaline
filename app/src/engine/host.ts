@@ -1135,7 +1135,10 @@ export class EngineHost implements FactsHost {
     }
     this.useHomeMode(s);
     try {
-      return unitEval(this.strict, job, s);
+      const q = unitEval(this.strict, job, s);
+      // R121: the log's stored values the formula read, each a pure number here (Giac's constants and ours are not in it)
+      const names = "error" in q ? [] : namesIn(job.expr, "typed").filter((n) => this.byName.get(n)?.kind === "var");
+      return names.length ? { ...q, names } : q;
     } catch (e) {
       if (e instanceof GiacSyntaxError) return { error: "engine", detail: e.message };
       throw e;

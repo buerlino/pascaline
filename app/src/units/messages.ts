@@ -40,6 +40,12 @@ export function unitNoteText(n: UnitNote): string {
   return n.note === "radDropped" ? unitText("units.note.radDropped") : unitText("units.note.cycle", { unit: n.unit });
 }
 
+/** R121: the note on the names a result read as pure numbers: at most three, then …. */
+export function unitNamesText(names: readonly string[]): string {
+  const list = names.slice(0, 3).join(", ") + (names.length > 3 ? ", …" : "");
+  return unitText(names.length === 1 ? "units.note.name" : "units.note.names", { names: list });
+}
+
 /** G41: the why-line of a σ shown with ⚠. */
 export function unitWhyText(w: UncWhy): string {
   return unitText(w === "order2" ? "units.why.order2" : w === "jump" ? "units.why.jump" : "units.why.singular");

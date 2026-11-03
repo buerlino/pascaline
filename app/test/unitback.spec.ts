@@ -122,6 +122,29 @@ test.describe("the way back from the unit view (R63)", () => {
     await expect(lastRow(page).getByTestId("unit-dropped")).toHaveText("unit dropped: Home has no units");
   });
 
+  test("R121: 4700 ▶ R, then R × 2 with A shows = 9400 A with the note R has no unit, in the view and in its Home row (derived)", async ({ page }) => {
+    await tap(page, ["d4", "d7", "d0", "d0", "shift", "emark", "alpha", "d8", "enter"]);
+    await expect(page.locator('[data-status="done"]')).toHaveCount(1);
+    await page.evaluate(() => window.pascaline.entry.clear());
+    await tap(page, ["alpha", "d8", "mul", "d2"]);
+    await unitsKey(page);
+    await tap(page, ["sin"]);
+    await flick(page, "enter", "up");
+    await expect(result(page)).toHaveAttribute("data-text", "9400");
+    await expect(page.getByTestId("unit-unit")).toHaveText("A");
+    const note = page.getByTestId("unit-view").getByTestId("unit-names");
+    await expect(note).toHaveText("R has no unit: a Home value");
+    await expect(note).toHaveClass("note");
+    await leaveView(page);
+    await expect(lastRow(page).locator(".result")).toHaveAttribute("data-text", "9400 A");
+    await expect(lastRow(page).getByTestId("unit-names")).toHaveText("R has no unit: a Home value");
+    // the stored row of a line without a name (t04) has none
+    await page.evaluate(() => window.pascaline.entry.clear());
+    await t04(page);
+    await leaveView(page);
+    await expect(lastRow(page).getByTestId("unit-names")).toHaveCount(0);
+  });
+
   test("the units key on chip × 2 fills the slot after the chip with m; the 2 keeps its own empty slot", async ({ page }) => {
     await t04(page);
     await leaveView(page);
