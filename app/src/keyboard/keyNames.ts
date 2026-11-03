@@ -50,3 +50,19 @@ export function keyLabels(key: Key, shift: boolean, alpha: boolean, cas: boolean
     }
   return { label: layerName(key, now, cas, shift) ?? "", description: parts.join(". ") };
 }
+
+/**
+ * Name every key button under `pad` for the modifier state: aria-label, and aria-description when the key has other layers.
+ * Set on the elements here, not in Keypad's template, so the start chunk carries none of it (and a spread of the
+ * attribute, which Svelte's typings do not know, costs 7 kB of runtime).
+ */
+export function labelKeys(pad: HTMLElement, keys: readonly Key[], shift: boolean, alpha: boolean, cas: boolean): void {
+  for (const key of keys) {
+    const el = pad.querySelector(`[data-key="${key.id}"]`);
+    if (!el) continue;
+    const { label, description } = keyLabels(key, shift, alpha, cas);
+    el.setAttribute("aria-label", label);
+    if (description) el.setAttribute("aria-description", description);
+    else el.removeAttribute("aria-description");
+  }
+}

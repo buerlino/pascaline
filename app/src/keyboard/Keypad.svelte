@@ -75,12 +75,15 @@
     return !a || (a.kind === "special" && a.name === "none") || (app && a.kind === "insert" && a.units === true);
   };
 
+  let padEl: HTMLDivElement | undefined = $state();
   // R41: the names a screen reader says, from their own chunk after the first paint (a button is named by its face till then)
   $effect(loadKeyNames);
-  const names = $derived(keyNames());
+  $effect(() => {
+    const m = keyNames();
+    if (m && padEl) m.labelKeys(padEl, keys, shift, alpha, cas);
+  });
 
   // Every face and legend is shrunk until it fits its key: never cut, never overlapping (U0, docs/05 3.7).
-  let padEl: HTMLDivElement | undefined = $state();
   $effect(() => {
     // re-fit when the layer changes (the faces change with it) and when the pad's width does
     void shift;
@@ -301,16 +304,11 @@
   {#each keys as key (key.id)}
     <!-- the letter line: the row's, or a pad cell's own flick down (the cluster has none otherwise) -->
     {@const lettered = letterRows.has(key.row) || (key.pad && key.label.alpha)}
-    {@const said = names?.keyLabels(key, shift, alpha, cas)}
-    <!-- aria-description is ARIA 1.3: Svelte's typings and a11y check do not know it, so it goes in by spread -->
-    {@const described = said?.description ? { "aria-description": said.description } : {}}
     <button
       type="button"
       class={`key ${key.cls}`}
       data-key={key.id}
       tabindex="-1"
-      aria-label={said?.label || undefined}
-      {...described}
       aria-pressed={key.cls === "ctl" && (key.id === "shift" || key.id === "alpha") ? pressed(key) : undefined}
       data-locked={locked(key) ? "true" : undefined}
       style:grid-row={key.row + 1}
