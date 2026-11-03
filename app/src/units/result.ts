@@ -6,7 +6,7 @@
 import { confirmedOptions, formatComplex, markOf, type FormatOptions, type Mark } from "../engine/format.ts";
 import { precisionFacts } from "../engine/homeEval.ts";
 import { unitText } from "../i18n/enUnits.ts";
-import { groupDigits } from "../render/home.ts";
+import { groupText } from "../render/home.ts";
 import { commaResult, markText } from "../state/displayMode.ts";
 import type { Alternative } from "./alternatives.ts";
 import { unitErrorMessage, unitNoteText, unitWhyText } from "./messages.ts";
@@ -52,9 +52,6 @@ export interface UnitFormat extends FormatOptions {
   decimalComma?: boolean;
   grouped?: boolean;
 }
-
-/** R55's groups as plain text: each number of `s` grouped as Home groups a mantissa, a thin space between groups. */
-const groupText = (s: string): string => s.replace(/\d+(?:\.\d+)?/g, (n) => groupDigits(n).replace(/\\,/g, "\u2009"));
 
 /** A result as the view shows it. `alts` is the row (alternatives.ts), none for a refusal or a pure number. */
 export function shownOf(q: Quantity | UnitError, u: UnitFormat, alts: readonly Alternative[] = []): Shown {
