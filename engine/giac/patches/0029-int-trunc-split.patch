@@ -1,4 +1,4 @@
-# Upstream: giac 2.1.0 intg.cc _integrate_, approxint_exact and ck_int_numerically. A definite integral splits floor at its jumps (ceil first rewritten as -floor(-u) by ceil2floor): it finds the integers of a*x+b on the range, substitutes floor's value on each piece and adds the pieces, then checks the sum against a numeric integral (ck_int_numerically, which returns the pair [exact, numeric] when they disagree). Four faults: (1) trunc has no such rule, so once patch 0028 left trunc(u) unevaluated for an argument of unproven sign, the antiderivative x*trunc(x) was used across trunc's jumps: int(trunc(x),x,-1/2,5/2) = 3*trunc(x) (right 2), int(trunc(2*x+1),x,-3/2,1/2) = 2*trunc(2*x+1) (right 0), int(trunc(x)*x,x,-1/2,3/2) = 9/8 (right 5/8). Now, next to ceil2floor, trunc(u) of the integration variable is rewritten as floor(u)+(1-sign(u))/2 (evaluated), which is trunc(u) off the integers of u, so the integral is the same; the split cuts at every integer of u, 0 included, and sign(u) is constant on each piece; trunc(x,n) is left as it was. (2) For a falling a*x+b (a < 0, so every ceil, and trunc of a proven negative, which is -floor(-u)) from a non-integer start u0 the first jump was taken where a*x+b reaches floor(u0)-1, one interval late: int(ceil(x),x,1/2,3/2) = [1,1.5] (right 3/2), int(floor(-x),x,-3/2,-1/2) = [1,0.5] (right 1/2), int(trunc(x),x,-5/2,0) = [-4,-1.99999850795] (right -2). Now the first jump is where a*x+b reaches floor(u0); from an integer start it is as before. (3) The numeric check took trunc as exactly integrable (approxint_exact: sign, floor, ceil and round are not) and evaluated x*trunc(x) at the ends (5.0 for the first integral). Now trunc goes to the adaptive quadrature as floor does. (4) tegral stops at an error of 1e-6 relative to the integral of |f|, but an exact value 0 had to meet a numeric value below 1e-8: int(trunc(x),x,-3/2,3/2) = [0,-2.885e-07]. Now an exact value below 1e-8 is kept when the numeric value is at most 1e-5 times the integral of |f| (computed only then). limit(trunc(x),x,-1,1) = -1 (right 0) is another path (series.cc; trunc has no series rule and is not in sign_floor_ceil_round_tab) and is not changed.
+# Upstream: giac 2.1.0 intg.cc _integrate_, approxint_exact and ck_int_numerically. A definite integral splits floor at its jumps (ceil first rewritten as -floor(-u) by ceil2floor): it finds the integers of a*x+b on the range, substitutes floor's value on each piece and adds the pieces, then checks the sum against a numeric integral (ck_int_numerically, which returns the pair [exact, numeric] when they disagree). Four faults: (1) trunc has no such rule, so once patch 0028 left trunc(u) unevaluated for an argument of unproven sign, the antiderivative x*trunc(x) was used across trunc's jumps: int(trunc(x),x,-1/2,5/2) = 3*trunc(x) (right 2), int(trunc(2*x+1),x,-3/2,1/2) = 2*trunc(2*x+1) (right 0), int(trunc(x)*x,x,-1/2,3/2) = 9/8 (right 5/8). Now, next to ceil2floor, each trunc(u) whose u contains the integration variable is rewritten (and only those: trunc(a) of an x-free a stays) as floor(u)+(1-sign(u))/2 (evaluated), which is trunc(u) off the integers of u, so the integral is the same; the split cuts at every integer of u, 0 included, and sign(u) is constant on each piece; trunc(x,n) is left as it was. (2) For a falling a*x+b (a < 0, so every ceil, and trunc of a proven negative, which is -floor(-u)) from a non-integer start u0 the first jump was taken where a*x+b reaches floor(u0)-1, one interval late: int(ceil(x),x,1/2,3/2) = [1,1.5] (right 3/2), int(floor(-x),x,-3/2,-1/2) = [1,0.5] (right 1/2), int(trunc(x),x,-5/2,0) = [-4,-1.99999850795] (right -2). Now the first jump is where a*x+b reaches floor(u0); from an integer start it is as before. (3) The numeric check took trunc as exactly integrable (approxint_exact: sign, floor, ceil and round are not) and evaluated x*trunc(x) at the ends (5.0 for the first integral). Now trunc goes to the adaptive quadrature as floor does. (4) tegral stops at an error of 1e-6 relative to the integral of |f|, but an exact value 0 had to meet a numeric value below 1e-8: int(trunc(x),x,-3/2,3/2) = [0,-2.885e-07]. Now an exact value below 1e-8 is kept when the numeric value is at most 1e-5 times the integral of |f| (computed only then). limit(trunc(x),x,-1,1) = -1 (right 0) is another path (series.cc; trunc has no series rule and is not in sign_floor_ceil_round_tab) and is not changed.
 # Changed by Pascaline contributors, 2026-11-03
 --- a/src/intg.cc
 +++ b/src/intg.cc
@@ -20,7 +20,7 @@
      *logptr(contextptr) << gettext("Error while checking exact value with approximate value, returning both!") << '\n';
      return makevecteur(exactvalue,tmp2);
    }
-@@ -4073,6 +4084,26 @@
+@@ -4073,6 +4084,36 @@
      return curviligne(w,v,curve,V,tmin,tmax,contextptr);
    }
  
@@ -28,26 +28,36 @@
 +  // which patch 0028 leaves unevaluated for an argument of unproven sign, so x*trunc(x) was used across trunc's jumps
 +  // (int(trunc(x),x,-1/2,5/2) = 3*trunc(x), right 2). Off the integers trunc(u) = floor(u)+(1-sign(u))/2, so the
 +  // integral is the same; the floor split cuts at every integer of u, 0 included, and sign(u) is constant on each piece.
++  // Only the trunc nodes that contain x are rewritten, each as its own form: trunc(a) of an x-free a stays trunc(a)
++  // (floor(a)+(1-sign(a))/2 is wrong at the integers of a, int(trunc(x)*trunc(a),x,-3/2,-1/2) at a = 0).
 +  extern const unary_function_ptr * const at_trunc;
-+  static gen trunc2floor_op(const gen & g,GIAC_CONTEXT){
-+    if (g.type==_VECT) // trunc(x,n) and a list stay as they are
-+      return symbolic(at_trunc,g);
-+    return symbolic(at_floor,g)+(1-symbolic(at_sign,g))/2;
-+  }
-+  static gen trunc2floor(const gen & g,const gen & x,GIAC_CONTEXT){
++  static gen trunc2floor_noeval(const gen & g,const gen & x,GIAC_CONTEXT){
 +    vecteur ltrunc(lvarx(lop(g,at_trunc),x));
 +    if (ltrunc.empty())
 +      return g;
-+    const vector< const unary_function_ptr *> trunc_v(1,at_trunc);
-+    const vector< gen_op_context > trunc2floor_v(1,trunc2floor_op);
++    vecteur lfloor;
++    for (unsigned i=0;i<ltrunc.size();++i){
++      const gen & t=ltrunc[i];
++      if (t.type!=_SYMB || t._SYMBptr->feuille.type==_VECT){ // trunc(x,n) and a list stay as they are
++        lfloor.push_back(t);
++        continue;
++      }
++      gen u=trunc2floor_noeval(t._SYMBptr->feuille,x,contextptr); // a trunc nested in the argument
++      lfloor.push_back(symbolic(at_floor,u)+(1-symbolic(at_sign,u))/2);
++    }
++    return subst(g,ltrunc,lfloor,true,contextptr);
++  }
++  static gen trunc2floor(const gen & g,const gen & x,GIAC_CONTEXT){
++    if (lvarx(lop(g,at_trunc),x).empty())
++      return g;
 +    // evaluated, as a typed integrand is: the floor split substitutes floor's value into this form piece by piece
-+    return eval(subst(g,trunc_v,trunc2floor_v,true,contextptr),1,contextptr);
++    return eval(trunc2floor_noeval(g,x,contextptr),1,contextptr);
 +  }
 +
    gen _integrate_(const gen &args,GIAC_CONTEXT){
  #ifdef LOGINT
      *logptr(contextptr) << gettext("integrate begin") << '\n';
-@@ -4349,6 +4380,7 @@
+@@ -4349,6 +4390,7 @@
        if (borne_inf==borne_sup)
  	return 0;
        v[0]=ceil2floor(v[0],contextptr,true);
@@ -55,7 +65,7 @@
        vecteur lfloor(lop(v[0],at_floor));
        lfloor=lvarx(lfloor,x);
        if (!lfloor.empty()){
-@@ -4376,8 +4408,15 @@
+@@ -4376,8 +4418,15 @@
  	    stepn=-1;
  	  }
  	  gen cur=borne_inf,next=(n1+stepn-b)/a,res=0;
@@ -73,7 +83,7 @@
  	  for (;is_greater(borne_sup,next,contextptr); cur=next,next+=stepx,n1+=stepn){
  	    tmp=quotesubst(v[0],lfloor.front(),n1,contextptr);
  	    res += _integrate(makesequence(tmp,x,cur,next),contextptr);
-@@ -5008,6 +5047,8 @@
+@@ -5008,6 +5057,8 @@
        return false;
      if (!loptab(Heavisidetosign(f,contextptr),sign_floor_ceil_round_tab).empty() )
        return false;

@@ -692,6 +692,9 @@ Digits:=40:; pc("g157f1-int-trunc-neg-9/8-7/8",'(int(trunc(x),x,-9/8,-7/8))',-(1
 // patch 0029-int-trunc-split.patch
 // g157f1-int-ceil-half-3/2 (precision.yaml, derived)
 Digits:=40:; pc("g157f1-int-ceil-half-3/2",'(int(ceil(x),x,1/2,3/2))',(15/10^1),5/10^12);
+// patch 0029-int-trunc-split.patch
+// g157f1-int-trunc-x-free-trunc-neg1 (precision.yaml, derived)
+Digits:=40:; pc("g157f1-int-trunc-x-free-trunc-neg1",'(subst(int(trunc(x)*trunc(ag157),x,-3/2,-1/2),ag157=-1))',(5/10^1),5/10^13);
 // patch 0006-reim-root-of-unknown-sign.patch
 // g96-cas-im-2sqrt (bench.yaml, derived)
 Digits:=40:; pc("g96-cas-im-2sqrt",'subst(im(2*sqrt(x)),x,-1)',2,1/10^30);

@@ -1018,5 +1018,12 @@ cases:
   - { id: "g157f1-cas-int-ceil-half-3/2", kind: "cas", input: "int(ceil(x),x,1/2,3/2)", expect: "3/2", source: "derived", note: "showed [1,1.5]" }
   - { id: "g157f1-cas-int-floor-neg-x", kind: "cas", input: "int(floor(-x),x,-3/2,-1/2)", expect: "1/2", source: "derived", note: "-x in (1,3/2) gives 1 on (-3/2,-1), -x in (1/2,1) gives 0 on (-1,-1/2). Showed [1,0.5]" }
   - { id: "g157f1-cas-int-floor-1-2x", kind: "cas", input: "int(floor(-2*x+1),x,0,3/4)", expect: "-1/4", source: "derived", note: "guard: an integer start (-2*x+1 = 1 at 0): 0 on (0,1/2), -1 on (1/2,3/4); right before the fix" }
+  # Fix round 1: only trunc of the integration variable is rewritten; trunc(ag157) of a free name stays trunc, which the
+  # floor form floor(a)+(1-sign(a))/2 is not at an integer a. trunc(x) = -1 on (-3/2,-1), 0 on (-1,-1/2): -trunc(a)/2
+  - { id: "g157f1-cas-int-trunc-x-free-trunc", kind: "cas", input: "int(trunc(x)*trunc(ag157),x,-3/2,-1/2)", expect: "-trunc(ag157)/2", source: "derived", note: "fix round 1 gave -(floor(ag157)+(1-sign(ag157))/2)/2; phase-1 -trunc(ag157)" }
+  - { id: "g157f1-int-trunc-x-free-trunc-0", input: "subst(int(trunc(x)*trunc(ag157),x,-3/2,-1/2),ag157=0)", oracle: "F(0)", expect: "0", mark: "=", source: "derived", note: "-trunc(0)/2. Round 0 of G157f1 gave -1/4 (trunc(a) rewritten as floor(a)+(1-sign(a))/2)" }
+  - { id: "g157f1-cas-int-trunc-x-free-trunc-0", kind: "cas", input: "subst(int(trunc(x)*trunc(ag157),x,-3/2,-1/2),ag157=0)", expect: "0", source: "derived", note: "round 0 of G157f1 gave -1/4" }
+  - { id: "g157f1-int-trunc-x-free-trunc-neg1", input: "subst(int(trunc(x)*trunc(ag157),x,-3/2,-1/2),ag157=-1)", oracle: "F(1,2)", expect: "0.5", mark: "=", source: "derived", note: "-trunc(-1)/2. Round 0 of G157f1 gave 0, phase-1 1" }
+  - { id: "g157f1-cas-int-trunc-x-free-trunc-neg1", kind: "cas", input: "subst(int(trunc(x)*trunc(ag157),x,-3/2,-1/2),ag157=-1)", expect: "1/2", source: "derived", note: "round 0 of G157f1 gave 0, phase-1 1" }
   - { id: "g157f1-limit-trunc-neg1-right", input: "limit(trunc(x),x,-1,1)", oracle: "F(0)", expect: "0", mark: "=", source: "derived", status: "pending", note: "trunc(x) = 0 on (-1,0), so the limit from the right at -1 is 0. Shows = -1: Giac's limit takes trunc(-1), trunc has no series rule (floor has taylor_floor)" }
   - { id: "g157f1-cas-limit-trunc-neg1-right", kind: "cas", input: "limit(trunc(x),x,-1,1)", expect: "0", source: "derived", status: "pending", note: "shows -1" }
