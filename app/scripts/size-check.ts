@@ -119,7 +119,7 @@ export const LAZY_VIEWS = ["src/views/Sheet.svelte"];
  *  key acts on the entry line's field, and the field's set-up (entry/field.ts, loaded with MathLive). R97: the update
  *  note's button and style (views/UpdateNote.svelte), which show only when an update waits. R103: the stored data's
  *  migration steps (state/migrations.ts, with the angle rewrite), loaded only for a record that has a step to run. */
-export const LAZY_PARTS = ["src/views/sheetKeys.ts", "src/views/tmplSheet.ts", "src/render/tidy.ts", "src/keyboard/shiftPalettes.ts", "src/units/open.ts", "src/entry/field.ts", "src/state/handOver.ts", "src/views/UpdateNote.svelte", "src/views/tipsHost.ts", "src/state/migrations.ts"];
+export const LAZY_PARTS = ["src/views/sheetKeys.ts", "src/views/tmplSheet.ts", "src/render/tidy.ts", "src/keyboard/shiftPalettes.ts", "src/units/open.ts", "src/entry/field.ts", "src/state/handOver.ts", "src/views/UpdateNote.svelte", "src/views/tipsHost.ts", "src/state/migrations.ts", "src/keyboard/keyNames.ts"];
 
 /** R91's pin: the start chunk is at most this many bytes gzip, 1 kB under the budget of 61 kB, so the Settings base
  *  (R49, R86, R57) has room. A package that needs more raises the pin with a reason, here and in docs/04 8.3.
@@ -250,8 +250,13 @@ export const LAZY_PARTS = ["src/views/sheetKeys.ts", "src/views/tmplSheet.ts", "
  *  (169,363 B raw, +230 B), and merged with 534183c1 (G159, whose lazy unit chunk's hash moved the pin to 59,434 B)
  *  59,593 B (169,363 B raw): views/edgeFade.ts, the action that marks a history input or result scrolled past an edge so
  *  the row's CSS fades that edge (docs/05 3.5: never cut without a sign), on every row of the first screen. The tokens
- *  themselves are CSS, not counted here. The pin is 59,600 B + 0.05 kB. */
-export const START_PIN_GZIP = 59_650;
+ *  themselves are CSS, not counted here. The pin is 59,600 B + 0.05 kB.
+ *  59.65 → 59.96 kB (R41): phase-1 d7a745d1 measures 59,600 B gzip (169,363 B raw); the branch 59,910 B (170,306 B raw, +310 B):
+ *  the Keypad's effects that load the key names (keyboard/keyNamesLoader.svelte.ts) and name the buttons once they are in,
+ *  and fit.ts's height pass (a face stays between its legend lines, a legend in its own, at a larger system font). The
+ *  names and the code that sets them are keyboard/keyNames.ts, a chunk of its own (1.45 kB gzip, loaded when the browser
+ *  is idle). The pin is 59,910 B + 0.05 kB. */
+export const START_PIN_GZIP = 59_960;
 
 /** R103 (vr-4): the classic inline scripts of index.html run before the first paint, outside every chunk: the stored look
  *  (R50e) and the too-old WebView check. Their gzip sizes, each script alone and summed (as the start chunk sums its

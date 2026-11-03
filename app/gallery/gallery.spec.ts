@@ -5,7 +5,7 @@
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { test, type Page } from "@playwright/test";
 import { parse } from "yaml";
-import { entryValue, flick, open, tap } from "../test/helpers.ts";
+import { entryValue, flick, open, setFontScale, tap } from "../test/helpers.ts";
 import { entryShots, lookShots } from "./looks.ts";
 
 const OUT = new URL("../test/gallery/", import.meta.url).pathname;
@@ -653,6 +653,23 @@ for (const width of [360, 372])
       viewport: { width, height: 800 },
       clip: 110,
       setup: (p) => barState(p, place, st),
+    });
+
+// R41 (A4a point 4): the keypad at the Android font scale 1.5 and 2.0 (emulated: helpers.ts setFontScale), Home and CAS, in the
+// layers that carry the widest and tallest text.
+for (const scale of [1.5, 2.0])
+  for (const [view, layer, keys] of [["home", "", []], ["home", "-shift", ["shift"]], ["cas", "-alpha", ["alpha"]]] as const)
+    shots.push({
+      id: `fontscale-${scale}-${view}${layer}`,
+      group: `Font scale ${scale} (R41)`,
+      title: `${view === "cas" ? "CAS" : "Home"}${layer === "-shift" ? ", Shift on" : layer === "-alpha" ? ", Alpha on (lower case)" : ""} at font scale ${scale}: faces between their legend lines, legends in theirs, nothing cut`,
+      viewport: { width: 360, height: 740 },
+      setup: async (p) => {
+        await someHistory(p);
+        if (view === "cas") await tap(p, ["@cas"]);
+        await setFontScale(p, scale);
+        await tap(p, [...keys]);
+      },
     });
 
 // R108: the decimal comma in the Function and Solve Num tables and in Solve's polynomial roots.
