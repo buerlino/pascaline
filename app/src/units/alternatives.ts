@@ -5,7 +5,7 @@
 // `units.targets` (the last unit tapped per dimension) orders the row only; it never changes the unit shown (G25).
 // Main thread, synchronous, no Giac; loaded with the unit view only. Only erasable TypeScript syntax (the golden gate).
 import type { Kv } from "../state/storage.ts";
-import { shownUnits, slotText } from "./build.ts";
+import { powerKinds, shownUnits, slotText } from "./build.ts";
 import { BASES, dimKeyOf, isExponent, parseDimKey, powerText, siSlot } from "./dims.ts";
 import type { FactorTable } from "./factors.ts";
 import { cellText, type PadLegUnit, type PadUnitCell } from "./padCells.ts";
@@ -126,16 +126,21 @@ export function alternatives(q: Quantity, ctx: AltContext): Alternative[] {
   if (dim === null || dim === "") return [];
   const out: Alternative[] = [];
   const seen = new Set<string>(q.shownSlot ? [keyOf(q.shownSlot)] : []);
+  const { end, ...asTyped } = ctx.req;
+  void end;
+  // G161: a result in VA or var is offered no unit of another power (W, kW, hp: refused, they differ by the power
+  // factor); its SI chips are in its own kind (kVA, not kW).
+  const kinds = powerKinds(asTyped.slots, ctx.table);
+  const own = kinds.length === 1 && kinds[0] !== "W" ? kinds[0]! : null;
+  const inKind = (slot: UnitSlot): UnitSlot => (own ? { ...slot, tokens: slot.tokens.map((t) => (t.unit === "W" ? { ...t, unit: own } : t)) } : slot);
   const add = (slot: UnitSlot, kind: AltKind, text = slotText(slot, ctx.table), key = keyOf(slot)): void => {
-    if (!slot.tokens.length || seen.has(key)) return;
+    if (!slot.tokens.length || seen.has(key) || powerKinds([...asTyped.slots, slot], ctx.table).length > 1) return;
     seen.add(key);
     out.push({ slot, text, kind });
   };
-  const { end, ...asTyped } = ctx.req;
-  void end;
   const typed = shownUnits(asTyped, ctx.table).filter((u) => u.dim === dim);
-  add(coherent(dim, typed, ctx), "si");
-  if (q.siPrefixed !== "") add(siSlot(dim, q.siPrefixed), "siPrefixed");
+  add(inKind(coherent(dim, typed, ctx)), "si");
+  if (q.siPrefixed !== "") add(inKind(siSlot(dim, q.siPrefixed)), "siPrefixed");
   if (dim === "K1") {
     for (const t of temperatures(ctx.req)) add(t.slot, "pad", t.text, t.key);
     return out;

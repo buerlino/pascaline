@@ -89,6 +89,17 @@ describe("the unit result's alternatives (R60)", () => {
     expect(texts).not.toContain("m²");
     allBuild(q, ctx);
   });
+  it_("G161: a power typed in kVA offers VA, never W, kW, hp or TR (they differ by the power factor)", () => {
+    const q = qty("kg1m2s-3", "kVA", "k:VA", "kW");
+    const { texts, ctx } = row(q, "2*{k:VA}");
+    expect(texts).toEqual(["VA"]);
+    for (const a of alternatives(q, ctx)) expect(buildJob(withEnd(ctx.req, a), table)).not.toHaveProperty("powers");
+    allBuild(q, ctx);
+    // 2 MW in var: the SI chips are var and kvar; a real power keeps its chips (W first, then hp and TR from the pad)
+    expect(row(qty("kg1m2s-3", "Mvar", "M:var", "Mvar"), "2*{M:var}").texts).toEqual(["var"]);
+    expect(row(qty("kg1m2s-3", "kvar", "k:var", "MW"), "2000*{k:var}").texts).toEqual(["var", "Mvar"]);
+    expect(row(qty("kg1m2s-3", "kW", "k:W", "kW"), "2*{k:W}").texts.slice(0, 3)).toEqual(["W", "hp", "TR"]);
+  });
   it_("Θ from 20 °C (shown 293.15 K, absolute): °C, °F", () => {
     const q = qty("K1", "K", "K", "K");
     const { texts, ctx } = row(q, "20*{oC}");

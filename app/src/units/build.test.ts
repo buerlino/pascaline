@@ -18,7 +18,8 @@ const pfx = (id: string, si: string, symbol = id): IndexItem => ({ id: `pfx:${id
 const table = factorTable([
   unit("m", "1", "m1"), unit("h", "3600", "s1"), unit("s", "1", "s1"), unit("Hz", "1", "s-1"), unit("rev", "1", ""), unit("rpm", "1/60", "s-1"), unit("V", "1", "A-1kg1m2s-3"),
   unit("N", "1", "kg1m1s-2"), unit("deg", "pi/180", "rad1", "1°"), unit("oC", "1+5463/20", "K1", "°C"), unit("dB", undefined, "Np1"),
-  unit("dBm", undefined, "kg1m2s-3"), unit("hp", undefined, "kg1m2s-3"), unit("Np", "1", "Np1"), unit("km/h", "5/18", "m1s-1"),
+  unit("dBm", undefined, "kg1m2s-3"), unit("hp", undefined, "kg1m2s-3"), unit("W", "1", "kg1m2s-3"), unit("Wh", "3600", "kg1m2s-2"),
+  unit("VA", "1", "kg1m2s-3"), unit("var", "1", "kg1m2s-3"), unit("TR", "52752792631/15000000", "kg1m2s-3"), unit("A", "1", "A1"), unit("J", "1", "kg1m2s-2"), unit("Np", "1", "Np1"), unit("km/h", "5/18", "m1s-1"),
   pfx("k", "1000"), pfx("n", "1/1000000000"), pfx("u", "1/1000000", "µ"), pfx("Ki", "1024"),
   { id: "const:c", kind: "const", names: ["c"], title: "c", value: "299792458", dim: "m1s-1", tier: 0, insert: "\\const{c}{c}" },
   { id: "const:G", kind: "const", names: ["G"], title: "G", value: "6.67430E-11", unc: "1.5E-15", dim: "kg-1m3s-2", tier: 0, insert: "\\const{G}{G}" },
@@ -83,6 +84,25 @@ describe("unit view builder (G16)", () => {
     expect((kw as { shows: { text: string }[] }).shows[0]!.text).toBe("kN·m");
     const two = buildJob({ formula: "4.7*pasu1*2.2*pasu2", slots: [{ tokens: [{ prefix: "k", unit: "ohm" }] }, { tokens: [{ prefix: "n", unit: "F" }] }] }, table);
     expect(((two as { shows?: { text: string }[] }).shows ?? []).map((x) => x.text)).not.toContain("kΩ·nF");
+  });
+  it("G161: a job whose units name two of W, VA and var carries them; V·A, J and one kind alone carry none", () => {
+    const one = (u: string, prefix?: string) => ({ tokens: [{ ...(prefix ? { prefix } : {}), unit: u }] });
+    const conv = (from: ReturnType<typeof one>, to: ReturnType<typeof one>) => buildJob({ formula: "2*pasu1", slots: [from], end: to }, table);
+    expect(conv(one("VA", "k"), one("W"))).toMatchObject({ powers: ["VA", "W"] });
+    expect(conv(one("var", "k"), one("VA"))).toMatchObject({ powers: ["var", "VA"] });
+    expect(conv(one("TR"), one("VA"))).toMatchObject({ powers: ["W", "VA"] });
+    expect(conv(one("VA"), one("dBm"))).toMatchObject({ powers: ["VA", "W"] });
+    // kVA·h is not kWh
+    const kvah = buildJob({ formula: "2*pasu1*3*pasu2", slots: [one("VA", "k"), one("h")], end: one("Wh", "k") }, table);
+    expect(kvah).toMatchObject({ powers: ["VA", "W"] });
+    // a sum of real and reactive power, no end slot
+    expect(buildJob({ formula: "3*pasu1+4*pasu2", slots: [one("W", "k"), one("var", "k")] }, table)).toMatchObject({ powers: ["W", "var"] });
+    for (const ok of [conv(one("VA", "k"), one("VA")), conv(one("var"), one("var", "k")), conv(one("W", "k"), one("TR")),
+      buildJob({ formula: "230*pasu1*2*pasu2", slots: [one("V"), one("A")], end: one("VA") }, table), conv(one("VA"), one("J"))]) {
+      expect("error" in ok).toBe(false);
+      expect(ok).not.toHaveProperty("powers");
+    }
+    expect(unitErrorMessage({ error: "power" })).toBe("VA, var and W differ by the power factor");
   });
   it("G25: rev is a pure count of cycles and rpm is 1 rev/min", () => {
     expect(table.units.get("rev")).toMatchObject({ si: "1", dim: "" });

@@ -215,6 +215,21 @@ function cycleUnit(slots: readonly UnitSlot[]): string | null {
   return null;
 }
 
+/** G161: the power a unit names: VA apparent, var reactive, W real (the units of W, Wh and the other units of power,
+ *  hp, TR, dBm). VA, var and W have one dimension but are three quantities (S, Q, P differ by the power factor). */
+const POWER_DIM = "kg1m2s-3";
+const POWER_KIND: Readonly<Record<string, string>> = { VA: "VA", kVA: "VA", MVA: "VA", var: "var", kvar: "var", Mvar: "var", Wh: "W", kWh: "W", MWh: "W" };
+
+/** G161: the kinds of power the slots' units name, in the order typed; a unit with no power in it (V, A, J) names none. */
+export function powerKinds(slots: readonly UnitSlot[], table: FactorTable): string[] {
+  const kinds = new Set<string>();
+  for (const s of slots) for (const t of s.tokens) {
+    const k = POWER_KIND[t.unit] ?? (table.units.get(t.unit)?.dim === POWER_DIM ? "W" : undefined);
+    if (k) kinds.add(k);
+  }
+  return [...kinds];
+}
+
 /** G40: whether a slot holds a cycle unit: rpm, rev, Hz or a unit made of them (kHz). */
 const hasCycles = (slots: readonly UnitSlot[]): boolean => slots.some((s) => s.tokens.some((t) => /rpm|rev|Hz/.test(t.unit)));
 
@@ -369,8 +384,15 @@ function insideBrackets(f: string, n: { k: number; sum: boolean }): string {
   return out;
 }
 
-/** The UnitJob for a request, or why it is refused before Giac sees it. */
+/** The UnitJob for a request, or why it is refused before Giac sees it. G161: a job whose units name two kinds of power
+ *  (W, VA, var) carries them, for the evaluator's refusal. */
 export function buildJob(req: UnitRequest, table: FactorTable): UnitJob | UnitError {
+  const job = jobOf(req, table);
+  const powers = powerKinds([...req.slots, ...(req.end ? [req.end] : [])], table);
+  return "error" in job || powers.length < 2 ? job : { ...job, powers };
+}
+
+function jobOf(req: UnitRequest, table: FactorTable): UnitJob | UnitError {
   try {
     // An absolute temperature or a logarithmic unit is allowed only alone, as the whole quantity.
     const sp = req.slots.map((s) => specialIn(s, table));
