@@ -7,7 +7,7 @@ Phase 0 decisions (D1–D9, P1, P2): [spike/DECISIONS.md](../spike/DECISIONS.md)
 
 The owner's other open items are in [backlog.md](backlog.md), "Needs the user". Once decided, an entry moves to "Decided proposals".
 
-None open (2026-11-02).
+- **R121:** its Home-row line, +55 B start (pin raised): keep, or F28's uses line?
 
 ## Decided proposals
 
