@@ -2,7 +2,7 @@
 // R96: Settings › Data's last row tells whether the data is kept: kept (on this device when the browser keeps the store
 // out of its eviction, else "may delete it"), or not saved when the store fails; the last backup's date under it.
 import { expect, test, type Page } from "@playwright/test";
-import { open, tap } from "./helpers.ts";
+import { open, savePicker, tap } from "./helpers.ts";
 
 async function dataLevel(page: Page): Promise<void> {
   await tap(page, ["@mode", "d6"]);
@@ -14,6 +14,7 @@ const hint = (page: Page) => page.getByTestId("menu").locator('[data-id="store"]
 
 test("Settings › Data says the data is kept, and the date of the last backup once one is saved", async ({ page }) => {
   await page.setViewportSize({ width: 412, height: 915 });
+  await savePicker(page, "fake"); // a confirmed save (R122)
   await open(page);
   await page.evaluate(() => window.pascaline.session.setDigits(9)); // a write
   await page.waitForTimeout(900); // the writes are debounced and asynchronous
@@ -22,12 +23,23 @@ test("Settings › Data says the data is kept, and the date of the last backup o
   await expect(line(page)).toHaveText(persisted ? "Kept on this device" : "Kept, but the browser may delete it: save a backup");
   await expect(hint(page)).toHaveCount(0); // no backup saved yet
 
-  const download = page.waitForEvent("download");
   await page.getByTestId("menu").locator('[data-id="backup"]').tap();
-  await download;
   await expect(page.getByTestId("notice")).toHaveText("Backup saved");
   await dataLevel(page);
   await expect(hint(page)).toHaveText(/^Last backup: \d{4}-\d{2}-\d{2} \d{2}:\d{2}$/);
+});
+
+test("Settings › Data says a backup was only offered when the browser has no save picker (R122)", async ({ page }) => {
+  await page.setViewportSize({ width: 412, height: 915 });
+  await savePicker(page, "none");
+  await open(page);
+  await dataLevel(page);
+  const download = page.waitForEvent("download");
+  await page.getByTestId("menu").locator('[data-id="backup"]').tap();
+  await download;
+  await expect(page.getByTestId("notice")).toHaveText("Backup offered as a download");
+  await dataLevel(page);
+  await expect(hint(page)).toHaveText(/^Last backup offered: \d{4}-\d{2}-\d{2} \d{2}:\d{2}$/);
 });
 
 test("Settings › Data says nothing is saved when the store cannot be opened", async ({ page }) => {

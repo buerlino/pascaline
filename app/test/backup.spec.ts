@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// R38a (decisions.md S6, archive/r11-files.md): Settings › Data › Save a backup downloads one JSON file holding every
-// stored key that is present, each as stored with its stamp. The real engine (a definition needs the defs log).
+// R38a (decisions.md S6, archive/r11-files.md): Settings › Data › Save a backup saves one JSON file holding every
+// stored key that is present, each as stored with its stamp. The real engine (a definition needs the defs log). R122:
+// through the browser's save picker where it has one (a stand-in here), else offered as a download.
 import { readFileSync } from "node:fs";
 import { expect, test } from "@playwright/test";
-import { open, tap } from "./helpers.ts";
+import { open, savedText, savePicker, tap } from "./helpers.ts";
 
-test("Settings › Data › Save a backup downloads the envelope with every present key and its stamp", async ({ page }) => {
+test("Settings › Data › Save a backup saves the envelope with every present key and its stamp", async ({ page }) => {
   await page.setViewportSize({ width: 412, height: 915 });
+  await savePicker(page, "fake");
   await open(page, "");
   await page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
   // history (two rows), a definition (5▶A), a setting and a user key
@@ -21,13 +23,12 @@ test("Settings › Data › Save a backup downloads the envelope with every pres
   await tap(page, ["@mode", "d6"]);
   await page.getByTestId("menu").locator('[data-id="data"]').tap();
   await expect(page.getByTestId("sheet-title")).toHaveText("Mode › Settings › Data");
-  const download = page.waitForEvent("download");
   await page.getByTestId("menu").locator('[data-id="backup"]').tap();
-  const file = await download;
-  expect(file.suggestedFilename()).toMatch(/^pascaline-backup-\d{4}-\d{2}-\d{2}\.json$/);
-  const text = readFileSync((await file.path()) as string, "utf8");
-  console.log(`BACKUP SIZE ${Buffer.byteLength(text)} bytes`);
   await expect(page.getByTestId("notice")).toHaveText("Backup saved");
+  const file = await savedText(page);
+  expect(file?.name).toMatch(/^pascaline-backup-\d{4}-\d{2}-\d{2}\.json$/);
+  const text = file?.text ?? "";
+  console.log(`BACKUP SIZE ${Buffer.byteLength(text)} bytes`);
 
   const b = JSON.parse(text) as { "pascaline-backup": number; dataVersion: number; made: string; parts: Record<string, { "@pascaline": number; value: unknown }> };
   expect(b["pascaline-backup"]).toBe(1);
@@ -48,8 +49,9 @@ test("Settings › Data › Save a backup downloads the envelope with every pres
   expect(b.parts["userKeys"]?.value).toHaveProperty("u1");
 });
 
-test("Save a backup works when the sheet opened before the clipboard code arrived", async ({ page }) => {
+test("Save a backup works when the sheet opened before the clipboard code arrived; without a save picker it is offered", async ({ page }) => {
   await page.setViewportSize({ width: 412, height: 915 });
+  await savePicker(page, "none");
   let release: () => void = () => {};
   const held = new Promise<void>((r) => (release = r));
   await page.route(/clipboard\/actions\.svelte/, async (route) => {
@@ -63,6 +65,8 @@ test("Save a backup works when the sheet opened before the clipboard code arrive
   const download = page.waitForEvent("download");
   await page.getByTestId("menu").locator('[data-id="backup"]').tap();
   release();
-  expect((await download).suggestedFilename()).toMatch(/^pascaline-backup-\d{4}-\d{2}-\d{2}\.json$/);
-  await expect(page.getByTestId("notice")).toHaveText("Backup saved");
+  const file = await download;
+  expect(file.suggestedFilename()).toMatch(/^pascaline-backup-\d{4}-\d{2}-\d{2}\.json$/);
+  expect(JSON.parse(readFileSync((await file.path()) as string, "utf8"))).toHaveProperty("pascaline-backup", 1);
+  await expect(page.getByTestId("notice")).toHaveText("Backup offered as a download");
 });

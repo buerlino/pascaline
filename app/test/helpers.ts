@@ -248,3 +248,28 @@ export function useClipboardLock(): void {
     release = undefined;
   });
 }
+
+/**
+ * R122: the browser's save picker (`showSaveFilePicker`), set before `open`. Headless Chromium has one that closes at
+ * once (AbortError, a cancelled save). "none" removes it, so a save offers the download; "fake" is a stand-in that
+ * writes nothing to disk and keeps the text it was given for `savedText`.
+ */
+export async function savePicker(page: Page, kind: "none" | "fake"): Promise<void> {
+  await page.addInitScript((k) => {
+    const w = window as unknown as { showSaveFilePicker?: unknown; __saved?: { name: string; text: string } };
+    if (k === "none") {
+      delete w.showSaveFilePicker;
+      w.showSaveFilePicker = undefined;
+      return;
+    }
+    w.showSaveFilePicker = async (o: { suggestedName: string }) => ({
+      createWritable: async () => {
+        let text = "";
+        return { write: async (t: string) => void (text += t), close: async () => void (w.__saved = { name: o.suggestedName, text }) };
+      },
+    });
+  }, kind);
+}
+/** The file the stand-in picker saved last (savePicker "fake"), or undefined. */
+export const savedText = (page: Page): Promise<{ name: string; text: string } | undefined> =>
+  page.evaluate(() => (window as unknown as { __saved?: { name: string; text: string } }).__saved);
