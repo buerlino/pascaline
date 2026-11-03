@@ -3,6 +3,7 @@
 import { describe, expect, it } from "vitest";
 import { decimalFromRational, type ComplexValue } from "../engine/format.ts";
 import { commaResult, renderNumeric, type DisplayContext, type NumericResult } from "../state/displayMode.ts";
+import { groupText } from "./groupText.ts";
 import { groupDigits } from "./home.ts";
 
 const q = (p: bigint, d = 1n) => decimalFromRational(p, d);
@@ -22,6 +23,14 @@ describe("groupDigits", () => {
     expect(groupDigits("0.000123")).toBe("0.000\\,123");
     expect(groupDigits("0.000123 45".replace(" ", ""))).toBe("0.000\\,123\\,45");
     expect(groupDigits("123456.12345")).toBe("123\\,456.123\\,45");
+  });
+});
+
+describe("groupText (R120, the unit view)", () => {
+  it("groups each number of a line on its own, with a thin space: a later integer from the left of its point", () => {
+    expect(groupText("39.488 · σ 1.24433958387572")).toBe("39.488 · σ 1.244\u2009339\u2009583\u2009875\u200972");
+    expect(groupText("1.0000 ± 12345678")).toBe("1.0000 ± 12\u2009345\u2009678");
+    expect(groupText("1.5E-12 m")).toBe("1.5E-12 m");
   });
 });
 

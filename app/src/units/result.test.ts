@@ -71,6 +71,42 @@ describe("shownOf (R62)", () => {
   });
 });
 
+// R120: the view draws as Home's unit row does: the decimal comma (R57, commaResult) and R55's digit groups (a thin space,
+// the screen only); `display` (the result's data-text) keeps Copy's rule: the comma, no groups. Expected: derived from
+// commaResult("39.5 ± 1.2", false) = "39,5 ± 1,2" and groupDigits("157.079632679") = 157.079\,632\,679.
+describe("shownOf with the decimal comma and digit groups (R120)", () => {
+  const T = " "; // the thin space between groups
+  const t10 = (): Quantity => {
+    const unc = { value: num("1.244", { exact: false }), text: "1.2", shown: "39.5 ± 1.2" };
+    return qty(num("39.488", { exact: false }), { dimension: "m2", unit: "m²", dimensionText: "L²", unc });
+  };
+
+  it("with the comma, the value line, σ and the sub line read 39,5 ± 1,2 and 39,488 · σ 1,244", () => {
+    const r = result(shownOf(t10(), { ...STD, decimalComma: true, grouped: true }));
+    expect(r).toMatchObject({ text: "39,5 ± 1,2", sigma: { head: "39,5 ± ", tail: "1,2" }, sub: "39,488 · σ 1,244", display: "39,488" });
+  });
+
+  it("without the comma nothing changes (the point, no groups on a short value)", () => {
+    const r = result(shownOf(t10(), { ...STD, grouped: true }));
+    expect(r).toMatchObject({ text: "39.5 ± 1.2", sigma: { head: "39.5 ± ", tail: "1.2" }, sub: "39.488 · σ 1.244", display: "39.488" });
+  });
+
+  it("a long value gets R55's groups on screen only; display (Copy's text) has none", () => {
+    const q = qty(num("157.079632679", { exact: false }));
+    expect(result(shownOf(q, { ...STD, grouped: true }))).toMatchObject({ text: `157.079${T}632${T}679`, display: "157.079632679" });
+    expect(result(shownOf(q, { ...STD, grouped: true, decimalComma: true }))).toMatchObject({ text: `157,079${T}632${T}679`, display: "157,079632679" });
+    expect(result(shownOf(q, STD)).text).toBe("157.079632679"); // a host that asks for no groups gets none
+    expect(result(shownOf(qty(num("1234567")), { ...STD, grouped: true })).text).toBe(`1${T}234${T}567`);
+    expect(result(shownOf(qty(num("1234")), { ...STD, grouped: true })).text).toBe("1234");
+  });
+
+  it("σ's digits are grouped in the value line and the sub line, each number on its own", () => {
+    const unc = { value: num("0.00707106781187", { exact: false }), text: "0.0071", shown: "1.0000 ± 0.0071" };
+    const r = result(shownOf(qty(num("1"), { dimension: "", unit: "", dimensionText: "1", unc }), { ...STD, grouped: true, decimalComma: true }));
+    expect(r).toMatchObject({ text: "1,0000 ± 0,0071", sub: `1 · σ 0,007${T}071${T}067${T}811${T}87` });
+  });
+});
+
 describe("the unit a chip reads as after a tap (R62)", () => {
   const unit = (id: string, insert: string, names: string[]): IndexItem => ({ id: `unit:${id}`, kind: "unit", names, title: id, tier: 0, insert, si: "3600", dim: "kg1m2s-2" }) as IndexItem;
   const table = factorTable([unit("Wh", "\\unit{Wh}{\\mathrm{W\\cdot\\,h}}", ["Wh", "W·h"]), unit("s_ton", "\\unit{s_ton}{\\mathrm{s_ton}}", ["s_ton"]), unit("oC", "\\unit{oC}{\\mathrm{°C}}", ["oC"])]);

@@ -4,7 +4,7 @@
 // a note under a value that stays, a refusal with no row, and the alternatives row picked by touch (a tap on a chip) and by
 // keys (▼ ◀ ▶ Enter, Esc leaves). A pick writes the unit into the end slot and evaluates again.
 import { expect, test, type Page } from "@playwright/test";
-import { flick, open, tap } from "./helpers.ts";
+import { flick, open, tap, useClipboardLock } from "./helpers.ts";
 
 const up = (page: Page): Promise<unknown> =>
   page.waitForFunction(() => window.pascaline.unitView !== undefined && document.activeElement === window.pascaline.unitView.element && document.querySelector('[data-pad="unit"]') !== null);
@@ -109,7 +109,8 @@ test.describe("the unit result view (R62)", () => {
     await unitsKey(page);
     await plan(page, "enter d1 d9 ↑enter");
     await expect(mark(page)).toHaveText("≈");
-    await expect(result(page).locator(".value")).toHaveText("157.079632679");
+    await expect(result(page).locator(".value")).toHaveText("157.079\u2009632\u2009679"); // R55's groups on screen (R120)
+    await expect(result(page)).toHaveAttribute("data-text", "157.079632679"); // Copy's text: no groups
     await expect(page.getByTestId("unit-unit")).toHaveText("mm");
     await expect(page.getByTestId("unit-dim")).toHaveText("L");
     await expect(chips(page).first()).toHaveText("m");
@@ -139,7 +140,7 @@ test.describe("the unit result view (R62)", () => {
     await expect(result(page).locator(".value")).toHaveText(/ ± ⚠0\.0\d+$/);
     await expect(page.getByTestId("unit-warn")).toHaveText("⚠");
     await expect(page.getByTestId("unit-why")).toHaveText("first order does not hold here");
-    await expect(page.getByTestId("unit-sub")).toContainText("σ 0.00707106781");
+    await expect(page.getByTestId("unit-sub")).toContainText("σ 0.007\u2009071\u2009067\u200981"); // grouped (R120)
     await expect(page.getByTestId("unit-dim")).toHaveCount(0);
     await expect(page.getByTestId("unit-alts")).toHaveCount(0);
   });
@@ -211,6 +212,40 @@ test.describe("the unit result view (R62)", () => {
     expect(unit).not.toBe("km/h");
     expect(await endSlot(page)).not.toBe("");
     expect(await page.evaluate(() => window.pascaline.unitView?.view.activeId)).toBe("end");
+  });
+});
+
+// R120: in comma mode the unit view draws its result with the comma (R57), as the Home row of the same visit does; the
+// screen has R55's groups, the data-text and Copy as shown none. Expected: derived, commaResult of t10's values (above).
+test.describe("t10 with the decimal comma (R120)", () => {
+  test.use({ permissions: ["clipboard-read", "clipboard-write"] });
+  test.describe.configure({ mode: "serial" });
+  useClipboardLock(); // first hook, so the lock is held before the page opens
+  test.beforeEach(async ({ page }) => {
+    await open(page, "");
+    await page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
+    await page.evaluate(() => window.pascaline.session.setDecimalMark("comma"));
+  });
+
+  test("12,34 ± 0,05 m × 3,2 ± 0,1 m shows ≈ 39,5 ± 1,2 m² and 39,488 · σ 1,244…; the Home row and Copy as shown keep 39,488 ± 1,2 m²", async ({ page }) => {
+    await tap(page, ["d1", "d2", "dot", "d3", "d4", "shift", "comma", "d0", "dot", "d0", "d5"]);
+    await tap(page, ["mul", "d3", "dot", "d2", "shift", "comma", "d0", "dot", "d1"]);
+    await unitsKey(page);
+    await plan(page, "d9 enter d9 ↑enter");
+    await expect(mark(page)).toHaveText("≈");
+    await expect(result(page).locator(".value")).toHaveText("39,5 ± 1,2");
+    await expect(page.getByTestId("unit-unit")).toHaveText("m²");
+    await expect(page.getByTestId("unit-sub")).toContainText("39,488 · σ 1,244");
+    await expect(page.getByTestId("unit-sub")).not.toContainText(".");
+    await expect(result(page)).toHaveAttribute("data-text", "39,488");
+    await tap(page, ["esc"]);
+    await page.waitForFunction(() => window.pascaline.unitView === undefined);
+    const row = page.locator("article.item").last().locator(".result");
+    await expect(row).toHaveAttribute("data-text", "39,488 ± 1,2 m²");
+    await tap(page, ["@menu", "d6"]);
+    await expect(page.getByTestId("menu")).toBeVisible();
+    await page.getByRole("menuitem", { name: /^\d As shown$/ }).click();
+    await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toBe("39,488 ± 1,2 m²");
   });
 });
 

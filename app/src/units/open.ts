@@ -72,7 +72,7 @@ export async function openUnits(c: RouteCtx, row?: HistoryItem): Promise<void> {
         const more = dim === undefined ? { constant, tools: unitTools(view.shown, { end: () => view.toEnd(), alt: (a) => void view.pickAlt(a), alts: () => view.down(), home }) } : {};
         m.showUnitFind({ shell: c.shell, index, cat, apply: dim === undefined ? (a) => view.apply(a) : (a) => view.pickMore(a), refresh: () => (unitPad.model = new UnitPad(unitCells.userSet())), ...more }, into, dim);
       }),
-    format: () => ({ format: engineFormat(c.session.settings.format), digits: c.session.settings.digits }),
+    format: () => ({ format: engineFormat(c.session.settings.format), digits: c.session.settings.digits, decimalComma: c.session.decimalComma, grouped: true }),
     alternatives: async (q, req) => {
       const target = q.dimension ? (await readTargets(idbKv))[q.dimension] : undefined;
       return alternatives(q, { table, pad: padUnitList(), user: userUnitCells(unitCells.userSet()), req, ...(target ? { target } : {}) });
