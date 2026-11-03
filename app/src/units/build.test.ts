@@ -122,6 +122,9 @@ describe("unit view builder (G16)", () => {
     expect(one("oC", "pasupm(20,0.5)*pasu1")).toMatchObject({ absTemp: true, inexact: true, unc: { vars: [{ name: "pasv1", value: "20", sigma: "0.5" }] } });
     expect(one("oC", "pasupm(20,0.5)*pasu1")).toMatchObject({ expr: expect.stringContaining("(20)") });
     expect(one("oC", "pasupm(20,0.5)*2*pasu1")).toMatchObject({ error: "temperature" });
+    // R115: a chip keeps its minus outside its call, as the parser writes −chip °C
+    expect(one("oC", "(-pasupm((20),(1/2),pasr_1))*pasu1")).toMatchObject({ absTemp: true, unc: { expr: expect.stringContaining("(-pasv1)"), vars: [{ name: "pasv1", value: "(20)" }] } });
+    expect(one("oC", "(-pasupm((20),(1/2),pasr_1))*pasu1")).toMatchObject({ expr: expect.stringContaining("(-((20)))") });
     expect(one("dB", "pasupm(3,0.1)*pasu1")).toEqual({ error: "logarithmic", unit: "dB" });
     const to = (u: string) => buildJob({ formula: "2*pasu1", slots: [{ tokens: [{ unit: "m" }] }], end: { tokens: [{ unit: u }] } }, table);
     expect(to("oC")).toMatchObject({ end: "((1)*pasdimK^(1))", endOffset: "5463/20" });
@@ -189,6 +192,23 @@ describe("uncertain inputs (G18)", () => {
     expect(job.unc?.vars).toEqual([{ name: "pasv1", value: "7.3E-3", sigma: "1E-12" }]);
     expect(job.unc?.expr).toBe("(((2)*pasv1)*pasdimM^(1))*((1/pasv1)*pasdimM^(-1))");
     expect(job.expr).toBe("(((2)*(7.3E-3))*pasdimM^(1))*((1/(7.3E-3))*pasdimM^(-1))");
+  });
+  it("R115: a chip's key makes one input per key, wherever the chip stands; a typed ± stays an input of its own", () => {
+    const m = { tokens: [{ unit: "m" }] };
+    const once = buildJob({ formula: "pasupm(12.34,0.05,pasr_1)*pasu1-pasupm(12.34,0.05,pasr_1)*pasu2", slots: [m, m] }, table);
+    if ("error" in once) throw new Error(once.error);
+    expect(once.unc?.vars).toEqual([{ name: "pasv1", value: "12.34", sigma: "0.05" }]);
+    expect(once.unc?.expr).toBe("pasv1*(((1)*pasdimL^(1)))-pasv1*(((1)*pasdimL^(1)))");
+    const two = buildJob({ formula: "pasupm(12.34,0.05,pasr_1)*pasu1-pasupm(12.34,0.05,pasr_2)*pasu2", slots: [m, m] }, table);
+    if ("error" in two) throw new Error(two.error);
+    expect(two.unc?.vars.map((v) => v.name)).toEqual(["pasv1", "pasv2"]);
+    const typed = buildJob({ formula: "pasupm(12.34,0.05)*pasu1-pasupm(12.34,0.05)*pasu2", slots: [m, m] }, table);
+    if ("error" in typed) throw new Error(typed.error);
+    expect(typed.unc?.vars.map((v) => v.name)).toEqual(["pasv1", "pasv2"]);
+    // one key with two values or a key that is not a chip's name is not the parser's: refused
+    expect("error" in buildJob({ formula: "pasupm(1,0.1,pasr_1)*pasu1+pasupm(2,0.1,pasr_1)*pasu2", slots: [m, m] }, table)).toBe(true);
+    expect("error" in buildJob({ formula: "pasupm(1,0.1,x)*pasu1", slots: [m] }, table)).toBe(true);
+    expect("error" in buildJob({ formula: "pasupm(1,0.1,pasr_1,2)*pasu1", slots: [m] }, table)).toBe(true);
   });
   it("a value without ± has no uncertainty; a malformed ± is refused", () => {
     const job = buildJob({ formula: "12.34*pasu1", slots: [{ tokens: [{ unit: "m" }] }] }, table);

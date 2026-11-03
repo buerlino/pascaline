@@ -70,9 +70,13 @@ describe("units mode (R28)", () => {
     const r = latexToGiacInfo("\\res{1}{0.157}\\placeholder[u1]{}\\times2\\placeholder[u2]{}", { units: true, chips });
     expect(r.giac).toBe("((50*pi)*pasu1)*(2*pasu2)");
     expect(r.units).toEqual({ slots: ["u1", "u2"], consts: [] });
-    // R61's σ in the unit shown goes in as G18's uncertain value, so the unit view keeps it (never a σ silently dropped)
-    expect(latexToGiacInfo("\\res{2}{39.488}\\placeholder[u1]{}\\times2", { units: true, chips }).giac).toBe("(pasupm((4936/125),(sqrt(1548381)/1000))*pasu1)*2");
-    expect(latexToGiacInfo("\\res{2}{39.488}\\times2", { units: true, chips }).giac).toBe("pasupm((4936/125),(sqrt(1548381)/1000))*2");
+    // R61's σ in the unit shown goes in as G18's uncertain value with the chip's key (R115), so the unit view keeps it (never a σ silently dropped)
+    expect(latexToGiacInfo("\\res{2}{39.488}\\placeholder[u1]{}\\times2", { units: true, chips }).giac).toBe("(pasupm((4936/125),(sqrt(1548381)/1000),pasr_2)*pasu1)*2");
+    expect(latexToGiacInfo("\\res{2}{39.488}\\times2", { units: true, chips }).giac).toBe("pasupm((4936/125),(sqrt(1548381)/1000),pasr_2)*2");
+    // R115: the chip's name is its key, one input however often it is used; a minus stays outside the call
+    expect(latexToGiacInfo("-\\res{2}{39.488}-\\res{2}{39.488}", { units: true, chips }).giac).toBe(
+      "-pasupm((4936/125),(sqrt(1548381)/1000),pasr_2)-pasupm((4936/125),(sqrt(1548381)/1000),pasr_2)",
+    );
     expect(() => latexToGiacInfo("\\res{1}{0.157}\\placeholder[u1]{}", { chips })).toThrow(/unexpected token at 'placeholder'/);
     expect(() => latexToGiacInfo("\\res{1}{0.157}\\pm1", { units: true, chips })).toThrow("± goes right after a number");
   });

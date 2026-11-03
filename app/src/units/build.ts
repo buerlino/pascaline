@@ -155,26 +155,45 @@ function constGiac(id: string, table: FactorTable, vars: UncVar[], seen: Map<str
   return { giac: `(${number}${dims ? `*${dims}` : ""})`, inexact: c.unc !== undefined };
 }
 
-/** `pasupm(value,sigma)` calls of a formula (G18) become the symbols pasv<n>, appended to `vars`. */
+/** A chip's key in `pasupm(value,sigma,key)` (R115): the parser's chip name, pasr_<k> or pasr_ans. */
+const CHIP_KEY = /^pasr_[A-Za-z0-9]+$/;
+
+/** `pasupm(value,sigma)` calls of a formula (G18) become the symbols pasv<n>, appended to `vars`: every typed one an
+ *  input of its own (G18), every call with a chip's key `pasupm(value,sigma,key)` one input per key (R115, decisions
+ *  R61: one chip used twice is one input), as `uncVar` does for a constant. */
 function uncertainValues(formula: string, vars: UncVar[]): string {
   const CALL = "pasupm(";
+  const bad = (): Refused => new Refused({ error: "engine", detail: "a bad ± in the formula" });
+  const byKey = new Map<string, UncVar>();
   let out = "";
   let i = 0;
   for (;;) {
     const at = formula.indexOf(CALL, i);
     if (at < 0) return out + formula.slice(i);
     out += formula.slice(i, at);
-    const close = closing(formula, at + CALL.length - 1, "typed");
-    const j = close + 1;
-    const comma = close < 0 ? -1 : walk(formula, at + CALL.length, (k, d, c) => k < close && c === "," && d === 0, "typed");
-    if (close < 0 || comma < 0 || comma >= close) throw new Refused({ error: "engine", detail: "a bad ± in the formula" });
-    const value = formula.slice(at + CALL.length, comma).trim();
-    const sigma = formula.slice(comma + 1, j - 1).trim();
-    if (!value || !sigma || /pas/.test(value + sigma) || /,/.test(sigma)) throw new Refused({ error: "engine", detail: "a bad ± in the formula" });
-    const name = `pasv${vars.length + 1}`;
-    vars.push({ name, value, sigma });
-    out += name;
-    i = j;
+    const open = at + CALL.length - 1;
+    const close = closing(formula, open, "typed");
+    if (close < 0) throw bad();
+    const commas: number[] = [];
+    walk(formula, open + 1, (k, d, c) => {
+      if (k < close && c === "," && d === 0) commas.push(k);
+      return k >= close;
+    }, "typed");
+    if (commas.length < 1 || commas.length > 2) throw bad();
+    const value = formula.slice(open + 1, commas[0]).trim();
+    const sigma = formula.slice(commas[0]! + 1, commas[1] ?? close).trim();
+    const key = commas[1] === undefined ? undefined : formula.slice(commas[1] + 1, close).trim();
+    if (!value || !sigma || /pas/.test(value + sigma) || (key !== undefined && !CHIP_KEY.test(key))) throw bad();
+    const known = key !== undefined ? byKey.get(key) : undefined;
+    // one key is one chip: the parser writes it with one value and one σ, so anything else is not ours
+    if (known && (known.value !== value || known.sigma !== sigma)) throw bad();
+    const v = known ?? { name: `pasv${vars.length + 1}`, value, sigma };
+    if (!known) {
+      vars.push(v);
+      if (key !== undefined) byKey.set(key, v);
+    }
+    out += v.name;
+    i = close + 1;
   }
 }
 
@@ -365,7 +384,10 @@ export function buildJob(req: UnitRequest, table: FactorTable): UnitJob | UnitEr
       const uvars: UncVar[] = [];
       const withPm = lone && !isLog(x.id, x.u) && req.formula.includes("pasupm(");
       const symbolic = withPm ? uncertainValues(req.formula, uvars) : "";
-      const pm = withPm && uvars.length === 1 && new RegExp(`^\\s*pasv1\\s*\\*\\s*pasu${alone + 1}\\s*$`).test(symbolic);
+      // R115: a chip's call keeps its minus outside it, (-pasv1)
+      const pmMatch = withPm && uvars.length === 1 ? new RegExp(`^\\s*(pasv1|\\(\\s*-\\s*pasv1\\s*\\))\\s*\\*\\s*pasu${alone + 1}\\s*$`).exec(symbolic) : null;
+      const pm = pmMatch !== null;
+      const minus = pmMatch?.[1] !== "pasv1";
       const num = pm ? "pasv1" : lone && !withPm ? aloneNumber(req.formula, alone + 1) : null;
       if (num === null) {
         // G35: −(5 °C) is a minus before the whole quantity; say where it goes rather than "use K".
@@ -380,7 +402,8 @@ export function buildJob(req: UnitRequest, table: FactorTable): UnitJob | UnitEr
       const abs = isAffine(x.u) ? { absTemp: true as const } : {};
       if (pm) {
         const v = uvars[0]!;
-        return { expr: specialSource(x.id, x.u, `(${v.value})`), ...endJob(req, table), ...abs, inexact: true, unc: { expr: specialSource(x.id, x.u, "pasv1"), vars: uvars } };
+        const sign = minus ? "-" : "";
+        return { expr: specialSource(x.id, x.u, `(${sign}(${v.value}))`), ...endJob(req, table), ...abs, inexact: true, unc: { expr: specialSource(x.id, x.u, `(${sign}pasv1)`), vars: uvars } };
       }
       return { expr: specialSource(x.id, x.u, num), ...endJob(req, table), ...abs, inexact: false };
     }
