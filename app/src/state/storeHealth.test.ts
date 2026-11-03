@@ -168,6 +168,23 @@ describe("Settings › Data's last row (R96)", () => {
     await storage.idbKv.get("view");
     expect(row(items()).label).toBe("Not saved: changes are lost when the app closes");
   });
+  it("Not saved after a read of the presets that failed (R123): their record is read raw, outside idbKv", async () => {
+    vi.stubGlobal("navigator", { storage: { persisted: async () => true } });
+    await storage.kvSet("presets", { presets: [], active: null, next: 1 });
+    const { items } = await level();
+    await vi.waitFor(() => expect(row(items()).label).toBe("Kept on this device"));
+    idb.failGetsOnce.add("presets");
+    const { Presets, idbPresetStore } = await import("./presets.svelte.ts");
+    const { Session } = await import("./session.svelte.ts");
+    const { UserKeys } = await import("../keyboard/userKeys.svelte.ts");
+    const { UnitCells } = await import("../units/userCells.svelte.ts");
+    const { FakeCalc } = await import("../calc/fake.ts");
+    const kv = { get: () => Promise.resolve(undefined), set: () => Promise.resolve() };
+    const presets = await Presets.open({ session: new Session(new FakeCalc(), kv), userKeys: new UserKeys(kv), cells: new UnitCells(kv), store: idbPresetStore });
+    expect(presets.refused).toBe("unreadable");
+    expect(storage.storeHealth()).toBe("unread");
+    expect(row(items()).label).toBe("Not saved: changes are lost when the app closes");
+  });
   it("Not saved after a commit that failed (a full disk, R96f1), while a later write of another key lands", async () => {
     vi.stubGlobal("navigator", { storage: { persisted: async () => true } });
     await storage.kvSet("seed", 0);

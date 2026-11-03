@@ -159,6 +159,9 @@ async function kvPut(key: string, value: unknown): Promise<void> {
 
 /** R93: the keys whose read failed in this session (the page). */
 const unread = new Set<string>();
+/** A key's read failed: it is not written again this session, and Settings › Data says so (R96). Also for a record read
+ *  raw, outside idbKv (the presets, R123). */
+export const readFailed = (key: string): void => void unread.add(key);
 
 /**
  * The store as its callers use it (R93). A read that failed gives undefined, so the caller keeps its defaults in memory,
@@ -168,7 +171,7 @@ const unread = new Set<string>();
 export const idbKv: Kv = {
   async get<T>(key: string): Promise<T | undefined> {
     const r = await kvGet<T>(key);
-    if (r.kind === "failed") unread.add(key);
+    if (r.kind === "failed") readFailed(key);
     return r.kind === "value" ? r.value : undefined;
   },
   set: (key, value) => (unread.has(key) ? Promise.resolve() : kvSet(key, value)),
