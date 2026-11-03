@@ -6,6 +6,7 @@ import { BASES, dimKeyOf, dimSymbols, isExponent, parseDimKey, unitProduct } fro
 import type { FactorTable, UnitFactor } from "./factors.ts";
 import { balanced, closing, mapNames, names, walk } from "../engine/giacPrint.ts";
 import { basisGiac, basisOf, correlated, LEAF_PREFIX } from "../engine/constBasis.ts";
+import { isChipName } from "../engine/ourNames.ts";
 
 const letters = (s: string): boolean => s !== "" && [...s].every((c) => (c >= "a" && c <= "z") || (c >= "A" && c <= "Z"));
 const digits = (s: string): boolean => s !== "" && [...s].every((c) => c >= "0" && c <= "9");
@@ -155,9 +156,6 @@ function constGiac(id: string, table: FactorTable, vars: UncVar[], seen: Map<str
   return { giac: `(${number}${dims ? `*${dims}` : ""})`, inexact: c.unc !== undefined };
 }
 
-/** A chip's key in `pasupm(value,sigma,key)` (R115): the parser's chip name, pasr_<k> or pasr_ans. */
-const CHIP_KEY = /^pasr_[A-Za-z0-9]+$/;
-
 /** `pasupm(value,sigma)` calls of a formula (G18) become the symbols pasv<n>, appended to `vars`: every typed one an
  *  input of its own (G18), every call with a chip's key `pasupm(value,sigma,key)` one input per key (R115, decisions
  *  R61: one chip used twice is one input), as `uncVar` does for a constant. */
@@ -183,7 +181,7 @@ function uncertainValues(formula: string, vars: UncVar[]): string {
     const value = formula.slice(open + 1, commas[0]).trim();
     const sigma = formula.slice(commas[0]! + 1, commas[1] ?? close).trim();
     const key = commas[1] === undefined ? undefined : formula.slice(commas[1] + 1, close).trim();
-    if (!value || !sigma || /pas/.test(value + sigma) || (key !== undefined && !CHIP_KEY.test(key))) throw bad();
+    if (!value || !sigma || /pas/.test(value + sigma) || (key !== undefined && !isChipName(key))) throw bad();
     const known = key !== undefined ? byKey.get(key) : undefined;
     // one key is one chip: the parser writes it with one value and one σ, so anything else is not ours
     if (known && (known.value !== value || known.sigma !== sigma)) throw bad();

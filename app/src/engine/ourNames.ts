@@ -48,6 +48,16 @@ export const EQ_DIFF = "pasdiff";
 export const EQ_VERDICT = "pasverdict";
 /** The prefix of a result chip sent by name (G49's `pasr_<k>`, input/chip-giac.ts; engine/chipFacts.ts). */
 export const CHIP_PREFIX = "pasr_";
+/** The part after CHIP_PREFIX that names Ans's chip (`pasr_ans`); a result chip's is its row number k. */
+export const CHIP_ANS = "ans";
+
+/** R115: whether `name` is a chip name the parser writes (input/chip-giac.ts chipName): CHIP_PREFIX then digits, or
+ *  CHIP_ANS. The unit view's `pasupm(value,sigma,key)` takes no other key. */
+export function isChipName(name: string): boolean {
+  if (!name.startsWith(CHIP_PREFIX)) return false;
+  const k = name.slice(CHIP_PREFIX.length);
+  return k === CHIP_ANS || /^\d+$/.test(k);
+}
 
 /** G100: the names our own test helper stores into (input/emit.ts equalityTest: the float flag, the difference and
  *  the verdict): a store into one is not the user's. */

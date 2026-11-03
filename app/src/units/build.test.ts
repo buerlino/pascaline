@@ -3,6 +3,9 @@
 // written here (factors as the index writes them), so the test runs without the generated index.
 import { describe, expect, it } from "vitest";
 import { buildJob, slotGiac } from "./build.ts";
+import { chipName } from "../input/chip-giac.ts";
+import { ANS_KEY } from "../input/chips.ts";
+import { CHIP_PREFIX, isChipName } from "../engine/ourNames.ts";
 import { factorTable } from "./factors.ts";
 import { dimKeyOf, dimensionText, parseDimKey } from "./dims.ts";
 import { unitErrorMessage } from "./messages.ts";
@@ -209,6 +212,21 @@ describe("uncertain inputs (G18)", () => {
     expect("error" in buildJob({ formula: "pasupm(1,0.1,pasr_1)*pasu1+pasupm(2,0.1,pasr_1)*pasu2", slots: [m, m] }, table)).toBe(true);
     expect("error" in buildJob({ formula: "pasupm(1,0.1,x)*pasu1", slots: [m] }, table)).toBe(true);
     expect("error" in buildJob({ formula: "pasupm(1,0.1,pasr_1,2)*pasu1", slots: [m] }, table)).toBe(true);
+  });
+  it("R115 (fix round 1): the key follows the parser's own chip names, from the one CHIP_PREFIX (P20, G145)", () => {
+    const m = { tokens: [{ unit: "m" }] };
+    // a pasr_ name the parser never writes is refused
+    expect("error" in buildJob({ formula: "pasupm(1,0.1,pasr_foo)*pasu1", slots: [m] }, table)).toBe(true);
+    expect("error" in buildJob({ formula: "pasupm(1,0.1,pasr_)*pasu1", slots: [m] }, table)).toBe(true);
+    // every name chipName writes is a key: a result chip's and Ans's
+    for (const k of ["res:7", ANS_KEY]) {
+      const name = chipName(k)!;
+      expect(name.startsWith(CHIP_PREFIX)).toBe(true);
+      expect(isChipName(name)).toBe(true);
+      const job = buildJob({ formula: `pasupm(1,0.1,${name})*pasu1+pasupm(1,0.1,${name})*pasu2`, slots: [m, m] }, table);
+      if ("error" in job) throw new Error(job.error);
+      expect(job.unc?.vars.map((v) => v.name)).toEqual(["pasv1"]);
+    }
   });
   it("a value without ± has no uncertainty; a malformed ± is refused", () => {
     const job = buildJob({ formula: "12.34*pasu1", slots: [{ tokens: [{ unit: "m" }] }] }, table);
