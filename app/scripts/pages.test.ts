@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // A45: the GitHub Pages workflow stays small and pinned: commit-SHA actions, two triggers, three permissions, one build command;
-// A8: a test tag (a - in its name) is never deployed by its push.
+// A8: a test tag (a - in its name) is never deployed by its push;
+// A63: a kill run refuses any ref but a tag, in the job's first step.
 import { readFileSync, readdirSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -64,9 +65,10 @@ describe(".github/workflows/pages.yml", () => {
     expect(build).toBeGreaterThan(-1);
     expect(i).toBeGreaterThan(build);
     expect(i).toBeLessThan(upload);
-    // no other step may mention the kill worker; the only other step that reads the input is the golden gate (A52f1)
-    expect(s.filter((x) => /kill/.test(x.run ?? "")).length).toBe(1);
-    expect(s.filter((x) => /kill/.test(x.if ?? "")).map((x) => x.name)).toEqual(["Golden gate on the release engine", step.name]);
+    // no other step may mention the kill worker; the only other steps that read the input are the golden gate (A52f1) and the tag guard (A63)
+    const guard = s[0] as Step;
+    expect(s.filter((x) => x !== guard && /kill/.test(x.run ?? "")).length).toBe(1);
+    expect(s.filter((x) => /kill/.test(x.if ?? "")).map((x) => x.name)).toEqual([guard.name, "Golden gate on the release engine", step.name]);
   });
 
   it("A52f1: the golden step is skipped on a kill run; the version check runs on every run", () => {
@@ -77,6 +79,28 @@ describe(".github/workflows/pages.yml", () => {
     expect(ver).toBeDefined();
     expect(ver?.if).toBeUndefined();
     expect(text).toMatch(/#.*kill run.*golden/i);
+  });
+
+  it("A63: the job's first step fails a kill run whose ref is not a tag, with the message; a normal run is untouched", () => {
+    const guard = steps("build")[0] as Step;
+    expect(guard.uses).toBeUndefined();
+    expect(guard.run).toContain("A kill run needs the release tag: pick the tag in 'Use workflow from'");
+    expect(guard.run).toMatch(/\bexit 1\b/);
+    // evaluate the step's `if:` for every input/ref combination (the expression is a plain && of comparisons)
+    const expr = (guard.if ?? "").replace(/^\$\{\{\s*|\s*\}\}$/g, "");
+    expect(expr).toMatch(/inputs\.kill/);
+    expect(expr).toMatch(/github\.ref_type/);
+    const runs = (kill: boolean, refType: string): boolean =>
+      new Function("inputs", "github", `return (${expr});`)({ kill }, { ref_type: refType }) as boolean;
+    expect(runs(true, "branch")).toBe(true);
+    expect(runs(true, "tag")).toBe(false);
+    expect(runs(false, "branch")).toBe(false);
+    expect(runs(false, "tag")).toBe(false);
+    // a push has no inputs: the guard must not trip (inputs.kill is empty there) and the other steps stay as they were
+    expect(new Function("inputs", "github", `return (${expr});`)({}, { ref_type: "tag" })).toBe(false);
+    // it comes before the checkout, so a refused run costs nothing
+    expect(steps("build").findIndex((x) => (x.uses ?? "").startsWith("actions/checkout@"))).toBeGreaterThan(0);
+    expect(text).toMatch(/#.*A63/);
   });
 
   it("A8: a tag push whose name holds a - (the test tag vX.Y.Z-test) skips the build job, and so the deploy; a dispatch never skips", () => {
