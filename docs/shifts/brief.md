@@ -61,7 +61,6 @@ Milestone reviews (section 0): after R50e (with R116's gallery groups "Entry hig
 
 | Step | What | Agent, model | Branch | After |
 |---|---|---|---|---|
-| 461 | [R123](packages/R123.md) presets: a typed name is never the kept line | ron, Opus | `p1/ron-presetname` | – |
 | 464 | [R12b](packages/R12b.md) visual pass: tokens and history rows | ron, Opus | `p1/ron-m4a-tokens` | – |
 | 465 | [R12c](packages/R12c.md) visual pass: motion | ron, Sonnet | `p1/ron-m4a-motion` | R12b |
 | 466 | [R41](packages/R41.md) labels (TalkBack: the next day's device run) | ron, Sonnet | `p1/ron-m4a-labels` | R12c |
