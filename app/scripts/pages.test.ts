@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // A45: the GitHub Pages workflow stays small and pinned: commit-SHA actions, two triggers, three permissions, one build command;
 // A8: a test tag (a - in its name) is never deployed by its push.
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
@@ -123,5 +123,20 @@ describe(".github/workflows/pages.yml", () => {
     expect(wf.jobs["deploy"]?.needs).toBe("build");
     expect(JSON.stringify(wf.jobs["deploy"]?.environment)).toContain("github-pages");
     expect(steps("deploy").some((s) => (s.uses ?? "").startsWith("actions/deploy-pages@"))).toBe(true);
+  });
+});
+
+describe("THIRD_PARTY.md", () => {
+  it("A8f1: every action a workflow pins has a row there with the same commit SHA", () => {
+    const third = readFileSync(join(repo, "THIRD_PARTY.md"), "utf8");
+    const dir = join(repo, ".github/workflows");
+    const uses = readdirSync(dir)
+      .filter((f) => /\.ya?ml$/.test(f))
+      .flatMap((f) => [...readFileSync(join(dir, f), "utf8").matchAll(/^\s*(?:-\s*)?uses:\s*([\w.-]+\/[\w./-]+)@([0-9a-f]{40})/gm)]);
+    expect(uses.length).toBeGreaterThanOrEqual(7);
+    for (const m of uses) {
+      const name = (m[1] as string).replace(/\./g, "\\.");
+      expect(third, `${m[1]}@${m[2]}`).toMatch(new RegExp(`^\\| ${name} \\|[^\\n]*\`${m[2]}\``, "m"));
+    }
   });
 });
