@@ -172,9 +172,11 @@ export const ENGINE_DEFINITIONS: Readonly<Record<string, string>> = {
     "s:=sort(l); n:=size(s); if (n==0) throw(\"median: needs at least one value\"); " +
     "if (irem(n,2)==1) return s[(n-1)/2]; return (s[n/2-1]+s[n/2])/2; }",
   // G42: Giac leaves percentile unevaluated. Linear interpolation between the closest ranks: rank r = p/100·(n−1) on
-  // the sorted list (the inclusive method, Excel's PERCENTILE.INC), 0 ≤ p ≤ 100.
+  // the sorted list (the inclusive method, Excel's PERCENTILE.INC), 0 ≤ p ≤ 100. G158f1: one parameter, the sequence of the
+  // call: Giac refuses a fixed (l,p) function a wrong count before it runs, with its own text (size() != [l,p]).
   paspercentile:
-    "paspercentile(l,p):={ local s,n,r,k; if (type(l)!=DOM_LIST) throw(\"percentile: needs a list of values\"); " +
+    "paspercentile(a):={ local l,p,s,n,r,k; if (subtype(a)!=1 or size(a)!=2) throw(\"percentile: needs one list and a percentage\"); l:=a[0]; p:=a[1]; " +
+    "if (type(l)!=DOM_LIST) throw(\"percentile: needs a list of values\"); " +
     "for (k:=0;k<size(l);k:=k+1) { if (type(l[k])!=integer and type(l[k])!=rational and type(evalf(l[k]))!=DOM_FLOAT) throw(\"percentile: needs a list of real numbers\"); } " +
     "s:=sort(l); n:=size(s); " +
     "if (type(p)!=integer and type(p)!=rational and type(evalf(p))!=DOM_FLOAT) throw(\"percentile: needs a list of real numbers\"); " +
