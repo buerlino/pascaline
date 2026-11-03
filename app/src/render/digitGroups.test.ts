@@ -3,7 +3,8 @@
 import { describe, expect, it } from "vitest";
 import { decimalFromRational, type ComplexValue } from "../engine/format.ts";
 import { commaResult, renderNumeric, type DisplayContext, type NumericResult } from "../state/displayMode.ts";
-import { groupDigits, groupText } from "./home.ts";
+import { groupText } from "./groupText.ts";
+import { groupDigits } from "./home.ts";
 
 const q = (p: bigint, d = 1n) => decimalFromRational(p, d);
 const real = (p: bigint, d = 1n): ComplexValue => ({ re: q(p, d), im: q(0n) });

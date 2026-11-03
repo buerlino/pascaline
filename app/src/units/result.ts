@@ -6,7 +6,7 @@
 import { confirmedOptions, formatComplex, markOf, type FormatOptions, type Mark } from "../engine/format.ts";
 import { precisionFacts } from "../engine/homeEval.ts";
 import { unitText } from "../i18n/enUnits.ts";
-import { groupText } from "../render/home.ts";
+import { groupText } from "../render/groupText.ts";
 import { commaResult, markText } from "../state/displayMode.ts";
 import type { Alternative } from "./alternatives.ts";
 import { unitErrorMessage, unitNoteText, unitWhyText } from "./messages.ts";

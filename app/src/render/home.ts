@@ -12,10 +12,6 @@ import { balanced, mapNames } from "../engine/giacPrint.ts";
 export const groupDigits = (m: string): string =>
   m.replace(/\d{5,}/g, (d, at: number) => (at ? d.replace(/(\d{3})(?=\d)/g, "$1\\,") : d.replace(/\B(?=(\d{3})+$)/g, "\\,")));
 
-/** R55's groups in plain text drawn as it is (the unit view, R120): each number of `s` grouped as a mantissa is, a thin
- *  space (U+2009) between the groups. */
-export const groupText = (s: string): string => s.replace(/\d+(?:\.\d+)?/g, (n) => groupDigits(n).replace(/\\,/g, "\u2009"));
-
 function part(f: FormattedNumber, group: boolean): string {
   const m = group ? groupDigits(f.mantissa) : f.mantissa;
   // PFX: a thin space, then the prefix in the accent colour (docs/04 2.7); .pfx is styled in Math.svelte
