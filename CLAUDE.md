@@ -10,7 +10,7 @@ engine/giac/build-wasm.sh                 # Giac+GSL+GMP+MPFR → engine/giac/_o
 engine/giac/build-wasm-release.sh         # release engine in the debian:trixie container (P2) → _out/release + SHA256SUMS
 engine/qalc/build-wasm.sh [dev|release]   # libqalculate → engine/qalc/_out/<mode>; developer only, for tools/find-index/refresh-factors.mjs (P22)
 node engine/giac/smoke.mjs 'factor(x^4-1)'                 # engine smoke test (VARIANT=gsl|base)
-cd app && npm ci && npm run dev                            # http://localhost:5173 (?engine=fake echoes input)
+cd app && npm ci && npm run dev                            # http://localhost:5173 (?engine=fake echoes input); rebuilds the Find index first when its sources are newer
 npm run typecheck && npm run index && FIND_INDEX=required npm test   # svelte-check + Vitest (from app/; absolute GIAC_OUT for engine tests)
 npm run gate [-- --quick]                                  # from app/: every check in one command, one line each (A6)
 PW_PORT=<free port> GIAC_OUT=<abs dir> npm run test:e2e    # Playwright key-sequence tests; fails at once if the port is in use
