@@ -29,8 +29,8 @@
 | # | Package | Agent, model | Lane | Starts when merged | Size |
 |---|---|---|---|---|---|
 | [A4b](packages/A4b.md) | Find's timing on the Tab One (the bar's point 4) | annabell, Sonnet | day (the Tab One) | – | ~0.2 d |
-| [A8](packages/A8.md) | The release workflow (merged 9c7ee4e0; its after-merge steps wait for A8f2, row 472) | annabell, Opus | day (then the test tag `v0.1.0-test`) | A7 | ~0.5 d |
-| [A70](packages/A70.md) | The release APK from the test tag runs on the Tab One | annabell, Sonnet | day (the Tab One) | A8f2, the moved tag's green run | ~0.2 d |
+| [A8](packages/A8.md) | The release workflow (merged 9c7ee4e0; A8f2 merged 9624810e, so its after-merge steps run again on the moved tag) | annabell, Opus | day (then the test tag `v0.1.0-test`) | A7 | ~0.5 d |
+| [A70](packages/A70.md) | The release APK from the test tag runs on the Tab One | annabell, Sonnet | day (the Tab One) | the moved tag's green run (A8f2 merged 9624810e) | ~0.2 d |
 | [A69](packages/A69.md) | A night stops before the disk is full; runs leave no temp folders | annabell, Sonnet | day (the pipeline) | – | ~0.3 d |
 | [A61](packages/A61.md) | What the WebView answers to `persisted()` | annabell, Sonnet | day (the Fairphone) | R96f1 | ~0.2 d |
 
@@ -73,18 +73,15 @@ A8 and [A57](packages/A57.md) run by day. Steps 448–452 and 408 run only on th
 
 | Step | What | Agent, model | Branch | After |
 |---|---|---|---|---|
-| 446 | [G162](packages/G162.md) the fuzz's cancellation families and their oracle | gorge, Opus | `p1/gorge-fuzzedges` | – |
-| 472 | [A8f2](packages/A8f2.md) release-verify reads apksigner 37's signer lines (the release run failed on it) | annabell, Opus | `p1/annabell-verifyfmt` | – |
-| 447 | [G159](packages/G159.md) σ through `piecewise` or `when` gets ⚠ at a crossing (F166) | gorge, Opus | `p1/gorge-casejump` | – |
 | 470 | [A63](packages/A63.md) the kill run needs a tag (the bar's point 1) | annabell, Sonnet | `p1/annabell-killtag` | A8 |
-| 462 | [G161](packages/G161.md) Find gets VA and var; gauge units stay gauge | gorge, Opus | `p1/gorge-elecunits` | G159 |
-| 463 | [G163](packages/G163.md) the unit view's chunks hold no worker evaluator | gorge, Sonnet | `p1/gorge-unitchunk` | G159, G161 |
+| 462 | [G161](packages/G161.md) Find gets VA and var; gauge units stay gauge | gorge, Opus | `p1/gorge-elecunits` | – |
+| 463 | [G163](packages/G163.md) the unit view's chunks hold no worker evaluator | gorge, Sonnet | `p1/gorge-unitchunk` | G161 |
 | 448 | [G148](packages/G148.md) `approx` of a finite value past the range is an overflow | gorge, Opus | `p1/gorge-approxoverflow` | the weekly night |
 | 449 | [G141](packages/G141.md) a long exact literal raises the agreement check's precision | gorge, Opus | `p1/gorge-literalprec` | the weekly night |
 | 450 | [G142](packages/G142.md) complex acosh of a small number at 30 digits | gorge, Opus | `p1/gorge-acoshsmall` | the weekly night |
 | 451 | [G156](packages/G156.md) \|x\| shown negative when both runs share an error (F163) | gorge, Opus | `p1/gorge-abssign` | the weekly night; G141 |
 | 452 | [G160](packages/G160.md) patch 0025 decides a huge base by its logarithm (F167) | gorge, Opus | `p1/gorge-powbigbase` | the weekly night |
-| 408 | [G138](packages/G138.md) the weekly fuzz and its triage | gorge, Opus | `p1/gorge-nightfuzz-1104` | the weekly night (Wed 11-04); G162 |
+| 408 | [G138](packages/G138.md) the weekly fuzz and its triage | gorge, Opus | `p1/gorge-nightfuzz-1104` | the weekly night (Wed 11-04) |
 | 437 | [G152](packages/G152.md) acosh's sign and tiny imaginary part (F143, F144) | gorge, Opus | `p1/gorge-acoshsign` | G142 |
 | 471 | [A68](packages/A68.md) `npm run dev` refreshes the Find index | annabell, Sonnet | `p1/annabell-devindex` | – |
 | 439 | [A60](packages/A60.md) the F-Droid recipe checks `find/factors.yaml` against its qalc build | annabell, Sonnet | `p1/annabell-recipecheck` | – |

@@ -36,7 +36,8 @@ sha256sum -c pascaline-X.Y.Z.apk.sha256                      # pascaline-X.Y.Z.a
 apksigner verify --print-certs pascaline-X.Y.Z.apk           # one signer; its SHA-256 digest is android/release-cert.sha256
 cp pascaline-X.Y.Z.apk /tmp/check.apk && tools/release-verify.sh /tmp/check.apk   # the same comparison (it deletes the file on a mismatch)
 ```
-`apksigner` prints the digest in lower case without colons; `release-verify.sh` compares both forms. The release notes repeat the
+`apksigner` prints the digest in lower case without colons (`Signer #1 certificate SHA-256 digest:` up to build-tools 36, `V2 Signer:
+certificate SHA-256 digest:` from 37; never the `public key` line); `release-verify.sh` reads both and compares both forms. The release notes repeat the
 commit, the certificate and both `SHA256SUMS`.
 
 ## 5. Install over the last release
