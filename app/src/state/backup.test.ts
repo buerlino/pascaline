@@ -98,6 +98,11 @@ describe("the backup's keys (R38a)", () => {
     for (const k of ["userKeys", "taps", "entry", "unitPadCells", "settings", "defs"]) expect(keys.has(k), k).toBe(true);
     for (const [k, where] of keys) expect(BACKUP_KEYS.includes(k) || LEFT_OUT.includes(k), `${k} (${where})`).toBe(true);
   });
+  it("every key the app writes, kept or left out, is in docs/04 6.2's table (R122: the guard runs both ways)", () => {
+    const documented = documentedKeys();
+    for (const [k, where] of writtenKeys().keys) expect(documented, `${k} (${where})`).toContain(k);
+    for (const k of [...BACKUP_KEYS, ...LEFT_OUT]) expect(documented, k).toContain(k);
+  });
   it("leaves the history's Undo copy of Clear and Delete out, and the check refuses a history that holds one (R98)", async () => {
     const row = { id: 1, view: "home", latex: "1", status: "done", resultLatex: "1", text: "1", approximate: false, startedAt: 0 };
     const undo = { view: "home", kind: "clear", rows: [{ at: 0, item: { ...row, latex: "secret" } }] };
@@ -189,6 +194,14 @@ describe("a failed read fails the backup", () => {
     expect(idb.stores.get("kv")?.has("backup.last")).toBe(false);
     await saveBackup(at);
     expect(idb.stores.get("kv")?.get("backup.last")).toEqual(stamp(at.toISOString()));
+  });
+  it("a download the browser only offered (no save picker) is not a saved backup (R122): its time is kept apart", async () => {
+    seed("settings", { digits: 12 });
+    const at = new Date(2026, 10, 3, 9, 30);
+    saveFile.mockResolvedValueOnce("offered" as "saved");
+    expect(await saveBackup(at)).toBe(dataText("backup.offered" as never));
+    expect(idb.stores.get("kv")?.has("backup.last")).toBe(false);
+    expect(idb.stores.get("kv")?.get("backup.offered")).toEqual(stamp(at.toISOString()));
   });
 });
 

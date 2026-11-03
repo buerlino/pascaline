@@ -1,0 +1,154 @@
+{
+  "pascaline-backup": 1,
+  "dataVersion": 4,
+  "made": "2026-11-03T03:20:04.758Z",
+  "parts": {
+    "settings": {
+      "@pascaline": 4,
+      "value": {
+        "schema": 4,
+        "digits": 9,
+        "angle": "deg",
+        "format": "std",
+        "entry": "textbook",
+        "decimalMark": "point",
+        "fmtCycle": [
+          "std",
+          "sci",
+          "eng"
+        ],
+        "fixDecimals": 4,
+        "haptics": {
+          "on": true,
+          "strength": 70,
+          "ms": 20
+        },
+        "look": {
+          "family": "nord",
+          "brightness": "dark",
+          "contrast": false,
+          "plain": true
+        }
+      }
+    },
+    "view": {
+      "@pascaline": 4,
+      "value": "cas"
+    },
+    "history": {
+      "@pascaline": 4,
+      "value": {
+        "home": [
+          {
+            "id": 1,
+            "view": "home",
+            "latex": "\\frac13",
+            "status": "done",
+            "resultLatex": "0.333333333333",
+            "text": "0.333333333333",
+            "approximate": false,
+            "startedAt": 2435.5999999940395,
+            "value": {
+              "re": {
+                "neg": false,
+                "digits": "3333333333333333333333333333333333333333",
+                "exp": -1,
+                "sticky": true
+              },
+              "im": {
+                "neg": false,
+                "digits": "",
+                "exp": 0,
+                "sticky": false
+              }
+            },
+            "facts": {
+              "exact": true,
+              "reliableDigits": null
+            },
+            "rational": {
+              "n": "1",
+              "d": "3"
+            },
+            "full": "1/3",
+            "fullExact": true
+          },
+          {
+            "id": 2,
+            "view": "home",
+            "latex": "5\\blacktriangleright A",
+            "status": "done",
+            "resultLatex": "5",
+            "text": "5",
+            "approximate": false,
+            "startedAt": 3114.300000011921,
+            "value": {
+              "re": {
+                "neg": false,
+                "digits": "5",
+                "exp": 0,
+                "sticky": false
+              },
+              "im": {
+                "neg": false,
+                "digits": "",
+                "exp": 0,
+                "sticky": false
+              }
+            },
+            "facts": {
+              "exact": true,
+              "reliableDigits": null
+            },
+            "rational": {
+              "n": "5",
+              "d": "1"
+            },
+            "full": "5",
+            "fullExact": true
+          }
+        ],
+        "cas": []
+      }
+    },
+    "defs": {
+      "@pascaline": 4,
+      "value": [
+        {
+          "name": "A",
+          "kind": "var",
+          "cmds": [
+            "A:=(5)"
+          ],
+          "preview": "5",
+          "view": "home",
+          "time": 1793676002483,
+          "angle": "rad"
+        }
+      ]
+    },
+    "userKeys": {
+      "@pascaline": 4,
+      "value": {
+        "u1": {
+          "primary": {
+            "label": "Home",
+            "action": {
+              "special": "home"
+            }
+          }
+        }
+      }
+    },
+    "taps": {
+      "@pascaline": 4,
+      "value": {
+        "shift": 1,
+        "alpha": 1,
+        "presses": 12,
+        "presets": 0,
+        "since": "2026-11-03"
+      }
+    }
+  }
+}
