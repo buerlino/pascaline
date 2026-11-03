@@ -18,7 +18,8 @@ function svelteFiles(dir: string): string[] {
   );
 }
 
-const LENGTH = /(?<![\w.#-])\d*\.?\d+(?:px|r?em|vh|vw|pt|m?s)\b/g;
+// a minus sign counts (-8px); a number inside a name (--sp-2, translate-x-4px) does not
+const LENGTH = /(?<![\w.#]|\w-)-?\d*\.?\d+(?:px|r?em|vh|vw|pt|m?s)\b/g;
 const COLOUR = /#[0-9a-fA-F]{3,8}\b|\b(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch)\(/g;
 const NAMED = /:\s*(?:[^;{}]*?[\s,(])?(black|white|red|green|blue|gray|grey|yellow|orange|purple|silver|navy|maroon)\b/g;
 
@@ -49,10 +50,12 @@ describe("design tokens (R12b)", () => {
       "<script>const a = 3; // 12px in a comment", "const t = `${n}px`;</script>",
       "<div style:width={`${w}px`} style:height=\"12px\"></div>",
       "<style>", "  .a { padding: 0 var(--sp-2); width: 50%; flex: 1 1 0; line-height: 1.1; }", "  /* 8px here is a comment */",
-      "  .b { margin: 4px; color: #fff; background: rgb(0 0 0); border-color: black; }", "  @media (max-height: 700px) {", "  .c { animation: x 100ms; font-size: 0.94em; }", "</style>",
+      "  .b { margin: 4px; color: #fff; background: rgb(0 0 0); border-color: black; }", "  @media (max-height: 700px) {", "  .c { animation: x 100ms; font-size: 0.94em; }",
+      "  .d { margin: 0 -8px; transform: translate(-50%, calc(-100% - 6px)); gap: var(--sp-2); }", "</style>",
     ].join("\n");
     expect(hardCoded("x.svelte", sample)).toEqual([
       "x.svelte:3: 12px", "x.svelte:7: 4px", "x.svelte:7: #fff", "x.svelte:7: rgb(", "x.svelte:7: black", "x.svelte:9: 100ms", "x.svelte:9: 0.94em",
+      "x.svelte:10: -8px", "x.svelte:10: 6px",
     ]);
   });
   it("no colour or size is written directly in any .svelte file", () => {
