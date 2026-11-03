@@ -235,8 +235,11 @@ export const LAZY_PARTS = ["src/views/sheetKeys.ts", "src/views/tmplSheet.ts", "
  *  59.16 → 59.24 kB (R96f1): phase-1 a461f046 measures 59,108 B gzip (168,152 B raw); the branch merged with it 59,185 B
  *  (168,255 B raw, +77 B): R96's store health in storage.ts (a set of the keys whose last write did not land, and kvPut
  *  settling on abort; the line itself is in the Mode sheet's chunk). R96 before its fix measured 59,167 B. The pin is
- *  59,185 B + 0.05 kB. */
-export const START_PIN_GZIP = 59_235;
+ *  59,185 B + 0.05 kB.
+ *  59.24 → 59.34 kB (R121): phase-1 321fb5f1 measures 59,235 B gzip (168,422 B raw), the branch 59,290 B (168,655 B raw,
+ *  +55 B): the Home row's line naming the stored values a unit result read as pure numbers, in History.svelte (the text
+ *  is the row's, written by the lazy units/row.ts; no unit code is in the start chunk). The pin is 59,290 B + 0.05 kB. */
+export const START_PIN_GZIP = 59_340;
 
 /** R103 (vr-4): the classic inline scripts of index.html run before the first paint, outside every chunk: the stored look
  *  (R50e) and the too-old WebView check. Their gzip sizes, each script alone and summed (as the start chunk sums its

@@ -6,7 +6,7 @@
 // agreement check), so markOf() marks it as Home. Synchronous, UI-free. Only erasable TypeScript syntax.
 import { FULL_EXACT_MAX, resultFromFacts, toExactLiterals, type HomeResult, type HomeSettings } from "../engine/homeEval.ts";
 import { exactFacts, floatFacts, hasFloat, rationalValue, valuePrecision, type ElementFacts, type Giac } from "../engine/numeric.ts";
-import { callsOf, isError, isNameChar, splitList } from "../engine/giacPrint.ts";
+import { callsOf, isError, isNameChar, namesIn, splitList } from "../engine/giacPrint.ts";
 import { PASDEG } from "../engine/angles.ts";
 import { BASES, dimKeyOf, dimensionText, isExponent, parseDimKey, siSlot, siUnit } from "./dims.ts";
 import { isUnitError, type Quantity, type Uncertainty, type UncVar, type UnitError, type UnitJob, type UnitNote, type UnitSlot } from "./types.ts";
@@ -337,6 +337,15 @@ function chosenUnit(job: UnitJob, dimension: string, si: { text: string; factor:
   if (near) return { text: near.text, factor: near.factor, slot: near.slot, radDropped: true };
   if (dimension === "rad1" && angle === "deg") return { text: "°", factor: "pi/180", slot: { tokens: [{ unit: "deg" }] } };
   return { ...si, slot: siSlot(dimension, si.text) };
+}
+
+/** R121: `q` with the user names its formula read (`user`: the definitions log's stored values), in the order they
+ *  appear. Each is a pure number here: Home keeps a value without its unit. Giac's constants and our pas names are not
+ *  user names; a free name was refused before (symbolic). */
+export function withNames(q: Quantity | UnitError, job: UnitJob, user: (name: string) => boolean): Quantity | UnitError {
+  if (isUnitError(q)) return q;
+  const names = namesIn(job.expr, "typed").filter(user);
+  return names.length ? { ...q, names } : q;
 }
 
 /** Evaluates a job in the engine's current (Home) mode. One Giac call when the value is rational; the agreement
