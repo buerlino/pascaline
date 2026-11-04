@@ -61,9 +61,6 @@ Milestone reviews (section 0): after R50e (with R116's gallery groups "Entry hig
 
 | Step | What | Agent, model | Branch | After |
 |---|---|---|---|---|
-| 439 | [A60](packages/A60.md) the F-Droid recipe checks `find/factors.yaml` against its qalc build | annabell, Sonnet | `p1/annabell-recipecheck` | – |
-| 440 | [A59](packages/A59.md) Android's splash and system bars take the Dark background (device step) | annabell, Sonnet | `p1/annabell-darkbars` | – |
-| 470 | [A62](packages/A62.md) the library replay on the Tab One after G83 (R59's gate; device step) | annabell, Sonnet | `p1/annabell-libtiming` | – |
 | 471 | [R127](packages/R127.md) press counters per key and layer, and their export for your AI | ron, Sonnet | `p1/ron-keycounts` | – |
 
 ### Lane B queue (the release, then the engine)
