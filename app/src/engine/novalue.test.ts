@@ -9,7 +9,8 @@ import { defaultHomeSettings } from "./homeEval.ts";
 import { defaultCasSettings } from "./types.ts";
 import { giacAvailable, loadNodeGiac } from "./nodeGiac.ts";
 import { rewriteAngles } from "./angles.ts";
-import { lostNumber, overflowAt, throughInfinity, underflow, zeroElements } from "./novalue.ts";
+import type { Giac } from "./numeric.ts";
+import { approxRange, lostNumber, overflowAt, throughInfinity, underflow, zeroElements } from "./novalue.ts";
 
 describe.skipIf(!giacAvailable())("G78 on the real engine", () => {
   let host: EngineHost;
@@ -186,4 +187,30 @@ describe.skipIf(!giacAvailable())("G78 on the real engine", () => {
     // Before the fix the walk evaluated factorial(10^6) twice more after Home's own run (about 2 s more).
     expect(performance.now() - t0 - r.exactMs).toBeLessThan(700);
   }, 30_000); // factorial(10^6) is one GMP call of about 1 s that ignores the interrupt; with 87 test files in parallel it took 6 s (run 150), so the overhead check above decides, not vitest's 5 s
+});
+
+// G148 (step 4): the rule asks the engine nothing for an output with no infinity that does not read as 0, nor for an
+// input with no approx or evalf, a typed infinity, or a 0 that is not the whole input's.
+describe("G148 approxRange's cost", () => {
+  const counting = (): { giac: Giac; calls: () => number } => {
+    let n = 0;
+    const giac: Giac = {
+      eval: () => (n++, "0"),
+      value: () => (n++, { kind: "error", text: "GIAC_ERROR: not run" }),
+    };
+    return { giac, calls: () => n };
+  };
+  const ask = (input: string, output: string): number => {
+    const { giac, calls } = counting();
+    expect(approxRange(giac, input, output, 40, () => false, () => false), `${input} -> ${output}`).toBeNull();
+    return calls();
+  };
+  it("asks nothing for an ordinary output, a limit, a typed inf or a 0 inside a larger input", () => {
+    expect(ask("approx(1/3)", "0.3333333333333333333333333333333333333333")).toBe(0);
+    expect(ask("approx(exp(1000))", "0.1970071114017046993888879352243323125316e435")).toBe(0);
+    expect(ask("limit(1/x^2,x,0)", "+infinity")).toBe(0);
+    expect(ask("approx(inf)", "+infinity")).toBe(0);
+    expect(ask("2*approx(exp(-10^20))", "0.0000000000000000000000000000000000000000")).toBe(0);
+    expect(ask("sin(pi)", "0")).toBe(0);
+  });
 });

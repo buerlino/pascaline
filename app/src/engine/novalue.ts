@@ -9,11 +9,13 @@
 //   (lostNumber).
 // - G84 (backlog F60): a value that reads as 0 while Giac's exact answer is not 0 (exp(-10^30), past MPFR's exponent
 //   range) is refused "underflow", as an overflow is (underflow); G154 (F139): only when Giac can state its size.
+// - G148 (vg-3, vvg-1): approx and evalf make Giac's answer ±infinity, or a float 0, at once; the finite exact value they
+//   were given is refused as the bare value is (approxRange).
 // Runs synchronously next to the engine; only erasable TypeScript syntax.
 import { callsIn, type Refusal } from "./converge.ts";
-import { MAX_EVAL_DIGITS, type ElementFacts, type Giac, type Shape } from "./numeric.ts";
-import { callsOf, firstNameIn, functionsIn, isError, names, type Quoting, withoutStrings } from "./giacPrint.ts";
-import { isZero } from "./format.ts";
+import { hasFloat, MAX_EVAL_DIGITS, type ElementFacts, type Giac, type Shape } from "./numeric.ts";
+import { callsOf, firstNameIn, functionsIn, isError, names, topLevelArgs, type Quoting, withoutStrings } from "./giacPrint.ts";
+import { decimalFromString, isZero } from "./format.ts";
 
 /** The reasons of this module; the UI shows `error.<code>` from the i18n table (enEngine.ts). */
 export type NoValue = Extract<Refusal, "divisionByZero" | "overflow" | "underflow" | "noValue">;
@@ -126,6 +128,44 @@ export function lostNumber(
 export function overflowAt(giac: Giac, slot: string, output: string, P: number): boolean {
   // G123f2: the module's one infinity rule on the string() text, so a part that is infinite (+infinity*i) is one too.
   return !infinite(output) && infinite(giac.eval(`string(evalf(${slot},${P}))`));
+}
+
+/** G148: the calls that evaluate their argument in floating point at once. */
+const APPROX_CALLS = ["approx", "evalf"];
+
+/** G148: `input` calls approx or evalf (a CAS assignment of it runs its right-hand side first, to store nothing refused). */
+export const mayApproxRange = (input: string): boolean => callsOf(input, APPROX_CALLS, "typed").length > 0;
+
+/**
+ * G148 (vg-3, vvg-1): the reason for the result `output` of `input` (decimals exact) when approx or evalf took a finite,
+ * non-zero exact value past MPFR's exponent range: "overflow" for Giac's ±infinity or an infinite part
+ * (approx(exp(10^20)), approx(exp(10^20)*i)), "underflow" for a float 0 when the whole input is one such call
+ * (approx(exp(-10^20))); the bare value is refused so (lostNumber, overflowAt, underflow). For an infinity, each call's
+ * first argument is evaluated exactly in `pasq` and asked as overflowAt asks (one whose exact form is already infinite or
+ * undef, a division by zero or a limit, keeps its answer); for a 0, the argument is asked as underflow asks, in one engine
+ * call. Nothing is asked for an output with no infinity that does not read as 0, an input with a typed infinity, one
+ * that changes state or calls a function of the user's, nor once `late()`.
+ */
+export function approxRange(giac: Giac, input: string, output: string, P: number, late: () => boolean, userFn: (name: string) => boolean): NoValue | null {
+  const over = infinite(output);
+  const read = over || !hasFloat(output) ? null : decimalFromString(output);
+  if (!over && (read === null || !isZero(read))) return null;
+  const t = input.trim();
+  const calls = callsOf(t, APPROX_CALLS, "typed");
+  if (!calls.length || (!over && (calls.length !== 1 || calls[0]!.at !== 0 || calls[0]!.close !== t.length - 1))) return null;
+  if (firstNameIn(t, TYPED_INF, "typed") !== null || changesState(t, "typed") || functionsIn(t, "typed").some(userFn)) return null;
+  const argOf = (c: { open: number; close: number }): string => topLevelArgs(t.slice(c.open + 1, c.close), "typed")[0]!;
+  if (!over) return late() || !underflow(giac, [`(${argOf(calls[0]!)})`], P) ? null : "underflow";
+  try {
+    for (const c of calls) {
+      if (late()) return null;
+      const exact = giac.eval(`pasq:=(${argOf(c)})`).trim();
+      if (!isError(exact) && exact !== "undef" && overflowAt(giac, "pasq", exact, P)) return "overflow";
+    }
+    return null;
+  } finally {
+    giac.eval("purge(pasq)");
+  }
 }
 
 /** F50: a float path's `error` text for an input with no free name: Giac's undef or an infinity (no number found);
