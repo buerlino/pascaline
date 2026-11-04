@@ -73,7 +73,8 @@ export function readValueFacts(x: unknown): ValueFacts | null {
   if (inexact !== undefined && inexact !== true) return null;
   if (uncDigits !== undefined && !(typeof uncDigits === "number" && Number.isInteger(uncDigits) && uncDigits >= 0)) return null;
   if (why !== undefined && !isWhy(why)) return null;
-  if (uncSigma !== undefined && !(typeof uncSigma === "string" && /^0\.\d{1,40}e-?\d{1,5}$/.test(uncSigma))) return null;
+  // R40: a text the σ line reads with decimalFromString (one that is not a decimal shows no line)
+  if (uncSigma !== undefined && !(typeof uncSigma === "string" && uncSigma.length <= 64)) return null;
   return {
     exact,
     reliableDigits: d,
