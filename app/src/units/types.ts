@@ -62,6 +62,8 @@ export interface UnitJob {
   shows?: ShownUnit[];
   /** G32: the symbol of an rpm or rev typed in a slot (a count of cycles, not an angle), for the refusal that names it. */
   cycle?: string;
+  /** G161: the kinds of power (W, VA, var) the slots and the end slot name, when there are two or more: refused. */
+  powers?: string[];
   /** G40: a cycle unit (rpm, rev, Hz or a unit made of them) in a slot or the end slot: no rad is dropped at the end
    *  slot (G32's refusal, or the mismatch, stays). */
   cycles?: true;
@@ -162,6 +164,8 @@ export type UnitError =
   | { error: "temperature" | "logarithmic" | "nofactor"; unit: string }
   /** G32: rpm or rev against an angle (rad); `unit` is its symbol. */
   | { error: "cycle"; unit: string }
+  /** G161: W, VA and var meet (a conversion or a sum): they differ by the power factor, not by a unit factor. */
+  | { error: "power" }
   /** The level of a value at or below 0, or an absolute temperature below 0 K. */
   | { error: "level" | "belowzero" }
   /** A function of a quantity with units (sin, cos and tan take an angle or a pure number). */

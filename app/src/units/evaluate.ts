@@ -216,6 +216,12 @@ function cycleRefusal(job: UnitJob, a: string, b: string): UnitError | null {
   return angle(a) !== angle(b) && strip(a) === strip(b) ? { error: "cycle", unit: job.cycle } : null;
 }
 
+/** G161: W, VA and var have one dimension, so no dimension check sees them meet: the job names its kinds of power
+ *  (build.ts), and two of them are refused before Giac runs, as G32 refuses rpm against an angle. */
+function powerRefusal(job: UnitJob): UnitError | null {
+  return job.powers && job.powers.length > 1 ? { error: "power" } : null;
+}
+
 /** G40: dimension keys that differ by exactly one rad (either way), all other bases equal. */
 function oneRadApart(a: string, b: string): boolean {
   const ea = parseDimKey(a);
@@ -373,6 +379,8 @@ export function withNames(q: Quantity | UnitError, read: () => readonly string[]
  *  check's calls otherwise. */
 export function unitEval(giac: Giac, job: UnitJob, s: HomeSettings): Quantity | UnitError {
   const t0 = performance.now();
+  const power = powerRefusal(job);
+  if (power) return power;
   const f = withAngles(toExactLiterals(job.expr));
   let g = job.end ? withAngles(toExactLiterals(job.end)) : "1";
   // G35: the dimension check (job.check, every number beside a slot a symbol of its own) goes in the same call.

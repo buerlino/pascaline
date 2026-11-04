@@ -88,6 +88,15 @@ defined:
   - { id: rpm, title: "Revolutions per Minute (RPM)", si: "1/60", dim: "s-1", source: derived, replace: true }
   # ton of refrigeration: 12 000 Btu_IT/h (derived: 12000 * 1055.05585262 / 3600 = 3516.852842066666... W)
   - { id: TR, title: "Ton of refrigeration", names: ["ton of refrigeration", "refrigeration ton"], si: "12000*1055.05585262/3600", dim: "kg1m2s-3", source: derived }
+  # apparent and reactive power (G161, IEC 60050-131): the size of W, but other quantities (S = P/cos φ, Q = P·tan φ),
+  # so the unit view refuses a conversion between W, VA and var (app/src/units/build.ts powerKinds). The prefixed ones
+  # are prefix pairs of the slot (k + VA), exact by the definition of the prefix.
+  - { id: VA, title: "Volt-ampere (apparent power)", names: ["volt-ampere", "volt ampere", "apparent power"], si: "1", dim: "kg1m2s-3", source: derived }
+  - { id: kVA, title: "Kilovolt-ampere (apparent power)", names: ["kilovolt-ampere", "kilovolt ampere"], si: "1000", dim: "kg1m2s-3", source: derived }
+  - { id: MVA, title: "Megavolt-ampere (apparent power)", names: ["megavolt-ampere", "megavolt ampere"], si: "1000000", dim: "kg1m2s-3", source: derived }
+  - { id: var, title: "Volt-ampere reactive (reactive power)", names: ["volt-ampere reactive", "reactive power"], si: "1", dim: "kg1m2s-3", source: derived }
+  - { id: kvar, title: "Kilovar (reactive power)", names: ["kilovar"], si: "1000", dim: "kg1m2s-3", source: derived }
+  - { id: Mvar, title: "Megavar (reactive power)", names: ["megavar"], si: "1000000", dim: "kg1m2s-3", source: derived }
 
 dropNames:
   "unit:tr": [rev, revolution, cyc, cycle]

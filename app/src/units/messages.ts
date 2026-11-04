@@ -10,6 +10,8 @@ export function unitErrorMessage(e: UnitError): string {
       return unitText("units.mismatch", { dims: e.dims.map(dimensionText).join(unitText("units.mismatchSep")) });
     case "cycle":
       return unitText(e.unit === "rpm" ? "units.cycle.rpm" : "units.cycle.rev", { unit: e.unit });
+    case "power":
+      return unitText("units.power");
     case "temperature":
       return unitText("units.temperature");
     case "logarithmic":

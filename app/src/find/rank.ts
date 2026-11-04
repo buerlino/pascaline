@@ -3,6 +3,8 @@
 // Order: (2) exact name, (3) name prefix, shorter first, (4) word prefix inside a name, (5) word prefix in the
 // title or description, (6) one edit away (queries of 4+ characters). No usage boost (P11: the same query always
 // gives the same order, docs/03 rule 8), so there is no (1).
+// G161: a gauge pressure (psig, barg, kPag, MPag) is not fuzzy: one edit away is the absolute unit (psi, bar), the trap
+// G17 closes for °C, so it finds nothing rather than a wrong unit.
 // Ties: tier 0 first, then the context's kinds, then the shorter matched name, then the id.
 // Matching is in lower case; "_" counts as a space, and a name also matches without its spaces and "_" ("kb" finds
 // k_B, "g0" finds g_0).
@@ -14,6 +16,8 @@ const NAME_WORD = 600;
 const TITLE_WORD = 500;
 const DESC_WORD = 450;
 const FUZZY = 300;
+/** G161: gauge readings, in the compact lower case of a query: the fuzzy step skips them. */
+const GAUGE = new Set(["psig", "barg", "kpag", "mpag"]);
 
 interface PreparedName { raw: string; norm: string; compact: string; cased: string; words: string[] }
 interface Prepared { item: FindItem; names: PreparedName[]; title: string[]; desc: string[] }
@@ -81,7 +85,7 @@ function level(p: Prepared, q: string, qc: string, qw: readonly string[], rawc: 
   if (score) return { score, matched };
   if (wordsPrefix(qw, p.title)) return { score: TITLE_WORD, matched: "title" };
   if (wordsPrefix(qw, p.desc)) return { score: DESC_WORD, matched: "desc" };
-  if (qc.length >= 4) {
+  if (qc.length >= 4 && !GAUGE.has(qc)) {
     for (const n of p.names) {
       if (qc[0] !== n.compact[0] && qc[1] !== n.compact[1]) continue; // a typo in both first letters: too far
       if (oneEdit(qc, n.compact)) take(FUZZY + 1, n.raw);
