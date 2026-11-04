@@ -66,7 +66,8 @@ test("a constant with a σ: the result uses G (± 1.5·10⁻¹⁵)", async ({ pa
   await page.evaluate(() => window.pascaline.entry.insertConst("G", "G", { value: "(667430/10^16)", exact: false, unc: "0.00015E-11" }));
   await tap(page, ["mul", "d2", "enter"]);
   await done(page, 1);
-  expect(await picked(page)).toBe("≈ uses G (± 1.5·10⁻¹⁵)");
+  // R40f1: the picked row's why-line ends with the row's own σ line (σ = 1.5ᴇ-15 × 2, derived), so the keys reach it
+  expect(await picked(page)).toBe("≈ uses G (± 1.5·10⁻¹⁵) · σ = 3.0ᴇ-15 · U = 2σ = 6.0ᴇ-15 (k = 2)");
 });
 
 // R36f1: the stored names behind ≈ are the engine's (why.rounded). Home keeps an exact value exact (docs/04 6.2, 2.8):
