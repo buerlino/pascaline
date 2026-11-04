@@ -35,7 +35,7 @@ These sit under the three principles in CLAUDE.md and decide the details below.
 3. **State is always visible.** Angle mode, format, digits, Shift/Alpha, a running job and the current place are always on screen, in the same spot.
 4. **Nothing is lost without notice.** No key goes "through" an open sheet; a dead key looks dead and gives a short haptic "no".
 5. **Two keys for frequent things.** Anything an engineer does several times a day (switch DEG/RAD, copy a result, reuse a constant, change format) takes at most 2 key presses or 1 tap. The EN0 benchmark measures it.
-6. **No motion that waits.** Sheets appear within one frame and animate for at most 120 ms; nothing blocks input while it animates. `prefers-reduced-motion` turns animation off.
+6. **No motion that waits.** The key press is the only motion (owner, 2026-11-02): sheets, results and marks appear at once, with no rise, fade or slide, in every setting, so `prefers-reduced-motion` has nothing to turn off. A pressed key shows at once, in every family, in Plain keys and under High contrast.
 7. **Our own look.** Our colours, shapes and icons; nothing traced from the reference (CLAUDE.md, clean room).
 
 ## 3. The interaction model
@@ -97,7 +97,7 @@ One sheet, split by how often a thing changes (owner, 2026-10-27; the picture: [
 
 ### 3.5 History rows
 
-- A thin divider and 8 px more space between entries; input muted and left-aligned, result right-aligned (as now).
+- A thin divider between entries (R12b; the 8 px more space is S25 part 3's); input muted and left-aligned, result right-aligned (as now).
 - A long result or input scrolls sideways with a fade at the edge that shows there is more; never cut without a sign.
 - The picked row (▲ from an empty line) gets the context bar from 3.3, so its actions are visible, not hidden behind a long press.
 - An error row shows the message on one line, with the part of the input that failed underlined when the parser knows its position.
@@ -138,7 +138,7 @@ Deferred (section 7 point 4): the app stays a centred column of at most 720 px (
 
 ### 3.10 Look and feel
 
-- **Design tokens** (one file, already partly in `style.css`): colours per role, the type scale (entry 28, result 26, input 22, UI 15, legend 11), spacing on a 4 px grid, radii, motion durations. No colour or size written directly in a component.
+- **Design tokens** (one file, already partly in `style.css`): colours per role, the type scale (entry 28, result 26, input 22, UI 15, legend 11), spacing on a 4 px grid, radii. No colour or size written directly in a component. Built (R12b): the tokens are in `app/src/style.css`; `src/tokens.test.ts` fails on a literal colour or size in a `.svelte` file.
 - **Appearance** (owner, 2026-10-13 and 2026-10-18, decisions.md "R50"): a family (Pascaline, Graphite, Solarized, Gruvbox, Nord), a brightness System / Light / Dark (default **Dark on Android**, **System in the PWA**), and the switches High contrast and Plain keys. Built (R50e); the mockup's radio rows are ticks in the app (the sheet's convention).
 - **Numbers:** one maths font for entry and results (MathLive's). UI text in the system font. Monospaced digits in tables (Num, Solve, the Find value column) so columns line up.
 - **App icons:** our own simple line icons in the Apps sheet beside the number and name.

@@ -11,7 +11,7 @@
 
 **Two lanes** (owner, 2026-10-29; decisions.md P17 and "Owner answers of 2026-10-29"): lane A (ron's UI) and lane B (the release, then the engine) run around the clock, each with its own table in section 0c, merged through one queue (A47b). ron's packages run at night too: the owner's look moves to the milestone reviews (Lane A's queue), and a package's "owner's eye" item joins the next review. Device steps and the owner's acts (a key, a tag, a phone) stay by day. The order:
 1. **Find:** built; A4b (the Tab One's timing, the bar's point 4) by day; R91's before/after is in [ONE-TIME.md](../../tests/core/ONE-TIME.md).
-2. **The Settings base** (owner, 2026-10-27; decisions.md "Settings in the Mode sheet, and presets"; [mockups/settings.html](../mockups/settings.html)): merged up to R89 → R59; R53; R12b → R12c → R41; R36, R33 → R40 (R37 parked).
+2. **The Settings base** (owner, 2026-10-27; decisions.md "Settings in the Mode sheet, and presets"; [mockups/settings.html](../mockups/settings.html)): merged up to R89 → R59 and R12b → R12c → R41; R53; R36, R33 → R40 (R37 parked).
 3. **The units** (owner, 2026-10-29: right after R86, R57, R50e): R24b–R24d, G81, R60–R63, R71 and R92 (the units menu's Constants and Tools) merged.
 4. **Lane B, to v0.1.0** (the APK and the website from one tag): A7, A9, A43, A45 and A48–A50 merged; A8 (the owner's test tag); then wrong numbers by reach, C4. The bar and the days: [release-0.1.0.md](../release-0.1.0.md); from its freeze (Thu 11-12) both lanes run only its fixes.
 5. **Every morning:** the owner's check (MORNING.md, on the night's device when the night had one, about 10 minutes). The day session writes each failed step as a backlog bug line on phase-1 and logs one line in `.coord/log.md`: `- HH:MM morning <date>: clean` or `- HH:MM morning <date>: fails <ids>`.
@@ -61,9 +61,6 @@ Milestone reviews (section 0): after R50e (with R116's gallery groups "Entry hig
 
 | Step | What | Agent, model | Branch | After |
 |---|---|---|---|---|
-| 464 | [R12b](packages/R12b.md) visual pass: tokens and history rows | ron, Opus | `p1/ron-m4a-tokens` | – |
-| 465 | [R12c](packages/R12c.md) visual pass: motion | ron, Sonnet | `p1/ron-m4a-motion` | R12b |
-| 466 | [R41](packages/R41.md) labels (TalkBack: the next day's device run) | ron, Sonnet | `p1/ron-m4a-labels` | R12c |
 | 467 | [R40](packages/R40.md) a constant's trusted digits; the room step in Numbers | ron, Opus | `p1/ron-m4a-constdigits` | R41 |
 | 468 | [R124](packages/R124.md) mark style | ron, Opus | `p1/ron-markstyle` | R40 |
 | 469 | [R125](packages/R125.md) group separator | ron, Opus | `p1/ron-groupsep` | R124 |
