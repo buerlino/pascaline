@@ -441,7 +441,7 @@ The types live in the code; this is the map. Views see `Calc` (`app/src/calc/por
 | Find open | ≤ 100 ms warm, ≤ 300 ms cold | — | device runs |
 | Units first result (Tab One) | < 1 s | — | device runs |
 | Unit evaluation (desktop) | p95 ≤ 5 ms | median 0.91 ms, p95 ≈ 2 ms (G16) | the golden units section |
-| `defs` replay | ≤ 50 ms at 200 definitions | 158 ms (A12, Tab One); a 200-program library 403 ms; G83: functions on first use | device runs |
+| `defs` replay | ≤ 50 ms at 200 definitions | 158 ms (A12, Tab One); a 200-program library 403 ms, after G83 96 ms p50 (p95 119), 57 of it an empty log's first restore (A62) | device runs |
 | Key presses | each task within its budget; a unit ≤ 4 at the median | — | task benchmark |
 | Find quality | 100 % top 3, ≥ 90 % first | 100/100 first at G4 | query test |
 
@@ -471,4 +471,4 @@ The probes are in `tools/probes/` (its README says how to run each); what they f
 | Find per-key time on the Tab One | annabell (A4b) | `?bench=find` | main thread or incremental/worker (3.2) |
 | The stacked unit's height in a prompt | ron (R24c) | gallery at 360 × 740 | the row height of the unit view |
 | Units first result on the Tab One | annabell (m5) | device run of the unit view | the lazy-load bar (4.4) |
-| The library replay after G83 on the Tab One | annabell | `?bench=library`, seven cold starts | 6.2's budget; R59's gate (decisions.md G33) |
+| The replay's 96 ms (A62) vs 50 | the owner | decisions.md "Needs the user" | R59's gate (G33) |

@@ -1,21 +1,21 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 # Status and backlog
 
-The one place for "where are we and what's left", one or two lines per open item. The architecture is [04-architecture.md](04-architecture.md) (it supersedes [02-architecture-plan.md](02-architecture-plan.md) where they differ; 02 section 12 keeps the milestone history); decisions are in [decisions.md](decisions.md); the order of the packages is [shifts/brief.md](shifts/brief.md) section 0, and each package's cause, steps and tests are in its file in [shifts/packages/](shifts/packages/). Done items leave this file (git history and [archive/backlog-2026-10.md](archive/backlog-2026-10.md) keep them). Keep it current by rewriting, not by adding amendments.
+The one place for "where are we and what's left", one or two lines per open item. The architecture is [04-architecture.md](04-architecture.md) (it supersedes [02-architecture-plan.md](02-architecture-plan.md) where they differ; 02 section 12 keeps the milestone history); decisions are in [decisions.md](decisions.md); the order of the packages is [shifts/brief.md](shifts/brief.md) section 0, and each package's cause, steps and tests are in its file in [shifts/packages/](shifts/packages/). Done items leave this file (git history and [archive/backlog-2026-10.md](archive/backlog-2026-10.md) keep them).
 
 ## Where we are
 
 | Stage | State |
 |---|---|
 | Phase 0 spike; MVP milestones 1 (Home, CAS), 2 (Function, Solve), 3 (Python, removed by P11) | **Done** 2026-10-11 (reports in [archive/shifts/](archive/shifts/)) |
-| **The core freeze (P23)** | **Ended 2026-10-27** (owner). Its net stays: [tests/core/](../tests/core/README.md) (66 everyday tasks, all active) runs on every merge and on the night's device; a red case is a bug to fix. Order of the work: brief section 0. |
-| Milestone 4a: feel (P11) | Built: the entry work, sheets, flicks, Settings in the Mode sheet (R49, R87), history-row actions, R15b–R15c4, the mockups (R12a), the visual pass (R12b), press feedback and no other motion (R12c), key names for TalkBack and the keypad's fit at font scale 1.5 and 2.0 (R41), muted digits past a constant's σ, σ on tap (R40), the mark style with a ⚠ row's reason line (R124), the digit-group separator (R125). Waiting: the palette, results mode, the trust features |
+| **The core freeze (P23)** | **Ended 2026-10-27** (owner). Its net stays: [tests/core/](../tests/core/README.md) (66 everyday tasks, all active) runs on every merge and on the night's device; a red case is a bug to fix. |
+| Milestone 4a: feel (P11) | Built: the entry work, sheets, flicks, Settings in the Mode sheet (R49, R87), history-row actions, R15b–R15c4, the mockups and the visual pass (R12a, R12b), press feedback only (R12c), TalkBack names and font scale 2.0 (R41), σ on tap (R40), the mark style (R124), the digit-group separator (R125). Waiting: the palette, results mode, the trust features |
 | Milestone 4: Find and trust | Engine side done (marks, 30 digits, chips, copy, defs, the Find index, the size test, A4a); Find's UI: R4a, R4b built; A4b next |
-| Milestone 5: Units | Built: the evaluator on Giac (P15), the pad, the entry and Find in a slot (R24a–R24d), the result's alternatives, chip, view and way back (R60–R63), ± (R71), menu Constants and Tools (R92) |
+| Milestone 5: Units | Built: the evaluator on Giac (P15), the pad, the entry and Find in a slot (R24a–R24d), the result's alternatives and view (R60–R63), ± (R71), menu Constants and Tools (R92) |
 | Milestone 6: Structure | Not started (EN5–EN7, Help) |
 | MVP release | v0.1.0, the APK and the website from one tag, on Sun 11-15 if the bar is met: [release-0.1.0.md](release-0.1.0.md) |
 
-`phase-1` and `master` are on GitHub; `master` was last fast-forwarded to `phase-1` on 2026-10-14 (`ef857a6`). Work continues on `phase-1`.
+Work continues on `phase-1`; `master` follows it from 2026-11-03 (decisions.md, the release path).
 
 ## Needs the user
 0. **The core list (P23):** cut or extend [tests/core/core.yaml](../tests/core/core.yaml) (66 cases; tell a session what to drop or add); do the [morning check](../tests/core/MORNING.md) on the night's device (about 10 minutes, 15 cases; tell the day session what failed); keep the night's device plugged in, unlocked and on the charger (A32, A33). The one-time checks: [ONE-TIME.md](../tests/core/ONE-TIME.md).
@@ -26,6 +26,7 @@ The one place for "where are we and what's left", one or two lines per open item
 5. **Tap "Allow USB debugging"** on a device when it shows `unauthorized`.
 6. **v0.1.0** (the days: [release-0.1.0.md](release-0.1.0.md)): the test tag on 11-03; go or slip on 11-14; read the usage meter each morning and at each lane start (tripwire 85 %). **A49/A52, switching a broken web worker off:** `app/pwa/README.md` (the kill run on the deployed tag, up to 90 min; the fixed tag's normal run brings the worker back).
 7. **Later:** the outside rounds (two 30-minute rounds after R4b and R24c, [r18](research/r18-outside-test.md)); at milestone 5, time ten tasks by hand (E-notation against units).
+8. **A62, R59's gate:** the library replay 96 ms against 50; decisions.md "Needs the user".
 
 ### Upstream reports (owner; drafts in `../outreach/upstream-reports.md`)
 - **MathLive**, filed 2026-10-19: [#3122](https://github.com/arnog/mathlive/issues/3122) (⌫ at `\left…\right`), [#3123](https://github.com/arnog/mathlive/issues/3123) (touch caret), [#3124](https://github.com/arnog/mathlive/issues/3124) (focus restore); [#3125](https://github.com/arnog/mathlive/issues/3125) (Redo after ⌫, 2026-10-20); M5 (`isImplicitArg` takes no matrix, F68) drafted by R75.
@@ -40,6 +41,7 @@ The one place for "where are we and what's left", one or two lines per open item
 - **F171, no package (R40f1's Not done).** A picked row's why-line names a Greek constant chip by its LaTeX: G times α reads `≈ uses G (± …), \alpha (± …)` (whyLine.ts constantsUsed takes the chip's LaTeX name). Family 9.
 - **F170, no package (G157f1's Not done).** `limit(trunc(x),x,-1,1)` shows = -1 (right 0): Giac's limit substitutes -1, since trunc has no series rule and is not in series.cc's sign/floor/ceil/round list (floor has taylor_floor). Golden `g157f1-limit-trunc-neg1-right` pending. Families 3, 8.
 - **F169, no package (R114's Not done).** The unit view's own field still takes MathLive's paste: Ctrl+V of `1e-3` there is e − 3. Family 7.
+- **F172, no package (A62).** With 200 CAS history items stored, engine ready on the Tab One is 1835 ms (1305 without; bar 1.5 s), the replay the same; cause not isolated.
 - **Night review 2026-11-02:** the rest in [research/night-review-2026-11-02.md](research/night-review-2026-11-02.md).
 
 ### Background stream (extreme inputs; at night, by reach)
@@ -88,6 +90,7 @@ The one place for "where are we and what's left", one or two lines per open item
 - Plots of user functions after v0.1.0 (owner, 2026-11-02; R56b covers Solve); **R58b** Alpha letters are always names in CAS (G2 item 62 can reverse it).
 - **G9. Number formats against the G2** (item 15): decide in the settings and help pass. **K1:** a pending one-shot Shift is used up by the first drag step. **K5:** the gestures in the help texts.
 - **A9's leftover:** the strength slider does nothing on a motor without amplitude control (Fairphone 6); a composition of ticks would give it (owner, 2026-11-02: a package later).
+- **A59's leftover:** 1–2 light frames (YAVG 19–65) at the splash exit; A59f1 by day on a device: Capacitor's backgroundColor the Dark bg.
 - **R92's leftover:** UPART (the result's unit alone) is not built; its Tools row is off.
 - **R107's leftover (pass 35):** a dead hardware key on the unit view's field (`units/open.ts`, `c.dead()`) counts no press (docs/04 5.2); its keys go through the counted `onKey`.
 - **The pipeline:** `resolve_audit_model` is tested only through dry-run echo lines; the size test does not cover CSS (25.8 kB raw at 2026-10-12). `tests/engine/patch-canary.ts` unpacks the Giac tarball once per canary (40 times, `member()` of `tools/find-index/state.mjs`), 100 s of CPU alone, so the golden `flags` stage times out under load (A51 counts it as timing): unpack it once. Red-first (`pipeline-lib.sh`) runs vitest on the branch's engine, so an engine test like G133f1's passes there (golden carries the red), and reads ids as `[A-Za-z0-9_.-]`, so older ids with `/` or `^` are invisible to it (G133f1).
