@@ -548,9 +548,9 @@ export function exactFacts(
   // a double where MPFR digits were asked, in an element that is no number yet (atParts): Giac's evalf of the value
   const whole = (prec: number): GiacValue => at(`evalf(${src},${prec})`, prec);
   if (erf !== safe) giac.eval(`${ICDF_FAILED}:=0`);
-  // G141: the check starts at the longest exact integer's digits plus 20 (literalStart; a rational is no cancellation).
-  // Past MAX_EVAL_DIGITS, or when that start gives no value (the budget), it runs from P, unchecked (⚠, never ≈).
-  const lit = v.kind === "integer" || v.kind === "rational" ? { at: P, unchecked: false } : literalStart(text, P, MAX_EVAL_DIGITS);
+  // G141: the check starts at the longest exact integer's digits plus P when they pass P - 20 (literalStart; a rational
+  // is no cancellation). Past MAX_EVAL_DIGITS, or when that start gives no value (the budget), it runs from P, unchecked (⚠, never ≈).
+  const lit = v.kind === "integer" || v.kind === "rational" ? { at: P, unchecked: false } : literalStart(text, P, MAX_EVAL_DIGITS, "printed");
   const from = (start: number): ElementFacts[] | null => {
     const P2 = [start, start + 20];
     const first = erf !== safe ? null : src === name && P2.every((d) => v.at?.[String(d)] !== undefined) ? v : giac.value(src, P2);
@@ -841,9 +841,9 @@ function floatFactsOf(
   }
   // Rule 2: S against S+20, and S+20 against S+40 when fewer than the digits agree (a cancellation only needs more
   // working digits). Null when S or S+20 could not be evaluated, with the facts of S alone in `once`. G141: S is P, or
-  // the longest exact integer's digits plus 20 (literalStart); past MAX_EVAL_DIGITS the check runs from P, unchecked. Not
-  // for G44's polish (`lit` P): its Newton steps at S would cost many times more (normald_icdf(10^-300) at 321 digits).
-  const agreed = (text: string | null, lit = literalStart(expr, P, MAX_EVAL_DIGITS)): { facts: ElementFacts[] } | { once: ElementFacts[] } | null => {
+  // the longest exact integer's digits plus P (literalStart); past MAX_EVAL_DIGITS the check runs from P, unchecked. Not
+  // for G44's polish (`lit` P): its Newton steps at S would cost many times more (normald_icdf(10^-300) at 341 digits).
+  const agreed = (text: string | null, lit = literalStart(expr, P, MAX_EVAL_DIGITS, "typed")): { facts: ElementFacts[] } | { once: ElementFacts[] } | null => {
     const S = lit.at;
     const A = at(S, "pasm", (n) => Math.max(n, S), text);
     const B = A && at(S + 20, "pasm2", (n) => Math.max(n, S) + 20, text);
