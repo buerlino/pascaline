@@ -57,9 +57,10 @@ describe("the σ line (R40)", () => {
     expect(sigmaLine({ exact: false, reliableDigits: null }, "std")).toBeNull();
     expect(sigmaLine(undefined, "std")).toBeNull();
   });
-  it("the session shows it with Muted digits, σ on tap, and not with Muted digits", () => {
+  it("the session shows it with Muted digits, σ on tap, once its code is in, and not with Muted digits", async () => {
     const s = new Session(new FakeCalc(), { get: async () => undefined, set: async () => {} });
     const item = { id: 1, view: "home" as const, latex: "", status: "done" as const, resultLatex: "", text: "", approximate: true, value, facts, startedAt: 0 };
+    await s.sigmaReady();
     expect(s.sigma(item)).toBe("σ = 9.0ᴇ9 · U = 2σ = 1.8ᴇ10 (k = 2)");
     s.setUncertainty("muted");
     expect(s.sigma(item)).toBeNull();

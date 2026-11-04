@@ -32,9 +32,8 @@ import { defaultLook, validLook, type Look } from "../theme/look.ts";
 import { idbKv, type Kv } from "./storage.ts";
 import { TapCounter } from "./taps.svelte.ts";
 import { commaInput } from "../entry/commaInput.ts";
-import { casItem, chipFactsOf, chipOf, constTableOf, HISTORY_LIMIT, homeItem, withUnit } from "./results.ts";
+import { casItem, chipFactsOf, chipOf, HISTORY_LIMIT, homeItem, withUnit } from "./results.ts";
 import { prefetchTidy, tidyOr } from "./tidyLoad.ts";
-import { sigmaLine } from "./sigmaLine.ts";
 export { loadTidy } from "./tidyLoad.ts";
 import type { Copies, RemovedKind, RemovedRows } from "./removedRows.ts";
 import { restoredItem } from "./storedItem.ts";
@@ -56,7 +55,6 @@ export type DecimalMark = "point" | "comma";
 /** R40, Settings › Numbers › Uncertainty: the digits past a constant's σ are muted, and a tap on the row shows σ (`sigma`,
  *  the default) or nothing (`muted`). A third value, the concise form `3.986004(89)ᴇ14`, is a later package's. */
 export type UncertaintyView = "sigma" | "muted";
-export const UNCERTAINTY_VIEWS: readonly UncertaintyView[] = ["sigma", "muted"];
 export interface Settings extends CalcSettings {
   entry: EntryMode;
   decimalMark: DecimalMark;
@@ -142,6 +140,8 @@ export interface UsedValue {
 /** R98: the Undo copy's code (removedRows.ts) is out of the start chunk: main.ts fetches it when idle, and the first
  *  Clear or Delete, or a start that finds a stored copy, waits for it. A failed load is tried again by the next one. */
 let removedCode: typeof import("./removedRows.ts") | undefined;
+/** R40: the σ line's code, once a tap on a row with σ loaded it (Session.sigmaReady). */
+let sigmaCode = $state.raw<typeof import("./sigmaLine.ts")>();
 export const loadRemoved = (): Promise<typeof import("./removedRows.ts") | undefined> =>
   import("./removedRows.ts").then((m) => (removedCode = m), () => undefined);
 
@@ -502,7 +502,7 @@ export class Session {
         defines = p.defines;
         if (p.inexact) live.inexactInput = true;
         if (p.named) named = chipFactsOf(p.named);
-        if (p.consts) consts = constTableOf(p.consts); // R40: G26's uncDigits (and σ) come back for them
+        if (p.consts) consts = entry.constTableOf(p.consts); // R40: G26's uncDigits (and σ) come back for them
       }
     } catch (e) {
       live.status = "error";
@@ -580,10 +580,15 @@ export class Session {
     return modeOf(item, this.settings);
   }
 
-  /** R40: the σ line a tap on the row shows (Settings › Numbers › Uncertainty), in the row's notation; null: none. */
+  /** R40: the σ line a tap on the row shows (Settings › Numbers › Uncertainty), in the row's notation; null: none, or
+   *  its code is not loaded yet (sigmaReady). */
   sigma(item: HistoryItem): string | null {
-    if (item.status !== "done" || this.settings.uncertainty !== "sigma") return null;
-    return sigmaLine(item.facts, this.modeOf(item) ?? this.settings.format, this.decimalComma);
+    if (item.status !== "done" || this.settings.uncertainty !== "sigma" || !sigmaCode) return null;
+    return sigmaCode.sigmaLine(item.facts, this.modeOf(item) ?? this.settings.format, this.decimalComma);
+  }
+  /** Loads the σ line's code (a chunk of its own, off the start chunk); a failed load is tried again by the next tap. */
+  sigmaReady(): Promise<void> {
+    return import("./sigmaLine.ts").then((m) => void (sigmaCode = m), () => {});
   }
 
   /** The mark before a finished result (docs/04 2.4), for the form it is drawn in; null: a non-number, or none known. */

@@ -4,7 +4,7 @@
 // the engine sends with `uncDigits` (ValueFacts.uncSigma).
 import { decimalFromString, formatReal, toText, type FormatOptions } from "../engine/format.ts";
 import type { ValueFacts } from "../engine/types.ts";
-import { t } from "../i18n/index.ts";
+import { uncText } from "../i18n/enUnc.ts";
 import { commaResult, type FmtMode } from "./displayMode.ts";
 
 /** The notation σ is shown in, from the row's: Standard and Fixed would drop σ's second digit or show it as zeros. */
@@ -31,5 +31,5 @@ export function sigmaLine(facts: ValueFacts | undefined, mode: FmtMode, comma = 
   const u = doubled(s);
   const a = shown(s, mode, comma);
   const b = u === null ? null : shown(u, mode, comma);
-  return a === null || b === null ? null : t("history.sigma", { s: a, u: b });
+  return a === null || b === null ? null : uncText("unc.sigma", { s: a, u: b });
 }

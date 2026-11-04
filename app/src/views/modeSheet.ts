@@ -9,8 +9,9 @@ import type { AngleUnit, NumberFormat } from "../calc/port.ts";
 import { t, type MessageKey } from "../i18n/index.ts";
 import { hasStrength, vibrate } from "../input/haptics.ts";
 import { NOTATION_MODES } from "../state/displayMode.ts";
-import { MAX_DIGITS, UNCERTAINTY_VIEWS, type DecimalMark, type EntryMode, type Session } from "../state/session.svelte.ts";
+import { MAX_DIGITS, type DecimalMark, type EntryMode, type Session, type UncertaintyView } from "../state/session.svelte.ts";
 import { aboutText } from "../i18n/enAbout.ts";
+import { uncText } from "../i18n/enUnc.ts";
 import { helpItems } from "./aboutItems.ts";
 import { findText } from "../i18n/enFind.ts";
 import { dataSection } from "./dataSection.svelte.ts";
@@ -25,6 +26,7 @@ const ANGLES: readonly AngleUnit[] = ["rad", "deg"];
 const FORMATS: readonly NumberFormat[] = ["std", "sci", "eng", "pfx"];
 const ENTRIES: readonly EntryMode[] = ["textbook", "line"];
 const MARKS: readonly DecimalMark[] = ["point", "comma"];
+const UNCERTAINTY_VIEWS: readonly UncertaintyView[] = ["sigma", "muted"];
 /** The values the digits and decimals rows offer when picked (◀ ▶ reach every other one). */
 const DIGITS_PRESETS: readonly number[] = [4, 6, 8, 10, 12, 15, 20, 25, MAX_DIGITS];
 
@@ -284,11 +286,11 @@ function numbersItems(session: Session): MenuItem[] {
   };
   const cycleRow: MenuItem = {
     id: "fmtCycle",
-    label: t("settings.fmtCycle"),
+    label: uncText("unc.fmtCycle"),
     get value() {
       return s.fmtCycle.map((m) => m.toUpperCase()).join(" ");
     },
-    submenu: { title: t("settings.fmtCycle"), items: fmtTicks(session), remember: false },
+    submenu: { title: uncText("unc.fmtCycle"), items: fmtTicks(session), remember: false },
   };
   const decimals: MenuItem = {
     id: "decimals",
@@ -301,10 +303,10 @@ function numbersItems(session: Session): MenuItem[] {
   };
   const uncertainty: MenuItem = {
     id: "uncertainty",
-    label: t("settings.uncertainty"),
+    label: uncText("unc.setting"),
     keep: true,
     get value() {
-      return t(`settings.uncertainty.${s.uncertainty}`);
+      return uncText(`unc.setting.${s.uncertainty}`);
     },
     adjust: (by) => session.setUncertainty(cycle(UNCERTAINTY_VIEWS, s.uncertainty, by)),
   };

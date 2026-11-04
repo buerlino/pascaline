@@ -8,12 +8,12 @@ import { defaultCasSettings, type CasResult } from "./engine/types.ts";
 import { ANS_KEY, type ChipTable } from "./input/chips.ts";
 import { chipsIn, type ChipFactsTable } from "./engine/chipFacts.ts";
 import { constTable, inexactConstsIn, type ConstTable } from "./engine/constUnc.ts";
-import { giacOfEntry } from "./input/entry.ts";
+import { constTableOf, giacOfEntry } from "./input/entry.ts";
 import { rewriteAngles } from "./engine/angles.ts";
 import { applyDefChanges, type DefChange } from "./engine/defs.ts";
 import { namesFlag } from "./engine/flags.ts";
 import { namesAssuming, setsAssumption } from "./engine/assumed.ts";
-import { casItem, chipFactsOf, chipOf, constTableOf, homeItem } from "./state/results.ts";
+import { casItem, chipFactsOf, chipOf, homeItem } from "./state/results.ts";
 
 export type Expect = string | Expect[];
 
