@@ -40,6 +40,7 @@ const FAMILIES: readonly { prefix: string; suffixes: readonly string[] | "any"; 
   { prefix: "settings.fmt.", suffixes: ["std", "sci", "eng", "pfx", "fix"], file: "views/modeSheet.ts" },
   { prefix: "settings.decimalMark.", suffixes: ["point", "comma"], file: "views/modeSheet.ts" },
   { prefix: "unc.setting.", suffixes: ["sigma", "muted"], file: "views/modeSheet.ts" },
+  { prefix: "marks.setting.", suffixes: ["muted", "colour", "reason", "muted.spoken", "colour.spoken", "reason.spoken"], file: "views/modeSheet.ts" },
   { prefix: "appearance.brightness.", suffixes: ["system", "light", "dark"], file: "views/modeSheet.ts" },
   { prefix: "mark.", suffixes: ["exact", "approx", "warn"], file: "views/History.svelte" },
   { prefix: "fcn.", suffixes: ["min", "max", "flat"], file: "apps/function/app.svelte.ts" },

@@ -9,7 +9,7 @@ import type { AngleUnit, NumberFormat } from "../calc/port.ts";
 import { t, type MessageKey } from "../i18n/index.ts";
 import { hasStrength, vibrate } from "../input/haptics.ts";
 import { NOTATION_MODES } from "../state/displayMode.ts";
-import { MAX_DIGITS, type DecimalMark, type EntryMode, type Session, type UncertaintyView } from "../state/session.svelte.ts";
+import { MAX_DIGITS, type DecimalMark, type EntryMode, type MarkStyle, type Session, type UncertaintyView } from "../state/session.svelte.ts";
 import { aboutText } from "../i18n/enAbout.ts";
 import { uncText } from "../i18n/enUnc.ts";
 import { helpItems } from "./aboutItems.ts";
@@ -27,6 +27,7 @@ const FORMATS: readonly NumberFormat[] = ["std", "sci", "eng", "pfx"];
 const ENTRIES: readonly EntryMode[] = ["textbook", "line"];
 const MARKS: readonly DecimalMark[] = ["point", "comma"];
 const UNCERTAINTY_VIEWS: readonly UncertaintyView[] = ["sigma", "muted"];
+const MARK_STYLES: readonly MarkStyle[] = ["muted", "colour", "reason"];
 /** The values the digits and decimals rows offer when picked (◀ ▶ reach every other one). */
 const DIGITS_PRESETS: readonly number[] = [4, 6, 8, 10, 12, 15, 20, 25, MAX_DIGITS];
 
@@ -271,8 +272,8 @@ function appearanceItems(session: Session): MenuItem[] {
 }
 
 /** Numbers (docs/05 3.4, at most seven rows): the decimal mark (R57: a value row, Point or Comma), the Fmt key's cycle
- *  (R40: a row that opens its five ticks, its value the cycle), the decimals Fixed shows (S2 I3) and how a result shows
- *  the digits a constant's σ leaves uncertain (R40: a value row). */
+ *  (R40: a row that opens its five ticks, its value the cycle), the decimals Fixed shows (S2 I3), how a result shows
+ *  the digits a constant's σ leaves uncertain (R40: a value row) and how its mark is drawn (R124: three buttons). */
 function numbersItems(session: Session): MenuItem[] {
   const s = session.settings;
   const mark: MenuItem = {
@@ -314,7 +315,21 @@ function numbersItems(session: Session): MenuItem[] {
       session.save();
     },
   };
-  return [mark, cycleRow, decimals, uncertainty];
+  const marks: MenuItem = {
+    id: "marks",
+    label: uncText("marks.setting"),
+    keep: true,
+    get options() {
+      return buttons(MARK_STYLES, () => s.marks, setMarks, (v) => uncText(`marks.setting.${v}`), (v) => uncText(`marks.setting.${v}.spoken`));
+    },
+    adjust: (by) => setMarks(cycle(MARK_STYLES, s.marks, by)),
+  };
+  // set here, not by a Session setter, as Uncertainty (R40): the start chunk carries only the field and its reader
+  function setMarks(v: MarkStyle): void {
+    s.marks = v;
+    session.save();
+  }
+  return [mark, cycleRow, decimals, uncertainty, marks];
 }
 
 /** The Fmt key's cycle: a tick per notation, in today's order, the hint a second line under the first. */

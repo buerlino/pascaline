@@ -62,6 +62,14 @@ async function watchFirstDraw(page: Page): Promise<void> {
 }
 const firstDraw = (page: Page) => page.evaluate(() => (window as unknown as { __first?: { height: number; reason: boolean } }).__first);
 
+/** The last row's reason line holds R36's words: the line its pick shows (▲ on the empty line, then Esc). */
+async function sameAsPicked(page: Page): Promise<void> {
+  await tap(page, ["up"]);
+  const picked = (await page.getByTestId("row-why").innerText()).trim();
+  await tap(page, ["esc"]);
+  expect(await reasons(page).last().innerText()).toBe(picked);
+}
+
 test.beforeEach(async ({ page }) => {
   await open(page, "");
   await ready(page);
@@ -74,7 +82,8 @@ for (const view of ["home", "cas"] as const)
     await watchFirstDraw(page);
     await run(page, DIFFER, 1);
     await expect(page.getByTestId("mark").last()).toHaveAttribute("data-mark", "⚠");
-    await expect(reasons(page)).toHaveText(DIFFER_WHY);
+    await expect(reasons(page)).toHaveText(view === "home" ? DIFFER_WHY : /the exact and numeric answers differ$/);
+    await sameAsPicked(page);
     const first = await firstDraw(page);
     expect(first?.reason, "the line's place is there at the first frame").toBe(true);
     expect((await lastRow(page).boundingBox())?.height).toBe(first?.height); // the row never grew
@@ -83,6 +92,7 @@ for (const view of ["home", "cas"] as const)
     await watchFirstDraw(page);
     await run(page, UNAUDITED, 2);
     await expect(reasons(page).last()).toHaveText(UNAUDITED_WHY);
+    await sameAsPicked(page);
     expect((await lastRow(page).boundingBox())?.height).toBe((await firstDraw(page))?.height);
     await run(page, "\\frac{1}{4}", 3);
     await run(page, "\\sqrt{2}+0.5", 4);

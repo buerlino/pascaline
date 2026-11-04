@@ -150,6 +150,10 @@ let removedCode: typeof import("./removedRows.ts") | undefined;
  *  job beside it; a failed load is tried again by the next job). Until then a row draws every digit plain. */
 let sigmaCode = $state.raw<typeof import("../render/tidy.ts")>();
 onTidy((m) => (sigmaCode = m));
+/** R124: the reason line's code (R36's clipboard/whyLine.ts), loaded with the first ⚠ a row draws, never in the start
+ *  chunk; a failed load is tried again by the next draw. */
+let whyCode = $state.raw<typeof import("../clipboard/whyLine.ts")>();
+let whyLoad: Promise<unknown> | undefined;
 export const loadRemoved = (): Promise<typeof import("./removedRows.ts") | undefined> =>
   import("./removedRows.ts").then((m) => (removedCode = m), () => undefined);
 
@@ -589,6 +593,14 @@ export class Session {
    *  undefined: its code is not in yet (sigmaCode). */
   sigma(item: HistoryItem): string | null | undefined {
     return sigmaCode?.sigmaOf(item, this.settings);
+  }
+  /** R124: the reason line under a ⚠ row (Settings › Numbers › Marks, "⚠ + reason"), R36's words; null: none; "" while
+   *  its code loads (the row keeps the line's place from its first frame, so nothing moves when the text comes). */
+  reason(item: HistoryItem): string | null {
+    const m = this.settings.marks === "reason" ? this.mark(item) : null;
+    if (m?.mark !== "⚠") return null;
+    whyLoad ??= import("../clipboard/whyLine.ts").then((w) => (whyCode = w), () => (whyLoad = undefined));
+    return whyCode?.whyLine(item, m, this.settings.digits) ?? "";
   }
   /** The mark before a finished result (docs/04 2.4), for the form it is drawn in; null: a non-number, or none known. */
   mark(item: HistoryItem): MarkInfo | null {

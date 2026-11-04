@@ -8,7 +8,7 @@
   import { markText, noDigit as hasNoDigit } from "../state/displayMode.ts";
   import { edgeFade } from "./edgeFade.ts";
   import type { MarkInfo } from "../engine/format.ts";
-  import type { HistoryItem, UsedValue } from "../state/session.svelte.ts";
+  import type { HistoryItem, MarkStyle, UsedValue } from "../state/session.svelte.ts";
 
   let {
     items,
@@ -16,6 +16,8 @@
     input = (item) => item.latex,
     mark,
     sigma = () => null,
+    reason = () => null,
+    marks = "reason",
     onrecall,
     oninsert,
     oncancel,
@@ -35,6 +37,11 @@
     /** R40: the σ line a tap on the row shows (a constant's σ limits its digits); null or undefined: a tap shows
      *  nothing (its code rides in the tidy chunk, Session.sigma). */
     sigma?: (item: HistoryItem) => string | null | undefined;
+    /** R124: the reason line under a ⚠ row (Settings › Numbers › Marks); null: none; "": its text is not in yet (the
+     *  line's place is kept, Session.reason). */
+    reason?: (item: HistoryItem) => string | null;
+    /** R124: how the marks are drawn: Muted, ⚠ coloured, ⚠ + reason. */
+    marks?: MarkStyle;
     /** Tapping an entry puts it back on the line, with the values of its chips. */
     onrecall: (item: HistoryItem) => void;
     /** L5: tapping a result puts it on the entry line at the cursor, as a chip (docs/04 2.8). */
@@ -76,6 +83,9 @@
   function toggleSigma(e: MouseEvent, item: HistoryItem): void {
     if (!(e.target as Element).closest("button") && sigma(item)) tapped(() => (sigmaOpen = sigmaOpen === item.id ? null : item.id));
   }
+
+  // R124: a tap on a row's reason line shows its full text (it wraps); a second tap or another row's line ellipses it again
+  let reasonOpen = $state<number | null>(null);
 
   /** R63: a unit row draws its request with the units in it (the line itself, recalled, has none: Home has no units). */
   function drawnInput(item: HistoryItem): string {
@@ -149,7 +159,7 @@
   });
 </script>
 
-<section class="history" aria-label={t("history.label")} bind:this={scroller}>
+<section class="history" aria-label={t("history.label")} data-marks={marks} bind:this={scroller}>
   {#if items.length === 0 && !undo}
     <p class="empty">{t("history.empty")}</p>
   {/if}
@@ -190,6 +200,13 @@
           </button>
         {/if}
       </div>
+      {#if item.status === "done"}
+        {@const r = reason(item)}
+        {#if r !== null}
+          <button type="button" class="reason" data-testid="mark-reason" data-open={reasonOpen === item.id ? "true" : undefined} title={r || undefined}
+            onpointerdown={(e) => e.preventDefault()} onclick={() => tapped(() => (reasonOpen = reasonOpen === item.id ? null : item.id))}>{r || "\u00a0"}</button>
+        {/if}
+      {/if}
       {#if sigmaOpen === item.id && sigma(item)}<div class="uses" data-testid="sigma">{sigma(item)}</div>{/if}
       {#if item.status === "done" && item.uses?.length}
         <div class="uses" data-testid="uses">{usesLine(item.uses)}</div>
@@ -320,6 +337,25 @@
   }
   .mark[data-mark="⚠"] {
     color: var(--warn);
+  }
+  /* R124: the reason line, one line ellipsed in the mark's colour; its place is there from the row's first frame */
+  .reason {
+    all: unset;
+    display: block;
+    cursor: pointer;
+    align-self: flex-end;
+    max-width: 100%;
+    font-size: var(--fs-note);
+    color: var(--warn);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .reason[data-open="true"] {
+    white-space: normal;
+  }
+  .history[data-marks="muted"] .mark {
+    color: var(--muted);
   }
   .note,
   .working {
