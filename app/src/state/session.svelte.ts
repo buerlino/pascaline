@@ -10,7 +10,6 @@ import { t, type MessageKey } from "../i18n/index.ts";
 import { EngineMemoryError } from "../engine/types.ts";
 import { decimalToString, type ComplexValue, type MarkInfo } from "../engine/format.ts";
 import { homeResultToLatex, type GroupSep } from "../render/home.ts";
-export type { GroupSep } from "../render/home.ts";
 import {
   DEFAULT_FMT_CYCLE,
   factsOf,
@@ -68,8 +67,7 @@ export interface Settings extends CalcSettings {
   fixDecimals: number;
   uncertainty: UncertaintyView;
   marks: MarkStyle;
-  /** R125, Settings › Numbers › Digit groups: the separator of a drawn result's digit groups (Copy has none). */
-  groupSep: GroupSep;
+  groupSep: GroupSep; // R125, Settings › Numbers › Digit groups: the drawn groups' separator (Copy has none)
   haptics: HapticsSettings;
   /** Settings › Appearance (R50e): family, brightness, High contrast, Plain keys. */
   look: Look;
@@ -89,7 +87,7 @@ export const defaultSettings: Settings = {
   fixDecimals: 4,
   uncertainty: "sigma",
   marks: "reason",
-  groupSep: "thin",
+  groupSep: "thin", // R125
   haptics: { on: false, strength: 50, ms: 15 },
   look: defaultLook(),
 };
@@ -606,8 +604,7 @@ export class Session {
     return markFor(item, this.modeOf(item), this.displayContext());
   }
 
-  /** `mute` (R40): the muted digits' code once in; only the screen's row (`grouped`) uses it (displayMode.ts renderPoint),
-   *  with `groupSep` (R125: the setting; displayMode.ts draws a comma under the decimal comma as the thin space). */
+  /** `mute` (R40), `groupSep` (R125): the muted digits' code once in, the separator; only the screen's row uses them. */
   displayContext(): DisplayContext {
     const s = this.settings;
     return { format: s.format, digits: s.digits, fixDecimals: s.fixDecimals, angle: s.angle, ...(this.decimalComma ? { decimalComma: true } : {}), groupSep: s.groupSep, mute: sigmaCode?.muter };
