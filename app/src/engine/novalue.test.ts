@@ -215,5 +215,32 @@ describe("G148 approxRange's cost", () => {
     expect(ask("2*approx(1/4)", "0.5")).toBe(0);
     expect(ask("evalf(10^20)+1", "0.1000000000000000000010000000000000000000e21")).toBe(0);
     expect(ask("sin(pi)", "0")).toBe(0);
+    // G148f2: an output that is neither infinite, undef nor 0 asks nothing, a text that only holds undef included.
+    expect(ask("approx(exp(-10^20))*x", "0.0*x")).toBe(0);
+    expect(ask("approx(1/3)+x", "x+0.3333333333333333333333333333333333333333")).toBe(0);
+    expect(ask("[approx(1/3),undef]", "[0.3333333333333333333333333333333333333333,undef]")).toBe(0);
+    expect(ask("approx(inf)-approx(inf)", "undef")).toBe(0);
+  });
+});
+
+// G148f2: an infinite output whose bare input is finite asks each call's argument underflow too (ln(approx(exp(-10^20)))),
+// and an undef output is asked as an infinite one; a bare input that is undef or infinite keeps its answer.
+describe.skipIf(!giacAvailable())("G148f2 approxRange on the real engine", () => {
+  let giac: EngineGiac;
+  beforeAll(async () => {
+    giac = engineGiac(await loadNodeGiac());
+  });
+  // The outputs Home's exact path gives on phase-1 (probe through the engine host; Giac's own eval of the product, outside
+  // Home's settings, is 0.0).
+  const range = (input: string, output: string): string | null => approxRange(giac, input, output, 40, () => false, () => false);
+  it("refuses an infinity or undef that approx made from a finite value", () => {
+    expect(range("ln(approx(exp(-10^20)))", "-infinity")).toBe("underflow");
+    expect(range("ln(approx(exp(-10^20)))/ln(10)", "-infinity")).toBe("underflow");
+    expect(range("approx(exp(-10^20))*exp(10^20)", "undef")).toBe("underflow");
+    expect(range("approx(exp(10^20))/exp(10^20)", "undef")).toBe("overflow");
+  });
+  it("keeps the answer of a bare input that is undef or infinite, or exactly 0", () => {
+    const kept: [string, string][] = [["1/approx(0)", "infinity"], ["approx(1/0)", "infinity"], ["approx(0)/0", "undef"], ["ln(approx(0))", "-infinity"], ["2*approx(0)", "0.0"], ["approx(sin(pi))", "0.0"], ["approx(limit(1/x^2,x,0))", "+infinity"]];
+    for (const [input, output] of kept) expect(range(input, output), input).toBeNull();
   });
 });
