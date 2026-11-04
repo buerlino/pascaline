@@ -489,9 +489,9 @@
     padding: var(--sp-05) var(--sp-3) 0;
     font-size: var(--fs-note);
     color: var(--muted);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    /* wraps: the σ part (R40f1) comes last and must not be cut off at phone width */
+    white-space: normal;
+    overflow-wrap: anywhere;
   }
   .rowbar button {
     flex: 1;

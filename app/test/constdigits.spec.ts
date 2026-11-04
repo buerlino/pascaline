@@ -126,3 +126,37 @@ test("a tap on the row shows its σ line, a second hides it; with Muted digits a
   await ready(page);
   expect(await page.evaluate(() => window.pascaline.session.settings.uncertainty)).toBe("muted");
 });
+
+test("R40f1: on keys alone the picked row's why-line holds the σ line after a dot; with Muted digits it holds none", async ({ page }) => {
+  await gTimesEarth(page, 1);
+  await tap(page, ["up"]); // picks the row (P4), no touch
+  const why = page.getByTestId("row-why");
+  await expect(why).toContainText("G (± 1.5·10⁻¹⁵)");
+  await expect(why).toContainText(" · σ = 9.0ᴇ9 · U = 2σ = 1.8ᴇ10 (k = 2)");
+  await expect(page.getByTestId("sigma")).toHaveCount(0); // the row's own σ line stays a tap's
+  await tap(page, ["esc"]);
+  await page.evaluate(() => (window.pascaline.session.settings.uncertainty = "muted"));
+  await tap(page, ["up"]);
+  await expect(why).toContainText("G (± 1.5·10⁻¹⁵)");
+  await expect(why).not.toContainText("σ");
+});
+
+test("R40f1: at phone width (400 px) the why-line wraps, so the σ part is not cut off, and the keys and the row bar stay put", async ({ page }) => {
+  await page.setViewportSize({ width: 400, height: 800 });
+  await putConst(page, "G"); // two constants with a σ: the line is longer than one line holds
+  await tap(page, ["mul"]);
+  await putConst(page, "alpha");
+  await tap(page, ["enter"]);
+  await done(page, 1);
+  const keysTop = () => page.locator('[data-key="enter"]').evaluate((e) => e.getBoundingClientRect().top);
+  const before = await keysTop();
+  await tap(page, ["up"]);
+  const why = page.getByTestId("row-why");
+  await expect(why).toContainText("(k = 2)");
+  const fit = await why.evaluate((e) => ({ sw: e.scrollWidth, cw: e.clientWidth }));
+  expect(fit.sw).toBeLessThanOrEqual(fit.cw);
+  expect(await keysTop()).toBe(before); // the keys do not move
+  const bar = await page.getByTestId("row-actions").boundingBox();
+  const wb = await why.boundingBox();
+  expect(wb!.y + wb!.height).toBeLessThanOrEqual(bar!.y + 1); // the why-line sits above the bar, no overlap
+});
