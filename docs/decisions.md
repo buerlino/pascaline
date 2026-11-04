@@ -7,7 +7,7 @@ Phase 0 decisions (D1–D9, P1, P2): [spike/DECISIONS.md](../spike/DECISIONS.md)
 
 The owner's other open items are in [backlog.md](backlog.md), "Needs the user". Once decided, an entry moves to "Decided proposals".
 
-- **2026-11-04 R41: the status line at font scale 2.0 (OPEN).** The keypad fits at 1.5 and 2.0; the status line is 35 px wider than 360 px at 2.0 (fine at 1.5). Recommendation: leave it until a device shows it. Would change if: the device clips Mode or ☰.
+None open (2026-11-04).
 
 ## Decided proposals
 
@@ -29,6 +29,7 @@ The owner's other open items are in [backlog.md](backlog.md), "Needs the user". 
 - **Small packages (2026-10-14, the owner's rule).** One concern each, about a day or less, with its own reading list; placed by importance, then dependencies.
 
 ### Feel, keys and screen (milestone 4a)
+- **R41's status line at font scale 2.0 waits for a device (Opus pass 61).** Chromium's emulation puts it 35 px over 360 px at 2.0 (fine at 1.5); annabell's next device run checks it with TalkBack. Would change if: the device clips Mode or ☰ (a ron package).
 - **Owner answers of 2026-11-02 (vision; interview with sandra).** A working engineer, phone first; units and constants are the task to win. No AI in the app: the engineer's own AI writes the files (S4's two stay; paste, picker, "Copy for your AI"); a sync folder (Syncthing) takes everything. Marks: ⚠ in colour with its reason; σ: muted digits, σ on tap; a digit-group separator; each also a setting. Motion: the press only. R37 parked; R53 held for one study (results mode, the six top-right keys) and a mockup. New work ships if ready; the fuzz night is Wed 11-04. Full text: archive. Would change if: an outside round shows another first user.
 - **Owner answers of 2026-10-31 and 2026-11-01 (stored data, the comma, `%`):** built (R95, R100, R94, R110). Full text: archive. Would change if: two tabs side by side are wanted on purpose.
 - **Owner answers of 2026-11-02.** Stored names (R33) get a colour token of their own per theme, picked at the R24d review. Key vibration (A9, R112): the app's switch alone decides; one pulse per touch, at finger-down. Phone checks: Android's splash and status bar take the Dark background (A59); R15c4's rings (R113). Opus pass 50's defaults kept; `persisted()` read on the Fairphone (A61). Full text: archive. Would change if: users want the system switch to mute the keys.
