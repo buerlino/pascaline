@@ -80,12 +80,13 @@
 
   // R40: a tap on a row with a σ line (not on its entry or result, which recall and insert) shows it; a second hides it
   let sigmaOpen = $state<number | null>(null);
-  function toggleSigma(e: MouseEvent, item: HistoryItem): void {
-    if (!(e.target as Element).closest("button") && sigma(item)) tapped(() => (sigmaOpen = sigmaOpen === item.id ? null : item.id));
-  }
-
-  // R124: a tap on a row's reason line shows its full text (it wraps); a second tap or another row's line ellipses it again
+  // R124: a tap on a ⚠ row's reason line shows its full text (it wraps); a second tap ellipses it again
   let reasonOpen = $state<number | null>(null);
+  function toggleSigma(e: MouseEvent, item: HistoryItem): void {
+    const at = e.target as Element;
+    if (at.closest(".reason")) tapped(() => (reasonOpen = reasonOpen === item.id ? null : item.id));
+    else if (!at.closest("button") && sigma(item)) tapped(() => (sigmaOpen = sigmaOpen === item.id ? null : item.id));
+  }
 
   /** R63: a unit row draws its request with the units in it (the line itself, recalled, has none: Home has no units). */
   function drawnInput(item: HistoryItem): string {
@@ -170,6 +171,7 @@
     {#if item.status === "note"}
       <div class="item note" data-status="note" data-testid="safe-start" role="status">{item.text}</div>
     {:else}
+    {@const r = reason(item)}
     <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_noninteractive_element_interactions (R40: the σ line is a touch extra; a picked row's why-line, R36, serves the keys) -->
     <article class="item" data-status={item.status}
       onpointerdown={(e) => pressStart(e, item)} onpointerup={endPress} onpointercancel={endPress} onclick={(e) => toggleSigma(e, item)}
@@ -200,13 +202,7 @@
           </button>
         {/if}
       </div>
-      {#if item.status === "done"}
-        {@const r = reason(item)}
-        {#if r !== null}
-          <button type="button" class="reason" data-testid="mark-reason" data-open={reasonOpen === item.id ? "true" : undefined} title={r || undefined}
-            onpointerdown={(e) => e.preventDefault()} onclick={() => tapped(() => (reasonOpen = reasonOpen === item.id ? null : item.id))}>{r || "\u00a0"}</button>
-        {/if}
-      {/if}
+      {#if r !== null}<div class="reason" data-testid="mark-reason" data-open={reasonOpen === item.id}>{r || "\u00a0"}</div>{/if}
       {#if sigmaOpen === item.id && sigma(item)}<div class="uses" data-testid="sigma">{sigma(item)}</div>{/if}
       {#if item.status === "done" && item.uses?.length}
         <div class="uses" data-testid="uses">{usesLine(item.uses)}</div>
@@ -340,8 +336,6 @@
   }
   /* R124: the reason line, one line ellipsed in the mark's colour; its place is there from the row's first frame */
   .reason {
-    all: unset;
-    display: block;
     cursor: pointer;
     align-self: flex-end;
     max-width: 100%;
