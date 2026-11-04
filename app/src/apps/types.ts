@@ -48,8 +48,8 @@ export interface ValueOption {
 
 export interface MenuItem {
   readonly id: string;
-  /** What a tap on this row is called in the press counts: `screen:<count>` (R127, state/pressCount.ts); without it the
-   *  count says only that a row was tapped. */
+  /** What a tap on this row is called in the press counts: `screen:<count>` (R127, state/pressCount.ts); without it
+   *  "row". */
   readonly count?: string;
   /** Already translated. */
   readonly label: string;

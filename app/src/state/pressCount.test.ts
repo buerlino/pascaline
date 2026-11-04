@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // What counts as one press (R70; docs/04 section 5.2): a key tap, a flick, a drag on the trackpad, a tap on the screen.
 import { describe, expect, it } from "vitest";
-import { counted, isScreenTap, pressName, screenKind, touchKey, touchPresses } from "./pressCount.ts";
+import { counted, isScreenTap, screenKind, touchKey, touchPresses } from "./pressCount.ts";
 
 const key = {};
 /** A stand-in element that answers `closest` for the selectors it is given. */
@@ -92,21 +92,15 @@ describe("which key and layer a press was (R127)", () => {
     expect(touchKey({ kind: "pad", key: undefined, steps: { count: 0 } }, plain)).toBeUndefined();
     expect(touchKey({ kind: "repeat" }, plain)).toBeUndefined();
   });
-  it("names a press by key id and layer; a hardware key's layer is hw", () => {
-    expect(pressName("d7", "primary")).toBe("d7:primary");
-    expect(pressName("add", "hw")).toBe("add:hw");
-  });
-  it("a screen tap is named by what it hit: a row's own count kind first (R92), else the element's kind", () => {
+  it("a screen tap is named by the row's count kind (R92; a plain menu row: row), else button", () => {
     const hit = (m: Record<string, unknown>) => ({ closest: (sel: string) => m[sel] ?? null });
     expect(screenKind(hit({ "[data-count]": { dataset: { count: "units-const" } } }))).toBe("screen:units-const");
-    expect(screenKind(hit({ "[role=menuitem]": {} }))).toBe("screen:row");
-    expect(screenKind(hit({ "[data-testid=sheet-catch]": {} }))).toBe("screen:catch");
+    expect(screenKind(hit({ "[data-count]": { dataset: { count: "row" } } }))).toBe("screen:row");
     expect(screenKind(hit({ button: {} }))).toBe("screen:button");
-    expect(screenKind(hit({ "[role=button]": {} }))).toBe("screen:button");
   });
   it("counted() hands the hardware key's own arguments to the counter", () => {
     const seen: string[] = [];
-    const f = counted((...[id, layer]: [string, string]) => void seen.push(pressName(id, "hw") + layer), (_id: string, _layer: string) => {});
+    const f = counted((...[id, layer]: [string, string]) => void seen.push(`${id}:hw${layer}`), (_id: string, _layer: string) => {});
     f("d7", "primary", false);
     f("d7", "primary", true); // an auto-repeat counts nothing
     expect(seen).toEqual(["d7:hwprimary"]);

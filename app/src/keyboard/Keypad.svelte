@@ -6,7 +6,7 @@
   import { fitLegends } from "./fit.ts";
   import { keyNames, loadKeyNames } from "./keyNamesLoader.svelte.ts";
   import { actionFor, gridPlace, keyboard, labelFor, type Key, type Layer } from "./keyboard.ts";
-  import { pressName, touchKey, touchPresses } from "../state/pressCount.ts";
+  import { touchKey, touchPresses } from "../state/pressCount.ts";
   import { sheetChunk } from "../views/sheetView.svelte.ts";
   import type { UserKeys } from "./userKeys.svelte.ts";
 
@@ -209,10 +209,10 @@
     }
 
     if (target && target !== "pad" && REPEAT_KEYS.includes(target.id)) {
-      oncount(pressName(target.id, alpha ? "alpha" : shift ? "shift" : "primary"));
-      onpress(target);
       // the repeats keep the layer of the first press (Shift ⌫ = Del), which used up a one-shot Shift
       const layer: Layer = alpha ? "alpha" : shift ? "shift" : "primary";
+      oncount(`${target.id}:${layer}`);
+      onpress(target);
       gestures.set(ev.pointerId, { kind: "repeat", repeat: new Repeat(() => onpress(target, layer)) });
       return;
     }

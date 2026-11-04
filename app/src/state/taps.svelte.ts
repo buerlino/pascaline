@@ -5,10 +5,10 @@
 // (`presses`, docs/04 section 5.2: key taps, flicks, screen taps; src/state/pressCount.ts), the measure of the task benchmark.
 // Since R127 a press also says which one it was: `keys` maps "<key id>:<layer>" (layer: primary, shift, alpha for a tap in
 // that layer; up, down for a flick; hw for a hardware key that ran the keypad key), "trackpad:drag", or "screen:<kind>"
-// (a tap outside the keypad: row, button, catch, or a row's own kind such as units-const) to its count; the total is the
-// sum. A stored record without `keys` loads with an empty map. The export (Settings › Counters › Export the counts, and
-// R128's sync folder as counters.json) is one JSON object, `{ "format": "pascaline-counts/1", "since", "presses", "keys" }`,
-// with the keys sorted by count, largest first, ties by name: counts only, no times, no content.
+// (a tap outside the keypad: row, button, or a row's own kind such as units-const) to its count; the total is the
+// sum. A stored record without `keys` loads with an empty map. The export (state/countsFile.ts: Settings › Counters ›
+// Export the counts, and R128's sync folder as counters.json) is one JSON object, `{ "format": "pascaline-counts/1",
+// "since", "presses", "keys" }`, with the keys sorted by count, largest first, ties by name: counts only, no times, no content.
 import type { Kv } from "./storage.ts";
 
 export interface TapCounts {
@@ -25,8 +25,6 @@ export interface TapCounts {
 }
 
 export const TAPS_KEY = "taps";
-/** The export's format name (R127). */
-export const COUNTS_FORMAT = "pascaline-counts/1";
 /** Writes wait this long, so a burst of taps is one IndexedDB write. */
 const SAVE_MS = 1000;
 
@@ -52,12 +50,9 @@ export class TapCounter {
       if (!isCount(o["shift"]) || !isCount(o["alpha"]) || typeof o["since"] !== "string") return;
       const c = { ...this.counts, since: o["since"] || this.counts.since };
       for (const k of COUNTS) if (isCount(o[k])) c[k] += o[k]; // (presses absent before R70, presets before R88)
-      const stored = o["keys"];
-      if (typeof stored === "object" && stored !== null && !Array.isArray(stored)) {
-        const keys = { ...c.keys };
-        for (const [k, n] of Object.entries(stored)) if (isCount(n)) keys[k] = (keys[k] ?? 0) + n;
-        c.keys = keys;
-      }
+      const keys = { ...c.keys };
+      for (const [k, n] of Object.entries(typeof o["keys"] === "object" && o["keys"] !== null ? o["keys"] : {})) if (isCount(n)) keys[k] = (keys[k] ?? 0) + n;
+      c.keys = keys;
       this.counts = c;
     });
   }
@@ -81,13 +76,6 @@ export class TapCounter {
     this.wasReset = true;
     this.counts = { shift: 0, alpha: 0, presses: 0, presets: 0, keys: {}, since: this.today() };
     this.schedule();
-  }
-
-  /** The counts as the export file's text (R127; format in the header comment). */
-  exportText(): string {
-    const { since, presses, keys } = this.counts;
-    const sorted = Object.entries(keys).sort(([a, x], [b, y]) => y - x || (a < b ? -1 : a > b ? 1 : 0));
-    return JSON.stringify({ format: COUNTS_FORMAT, since, presses, keys: Object.fromEntries(sorted) }, null, 2) + "\n";
   }
 
   /** Write now (tests; the app writes after SAVE_MS). */

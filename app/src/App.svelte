@@ -17,7 +17,7 @@
   import type { UserKeys } from "./keyboard/userKeys.svelte.ts";
   import { noDigit } from "./state/displayMode.ts";
   import type { HistoryItem, Session, View } from "./state/session.svelte.ts";
-  import { counted, countScreenTaps, pressName } from "./state/pressCount.ts";
+  import { counted, countScreenTaps } from "./state/pressCount.ts";
   import { createLoaders, type FindCode, type ModeSheetCode } from "./appLoaders.ts";
   import { tipsDue } from "./state/tips.ts";
   import History from "./views/History.svelte";
@@ -67,7 +67,7 @@
       if (key) press(key, "primary");
     });
     // R31 (F27): a hardware keyboard's printable keys are taps of the keypad key with that character
-    entry.onKey = counted((...[id]: [string, Layer]) => session.taps.press(pressName(id, "hw")), (id: string, layer: Layer) => {
+    entry.onKey = counted((...[id]: [string, Layer]) => session.taps.press(`${id}:hw`), (id: string, layer: Layer) => {
       const key = keyboard.byId.get(id);
       if (key) press(userKeys.resolve(key), layer);
     });

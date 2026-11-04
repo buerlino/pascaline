@@ -304,8 +304,13 @@ export const LAZY_PARTS = ["src/views/sheetKeys.ts", "src/views/tmplSheet.ts", "
  *  texts ride in the Mode sheet's chunk, the unit view's separators in its own. The pin is 60,616 B + 0.05 kB.
  *  60.67 → 60.72 kB (R125f1): the branch 60,673 B (172,163 B raw, +57 B over that pin's measure): groupDigits' flag for the
  *  thin space's both sides, passed from part() (the apostrophe and the comma group only before the point). The pin is
- *  60,673 B + 0.05 kB. */
-export const START_PIN_GZIP = 60_723;
+ *  60,673 B + 0.05 kB.
+ *  60.72 → 60.99 kB (R127): the branch measures 60,970 B (172.99 kB raw, +0.25 kB over the pin): the per-key press counts,
+ *  which run on every press and so ride in the start chunk (TapCounts.keys and its stored reader, the key and layer a
+ *  touch names in pressCount.ts, a hardware key's and a screen tap's name, the call sites in Keypad and App); the
+ *  export, its file and its row ride in the Mode sheet's chunk. The pin is 60,970 B + 0.02 kB (+0.05 kB would pass the
+ *  budget of 61 kB). */
+export const START_PIN_GZIP = 60_990;
 
 /** R103 (vr-4): the classic inline scripts of index.html run before the first paint, outside every chunk: the stored look
  *  (R50e) and the too-old WebView check. Their gzip sizes, each script alone and summed (as the start chunk sums its

@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 import { describe, expect, it } from "vitest";
 import type { Kv } from "./storage.ts";
-import { COUNTS_FORMAT, TAPS_KEY, TapCounter } from "./taps.svelte.ts";
+import { COUNTS_FORMAT, countsText } from "./countsFile.ts";
+import { TAPS_KEY, TapCounter } from "./taps.svelte.ts";
 
 function memoryKv(init: [string, unknown][] = []): Kv & { data: Map<string, unknown> } {
   const data = new Map<string, unknown>(init);
@@ -127,7 +128,7 @@ describe("the press counter per key and layer (R127)", () => {
     const c = new TapCounter(memoryKv(), day("2026-11-05"));
     await c.ready;
     for (const k of ["b:primary", "a:primary", "c:up", "c:up", "d:shift", "d:shift", "d:shift"]) c.press(k);
-    const text = c.exportText();
+    const text = countsText(c.counts);
     expect(text.endsWith("\n")).toBe(true);
     const o = JSON.parse(text) as { format: string; since: string; presses: number; keys: Record<string, number> };
     expect(o.format).toBe(COUNTS_FORMAT);

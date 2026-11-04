@@ -555,11 +555,11 @@ describe("Settings › Data (R38a)", () => {
 });
 
 describe("Settings › Counters › Export the counts (R127)", () => {
-  it("is a row before Reset only where the app gives the file port; it saves the counter's export text", () => {
+  it("is a row before Reset only where the app gives the file port; it saves the counts as they stand", () => {
     expect(settings(4).level.items.map((x) => x.id)).toEqual(["presses", "shift", "alpha", "presets", "since", "reset"]);
     const saved: string[] = [];
     const userKeys = new UserKeys(memoryKv());
-    const clip = { saveCounts: async (text: string) => void saved.push(text) } as unknown as ClipActions;
+    const clip = { saveCounts: async (counts: unknown) => void saved.push(JSON.stringify(counts)) } as unknown as ClipActions;
     const s = new Sheet("mode", "Mode", () => modeItems(session, { userKeys, data: (run) => void run(clip) }), { remember: false });
     s.pickNumber(6);
     s.pickNumber(6); // Counters (Your keys and Data come first)
@@ -568,6 +568,6 @@ describe("Settings › Counters › Export the counts (R127)", () => {
     const picked = s.activate(at(s, "export"));
     if (picked.kind === "run") picked.item.run?.();
     expect(saved).toHaveLength(1);
-    expect(JSON.parse(saved[0] ?? "")).toMatchObject({ format: "pascaline-counts/1", presses: 1, keys: { "d7:primary": 1 } });
+    expect(JSON.parse(saved[0] ?? "")).toMatchObject({ presses: 1, keys: { "d7:primary": 1 } });
   });
 });

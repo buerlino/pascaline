@@ -385,7 +385,7 @@ function tapsItems(session: Session, env: SettingsEnv): MenuItem[] {
     switchedRow(session), // R88, R89: the presets applied
     { id: "since", label: t("settings.taps.since"), keep: true, get value() { return taps.counts.since || "—"; } },
     // R127: the counts per key and layer as a file (R128 writes the same text into the sync folder); only where the app gives the file port
-    ...(env.data ? [{ id: "export", label: t("settings.taps.export"), run: () => env.data?.((c) => c.saveCounts(taps.exportText())) }] : []),
+    ...(env.data ? [{ id: "export", label: t("settings.taps.export"), run: () => env.data?.((c) => c.saveCounts(taps.counts)) }] : []),
     { id: "reset", label: t("settings.taps.reset"), keep: true, run: () => taps.reset() },
   ];
 }
