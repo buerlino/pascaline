@@ -230,18 +230,17 @@ describe.skipIf(!giacAvailable())("G148f2 approxRange on the real engine", () =>
   beforeAll(async () => {
     giac = engineGiac(await loadNodeGiac());
   });
-  const range = (input: string): string | null => {
-    const out = giac.eval(input).trim();
-    return approxRange(giac, input, out, 40, () => false, () => false);
-  };
+  // The outputs Home's exact path gives on phase-1 (probe through the engine host; Giac's own eval of the product, outside
+  // Home's settings, is 0.0).
+  const range = (input: string, output: string): string | null => approxRange(giac, input, output, 40, () => false, () => false);
   it("refuses an infinity or undef that approx made from a finite value", () => {
-    expect(range("ln(approx(exp(-10^20)))")).toBe("underflow");
-    expect(range("ln(approx(exp(-10^20)))/ln(10)")).toBe("underflow");
-    expect(range("approx(exp(-10^20))*exp(10^20)")).toBe("underflow");
-    expect(range("approx(exp(10^20))/exp(10^20)")).toBe("overflow");
+    expect(range("ln(approx(exp(-10^20)))", "-infinity")).toBe("underflow");
+    expect(range("ln(approx(exp(-10^20)))/ln(10)", "-infinity")).toBe("underflow");
+    expect(range("approx(exp(-10^20))*exp(10^20)", "undef")).toBe("underflow");
+    expect(range("approx(exp(10^20))/exp(10^20)", "undef")).toBe("overflow");
   });
   it("keeps the answer of a bare input that is undef or infinite, or exactly 0", () => {
-    for (const input of ["1/approx(0)", "approx(1/0)", "approx(0)/0", "ln(approx(0))", "2*approx(0)", "approx(sin(pi))", "approx(limit(1/x^2,x,0))"])
-      expect(range(input), input).toBeNull();
+    const kept: [string, string][] = [["1/approx(0)", "infinity"], ["approx(1/0)", "infinity"], ["approx(0)/0", "undef"], ["ln(approx(0))", "-infinity"], ["2*approx(0)", "0.0"], ["approx(sin(pi))", "0.0"], ["approx(limit(1/x^2,x,0))", "+infinity"]];
+    for (const [input, output] of kept) expect(range(input, output), input).toBeNull();
   });
 });
