@@ -301,8 +301,11 @@ export const LAZY_PARTS = ["src/views/sheetKeys.ts", "src/views/tmplSheet.ts", "
  *  60.56 → 60.67 kB (R125): phase-1 405b7271 measures 60,516 B gzip (171,814 B raw); the branch 60,616 B (172,095 B raw,
  *  +281 B): the digit-group separator (its field, default and reader, the separators' LaTeX, the rule that draws a
  *  comma under the decimal comma as the thin space) and the sheet's check of a disabled value button. The row and its
- *  texts ride in the Mode sheet's chunk, the unit view's separators in its own. The pin is 60,616 B + 0.05 kB. */
-export const START_PIN_GZIP = 60_666;
+ *  texts ride in the Mode sheet's chunk, the unit view's separators in its own. The pin is 60,616 B + 0.05 kB.
+ *  60.67 → 60.72 kB (R125f1): the branch 60,673 B (172,163 B raw, +57 B over that pin's measure): groupDigits' flag for the
+ *  thin space's both sides, passed from part() (the apostrophe and the comma group only before the point). The pin is
+ *  60,673 B + 0.05 kB. */
+export const START_PIN_GZIP = 60_723;
 
 /** R103 (vr-4): the classic inline scripts of index.html run before the first paint, outside every chunk: the stored look
  *  (R50e) and the too-old WebView check. Their gzip sizes, each script alone and summed (as the start chunk sums its
