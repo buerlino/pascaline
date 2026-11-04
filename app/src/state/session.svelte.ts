@@ -56,8 +56,7 @@ export type DecimalMark = "point" | "comma";
 /** R40, Settings › Numbers › Uncertainty: the digits past a constant's σ are muted, and a tap on the row shows σ (`sigma`,
  *  the default) or nothing (`muted`). A third value, the concise form `3.986004(89)ᴇ14`, is a later package's. */
 export type UncertaintyView = "sigma" | "muted";
-/** R124, Settings › Numbers › Marks: a mark in --muted, a ⚠ in colour (as before R124), or a ⚠ in colour with its reason
- *  line under the row (`reason`, the default; the line's code is clipboard/whyLine.ts, loaded with the first ⚠). */
+/** R124, Settings › Numbers › Marks: marks in --muted, a ⚠ in colour, or that with its reason line (the default). */
 export type MarkStyle = "muted" | "colour" | "reason";
 export interface Settings extends CalcSettings {
   entry: EntryMode;

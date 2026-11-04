@@ -8,6 +8,7 @@ Phase 0 decisions (D1–D9, P1, P2): [spike/DECISIONS.md](../spike/DECISIONS.md)
 The owner's other open items are in [backlog.md](backlog.md), "Needs the user". Once decided, an entry moves to "Decided proposals".
 
 - **R40:** two questions, in [backlog.md](backlog.md) "Needs the user" 1.
+- **R124 defaults:** Muted mutes every mark; the line keeps R36's ⚠; the unit view's σ why-line shows with "⚠ + reason" only; the words ride in the tidy chunk. Would change if: the gallery reads wrong.
 
 ## Decided proposals
 

@@ -6,7 +6,7 @@ import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { test, type Page } from "@playwright/test";
 import { parse } from "yaml";
 import { entryValue, flick, open, setFontScale, tap } from "../test/helpers.ts";
-import { entryShots, lookShots } from "./looks.ts";
+import { entryShots, lookShots, markShots } from "./looks.ts";
 
 const OUT = new URL("../test/gallery/", import.meta.url).pathname;
 const THEMES = ["light", "dark"] as const;
@@ -405,19 +405,7 @@ const shots: Shot[] = [
   },
   ...settingsShots(),
   ...presetShots(),
-  // ---- R124: Settings › Numbers › Marks, the three styles on the same rows (two ⚠ with their reasons, a ≈, an =)
-  ...(["reason", "colour", "muted"] as const).map((m): Shot => ({
-    id: `home-marks-${m}`,
-    group: "Mark style (R124)",
-    title: { reason: "⚠ + reason (the default): each ⚠ row's reason line under it, in the warn colour, one line ellipsed", colour: "⚠ coloured: the rows as before R124, the marks in colour, no line", muted: "Muted: every mark in the muted colour, no line" }[m],
-    setup: async (p) => {
-      await p.evaluate((style) => (window.pascaline.session.settings.marks = style), m);
-      for (const [i, l] of ["\\operatorname{int}\\left(\\operatorname{abs}\\left(x-\\sin\\left(10^{50}\\right)\\right),x,-1,1\\right)", "\\operatorname{normald\\_icdf}\\left(2,-1,0.3\\right)", "\\sqrt{2}+0.5", "\\frac{1}{4}"].entries()) {
-        await p.evaluate((x) => window.pascaline.session.submit(x), l);
-        await doneCount(p, i + 1);
-      }
-    },
-  })),
+  ...markShots(), // R124
   // ---- R15c4: the first-start tips, over a Home with history (opened from Settings › Help and about, as a fresh profile shows them)
   {
     id: "home-tips",
