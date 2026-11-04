@@ -7,7 +7,6 @@ import { balanced, mapNames } from "../engine/giacPrint.ts";
 
 /** R125, Settings › Numbers › Digit groups: the thin space (R55's, the default), the apostrophe or the comma. */
 export type GroupSep = "thin" | "apos" | "comma";
-export const GROUP_SEPS: readonly GroupSep[] = ["thin", "apos", "comma"];
 /** Each separator as the drawn LaTeX has it: the apostrophe as text (math mode makes `'` a prime), the comma braced (no
  *  space after it). */
 export const GROUP_LATEX: Readonly<Record<GroupSep, string>> = { thin: "\\,", apos: "\\text{'}", comma: "{,}" };
@@ -27,19 +26,18 @@ export const groupDigits = (m: string, sep = "\\,"): string =>
 /** R40: a real part's mantissa as drawn, with its uncertain digits muted (render/uncMute.ts muter, a chunk of its own). */
 export type Mute = (m: string, f: FormattedNumber) => string;
 
-/** A drawn number's groups (R55): none (false), the thin space (true), or a separator (R125). */
-export type Grouping = boolean | GroupSep;
-
-function part(f: FormattedNumber, group: Grouping, mute?: Mute): string {
-  const g = group === false ? f.mantissa : groupDigits(f.mantissa, GROUP_LATEX[group === true ? "thin" : group]);
+/** `sep`: the digit groups' separator as LaTeX (GROUP_LATEX); undefined: no groups. */
+function part(f: FormattedNumber, sep: string | undefined, mute?: Mute): string {
+  const g = sep === undefined ? f.mantissa : groupDigits(f.mantissa, sep);
   const m = mute ? mute(g, f) : g;
   // PFX: a thin space, then the prefix in the accent colour (docs/04 2.7); .pfx is styled in Math.svelte
   if (f.prefix) return `${m}\\,\\class{pfx}{\\mathrm{${f.prefix}}}`;
   return `${m}${f.exponent === null ? "" : `\\times10^{${f.exponent}}`}`;
 }
 
-/** A formatted Home number as LaTeX: the exponent is drawn raised, the imaginary unit as i. */
-export function complexToLatex(c: FormattedComplex, group: Grouping = false, mute?: Mute): string {
+/** A formatted Home number as LaTeX: the exponent is drawn raised, the imaginary unit as i; `group`: the digit groups'
+ *  separator as LaTeX (R55, R125), undefined for none. */
+export function complexToLatex(c: FormattedComplex, group?: string, mute?: Mute): string {
   const re = `${c.re.neg ? "-" : ""}${part(c.re, group, c.im ? undefined : mute)}`;
   if (!c.im) return re;
   const im = c.im.mantissa === "1" && c.im.exponent === null && !c.im.prefix ? "\\mathrm{i}" : `${part(c.im, group)}\\mathrm{i}`;
@@ -55,7 +53,7 @@ export function fractionToLatex(f: FormattedFraction): string {
 }
 
 /** r∡θ, with the same ∡ the keyboard types. */
-export function polarToLatex(p: FormattedPolar, group: Grouping = false): string {
+export function polarToLatex(p: FormattedPolar, group?: string): string {
   const n = (f: FormattedNumber): string => `${f.neg ? "-" : ""}${part(f, group)}`;
   return `${n(p.r)}\\mathbin{\\measuredangle}${n(p.theta)}`;
 }

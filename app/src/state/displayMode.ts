@@ -21,7 +21,7 @@ import {
   type PrecisionFacts,
 } from "../engine/format.ts";
 import type { NumberFormat } from "../calc/port.ts";
-import { complexToLatex, fractionToLatex, groupSepFor, homeResultToLatex, polarToLatex, type GroupSep, type Grouping, type Mute } from "../render/home.ts";
+import { complexToLatex, fractionToLatex, GROUP_LATEX, groupSepFor, homeResultToLatex, polarToLatex, type GroupSep, type Mute } from "../render/home.ts";
 
 export type FmtMode = "std" | "sci" | "eng" | "pfx" | "fix" | "frac" | "mixed" | "polar";
 
@@ -161,7 +161,8 @@ export interface DisplayContext {
   angle: "rad" | "deg";
   /** R57: the decimal comma is on; numbers are drawn `1,5` and list elements are separated by `;`. */
   decimalComma?: boolean;
-  /** R125: the digit-group separator of a grouped row (absent: the thin space; never the comma under the decimal comma). */
+  /** R125: the digit-group separator of a grouped row (absent: the thin space; a comma under the decimal comma draws as
+   *  the thin space, groupSepFor). */
   groupSep?: GroupSep;
   /** R40: the muted digits' code (render/uncMute.ts muter), once loaded; absent: every digit drawn plain. */
   mute?: (r: NumericResult) => Mute | undefined;
@@ -220,7 +221,7 @@ function renderPoint(r: NumericResult, mode: FmtMode | undefined, ctx: DisplayCo
   const digits = r.facts?.digits ?? ctx.digits;
   const opts = (f: keyof typeof BASE): FormatOptions => ({ format: BASE[f], digits, fixed: ctx.fixDecimals });
   const base = baseMode(mode, ctx);
-  const group: Grouping = grouped && groupSepFor(ctx.groupSep, ctx.decimalComma);
+  const group = grouped ? GROUP_LATEX[groupSepFor(ctx.groupSep, ctx.decimalComma)] : undefined;
   if (!r.value) {
     // a numeric list or matrix: our formatter draws every element
     const p = precisionOf(r);

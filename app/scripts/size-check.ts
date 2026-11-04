@@ -294,8 +294,12 @@ export const LAZY_PARTS = ["src/views/sheetKeys.ts", "src/views/tmplSheet.ts", "
  *  60.23 → 60.56 kB (R124): phase-1 722a9b45 measures 60,208 B gzip (171,077 B raw); the branch 60,510 B (171,814 B raw,
  *  +302 B): the Marks setting (its default, read back), the row's reason line with its kept place and its tap, the
  *  history's style attribute. The line's words (clipboard/whyLine.ts with its strings) ride in the tidy chunk, the
- *  setting's row and texts in the Mode sheet's chunk (i18n/enUnc.ts). The pin is 60,510 B + 0.05 kB. */
-export const START_PIN_GZIP = 60_560;
+ *  setting's row and texts in the Mode sheet's chunk (i18n/enUnc.ts). The pin is 60,510 B + 0.05 kB.
+ *  60.56 → 60.67 kB (R125): phase-1 405b7271 measures 60,516 B gzip (171,814 B raw); the branch 60,616 B (172,095 B raw,
+ *  +281 B): the digit-group separator (its field, default and reader, the separators' LaTeX, the rule that draws a
+ *  comma under the decimal comma as the thin space) and the sheet's check of a disabled value button. The row and its
+ *  texts ride in the Mode sheet's chunk, the unit view's separators in its own. The pin is 60,616 B + 0.05 kB. */
+export const START_PIN_GZIP = 60_666;
 
 /** R103 (vr-4): the classic inline scripts of index.html run before the first paint, outside every chunk: the stored look
  *  (R50e) and the too-old WebView check. Their gzip sizes, each script alone and summed (as the start chunk sums its

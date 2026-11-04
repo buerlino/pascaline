@@ -10,7 +10,7 @@ import { t, type MessageKey } from "../i18n/index.ts";
 import { hasStrength, vibrate } from "../input/haptics.ts";
 import { NOTATION_MODES } from "../state/displayMode.ts";
 import { MAX_DIGITS, type DecimalMark, type EntryMode, type GroupSep, type MarkStyle, type Session, type UncertaintyView } from "../state/session.svelte.ts";
-import { GROUP_SEPS, groupSepFor } from "../render/home.ts";
+import { groupSepFor } from "../render/home.ts";
 import { aboutText } from "../i18n/enAbout.ts";
 import { uncText } from "../i18n/enUnc.ts";
 import { helpItems } from "./aboutItems.ts";
@@ -29,6 +29,7 @@ const ENTRIES: readonly EntryMode[] = ["textbook", "line"];
 const MARKS: readonly DecimalMark[] = ["point", "comma"];
 const UNCERTAINTY_VIEWS: readonly UncertaintyView[] = ["sigma", "muted"];
 const MARK_STYLES: readonly MarkStyle[] = ["muted", "colour", "reason"];
+const GROUP_SEPS: readonly GroupSep[] = ["thin", "apos", "comma"];
 /** The values the digits and decimals rows offer when picked (◀ ▶ reach every other one). */
 const DIGITS_PRESETS: readonly number[] = [4, 6, 8, 10, 12, 15, 20, 25, MAX_DIGITS];
 

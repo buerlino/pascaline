@@ -9,7 +9,7 @@ import { loadEntry, loadParser } from "../input/parser.ts";
 import { t, type MessageKey } from "../i18n/index.ts";
 import { EngineMemoryError } from "../engine/types.ts";
 import { decimalToString, type ComplexValue, type MarkInfo } from "../engine/format.ts";
-import { groupSepFor, homeResultToLatex, type GroupSep } from "../render/home.ts";
+import { homeResultToLatex, type GroupSep } from "../render/home.ts";
 export type { GroupSep } from "../render/home.ts";
 import {
   DEFAULT_FMT_CYCLE,
@@ -607,11 +607,10 @@ export class Session {
   }
 
   /** `mute` (R40): the muted digits' code once in; only the screen's row (`grouped`) uses it (displayMode.ts renderPoint),
-   *  as `groupSep` (R125: the separator drawn, never the comma under the decimal comma). */
+   *  with `groupSep` (R125: the setting; displayMode.ts draws a comma under the decimal comma as the thin space). */
   displayContext(): DisplayContext {
     const s = this.settings;
-    const comma = this.decimalComma;
-    return { format: s.format, digits: s.digits, fixDecimals: s.fixDecimals, angle: s.angle, ...(comma ? { decimalComma: true } : {}), groupSep: groupSepFor(s.groupSep, comma), mute: sigmaCode?.muter };
+    return { format: s.format, digits: s.digits, fixDecimals: s.fixDecimals, angle: s.angle, ...(this.decimalComma ? { decimalComma: true } : {}), groupSep: s.groupSep, mute: sigmaCode?.muter };
   }
 
   /**
