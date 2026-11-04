@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // What counts as one press (R70; docs/04 section 5.2): a key tap, a flick, a drag on the trackpad, a tap on the screen.
 import { describe, expect, it } from "vitest";
-import { counted, isScreenTap, touchPresses } from "./pressCount.ts";
+import { counted, isScreenTap, pressName, screenKind, touchKey, touchPresses } from "./pressCount.ts";
 
 const key = {};
 /** A stand-in element that answers `closest` for the selectors it is given. */
@@ -66,5 +66,49 @@ describe("a hardware key (docs/04 5.2, R70f1)", () => {
     onEnter(false);
     onEnter(true);
     expect([presses, runs]).toEqual([1, 2]);
+  });
+});
+
+describe("which key and layer a press was (R127)", () => {
+  const k = { id: "sin" };
+  const plain = { shift: false, alpha: false };
+  it("a tap is the key in the layer the pad shows: primary, Shift, or Alpha over Shift", () => {
+    expect(touchKey({ kind: "key", key: k, flick: { state: "tap" } }, plain)).toBe("sin:primary");
+    expect(touchKey({ kind: "key", key: k, flick: { state: "tap" } }, { shift: true, alpha: false })).toBe("sin:shift");
+    expect(touchKey({ kind: "key", key: k, flick: { state: "tap" } }, { shift: true, alpha: true })).toBe("sin:alpha");
+  });
+  it("a flick is up or down whatever the layer", () => {
+    expect(touchKey({ kind: "key", key: k, flick: { state: "up" } }, { shift: false, alpha: true })).toBe("sin:up");
+    expect(touchKey({ kind: "key", key: k, flick: { state: "down" } }, plain)).toBe("sin:down");
+  });
+  it("a trackpad drag is one press of the trackpad; a tap on a pad zone is that key", () => {
+    expect(touchKey({ kind: "pad", key: undefined, steps: { count: 3 } }, plain)).toBe("trackpad:drag");
+    expect(touchKey({ kind: "pad", key: { id: "left" }, steps: { count: 2 } }, plain)).toBe("trackpad:drag");
+    expect(touchKey({ kind: "pad", key: { id: "left" }, steps: { count: 0 } }, plain)).toBe("left:primary");
+  });
+  it("what touchPresses counts nothing for has no name", () => {
+    expect(touchKey({ kind: "key", key: k, flick: { state: "cancelled" } }, plain)).toBeUndefined();
+    expect(touchKey({ kind: "key", key: undefined, flick: { state: "tap" } }, plain)).toBeUndefined();
+    expect(touchKey({ kind: "pad", key: undefined, steps: { count: 0 } }, plain)).toBeUndefined();
+    expect(touchKey({ kind: "repeat" }, plain)).toBeUndefined();
+  });
+  it("names a press by key id and layer; a hardware key's layer is hw", () => {
+    expect(pressName("d7", "primary")).toBe("d7:primary");
+    expect(pressName("add", "hw")).toBe("add:hw");
+  });
+  it("a screen tap is named by what it hit: a row's own count kind first (R92), else the element's kind", () => {
+    const hit = (m: Record<string, unknown>) => ({ closest: (sel: string) => m[sel] ?? null });
+    expect(screenKind(hit({ "[data-count]": { dataset: { count: "units-const" } } }))).toBe("screen:units-const");
+    expect(screenKind(hit({ "[role=menuitem]": {} }))).toBe("screen:row");
+    expect(screenKind(hit({ "[data-testid=sheet-catch]": {} }))).toBe("screen:catch");
+    expect(screenKind(hit({ button: {} }))).toBe("screen:button");
+    expect(screenKind(hit({ "[role=button]": {} }))).toBe("screen:button");
+  });
+  it("counted() hands the hardware key's own arguments to the counter", () => {
+    const seen: string[] = [];
+    const f = counted((...[id, layer]: [string, string]) => void seen.push(pressName(id, "hw") + layer), (_id: string, _layer: string) => {});
+    f("d7", "primary", false);
+    f("d7", "primary", true); // an auto-repeat counts nothing
+    expect(seen).toEqual(["d7:hwprimary"]);
   });
 });

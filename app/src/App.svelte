@@ -17,7 +17,7 @@
   import type { UserKeys } from "./keyboard/userKeys.svelte.ts";
   import { noDigit } from "./state/displayMode.ts";
   import type { HistoryItem, Session, View } from "./state/session.svelte.ts";
-  import { counted, countScreenTaps } from "./state/pressCount.ts";
+  import { counted, countScreenTaps, pressName } from "./state/pressCount.ts";
   import { createLoaders, type FindCode, type ModeSheetCode } from "./appLoaders.ts";
   import { tipsDue } from "./state/tips.ts";
   import History from "./views/History.svelte";
@@ -53,35 +53,36 @@
   // The shell paints first; main.ts then loads MathLive, which puts the field into this element.
   onMount(() => {
     if (host) entry.setHost(host);
-    const count = (): void => session.taps.press(); // R70, R107: a hardware key (`<` `>` `!` and a dead one too) and a tap are presses (docs/04 5.2)
+    // R70, R107: a hardware key (`<` `>` `!` and a dead one too) and a tap are presses (docs/04 5.2)
+    const hw = (name: string) => (): void => session.taps.press(`${name}:hw`); // R127: which one; a hardware key that runs a keypad key is "<key id>:hw"
     // R45: a hardware Enter is the Enter key (a picked row, an open sheet), not a bare submit
-    entry.onEnter = counted(count, () => {
+    entry.onEnter = counted(hw("enter"), () => {
       const key = keyboard.byId.get("enter");
       if (key) press(key, "primary");
       else enter();
     });
     // R15c2: a hardware Escape is the Esc key (an open sheet or pick takes it first)
-    entry.onEscape = counted(count, () => {
+    entry.onEscape = counted(hw("esc"), () => {
       const key = keyboard.byId.get("esc");
       if (key) press(key, "primary");
     });
     // R31 (F27): a hardware keyboard's printable keys are taps of the keypad key with that character
-    entry.onKey = counted(count, (id, layer) => {
+    entry.onKey = counted((...[id]: [string, Layer]) => session.taps.press(pressName(id, "hw")), (id: string, layer: Layer) => {
       const key = keyboard.byId.get(id);
       if (key) press(userKeys.resolve(key), layer);
     });
-    entry.onLetter = counted(count, typeLetter);
+    entry.onLetter = counted(hw("letter"), typeLetter);
     shell.goTo = goTo; // the Apps sheet's Home and CAS rows
     shell.openSettings = openSettings;
     shell.settingsMenu = () => (loaders.modeSheet ? (settingsMenu ??= loaders.modeSheet.settingsMenu(session, settingsEnv)) : undefined); // (R49)
     shell.homeView = () => (session.view === "cas" ? "cas" : "home"); // the last row of every Menu
-    entry.onSymbol = counted(count, (ch) => entry.run({ kind: "insert", latex: ch }));
-    entry.onDead = counted(count, dead);
-    entry.onPress = counted(count, () => {}); // R107f1: a leaving ) or | is a press that needs nothing more
+    entry.onSymbol = counted(hw("symbol"), (ch) => entry.run({ kind: "insert", latex: ch }));
+    entry.onDead = counted(hw("dead"), dead);
+    entry.onPress = counted(hw("other"), () => {}); // R107f1: a leaving ) or | is a press that needs nothing more
     entry.onPaste = (text) => route.pasteText(ctx, text); // R114: Ctrl+V and every system paste take the Paste key's path
     // the first start (R15c4): once the keypad is drawn and the browser is idle, so the tips never compete with the start
     void tipsDue(location.search).then((due) => due && ("requestIdleCallback" in window ? requestIdleCallback(showTips, { timeout: 2000 }) : setTimeout(showTips, 500)));
-    return countScreenTaps(count);
+    return countScreenTaps((kind) => session.taps.press(kind));
   });
   let host: HTMLElement | undefined = $state();
   let entryHeight = $state(0);
@@ -386,7 +387,7 @@
       cas={casKeys} app={shell.app !== null}
       sheet={shell.sheet ? { filter: shell.sheet.level.filterable } : undefined}
       onpress={press}
-      oncount={() => session.taps.press()}
+      oncount={(key) => session.taps.press(key)}
       ontouch={touched}
     />
     <!-- a pick sheet rises over the maths rows (3–9), anchored at the keypad's bottom edge; the top cluster stays

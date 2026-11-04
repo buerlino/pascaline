@@ -197,7 +197,7 @@ export function settingsSections(session: Session, env: SettingsEnv = {}): MenuI
     ...(env.userKeys ? [section("keys", findText("keys.title"), yourKeysItems(env), () => yourKeysValue(env))] : []),
     // Data (R38a, R38b: views/dataSection.svelte.ts; R59 adds the library): only where the app gives the backup
     ...(env.data ? [dataSection(env)] : []),
-    section("counters", t("settings.counters"), tapsItems(session), () => {
+    section("counters", t("settings.counters"), tapsItems(session, env), () => {
       return t("settings.counters.value", { n: String(session.taps.counts.presses) }); // (a reset replaces the object)
     }),
     section("help", aboutText("help"), helpItems(env)),
@@ -375,8 +375,8 @@ function fmtTicks(session: Session): MenuItem[] {
 
 /** The press counter (R70, docs/04 5.2: every key tap, flick and screen tap) and the Shift and Alpha tap counter (R9,
  *  P7 point 4): the counts, since when, and a reset. Counted on this device only, never sent anywhere. The first four
- *  rows are information. */
-function tapsItems(session: Session): MenuItem[] {
+ *  rows are information; Export the counts (R127) saves them per key and layer as a file. */
+function tapsItems(session: Session, env: SettingsEnv): MenuItem[] {
   const taps = session.taps;
   return [
     { id: "presses", label: t("settings.taps.presses"), keep: true, get value() { return String(taps.counts.presses); } },
@@ -384,6 +384,8 @@ function tapsItems(session: Session): MenuItem[] {
     { id: "alpha", label: t("settings.taps.alpha"), keep: true, get value() { return String(taps.counts.alpha); } },
     switchedRow(session), // R88, R89: the presets applied
     { id: "since", label: t("settings.taps.since"), keep: true, get value() { return taps.counts.since || "—"; } },
+    // R127: the counts per key and layer as a file (R128 writes the same text into the sync folder); only where the app gives the file port
+    ...(env.data ? [{ id: "export", label: t("settings.taps.export"), run: () => env.data?.((c) => c.saveCounts(taps.exportText())) }] : []),
     { id: "reset", label: t("settings.taps.reset"), keep: true, run: () => taps.reset() },
   ];
 }

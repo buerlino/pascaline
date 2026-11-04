@@ -81,6 +81,11 @@ export class ClipActions {
     this.say(await (await import("../state/backup.ts")).saveBackup());
   }
 
+  /** Settings › Counters › Export the counts (R127): the text is the counter's export; the result is the notice. */
+  async saveCounts(text: string): Promise<void> {
+    this.say(await (await import("../state/countsFile.ts")).saveCounts(text));
+  }
+
   /** Settings › Data › Restore from a file, with the picked file, or Undo the restore (R38b): the restore code loads on
    *  the press; a refusal or a failure is the notice, a good file opens the restore sheet. */
   async restoreBackup(file: File | "undo"): Promise<void> {

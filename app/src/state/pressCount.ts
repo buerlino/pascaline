@@ -16,6 +16,26 @@ export function touchPresses(g: FinishedTouch): 0 | 1 {
   return 0;
 }
 
+/** The key and layer of a finished touch, for the per-key counts (R127): "<key id>:<layer>" with the layer the pad shows for
+ *  a tap (Alpha over Shift) and up or down for a flick; a trackpad drag is "trackpad:drag". Undefined where
+ *  `touchPresses` is 0. */
+export function touchKey(
+  g: { kind: "pad"; key: { id: string } | undefined; steps: { count: number } } | { kind: "key"; key: { id: string } | undefined; flick: { state: "tap" | "up" | "down" | "cancelled" } } | { kind: "repeat" },
+  layer: { shift: boolean; alpha: boolean },
+): string | undefined {
+  if (g.kind === "repeat") return undefined;
+  if (g.kind === "pad") {
+    if (g.steps.count > 0) return "trackpad:drag";
+    return g.key ? pressName(g.key.id, layer.alpha ? "alpha" : layer.shift ? "shift" : "primary") : undefined;
+  }
+  if (!g.key || g.flick.state === "cancelled") return undefined;
+  const st = g.flick.state;
+  return pressName(g.key.id, st === "tap" ? (layer.alpha ? "alpha" : layer.shift ? "shift" : "primary") : st);
+}
+
+/** A key's count name: its id and the layer pressed (primary, shift, alpha), flicked (up, down) or typed on a hardware keyboard (hw). */
+export const pressName = (id: string, layer: string): string => `${id}:${layer}`;
+
 /** What a finger can tap on the screen outside the keypad. */
 const TAPPABLE = "button, [role=menuitem], [role=button], [data-testid=sheet-catch]";
 const KEYPAD = "[data-key], [data-trackpad]";
@@ -26,20 +46,33 @@ export function isScreenTap(target: { closest(selector: string): unknown } | nul
   return target.closest(TAPPABLE) !== null && target.closest(KEYPAD) === null;
 }
 
-/** A hardware key's handler that counts the press first (docs/04 5.2: every key press counts 1). Its last argument is the
- *  event's KeyboardEvent.repeat: a held key counts once, so an auto-repeat runs the key again but counts nothing (R70f1). */
-export function counted<A extends unknown[]>(count: () => void, run: (...a: A) => void): (...a: [...A, repeat: boolean]) => void {
+/** What a screen tap hit, as the count's kind (R127): a row's own `data-count` (R92: units-const, units-tools), else row,
+ *  catch (the sheet's backdrop) or button. */
+export function screenKind(target: { closest(selector: string): unknown }): string {
+  const own = target.closest("[data-count]") as { dataset: { count?: string } } | null;
+  if (own?.dataset.count) return `screen:${own.dataset.count}`;
+  if (target.closest("[role=menuitem]") !== null) return "screen:row";
+  if (target.closest("[data-testid=sheet-catch]") !== null) return "screen:catch";
+  return "screen:button";
+}
+
+/** A hardware key's handler that counts the press first (docs/04 5.2: every key press counts 1; `count` gets the handler's
+ *  own arguments, R127). Its last argument is the event's KeyboardEvent.repeat: a held key counts once, so an auto-repeat
+ *  runs the key again but counts nothing (R70f1). */
+export function counted<A extends unknown[]>(count: (...a: NoInfer<A>) => void, run: (...a: A) => void): (...a: [...A, repeat: boolean]) => void {
   return (...a) => {
-    if (a[a.length - 1] !== true) count();
-    run(...(a.slice(0, -1) as A));
+    const args = a.slice(0, -1) as A;
+    if (a[a.length - 1] !== true) count(...args);
+    run(...args);
   };
 }
 
 /** Count every tap on the screen (a history row, a Find result, a chip, a menu item). Captured, so the count is in before
  *  the tap's own handler runs (Reset then zeroes it; a Settings tap counts itself). Returns the cleanup. */
-export function countScreenTaps(count: () => void): () => void {
+export function countScreenTaps(count: (kind: string) => void): () => void {
   const on = (ev: MouseEvent): void => {
-    if (isScreenTap(ev.target instanceof Element ? ev.target : null)) count();
+    const el = ev.target instanceof Element ? ev.target : null;
+    if (el && isScreenTap(el)) count(screenKind(el));
   };
   document.addEventListener("click", on, true);
   return () => document.removeEventListener("click", on, true);
