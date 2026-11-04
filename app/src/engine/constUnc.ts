@@ -145,7 +145,15 @@ export function uncDigitsOf(value: DecimalValue, sigma: DecimalValue, digits: nu
 export function constUncDigits(giac: Giac, body: string, table: ConstTable, r: HomeResult, digits: number, extra: readonly SigmaInput[] = []): { uncDigits: number; uncSigma: string } | undefined {
   const ids = inexactConstsIn(body, table);
   if ((!ids.length && !extra.length) || !r.ok || !r.value || r.items || !isZero(r.value.im)) return undefined;
-  const out = giac.eval(`evalf(${sigmaExpr(body, table, ids, extra)},20)`);
+  // R40 (family 9): a user's variable named as one of our leaves or constants (`pasl_fine_structure:=5`) would be read
+  // for it inside diff; each such name is renamed to one Giac holds no value for (`pasl_fine_structure_`)
+  const free = (n: string): string => {
+    let m = n;
+    for (let i = 0; i < 8 && giac.eval(m) !== m; i++) m += "_";
+    return m;
+  };
+  const expr = mapNames(sigmaExpr(body, table, ids, extra), ({ name }) => (name.startsWith(LEAF_PREFIX) || name.startsWith(CONST_PREFIX) ? free(name) : null), "typed");
+  const out = giac.eval(`evalf(${expr},20)`);
   if (out.startsWith("GIAC_ERROR")) return undefined;
   const sigma = decimalFromString(out);
   if (!sigma) return undefined;

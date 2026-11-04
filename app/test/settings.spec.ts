@@ -49,34 +49,41 @@ test.describe("by keys", () => {
     expect(await entryValue(page)).toBe(""); // no key reached the line
   });
 
-  test("the pill, 6, 2: Numbers holds the Decimal mark, the Fmt cycle's five ticks and Decimals in Fixed; the hint is a second line under Standard", async ({ page }) => {
+  test("the pill, 6, 2: Numbers holds the Decimal mark, the Fmt key cycle ›, Decimals in Fixed and Uncertainty (R40); 2 opens the cycle's five ticks, the hint a second line under Standard", async ({ page }) => {
     await page.getByTestId("chip-format").tap();
     await tap(page, ["d6", "d2"]);
     await expect(title(page)).toHaveText("Mode › Settings › Numbers");
-    expect(await rowIds(page)).toEqual(["mark", "std", "sci", "eng", "pfx", "fix", "decimals"]);
+    expect(await rowIds(page)).toEqual(["mark", "fmtCycle", "decimals", "uncertainty"]);
+    await expect(row(page, "fmtCycle").getByTestId("sheet-value")).toHaveText("STD SCI ENG");
+    await tap(page, ["d2"]);
+    await expect(title(page)).toHaveText("Settings › Numbers › Fmt key cycle");
+    expect(await rowIds(page)).toEqual(["std", "sci", "eng", "pfx", "fix"]);
     await expect(row(page, "std").getByTestId("row-hint")).toBeVisible();
     await expect(sheet(page).getByTestId("row-hint")).toHaveCount(1);
     await expect(row(page, "pfx")).toHaveAttribute("data-selected", "false");
-    await tap(page, ["d5"]); // a tick toggles and the sheet stays
+    await tap(page, ["d4"]); // a tick toggles and the sheet stays
     await expect(row(page, "pfx")).toHaveAttribute("data-selected", "true");
     expect(await page.evaluate(() => window.pascaline.session.settings.fmtCycle)).toContain("pfx");
     await tap(page, ["enter"]); // Enter on a tick toggles it too, and stays
     await expect(row(page, "pfx")).toHaveAttribute("data-selected", "false");
-    // the top cluster's pad moves the highlight: ▲ from Prefixes to Standard, then round to Decimals; ▶ ◀ step it
-    await tap(page, ["up", "up", "up"]);
-    await expect(active(page)).toHaveAttribute("data-id", "std");
+    await tap(page, ["esc"]); // back one level, onto the same row
+    await expect(title(page)).toHaveText("Mode › Settings › Numbers");
+    await expect(active(page)).toHaveAttribute("data-id", "fmtCycle");
+    // the top cluster's pad moves the highlight: ▲ to the Decimal mark, a value row (R57); ▶ ◀ step it
     await tap(page, ["up"]);
-    await expect(active(page)).toHaveAttribute("data-id", "mark"); // R57: the level's first row, a value row (Point, Comma)
+    await expect(active(page)).toHaveAttribute("data-id", "mark");
     await expect(row(page, "mark").getByTestId("sheet-value")).toHaveText("Point");
     await tap(page, ["right"]);
     await expect(row(page, "mark").getByTestId("sheet-value")).toHaveText("Comma");
     expect(await page.evaluate(() => window.pascaline.session.settings.decimalMark)).toBe("comma");
-    await tap(page, ["left", "up"]);
+    await tap(page, ["left", "down", "down"]);
     expect(await page.evaluate(() => window.pascaline.session.settings.decimalMark)).toBe("point");
     await expect(active(page)).toHaveAttribute("data-id", "decimals");
     await tap(page, ["right", "right", "left"]);
     expect(await page.evaluate(() => window.pascaline.session.settings.fixDecimals)).toBe(5);
     await expect(row(page, "decimals").getByTestId("sheet-value")).toHaveText("5");
+    await tap(page, ["down"]);
+    await expect(row(page, "uncertainty").getByTestId("sheet-value")).toHaveText("Muted digits, σ on tap");
     await expect(title(page)).toHaveText("Mode › Settings › Numbers");
   });
 

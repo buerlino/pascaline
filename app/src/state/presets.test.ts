@@ -314,6 +314,16 @@ describe("presets (R88)", () => {
     expect(() => presets.setGroups(id, [])).toThrow(PresetError);
   });
 
+  it("R40: Numbers holds Uncertainty: a capture keeps it, an apply sets it back", async () => {
+    const { session, presets } = await setup();
+    session.setUncertainty("muted");
+    const id = presets.capture("Quiet", ["numbers"]);
+    expect(presets.list[0]?.groups.numbers).toMatchObject({ uncertainty: "muted" });
+    session.setUncertainty("sigma");
+    await presets.apply(id);
+    expect(session.settings.uncertainty).toBe("muted");
+  });
+
   it("two applies in a row end in the second, the theme's loads awaited", async () => {
     const { session, presets, env } = await setup();
     const shown: string[] = [];

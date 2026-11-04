@@ -66,6 +66,22 @@ describe.skipIf(!giacAvailable())("a constant's σ through its basis (G81, real 
     expect(inexactConstsIn(body, WITH)).toEqual(["mu_0", "epsilon_0"]);
   });
 
+  it("R40 (family 9): a user's variable named as our leaf or a constant changes neither the value nor σ", () => {
+    const body = "pasc_mu_0*pasc_epsilon_0*pasc_c^2";
+    host.home("pasl_fine_structure:=5", defaultHomeSettings);
+    host.home("pasc_mu_0:=7", defaultHomeSettings);
+    try {
+      const r = home(body, WITH);
+      expect(r.display).toBe("1");
+      expect("uncDigits" in r.facts).toBe(false); // σ 0, as without the variables (it was 7.7ᴇ-33 with them)
+      const z = home("sqrt(pasc_mu_0/pasc_epsilon_0)", WITH);
+      expect(z.display).toBe("376.730313412");
+      expect(z.facts.uncDigits).toBe(home("sqrt(pasc_mu_0/pasc_epsilon_0)", WITH).facts.uncDigits);
+    } finally {
+      host.home("purge(pasl_fine_structure,pasc_mu_0)", defaultHomeSettings);
+    }
+  });
+
   it("√(μ₀/ε₀) = Z₀: σ 5.8337E-8 (oracle), not the independent 4.2E-8", () => {
     const s = sigma("sqrt(pasc_mu_0/pasc_epsilon_0)", WITH);
     expect(Math.abs(s / 5.8336944858e-8 - 1)).toBeLessThan(0.02);
