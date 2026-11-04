@@ -5,7 +5,9 @@
 import type { ComplexValue, NumberFormat as EngineFormat } from "../engine/format.ts";
 import type { AnalysisRequest, AnalysisResult, HomeResult, SolveOutcome, SolveRequest, TableRequest, ValueFacts } from "../engine/types.ts";
 import type { ChipFactsTable } from "../engine/chipFacts.ts";
+import type { ConstTable } from "../engine/constUnc.ts";
 export type { ChipEntry, ChipFactsTable } from "../engine/chipFacts.ts";
+export type { ConstEntry, ConstTable } from "../engine/constUnc.ts";
 
 export type { AnalysisRequest, AnalysisResult, HomeResult, KnownValue, SolveOutcome, SolveRequest, SolveRoot, TableRequest, ValueFacts } from "../engine/types.ts";
 export type { UserName } from "../engine/defs.ts";
@@ -100,8 +102,9 @@ export class CalcCancelled extends Error {
 export interface Calc {
   /** Resolves when the engine can take calls; `safeStart` when it started without the stored definitions (G19). */
   ready(): Promise<{ safeStart?: { skipped: number } } | void>;
-  /** `chips`: the result chips the input holds by name (`pasr_<k>`), with their values and facts (G49, R65). */
-  home(giac: string, settings: CalcSettings, chips?: ChipFactsTable): Promise<HomeOutcome>;
+  /** `chips`: the result chips the input holds by name (`pasr_<k>`), with their values and facts (G49, R65). `consts`
+   *  (R40): the constants it holds by name (`pasc_<id>`), with value, σ and basis; a result from them carries `uncDigits`. */
+  home(giac: string, settings: CalcSettings, chips?: ChipFactsTable, consts?: ConstTable): Promise<HomeOutcome>;
   cas(giac: string, settings: CalcSettings): Promise<CasOutcome>;
   /** Solve app: equations from guesses (1-D or a system), or all roots of a polynomial. */
   solve(req: SolveRequest, settings: CalcSettings): Promise<SolveOutcome>;

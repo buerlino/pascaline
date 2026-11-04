@@ -255,8 +255,14 @@ export const LAZY_PARTS = ["src/views/sheetKeys.ts", "src/views/tmplSheet.ts", "
  *  the Keypad's effects that load the key names (keyboard/keyNamesLoader.svelte.ts) and name the buttons once they are in,
  *  and fit.ts's height pass (a face stays between its legend lines, a legend in its own, at a larger system font). The
  *  names and the code that sets them are keyboard/keyNames.ts, a chunk of its own (1.45 kB gzip, loaded when the browser
- *  is idle). The pin is 59,910 B + 0.05 kB. */
-export const START_PIN_GZIP = 59_960;
+ *  is idle). The pin is 59,910 B + 0.05 kB.
+ *  59.96 → 60.23 kB (R40, inside its 0.3 kB bar): phase-1 b94c8613 measures 59,910 B gzip (170,306 B raw); the branch
+ *  60,183 B (171,077 B raw, +273 B): the Uncertainty setting (its default, read back), the σ fact read back
+ *  (readValueFacts), the parts of the row that ask for σ (the mute hook, the tap that shows the line) and the hook that
+ *  hears the tidy chunk load. The cut that mutes the digits (render/uncMute.ts) and the σ line (state/sigmaLine.ts) ride
+ *  in the tidy chunk (render/tidy.ts), the R40 texts in i18n/enUnc.ts: a row is drawn unmuted until it is in. The pin
+ *  is 60,183 B + 0.05 kB. */
+export const START_PIN_GZIP = 60_233;
 
 /** R103 (vr-4): the classic inline scripts of index.html run before the first paint, outside every chunk: the stored look
  *  (R50e) and the too-old WebView check. Their gzip sizes, each script alone and summed (as the start chunk sums its

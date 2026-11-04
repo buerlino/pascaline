@@ -162,6 +162,7 @@ describe("the repeated rules agree with the start's readers", () => {
     decimalMark: ["point", "comma", "dot"],
     digits: [1, 12, 30, 31, 0, -1, 12.5, "12", 1e3],
     fixDecimals: [0, 4, 12, 13, -1, 2.5, "4"],
+    uncertainty: ["sigma", "muted", "concise", 1, null], // R40
     fmtCycle: [["std", "sci", "eng"], ["std"], ["sci", "std"], [], ["std", "std"], ["frac"], ["std", "frac"], "std", ["pfx", "fix"], ["fix", "pfx"]],
     haptics: [
       { on: true, strength: 50, ms: 15 },

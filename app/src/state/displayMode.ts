@@ -21,7 +21,7 @@ import {
   type PrecisionFacts,
 } from "../engine/format.ts";
 import type { NumberFormat } from "../calc/port.ts";
-import { complexToLatex, fractionToLatex, homeResultToLatex, polarToLatex } from "../render/home.ts";
+import { complexToLatex, fractionToLatex, homeResultToLatex, polarToLatex, type Mute } from "../render/home.ts";
 
 export type FmtMode = "std" | "sci" | "eng" | "pfx" | "fix" | "frac" | "mixed" | "polar";
 
@@ -161,6 +161,8 @@ export interface DisplayContext {
   angle: "rad" | "deg";
   /** R57: the decimal comma is on; numbers are drawn `1,5` and list elements are separated by `;`. */
   decimalComma?: boolean;
+  /** R40: the muted digits' code (render/uncMute.ts muter), once loaded; absent: every digit drawn plain. */
+  mute?: (r: NumericResult) => Mute | undefined;
 }
 
 /** The mode an item is drawn in: the a b/c form when one is chosen, else the Format key's notation (`dec`: the notation,
@@ -231,7 +233,8 @@ function renderPoint(r: NumericResult, mode: FmtMode | undefined, ctx: DisplayCo
     return { text: p.text, latex: polarToLatex(p, grouped) };
   }
   const c = formatComplex(r.value, confirmedOptions(r.value, r.facts?.reliableDigits ?? null, opts(base)));
-  return { text: c.text, latex: complexToLatex(c, grouped) };
+  // R40: only the screen's row mutes the digits past a constant's σ (`grouped`): the text, chips and Copy keep them all
+  return { text: c.text, latex: complexToLatex(c, grouped, grouped ? ctx.mute?.(r) : undefined) };
 }
 
 /**

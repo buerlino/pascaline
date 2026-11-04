@@ -2,7 +2,7 @@
 // The calculator session: current view, modifier keys, settings and the history of both views.
 // Plain logic on Svelte 5 runes; the engine comes in through the Calc port.
 import { PASDEG } from "../engine/pasdeg.ts";
-import { CalcCancelled, type AngleUnit, type CalcError, type Calc, type CalcSettings, type ChipFactsTable, type NumberFormat, type UserName } from "../calc/port.ts";
+import { CalcCancelled, type AngleUnit, type CalcError, type Calc, type CalcSettings, type ChipFactsTable, type ConstTable, type NumberFormat, type UserName } from "../calc/port.ts";
 import { ANS_KEY, pruneChips, validChips, type Chip, type ChipTable } from "../input/chips.ts";
 import { parseFailText } from "../input/errors.ts";
 import { loadEntry, loadParser } from "../input/parser.ts";
@@ -22,6 +22,7 @@ import {
   renderNumeric,
   commaResult,
   type FmtMode,
+  type DisplayContext,
   type FormStep,
   type Polar,
   type Rational,
@@ -33,6 +34,8 @@ import { idbKv, type Kv } from "./storage.ts";
 import { TapCounter } from "./taps.svelte.ts";
 import { commaInput } from "../entry/commaInput.ts";
 import { casItem, chipFactsOf, chipOf, HISTORY_LIMIT, homeItem, withUnit } from "./results.ts";
+import { onTidy, prefetchTidy, tidyOr } from "./tidyLoad.ts";
+export { loadTidy } from "./tidyLoad.ts";
 import type { Copies, RemovedKind, RemovedRows } from "./removedRows.ts";
 import { restoredItem } from "./storedItem.ts";
 import type { UnitRow } from "../units/types.ts";
@@ -50,6 +53,9 @@ export const HAPTIC_MS_RANGE = { min: 5, max: 100 } as const;
 
 /** The decimal mark (R57, docs/05 3.4): the point, or the comma (typed `{,}`, drawn `,`; `;` separates arguments). */
 export type DecimalMark = "point" | "comma";
+/** R40, Settings › Numbers › Uncertainty: the digits past a constant's σ are muted, and a tap on the row shows σ (`sigma`,
+ *  the default) or nothing (`muted`). A third value, the concise form `3.986004(89)ᴇ14`, is a later package's. */
+export type UncertaintyView = "sigma" | "muted";
 export interface Settings extends CalcSettings {
   entry: EntryMode;
   decimalMark: DecimalMark;
@@ -57,6 +63,7 @@ export interface Settings extends CalcSettings {
   fmtCycle: FmtMode[];
   /** Decimals of the Fixed mode. */
   fixDecimals: number;
+  uncertainty: UncertaintyView;
   haptics: HapticsSettings;
   /** Settings › Appearance (R50e): family, brightness, High contrast, Plain keys. */
   look: Look;
@@ -74,6 +81,7 @@ export const defaultSettings: Settings = {
   decimalMark: "point",
   fmtCycle: [...DEFAULT_FMT_CYCLE],
   fixDecimals: 4,
+  uncertainty: "sigma",
   haptics: { on: false, strength: 50, ms: 15 },
   look: defaultLook(),
 };
@@ -133,36 +141,13 @@ export interface UsedValue {
 /** R98: the Undo copy's code (removedRows.ts) is out of the start chunk: main.ts fetches it when idle, and the first
  *  Clear or Delete, or a start that finds a stored copy, waits for it. A failed load is tried again by the next one. */
 let removedCode: typeof import("./removedRows.ts") | undefined;
+/** R40: the σ line's and the muted digits' code: the tidy chunk, once it is in (main.ts loads it when idle, and each
+ *  job beside it; a failed load is tried again by the next job). Until then a row draws every digit plain. */
+let sigmaCode = $state.raw<typeof import("../render/tidy.ts")>();
+onTidy((m) => (sigmaCode = m));
 export const loadRemoved = (): Promise<typeof import("./removedRows.ts") | undefined> =>
   import("./removedRows.ts").then((m) => (removedCode = m), () => undefined);
 
-/** R91: the tidy-up of Giac's latex (render/tidy.ts) is only needed once a result is in, so it is a chunk of its own: it
- *  loads beside the first job (and when idle, main.ts), and a failed load is tried again by the next job. */
-let tidyChunk: Promise<typeof import("../render/tidy.ts")> | undefined;
-export const loadTidy = (): Promise<typeof import("../render/tidy.ts")> =>
-  (tidyChunk ??= import("../render/tidy.ts").catch((e: unknown) => {
-    tidyChunk = undefined;
-    throw e;
-  }));
-/** Start the tidy chunk's load beside a job; a failure here is dealt with where the result is drawn (tidyOr). */
-const prefetchTidy = (): Promise<typeof import("../render/tidy.ts")> => {
-  const p = loadTidy();
-  p.catch(() => {});
-  return p;
-};
-/** Tidy `raw`; a chunk that will not load (a tab open across a redeploy: the old hashed file is gone) never turns the
- *  finished result into an error: one more try, then `fallback` is drawn. */
-async function tidyOr(load: Promise<typeof import("../render/tidy.ts")>, raw: string, fallback: string): Promise<string> {
-  try {
-    return (await load).tidyGiacLatex(raw);
-  } catch {
-    try {
-      return (await loadTidy()).tidyGiacLatex(raw);
-    } catch {
-      return fallback;
-    }
-  }
-}
 const errorText = (code: CalcError | undefined, fallback: string): string =>
   code ? t(`error.${code}` as MessageKey) : fallback;
 const clamp = (n: number, lo: number, hi: number): number => Math.min(hi, Math.max(lo, Math.round(n)));
@@ -184,6 +169,7 @@ export function migrateSettings(saved: unknown, firstLook: Look = defaultSetting
   if (x["format"] === "std" || x["format"] === "sci" || x["format"] === "eng" || x["format"] === "pfx") s.format = x["format"];
   if (x["entry"] === "textbook" || x["entry"] === "line") s.entry = x["entry"];
   if (x["decimalMark"] === "point" || x["decimalMark"] === "comma") s.decimalMark = x["decimalMark"];
+  if (x["uncertainty"] === "muted") s.uncertainty = "muted"; // R40: anything else is the default, sigma
   if (typeof x["digits"] === "number" && Number.isFinite(x["digits"])) s.digits = clampDigits(x["digits"]);
   if (Array.isArray(x["fmtCycle"])) s.fmtCycle = normalizeCycle(x["fmtCycle"].filter(isFmtMode));
   if (typeof x["fixDecimals"] === "number" && Number.isFinite(x["fixDecimals"])) s.fixDecimals = clamp(x["fixDecimals"], 0, 12);
@@ -501,6 +487,7 @@ export class Session {
     let giac: string;
     let defines: string | undefined;
     let named: ChipFactsTable | undefined;
+    let consts: ConstTable | undefined;
     try {
       if (giacOverride !== undefined) giac = giacOverride;
       else {
@@ -514,6 +501,7 @@ export class Session {
         defines = p.defines;
         if (p.inexact) live.inexactInput = true;
         if (p.named) named = chipFactsOf(p.named);
+        consts = p.consts; // R40: G26's uncDigits (and σ) come back for them
       }
     } catch (e) {
       live.status = "error";
@@ -524,7 +512,7 @@ export class Session {
     try {
       if (view === "home") {
         const tidy = prefetchTidy();
-        const r = await (named ? this.calc.home(giac, s, named) : this.calc.home(giac, s));
+        const r = await this.calc.home(giac, s, named, consts); // an absent table is not sent (EngineCalc.home)
         if (live.status !== "pending") return;
         const latex = !r.ok ? "" : r.latex !== undefined ? await tidyOr(tidy, r.latex, homeResultToLatex(r.display)) : homeResultToLatex(r.display);
         if (live.status !== "pending") return;
@@ -591,15 +579,21 @@ export class Session {
     return modeOf(item, this.settings);
   }
 
+  /** R40: the σ line a tap on the row shows (Settings › Numbers › Uncertainty), in the row's notation; null: none;
+   *  undefined: its code is not in yet (sigmaCode). */
+  sigma(item: HistoryItem): string | null | undefined {
+    return sigmaCode?.sigmaOf(item, this.settings);
+  }
   /** The mark before a finished result (docs/04 2.4), for the form it is drawn in; null: a non-number, or none known. */
   mark(item: HistoryItem): MarkInfo | null {
     if (item.status !== "done") return null;
     return markFor(item, this.modeOf(item), this.displayContext());
   }
 
-  displayContext(): { format: NumberFormat; digits: number; fixDecimals: number; angle: AngleUnit; decimalComma?: boolean } {
+  /** `mute` (R40): the muted digits' code once in; only the screen's row (`grouped`) uses it (displayMode.ts renderPoint). */
+  displayContext(): DisplayContext {
     const s = this.settings;
-    return { format: s.format, digits: s.digits, fixDecimals: s.fixDecimals, angle: s.angle, ...(this.decimalComma ? { decimalComma: true } : {}) };
+    return { format: s.format, digits: s.digits, fixDecimals: s.fixDecimals, angle: s.angle, ...(this.decimalComma ? { decimalComma: true } : {}), mute: sigmaCode?.muter };
   }
 
   /**

@@ -47,7 +47,7 @@ describe("a chip with σ (R61)", () => {
     const a = home("pasr_1*2", { "1": plain });
     expect("uncDigits" in a.facts).toBe(false);
     const b = home("pasr_1*2", { "1": t10 });
-    const { uncDigits: d, ...withoutUnc } = b.facts;
+    const { uncDigits: d, uncSigma: _s, ...withoutUnc } = b.facts;
     expect(d).toBe(1); // a stub that drops unc fails here
     expect(same(a)).toEqual(same({ ...b, facts: withoutUnc }));
     // a σ of 0 is no uncertain input, as a constant's (G26)

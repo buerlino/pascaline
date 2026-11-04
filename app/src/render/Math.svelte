@@ -29,4 +29,8 @@
   .math :global(.pfx) {
     color: var(--shift);
   }
+  /* R40: the digits past what a constant's σ leaves (render/uncMute.ts mutedTail); --muted keeps the text floor */
+  .math :global(.unc) {
+    color: var(--muted);
+  }
 </style>
