@@ -9,7 +9,7 @@ The one place for "where are we and what's left", one or two lines per open item
 |---|---|
 | Phase 0 spike; MVP milestones 1 (Home, CAS), 2 (Function, Solve), 3 (Python, removed by P11) | **Done** 2026-10-11 (reports in [archive/shifts/](archive/shifts/)) |
 | **The core freeze (P23)** | **Ended 2026-10-27** (owner). Its net stays: [tests/core/](../tests/core/README.md) (66 everyday tasks, all active) runs on every merge and on the night's device; a red case is a bug to fix. Order of the work: brief section 0. |
-| Milestone 4a: feel (P11) | Built: the entry work, sheets, flicks, Settings in the Mode sheet (R49, R87), history-row actions, R15b–R15c4, the mockups (R12a), the visual pass (R12b), press feedback and no other motion (R12c), key names for TalkBack and the keypad's fit at font scale 1.5 and 2.0 (R41). Waiting: the palette, results mode, the trust features |
+| Milestone 4a: feel (P11) | Built: the entry work, sheets, flicks, Settings in the Mode sheet (R49, R87), history-row actions, R15b–R15c4, the mockups (R12a), the visual pass (R12b), press feedback and no other motion (R12c), key names for TalkBack and the keypad's fit at font scale 1.5 and 2.0 (R41), muted digits past a constant's σ, σ on tap (R40). Waiting: the palette, results mode, the trust features |
 | Milestone 4: Find and trust | Engine side done (marks, 30 digits, chips, copy, defs, the Find index, the size test, A4a); Find's UI: R4a, R4b built; A4b next |
 | Milestone 5: Units | Built: the evaluator on Giac (P15), the pad, the entry and Find in a slot (R24a–R24d), the result's alternatives, chip, view and way back (R60–R63), ± (R71), menu Constants and Tools (R92) |
 | Milestone 6: Structure | Not started (EN5–EN7, Help) |

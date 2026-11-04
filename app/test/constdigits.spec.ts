@@ -93,7 +93,8 @@ test("only exact constants (c): no muted digit; μ₀ × ε₀ × c² from chips
   await muEpsC2();
 });
 
-test("a tap on the row shows its σ line, a second hides it; with Muted digits a tap shows nothing; the setting survives a relaunch", async ({ page }) => {
+test("a tap on the row shows its σ line, a second hides it; with Muted digits a tap shows nothing; the setting goes into a preset and survives a relaunch", async ({ page }) => {
+  await page.setViewportSize({ width: 412, height: 915 }); // the presets' sheet, as presetsMode.spec.ts
   await gTimesEarth(page, 1);
   const sigma = page.getByTestId("sigma");
   await expect(sigma).toHaveCount(0);
@@ -109,6 +110,16 @@ test("a tap on the row shows its σ line, a second hides it; with Muted digits a
   await lastMark(page).tap();
   await expect(muted(page)).toHaveCount(1); // the digits stay muted
   await expect(sigma).toHaveCount(0);
+  // a preset holds it (Numbers): saved with Muted digits, applied after a change back
+  await tap(page, ["@mode", "d5"]);
+  await page.getByTestId("menu").locator('[role="menuitem"][data-id="save"]').tap();
+  await expect(page.getByTestId("entry-label")).toHaveText("Preset name");
+  await tap(page, ["alpha", "emark", "enter"]); // the name "P" (Alpha on the ᴇ key)
+  await expect(page.getByTestId("notice")).toHaveText("Saved P");
+  await page.evaluate(() => window.pascaline.session.setUncertainty("sigma"));
+  await tap(page, ["@mode", "d5"]);
+  await page.getByTestId("menu").locator('[role="menuitem"][data-id="p1"]').tap();
+  await expect.poll(() => page.evaluate(() => window.pascaline.session.settings.uncertainty)).toBe("muted");
   await page.waitForTimeout(800); // the store write is debounced
   await page.reload();
   await page.waitForFunction(() => window.pascaline !== undefined);
