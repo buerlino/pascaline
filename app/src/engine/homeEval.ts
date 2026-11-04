@@ -120,7 +120,7 @@ export interface HomeResult {
   settingReset?: true;
 }
 
-export { precisionFacts } from "./format.ts";
+export { precisionFacts } from "./precisionFacts.ts";
 
 /** Giac's text of an exact real rational (`-7/3`, `3`) when each part has at most 200 digits (longer ones are not
  *  offered to the Format key's fraction modes). */

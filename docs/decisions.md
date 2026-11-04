@@ -7,7 +7,7 @@ Phase 0 decisions (D1–D9, P1, P2): [spike/DECISIONS.md](../spike/DECISIONS.md)
 
 The owner's other open items are in [backlog.md](backlog.md), "Needs the user". Once decided, an entry moves to "Decided proposals".
 
-None open (2026-11-04).
+- **G163 (2026-11-04): the unit view's budget on its whole code.** `size-check.ts` now sees the `src/units/` modules that Rollup hoists into shared chunks (`factors` with the builder 15.00 kB, `slot` 10.23 kB, `userCells` 4.64 kB). The 38 kB rule on the entries is unchanged and passes (36.39 kB, was 37.82 kB before the move); the whole unit view measures 66.26 kB raw. A rule that put the whole under 38 kB would fail today and reopen decisions.md:98, so the report prints a second row, "Unit view + shared", pinned at 66.5 kB (`UNIT_VIEW_PIN_RAW`). Proposal: keep the pin as the guard (it is a regression pin, not a budget), or set a budget on the sum from a Tab One measure of the first unit result (< 1 s, docs/04 4.4). Would change if: that run is over the bar.
 
 ## Decided proposals
 

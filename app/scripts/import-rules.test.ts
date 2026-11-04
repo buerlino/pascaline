@@ -105,8 +105,8 @@ describe("the main-thread side holds no worker evaluator (G163)", () => {
     const v = checkDirection(tree({ "src/units/open.ts": 'import { x } from "../engine/homeEval.ts";', "src/engine/homeEval.ts": "" }));
     expect(v.ok).toBe(false);
   });
-  it("lets the unit view import the pure modules (format.ts, exactLiterals.ts)", () => {
-    const v = checkDirection(tree({ "src/units/result.ts": 'import { precisionFacts } from "../engine/format.ts"; import { toExactLiterals } from "../engine/exactLiterals.ts";', "src/engine/format.ts": "", "src/engine/exactLiterals.ts": "" }));
+  it("lets the unit view import the pure modules (precisionFacts.ts, exactLiterals.ts)", () => {
+    const v = checkDirection(tree({ "src/units/result.ts": 'import { precisionFacts } from "../engine/precisionFacts.ts"; import { toExactLiterals } from "../engine/exactLiterals.ts";', "src/engine/precisionFacts.ts": "", "src/engine/exactLiterals.ts": "" }));
     expect(v.failures).toEqual([]);
   });
 });

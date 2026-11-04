@@ -3,7 +3,8 @@
 // docs/mockups/unit-result.html): a refusal, Working…, or a result with its value line (the mark as Home draws it, the
 // value at the digits setting, the unit, the dimension), σ with its ⚠ and why-line, a note and the alternatives row.
 // Plain TS; units/panel.ts draws it. Loaded with the unit view.
-import { confirmedOptions, formatComplex, markOf, precisionFacts, type FormatOptions, type Mark } from "../engine/format.ts";
+import { confirmedOptions, formatComplex, markOf, type FormatOptions, type Mark } from "../engine/format.ts";
+import { precisionFacts } from "../engine/precisionFacts.ts";
 import { unitText } from "../i18n/enUnits.ts";
 import { groupText } from "../render/groupText.ts";
 import { commaResult, markText } from "../state/displayMode.ts";

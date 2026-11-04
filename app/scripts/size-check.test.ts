@@ -5,7 +5,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { checkLazyParts, checkSizes, checkSplits, checkStartPin, INLINE_PIN_GZIP, inlineScripts, LAZY_PARTS, START_PIN_GZIP, startFiles } from "./size-check.ts";
+import { checkLazyParts, checkSizes, checkSplits, checkStartPin, INLINE_PIN_GZIP, inlineScripts, LAZY_PARTS, START_PIN_GZIP, startFiles, UNIT_VIEW_PIN_RAW } from "./size-check.ts";
 
 const dirs: string[] = [];
 afterEach(() => {
@@ -48,7 +48,7 @@ describe("size-check", () => {
     const r = checkSizes(fakeDist(manifest, files));
     expect(r.failures).toEqual([]);
     expect(r.rows.map((x) => x.rule)).toEqual(["Start chunk", "MathLive chunk", "Find UI chunk", "Precache total"]);
-    expect(r.notBuilt).toEqual(["Inline scripts", "Unit view chunk", "Find index asset", "qalc wasm + glue"]);
+    expect(r.notBuilt).toEqual(["Inline scripts", "Unit view chunk", "Unit view + shared", "Find index asset", "qalc wasm + glue"]);
   });
 
   it("pins index.html's inline scripts at 1.53 kB gzip, each script alone and summed, not the module script (R103, vr-4)", () => {
@@ -165,22 +165,29 @@ describe("size-check", () => {
     expect(r.rows.find((x) => x.rule === "Unit view chunk")?.files.sort()).toEqual(["assets/open.js", "assets/units.js"]);
   });
 
-  it("counts a src/units/ module that sits in a nameless shared chunk against the unit view (G163)", () => {
+  it("counts a src/units/ module that sits in a shared chunk against the unit view, pinned as a whole (G163)", () => {
     const { manifest, files } = base(1000);
     const units = {
       ...manifest,
       "src/units/calc.ts": { file: "assets/units.js", src: "src/units/calc.ts", isDynamicEntry: true, imports: ["_shared.js"] },
       "src/units/open.ts": { file: "assets/open.js", src: "src/units/open.ts", isDynamicEntry: true, imports: ["_shared.js"] },
-      "_shared.js": { file: "assets/shared.js", name: "shared", imports: [], src: undefined },
+      "_shared.js": { file: "assets/shared.js", name: "shared" },
       "_other.js": { file: "assets/other.js", name: "other" },
     };
-    const sizes = { ...files, "assets/units.js": 10_000, "assets/open.js": 20_000, "assets/shared.js": 8_001, "assets/other.js": 5_000 };
-    const dist = fakeDist(units, sizes);
-    writeFileSync(join(dist, ".vite/chunk-modules.json"), JSON.stringify({ "assets/shared.js": ["src/units/dims.ts", "src/engine/format.ts"], "assets/other.js": ["src/engine/format.ts"] }));
-    const r = checkSizes(dist);
-    expect(r.failures.map((f) => f.split(":")[0])).toEqual(["Unit view chunk"]);
-    expect(r.rows.find((x) => x.rule === "Unit view chunk")?.files.sort()).toEqual(["assets/open.js", "assets/shared.js", "assets/units.js"]);
-    expect(r.rows.find((x) => x.rule === "Unit view chunk")?.entryRaw).toBe(30_000);
+    const modules = { "assets/shared.js": ["src/units/dims.ts", "src/engine/format.ts"], "assets/other.js": ["src/engine/format.ts"] };
+    const run = (sharedBytes: number) => {
+      const dist = fakeDist(units, { ...files, "assets/units.js": 10_000, "assets/open.js": 20_000, "assets/shared.js": sharedBytes, "assets/other.js": 5_000 });
+      writeFileSync(join(dist, ".vite/chunk-modules.json"), JSON.stringify(modules));
+      return checkSizes(dist);
+    };
+    const ok = run(UNIT_VIEW_PIN_RAW - 30_000);
+    expect(ok.failures).toEqual([]);
+    expect(ok.rows.find((x) => x.rule === "Unit view chunk")?.raw).toBe(30_000); // the entries alone, as before
+    const all = ok.rows.find((x) => x.rule === "Unit view + shared");
+    expect(all?.files.sort()).toEqual(["assets/open.js", "assets/shared.js", "assets/units.js"]);
+    expect(all?.raw).toBe(UNIT_VIEW_PIN_RAW);
+    const over = run(UNIT_VIEW_PIN_RAW - 30_000 + 1);
+    expect(over.failures.map((f) => f.split(":")[0])).toEqual(["Unit view + shared"]);
   });
 
   it("does not count a shared chunk without a src/units/ module, nor a start-chunk file (G163)", () => {
