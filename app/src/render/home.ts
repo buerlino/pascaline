@@ -18,17 +18,17 @@ export const groupSepFor = (sep: GroupSep | undefined, decimalComma: boolean | u
 /**
  * R55: a mantissa's digits in groups of three from the decimal point outward, `sep` between them (the thin space's LaTeX
  * by default), on a side with five or more digits (1234 and 0.1234 stay whole). Drawn results only: the text, the
- * chips and Copy stay plain.
+ * chips and Copy stay plain. R125f1: `both` false (the apostrophe, the comma) groups only the digits before the point.
  */
-export const groupDigits = (m: string, sep = "\\,"): string =>
-  m.replace(/\d{5,}/g, (d, at: number) => (at ? d.replace(/(\d{3})(?=\d)/g, (g) => g + sep) : d.replace(/\B(?=(\d{3})+$)/g, () => sep)));
+export const groupDigits = (m: string, sep = "\\,", both = true): string =>
+  m.replace(/\d{5,}/g, (d, at: number) => (at ? (both ? d.replace(/(\d{3})(?=\d)/g, (g) => g + sep) : d) : d.replace(/\B(?=(\d{3})+$)/g, () => sep)));
 
 /** R40: a real part's mantissa as drawn, with its uncertain digits muted (render/uncMute.ts muter, a chunk of its own). */
 export type Mute = (m: string, f: FormattedNumber) => string;
 
 /** `sep`: the digit groups' separator as LaTeX (GROUP_LATEX); undefined: no groups. */
 function part(f: FormattedNumber, sep: string | undefined, mute?: Mute): string {
-  const g = sep === undefined ? f.mantissa : groupDigits(f.mantissa, sep);
+  const g = sep === undefined ? f.mantissa : groupDigits(f.mantissa, sep, sep === GROUP_LATEX.thin);
   const m = mute ? mute(g, f) : g;
   // PFX: a thin space, then the prefix in the accent colour (docs/04 2.7); .pfx is styled in Math.svelte
   if (f.prefix) return `${m}\\,\\class{pfx}{\\mathrm{${f.prefix}}}`;
