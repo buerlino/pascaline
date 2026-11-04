@@ -59,6 +59,24 @@ function normalSrc(src: string | undefined): string {
   return (src ?? "").replace(/^(\.\.\/)+/, "");
 }
 
+/** G163: the app modules (paths from app/, e.g. `src/units/row.ts`) each emitted chunk holds, by chunk file, written by
+ *  vite-plugin-chunk-modules.ts to dist/.vite/chunk-modules.json; the manifest lists no modules. Absent in a fake dist. */
+export const CHUNK_MODULES = ".vite/chunk-modules.json";
+function readChunkModules(dist: string): Record<string, string[]> | null {
+  const path = join(dist, CHUNK_MODULES);
+  return existsSync(path) ? (JSON.parse(readFileSync(path, "utf8")) as Record<string, string[]>) : null;
+}
+
+/** G163: the shared chunks (no src, not loaded at start) that hold a module under `prefix`: Rollup hoists a module that
+ *  two lazy chunks import into a chunk of its own, and the entry-only sum would not see it. */
+export function sharedChunksHolding(manifest: Record<string, ManifestChunk>, modules: Record<string, string[]> | null, prefix: string): string[] {
+  if (modules === null) return [];
+  const start = new Set(startFiles(manifest));
+  return Object.values(manifest)
+    .filter((c) => !c.isEntry && !c.isDynamicEntry && c.src === undefined && !start.has(c.file) && (modules[c.file] ?? []).some((m) => m.startsWith(prefix)))
+    .map((c) => c.file);
+}
+
 function readManifest(dist: string): Record<string, ManifestChunk> {
   const path = join(dist, ".vite/manifest.json");
   if (!existsSync(path)) throw new Error(`size-check: no ${path}; build with build.manifest: true (vite.config.ts)`);
@@ -81,8 +99,13 @@ export function startFiles(manifest: Record<string, ManifestChunk>): string[] {
   return [...files];
 }
 
+/** G163: the unit view's entries plus the shared chunks that hold its modules, raw: 66.26 kB measured (open 26.91, find 9.05,
+ *  calc 0.43, userCells 4.64, factors 15.00, slot 10.23; entries alone 36.39 kB), a pin at 66.5 kB so it cannot grow unseen
+ *  (decisions.md R24b and R24c: G163, Opus pass 62); raised only with its reason in a report, as START_PIN_GZIP is. */
+export const UNIT_VIEW_PIN_RAW = 66_500;
+
 /** The budgets of docs/04 section 8.3 that apply to files of the build; the device bars are not here. */
-function subjects(manifest: Record<string, ManifestChunk>, all: string[]): { present: Subject[]; absent: string[]; missing: string[] } {
+function subjects(manifest: Record<string, ManifestChunk>, all: string[], modules: Record<string, string[]> | null): { present: Subject[]; absent: string[]; missing: string[] } {
   const chunks = Object.values(manifest);
   const present: Subject[] = [];
   const absent: string[] = [];
@@ -104,6 +127,12 @@ function subjects(manifest: Record<string, ManifestChunk>, all: string[]): { pre
   // 38 kB (Opus pass 24): G81's correlated constants measure 34.04 kB, and R24d and R60–R63 still add; the bar that counts
   // is the first unit result < 1 s on the Tab One (decisions.md, Units: G81, R24b and R24c).
   add("Unit view chunk", dynamic("src/units/"), { rawMax: 38 * KB });
+  // G163: Rollup hoists the units modules that two lazy chunks import (factors.ts with the builder, slot.ts, the cells'
+  // store) into shared chunks, which the row above does not see (as finder.ts once was for Find). This row is the unit
+  // view's whole code: its entries plus every shared chunk that holds a src/units/ module. Its bar is a pin at today's
+  // measure, not the 38 kB (decisions.md R24b and R24c: G163, Opus pass 62); a package that grows the unit code raises it with a reason.
+  const unitEntries = dynamic("src/units/");
+  add("Unit view + shared", unitEntries.length > 0 ? [...unitEntries, ...sharedChunksHolding(manifest, modules, "src/units/")] : [], { rawMax: UNIT_VIEW_PIN_RAW });
   // The index and qalc have no fixed place yet (G4 and A2 decide); these match by location and name, so they apply wherever they land.
   add("Find index asset", all.filter((f) => f.startsWith("find/") || /(^|\/)find-index[^/]*$/.test(f)), { rawMax: 400 * KB, gzipMax: 100 * KB });
   add("qalc wasm + glue", all.filter((f) => /(^|\/)qalc[^/]*\.(wasm|mjs|js)$/.test(f)), { brotliMax: 1 * MB });
@@ -350,7 +379,7 @@ const kB = (n: number): string => `${(n / KB).toFixed(2)} kB`;
 /** Measure `dist` against the budgets. Pure apart from reading files; the CLI prints and sets the exit code. */
 export function checkSizes(dist: string): Report {
   const all = precacheFiles(dist);
-  const { present, absent, missing } = subjects(readManifest(dist), all);
+  const { present, absent, missing } = subjects(readManifest(dist), all, readChunkModules(dist));
   const rows: Row[] = [];
   for (const s of present) {
     let raw = 0;
@@ -381,7 +410,7 @@ function format(report: Report): string {
   const cell = (value: number, max: number | undefined, label: string): string => (max === undefined ? "" : `${label} ${kB(value)} / ${kB(max)}`);
   const lines = report.rows.map((r) => {
     const parts = [cell(r.raw, r.rawMax, "raw"), cell(r.gzip, r.gzipMax, "gzip"), cell(r.brotli, r.brotliMax, "brotli")].filter(Boolean);
-    return `  ${r.failures.length > 0 ? "FAIL" : "ok  "}  ${r.rule.padEnd(18)} ${parts.join("   ")}`;
+    return `  ${r.failures.length > 0 ? "FAIL" : "ok  "}  ${r.rule.padEnd(19)} ${parts.join("   ")}`;
   });
   if (report.notBuilt.length > 0) lines.push(`  (not built yet: ${report.notBuilt.join(", ")})`);
   return lines.join("\n");
@@ -401,6 +430,7 @@ if (process.argv[1] !== undefined && resolve(process.argv[1]) === fileURLToPath(
   try {
     const report = checkSizes(dist);
     report.failures.push(...checkSplits(dist), ...checkLazyParts(dist));
+    if (!existsSync(join(dist, CHUNK_MODULES))) report.failures.push(`${CHUNK_MODULES} is missing: the unit view's rule cannot see src/units/ modules in shared chunks (vite-plugin-chunk-modules.ts writes it; build with npm run build)`);
     const start = report.rows.find((r) => r.rule === "Start chunk");
     if (start !== undefined) report.failures.push(...checkStartPin(start));
     console.log(`size-check: ${dist}\n${format(report)}`);

@@ -88,6 +88,45 @@ describe("the import direction (G147)", () => {
   });
 });
 
+describe("the main-thread side holds no worker evaluator (G163)", () => {
+  const workerSide = ["homeEval", "numeric", "host", "converge", "decisions"];
+  it.each(workerSide)("fails when a unit-view file (result.ts) or a view imports engine/%s", (m) => {
+    for (const from of ["src/units/result.ts", "src/units/row.ts", "src/views/V.svelte", "src/state/s.ts", "src/apps/a.ts"]) {
+      const v = checkDirection(tree({ [from]: `import { x } from "../engine/${m}.ts";`, [`src/engine/${m}.ts`]: "" }));
+      expect(v.failures.some((f) => f.includes(`${from}:`) && f.includes(`src/engine/${m}.ts`))).toBe(true);
+    }
+  });
+  it("lets the unit evaluator and its worker-side files import them", () => {
+    const extra: Record<string, string> = { "src/engine/homeEval.ts": "", "src/engine/numeric.ts": "" };
+    for (const f of ["evaluate", "build", "dims", "types", "uncertainty"]) extra[`src/units/${f}.ts`] = 'import { x } from "../engine/homeEval.ts"; import { y } from "../engine/numeric.ts";';
+    expect(checkDirection(tree(extra)).failures).toEqual([]);
+  });
+  it("fails on a unit file that reaches the evaluator through a relative sibling name too (units/ -> engine/homeEval.ts)", () => {
+    const v = checkDirection(tree({ "src/units/open.ts": 'import { x } from "../engine/homeEval.ts";', "src/engine/homeEval.ts": "" }));
+    expect(v.ok).toBe(false);
+  });
+  it("follows value imports transitively and reports the chain (units/row.ts -> engine/constUnc.ts -> engine/homeEval.ts)", () => {
+    const v = checkDirection(tree({ "src/units/row.ts": 'import { c } from "../engine/constUnc.ts";', "src/engine/constUnc.ts": 'import { h } from "./homeEval.ts";', "src/engine/homeEval.ts": "" }));
+    expect(v.ok).toBe(false);
+    expect(v.failures).toHaveLength(1);
+    expect(v.failures[0]).toContain("src/units/row.ts:1: src/units/row.ts -> src/engine/constUnc.ts -> src/engine/homeEval.ts");
+  });
+  it("lets the same two-step tree pass when the second import is type-only, or the first is", () => {
+    const second = checkDirection(tree({ "src/units/row.ts": 'import { c } from "../engine/constUnc.ts";', "src/engine/constUnc.ts": 'import type { h } from "./homeEval.ts";', "src/engine/homeEval.ts": "" }));
+    expect(second.failures).toEqual([]);
+    const first = checkDirection(tree({ "src/units/row.ts": 'import type { c } from "../engine/constUnc.ts";', "src/engine/constUnc.ts": 'import { h } from "./homeEval.ts";', "src/engine/homeEval.ts": "" }));
+    expect(first.failures).toEqual([]);
+  });
+  it("walks through the unit worker's own files too (a view -> units/build.ts -> engine/numeric.ts)", () => {
+    const v = checkDirection(tree({ "src/views/V.svelte": 'import { b } from "../units/build.ts";', "src/units/build.ts": 'import { n } from "../engine/numeric.ts";', "src/engine/numeric.ts": "" }));
+    expect(v.failures.some((f) => f.includes("src/views/V.svelte -> src/units/build.ts -> src/engine/numeric.ts"))).toBe(true);
+  });
+  it("lets the unit view import the pure modules (precisionFacts.ts, exactLiterals.ts)", () => {
+    const v = checkDirection(tree({ "src/units/result.ts": 'import { precisionFacts } from "../engine/precisionFacts.ts"; import { toExactLiterals } from "../engine/exactLiterals.ts";', "src/engine/precisionFacts.ts": "", "src/engine/exactLiterals.ts": "" }));
+    expect(v.failures).toEqual([]);
+  });
+});
+
 describe("the real tree (G147)", () => {
   it("holds the direction, every exception named", () => {
     const v = checkImportDirection(app);

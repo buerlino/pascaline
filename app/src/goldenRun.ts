@@ -2,8 +2,9 @@
 // The golden Home and precision cases, run one at a time. Shared by the Node gate (scripts/golden.ts), the Node dump
 // (scripts/golden-dump.ts) and the WebView run (goldenBench.ts, ?bench=golden, A20), so both sides run the same code.
 import { EngineHost } from "./engine/host.ts";
-import { defaultHomeSettings, precisionFacts, type HomeResult, type HomeSettings } from "./engine/homeEval.ts";
+import { defaultHomeSettings, type HomeResult, type HomeSettings } from "./engine/homeEval.ts";
 import { markOf, type MarkInfo } from "./engine/format.ts";
+import { precisionFacts } from "./engine/precisionFacts.ts";
 import { defaultCasSettings, type CasResult } from "./engine/types.ts";
 import { ANS_KEY, type ChipTable } from "./input/chips.ts";
 import { chipsIn, type ChipFactsTable } from "./engine/chipFacts.ts";
