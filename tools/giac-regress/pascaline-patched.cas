@@ -602,6 +602,12 @@ Digits:=40:; pc("g133f1-asinh-1e20asinh-i-div10-12",'(asinh(asinh(i/10)*10^20))'
 // patch 0023-asin-imaginary-real-part.patch
 // g133f1-asinh-1e20asinh-i-div10-30 (precision.yaml, oracle)
 Digits:=40:; pc("g133f1-asinh-1e20asinh-i-div10-30",'(asinh(asinh(i/10)*10^20))',(444439367591324459024448901932/10^28)+(157079632679489661923132169164/10^29)*i,5/10^29+5/10^30);
+// patch 0020-complex-sqrt-asin-small.patch
+// g142-acosh-1e-6-over-ln-neg-1.000001-30 (precision.yaml, oracle)
+Digits:=40:; pc("g142-acosh-1e-6-over-ln-neg-1.000001-30",'(acosh(10^-6/ln(-(1000001/10^6))))',(318309886183753044779846972324/10^36)-(157079632679479529809833992731/10^29)*i,5/10^37+5/10^30);
+// patch 0020-complex-sqrt-asin-small.patch
+// g142-g116-sqrt-ln-sqrt-over-acosh-30 (precision.yaml, oracle)
+Digits:=40:; pc("g142-g116-sqrt-ln-sqrt-over-acosh-30",'(sqrt(ln(sqrt(-(1000001/10^6))))/acosh(10^-6/ln(-(1000001/10^6))))',-(564189379425529487310951720032/10^30)+(564189787669987433919358526273/10^30)*i,5/10^31+5/10^31);
 // patch 0026-asinh-small-real-exact.patch
 // g151-cbrt-asinh-1e-100-30 (precision.yaml, oracle)
 Digits:=40:; pc("g151-cbrt-asinh-1e-100-30",'(surd(asinh(10^-100),3))',(464158883361277889241007635092/10^63),5/10^64);
