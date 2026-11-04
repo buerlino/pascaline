@@ -27,7 +27,8 @@ import { principalPowers } from "./powers.ts";
 import { dropAngleFactor, hasAngleFactor } from "./angles.ts";
 import { decimalFromRational, decimalFromString, formatConfirmed, isZero, ZERO_VALUE, type ComplexValue, type DecimalValue, type PrecisionFacts, type PrecisionWarn, type PrecisionWhy } from "./format.ts";
 import { askedDigits, DOUBLE_DIGITS, doubleFallback, exactFacts, floatFacts, floatPathFacts, integratedFacts, hasFloat, isAudited, doubleFormsIn, unauditedIn, numericDisagrees, notBuiltin, floatsShown, heavySplit, REGROUP_MAX, shapeOfValue, endsEarly, valuePrecision, whyOf, withDigits, type ElementFacts, type Giac, type Shape } from "./numeric.ts";
-import { bracesOf, functionsIn, isError, isTimeout, LIST_TYPE, mapNumbers, matrixTyped, type Quoting, replaceLiteral, wordsOf } from "./giacPrint.ts";
+import { bracesOf, functionsIn, isError, isTimeout, LIST_TYPE, matrixTyped, replaceLiteral, wordsOf } from "./giacPrint.ts";
+import { exactRational, rewriteDecimals, toExactLiterals } from "./exactLiterals.ts";
 import { plainRows } from "./matrixType.ts";
 import { complexSafe, readsReplaced } from "./complex.ts";
 import { decidedAtDouble, decideTwice, decidingStored, restsOnDecision } from "./decisions.ts";
@@ -119,17 +120,7 @@ export interface HomeResult {
   settingReset?: true;
 }
 
-/** A result as the formatter reads it (markOf, formatConfirmed): its facts with its value, elements and shape. */
-export function precisionFacts(r: HomeResult): PrecisionFacts & { shape?: [number, number] } {
-  return {
-    ...r.facts,
-    ...(r.value ? { value: r.value } : {}),
-    ...(r.items ? { items: r.items.map(precisionFacts) } : {}),
-    ...(r.shape ? { shape: r.shape } : {}),
-    ...(r.braces ? { braces: r.braces } : {}),
-    approximate: r.approximate,
-  };
-}
+export { precisionFacts } from "./format.ts";
 
 /** Giac's text of an exact real rational (`-7/3`, `3`) when each part has at most 200 digits (longer ones are not
  *  offered to the Format key's fraction modes). */
@@ -281,19 +272,9 @@ export function homeSetupCommands(s: HomeSettings): string[] {
   ];
 }
 
-// --- 1. decimal literals → exact rationals -------------------------------------------------
+// --- 1. decimal literals → exact rationals (exactLiterals.ts; toExactLiterals is re-exported below) ----------
 
-/** Rewrites the decimal literals of `input` that have a point or an exponent (`2.5`, `.5`, `1e-3`, `1.2E5`) with `f`.
- *  Leaves integers, identifiers (`x1`, `0x1F`) and strings alone. */
-function rewriteDecimals(input: string, f: (mant: string, exp10: number) => string, q: Quoting): string {
-  return mapNumbers(input, (mant, exp) => (!mant.includes(".") && !exp ? null : f(mant, exp ? parseInt(exp.slice(1), 10) : 0)), q);
-}
-
-/** Rewrites decimal literals (`2.5`, `.5`, `1e-3`, `1.2E5`) as exact rationals. Leaves integers,
- *  identifiers (`x1`, `0x1F`) and strings alone. */
-export function toExactLiterals(input: string): string {
-  return rewriteDecimals(input, exactRational, "typed");
-}
+export { toExactLiterals };
 
 /** Puts the typed decimals back into a text Giac printed with the exact rationals of toExactLiterals(`typed`):
  *  a test that stays as typed shows `0.746824132812`, not `(746824132812/10^12)` (G14). Only the spelled forms are
@@ -332,15 +313,6 @@ export function floatsAsEvalf(text: string): string {
 function floatLiterals(input: string, at: number): string {
   return rewriteDecimals(input, (mant, exp10) => `evalf(${exactRational(mant, exp10)},${at})`, "typed");
 }
-
-function exactRational(mant: string, exp10: number): string {
-  const [ip, fp = ""] = mant.split(".");
-  const digits = (ip + fp).replace(/^0+(?=\d)/, "");
-  const e = exp10 - fp.length;
-  if (e === 0) return digits;
-  return e > 0 ? `(${digits}*10^${e})` : `(${digits}/10^${-e})`;
-}
-
 
 // --- 2. evaluation ---------------------------------------------------------------------------
 

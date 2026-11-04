@@ -33,6 +33,8 @@ interface Subject {
   rawMax?: number;
   gzipMax?: number;
   brotliMax?: number;
+  /** G163: the files of `files` that are the rule's own entries (the rest are shared chunks that hold some of its modules). */
+  entryFiles?: string[];
 }
 
 export interface Row {
@@ -45,6 +47,8 @@ export interface Row {
   gzipMax: number | undefined;
   brotliMax: number | undefined;
   failures: string[];
+  /** G163: raw bytes of the rule's entry chunks alone (the unit view: without the shared chunks that hold its modules). */
+  entryRaw?: number;
 }
 
 export interface Report {
@@ -57,6 +61,24 @@ export interface Report {
 /** Vite writes sources relative to the project root, so a path in node_modules can start with "../../": strip those. */
 function normalSrc(src: string | undefined): string {
   return (src ?? "").replace(/^(\.\.\/)+/, "");
+}
+
+/** G163: the app modules (paths from app/, e.g. `src/units/row.ts`) each emitted chunk holds, by chunk file, written by
+ *  vite-plugin-chunk-modules.ts to dist/.vite/chunk-modules.json; the manifest lists no modules. Absent in a fake dist. */
+export const CHUNK_MODULES = ".vite/chunk-modules.json";
+function readChunkModules(dist: string): Record<string, string[]> | null {
+  const path = join(dist, CHUNK_MODULES);
+  return existsSync(path) ? (JSON.parse(readFileSync(path, "utf8")) as Record<string, string[]>) : null;
+}
+
+/** G163: the shared chunks (no src, not loaded at start) that hold a module under `prefix`: Rollup hoists a module that
+ *  two lazy chunks import into a chunk of its own, and the entry-only sum would not see it. */
+export function sharedChunksHolding(manifest: Record<string, ManifestChunk>, modules: Record<string, string[]> | null, prefix: string): string[] {
+  if (modules === null) return [];
+  const start = new Set(startFiles(manifest));
+  return Object.values(manifest)
+    .filter((c) => !c.isEntry && !c.isDynamicEntry && c.src === undefined && !start.has(c.file) && (modules[c.file] ?? []).some((m) => m.startsWith(prefix)))
+    .map((c) => c.file);
 }
 
 function readManifest(dist: string): Record<string, ManifestChunk> {
@@ -82,7 +104,7 @@ export function startFiles(manifest: Record<string, ManifestChunk>): string[] {
 }
 
 /** The budgets of docs/04 section 8.3 that apply to files of the build; the device bars are not here. */
-function subjects(manifest: Record<string, ManifestChunk>, all: string[]): { present: Subject[]; absent: string[]; missing: string[] } {
+function subjects(manifest: Record<string, ManifestChunk>, all: string[], modules: Record<string, string[]> | null): { present: Subject[]; absent: string[]; missing: string[] } {
   const chunks = Object.values(manifest);
   const present: Subject[] = [];
   const absent: string[] = [];
@@ -103,7 +125,9 @@ function subjects(manifest: Record<string, ManifestChunk>, all: string[]): { pre
   // builder that Calc.units() loads with the factor table on its first call (units/calc.ts, 9.72 kB): 34 kB (Opus pass 22);
   // 38 kB (Opus pass 24): G81's correlated constants measure 34.04 kB, and R24d and R60–R63 still add; the bar that counts
   // is the first unit result < 1 s on the Tab One (decisions.md, Units: G81, R24b and R24c).
-  add("Unit view chunk", dynamic("src/units/"), { rawMax: 38 * KB });
+  // G163: plus the shared chunks that hold a src/units/ module (hoisted out of the entries by Rollup); the report prints the entries alone too.
+  const unitEntries = dynamic("src/units/");
+  add("Unit view chunk", unitEntries.length > 0 ? [...unitEntries, ...sharedChunksHolding(manifest, modules, "src/units/")] : [], { rawMax: 38 * KB, entryFiles: unitEntries });
   // The index and qalc have no fixed place yet (G4 and A2 decide); these match by location and name, so they apply wherever they land.
   add("Find index asset", all.filter((f) => f.startsWith("find/") || /(^|\/)find-index[^/]*$/.test(f)), { rawMax: 400 * KB, gzipMax: 100 * KB });
   add("qalc wasm + glue", all.filter((f) => /(^|\/)qalc[^/]*\.(wasm|mjs|js)$/.test(f)), { brotliMax: 1 * MB });
@@ -344,7 +368,7 @@ const kB = (n: number): string => `${(n / KB).toFixed(2)} kB`;
 /** Measure `dist` against the budgets. Pure apart from reading files; the CLI prints and sets the exit code. */
 export function checkSizes(dist: string): Report {
   const all = precacheFiles(dist);
-  const { present, absent, missing } = subjects(readManifest(dist), all);
+  const { present, absent, missing } = subjects(readManifest(dist), all, readChunkModules(dist));
   const rows: Row[] = [];
   for (const s of present) {
     let raw = 0;
@@ -362,7 +386,8 @@ export function checkSizes(dist: string): Report {
     if (s.rawMax !== undefined && raw > s.rawMax) failures.push(`${s.rule}: ${kB(raw)} raw is over the budget of ${kB(s.rawMax)} (${s.files.join(", ")})`);
     if (s.gzipMax !== undefined && gzip > s.gzipMax) failures.push(`${s.rule}: ${kB(gzip)} gzip is over the budget of ${kB(s.gzipMax)} (${s.files.join(", ")})`);
     if (s.brotliMax !== undefined && brotli > s.brotliMax) failures.push(`${s.rule}: ${kB(brotli)} brotli is over the budget of ${kB(s.brotliMax)} (${s.files.join(", ")})`);
-    rows.push({ rule: s.rule, files: s.files, raw, gzip, brotli, rawMax: s.rawMax, gzipMax: s.gzipMax, brotliMax: s.brotliMax, failures });
+    const entryRaw = s.entryFiles?.reduce((n, f) => n + statSync(join(dist, f)).size, 0);
+    rows.push({ rule: s.rule, files: s.files, raw, gzip, brotli, rawMax: s.rawMax, gzipMax: s.gzipMax, brotliMax: s.brotliMax, failures, ...(entryRaw !== undefined ? { entryRaw } : {}) });
   }
   const inline = inlineRow(dist);
   if (inline !== null) rows.splice(1, 0, inline);
@@ -375,7 +400,8 @@ function format(report: Report): string {
   const cell = (value: number, max: number | undefined, label: string): string => (max === undefined ? "" : `${label} ${kB(value)} / ${kB(max)}`);
   const lines = report.rows.map((r) => {
     const parts = [cell(r.raw, r.rawMax, "raw"), cell(r.gzip, r.gzipMax, "gzip"), cell(r.brotli, r.brotliMax, "brotli")].filter(Boolean);
-    return `  ${r.failures.length > 0 ? "FAIL" : "ok  "}  ${r.rule.padEnd(18)} ${parts.join("   ")}`;
+    const entry = r.entryRaw !== undefined ? `   (entries only ${kB(r.entryRaw)}, shared chunks with its modules ${kB(r.raw - r.entryRaw)})` : "";
+    return `  ${r.failures.length > 0 ? "FAIL" : "ok  "}  ${r.rule.padEnd(18)} ${parts.join("   ")}${entry}`;
   });
   if (report.notBuilt.length > 0) lines.push(`  (not built yet: ${report.notBuilt.join(", ")})`);
   return lines.join("\n");
@@ -395,6 +421,7 @@ if (process.argv[1] !== undefined && resolve(process.argv[1]) === fileURLToPath(
   try {
     const report = checkSizes(dist);
     report.failures.push(...checkSplits(dist), ...checkLazyParts(dist));
+    if (!existsSync(join(dist, CHUNK_MODULES))) report.failures.push(`${CHUNK_MODULES} is missing: the unit view's rule cannot see src/units/ modules in shared chunks (vite-plugin-chunk-modules.ts writes it; build with npm run build)`);
     const start = report.rows.find((r) => r.rule === "Start chunk");
     if (start !== undefined) report.failures.push(...checkStartPin(start));
     console.log(`size-check: ${dist}\n${format(report)}`);

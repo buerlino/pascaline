@@ -5,6 +5,10 @@
 //     start-chunk overrun came from the entry holding homeEval's graph).
 //  2. A file in src/engine/ imports nothing from views/, state/, keyboard/, entry/, apps/, render/ or input/, and from
 //     units/ only what ENGINE_EXCEPTIONS names. So `input/` -> `engine/` is the only direction.
+//  3. G163: the main-thread side holds no worker evaluator. No file under src/units/ except the worker's own
+//     (UNIT_WORKER_FILES), and none under src/views/, src/state/ or src/apps/, imports engine/homeEval, numeric, host,
+//     converge or decisions (WORKER_ENGINE): the unit view's chunks would carry the whole evaluator's graph (docs/04 8.2:
+//     views see `Calc`; 8.1: format.ts is pure).
 // Imports are read from the source text (import/export ... from, and bare `import "x"`); `import()` is lazy and not
 // counted for rule 1. Tests (*.test.ts) are not checked.
 import { readdirSync, readFileSync, statSync } from "node:fs";
@@ -43,6 +47,15 @@ export const ENGINE_EXCEPTIONS: Readonly<Record<string, string>> = {
   "src/engine/host.ts -> src/units/evaluate.ts": "the unit evaluator runs in the Giac worker beside Home (P15, docs/04 4.2) and imports engine/homeEval.ts and numeric.ts back; moving it into engine/ is a package of its own (G147 'Not done')",
   "src/engine/stateRead.ts -> src/units/evaluate.ts": "reads UNIT_DEFINITIONS: the same unit evaluator (see host.ts above)",
 };
+
+/** Rule 3: the engine modules that run in the Giac worker (the evaluator and its decision code). */
+export const WORKER_ENGINE: ReadonlySet<string> = new Set(["homeEval", "numeric", "host", "converge", "decisions"].map((n) => `src/engine/${n}.ts`));
+
+/** Rule 3: the files of src/units/ that run in the worker beside Home (units/evaluate.ts and what it builds on) and may import them. */
+export const UNIT_WORKER_FILES: ReadonlySet<string> = new Set(["evaluate", "build", "dims", "types", "uncertainty"].map((n) => `src/units/${n}.ts`));
+
+/** Rule 3: the main-thread folders whose files may not import WORKER_ENGINE (src/units/ with UNIT_WORKER_FILES left out). */
+const MAIN_THREAD_DIRS = ["src/units/", "src/views/", "src/state/", "src/apps/"] as const;
 
 /** Source files (relative to app/, forward slashes) -> text: the .ts and .svelte files of src/. */
 export type Sources = Readonly<Record<string, string>>;
@@ -103,6 +116,13 @@ export function checkDirection(sources: Sources, entry = "src/main.ts"): Verdict
       const key = `${f} -> ${to}`;
       if (Object.hasOwn(ENGINE_EXCEPTIONS, key)) used.add(key);
       else failures.push(`${f}:${i.line}: src/engine/ imports ${to}: the direction is ${dir}/ -> engine/ only (move what the engine needs into src/engine/, or pass it in)`);
+    }
+  }
+  for (const f of Object.keys(sources).sort()) {
+    if (isTest(f) || UNIT_WORKER_FILES.has(f) || !MAIN_THREAD_DIRS.some((d) => f.startsWith(d))) continue;
+    for (const i of importsOf(sources[f]!)) {
+      const to = resolveImport(sources, f, i.spec);
+      if (to !== null && WORKER_ENGINE.has(to)) failures.push(`${f}:${i.line}: imports ${to}, the worker's evaluator (the main thread loads none of it; move what is needed into a pure module such as src/engine/format.ts or exactLiterals.ts)`);
     }
   }
   for (const key of Object.keys(ENGINE_EXCEPTIONS)) if (!used.has(key)) failures.push(`ENGINE_EXCEPTIONS lists "${key}", which nothing uses any more: remove it (import-rules.ts)`);

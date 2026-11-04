@@ -16,7 +16,8 @@ One line per module: what it owns, who calls it. Groups as in docs/04 section 6.
 | `protocol.ts` | messages between `workerEngine.ts` and `host.ts` (via `giac.worker.ts`) |
 | `homeDefaults.ts` | Home's default settings, `HOME_BUDGET_STEPS`, `safePrecision` (R103): what `calc/` reads without `homeEval.ts`'s graph |
 | `pasdeg.ts` | the name of the degree factor alone; read by `state/session.svelte.ts` and `angles.ts` |
-| `format.ts` | Home number formatter (D5): STD/SCI/ENG/FIX/PFX from a BigInt-derived `DecimalValue`, no engine round trip; `markOf()` and `formatConfirmed()` turn the engine's facts into the mark and the digits shown; called by `state/`, `render/`, `apps/`, `clipboard/` |
+| `exactLiterals.ts` | G163: decimal literals as exact rationals (`toExactLiterals`), pure text with no engine; `homeEval.ts` re-exports it, the unit view's chunks read it from here |
+| `format.ts` | Home number formatter (D5): STD/SCI/ENG/FIX/PFX from a BigInt-derived `DecimalValue`, no engine round trip; `markOf()` and `formatConfirmed()` turn the engine's facts into the mark and the digits shown; `precisionFacts()` maps a result to them (G163); called by `state/`, `render/`, `apps/`, `clipboard/` |
 | `defs.ts` | the definitions log (docs/04 6.2): plain data and pure functions used on both sides; called by `workerEngine.ts`, `host.ts`, `find/`, `state/backup.ts` |
 | `giacPrint.ts` | G105: the one reader of Giac text (string skip, bracket walk, names, lists); no imports of its own; used by nearly every module here and by `render/`, `state/results.ts`, `units/` |
 

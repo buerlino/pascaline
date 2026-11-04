@@ -165,6 +165,38 @@ describe("size-check", () => {
     expect(r.rows.find((x) => x.rule === "Unit view chunk")?.files.sort()).toEqual(["assets/open.js", "assets/units.js"]);
   });
 
+  it("counts a src/units/ module that sits in a nameless shared chunk against the unit view (G163)", () => {
+    const { manifest, files } = base(1000);
+    const units = {
+      ...manifest,
+      "src/units/calc.ts": { file: "assets/units.js", src: "src/units/calc.ts", isDynamicEntry: true, imports: ["_shared.js"] },
+      "src/units/open.ts": { file: "assets/open.js", src: "src/units/open.ts", isDynamicEntry: true, imports: ["_shared.js"] },
+      "_shared.js": { file: "assets/shared.js", name: "shared", imports: [], src: undefined },
+      "_other.js": { file: "assets/other.js", name: "other" },
+    };
+    const sizes = { ...files, "assets/units.js": 10_000, "assets/open.js": 20_000, "assets/shared.js": 8_001, "assets/other.js": 5_000 };
+    const dist = fakeDist(units, sizes);
+    writeFileSync(join(dist, ".vite/chunk-modules.json"), JSON.stringify({ "assets/shared.js": ["src/units/dims.ts", "src/engine/format.ts"], "assets/other.js": ["src/engine/format.ts"] }));
+    const r = checkSizes(dist);
+    expect(r.failures.map((f) => f.split(":")[0])).toEqual(["Unit view chunk"]);
+    expect(r.rows.find((x) => x.rule === "Unit view chunk")?.files.sort()).toEqual(["assets/open.js", "assets/shared.js", "assets/units.js"]);
+    expect(r.rows.find((x) => x.rule === "Unit view chunk")?.entryRaw).toBe(30_000);
+  });
+
+  it("does not count a shared chunk without a src/units/ module, nor a start-chunk file (G163)", () => {
+    const { manifest, files } = base(1000);
+    const units = {
+      ...manifest,
+      "src/units/open.ts": { file: "assets/open.js", src: "src/units/open.ts", isDynamicEntry: true, imports: ["_other.js"] },
+      "_other.js": { file: "assets/other.js", name: "other" },
+    };
+    const dist = fakeDist(units, { ...files, "assets/open.js": 30_000, "assets/other.js": 9_000 });
+    writeFileSync(join(dist, ".vite/chunk-modules.json"), JSON.stringify({ "assets/other.js": ["src/engine/format.ts"] }));
+    const r = checkSizes(dist);
+    expect(r.failures).toEqual([]);
+    expect(r.rows.find((x) => x.rule === "Unit view chunk")?.files).toEqual(["assets/open.js"]);
+  });
+
   it("measures the Find UI chunk when src/find/finder.ts is a dynamic entry, at 30 kB raw", () => {
     const { manifest, files } = base(1000);
     const { "_finder.js": _shared, ...noFinder } = manifest;
