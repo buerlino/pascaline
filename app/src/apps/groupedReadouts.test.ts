@@ -34,11 +34,12 @@ describe("R125: Solve's Num view", () => {
     expect(value("comma", "1234567.89")).toEqual(["1,234,567.89", "1234567.89"]);
     expect(value("apos", "1234")).toEqual(["1234", "1234"]);
     const app = new SolveApp(host("apos"));
-    expect(app.drawn(app.mark("-1.41421356237"))).toBe("-1.414’213’562’37");
+    expect(app.drawn(app.mark("-1.41421356237"))).toBe("-1.41421356237");
   });
-  it("under the decimal comma a stored comma draws as the thin space, and the mark's digits group from it", () => {
+  it("under the decimal comma a stored comma draws as the thin space, and the digits after the mark group only with the thin space (R125f1)", () => {
     expect(value("comma", "1234567.5", true)).toEqual(["1\u2009234\u2009567,5", "1234567,5"]);
-    expect(value("apos", "0.333333333333", true)).toEqual(["0,333’333’333’333", "0,333333333333"]);
+    expect(value("apos", "0.333333333333", true)).toEqual(["0,333333333333", "0,333333333333"]); // R125f1: the digits after the mark stay whole
+    expect(value("comma", "0.333333333333", true)).toEqual(["0,333\u2009333\u2009333\u2009333", "0,333333333333"]); // the stored comma draws thin: both sides
   });
 });
 

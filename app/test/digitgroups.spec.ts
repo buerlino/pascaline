@@ -80,6 +80,27 @@ test("Settings › Numbers › Digit groups › ’: 123456789 is drawn 123’45
   expect(v).not.toMatch(/'|’|\\,/); // the chip's shown text is the plain digits
 });
 
+test("R125f1: with ’ or , only the digits before the point are grouped on Home; the thin space groups both sides", async ({ page }) => {
+  const PI = ["d3", "dot", "d1", "d4", "d1", "d5", "d9", "d2", "d6", "d5", "d3", "d5", "d9", "enter"];
+  const BIG = ["d1", "d2", "d3", "d4", "d5", "d6", "d7", "dot", "d8", "d9", "d1", "d2", "d3", "enter"];
+  const cases: [string, string, string][] = [
+    ["comma", "3.14159265359", "1{,}234{,}567.89123"],
+    ["apos", "3.14159265359", "1\\text{'}234\\text{'}567.89123"],
+    ["thin", "3.141\\,592\\,653\\,59", "1\\,234\\,567.891\\,23"],
+  ];
+  let n = 0;
+  for (const [sep, pi, big] of cases) {
+    await page.evaluate((v) => (window.pascaline.session.settings.groupSep = v as "thin"), sep);
+    await tap(page, PI);
+    await done(page, ++n);
+    await expect(lastResult(page).locator(".math")).toHaveAttribute("data-latex", pi);
+    await tap(page, BIG);
+    await done(page, ++n);
+    await expect(lastResult(page).locator(".math")).toHaveAttribute("data-latex", big);
+    await expect(lastResult(page)).toHaveAttribute("data-text", "1234567.89123");
+  }
+});
+
 test("CAS draws the separator too, and the comma with the point", async ({ page }) => {
   await page.evaluate(() => {
     window.pascaline.session.settings.groupSep = "comma";
@@ -97,7 +118,7 @@ test("the unit view draws the separator (R120's path); its Copy text has none", 
   await flick(page, "tmpl", "up");
   await page.waitForFunction(() => window.pascaline.unitView !== undefined && document.querySelector('[data-pad="unit"]') !== null);
   await flick(page, "enter", "up");
-  await expect(page.getByTestId("unit-result").locator(".value")).toHaveText("157.079’632’679");
+  await expect(page.getByTestId("unit-result").locator(".value")).toHaveText("157.079632679");
   await expect(page.getByTestId("unit-result")).toHaveAttribute("data-text", "157.079632679");
 });
 
