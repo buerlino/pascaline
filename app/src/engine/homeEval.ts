@@ -17,7 +17,7 @@ import { valueFactsOf, type ValueFacts } from "./types.ts";
 import type { GiacValue } from "./bridge.ts";
 import { floatBounds, refusalOf, giacPair, hasDefiniteIntegral, integratedNumerically, type Refusal } from "./converge.ts";
 import { enEngine } from "../i18n/enEngine.ts";
-import { elementAt, lostFloat, lostNumber, overflowAt, throughInfinity, underflow, zeroElements } from "./novalue.ts";
+import { approxRange, elementAt, lostFloat, lostNumber, overflowAt, throughInfinity, underflow, zeroElements } from "./novalue.ts";
 import { icdfAtEnd, icdfCalls } from "./icdf.ts";
 import { NO_BODIES, nonSquarePower, type Bodies } from "./nonsquare.ts";
 import { POLY_AT, POLY_AT_ANY_DEPTH, unaskedPoly } from "./polyvec.ts";
@@ -690,6 +690,9 @@ export function homeEval(
     return !once && icdfAtEnd(giac, exactBody, s.digits) ? symbolic() : symbolic("unaudited");
   }
 
+  // G148: approx or evalf of a finite value past MPFR's range (Giac's ±infinity, or a float 0) is refused as the bare value.
+  const range = once || late() ? null : approxRange(giac, exactBody, exactOut, P, late, userFn);
+  if (range) return refuse(range, "exact");
   // A list holding an open == or ≠ test (R18f3): its numeric value would be Giac's structural verdict, 0 or 1.
   if (!shape || /==|<>/.test(exactOut)) return symbolic();
   // G78 (F51): a finite number through an infinity inside (1/(1/0), exp(ln 0)) is Giac's extended reals, not a value.

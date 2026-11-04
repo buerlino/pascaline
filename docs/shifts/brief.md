@@ -66,13 +66,11 @@ Milestone reviews (section 0): after R50e (with R116's gallery groups "Entry hig
 | 469 | [R125](packages/R125.md) group separator | ron, Opus | `p1/ron-groupsep` | R124 |
 
 ### Lane B queue (the release, then the engine)
-A8 and [A57](packages/A57.md) run by day. Steps 448–452 and 408 run only on the weekly extreme night, Wed 11-04 (owner, 2026-11-02); the night review's queue goes on in [its note](../research/night-review-2026-11-02.md) section 2.
+A8 and [A57](packages/A57.md) run by day. Steps 449–452 and 408 run only on the weekly extreme night, Wed 11-04 to Thu 11-05 (owner, 2026-11-02; G148 ran early, Opus pass 62); the night review's queue goes on in [its note](../research/night-review-2026-11-02.md) section 2.
 
 | Step | What | Agent, model | Branch | After |
 |---|---|---|---|---|
-| 462 | [G161](packages/G161.md) Find gets VA and var; gauge units stay gauge | gorge, Opus | `p1/gorge-elecunits` | – |
-| 463 | [G163](packages/G163.md) the unit view's chunks hold no worker evaluator | gorge, Sonnet | `p1/gorge-unitchunk` | G161 |
-| 448 | [G148](packages/G148.md) `approx` of a finite value past the range is an overflow | gorge, Opus | `p1/gorge-approxoverflow` | the weekly night |
+| 463 | [G163](packages/G163.md) the unit view's chunks hold no worker evaluator | gorge, Sonnet | `p1/gorge-unitchunk` | – |
 | 449 | [G141](packages/G141.md) a long exact literal raises the agreement check's precision | gorge, Opus | `p1/gorge-literalprec` | the weekly night |
 | 450 | [G142](packages/G142.md) complex acosh of a small number at 30 digits | gorge, Opus | `p1/gorge-acoshsmall` | the weekly night |
 | 451 | [G156](packages/G156.md) \|x\| shown negative when both runs share an error (F163) | gorge, Opus | `p1/gorge-abssign` | the weekly night; G141 |
