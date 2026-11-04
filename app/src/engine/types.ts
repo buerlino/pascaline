@@ -34,10 +34,12 @@ export interface ValueFacts {
    *  constants of the input leave (constUnc.ts); the digits from there on are uncertain. Absent when no inexact
    *  constant went in by name, or the result is not one real number. */
   uncDigits?: number;
+  /** R40: that first-order σ itself (a decimal text, `0.8958e10`), with `uncDigits`: the σ line a tap on the row shows. */
+  uncSigma?: string;
 }
 
 /** Every key of ValueFacts (a new fact fails to compile here until it is listed, and then every copy below has it). */
-const VALUE_FACT_KEYS = { exact: true, reliableDigits: true, warn: true, why: true, inexact: true, uncDigits: true } as const satisfies Record<keyof ValueFacts, true>;
+const VALUE_FACT_KEYS = { exact: true, reliableDigits: true, warn: true, why: true, inexact: true, uncDigits: true, uncSigma: true } as const satisfies Record<keyof ValueFacts, true>;
 
 /** The ValueFacts of `x`, which may carry more (a value, items): every fact, nothing else. */
 export function valueFactsOf(x: ValueFacts): ValueFacts {
@@ -66,11 +68,12 @@ export function readValueFacts(x: unknown): ValueFacts | null {
   const exact = f["exact"] ?? f["exactRational"] ?? false;
   const d = f["reliableDigits"] ?? null;
   if (typeof exact !== "boolean" || !(d === null || (typeof d === "number" && Number.isFinite(d)))) return null;
-  const { warn, why, inexact, uncDigits } = f;
+  const { warn, why, inexact, uncDigits, uncSigma } = f;
   if (warn !== undefined && warn !== "unaudited" && warn !== "unchecked") return null;
   if (inexact !== undefined && inexact !== true) return null;
   if (uncDigits !== undefined && !(typeof uncDigits === "number" && Number.isInteger(uncDigits) && uncDigits >= 0)) return null;
   if (why !== undefined && !isWhy(why)) return null;
+  if (uncSigma !== undefined && !(typeof uncSigma === "string" && /^0\.\d{1,40}e-?\d{1,5}$/.test(uncSigma))) return null;
   return {
     exact,
     reliableDigits: d,
@@ -78,6 +81,7 @@ export function readValueFacts(x: unknown): ValueFacts | null {
     ...(why ? { why: why as PrecisionWhy } : {}),
     ...(inexact ? { inexact } : {}),
     ...(uncDigits !== undefined ? { uncDigits } : {}),
+    ...(uncSigma !== undefined ? { uncSigma: uncSigma as string } : {}),
   };
 }
 

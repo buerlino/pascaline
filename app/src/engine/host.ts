@@ -817,7 +817,7 @@ export class EngineHost implements FactsHost {
       // A setting the input changed was put back after its run: it is not run again (G67).
       if ((!consts && !sig.inputs.length) || (stateful && !asg) || this.post?.flagsChanged) return out;
       const n = constUncDigits(this.giac, sig.body, consts ?? {}, out.result, Math.trunc(out.result.digits ?? s.digits), sig.inputs);
-      return n === undefined ? out : { ...out, result: { ...out.result, facts: { ...out.result.facts, uncDigits: n } } };
+      return n === undefined ? out : { ...out, result: { ...out.result, facts: { ...out.result.facts, ...n } } };
     } finally {
       if (keep.size) this.giac.eval(`purge(${[...keep].map((k) => CHIP_PREFIX + k).join(",")})`);
       this.chipFacts.clear();

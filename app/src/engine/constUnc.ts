@@ -8,12 +8,13 @@
 // exactly 1) and σ is taken over the leaves; any other constant is an input of its own with its value, as before.
 // `uncDigits` is the number of significant digits of the shown value before the digit position of σ's first digit:
 // the digits from there on are uncertain. Synchronous, UI-free. Only erasable TypeScript syntax.
-import { decimalFromString, isZero, roundSignificant, type DecimalValue } from "./format.ts";
+import { decimalFromString, decimalToString, isZero, roundSignificant, type DecimalValue } from "./format.ts";
 import { toExactLiterals, type HomeResult } from "./homeEval.ts";
 import type { Giac } from "./numeric.ts";
 import { mapNames, names } from "./giacPrint.ts";
 import { basisGiac, basisOf, correlated, isZeroText, LEAF_PREFIX } from "./constBasis.ts";
 import type { ValueFacts } from "./types.ts";
+import { CONST_PREFIX } from "./ourNames.ts";
 
 /** A constant the input holds by name: its value as Giac text (`6.67430E-11`), and its standard uncertainty in the
  *  same unit (`0.00015E-11`), absent or zero when the constant is exact. Keyed by the id after `pasc_`. */
@@ -30,8 +31,8 @@ export interface ConstEntry {
 }
 export type ConstTable = Readonly<Record<string, ConstEntry>>;
 
-/** The prefix of a constant sent by name. */
-export const CONST_PREFIX = "pasc_";
+/** The prefix of a constant sent by name (one home: ourNames.ts). */
+export { CONST_PREFIX };
 
 
 /** An inexact constant has a nonzero uncertainty text (the one rule; constFacts states it as facts). */
@@ -136,16 +137,18 @@ export function uncDigitsOf(value: DecimalValue, sigma: DecimalValue, digits: nu
 }
 
 /**
- * The `uncDigits` of a Home result computed from `body` (the input with its constants as names): absent when no
- * inexact constant of `table` is in it (nor an `extra` input, R61), when the result is not one real number, or when σ
- * cannot be computed (a function Giac cannot differentiate, the budget ran out).
+ * The `uncDigits` of a Home result computed from `body` (the input with its constants as names), with σ itself as
+ * `uncSigma` (R40: the σ line): absent when no inexact constant of `table` is in it (nor an `extra` input, R61), when
+ * the result is not one real number, when σ is zero, or when σ cannot be computed (a function Giac cannot
+ * differentiate, the budget ran out).
  */
-export function constUncDigits(giac: Giac, body: string, table: ConstTable, r: HomeResult, digits: number, extra: readonly SigmaInput[] = []): number | undefined {
+export function constUncDigits(giac: Giac, body: string, table: ConstTable, r: HomeResult, digits: number, extra: readonly SigmaInput[] = []): { uncDigits: number; uncSigma: string } | undefined {
   const ids = inexactConstsIn(body, table);
   if ((!ids.length && !extra.length) || !r.ok || !r.value || r.items || !isZero(r.value.im)) return undefined;
   const out = giac.eval(`evalf(${sigmaExpr(body, table, ids, extra)},20)`);
   if (out.startsWith("GIAC_ERROR")) return undefined;
   const sigma = decimalFromString(out);
   if (!sigma) return undefined;
-  return uncDigitsOf(r.value.re, sigma, digits) ?? undefined;
+  const n = uncDigitsOf(r.value.re, sigma, digits);
+  return n === null ? undefined : { uncDigits: n, uncSigma: decimalToString(sigma) };
 }

@@ -5,13 +5,15 @@ import { mathJsonToGiac, type Json, type SerializeOptions } from "./emit.ts";
 import type { ChipTable } from "./chips.ts";
 import { parseLatexInfo, type UnitsInfo } from "./parse.ts";
 import type { UserName } from "../engine/defs.ts";
+import { CHIP_PREFIX, CONST_PREFIX } from "../engine/ourNames.ts";
 
 export interface LatexToGiacOptions extends SerializeOptions {
   /** Not read (R57f1: parsing never depends on the decimal mark); kept for the golden rows' options. */
   decimalComma?: boolean;
   /** The entry's chip table (\res, \ans, \const); without it a chip is an error. */
   chips?: ChipTable;
-  /** R65 (Home): a result chip that is not exact goes in as `pasr_<k>`, listed in the answer's `named` (G49). */
+  /** R65 (Home): a result chip that is not exact goes in as `pasr_<k>`, listed in the answer's `named` (G49); R40: a
+   *  constant that is not exact as `pasc_<id>`, listed in `consts` (G26). */
   chipNames?: boolean;
   /** R28: units mode (docs/04 4.3). The Giac text is then G16's `UnitRequest.formula`: `72*pasu1` per unit slot,
    *  `pask1` per constant, `pasupm(value,sigma)` per ± (G18); `units` names the slots, the constants and the end slot. */
@@ -43,12 +45,24 @@ export function latexToGiac(latex: string, o: LatexToGiacOptions = {}): string {
   return latexToGiacInfo(latex, o).giac;
 }
 
-/** The Giac text; whether an inexact chip went into it (then the result is never marked "=", docs/04 2.4); and the
- *  single letter it defines as a function, so the caller can count it before its names are read again. */
+/** R40: the chips that went in by name, by kind: result chips keyed by the k of `pasr_<k>` (`named`), inexact constants
+ *  by the id of `pasc_<id>` (`consts`). */
+function byKind(names: ChipTable): { named?: ChipTable; consts?: ChipTable } {
+  const out: { named?: ChipTable; consts?: ChipTable } = {};
+  for (const [name, c] of Object.entries(names)) {
+    const [kind, key] = name.startsWith(CONST_PREFIX) ? (["consts", name.slice(CONST_PREFIX.length)] as const) : (["named", name.slice(CHIP_PREFIX.length)] as const);
+    (out[kind] ??= {})[key] = c;
+  }
+  return out;
+}
+
+/** The Giac text; whether an inexact chip went into it (then the result is never marked "=", docs/04 2.4); the chips
+ *  and constants it holds by name (Home); and the single letter it defines as a function, so the caller can count it
+ *  before its names are read again. */
 export function latexToGiacInfo(
   latex: string,
   o: LatexToGiacOptions = {},
-): { giac: string; inexact: boolean; named?: ChipTable; defines?: string; units?: UnitsInfo } {
+): { giac: string; inexact: boolean; named?: ChipTable; consts?: ChipTable; defines?: string; units?: UnitsInfo } {
   if (latex.trim() === "") throw parseError("parse.emptyInput");
   const user = o.userFunctions ?? DEFAULT_USER_FUNCTIONS;
   const { json, inexact, named, units } = parseLatexInfo(latex, {
@@ -59,5 +73,5 @@ export function latexToGiacInfo(
   });
   const giac = mathJsonToGiac(json, { ...o, userFunctions: user });
   const defines = definedFunction(json);
-  return { giac, inexact, ...(named ? { named } : {}), ...(defines ? { defines } : {}), ...(units ? { units } : {}) };
+  return { giac, inexact, ...(named ? byKind(named) : {}), ...(defines ? { defines } : {}), ...(units ? { units } : {}) };
 }

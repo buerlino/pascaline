@@ -13,7 +13,7 @@ import { rewriteAngles } from "./engine/angles.ts";
 import { applyDefChanges, type DefChange } from "./engine/defs.ts";
 import { namesFlag } from "./engine/flags.ts";
 import { namesAssuming, setsAssumption } from "./engine/assumed.ts";
-import { casItem, chipFactsOf, chipOf, homeItem } from "./state/results.ts";
+import { casItem, chipFactsOf, chipOf, constTableOf, homeItem } from "./state/results.ts";
 
 export type Expect = string | Expect[];
 
@@ -150,9 +150,10 @@ export async function runSteps(fresh: () => Promise<EngineHost>, steps: Step[], 
       host.cas(st.input!, { ...defaultCasSettings, angle: st.angle ?? "rad", digits });
       continue;
     }
-    const p = st.latex !== undefined ? homeLatexStep(st.latex, chips) : { giac: st.input!, inexact: false, named: undefined };
+    const p = st.latex !== undefined ? homeLatexStep(st.latex, chips) : { giac: st.input!, inexact: false, named: undefined, consts: undefined };
     // As the session sends it: a `latex` step with a named chip carries that chip's facts (state/results.ts chipFactsOf)
-    const r = (st.latex === undefined && (consts || k > 0) ? host.home(p.giac, s, consts, named) : p.named ? host.home(p.giac, s, undefined, chipFactsOf(p.named)) : host.home(p.giac, s)).result;
+    const lit = st.latex !== undefined && (p.named || p.consts); // R40: a `latex` step's inexact constants go by name too
+    const r = (st.latex === undefined && (consts || k > 0) ? host.home(p.giac, s, consts, named) : lit ? host.home(p.giac, s, p.consts && constTableOf(p.consts), p.named && chipFactsOf(p.named)) : host.home(p.giac, s)).result;
     last = p.inexact ? { ...r, inexactInput: true } : r;
     // The step's item and its chip by the session's own rule (state/results.ts, G86): Ans for the `latex` steps, a
     // named chip (`pasr_<k>`) for the `input` steps. An `input` step is Giac text, so what the parser would say about

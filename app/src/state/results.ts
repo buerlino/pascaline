@@ -4,6 +4,7 @@
 // chip a finished item gives. Pure TypeScript, no runes: the session (state/session.svelte.ts) and the golden runner
 // (goldenRun.ts, run by Node) both call it, so the gate checks the app's own rule. Only erasable TypeScript syntax.
 import type { ChipFactsTable } from "../engine/chipFacts.ts";
+import type { ConstEntry, ConstTable } from "../engine/constUnc.ts";
 import { decimalFromRational, decimalFromString, type ComplexValue } from "../engine/format.ts";
 import type { ValueFacts } from "../engine/types.ts";
 import { bracesOf, RATIONAL } from "../engine/giacPrint.ts";
@@ -174,6 +175,18 @@ export function chipFactsOf(named: ChipTable): ChipFactsTable {
   const out: Record<string, ChipFactsTable[string]> = {};
   for (const [k, c] of Object.entries(named))
     out[k] = { value: c.value, reliableDigits: c.reliableDigits ?? null, exact: c.exact, ...(c.warn ? { warn: c.warn } : {}), ...(c.unc !== undefined ? { unc: c.unc } : {}) };
+  return out;
+}
+
+/** R40: the constants an input holds by name (`pasc_<id>`), as the engine takes them (G26): the value and σ, and G81's
+ *  basis and leaves (constants that share a leaf enter through their basis; without the two, each is an input of its
+ *  own again). A stored basis is passed unchecked: the engine checks it before any use (constBasis.ts basisOf). */
+export function constTableOf(consts: ChipTable): ConstTable {
+  const out: Record<string, ConstEntry> = {};
+  for (const [id, c] of Object.entries(consts)) {
+    const { value, unc, basis, basisLeaves } = c;
+    out[id] = { value, ...(unc !== undefined ? { unc } : {}), ...(basis !== undefined ? { basis } : {}), ...(basisLeaves !== undefined ? { basisLeaves } : {}) };
+  }
   return out;
 }
 
