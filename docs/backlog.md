@@ -26,6 +26,7 @@ The one place for "where are we and what's left", one or two lines per open item
 5. **Tap "Allow USB debugging"** on a device when it shows `unauthorized`.
 6. **v0.1.0** (the days: [release-0.1.0.md](release-0.1.0.md)): the test tag on 11-03; go or slip on 11-14; read the usage meter each morning and at each lane start (tripwire 85 %). **A49/A52, switching a broken web worker off:** `app/pwa/README.md` (the kill run on the deployed tag, up to 90 min; the fixed tag's normal run brings the worker back).
 7. **Later:** the outside rounds (two 30-minute rounds after R4b and R24c, [r18](research/r18-outside-test.md)); at milestone 5, time ten tasks by hand (E-notation against units).
+8. **A62, R59's gate:** the library replay is 96 ms on the Tab One against 50 ms (39 ms over an empty log); recommended: R59 goes ahead (report A62).
 
 ### Upstream reports (owner; drafts in `../outreach/upstream-reports.md`)
 - **MathLive**, filed 2026-10-19: [#3122](https://github.com/arnog/mathlive/issues/3122) (⌫ at `\left…\right`), [#3123](https://github.com/arnog/mathlive/issues/3123) (touch caret), [#3124](https://github.com/arnog/mathlive/issues/3124) (focus restore); [#3125](https://github.com/arnog/mathlive/issues/3125) (Redo after ⌫, 2026-10-20); M5 (`isImplicitArg` takes no matrix, F68) drafted by R75.
