@@ -7,7 +7,7 @@ Phase 0 decisions (D1–D9, P1, P2): [spike/DECISIONS.md](../spike/DECISIONS.md)
 
 The owner's other open items are in [backlog.md](backlog.md), "Needs the user". Once decided, an entry moves to "Decided proposals".
 
-- **A59 (2026-11-04): a one-frame light flash remains at the splash's exit.** The splash and bars are dark; the system's exit wipe still shows 1 to 2 light frames (about 16 to 33 ms, YAVG 19 to 65) before the app's first paint. The layer behind is the WebView's default white: `capacitor.config` `backgroundColor` would fix it (outside A59's `res/values/`). Wants: a package for it, yes or no.
+None open.
 
 ## Decided proposals
 
