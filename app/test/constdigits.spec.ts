@@ -140,3 +140,23 @@ test("R40f1: on keys alone the picked row's why-line holds the σ line after a d
   await expect(why).toContainText("G (± 1.5·10⁻¹⁵)");
   await expect(why).not.toContainText("σ");
 });
+
+test("R40f1: at phone width (400 px) the why-line wraps, so the σ part is not cut off, and the keys and the row bar stay put", async ({ page }) => {
+  await page.setViewportSize({ width: 400, height: 800 });
+  await putConst(page, "G"); // two constants with a σ: the line is longer than one line holds
+  await tap(page, ["mul"]);
+  await putConst(page, "alpha");
+  await tap(page, ["enter"]);
+  await done(page, 1);
+  const keysTop = () => page.locator('[data-key="enter"]').evaluate((e) => e.getBoundingClientRect().top);
+  const before = await keysTop();
+  await tap(page, ["up"]);
+  const why = page.getByTestId("row-why");
+  await expect(why).toContainText("(k = 2)");
+  const fit = await why.evaluate((e) => ({ sw: e.scrollWidth, cw: e.clientWidth }));
+  expect(fit.sw).toBeLessThanOrEqual(fit.cw);
+  expect(await keysTop()).toBe(before); // the keys do not move
+  const bar = await page.getByTestId("row-actions").boundingBox();
+  const wb = await why.boundingBox();
+  expect(wb!.y + wb!.height).toBeLessThanOrEqual(bar!.y + 1); // the why-line sits above the bar, no overlap
+});
