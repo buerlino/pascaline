@@ -53,6 +53,7 @@ describe("Android splash and bars are the Dark background (A59)", () => {
     const s = style("AppTheme.NoActionBar");
     expect(item(s, "android:statusBarColor")).toBe(bg);
     expect(item(s, "android:navigationBarColor")).toBe(bg);
+    expect(item(s, "android:windowBackground")).toBe(bg); // what shows behind the bars from Android 15 on
   });
   it("the bars' icons are light", () => {
     const s = style("AppTheme.NoActionBar");

@@ -16,6 +16,8 @@
         <!-- A59: the bars take the default Dark's background, whatever the system mode; light icons on it. -->
         <item name="android:statusBarColor">@color/pascaline_dark_bg</item>
         <item name="android:navigationBarColor">@color/pascaline_dark_bg</item>
+        <!-- From Android 15 the bar colours are ignored (edge to edge): the window behind them must be the Dark background too. -->
+        <item name="android:windowBackground">@color/pascaline_dark_bg</item>
         <item name="android:windowLightStatusBar">false</item>
         <item name="android:windowLightNavigationBar">false</item>
     </style>
