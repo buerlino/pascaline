@@ -322,6 +322,7 @@
           display={(item) => session.display(item, true)}
           input={(item) => session.input(item)}
           mark={(item) => session.mark(item)}
+          sigma={(item) => session.sigma(item)}
           onrecall={(item) => { picked = null; shell.prompt?.cancel(); entry.set(session.input(item), item.chips); }}
           oninsert={(item) => { picked = null; shell.prompt?.cancel(); insertResult(item); }}
           oncancel={() => void cancel()}

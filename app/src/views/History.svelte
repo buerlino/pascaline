@@ -15,6 +15,7 @@
     display,
     input = (item) => item.latex,
     mark,
+    sigma = () => null,
     onrecall,
     oninsert,
     oncancel,
@@ -31,6 +32,8 @@
     input?: (item: HistoryItem) => string;
     /** The `=` / `≈` / `⚠ n` before a number result (docs/04 2.4); null for a non-number. */
     mark: (item: HistoryItem) => MarkInfo | null;
+    /** R40: the σ line a tap on the row shows (a constant's σ limits its digits); null: a tap shows nothing. */
+    sigma?: (item: HistoryItem) => string | null;
     /** Tapping an entry puts it back on the line, with the values of its chips. */
     onrecall: (item: HistoryItem) => void;
     /** L5: tapping a result puts it on the entry line at the cursor, as a chip (docs/04 2.8). */
@@ -65,6 +68,17 @@
   function tapped(act: () => void): void {
     if (longPressed) longPressed = false;
     else act();
+  }
+
+  // R40: a tap on a row with a σ line (not on its entry or result, which recall and insert) shows it; a second hides it
+  let sigmaShown = $state<ReadonlySet<number>>(new Set());
+  function toggleSigma(e: MouseEvent, item: HistoryItem): void {
+    if ((e.target as Element | null)?.closest("button") || sigma(item) === null) return;
+    tapped(() => {
+      const next = new Set(sigmaShown);
+      if (!next.delete(item.id)) next.add(item.id);
+      sigmaShown = next;
+    });
   }
 
   /** R63: a unit row draws its request with the units in it (the line itself, recalled, has none: Home has no units). */
@@ -150,8 +164,9 @@
     {#if item.status === "note"}
       <div class="item note" data-status="note" data-testid="safe-start" role="status">{item.text}</div>
     {:else}
+    <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_noninteractive_element_interactions (R40: the σ line is a touch extra; a picked row's why-line, R36, serves the keys) -->
     <article class="item" data-status={item.status}
-      onpointerdown={(e) => pressStart(e, item)} onpointerup={endPress} onpointercancel={endPress}
+      onpointerdown={(e) => pressStart(e, item)} onpointerup={endPress} onpointercancel={endPress} onclick={(e) => toggleSigma(e, item)}
       oncontextmenu={(e) => e.preventDefault()}
       data-selected={selected !== null && k + items.length - shown.length === selected ? "true" : undefined}>
       <button type="button" class="in" title={t("history.recall")} use:edgeFade onclick={() => tapped(() => onrecall(item))}>
@@ -179,6 +194,10 @@
           </button>
         {/if}
       </div>
+      {#if item.status === "done" && sigmaShown.has(item.id)}
+        {@const line = sigma(item)}
+        {#if line}<div class="uses" data-testid="sigma">{line}</div>{/if}
+      {/if}
       {#if item.status === "done" && item.uses?.length}
         <div class="uses" data-testid="uses">{usesLine(item.uses)}</div>
       {/if}

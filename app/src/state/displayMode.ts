@@ -13,6 +13,7 @@ import {
   formatFraction,
   formatPolar,
   isZero,
+  roundSignificant,
   markOf,
   type ComplexValue,
   type DecimalValue,
@@ -231,7 +232,16 @@ function renderPoint(r: NumericResult, mode: FmtMode | undefined, ctx: DisplayCo
     return { text: p.text, latex: polarToLatex(p, grouped) };
   }
   const c = formatComplex(r.value, confirmedOptions(r.value, r.facts?.reliableDigits ?? null, opts(base)));
-  return { text: c.text, latex: complexToLatex(c, grouped) };
+  return { text: c.text, latex: complexToLatex(c, grouped, grouped ? uncCut(r, digits) : undefined) };
+}
+
+/** R40: the place value below which a real result's digits are uncertain (G26: the digits past `uncDigits` of the value
+ *  shown at `digits`); undefined when no constant's σ limits it. Only the screen's row mutes them (`grouped`): the text,
+ *  chips and Copy keep every digit. */
+function uncCut(r: NumericResult, digits: number): number | undefined {
+  const n = r.facts?.uncDigits;
+  if (n === undefined || !r.value || !isZero(r.value.im) || isZero(r.value.re)) return undefined;
+  return roundSignificant(r.value.re, digits).exp - n + 1;
 }
 
 /**

@@ -12,16 +12,38 @@ import { balanced, mapNames } from "../engine/giacPrint.ts";
 export const groupDigits = (m: string): string =>
   m.replace(/\d{5,}/g, (d, at: number) => (at ? d.replace(/(\d{3})(?=\d)/g, "$1\\,") : d.replace(/\B(?=(\d{3})+$)/g, "\\,")));
 
-function part(f: FormattedNumber, group: boolean): string {
-  const m = group ? groupDigits(f.mantissa) : f.mantissa;
+/** The power of ten of each SI prefix (engine/format.ts PREFIXES), to place a PFX mantissa's digits. */
+const PREFIX_EXP: Readonly<Record<string, number>> = { f: -15, p: -12, n: -9, "\u00b5": -6, m: -3, k: 3, M: 6, G: 9, T: 12, P: 15 };
+
+/**
+ * R40: `m` (a mantissa as drawn, maybe grouped) with its digits whose place value is below 10^`cut` in one muted span
+ * (`\class{unc}`, Math.svelte): the digits past what a constant's σ leaves (G26's uncDigits). `exp` is the mantissa's
+ * power of ten. The digits shown below the cut are always the mantissa's last ones, so the span is its tail.
+ */
+export function mutedTail(m: string, exp: number, cut: number): string {
+  const point = m.indexOf(".");
+  // the place of the digit before the next one: past the digits before the point
+  let place = exp + [...(point < 0 ? m : m.slice(0, point))].filter((c) => c >= "0" && c <= "9").length;
+  for (let i = 0; i < m.length; i++) {
+    const c = m.charAt(i);
+    if (c < "0" || c > "9") continue;
+    place--;
+    if (place < cut) return `${m.slice(0, i)}\\class{unc}{${m.slice(i)}}`;
+  }
+  return m;
+}
+
+function part(f: FormattedNumber, group: boolean, cut?: number): string {
+  const g = group ? groupDigits(f.mantissa) : f.mantissa;
+  const m = cut === undefined ? g : mutedTail(g, f.prefix !== undefined ? (PREFIX_EXP[f.prefix] ?? 0) : (f.exponent ?? 0), cut);
   // PFX: a thin space, then the prefix in the accent colour (docs/04 2.7); .pfx is styled in Math.svelte
   if (f.prefix) return `${m}\\,\\class{pfx}{\\mathrm{${f.prefix}}}`;
   return `${m}${f.exponent === null ? "" : `\\times10^{${f.exponent}}`}`;
 }
 
 /** A formatted Home number as LaTeX: the exponent is drawn raised, the imaginary unit as i. */
-export function complexToLatex(c: FormattedComplex, group = false): string {
-  const re = `${c.re.neg ? "-" : ""}${part(c.re, group)}`;
+export function complexToLatex(c: FormattedComplex, group = false, cut?: number): string {
+  const re = `${c.re.neg ? "-" : ""}${part(c.re, group, c.im ? undefined : cut)}`;
   if (!c.im) return re;
   const im = c.im.mantissa === "1" && c.im.exponent === null && !c.im.prefix ? "\\mathrm{i}" : `${part(c.im, group)}\\mathrm{i}`;
   if (c.re.mantissa.replace(/[0.]/g, "") === "" && c.re.exponent === null && !c.re.prefix) return `${c.im.neg ? "-" : ""}${im}`;
