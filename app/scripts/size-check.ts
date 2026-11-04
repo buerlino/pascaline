@@ -100,7 +100,8 @@ export function startFiles(manifest: Record<string, ManifestChunk>): string[] {
 }
 
 /** G163: the unit view's entries plus the shared chunks that hold its modules, raw: 66.26 kB measured (open 26.91, find 9.05,
- *  calc 0.43, userCells 4.64, factors 15.00, slot 10.23; entries alone 36.39 kB), pinned at 66.5 kB so it cannot grow unseen. */
+ *  calc 0.43, userCells 4.64, factors 15.00, slot 10.23; entries alone 36.39 kB), a pin at 66.5 kB so it cannot grow unseen
+ *  (decisions.md R24b and R24c: G163, Opus pass 62); raised only with its reason in a report, as START_PIN_GZIP is. */
 export const UNIT_VIEW_PIN_RAW = 66_500;
 
 /** The budgets of docs/04 section 8.3 that apply to files of the build; the device bars are not here. */
@@ -129,7 +130,7 @@ function subjects(manifest: Record<string, ManifestChunk>, all: string[], module
   // G163: Rollup hoists the units modules that two lazy chunks import (factors.ts with the builder, slot.ts, the cells'
   // store) into shared chunks, which the row above does not see (as finder.ts once was for Find). This row is the unit
   // view's whole code: its entries plus every shared chunk that holds a src/units/ module. Its bar is a pin at today's
-  // measure, not the 38 kB (decisions.md, Needs the user: G163); a package that grows the unit code raises it with a reason.
+  // measure, not the 38 kB (decisions.md R24b and R24c: G163, Opus pass 62); a package that grows the unit code raises it with a reason.
   const unitEntries = dynamic("src/units/");
   add("Unit view + shared", unitEntries.length > 0 ? [...unitEntries, ...sharedChunksHolding(manifest, modules, "src/units/")] : [], { rawMax: UNIT_VIEW_PIN_RAW });
   // The index and qalc have no fixed place yet (G4 and A2 decide); these match by location and name, so they apply wherever they land.

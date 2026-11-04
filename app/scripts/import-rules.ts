@@ -6,8 +6,8 @@
 //  2. A file in src/engine/ imports nothing from views/, state/, keyboard/, entry/, apps/, render/ or input/, and from
 //     units/ only what ENGINE_EXCEPTIONS names. So `input/` -> `engine/` is the only direction.
 //  3. G163: the main-thread side holds no worker evaluator. No file under src/units/ except the worker's own
-//     (UNIT_WORKER_FILES), and none under src/views/, src/state/ or src/apps/, imports engine/homeEval, numeric, host,
-//     converge or decisions (WORKER_ENGINE): the unit view's chunks would carry the whole evaluator's graph (docs/04 8.2:
+//     (UNIT_WORKER_FILES), and none under src/views/, src/state/ or src/apps/, reaches engine/homeEval, numeric, host,
+//     converge or decisions (WORKER_ENGINE) by a chain of static value imports (type-only imports are erased): the unit view's chunks would carry the whole evaluator's graph (docs/04 8.2:
 //     views see `Calc`; 8.1: format.ts is pure).
 // Imports are read from the source text (import/export ... from, and bare `import "x"`); `import()` is lazy and not
 // counted for rule 1. Tests (*.test.ts) are not checked.
@@ -56,6 +56,35 @@ export const UNIT_WORKER_FILES: ReadonlySet<string> = new Set(["evaluate", "buil
 
 /** Rule 3: the main-thread folders whose files may not import WORKER_ENGINE (src/units/ with UNIT_WORKER_FILES left out). */
 const MAIN_THREAD_DIRS = ["src/units/", "src/views/", "src/state/", "src/apps/"] as const;
+
+/** Rule 3: from main-thread file `from`, the shortest chain of static value imports (type-only imports are erased, as in
+ *  startReach) to each WORKER_ENGINE module it reaches, with the line of `from`'s own first import on the chain. The walk
+ *  goes through every file, the unit worker's own too: a chunk that imports them carries their graph. */
+function workerChains(sources: Sources, from: string): { path: string[]; line: number }[] {
+  const parent = new Map<string, { via: string; line: number }>();
+  const queue = [from];
+  const seen = new Set([from]);
+  const out: { path: string[]; line: number }[] = [];
+  while (queue.length > 0) {
+    const f = queue.shift()!;
+    for (const i of importsOf(sources[f]!)) {
+      if (i.type) continue;
+      const to = resolveImport(sources, f, i.spec);
+      if (to === null || seen.has(to)) continue;
+      seen.add(to);
+      parent.set(to, { via: f, line: i.line });
+      if (WORKER_ENGINE.has(to)) {
+        const path = [to];
+        for (let p = parent.get(to)!; ; p = parent.get(p.via)!) {
+          path.unshift(p.via);
+          if (p.via === from) break;
+        }
+        out.push({ path, line: parent.get(path[1]!)!.line });
+      } else if (!isTest(to)) queue.push(to);
+    }
+  }
+  return out;
+}
 
 /** Source files (relative to app/, forward slashes) -> text: the .ts and .svelte files of src/. */
 export type Sources = Readonly<Record<string, string>>;
@@ -120,10 +149,7 @@ export function checkDirection(sources: Sources, entry = "src/main.ts"): Verdict
   }
   for (const f of Object.keys(sources).sort()) {
     if (isTest(f) || UNIT_WORKER_FILES.has(f) || !MAIN_THREAD_DIRS.some((d) => f.startsWith(d))) continue;
-    for (const i of importsOf(sources[f]!)) {
-      const to = resolveImport(sources, f, i.spec);
-      if (to !== null && WORKER_ENGINE.has(to)) failures.push(`${f}:${i.line}: imports ${to}, the worker's evaluator (the main thread loads none of it; move what is needed into a pure module such as src/engine/format.ts or exactLiterals.ts)`);
-    }
+    for (const chain of workerChains(sources, f)) failures.push(`${f}:${chain.line}: ${chain.path.join(" -> ")}: reaches ${chain.path.at(-1)}, the worker's evaluator, by value imports (the main thread loads none of it; move what is needed into a pure module such as src/engine/format.ts or exactLiterals.ts)`);
   }
   for (const key of Object.keys(ENGINE_EXCEPTIONS)) if (!used.has(key)) failures.push(`ENGINE_EXCEPTIONS lists "${key}", which nothing uses any more: remove it (import-rules.ts)`);
   const note = `${reach.size} files reached from start, ${Object.keys(ENGINE_EXCEPTIONS).length} named exceptions`;
