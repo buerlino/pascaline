@@ -57,13 +57,10 @@ With the lanes, start both from the phase-1 worktree: `cd .claude/worktrees/phas
 `ANDROID_SERIAL=HA24BZ2Y` for both lanes, `--until 05:30`; before the start the owner plugs in and unlocks the Tab One and runs `tools/stay-awake.sh HA24BZ2Y --restore` (STAY_ON=7). CORE DEVICE after each pass. Not the weekly extreme night (that is the night of Wed 11-04 to 11-05): rows 448–452 and 408 wait. Every "After" was checked against the merges on 2026-11-03 ("–" is merged); a step whose "After" is not merged is skipped. Follow each Opus pass as written (rule 3).
 
 ### Lane A queue (ron's UI)
-Milestone reviews (section 0): after R50e (with R116's gallery groups "Entry highlights (R116)" and the lifted --pick on the History picked row; R113's rings, gallery home-tips-small); after R24d (with R92's Constants and Tools; R108's gallery group "Decimal comma in apps"; R89 on the Fairphone: save two presets with different free keys and switch; R111's note at 360 px; R33's stored-name colour in each theme, decisions.md "Owner answers of 2026-11-02"; R120's gallery unitresult-t10-comma).
+Milestone reviews (section 0): after R50e (with R116's gallery groups "Entry highlights (R116)" and the lifted --pick on the History picked row; R113's rings, gallery home-tips-small); after R24d (with R92's Constants and Tools; R108's gallery group "Decimal comma in apps"; R89 on the Fairphone: save two presets with different free keys and switch; R111's note at 360 px; R33's stored-name colour in each theme, decisions.md "Owner answers of 2026-11-02"; R120's gallery unitresult-t10-comma; R124's gallery group "Mark style (R124)" and R125's "Digit groups (R125)", with decisions.md's R125 question).
 
 | Step | What | Agent, model | Branch | After |
 |---|---|---|---|---|
-| 467 | [R40](packages/R40.md) a constant's trusted digits; the room step in Numbers | ron, Opus | `p1/ron-m4a-constdigits` | R41 |
-| 468 | [R124](packages/R124.md) mark style | ron, Opus | `p1/ron-markstyle` | R40 |
-| 469 | [R125](packages/R125.md) group separator | ron, Opus | `p1/ron-groupsep` | R124 |
 
 ### Lane B queue (the release, then the engine)
 A8 and [A57](packages/A57.md) run by day. Steps 449–452 and 408 run only on the weekly extreme night, Wed 11-04 to Thu 11-05 (owner, 2026-11-02; G148 ran early, Opus pass 62); the night review's queue goes on in [its note](../research/night-review-2026-11-02.md) section 2.
