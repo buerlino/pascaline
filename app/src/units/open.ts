@@ -16,6 +16,7 @@ import type { Mods, RouteCtx } from "../keyboard/route.ts";
 import type { HistoryItem } from "../state/session.svelte.ts";
 import { engineFormat } from "../calc/port.ts";
 import { idbKv } from "../state/storage.ts";
+import { loadSheetView } from "../views/sheetView.svelte.ts";
 import { alternatives, readTargets, writeTarget } from "./alternatives.ts";
 import { factorTable } from "./factors.ts";
 import { userUnitCells } from "./padCells.ts";
@@ -41,11 +42,13 @@ export interface OpenUnitView {
 
 let current: OpenUnitView | null = null;
 
-/** The chunk of Find on units (Math in a slot, More…): its import starts when the view opens, so a tap waits on no
- *  module fetch (R121 fix round 2: More… under load showed no Find within 5 s). A failed import is tried again. */
+/** The chunk of Find on units (Math in a slot, More…) with the sheet's view that draws it (R46): both loads start when
+ *  the view opens, so a tap waits on no module fetch (R121 fix round 2: More… under load showed no Find within 5 s; R125
+ *  fix round 1: the sheet's view, fetched only when the browser is idle, was not in yet, so the open Find was not drawn).
+ *  A failed import is tried again. */
 let findChunk: Promise<typeof import("./find.ts")> | null = null;
 const unitFind = (): Promise<typeof import("./find.ts")> =>
-  (findChunk ??= import("./find.ts").catch((e: unknown) => {
+  (findChunk ??= Promise.all([import("./find.ts"), loadSheetView()]).then(([m]) => m).catch((e: unknown) => {
     findChunk = null;
     throw e;
   }));
@@ -82,7 +85,7 @@ export async function openUnits(c: RouteCtx, row?: HistoryItem): Promise<void> {
         const more = dim === undefined ? { constant, tools: unitTools(view.shown, { end: () => view.toEnd(), alt: (a) => void view.pickAlt(a), alts: () => view.down(), home }) } : {};
         m.showUnitFind({ shell: c.shell, index, cat, apply: dim === undefined ? (a) => view.apply(a) : (a) => view.pickMore(a), refresh: () => (unitPad.model = new UnitPad(unitCells.userSet())), ...more }, into, dim);
       }),
-    format: () => ({ format: engineFormat(c.session.settings.format), digits: c.session.settings.digits, decimalComma: c.session.decimalComma, grouped: true }),
+    format: () => ({ format: engineFormat(c.session.settings.format), digits: c.session.settings.digits, decimalComma: c.session.decimalComma, grouped: true, groupSep: c.session.settings.groupSep }),
     alternatives: async (q, req) => {
       const target = q.dimension ? (await readTargets(idbKv))[q.dimension] : undefined;
       return alternatives(q, { table, pad: padUnitList(), user: userUnitCells(unitCells.userSet()), req, ...(target ? { target } : {}) });

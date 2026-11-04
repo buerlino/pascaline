@@ -8,6 +8,7 @@
   import { t } from "../../i18n/index.ts";
   import { mark } from "../../marks.ts";
   import { longpress } from "../longpress.ts";
+  import Grouped from "../Grouped.svelte";
   import { plotHook } from "./plotHook.ts";
   import { curveColors, DEFAULT_X, type FunctionApp, type PlotWindow } from "./app.svelte.ts";
 
@@ -212,7 +213,7 @@
     <div class="readout" data-testid="readout">
       {#if app.readout}
         {#each app.readout.lines as l (l.label)}
-          <span class="pair"><span class="k">{l.label}</span> <span class="v" data-testid={`readout-${l.label}`} use:longpress={l.cell ? () => void app.copyReadout(l) : undefined}>{l.value}</span>{#if l.warn}<span class="warn" data-testid="mark" title={t("mark.warn")}> ⚠</span>{/if}</span>
+          <span class="pair"><span class="k">{l.label}</span> <span class="v" data-testid={`readout-${l.label}`} use:longpress={l.cell ? () => void app.copyReadout(l) : undefined}><Grouped text={app.drawn(l.value)} /></span>{#if l.warn}<span class="warn" data-testid="mark" title={t("mark.warn")}> ⚠</span>{/if}</span>
         {/each}
         {#if app.readout.info}
           <span class="info" class:warn={app.readout.warn} class:late={app.readout.info === t("history.working")} data-testid="readout-info"
@@ -220,8 +221,8 @@
         {/if}
       {:else}
         <span class="pair" style:color={curveColors()[app.trace.slot]}>{traceName}</span>
-        <span class="pair"><span class="k">x</span> <span class="v" data-testid="trace-x">{app.fmtX(app.trace.x)}</span></span>
-        <span class="pair"><span class="k">y</span> <span class="v" data-testid="trace-y" data-text={app.traceY ? app.fmt(app.traceY) : ""}>{app.fmt(app.traceY)}</span>{#if app.warned(app.traceY)}<span class="warn" data-testid="mark" title={t("mark.warn")}> ⚠</span>{/if}</span>
+        <span class="pair"><span class="k">x</span> <span class="v" data-testid="trace-x"><Grouped text={app.drawn(app.fmtX(app.trace.x))} /></span></span>
+        <span class="pair"><span class="k">y</span> <span class="v" data-testid="trace-y" data-text={app.traceY ? app.fmt(app.traceY) : ""}><Grouped text={app.drawn(app.fmt(app.traceY))} /></span>{#if app.warned(app.traceY)}<span class="warn" data-testid="mark" title={t("mark.warn")}> ⚠</span>{/if}</span>
       {/if}
     </div>
   {/if}

@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { decimalFromRational, type ComplexValue } from "../engine/format.ts";
 import { commaResult, renderNumeric, type DisplayContext, type NumericResult } from "../state/displayMode.ts";
 import { groupText } from "./groupText.ts";
-import { groupDigits } from "./home.ts";
+import { GROUP_LATEX, groupDigits, groupSepFor } from "./home.ts";
 
 const q = (p: bigint, d = 1n) => decimalFromRational(p, d);
 const real = (p: bigint, d = 1n): ComplexValue => ({ re: q(p, d), im: q(0n) });
@@ -26,11 +26,44 @@ describe("groupDigits", () => {
   });
 });
 
+describe("groupDigits with a separator (R125)", () => {
+  it("the thin space (the default, R55's), the apostrophe and the comma, with the point", () => {
+    expect(groupDigits("1234567.89", "\\,")).toBe("1\\,234\\,567.89");
+    expect(groupDigits("1234567.89", "'")).toBe("1'234'567.89");
+    expect(groupDigits("1234567.89", ",")).toBe("1,234,567.89");
+    expect(groupDigits("0.000123456", "'")).toBe("0.000'123'456");
+    expect(groupDigits("1234", "'")).toBe("1234");
+  });
+  it("as drawn: each separator's LaTeX (the apostrophe as text, the comma with no space after it)", () => {
+    expect(GROUP_LATEX).toEqual({ thin: "\\,", apos: "\\text{'}", comma: "{,}" });
+    expect(latexOf({ value: real(123456789n) }, "std", { ...ctx, groupSep: "apos" })).toBe("123\\text{'}456\\text{'}789");
+    expect(latexOf({ value: real(123456789n, 100n) }, "std", { ...ctx, groupSep: "comma" })).toBe("1{,}234{,}567.89");
+    expect(latexOf({ value: real(123456789n) }, "std", { ...ctx, groupSep: "thin" })).toBe("123\\,456\\,789");
+    expect(renderNumeric({ value: real(123456789n) }, "std", { ...ctx, groupSep: "apos" })?.latex).toBe("123456789"); // not asked: plain
+  });
+  it("with the decimal comma the comma is never a separator: a stored comma draws as the thin space", () => {
+    expect(groupSepFor("comma", true)).toBe("thin");
+    expect(groupSepFor("comma", false)).toBe("comma");
+    expect(groupSepFor("apos", true)).toBe("apos");
+    expect(groupSepFor(undefined, false)).toBe("thin");
+    const out = renderNumeric({ value: real(123456789n, 100n) }, "std", { ...ctx, decimalComma: true, groupSep: "comma" }, true);
+    expect(out?.latex).toBe("1\\,234\\,567{,}89");
+    expect(out?.text).toBe("1234567,89");
+    const apos = renderNumeric({ value: real(123456789n, 100n) }, "std", { ...ctx, decimalComma: true, groupSep: "apos" }, true);
+    expect(apos?.latex).toBe("1\\text{'}234\\text{'}567{,}89");
+  });
+});
+
 describe("groupText (R120, the unit view)", () => {
   it("groups each number of a line on its own, with a thin space: a later integer from the left of its point", () => {
     expect(groupText("39.488 · σ 1.24433958387572")).toBe("39.488 · σ 1.244\u2009339\u2009583\u2009875\u200972");
     expect(groupText("1.0000 ± 12345678")).toBe("1.0000 ± 12\u2009345\u2009678");
     expect(groupText("1.5E-12 m")).toBe("1.5E-12 m");
+  });
+  it("R125: with the separator set, the apostrophe as drawn (’) or the comma; the thin space by default", () => {
+    expect(groupText("1.0000 ± 12345678", "apos")).toBe("1.0000 ± 12’345’678");
+    expect(groupText("1234567.5 m", "comma")).toBe("1,234,567.5 m");
+    expect(groupText("1234567.5 m", "thin")).toBe("1\u2009234\u2009567.5 m");
   });
 });
 

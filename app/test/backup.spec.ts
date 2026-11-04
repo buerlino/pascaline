@@ -17,6 +17,7 @@ test("Settings › Data › Save a backup saves the envelope with every present 
   await tap(page, ["d5", "shift", "emark", "alpha", "vars", "enter"]);
   await expect(page.locator('[data-status="done"]')).toHaveCount(2);
   await page.evaluate(() => (window.pascaline.session.settings.marks = "muted")); // R124: written with the digits
+  await page.evaluate(() => (window.pascaline.session.settings.groupSep = "apos")); // R125: written with the digits
   await page.evaluate(() => window.pascaline.session.setDigits(9));
   await page.evaluate(() => window.pascaline.userKeys.set("u1", "primary", { label: "Home", action: { special: "home" } }));
   await page.waitForTimeout(900); // the writes are debounced and asynchronous
@@ -46,6 +47,7 @@ test("Settings › Data › Save a backup saves the envelope with every present 
   }
   expect((b.parts["settings"]?.value as { digits: number }).digits).toBe(9);
   expect((b.parts["settings"]?.value as { marks: string }).marks).toBe("muted"); // R124
+  expect((b.parts["settings"]?.value as { groupSep: string }).groupSep).toBe("apos"); // R125
   expect(JSON.stringify(b.parts["defs"]?.value)).toContain("A");
   expect((b.parts["history"]?.value as { home: unknown[] }).home.length).toBe(2);
   expect(b.parts["userKeys"]?.value).toHaveProperty("u1");

@@ -5,6 +5,7 @@
 import type { Component } from "svelte";
 import type { Calc, CalcSettings, UserName } from "../calc/port.ts";
 import type { Kv } from "../state/storage.ts";
+import type { GroupSep } from "../render/home.ts";
 
 export type AppId = "function" | "solve";
 export type ViewId = "symb" | "plot" | "num";
@@ -14,8 +15,8 @@ export type NavDir = "up" | "down" | "left" | "right";
 /** What the framework gives an app. */
 export interface AppHost {
   readonly calc: Calc;
-  /** The calculator settings (digits, angle, format); reactive. `decimalMark` (R108): "comma" = an app draws and copies its numbers with the decimal comma (R57). */
-  readonly settings: CalcSettings & { readonly decimalMark?: "point" | "comma" };
+  /** The calculator settings (digits, angle, format); reactive. `decimalMark` (R108): "comma" = an app draws and copies its numbers with the decimal comma (R57); `groupSep` (R125): its readouts' digit groups. */
+  readonly settings: CalcSettings & { readonly decimalMark?: "point" | "comma"; readonly groupSep?: GroupSep };
   readonly kv: Kv;
   /** The user's variables and functions (the stored ones included); reactive. Apps pick the functions out for the parser (R56b). */
   readonly userNames: readonly UserName[];
@@ -39,6 +40,8 @@ export interface ValueOption {
   readonly spoken?: string;
   /** This is the current value (the button is marked). */
   readonly selected: boolean;
+  /** This value cannot be set now (R125: the comma separator under the decimal comma); the row's hint says why. */
+  readonly disabled?: boolean;
   /** Set this value. A tap on the button runs it and closes the sheet, like a pick. */
   run(): void;
 }

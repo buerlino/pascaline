@@ -210,6 +210,19 @@ test.describe("the unit result view (R62)", () => {
     await expect(page.getByTestId("find")).toBeVisible();
   });
 
+  // R125 fix round 1: the sheet's view is fetched when the browser is idle (R46); under the full suite's load it was not
+  // in when More… opened Find, which was then not drawn. Here no idle callback ever runs: the view's own load brings it.
+  test("More… draws Find when the sheet's view was never fetched while idle (R125 fix round 1)", async ({ page }) => {
+    await page.addInitScript(() => {
+      window.requestIdleCallback = () => 0;
+    });
+    await open(page, "");
+    await page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
+    await kmh(page);
+    await page.getByTestId("unit-more").tap();
+    await expect(page.getByTestId("find")).toBeVisible();
+  });
+
   test("More…, then a pick in Find: the end slot holds the picked unit and the result is in it", async ({ page }) => {
     await kmh(page);
     await page.getByTestId("unit-more").tap();

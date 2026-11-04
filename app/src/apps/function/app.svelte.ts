@@ -10,6 +10,7 @@ import { t } from "../../i18n/index.ts";
 import { numText } from "../../i18n/enNum.ts";
 import { tc } from "../../clipboard/strings.ts";
 import { commaResult } from "../../state/displayMode.ts";
+import { drawnGroups } from "../grouped.ts";
 import { addMul, decText, decToNumber, nearestK, niceStep, parseDec, plainNumber, showDecimal, type Dec } from "../decimal.ts";
 import { slotNames, SlotsState, type SlotsJson } from "../slots.svelte.ts";
 import type { AppHost, AppInstance, MenuItem, NavDir, SubMenu, ViewId } from "../types.ts";
@@ -105,6 +106,10 @@ export class FunctionApp implements AppInstance {
   }
   fmt(c: Cell | undefined): string {
     return this.mark(this.fmtPoint(c));
+  }
+  /** R125: a cell, x or readout text as drawn, in digit groups (Copy, the CSV and data-text keep `fmt`'s plain text). */
+  drawn(text: string): string {
+    return drawnGroups(text, this.host.settings);
   }
   private fmtPoint(c: Cell | undefined): string {
     if (!c) return "…";

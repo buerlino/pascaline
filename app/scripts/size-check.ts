@@ -101,8 +101,11 @@ export function startFiles(manifest: Record<string, ManifestChunk>): string[] {
 
 /** G163: the unit view's entries plus the shared chunks that hold its modules, raw: 66.26 kB measured (open 26.91, find 9.05,
  *  calc 0.43, userCells 4.64, factors 15.00, slot 10.23; entries alone 36.39 kB), a pin at 66.5 kB so it cannot grow unseen
- *  (decisions.md R24b and R24c: G163, Opus pass 62); raised only with its reason in a report, as START_PIN_GZIP is. */
-export const UNIT_VIEW_PIN_RAW = 66_500;
+ *  (decisions.md R24b and R24c: G163, Opus pass 62); raised only with its reason in a report, as START_PIN_GZIP is.
+ *  66.50 → 66.55 kB (R125): the branch measures 66,504 B (open 27,148 B, +238 B; the others as above): the separator
+ *  in the unit view's groups (groupText's three separators, the rule for a comma under the decimal comma) and the sheet's
+ *  view loaded with Find on units (R125 fix round 1: More… under load opened a Find nobody drew). 66,504 B + 0.05 kB. */
+export const UNIT_VIEW_PIN_RAW = 66_550;
 
 /** The budgets of docs/04 section 8.3 that apply to files of the build; the device bars are not here. */
 function subjects(manifest: Record<string, ManifestChunk>, all: string[], modules: Record<string, string[]> | null): { present: Subject[]; absent: string[]; missing: string[] } {
@@ -294,8 +297,12 @@ export const LAZY_PARTS = ["src/views/sheetKeys.ts", "src/views/tmplSheet.ts", "
  *  60.23 → 60.56 kB (R124): phase-1 722a9b45 measures 60,208 B gzip (171,077 B raw); the branch 60,510 B (171,814 B raw,
  *  +302 B): the Marks setting (its default, read back), the row's reason line with its kept place and its tap, the
  *  history's style attribute. The line's words (clipboard/whyLine.ts with its strings) ride in the tidy chunk, the
- *  setting's row and texts in the Mode sheet's chunk (i18n/enUnc.ts). The pin is 60,510 B + 0.05 kB. */
-export const START_PIN_GZIP = 60_560;
+ *  setting's row and texts in the Mode sheet's chunk (i18n/enUnc.ts). The pin is 60,510 B + 0.05 kB.
+ *  60.56 → 60.67 kB (R125): phase-1 405b7271 measures 60,516 B gzip (171,814 B raw); the branch 60,616 B (172,095 B raw,
+ *  +281 B): the digit-group separator (its field, default and reader, the separators' LaTeX, the rule that draws a
+ *  comma under the decimal comma as the thin space) and the sheet's check of a disabled value button. The row and its
+ *  texts ride in the Mode sheet's chunk, the unit view's separators in its own. The pin is 60,616 B + 0.05 kB. */
+export const START_PIN_GZIP = 60_666;
 
 /** R103 (vr-4): the classic inline scripts of index.html run before the first paint, outside every chunk: the stored look
  *  (R50e) and the too-old WebView check. Their gzip sizes, each script alone and summed (as the start chunk sums its

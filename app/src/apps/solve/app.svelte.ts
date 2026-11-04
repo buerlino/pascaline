@@ -17,6 +17,7 @@ import { parseLatex } from "../../input/parse.ts";
 import { numberSource } from "../../clipboard/source.ts";
 import { tc } from "../../clipboard/strings.ts";
 import { commaResult } from "../../state/displayMode.ts";
+import { drawnGroups } from "../grouped.ts";
 import { t } from "../../i18n/index.ts";
 import { numText } from "../../i18n/enNum.ts";
 import { parseDec, plainNumber, showDecimal } from "../decimal.ts";
@@ -129,6 +130,10 @@ export class SolveApp implements AppInstance {
   /** R108: a drawn number or root with the decimal comma when that is the mark (as Home draws it). */
   mark(text: string): string {
     return this.host.settings.decimalMark === "comma" ? commaResult(text, false) : text;
+  }
+  /** R125: a value or root as the Num view draws it, in digit groups (Copy and the entry line take `fmtValue`, `mark`). */
+  drawn(text: string): string {
+    return drawnGroups(text, this.host.settings);
   }
 
   // ---- framework hooks

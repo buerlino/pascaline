@@ -7,6 +7,7 @@ import { confirmedOptions, formatComplex, markOf, type FormatOptions, type Mark 
 import { precisionFacts } from "../engine/precisionFacts.ts";
 import { unitText } from "../i18n/enUnits.ts";
 import { groupText } from "../render/groupText.ts";
+import { groupSepFor, type GroupSep } from "../render/home.ts";
 import { commaResult, markText } from "../state/displayMode.ts";
 import type { Alternative } from "./alternatives.ts";
 import { unitErrorMessage, unitNamesText, unitNoteText, unitWhyText } from "./messages.ts";
@@ -53,15 +54,18 @@ export interface UnitShown {
 export interface UnitFormat extends FormatOptions {
   decimalComma?: boolean;
   grouped?: boolean;
+  /** R125: the groups' separator (absent: the thin space; a comma under the decimal comma draws as the thin space). */
+  groupSep?: GroupSep;
 }
 
 /** A result as the view shows it. `alts` is the row (alternatives.ts), none for a refusal or a pure number. */
 export function shownOf(q: Quantity | UnitError, u: UnitFormat, alts: readonly Alternative[] = []): Shown {
   if (isUnitError(q)) return { kind: "message", text: unitErrorMessage(q) };
-  const { decimalComma, grouped, ...o } = u;
+  const { decimalComma, grouped, groupSep, ...o } = u;
+  const sep = groupSepFor(groupSep, decimalComma);
   /** R120: a number as the screen draws it (Home's unit row: commaResult, groupDigits) and as Copy writes it. */
   const comma = (s: string): string => (decimalComma ? commaResult(s, false) : s);
-  const drawn = (s: string): string => comma(grouped ? groupText(s) : s);
+  const drawn = (s: string): string => comma(grouped ? groupText(s, sep) : s);
   const facts = precisionFacts(q.value);
   const m = markOf(facts, o);
   const mark: Mark = m?.mark === "⚠" ? "⚠" : q.unc ? "≈" : (m?.mark ?? "≈");
