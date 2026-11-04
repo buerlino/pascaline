@@ -196,7 +196,7 @@ describe("Settings, a level of the sheet (R49)", () => {
   });
   it("Numbers: the Decimal mark row first (R57), the Fmt key cycle (R40: its five ticks a level of their own, the hint under the first), Decimals in Fixed stepped in place, and Uncertainty", () => {
     const s = settings(2);
-    expect(s.level.items.map((x) => x.id)).toEqual(["mark", "fmtCycle", "decimals", "uncertainty"]);
+    expect(s.level.items.map((x) => x.id)).toEqual(["mark", "fmtCycle", "decimals", "uncertainty", "marks"]);
     expect(byId(s, "fmtCycle")?.value).toBe("STD SCI ENG");
     s.pickNumber(2);
     expect(s.path).toBe("Settings › Numbers › Fmt key cycle");
@@ -250,6 +250,24 @@ describe("Settings, a level of the sheet (R49)", () => {
     expect(s.activate(at(s, "uncertainty"))).toEqual({ kind: "stay" });
     expect(session.settings.uncertainty).toBe("sigma");
   });
+  it("Marks (R124): three buttons, Muted, ⚠ coloured and ⚠ + reason (the default); ◀ ▶ step them and the sheet stays; Numbers keeps at most seven rows", () => {
+    const s = settings(2);
+    expect(s.level.items.length).toBeLessThanOrEqual(7);
+    expect(s.level.items.map((x) => x.id)).toEqual(["mark", "fmtCycle", "decimals", "uncertainty", "marks"]);
+    expect(byId(s, "marks")?.label).toBe("Marks");
+    expect(byId(s, "marks")?.options?.map((o) => o.label)).toEqual(["Muted", "⚠ coloured", "⚠ + reason"]);
+    s.level.highlight = at(s, "marks");
+    expect(marked(s)).toBe("reason");
+    s.right();
+    expect(session.settings.marks).toBe("muted");
+    expect(marked(s)).toBe("muted");
+    expect(s.activate(at(s, "marks"))).toEqual({ kind: "stay" });
+    expect(session.settings.marks).toBe("colour");
+    const pick = s.pickOption(at(s, "marks"), "reason");
+    expect(pick.kind).toBe("run");
+    if (pick.kind === "run") pick.item.run?.();
+    expect(session.settings.marks).toBe("reason");
+  });
   // Your keys (R4b) lists the 18 key slots and the unit pad as the mockup draws them, and each slot its 8 actions: a
   // list that scrolls, left out here (R40's report asks whether the rule covers it)
   it("every Settings level has at most seven rows (docs/05 3.4), with every section the app can give, Your keys' lists aside", () => {
@@ -265,6 +283,7 @@ describe("Settings, a level of the sheet (R49)", () => {
     walk("Settings", s.level.items, 0);
     expect(over).toEqual([]);
     expect(byId(s, "numbers")?.submenu?.items.map((x) => x.id)).toContain("uncertainty"); // with R40's row
+    expect(byId(s, "numbers")?.submenu?.items.map((x) => x.id)).toContain("marks"); // and R124's
   });
   it("Key vibration: the switch, then strength (the browser cannot set it), length and Try it follow", () => {
     const s = settings(3);

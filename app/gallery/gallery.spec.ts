@@ -6,7 +6,7 @@ import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { test, type Page } from "@playwright/test";
 import { parse } from "yaml";
 import { entryValue, flick, open, setFontScale, tap } from "../test/helpers.ts";
-import { entryShots, lookShots } from "./looks.ts";
+import { entryShots, lookShots, markShots } from "./looks.ts";
 
 const OUT = new URL("../test/gallery/", import.meta.url).pathname;
 const THEMES = ["light", "dark"] as const;
@@ -405,6 +405,7 @@ const shots: Shot[] = [
   },
   ...settingsShots(),
   ...presetShots(),
+  ...markShots(), // R124
   // ---- R15c4: the first-start tips, over a Home with history (opened from Settings › Help and about, as a fresh profile shows them)
   {
     id: "home-tips",

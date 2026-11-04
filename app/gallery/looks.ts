@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // The gallery's theme shots (gallery.spec.ts runs them, each under a light and a dark system): R50e, every family and
-// the two switches on Home; R116, the entry line's highlights in every family's Dark and Light.
+// the two switches on Home; R116, the entry line's highlights in every family's Dark and Light; R124, the mark styles.
 import type { Page } from "@playwright/test";
 import { tap } from "../test/helpers.ts";
 
@@ -78,4 +78,27 @@ export function entryShots(): LookShot[] {
       })),
     ),
   );
+}
+
+/** R124: Settings › Numbers › Marks, the three styles on the same rows: two ⚠ with their reasons (G39 differ, G50
+ *  unaudited, as why.spec.ts), a ≈ and an =. */
+export function markShots(): LookShot[] {
+  const rows = ["\\operatorname{int}\\left(\\operatorname{abs}\\left(x-\\sin\\left(10^{50}\\right)\\right),x,-1,1\\right)", "\\operatorname{normald\\_icdf}\\left(2,-1,0.3\\right)", "\\sqrt{2}+0.5", "\\frac{1}{4}"];
+  const titles = {
+    reason: "⚠ + reason (the default): each ⚠ row's reason line under it, in the warn colour, one line ellipsed",
+    colour: "⚠ coloured: the rows as before R124, the marks in colour, no line",
+    muted: "Muted: every mark in the muted colour, no line",
+  } as const;
+  return (["reason", "colour", "muted"] as const).map((m) => ({
+    id: `home-marks-${m}`,
+    group: "Mark style (R124)",
+    title: titles[m],
+    setup: async (p) => {
+      await p.evaluate((style) => (window.pascaline.session.settings.marks = style), m);
+      for (const [i, l] of rows.entries()) {
+        await p.evaluate((x) => window.pascaline.session.submit(x), l);
+        await p.waitForFunction((k) => document.querySelectorAll('[data-status="done"]').length >= k, i + 1);
+      }
+    },
+  }));
 }

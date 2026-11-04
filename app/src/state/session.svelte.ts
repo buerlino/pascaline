@@ -56,6 +56,8 @@ export type DecimalMark = "point" | "comma";
 /** R40, Settings › Numbers › Uncertainty: the digits past a constant's σ are muted, and a tap on the row shows σ (`sigma`,
  *  the default) or nothing (`muted`). A third value, the concise form `3.986004(89)ᴇ14`, is a later package's. */
 export type UncertaintyView = "sigma" | "muted";
+/** R124, Settings › Numbers › Marks: marks in --muted, a ⚠ in colour, or that with its reason line (the default). */
+export type MarkStyle = "muted" | "colour" | "reason";
 export interface Settings extends CalcSettings {
   entry: EntryMode;
   decimalMark: DecimalMark;
@@ -64,6 +66,7 @@ export interface Settings extends CalcSettings {
   /** Decimals of the Fixed mode. */
   fixDecimals: number;
   uncertainty: UncertaintyView;
+  marks: MarkStyle;
   haptics: HapticsSettings;
   /** Settings › Appearance (R50e): family, brightness, High contrast, Plain keys. */
   look: Look;
@@ -82,6 +85,7 @@ export const defaultSettings: Settings = {
   fmtCycle: [...DEFAULT_FMT_CYCLE],
   fixDecimals: 4,
   uncertainty: "sigma",
+  marks: "reason",
   haptics: { on: false, strength: 50, ms: 15 },
   look: defaultLook(),
 };
@@ -170,6 +174,7 @@ export function migrateSettings(saved: unknown, firstLook: Look = defaultSetting
   if (x["entry"] === "textbook" || x["entry"] === "line") s.entry = x["entry"];
   if (x["decimalMark"] === "point" || x["decimalMark"] === "comma") s.decimalMark = x["decimalMark"];
   if (x["uncertainty"] === "muted") s.uncertainty = "muted"; // R40: anything else is the default, sigma
+  if (x["marks"] === "muted" || x["marks"] === "colour") s.marks = x["marks"]; // R124: anything else is the default
   if (typeof x["digits"] === "number" && Number.isFinite(x["digits"])) s.digits = clampDigits(x["digits"]);
   if (Array.isArray(x["fmtCycle"])) s.fmtCycle = normalizeCycle(x["fmtCycle"].filter(isFmtMode));
   if (typeof x["fixDecimals"] === "number" && Number.isFinite(x["fixDecimals"])) s.fixDecimals = clamp(x["fixDecimals"], 0, 12);
@@ -583,6 +588,12 @@ export class Session {
    *  undefined: its code is not in yet (sigmaCode). */
   sigma(item: HistoryItem): string | null | undefined {
     return sigmaCode?.sigmaOf(item, this.settings);
+  }
+  /** R124: the reason line under a ⚠ row (Settings › Numbers › Marks, "⚠ + reason"), R36's words; null: none; "" until
+   *  its code (the tidy chunk, as R40's σ line) is in: the row keeps the line's place, so nothing moves when the text comes. */
+  reason(item: HistoryItem): string | null {
+    const m = this.settings.marks === "reason" ? this.mark(item) : null;
+    return m?.mark === "⚠" ? (sigmaCode?.whyLine(item, m, this.settings.digits) ?? "") : null;
   }
   /** The mark before a finished result (docs/04 2.4), for the form it is drawn in; null: a non-number, or none known. */
   mark(item: HistoryItem): MarkInfo | null {

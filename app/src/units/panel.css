@@ -23,3 +23,7 @@
 .unitview .alt.more { background: none; border-color: var(--muted); }
 .unitview .alt[data-focus] { outline: 2px solid var(--focus); outline-offset: 1px; }
 .unitview .alt[hidden] { display: none; }
+/* R124: Settings › Numbers › Marks. Muted: the marks and σ's ⚠ in --muted; the why-line under σ is the reason line, drawn
+   with "⚠ + reason" only. */
+.unitview[data-marks="muted"] .result .mark, .unitview[data-marks="muted"] .warn { color: var(--muted); }
+.unitview[data-marks="muted"] .why, .unitview[data-marks="colour"] .why { display: none; }
