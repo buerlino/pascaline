@@ -126,3 +126,17 @@ test("a tap on the row shows its σ line, a second hides it; with Muted digits a
   await ready(page);
   expect(await page.evaluate(() => window.pascaline.session.settings.uncertainty)).toBe("muted");
 });
+
+test("R40f1: on keys alone the picked row's why-line holds the σ line after a dot; with Muted digits it holds none", async ({ page }) => {
+  await gTimesEarth(page, 1);
+  await tap(page, ["up"]); // picks the row (P4), no touch
+  const why = page.getByTestId("row-why");
+  await expect(why).toContainText("G (± 1.5·10⁻¹⁵)");
+  await expect(why).toContainText(" · σ = 9.0ᴇ9 · U = 2σ = 1.8ᴇ10 (k = 2)");
+  await expect(page.getByTestId("sigma")).toHaveCount(0); // the row's own σ line stays a tap's
+  await tap(page, ["esc"]);
+  await page.evaluate(() => (window.pascaline.session.settings.uncertainty = "muted"));
+  await tap(page, ["up"]);
+  await expect(why).toContainText("G (± 1.5·10⁻¹⁵)");
+  await expect(why).not.toContainText("σ");
+});

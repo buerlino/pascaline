@@ -276,10 +276,15 @@ export class ClipActions {
     return this.menu(row).slice(0, 5);
   }
 
-  /** R36: the picked row's reason for its mark, one line; null when it has no mark. */
+  /** R36: the picked row's reason for its mark, one line; null when it has no mark. R40f1: a row with a σ (Settings ›
+   *  Numbers › Uncertainty: σ on tap) adds its σ line after a dot, so the keys reach it as a tap does. Session.reason
+   *  (R124's line under a ⚠ row) stays R36's words only. */
   rowWhy(row: HistoryItem): string | null {
     const s = this.session;
-    return whyLine(row, s.mark(row), s.settings.digits);
+    const why = whyLine(row, s.mark(row), s.settings.digits);
+    if (why === null) return null;
+    const sigma = s.sigma(row);
+    return sigma ? `${why} · ${sigma}` : why;
   }
 
   /** Menu with a picked row (R13): the whole list, acting on that row; ☰ and Menu end it with Settings (R15c1), a long
