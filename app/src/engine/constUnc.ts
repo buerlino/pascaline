@@ -9,7 +9,8 @@
 // `uncDigits` is the number of significant digits of the shown value before the digit position of σ's first digit:
 // the digits from there on are uncertain. Synchronous, UI-free. Only erasable TypeScript syntax.
 import { decimalFromString, decimalToString, isZero, roundSignificant, type DecimalValue } from "./format.ts";
-import { toExactLiterals, type HomeResult } from "./homeEval.ts";
+import { toExactLiterals } from "./exactLiterals.ts";
+import type { HomeResult } from "./homeEval.ts";
 import type { Giac } from "./numeric.ts";
 import { mapNames, names } from "./giacPrint.ts";
 import { basisGiac, basisOf, correlated, isZeroText, LEAF_PREFIX } from "./constBasis.ts";

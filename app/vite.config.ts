@@ -2,6 +2,7 @@
 import { svelte } from "@sveltejs/vite-plugin-svelte";
 import { defineConfig } from "vitest/config";
 import { aboutPlugin } from "./vite-plugin-about.ts";
+import { chunkModulesPlugin } from "./vite-plugin-chunk-modules.ts";
 import { engineFiles, pwaLite } from "./vite-plugin-pwa-lite.ts";
 import { themeCssPlugin } from "./vite-plugin-theme-css.ts";
 import { yamlPlugin } from "./vite-plugin-yaml.ts";
@@ -10,7 +11,7 @@ import { yamlPlugin } from "./vite-plugin-yaml.ts";
 export default defineConfig(({ command }) => ({
   define: { __GIAC_MJS__: JSON.stringify((command === "build" && engineFiles("public/engine")?.mjs) || "giac.mjs") },
   base: "./",
-  plugins: [yamlPlugin(), aboutPlugin(), svelte(), themeCssPlugin(), pwaLite()],
+  plugins: [yamlPlugin(), aboutPlugin(), svelte(), themeCssPlugin(), chunkModulesPlugin(), pwaLite()],
   build: { target: "es2022", manifest: true },
   worker: { plugins: () => [yamlPlugin()] }, // golden.worker.ts reads the golden YAML files (A20)
   // spec/keyboard.yaml lives one level above app/
