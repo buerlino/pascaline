@@ -9,8 +9,9 @@ import type { AngleUnit, NumberFormat } from "../calc/port.ts";
 import { t, type MessageKey } from "../i18n/index.ts";
 import { hasStrength, vibrate } from "../input/haptics.ts";
 import { NOTATION_MODES } from "../state/displayMode.ts";
-import { MAX_DIGITS, type DecimalMark, type EntryMode, type Session } from "../state/session.svelte.ts";
+import { MAX_DIGITS, type DecimalMark, type EntryMode, type Session, type UncertaintyView } from "../state/session.svelte.ts";
 import { aboutText } from "../i18n/enAbout.ts";
+import { uncText } from "../i18n/enUnc.ts";
 import { helpItems } from "./aboutItems.ts";
 import { findText } from "../i18n/enFind.ts";
 import { dataSection } from "./dataSection.svelte.ts";
@@ -25,6 +26,7 @@ const ANGLES: readonly AngleUnit[] = ["rad", "deg"];
 const FORMATS: readonly NumberFormat[] = ["std", "sci", "eng", "pfx"];
 const ENTRIES: readonly EntryMode[] = ["textbook", "line"];
 const MARKS: readonly DecimalMark[] = ["point", "comma"];
+const UNCERTAINTY_VIEWS: readonly UncertaintyView[] = ["sigma", "muted"];
 /** The values the digits and decimals rows offer when picked (◀ ▶ reach every other one). */
 const DIGITS_PRESETS: readonly number[] = [4, 6, 8, 10, 12, 15, 20, 25, MAX_DIGITS];
 
@@ -268,8 +270,9 @@ function appearanceItems(session: Session): MenuItem[] {
   ];
 }
 
-/** Numbers: the decimal mark (R57: a value row, Point or Comma), the Fmt key's cycle (its hint a second line under the
- *  first tick) and the decimals Fixed shows, right under its tick (S2 I3). */
+/** Numbers (docs/05 3.4, at most seven rows): the decimal mark (R57: a value row, Point or Comma), the Fmt key's cycle
+ *  (R40: a row that opens its five ticks, its value the cycle), the decimals Fixed shows (S2 I3) and how a result shows
+ *  the digits a constant's σ leaves uncertain (R40: a value row). */
 function numbersItems(session: Session): MenuItem[] {
   const s = session.settings;
   const mark: MenuItem = {
@@ -281,34 +284,52 @@ function numbersItems(session: Session): MenuItem[] {
     },
     adjust: (by) => session.setDecimalMark(cycle(MARKS, s.decimalMark, by)),
   };
-  return [mark, ...numbersRows(session)];
+  const cycleRow: MenuItem = {
+    id: "fmtCycle",
+    label: uncText("unc.fmtCycle"),
+    get value() {
+      return s.fmtCycle.map((m) => m.toUpperCase()).join(" ");
+    },
+    submenu: { title: uncText("unc.fmtCycle"), items: fmtTicks(session), remember: false },
+  };
+  const decimals: MenuItem = {
+    id: "decimals",
+    label: t("mode.decimals"),
+    keep: true,
+    get value() {
+      return String(s.fixDecimals);
+    },
+    adjust: (by) => session.setFixDecimals(s.fixDecimals + by),
+  };
+  const uncertainty: MenuItem = {
+    id: "uncertainty",
+    label: uncText("unc.setting"),
+    keep: true,
+    get value() {
+      return uncText(`unc.setting.${s.uncertainty}`);
+    },
+    // set here, not by a Session setter: the setting's code stays off the start chunk (R40, docs/04 8.3)
+    adjust: (by) => {
+      s.uncertainty = cycle(UNCERTAINTY_VIEWS, s.uncertainty, by);
+      session.save();
+    },
+  };
+  return [mark, cycleRow, decimals, uncertainty];
 }
 
-function numbersRows(session: Session): MenuItem[] {
+/** The Fmt key's cycle: a tick per notation, in today's order, the hint a second line under the first. */
+function fmtTicks(session: Session): MenuItem[] {
   const s = session.settings;
-  return NOTATION_MODES.flatMap((mode, i): MenuItem[] => {
-    const tick: MenuItem = {
-      id: mode,
-      label: t(`settings.fmt.${mode}` as MessageKey),
-      ...(i === 0 ? { hint: t("settings.fmtCycle.hint") } : {}),
-      keep: true,
-      get selected() {
-        return s.fmtCycle.includes(mode);
-      },
-      run: () => session.setFmtMode(mode, !s.fmtCycle.includes(mode)),
-    };
-    if (mode !== "fix") return [tick];
-    const decimals: MenuItem = {
-      id: "decimals",
-      label: t("mode.decimals"),
-      keep: true,
-      get value() {
-        return String(s.fixDecimals);
-      },
-      adjust: (by) => session.setFixDecimals(s.fixDecimals + by),
-    };
-    return [tick, decimals];
-  });
+  return NOTATION_MODES.map((mode, i): MenuItem => ({
+    id: mode,
+    label: t(`settings.fmt.${mode}` as MessageKey),
+    ...(i === 0 ? { hint: t("settings.fmtCycle.hint") } : {}),
+    keep: true,
+    get selected() {
+      return s.fmtCycle.includes(mode);
+    },
+    run: () => session.setFmtMode(mode, !s.fmtCycle.includes(mode)),
+  }));
 }
 
 /** The press counter (R70, docs/04 5.2: every key tap, flick and screen tap) and the Shift and Alpha tap counter (R9,

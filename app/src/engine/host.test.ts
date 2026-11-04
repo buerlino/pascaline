@@ -521,9 +521,9 @@ describe.skipIf(!giacAvailable())("EngineHost (real Giac)", () => {
 
     it("G·5.972ᴇ24: σ = 1.5E-15·5.972E24 = 8.958E9 under a value of 3.98589196E14, so 5 digits hold (derived)", () => {
       const r = home("pasc_G*5.972E24", { G });
-      expect(r.facts.uncDigits).toBe(5);
+      expect(r.facts).toMatchObject({ uncDigits: 5, uncSigma: "0.8958e10" }); // R40: σ itself too, for the row's σ line
       // the value is what the input with G's digits gives today
-      const { uncDigits: _u, ...rf } = r.facts;
+      const { uncDigits: _u, uncSigma: _s, ...rf } = r.facts;
       expect(facts({ ...r, facts: rf })).toEqual(facts(home("(6.67430E-11)*5.972E24")));
       expect(home("pasc_G*5.972E24", { G }, 30).facts.uncDigits).toBe(5);
     });

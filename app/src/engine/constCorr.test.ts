@@ -6,7 +6,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 import { EngineHost } from "./host.ts";
 import { defaultHomeSettings } from "./homeEval.ts";
 import { engineGiac, giacAvailable, loadNodeGiac, type EngineGiac } from "./nodeGiac.ts";
-import { inexactConstsIn, sigmaExpr, type ConstEntry, type ConstTable } from "./constUnc.ts";
+import { FREE_TRIES, freeName, inexactConstsIn, sigmaExpr, type ConstEntry, type ConstTable } from "./constUnc.ts";
 import type { IndexItem } from "../find/types.ts";
 import { buildJob } from "../units/build.ts";
 import { factorTable } from "../units/factors.ts";
@@ -64,6 +64,50 @@ describe.skipIf(!giacAvailable())("a constant's σ through its basis (G81, real 
     // inexactInput, results.ts homeItem). Opus pass 24 decided it (decisions.md, Units: G81): a result whose every leaf
     // cancels keeps `≈`, by docs/04 2.4 (`=` only when no input was inexact).
     expect(inexactConstsIn(body, WITH)).toEqual(["mu_0", "epsilon_0"]);
+  });
+
+  it("R40 (family 9): a user's variable named as our leaf or a constant changes neither the value nor σ", () => {
+    const body = "pasc_mu_0*pasc_epsilon_0*pasc_c^2";
+    host.home("pasl_fine_structure:=5", defaultHomeSettings);
+    host.home("pasc_mu_0:=7", defaultHomeSettings);
+    try {
+      const r = home(body, WITH);
+      expect(r.display).toBe("1");
+      expect("uncDigits" in r.facts).toBe(false); // σ 0, as without the variables (it was 7.7ᴇ-33 with them)
+      const z = home("sqrt(pasc_mu_0/pasc_epsilon_0)", WITH);
+      expect(z.display).toBe("376.730313412");
+      expect(z.facts.uncDigits).toBe(home("sqrt(pasc_mu_0/pasc_epsilon_0)", WITH).facts.uncDigits);
+    } finally {
+      host.home("purge(pasl_fine_structure,pasc_mu_0)", defaultHomeSettings);
+    }
+  });
+
+  it("R40 (family 9): with our leaf's name and every one freeName tries stored, no digit is muted (none from the user's value)", () => {
+    const body = "sqrt(pasc_mu_0/pasc_epsilon_0)";
+    const clean = home(body, WITH).facts.uncDigits;
+    expect(clean).toBeGreaterThan(0);
+    const held = Array.from({ length: FREE_TRIES }, (_, i) => `pasl_fine_structure${"_".repeat(i)}`);
+    try {
+      // all but the last: the last one tried is free, σ as without the variables
+      for (const n of held.slice(0, -1)) host.home(`${n}:=5`, defaultHomeSettings);
+      expect(home(body, WITH).facts.uncDigits).toBe(clean);
+      host.home(`${held.at(-1)!}:=5`, defaultHomeSettings);
+      const r = home(body, WITH);
+      expect(r.display).toBe("376.730313412");
+      expect("uncDigits" in r.facts).toBe(false);
+      expect("uncSigma" in r.facts).toBe(false);
+    } finally {
+      host.home(`purge(${held.join(",")})`, defaultHomeSettings);
+    }
+    expect(home(body, WITH).facts.uncDigits).toBe(clean);
+  });
+
+  it("freeName: the name when free, else the first free one with more `_`, never a name the text already uses", () => {
+    const taken = new Set(["pasl_a", "pasl_a_"]);
+    expect(freeName("pasl_b", (n) => taken.has(n))).toBe("pasl_b");
+    expect(freeName("pasl_a", (n) => taken.has(n))).toBe("pasl_a__");
+    expect(freeName("pasl_a", (n) => taken.has(n), new Set(["pasl_a__"]))).toBe("pasl_a___");
+    expect(freeName("pasl_a", () => true)).toBeUndefined();
   });
 
   it("√(μ₀/ε₀) = Z₀: σ 5.8337E-8 (oracle), not the independent 4.2E-8", () => {

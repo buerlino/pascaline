@@ -3,15 +3,19 @@
 import { parseError } from "../i18n/enParser.ts";
 import { equalityTest } from "./emit.ts";
 import { ANS_KEY } from "./chips.ts";
-import { CHIP_ANS, CHIP_PREFIX } from "../engine/ourNames.ts";
+import { CHIP_ANS, CHIP_PREFIX, CONST_PREFIX } from "../engine/ourNames.ts";
 
 /**
  * The Giac name of a result chip that is not exact (R65, deep check D1): `pasr_<k>` for `\res{k}`, `pasr_ans` for Ans.
  * The engine gives it the chip's value for the run and lends the result its facts (confirmed digits, warn), as a stored
- * float's (decisions M4-7). The table key the engine takes is the part after the prefix. Undefined: not a result chip.
+ * float's (decisions M4-7). The table key the engine takes is the part after the prefix. R40: a constant that is not
+ * exact is `pasc_<ID>` for `\const{ID}`: the engine puts its value in and counts the digits its σ leaves (G26).
+ * Undefined: neither.
  */
 export function chipName(key: string): string | undefined {
   if (key === ANS_KEY) return `${CHIP_PREFIX}${CHIP_ANS}`;
+  const c = /^const:([A-Za-z0-9_]+)$/.exec(key);
+  if (c) return `${CONST_PREFIX}${c[1]}`;
   const m = /^res:(\d+)$/.exec(key);
   return m ? `${CHIP_PREFIX}${m[1]}` : undefined;
 }

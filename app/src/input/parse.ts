@@ -24,7 +24,7 @@ class Parser implements CalcParser {
   readonly units: UnitsInfo | null;
   /** Set when a chip with an inexact value is used. */
   inexact = false;
-  /** R65: the chips put in by name (chipNames), keyed by the k of `pasr_<k>`; null when names are off. */
+  /** R65: the chips put in by name (chipNames), keyed by that name (`pasr_<k>`, R40 `pasc_<id>`); null when names are off. */
   readonly named: ChipTable | null;
   /** F25 (R29): the token index right after the last number literal, and right after the last result chip. */
   private numEnd = -1;
@@ -575,7 +575,7 @@ class Parser implements CalcParser {
     const name = !c.exact && this.named && !/==|<>|!=/.test(c.value) ? chipName(key) : undefined;
     if (name && this.named) {
       chipToGiac(c.value); // the same refusals as a value put in
-      this.named[name.slice(name.indexOf("_") + 1)] = c;
+      this.named[name] = c;
       return ["Chip", { str: name }];
     }
     return ["Chip", { str: chipToGiac(c.value) }];

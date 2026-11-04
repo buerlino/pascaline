@@ -91,7 +91,7 @@ export interface ParseInfo {
   json: Json;
   /** A chip whose value is not exact was used, so the result cannot be marked "=" (docs/04 2.4). */
   inexact: boolean;
-  /** With `chipNames`: the chips that went in by name, keyed by the k of `pasr_<k>`. */
+  /** With `chipNames`: the chips that went in by name, keyed by that name (`pasr_<k>`, R40 `pasc_<id>`). */
   named?: ChipTable;
   /** Units mode only. */
   units?: UnitsInfo;

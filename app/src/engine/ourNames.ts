@@ -48,6 +48,8 @@ export const EQ_DIFF = "pasdiff";
 export const EQ_VERDICT = "pasverdict";
 /** The prefix of a result chip sent by name (G49's `pasr_<k>`, input/chip-giac.ts; engine/chipFacts.ts). */
 export const CHIP_PREFIX = "pasr_";
+/** The prefix of a constant sent by name (G26's `pasc_<id>`, R40: input/chip-giac.ts; engine/constUnc.ts). */
+export const CONST_PREFIX = "pasc_";
 /** The part after CHIP_PREFIX that names Ans's chip (`pasr_ans`); a result chip's is its row number k. */
 export const CHIP_ANS = "ans";
 

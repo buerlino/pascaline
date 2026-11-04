@@ -12,16 +12,20 @@ import { balanced, mapNames } from "../engine/giacPrint.ts";
 export const groupDigits = (m: string): string =>
   m.replace(/\d{5,}/g, (d, at: number) => (at ? d.replace(/(\d{3})(?=\d)/g, "$1\\,") : d.replace(/\B(?=(\d{3})+$)/g, "\\,")));
 
-function part(f: FormattedNumber, group: boolean): string {
-  const m = group ? groupDigits(f.mantissa) : f.mantissa;
+/** R40: a real part's mantissa as drawn, with its uncertain digits muted (render/uncMute.ts muter, a chunk of its own). */
+export type Mute = (m: string, f: FormattedNumber) => string;
+
+function part(f: FormattedNumber, group: boolean, mute?: Mute): string {
+  const g = group ? groupDigits(f.mantissa) : f.mantissa;
+  const m = mute ? mute(g, f) : g;
   // PFX: a thin space, then the prefix in the accent colour (docs/04 2.7); .pfx is styled in Math.svelte
   if (f.prefix) return `${m}\\,\\class{pfx}{\\mathrm{${f.prefix}}}`;
   return `${m}${f.exponent === null ? "" : `\\times10^{${f.exponent}}`}`;
 }
 
 /** A formatted Home number as LaTeX: the exponent is drawn raised, the imaginary unit as i. */
-export function complexToLatex(c: FormattedComplex, group = false): string {
-  const re = `${c.re.neg ? "-" : ""}${part(c.re, group)}`;
+export function complexToLatex(c: FormattedComplex, group = false, mute?: Mute): string {
+  const re = `${c.re.neg ? "-" : ""}${part(c.re, group, c.im ? undefined : mute)}`;
   if (!c.im) return re;
   const im = c.im.mantissa === "1" && c.im.exponent === null && !c.im.prefix ? "\\mathrm{i}" : `${part(c.im, group)}\\mathrm{i}`;
   if (c.re.mantissa.replace(/[0.]/g, "") === "" && c.re.exponent === null && !c.re.prefix) return `${c.im.neg ? "-" : ""}${im}`;

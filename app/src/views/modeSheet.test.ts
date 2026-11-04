@@ -11,6 +11,7 @@ import { unitCells } from "../units/userCells.svelte.ts";
 import { modeItems } from "./modeSheet.ts";
 import { lastPicks } from "./picks.ts";
 import { Sheet } from "./sheet.svelte.ts";
+import type { MenuItem } from "../apps/types.ts";
 
 const memoryKv = (): Kv => {
   const data = new Map<string, unknown>();
@@ -193,10 +194,15 @@ describe("Settings, a level of the sheet (R49)", () => {
     s.right();
     expect(s.path).toBe("Mode › Settings › Key vibration");
   });
-  it("Numbers: the Decimal mark row first (R57), then the cycle's five ticks with the hint under the first, and the Decimals row under the Fixed tick, stepped in place", () => {
+  it("Numbers: the Decimal mark row first (R57), the Fmt key cycle (R40: its five ticks a level of their own, the hint under the first), Decimals in Fixed stepped in place, and Uncertainty", () => {
     const s = settings(2);
-    expect(s.level.items.map((x) => x.id)).toEqual(["mark", "std", "sci", "eng", "pfx", "fix", "decimals"]);
+    expect(s.level.items.map((x) => x.id)).toEqual(["mark", "fmtCycle", "decimals", "uncertainty"]);
+    expect(byId(s, "fmtCycle")?.value).toBe("STD SCI ENG");
+    s.pickNumber(2);
+    expect(s.path).toBe("Settings › Numbers › Fmt key cycle");
+    expect(s.level.items.map((x) => x.id)).toEqual(["std", "sci", "eng", "pfx", "fix"]);
     expect(s.level.items.filter((x) => x.hint).map((x) => x.id)).toEqual(["std"]);
+    expect(s.back()).toBe(true);
     s.level.highlight = at(s, "decimals");
     expect(s.left()).toBe(true);
     expect(session.settings.fixDecimals).toBe(3);
@@ -225,6 +231,7 @@ describe("Settings, a level of the sheet (R49)", () => {
   });
   it("a tick toggles on Enter or a pick, the sheet stays, and the cycle is never empty", () => {
     const s = settings(2);
+    s.pickNumber(2); // Fmt key cycle ›
     const marked = () => s.level.items.filter((i) => i.selected).map((i) => i.id);
     expect(marked()).toEqual(["std", "sci", "eng"]);
     expect(s.activate(at(s, "fix"))).toEqual({ kind: "stay" });
@@ -232,6 +239,32 @@ describe("Settings, a level of the sheet (R49)", () => {
     expect(session.settings.fmtCycle).toEqual(["std", "eng", "fix"]);
     for (const id of ["std", "eng", "fix"]) s.activate(at(s, id)); // all off: back to the default cycle
     expect(session.settings.fmtCycle).toEqual(["std", "sci", "eng"]);
+  });
+  it("Uncertainty (R40): Muted digits, σ on tap by default; ◀ ▶ or a tap step it to Muted digits and back, and the sheet stays", () => {
+    const s = settings(2);
+    s.level.highlight = at(s, "uncertainty");
+    expect(byId(s, "uncertainty")?.value).toBe("Muted digits, σ on tap");
+    s.right();
+    expect(session.settings.uncertainty).toBe("muted");
+    expect(byId(s, "uncertainty")?.value).toBe("Muted digits");
+    expect(s.activate(at(s, "uncertainty"))).toEqual({ kind: "stay" });
+    expect(session.settings.uncertainty).toBe("sigma");
+  });
+  // Your keys (R4b) lists the 18 key slots and the unit pad as the mockup draws them, and each slot its 8 actions: a
+  // list that scrolls, left out here (R40's report asks whether the rule covers it)
+  it("every Settings level has at most seven rows (docs/05 3.4), with every section the app can give, Your keys' lists aside", () => {
+    const userKeys = new UserKeys(memoryKv());
+    const clip = { saveBackup: async () => {} } as unknown as ClipActions;
+    const s = new Sheet("mode", "Mode", () => modeItems(session, { userKeys, data: (run) => void run(clip) }), { remember: false });
+    s.pickNumber(6);
+    const over: string[] = [];
+    const walk = (title: string, items: readonly MenuItem[], depth: number): void => {
+      if (items.length > 7) over.push(`${title}: ${items.length}`);
+      if (depth < 2) for (const i of items) if (i.submenu && !i.submenu.text && i.id !== "keys") walk(`${title} › ${i.submenu.title}`, i.submenu.items, depth + 1);
+    };
+    walk("Settings", s.level.items, 0);
+    expect(over).toEqual([]);
+    expect(byId(s, "numbers")?.submenu?.items.map((x) => x.id)).toContain("uncertainty"); // with R40's row
   });
   it("Key vibration: the switch, then strength (the browser cannot set it), length and Try it follow", () => {
     const s = settings(3);

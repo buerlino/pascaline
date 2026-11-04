@@ -817,8 +817,8 @@ export class EngineHost implements FactsHost {
       const sig = chipSigma(asg ? (formIn(form, named).assignment?.rhs ?? named) : named, chips ?? {}); // R61: σ chips (G26's body without)
       // A setting the input changed was put back after its run: it is not run again (G67).
       if ((!consts && !sig.inputs.length) || (stateful && !asg) || this.post?.flagsChanged) return out;
-      const n = constUncDigits(this.giac, sig.body, consts ?? {}, out.result, Math.trunc(out.result.digits ?? s.digits), sig.inputs);
-      return n === undefined ? out : { ...out, result: { ...out.result, facts: { ...out.result.facts, uncDigits: n } } };
+      const n = constUncDigits(this.giac, sig.body, consts ?? {}, out.result, Math.trunc(out.result.digits ?? s.digits), sig.inputs, (m) => this.stored.has(m) || this.skipped.has(m) || this.byName.has(m) || this.pending.has(m) || m === asg?.name || m === form.defined?.name);
+      return n === undefined ? out : { ...out, result: { ...out.result, facts: { ...out.result.facts, ...n } } };
     } finally {
       if (keep.size) this.giac.eval(`purge(${[...keep].map((k) => CHIP_PREFIX + k).join(",")})`);
       this.chipFacts.clear();

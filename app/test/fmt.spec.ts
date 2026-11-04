@@ -23,10 +23,17 @@ const closeSettings = async (page: Page) => {
   await expect(sheet(page)).toBeHidden();
 };
 const row = (page: Page, id: string) => sheet(page).locator(`[data-id="${id}"]`);
-/** Tick (or untick) notations of the Format key cycle: Settings › Numbers, a tap per notation, then closed. */
-async function toggleCycle(page: Page, modes: string[]): Promise<void> {
+/** The Format key cycle's ticks: Settings › Numbers › Fmt key cycle (R40), four levels deep. */
+async function openCycle(page: Page): Promise<void> {
   await openSettings(page, "d2");
+  await tap(page, ["d2"]);
+  await expect(page.getByTestId("sheet-title")).toHaveText("Settings › Numbers › Fmt key cycle");
+}
+/** Tick (or untick) notations of the Format key cycle, a tap per notation, then closed. */
+async function toggleCycle(page: Page, modes: string[]): Promise<void> {
+  await openCycle(page);
   for (const m of modes) await row(page, m).tap();
+  await tap(page, ["esc"]);
   await closeSettings(page);
 }
 async function pickDigits(page: Page, valueKey: string): Promise<void> {
@@ -86,7 +93,7 @@ test("the Format key cycle and the vibration settings persist across a reload", 
   await expect(row(page, "strength")).toHaveAttribute("aria-disabled", "true");
   await expect(row(page, "strength").locator(".reason")).toHaveText("The Android app only");
   await closeSettings(page);
-  await openSettings(page, "d2");
+  await openCycle(page);
   const marked = await sheet(page).locator('[data-selected="true"]').evaluateAll((els) => els.map((e) => e.getAttribute("data-id")));
   expect(marked).toEqual(["std", "sci", "fix"]);
   expect(await page.evaluate(() => window.pascaline.session.settings.haptics)).toEqual({ on: true, strength: 50, ms: 40 });

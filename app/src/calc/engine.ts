@@ -17,7 +17,7 @@ import {
 import { WorkerEngine } from "../engine/workerEngine.ts";
 import { userNamesOf } from "../engine/defs.ts";
 import { mark } from "../marks.ts";
-import { CalcCancelled, type Calc, type CalcSettings, type ChipFactsTable, type CasOutcome, type HomeOutcome, type Quantity, type UnitError, type UnitRequest, type UserName } from "./port.ts";
+import { CalcCancelled, type Calc, type CalcSettings, type ChipFactsTable, type ConstTable, type CasOutcome, type HomeOutcome, type Quantity, type UnitError, type UnitRequest, type UserName } from "./port.ts";
 import type { IndexItem } from "../find/types.ts";
 
 /**
@@ -104,10 +104,11 @@ export class EngineCalc implements Calc {
     return t.safeStart ? { safeStart: t.safeStart } : {};
   }
 
-  async home(giac: string, s: CalcSettings, chips?: ChipFactsTable): Promise<HomeOutcome> {
+  async home(giac: string, s: CalcSettings, chips?: ChipFactsTable, consts?: ConstTable): Promise<HomeOutcome> {
     try {
       const settings = { ...defaultHomeSettings, digits: s.digits, angle: s.angle };
-      const r = await (chips && Object.keys(chips).length ? this.engine.home(giac, settings, undefined, chips) : this.engine.home(giac, settings));
+      // an absent table is not sent (WorkerEngine.home); the session sends `consts` only when the input holds one (R40)
+      const r = await this.engine.home(giac, settings, consts, chips && Object.keys(chips).length ? chips : undefined);
       return { ...passed(r, HOME_KEYS), ...(r.rational && r.exact !== undefined ? { exact: r.exact } : {}) };
     } catch (e) {
       throw e instanceof EngineCancelled ? new CalcCancelled() : e;

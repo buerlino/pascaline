@@ -181,8 +181,9 @@ function fixPlain(v: DecimalValue, f: number): FormattedNumber {
   return { neg: v.neg, mantissa: f > 0 ? `${ip}.${fp}` : ip, exponent: null };
 }
 
-/** SI prefixes by power of ten (µ is U+00B5, as docs/04 section 2.7 says). */
-const PREFIXES: Record<number, string> = { [-15]: "f", [-12]: "p", [-9]: "n", [-6]: "\u00b5", [-3]: "m", 0: "", 3: "k", 6: "M", 9: "G", 12: "T", 15: "P" };
+/** SI prefixes by power of ten (µ is U+00B5, as docs/04 section 2.7 says). The one table: R40's muted digits read a
+ *  prefix's power from it (render/uncMute.ts prefixPower). */
+export const PREFIXES: Record<number, string> = { [-15]: "f", [-12]: "p", [-9]: "n", [-6]: "\u00b5", [-3]: "m", 0: "", 3: "k", 6: "M", 9: "G", 12: "T", 15: "P" };
 
 function pfx(v: DecimalValue, n: number): FormattedNumber {
   const e = eng(v, n);
