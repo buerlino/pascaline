@@ -58,6 +58,21 @@ describe("migrateSettings", () => {
   it("nothing stored, or something that is not an object, gives the defaults", () => {
     for (const bad of [undefined, null, 7, "x", []]) expect(migrateSettings(bad).settings).toEqual(defaultSettings);
   });
+  it("R125: the digit-group separator is the thin space by default; the apostrophe and the comma are kept, anything else is the default", () => {
+    expect(defaultSettings.groupSep).toBe("thin");
+    expect(migrateSettings({ schema: SETTINGS_SCHEMA, digits: 9 }).settings.groupSep).toBe("thin");
+    for (const g of ["thin", "apos", "comma"] as const) expect(migrateSettings({ schema: SETTINGS_SCHEMA, groupSep: g }).settings.groupSep).toBe(g);
+    for (const bad of ["'", ",", "space", "", 1, null]) expect(migrateSettings({ schema: SETTINGS_SCHEMA, groupSep: bad }).settings.groupSep).toBe("thin");
+  });
+  it("R125: the display context carries the separator, the thin space for a stored comma under the decimal comma", () => {
+    const session = new Session(new FakeCalc(), memoryKv());
+    expect(session.displayContext().groupSep).toBe("thin");
+    session.settings.groupSep = "comma";
+    expect(session.displayContext().groupSep).toBe("comma");
+    session.setDecimalMark("comma");
+    expect(session.displayContext().groupSep).toBe("thin");
+    expect(session.settings.groupSep).toBe("comma"); // nothing stored silently
+  });
   it("R124: the mark style is ⚠ + reason by default; Muted and ⚠ coloured are kept, anything else is the default", () => {
     expect(defaultSettings.marks).toBe("reason");
     expect(migrateSettings({ schema: SETTINGS_SCHEMA, digits: 9 }).settings.marks).toBe("reason");

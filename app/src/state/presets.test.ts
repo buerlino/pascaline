@@ -324,6 +324,16 @@ describe("presets (R88)", () => {
     expect(session.settings.uncertainty).toBe("muted");
   });
 
+  it("R125: Numbers holds the digit-group separator: a capture keeps it, an apply sets it back", async () => {
+    const { session, presets } = await setup();
+    session.settings.groupSep = "apos";
+    const id = presets.capture("Swiss groups", ["numbers"]);
+    expect(presets.list[0]?.groups.numbers).toMatchObject({ groupSep: "apos" });
+    session.settings.groupSep = "thin";
+    await presets.apply(id);
+    expect(session.settings.groupSep).toBe("apos");
+  });
+
   it("R124: Numbers holds the mark style: a capture keeps it, an apply sets it back", async () => {
     const { session, presets } = await setup();
     session.settings.marks = "muted";
