@@ -841,10 +841,10 @@ function floatFactsOf(
   }
   // Rule 2: S against S+20, and S+20 against S+40 when fewer than the digits agree (a cancellation only needs more
   // working digits). Null when S or S+20 could not be evaluated, with the facts of S alone in `once`. G141: S is P, or
-  // the longest exact integer's digits plus 20 (literalStart); past MAX_EVAL_DIGITS the check runs from P, unchecked.
-  const lit = literalStart(expr, P, MAX_EVAL_DIGITS);
-  const S = lit.at;
-  const agreed = (text: string | null): { facts: ElementFacts[] } | { once: ElementFacts[] } | null => {
+  // the longest exact integer's digits plus 20 (literalStart); past MAX_EVAL_DIGITS the check runs from P, unchecked. Not
+  // for G44's polish (`lit` P): its Newton steps at S would cost many times more (normald_icdf(10^-300) at 321 digits).
+  const agreed = (text: string | null, lit = literalStart(expr, P, MAX_EVAL_DIGITS)): { facts: ElementFacts[] } | { once: ElementFacts[] } | null => {
+    const S = lit.at;
     const A = at(S, "pasm", (n) => Math.max(n, S), text);
     const B = A && at(S + 20, "pasm2", (n) => Math.max(n, S) + 20, text);
     if (A && B) {
@@ -871,7 +871,7 @@ function floatFactsOf(
     const polished = icdfPolished(giac, run);
     giac.eval(`${ICDF_FAILED}:=0`);
     giac.eval(`${ICDF_DIGITS}:=${digits}`);
-    const r = agreed(polished);
+    const r = agreed(polished, { at: P, unchecked: false });
     const failed = giac.eval(ICDF_FAILED).trim() !== "0";
     giac.eval(`purge(${ICDF_FAILED},${ICDF_DIGITS})`);
     if (r && "facts" in r && !failed) return r.facts;
