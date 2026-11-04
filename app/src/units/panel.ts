@@ -8,6 +8,7 @@ import "./panel.css";
 import { unitText } from "../i18n/enUnits.ts";
 import type { UnitShown } from "./result.ts";
 import type { UnitView } from "./view.ts";
+import type { MarkStyle } from "../state/session.svelte.ts";
 
 function el(tag: string, cls: string, testid?: string, text?: string): HTMLElement {
   const e = document.createElement(tag);
@@ -72,8 +73,8 @@ export interface Panel {
   draw(): void;
 }
 
-/** The panel for `view`, not yet on the page. */
-export function makePanel(view: () => UnitView | undefined): Panel {
+/** The panel for `view`, not yet on the page. `marks` (R124): Settings › Numbers › Marks, which panel.css follows. */
+export function makePanel(view: () => UnitView | undefined, marks: () => MarkStyle = () => "reason"): Panel {
   const element = el("div", "unitview", "unit-view");
   element.tabIndex = -1;
   const formula = el("div", "formula");
@@ -112,6 +113,7 @@ export function makePanel(view: () => UnitView | undefined): Panel {
     const v = view();
     if (!v) return;
     element.dataset["slot"] = v.activeId;
+    element.dataset["marks"] = marks();
     reading.replaceChildren(...v.reading.parts.flatMap((p, i) => [...(i ? [" "] : []), el("span", p.marked ? "rare" : "", undefined, p.text)]));
     const s = v.shown;
     if (s === built) {

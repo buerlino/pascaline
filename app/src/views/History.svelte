@@ -8,7 +8,7 @@
   import { markText, noDigit as hasNoDigit } from "../state/displayMode.ts";
   import { edgeFade } from "./edgeFade.ts";
   import type { MarkInfo } from "../engine/format.ts";
-  import type { HistoryItem, UsedValue } from "../state/session.svelte.ts";
+  import type { HistoryItem, MarkStyle, UsedValue } from "../state/session.svelte.ts";
 
   let {
     items,
@@ -16,6 +16,8 @@
     input = (item) => item.latex,
     mark,
     sigma = () => null,
+    reason = () => null,
+    marks = "reason",
     onrecall,
     oninsert,
     oncancel,
@@ -35,6 +37,11 @@
     /** R40: the σ line a tap on the row shows (a constant's σ limits its digits); null or undefined: a tap shows
      *  nothing (its code rides in the tidy chunk, Session.sigma). */
     sigma?: (item: HistoryItem) => string | null | undefined;
+    /** R124: the reason line under a ⚠ row (Settings › Numbers › Marks); null: none; "": its text is not in yet (the
+     *  line's place is kept, Session.reason). */
+    reason?: (item: HistoryItem) => string | null;
+    /** R124: how the marks are drawn: Muted, ⚠ coloured, ⚠ + reason. */
+    marks?: MarkStyle;
     /** Tapping an entry puts it back on the line, with the values of its chips. */
     onrecall: (item: HistoryItem) => void;
     /** L5: tapping a result puts it on the entry line at the cursor, as a chip (docs/04 2.8). */
@@ -73,8 +80,12 @@
 
   // R40: a tap on a row with a σ line (not on its entry or result, which recall and insert) shows it; a second hides it
   let sigmaOpen = $state<number | null>(null);
+  // R124: a tap on a ⚠ row's reason line shows its full text (it wraps); a second tap ellipses it again
+  let reasonOpen = $state<number | null>(null);
   function toggleSigma(e: MouseEvent, item: HistoryItem): void {
-    if (!(e.target as Element).closest("button") && sigma(item)) tapped(() => (sigmaOpen = sigmaOpen === item.id ? null : item.id));
+    const at = e.target as Element;
+    if (at.closest(".reason")) tapped(() => (reasonOpen = reasonOpen === item.id ? null : item.id));
+    else if (!at.closest("button") && sigma(item)) tapped(() => (sigmaOpen = sigmaOpen === item.id ? null : item.id));
   }
 
   /** R63: a unit row draws its request with the units in it (the line itself, recalled, has none: Home has no units). */
@@ -149,7 +160,7 @@
   });
 </script>
 
-<section class="history" aria-label={t("history.label")} bind:this={scroller}>
+<section class="history" aria-label={t("history.label")} data-marks={marks} bind:this={scroller}>
   {#if items.length === 0 && !undo}
     <p class="empty">{t("history.empty")}</p>
   {/if}
@@ -160,6 +171,7 @@
     {#if item.status === "note"}
       <div class="item note" data-status="note" data-testid="safe-start" role="status">{item.text}</div>
     {:else}
+    {@const r = reason(item)}
     <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_noninteractive_element_interactions (R40: the σ line is a touch extra; a picked row's why-line, R36, serves the keys) -->
     <article class="item" data-status={item.status}
       onpointerdown={(e) => pressStart(e, item)} onpointerup={endPress} onpointercancel={endPress} onclick={(e) => toggleSigma(e, item)}
@@ -190,6 +202,7 @@
           </button>
         {/if}
       </div>
+      {#if r !== null}<div class="reason" data-testid="mark-reason" data-open={reasonOpen === item.id}>{r || "\u00a0"}</div>{/if}
       {#if sigmaOpen === item.id && sigma(item)}<div class="uses" data-testid="sigma">{sigma(item)}</div>{/if}
       {#if item.status === "done" && item.uses?.length}
         <div class="uses" data-testid="uses">{usesLine(item.uses)}</div>
@@ -320,6 +333,23 @@
   }
   .mark[data-mark="⚠"] {
     color: var(--warn);
+  }
+  /* R124: the reason line, one line ellipsed in the mark's colour; its place is there from the row's first frame */
+  .reason {
+    cursor: pointer;
+    align-self: flex-end;
+    max-width: 100%;
+    font-size: var(--fs-note);
+    color: var(--warn);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .reason[data-open="true"] {
+    white-space: normal;
+  }
+  .history[data-marks="muted"] .mark {
+    color: var(--muted);
   }
   .note,
   .working {

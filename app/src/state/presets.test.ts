@@ -324,6 +324,16 @@ describe("presets (R88)", () => {
     expect(session.settings.uncertainty).toBe("muted");
   });
 
+  it("R124: Numbers holds the mark style: a capture keeps it, an apply sets it back", async () => {
+    const { session, presets } = await setup();
+    session.settings.marks = "muted";
+    const id = presets.capture("Quiet marks", ["numbers"]);
+    expect(presets.list[0]?.groups.numbers).toMatchObject({ marks: "muted" });
+    session.settings.marks = "reason";
+    await presets.apply(id);
+    expect(session.settings.marks).toBe("muted");
+  });
+
   it("two applies in a row end in the second, the theme's loads awaited", async () => {
     const { session, presets, env } = await setup();
     const shown: string[] = [];

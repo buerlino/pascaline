@@ -110,7 +110,7 @@ export async function openUnits(c: RouteCtx, row?: HistoryItem): Promise<void> {
     c.insertResult(item);
   };
   let made: UnitView | undefined;
-  const panel = makePanel(() => made);
+  const panel = makePanel(() => made, () => c.session.settings.marks);
   const cat = slotCatalogue(index.items);
   const table = factorTable(index.items);
   const view = new UnitView(cat, line, chips, host, seed);

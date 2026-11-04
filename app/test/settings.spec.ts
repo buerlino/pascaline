@@ -53,7 +53,7 @@ test.describe("by keys", () => {
     await page.getByTestId("chip-format").tap();
     await tap(page, ["d6", "d2"]);
     await expect(title(page)).toHaveText("Mode › Settings › Numbers");
-    expect(await rowIds(page)).toEqual(["mark", "fmtCycle", "decimals", "uncertainty"]);
+    expect(await rowIds(page)).toEqual(["mark", "fmtCycle", "decimals", "uncertainty", "marks"]); // R124: Marks
     await expect(row(page, "fmtCycle").getByTestId("sheet-value")).toHaveText("STD SCI ENG");
     await tap(page, ["d2"]);
     await expect(title(page)).toHaveText("Settings › Numbers › Fmt key cycle");

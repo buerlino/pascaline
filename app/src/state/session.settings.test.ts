@@ -58,6 +58,12 @@ describe("migrateSettings", () => {
   it("nothing stored, or something that is not an object, gives the defaults", () => {
     for (const bad of [undefined, null, 7, "x", []]) expect(migrateSettings(bad).settings).toEqual(defaultSettings);
   });
+  it("R124: the mark style is ⚠ + reason by default; Muted and ⚠ coloured are kept, anything else is the default", () => {
+    expect(defaultSettings.marks).toBe("reason");
+    expect(migrateSettings({ schema: SETTINGS_SCHEMA, digits: 9 }).settings.marks).toBe("reason");
+    for (const m of ["muted", "colour", "reason"] as const) expect(migrateSettings({ schema: SETTINGS_SCHEMA, marks: m }).settings.marks).toBe(m);
+    for (const bad of ["color", "", 1, null]) expect(migrateSettings({ schema: SETTINGS_SCHEMA, marks: bad }).settings.marks).toBe("reason");
+  });
   it("unknown Format key modes are dropped from the cycle, pfx is kept", () => {
     expect(migrateSettings({ fmtCycle: ["std", "bogus", "pfx"] }).settings.fmtCycle).toEqual(["std", "pfx"]);
   });

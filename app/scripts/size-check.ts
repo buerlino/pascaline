@@ -290,8 +290,12 @@ export const LAZY_PARTS = ["src/views/sheetKeys.ts", "src/views/tmplSheet.ts", "
  *  (readValueFacts), the parts of the row that ask for σ (the mute hook, the tap that shows the line) and the hook that
  *  hears the tidy chunk load. The cut that mutes the digits (render/uncMute.ts) and the σ line (state/sigmaLine.ts) ride
  *  in the tidy chunk (render/tidy.ts), the R40 texts in i18n/enUnc.ts: a row is drawn unmuted until it is in. The pin
- *  is 60,183 B + 0.05 kB. */
-export const START_PIN_GZIP = 60_233;
+ *  is 60,183 B + 0.05 kB.
+ *  60.23 → 60.56 kB (R124): phase-1 722a9b45 measures 60,208 B gzip (171,077 B raw); the branch 60,510 B (171,814 B raw,
+ *  +302 B): the Marks setting (its default, read back), the row's reason line with its kept place and its tap, the
+ *  history's style attribute. The line's words (clipboard/whyLine.ts with its strings) ride in the tidy chunk, the
+ *  setting's row and texts in the Mode sheet's chunk (i18n/enUnc.ts). The pin is 60,510 B + 0.05 kB. */
+export const START_PIN_GZIP = 60_560;
 
 /** R103 (vr-4): the classic inline scripts of index.html run before the first paint, outside every chunk: the stored look
  *  (R50e) and the too-old WebView check. Their gzip sizes, each script alone and summed (as the start chunk sums its
