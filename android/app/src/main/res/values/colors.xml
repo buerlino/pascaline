@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<resources>
+    <!-- A59: the default Dark's background (the bg role in app/src/style.css, family pascaline); app/scripts/android-bars.test.ts keeps the two equal. -->
+    <color name="pascaline_dark_bg">#0b1020</color>
+</resources>
