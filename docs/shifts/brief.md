@@ -70,7 +70,6 @@ A8 and [A57](packages/A57.md) run by day. Steps 449–452 and 408 run only on th
 
 | Step | What | Agent, model | Branch | After |
 |---|---|---|---|---|
-| 463 | [G163](packages/G163.md) the unit view's chunks hold no worker evaluator | gorge, Sonnet | `p1/gorge-unitchunk` | – |
 | 449 | [G141](packages/G141.md) a long exact literal raises the agreement check's precision | gorge, Opus | `p1/gorge-literalprec` | the weekly night |
 | 450 | [G142](packages/G142.md) complex acosh of a small number at 30 digits | gorge, Opus | `p1/gorge-acoshsmall` | the weekly night |
 | 451 | [G156](packages/G156.md) \|x\| shown negative when both runs share an error (F163) | gorge, Opus | `p1/gorge-abssign` | the weekly night; G141 |
