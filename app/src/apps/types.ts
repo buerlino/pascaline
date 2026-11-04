@@ -39,6 +39,8 @@ export interface ValueOption {
   readonly spoken?: string;
   /** This is the current value (the button is marked). */
   readonly selected: boolean;
+  /** This value cannot be set now (R125: the comma separator under the decimal comma); the row's hint says why. */
+  readonly disabled?: boolean;
   /** Set this value. A tap on the button runs it and closes the sheet, like a pick. */
   run(): void;
 }

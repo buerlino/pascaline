@@ -154,6 +154,7 @@ export const SETTING_RULES: Readonly<Record<string, (x: unknown) => boolean>> = 
   fixDecimals: (x) => whole(x, 0, 12),
   uncertainty: (x) => x === "sigma" || x === "muted", // R40
   marks: (x) => x === "muted" || x === "colour" || x === "reason", // R124
+  groupSep: (x) => x === "thin" || x === "apos" || x === "comma", // R125
   fmtCycle: (x) => Array.isArray(x) && canon(normalizeCycle(x.filter(isFmtMode))) === canon(x),
   // R122: the nested groups check the fields they hold; a field missing (an older file) is filled by migrateSettings
   // at the next start, as it fills one missing from a stored record. A field this version does not know is a fault.

@@ -9,7 +9,8 @@ import type { AngleUnit, NumberFormat } from "../calc/port.ts";
 import { t, type MessageKey } from "../i18n/index.ts";
 import { hasStrength, vibrate } from "../input/haptics.ts";
 import { NOTATION_MODES } from "../state/displayMode.ts";
-import { MAX_DIGITS, type DecimalMark, type EntryMode, type MarkStyle, type Session, type UncertaintyView } from "../state/session.svelte.ts";
+import { MAX_DIGITS, type DecimalMark, type EntryMode, type GroupSep, type MarkStyle, type Session, type UncertaintyView } from "../state/session.svelte.ts";
+import { GROUP_SEPS, groupSepFor } from "../render/home.ts";
 import { aboutText } from "../i18n/enAbout.ts";
 import { uncText } from "../i18n/enUnc.ts";
 import { helpItems } from "./aboutItems.ts";
@@ -273,7 +274,8 @@ function appearanceItems(session: Session): MenuItem[] {
 
 /** Numbers (docs/05 3.4, at most seven rows): the decimal mark (R57: a value row, Point or Comma), the Fmt key's cycle
  *  (R40: a row that opens its five ticks, its value the cycle), the decimals Fixed shows (S2 I3), how a result shows
- *  the digits a constant's σ leaves uncertain (R40: a value row) and how its mark is drawn (R124: three buttons). */
+ *  the digits a constant's σ leaves uncertain (R40: a value row), how its mark is drawn (R124: three buttons) and the
+ *  separator of its digit groups (R125: three buttons; never the comma while the comma is the decimal mark). */
 function numbersItems(session: Session): MenuItem[] {
   const s = session.settings;
   const mark: MenuItem = {
@@ -329,7 +331,30 @@ function numbersItems(session: Session): MenuItem[] {
     s.marks = v;
     session.save();
   }
-  return [mark, cycleRow, decimals, uncertainty, marks];
+  // R125: under the decimal comma the comma's button is off and the row says why; a stored comma shows (and draws) as the
+  // thin space and stays stored, so the point brings it back. ◀ ▶ step from the value shown, over the comma.
+  const shownSep = (): GroupSep => groupSepFor(s.groupSep, session.decimalComma);
+  const usable = (): readonly GroupSep[] => (session.decimalComma ? GROUP_SEPS.filter((v) => v !== "comma") : GROUP_SEPS);
+  function setGroups(v: GroupSep): void {
+    s.groupSep = v;
+    session.save();
+  }
+  const groups: MenuItem = {
+    id: "groups",
+    label: uncText("groups.setting"),
+    keep: true,
+    get hint() {
+      return session.decimalComma ? uncText("groups.setting.commaOff") : undefined;
+    },
+    get options() {
+      const off = session.decimalComma;
+      return buttons(GROUP_SEPS, shownSep, setGroups, (v) => uncText(`groups.setting.${v}`), (v) => uncText(`groups.setting.${v}.spoken`)).map((o) =>
+        off && o.id === "comma" ? { ...o, disabled: true } : o,
+      );
+    },
+    adjust: (by) => setGroups(cycle(usable(), shownSep(), by)),
+  };
+  return [mark, cycleRow, decimals, uncertainty, marks, groups];
 }
 
 /** The Fmt key's cycle: a tick per notation, in today's order, the hint a second line under the first. */

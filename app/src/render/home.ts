@@ -5,18 +5,33 @@
 import type { FormattedComplex, FormattedFraction, FormattedNumber, FormattedPolar } from "../engine/format.ts";
 import { balanced, mapNames } from "../engine/giacPrint.ts";
 
+/** R125, Settings › Numbers › Digit groups: the thin space (R55's, the default), the apostrophe or the comma. */
+export type GroupSep = "thin" | "apos" | "comma";
+export const GROUP_SEPS: readonly GroupSep[] = ["thin", "apos", "comma"];
+/** Each separator as the drawn LaTeX has it: the apostrophe as text (math mode makes `'` a prime), the comma braced (no
+ *  space after it). */
+export const GROUP_LATEX: Readonly<Record<GroupSep, string>> = { thin: "\\,", apos: "\\text{'}", comma: "{,}" };
+/** The separator drawn: the setting's, but never the comma while the comma is the decimal mark (R57); a stored comma
+ *  then draws as the thin space and stays stored. */
+export const groupSepFor = (sep: GroupSep | undefined, decimalComma: boolean | undefined): GroupSep =>
+  sep === undefined || (sep === "comma" && decimalComma === true) ? "thin" : sep;
+
 /**
- * R55: a mantissa's digits in groups of three from the decimal point outward, a thin space between them, on a side
- * with five or more digits (1234 and 0.1234 stay whole). Drawn results only: the text, the chips and Copy stay plain.
+ * R55: a mantissa's digits in groups of three from the decimal point outward, `sep` between them (the thin space's LaTeX
+ * by default), on a side with five or more digits (1234 and 0.1234 stay whole). Drawn results only: the text, the
+ * chips and Copy stay plain.
  */
-export const groupDigits = (m: string): string =>
-  m.replace(/\d{5,}/g, (d, at: number) => (at ? d.replace(/(\d{3})(?=\d)/g, "$1\\,") : d.replace(/\B(?=(\d{3})+$)/g, "\\,")));
+export const groupDigits = (m: string, sep = "\\,"): string =>
+  m.replace(/\d{5,}/g, (d, at: number) => (at ? d.replace(/(\d{3})(?=\d)/g, (g) => g + sep) : d.replace(/\B(?=(\d{3})+$)/g, () => sep)));
 
 /** R40: a real part's mantissa as drawn, with its uncertain digits muted (render/uncMute.ts muter, a chunk of its own). */
 export type Mute = (m: string, f: FormattedNumber) => string;
 
-function part(f: FormattedNumber, group: boolean, mute?: Mute): string {
-  const g = group ? groupDigits(f.mantissa) : f.mantissa;
+/** A drawn number's groups (R55): none (false), the thin space (true), or a separator (R125). */
+export type Grouping = boolean | GroupSep;
+
+function part(f: FormattedNumber, group: Grouping, mute?: Mute): string {
+  const g = group === false ? f.mantissa : groupDigits(f.mantissa, GROUP_LATEX[group === true ? "thin" : group]);
   const m = mute ? mute(g, f) : g;
   // PFX: a thin space, then the prefix in the accent colour (docs/04 2.7); .pfx is styled in Math.svelte
   if (f.prefix) return `${m}\\,\\class{pfx}{\\mathrm{${f.prefix}}}`;
@@ -24,7 +39,7 @@ function part(f: FormattedNumber, group: boolean, mute?: Mute): string {
 }
 
 /** A formatted Home number as LaTeX: the exponent is drawn raised, the imaginary unit as i. */
-export function complexToLatex(c: FormattedComplex, group = false, mute?: Mute): string {
+export function complexToLatex(c: FormattedComplex, group: Grouping = false, mute?: Mute): string {
   const re = `${c.re.neg ? "-" : ""}${part(c.re, group, c.im ? undefined : mute)}`;
   if (!c.im) return re;
   const im = c.im.mantissa === "1" && c.im.exponent === null && !c.im.prefix ? "\\mathrm{i}" : `${part(c.im, group)}\\mathrm{i}`;
@@ -40,7 +55,7 @@ export function fractionToLatex(f: FormattedFraction): string {
 }
 
 /** r∡θ, with the same ∡ the keyboard types. */
-export function polarToLatex(p: FormattedPolar, group = false): string {
+export function polarToLatex(p: FormattedPolar, group: Grouping = false): string {
   const n = (f: FormattedNumber): string => `${f.neg ? "-" : ""}${part(f, group)}`;
   return `${n(p.r)}\\mathbin{\\measuredangle}${n(p.theta)}`;
 }

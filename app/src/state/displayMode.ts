@@ -21,7 +21,7 @@ import {
   type PrecisionFacts,
 } from "../engine/format.ts";
 import type { NumberFormat } from "../calc/port.ts";
-import { complexToLatex, fractionToLatex, homeResultToLatex, polarToLatex, type Mute } from "../render/home.ts";
+import { complexToLatex, fractionToLatex, groupSepFor, homeResultToLatex, polarToLatex, type GroupSep, type Grouping, type Mute } from "../render/home.ts";
 
 export type FmtMode = "std" | "sci" | "eng" | "pfx" | "fix" | "frac" | "mixed" | "polar";
 
@@ -161,6 +161,8 @@ export interface DisplayContext {
   angle: "rad" | "deg";
   /** R57: the decimal comma is on; numbers are drawn `1,5` and list elements are separated by `;`. */
   decimalComma?: boolean;
+  /** R125: the digit-group separator of a grouped row (absent: the thin space; never the comma under the decimal comma). */
+  groupSep?: GroupSep;
   /** R40: the muted digits' code (render/uncMute.ts muter), once loaded; absent: every digit drawn plain. */
   mute?: (r: NumericResult) => Mute | undefined;
 }
@@ -200,8 +202,8 @@ function baseMode(mode: FmtMode | undefined, ctx: DisplayContext): "std" | "sci"
 /**
  * A result drawn in `mode` (undefined: the global setting). Undefined when the item has no number.
  * Only the digits the engine confirmed are drawn (docs/04 2.4): re-formatting a ⚠ value with the plain digits setting
- * would show digits nobody checked. `grouped` (R55): the LaTeX has thin-space digit groups; only the screen's row asks
- * for it, never a chip, the entry line or Copy.
+ * would show digits nobody checked. `grouped` (R55): the LaTeX has digit groups, with the separator of `ctx.groupSep`
+ * (R125); only the screen's row asks for it, never a chip, the entry line or Copy.
  */
 export function renderNumeric(
   r: NumericResult,
@@ -218,6 +220,7 @@ function renderPoint(r: NumericResult, mode: FmtMode | undefined, ctx: DisplayCo
   const digits = r.facts?.digits ?? ctx.digits;
   const opts = (f: keyof typeof BASE): FormatOptions => ({ format: BASE[f], digits, fixed: ctx.fixDecimals });
   const base = baseMode(mode, ctx);
+  const group: Grouping = grouped && groupSepFor(ctx.groupSep, ctx.decimalComma);
   if (!r.value) {
     // a numeric list or matrix: our formatter draws every element
     const p = precisionOf(r);
@@ -230,11 +233,11 @@ function renderPoint(r: NumericResult, mode: FmtMode | undefined, ctx: DisplayCo
   }
   if (m === "polar" && r.polar && r.polar.angle === ctx.angle) {
     const p = formatPolar(r.polar.r, r.polar.theta, opts(ctx.format));
-    return { text: p.text, latex: polarToLatex(p, grouped) };
+    return { text: p.text, latex: polarToLatex(p, group) };
   }
   const c = formatComplex(r.value, confirmedOptions(r.value, r.facts?.reliableDigits ?? null, opts(base)));
   // R40: only the screen's row mutes the digits past a constant's σ (`grouped`): the text, chips and Copy keep them all
-  return { text: c.text, latex: complexToLatex(c, grouped, grouped ? ctx.mute?.(r) : undefined) };
+  return { text: c.text, latex: complexToLatex(c, group, grouped ? ctx.mute?.(r) : undefined) };
 }
 
 /**

@@ -9,7 +9,8 @@ import { loadEntry, loadParser } from "../input/parser.ts";
 import { t, type MessageKey } from "../i18n/index.ts";
 import { EngineMemoryError } from "../engine/types.ts";
 import { decimalToString, type ComplexValue, type MarkInfo } from "../engine/format.ts";
-import { homeResultToLatex } from "../render/home.ts";
+import { groupSepFor, homeResultToLatex, type GroupSep } from "../render/home.ts";
+export type { GroupSep } from "../render/home.ts";
 import {
   DEFAULT_FMT_CYCLE,
   factsOf,
@@ -67,6 +68,8 @@ export interface Settings extends CalcSettings {
   fixDecimals: number;
   uncertainty: UncertaintyView;
   marks: MarkStyle;
+  /** R125, Settings › Numbers › Digit groups: the separator of a drawn result's digit groups (Copy has none). */
+  groupSep: GroupSep;
   haptics: HapticsSettings;
   /** Settings › Appearance (R50e): family, brightness, High contrast, Plain keys. */
   look: Look;
@@ -86,6 +89,7 @@ export const defaultSettings: Settings = {
   fixDecimals: 4,
   uncertainty: "sigma",
   marks: "reason",
+  groupSep: "thin",
   haptics: { on: false, strength: 50, ms: 15 },
   look: defaultLook(),
 };
@@ -175,6 +179,7 @@ export function migrateSettings(saved: unknown, firstLook: Look = defaultSetting
   if (x["decimalMark"] === "point" || x["decimalMark"] === "comma") s.decimalMark = x["decimalMark"];
   if (x["uncertainty"] === "muted") s.uncertainty = "muted"; // R40: anything else is the default, sigma
   if (x["marks"] === "muted" || x["marks"] === "colour") s.marks = x["marks"]; // R124: anything else is the default
+  if (x["groupSep"] === "apos" || x["groupSep"] === "comma") s.groupSep = x["groupSep"]; // R125: anything else, the thin space
   if (typeof x["digits"] === "number" && Number.isFinite(x["digits"])) s.digits = clampDigits(x["digits"]);
   if (Array.isArray(x["fmtCycle"])) s.fmtCycle = normalizeCycle(x["fmtCycle"].filter(isFmtMode));
   if (typeof x["fixDecimals"] === "number" && Number.isFinite(x["fixDecimals"])) s.fixDecimals = clamp(x["fixDecimals"], 0, 12);
@@ -601,10 +606,12 @@ export class Session {
     return markFor(item, this.modeOf(item), this.displayContext());
   }
 
-  /** `mute` (R40): the muted digits' code once in; only the screen's row (`grouped`) uses it (displayMode.ts renderPoint). */
+  /** `mute` (R40): the muted digits' code once in; only the screen's row (`grouped`) uses it (displayMode.ts renderPoint),
+   *  as `groupSep` (R125: the separator drawn, never the comma under the decimal comma). */
   displayContext(): DisplayContext {
     const s = this.settings;
-    return { format: s.format, digits: s.digits, fixDecimals: s.fixDecimals, angle: s.angle, ...(this.decimalComma ? { decimalComma: true } : {}), mute: sigmaCode?.muter };
+    const comma = this.decimalComma;
+    return { format: s.format, digits: s.digits, fixDecimals: s.fixDecimals, angle: s.angle, ...(comma ? { decimalComma: true } : {}), groupSep: groupSepFor(s.groupSep, comma), mute: sigmaCode?.muter };
   }
 
   /**

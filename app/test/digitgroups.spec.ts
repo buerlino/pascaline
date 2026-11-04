@@ -136,11 +136,14 @@ test("the setting survives a relaunch, goes into a preset and into a backup", as
     return { held: presets.list[0]?.groups.numbers?.["groupSep"], now: session.settings.groupSep };
   }, "/src/views/modeSheet.ts");
   expect(after).toEqual({ held: "apos", now: "apos" });
-  const backup = await page.evaluate(async (path) => {
-    const { makeBackup } = (await import(/* @vite-ignore */ path)) as typeof import("../src/state/backup.ts");
-    const { kvGetRaw } = (await import(/* @vite-ignore */ "/src/state/storageRaw.ts")) as typeof import("../src/state/storageRaw.ts");
-    await new Promise((r) => setTimeout(r, 900));
-    return (await makeBackup(kvGetRaw, new Date())).parts["settings"]?.value as { groupSep?: string } | undefined;
-  }, "/src/state/backup.ts");
+  await page.waitForTimeout(900); // the apply's write
+  const backup = await page.evaluate(
+    async ([b, raw]) => {
+      const { makeBackup } = (await import(/* @vite-ignore */ b)) as typeof import("../src/state/backup.ts");
+      const { kvGetRaw } = (await import(/* @vite-ignore */ raw)) as typeof import("../src/state/storageRaw.ts");
+      return (await makeBackup(kvGetRaw, new Date())).parts["settings"]?.value as { groupSep?: string } | undefined;
+    },
+    ["/src/state/backup.ts", "/src/state/storageRaw.ts"] as const,
+  );
   expect(backup?.groupSep).toBe("apos");
 });

@@ -13,7 +13,7 @@ export const PRESET_GROUPS: readonly PresetGroup[] = ["mode", "numbers", "look",
 /** The fields of each group. A group stored before a field existed lacks it, and applying it leaves that setting alone. */
 export const GROUP_FIELDS: Readonly<Record<PresetGroup, readonly string[]>> = {
   mode: ["angle", "format", "digits", "entry"],
-  numbers: ["decimalMark", "fmtCycle", "fixDecimals", "uncertainty", "marks"],
+  numbers: ["decimalMark", "fmtCycle", "fixDecimals", "uncertainty", "marks", "groupSep"],
   look: ["family", "brightness", "contrast", "plain"],
   vibration: ["on", "strength", "ms"],
   keys: ["userKeys", "unitPadCells"],

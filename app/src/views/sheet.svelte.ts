@@ -310,7 +310,7 @@ export class Sheet {
   pickOption(index: number, optionId: string): Picked {
     const item = this.level.items[index];
     const option = item?.options?.find((o) => o.id === optionId);
-    if (!item || item.disabled || !option) return STAY;
+    if (!item || item.disabled || !option || option.disabled) return STAY;
     this.level.highlight = index;
     lastPicks.set(this.level.memo, item.id);
     return { kind: "run", item: { id: option.id, label: option.label, run: () => option.run() } };
