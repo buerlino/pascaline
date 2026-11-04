@@ -7,7 +7,7 @@ Phase 0 decisions (D1–D9, P1, P2): [spike/DECISIONS.md](../spike/DECISIONS.md)
 
 The owner's other open items are in [backlog.md](backlog.md), "Needs the user". Once decided, an entry moves to "Decided proposals".
 
-- **A62 (2026-11-04): the library replay after G83 is under 50 ms as a share, over it as the mark reads.** 200 library programs on the Tab One: `replayMs` p50 96 ms (p95 119) against 57 ms for an empty log, so the library costs 39 ms; A12 read 403 ms. Engine ready 1305 ms and keyboard 736 ms, the same as without the library. A12's "would change if" is met by the literal mark (96 > 50) and not by the library's share (39). Recommendation: the 50 ms bar reads the replay minus the empty-log 57 ms (a fixed cost of the first `restore`), and R59 goes ahead. Separate finding: a persisted CAS history of 200 items at launch (view `cas`) puts engine ready at 1835 ms p50, 535 ms over the bar, with the same defs; a package for ron (history rows drawn late) is needed.
+None open.
 
 ## Decided proposals
 
