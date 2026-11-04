@@ -9,8 +9,9 @@
 //   (lostNumber).
 // - G84 (backlog F60): a value that reads as 0 while Giac's exact answer is not 0 (exp(-10^30), past MPFR's exponent
 //   range) is refused "underflow", as an overflow is (underflow); G154 (F139): only when Giac can state its size.
-// - G148 (vg-3, vvg-1): approx and evalf make Giac's answer ±infinity, or a float 0, at once; the finite exact value they
-//   were given is refused as the bare value is (approxRange).
+// - G148 (vg-3, vvg-1), G148f1: approx and evalf make Giac's answer ±infinity, or a float 0, at once, inside a larger
+//   input too (1/approx(exp(-10^20))); the input with each call replaced by its argument is refused as the bare input is
+//   (approxRange).
 // Runs synchronously next to the engine; only erasable TypeScript syntax.
 import { callsIn, type Refusal } from "./converge.ts";
 import { hasFloat, MAX_EVAL_DIGITS, type ElementFacts, type Giac, type Shape } from "./numeric.ts";
@@ -136,15 +137,26 @@ const APPROX_CALLS = ["approx", "evalf"];
 /** G148: `input` calls approx or evalf (a CAS assignment of it runs its right-hand side first, to store nothing refused). */
 export const mayApproxRange = (input: string): boolean => callsOf(input, APPROX_CALLS, "typed").length > 0;
 
+/** G148f1: `t` with each approx or evalf call replaced by its first argument in parentheses (the bare input). The last
+ *  call in the text holds no other, so it is replaced first, until none is left. */
+function bareOf(t: string): string {
+  for (let calls = callsOf(t, APPROX_CALLS, "typed"); calls.length; calls = callsOf(t, APPROX_CALLS, "typed")) {
+    const c = calls[calls.length - 1]!;
+    t = `${t.slice(0, c.at)}(${topLevelArgs(t.slice(c.open + 1, c.close), "typed")[0] ?? ""})${t.slice(c.close + 1)}`;
+  }
+  return t;
+}
+
 /**
- * G148 (vg-3, vvg-1): the reason for the result `output` of `input` (decimals exact) when approx or evalf took a finite,
- * non-zero exact value past MPFR's exponent range: "overflow" for Giac's ±infinity or an infinite part
- * (approx(exp(10^20)), approx(exp(10^20)*i)), "underflow" for a float 0 when the whole input is one such call
- * (approx(exp(-10^20))); the bare value is refused so (lostNumber, overflowAt, underflow). For an infinity, each call's
- * first argument is evaluated exactly in `pasq` and asked as overflowAt asks (one whose exact form is already infinite or
- * undef, a division by zero or a limit, keeps its answer); for a 0, the argument is asked as underflow asks, in one engine
- * call. Nothing is asked for an output with no infinity that does not read as 0, an input with a typed infinity, one
- * that changes state or calls a function of the user's, nor once `late()`.
+ * G148 (vg-3, vvg-1), G148f1: the reason for the result `output` of `input` (decimals exact) when approx or evalf took a
+ * finite, non-zero exact value past MPFR's exponent range and Giac's answer is ±infinity, an infinite part or a float 0
+ * (approx(exp(10^20)), approx(exp(10^20)*i), approx(exp(-10^20)), 1/approx(exp(-10^20)), 2*approx(exp(-10^20))): the bare
+ * input (each call replaced by its first argument) is evaluated exactly in `pasq` and asked what the bare input is asked
+ * (overflowAt, then underflow at P), and refused with its reason. A bare input whose exact form is infinite, undef or an
+ * error (1/approx(0), approx(1/0), a limit) keeps its answer, as does one that is exactly 0 (2*approx(0)). For an
+ * infinity the bare input gives no reason for, each call's first argument is asked as overflowAt asks (approx overflowed
+ * on its way). Nothing is asked for an output with no infinity that does not read as 0, an input with no approx or
+ * evalf, one with a typed infinity, one that changes state or calls a function of the user's, nor once `late()`.
  */
 export function approxRange(giac: Giac, input: string, output: string, P: number, late: () => boolean, userFn: (name: string) => boolean): NoValue | null {
   const over = infinite(output);
@@ -152,15 +164,21 @@ export function approxRange(giac: Giac, input: string, output: string, P: number
   if (!over && (read === null || !isZero(read))) return null;
   const t = input.trim();
   const calls = callsOf(t, APPROX_CALLS, "typed");
-  if (!calls.length || (!over && (calls.length !== 1 || calls[0]!.at !== 0 || calls[0]!.close !== t.length - 1))) return null;
+  if (!calls.length || late()) return null;
   if (firstNameIn(t, TYPED_INF, "typed") !== null || changesState(t, "typed") || functionsIn(t, "typed").some(userFn)) return null;
-  const argOf = (c: { open: number; close: number }): string => topLevelArgs(t.slice(c.open + 1, c.close), "typed")[0]!;
-  if (!over) return late() || !underflow(giac, [`(${argOf(calls[0]!)})`], P) ? null : "underflow";
+  const finite = (exact: string): boolean => !isError(exact) && exact !== "undef" && !infinite(exact);
   try {
+    const bare = giac.eval(`pasq:=(${bareOf(t)})`).trim();
+    if (!finite(bare)) return null;
+    if (bare !== "0") {
+      if (overflowAt(giac, "pasq", bare, P)) return "overflow";
+      if (!late() && underflow(giac, ["pasq"], P)) return "underflow";
+    }
+    if (!over) return null;
     for (const c of calls) {
       if (late()) return null;
-      const exact = giac.eval(`pasq:=(${argOf(c)})`).trim();
-      if (!isError(exact) && exact !== "undef" && overflowAt(giac, "pasq", exact, P)) return "overflow";
+      const exact = giac.eval(`pasq:=(${topLevelArgs(t.slice(c.open + 1, c.close), "typed")[0] ?? ""})`).trim();
+      if (finite(exact) && overflowAt(giac, "pasq", exact, P)) return "overflow";
     }
     return null;
   } finally {

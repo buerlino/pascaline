@@ -189,8 +189,8 @@ describe.skipIf(!giacAvailable())("G78 on the real engine", () => {
   }, 30_000); // factorial(10^6) is one GMP call of about 1 s that ignores the interrupt; with 87 test files in parallel it took 6 s (run 150), so the overhead check above decides, not vitest's 5 s
 });
 
-// G148 (step 4): the rule asks the engine nothing for an output with no infinity that does not read as 0, nor for an
-// input with no approx or evalf, a typed infinity, or a 0 that is not the whole input's.
+// G148 (step 4), G148f1: the rule asks the engine nothing for an output with no infinity that does not read as 0, inside
+// a larger input too, nor for an input with no approx or evalf or with a typed infinity.
 describe("G148 approxRange's cost", () => {
   const counting = (): { giac: Giac; calls: () => number } => {
     let n = 0;
@@ -205,12 +205,15 @@ describe("G148 approxRange's cost", () => {
     expect(approxRange(giac, input, output, 40, () => false, () => false), `${input} -> ${output}`).toBeNull();
     return calls();
   };
-  it("asks nothing for an ordinary output, a limit, a typed inf or a 0 inside a larger input", () => {
+  it("asks nothing for an ordinary output, a limit or a typed inf", () => {
     expect(ask("approx(1/3)", "0.3333333333333333333333333333333333333333")).toBe(0);
     expect(ask("approx(exp(1000))", "0.1970071114017046993888879352243323125316e435")).toBe(0);
     expect(ask("limit(1/x^2,x,0)", "+infinity")).toBe(0);
     expect(ask("approx(inf)", "+infinity")).toBe(0);
-    expect(ask("2*approx(exp(-10^20))", "0.0000000000000000000000000000000000000000")).toBe(0);
+    // G148f1: an approx or evalf inside a larger input whose output is neither infinite nor 0.
+    expect(ask("1/approx(exp(1))", "0.3678794411714423215955237701614608674458")).toBe(0);
+    expect(ask("2*approx(1/4)", "0.5")).toBe(0);
+    expect(ask("evalf(10^20)+1", "0.1000000000000000000010000000000000000000e21")).toBe(0);
     expect(ask("sin(pi)", "0")).toBe(0);
   });
 });
