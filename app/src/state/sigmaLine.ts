@@ -5,7 +5,8 @@
 import { decimalFromString, formatReal, toText, type FormatOptions } from "../engine/format.ts";
 import type { ValueFacts } from "../engine/types.ts";
 import { uncText } from "../i18n/enUnc.ts";
-import { commaResult, type FmtMode } from "./displayMode.ts";
+import { commaResult, modeOf, type FmtMode, type FormStep } from "./displayMode.ts";
+import type { NumberFormat } from "../calc/port.ts";
 
 /** The notation σ is shown in, from the row's: Standard and Fixed would drop σ's second digit or show it as zeros. */
 const SIGMA_FORMAT: Readonly<Record<string, FormatOptions["format"]>> = { eng: "ENG", pfx: "PFX" };
@@ -32,4 +33,13 @@ export function sigmaLine(facts: ValueFacts | undefined, mode: FmtMode, comma = 
   const a = shown(s, mode, comma);
   const b = u === null ? null : shown(u, mode, comma);
   return a === null || b === null ? null : uncText("unc.sigma", { s: a, u: b });
+}
+
+/** The σ line a tap on a row shows (Session.sigma): none unless Settings › Numbers › Uncertainty says `sigma`; drawn in
+ *  the row's notation and the decimal mark. Only a finished row has facts. */
+export function sigmaOf(
+  item: { facts?: ValueFacts; fmt?: FmtMode; form?: FormStep },
+  s: { uncertainty: string; format: NumberFormat; decimalMark: string },
+): string | null {
+  return s.uncertainty === "sigma" ? sigmaLine(item.facts, modeOf(item, s) ?? s.format, s.decimalMark === "comma") : null;
 }

@@ -73,8 +73,6 @@ export function readValueFacts(x: unknown): ValueFacts | null {
   if (inexact !== undefined && inexact !== true) return null;
   if (uncDigits !== undefined && !(typeof uncDigits === "number" && Number.isInteger(uncDigits) && uncDigits >= 0)) return null;
   if (why !== undefined && !isWhy(why)) return null;
-  // R40: a text the σ line reads with decimalFromString (one that is not a decimal shows no line)
-  if (uncSigma !== undefined && !(typeof uncSigma === "string" && uncSigma.length <= 64)) return null;
   return {
     exact,
     reliableDigits: d,
@@ -82,7 +80,9 @@ export function readValueFacts(x: unknown): ValueFacts | null {
     ...(why ? { why: why as PrecisionWhy } : {}),
     ...(inexact ? { inexact } : {}),
     ...(uncDigits !== undefined ? { uncDigits } : {}),
-    ...(uncSigma !== undefined ? { uncSigma: uncSigma as string } : {}),
+    // R40: σ's text, read with decimalFromString where it is drawn (a text that is not a decimal draws no σ line and no
+    // muted digit); one that is not a string is dropped, never trusted, and claims nothing the other facts do not
+    ...(typeof uncSigma === "string" ? { uncSigma } : {}),
   };
 }
 

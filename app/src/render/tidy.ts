@@ -2,6 +2,10 @@
 // Tidy-up of Giac's latex() output so it reads like textbook maths (D4): implicit products, sized
 // brackets, no redundant parentheses in fractions, matrices as pmatrix. The string is then drawn by
 // MathLive's static renderer; raw engine text is never shown as the result.
+// R40: the result row's muted digits and σ line ride in this chunk (tidyLoad.ts onTidy tells the session): it loads
+// when idle and beside each job, so they need no loader of their own in the start chunk (docs/04 8.3).
+export { muter } from "./uncMute.ts";
+export { sigmaOf } from "../state/sigmaLine.ts";
 
 /** Index of the delimiter closing the group opened at `open` (a "{" or "\left(" or "("), or -1. */
 function matchBrace(s: string, open: number): number {

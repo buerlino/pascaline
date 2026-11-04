@@ -136,23 +136,48 @@ export function uncDigitsOf(value: DecimalValue, sigma: DecimalValue, digits: nu
   return Math.max(0, roundSignificant(value, digits).exp - sigma.exp);
 }
 
+/** How many names `freeName` tries for one of ours before it gives up (the name, then one more `_` each time). */
+export const FREE_TRIES = 8;
+
+/** R40 (family 9): `name`, or the first of `name_`, `name__`, … that `taken` does not hold, nor `used` (the other names
+ *  of the same text); undefined after FREE_TRIES names. `taken` is the host's list of stored names (no Giac text read, P20). */
+export function freeName(name: string, taken: (n: string) => boolean, used: ReadonlySet<string> = new Set()): string | undefined {
+  let m = name;
+  for (let i = 0; i < FREE_TRIES; i++, m += "_") if (!taken(m) && (m === name || !used.has(m))) return m;
+  return undefined;
+}
+
 /**
  * The `uncDigits` of a Home result computed from `body` (the input with its constants as names), with σ itself as
  * `uncSigma` (R40: the σ line): absent when no inexact constant of `table` is in it (nor an `extra` input, R61), when
  * the result is not one real number, when σ is zero, or when σ cannot be computed (a function Giac cannot
- * differentiate, the budget ran out).
+ * differentiate, the budget ran out, no free name for one of ours).
+ * `taken` (R40, family 9; P20): whether a name holds a user's value, from the host's own lists (the state read, the
+ * definitions log, the input's own store), never from Giac's text. A user's variable named as one of our leaves or
+ * constants (`pasl_fine_structure:=5`) would be read for it inside diff, so each such name is renamed to a free one
+ * (freeName); when none is free, no digit is muted rather than a wrong one.
  */
-export function constUncDigits(giac: Giac, body: string, table: ConstTable, r: HomeResult, digits: number, extra: readonly SigmaInput[] = []): { uncDigits: number; uncSigma: string } | undefined {
+export function constUncDigits(
+  giac: Giac,
+  body: string,
+  table: ConstTable,
+  r: HomeResult,
+  digits: number,
+  extra: readonly SigmaInput[] = [],
+  taken: (name: string) => boolean = () => false,
+): { uncDigits: number; uncSigma: string } | undefined {
   const ids = inexactConstsIn(body, table);
   if ((!ids.length && !extra.length) || !r.ok || !r.value || r.items || !isZero(r.value.im)) return undefined;
-  // R40 (family 9): a user's variable named as one of our leaves or constants (`pasl_fine_structure:=5`) would be read
-  // for it inside diff; each such name is renamed to one Giac holds no value for (`pasl_fine_structure_`)
-  const free = (n: string): string => {
-    let m = n;
-    for (let i = 0; i < 8 && giac.eval(m) !== m; i++) m += "_";
-    return m;
-  };
-  const expr = mapNames(sigmaExpr(body, table, ids, extra), ({ name }) => (name.startsWith(LEAF_PREFIX) || name.startsWith(CONST_PREFIX) ? free(name) : null), "typed");
+  const raw = sigmaExpr(body, table, ids, extra);
+  const used = new Set([...names(raw, "typed")].map((n) => n.name));
+  let stuck = false;
+  const expr = mapNames(raw, ({ name }) => {
+    if (!name.startsWith(LEAF_PREFIX) && !name.startsWith(CONST_PREFIX)) return null;
+    const m = freeName(name, taken, used);
+    if (m === undefined) stuck = true;
+    return m ?? name;
+  }, "typed");
+  if (stuck) return undefined;
   const out = giac.eval(`evalf(${expr},20)`);
   if (out.startsWith("GIAC_ERROR")) return undefined;
   const sigma = decimalFromString(out);

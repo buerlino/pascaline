@@ -114,7 +114,7 @@ describe("the sheet's highlighted row and cell (R12b)", () => {
   });
 });
 
-// R40: the digits past a constant's σ are one muted span (render/home.ts mutedTail, class `unc`), drawn in --muted: it
+// R40: the digits past a constant's σ are one muted span (render/uncMute.ts mutedTail, class `unc`), drawn in --muted: it
 // keeps the text floor on the history's ground and on a picked row, in all 40 theme combinations.
 describe("muted digits (R40)", () => {
   it("Math.svelte draws .unc in --muted", () => {

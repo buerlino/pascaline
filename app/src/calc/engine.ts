@@ -107,9 +107,8 @@ export class EngineCalc implements Calc {
   async home(giac: string, s: CalcSettings, chips?: ChipFactsTable, consts?: ConstTable): Promise<HomeOutcome> {
     try {
       const settings = { ...defaultHomeSettings, digits: s.digits, angle: s.angle };
-      const k = consts && Object.keys(consts).length ? consts : undefined;
-      const c = chips && Object.keys(chips).length ? chips : undefined;
-      const r = await (k || c ? this.engine.home(giac, settings, k, c) : this.engine.home(giac, settings));
+      // an absent table is not sent (WorkerEngine.home); the session sends `consts` only when the input holds one (R40)
+      const r = await this.engine.home(giac, settings, consts, chips && Object.keys(chips).length ? chips : undefined);
       return { ...passed(r, HOME_KEYS), ...(r.rational && r.exact !== undefined ? { exact: r.exact } : {}) };
     } catch (e) {
       throw e instanceof EngineCancelled ? new CalcCancelled() : e;

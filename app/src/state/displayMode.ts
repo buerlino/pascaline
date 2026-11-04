@@ -13,7 +13,6 @@ import {
   formatFraction,
   formatPolar,
   isZero,
-  roundSignificant,
   markOf,
   type ComplexValue,
   type DecimalValue,
@@ -22,7 +21,7 @@ import {
   type PrecisionFacts,
 } from "../engine/format.ts";
 import type { NumberFormat } from "../calc/port.ts";
-import { complexToLatex, fractionToLatex, homeResultToLatex, polarToLatex } from "../render/home.ts";
+import { complexToLatex, fractionToLatex, homeResultToLatex, polarToLatex, type Mute } from "../render/home.ts";
 
 export type FmtMode = "std" | "sci" | "eng" | "pfx" | "fix" | "frac" | "mixed" | "polar";
 
@@ -162,6 +161,8 @@ export interface DisplayContext {
   angle: "rad" | "deg";
   /** R57: the decimal comma is on; numbers are drawn `1,5` and list elements are separated by `;`. */
   decimalComma?: boolean;
+  /** R40: the muted digits' code (render/uncMute.ts muter), once loaded; absent: every digit drawn plain. */
+  mute?: (r: NumericResult) => Mute | undefined;
 }
 
 /** The mode an item is drawn in: the a b/c form when one is chosen, else the Format key's notation (`dec`: the notation,
@@ -232,16 +233,8 @@ function renderPoint(r: NumericResult, mode: FmtMode | undefined, ctx: DisplayCo
     return { text: p.text, latex: polarToLatex(p, grouped) };
   }
   const c = formatComplex(r.value, confirmedOptions(r.value, r.facts?.reliableDigits ?? null, opts(base)));
-  return { text: c.text, latex: complexToLatex(c, grouped, grouped ? uncCut(r, digits) : undefined) };
-}
-
-/** R40: the place value below which a real result's digits are uncertain (G26: the digits past `uncDigits` of the value
- *  shown at `digits`); undefined when no constant's σ limits it. Only the screen's row mutes them (`grouped`): the text,
- *  chips and Copy keep every digit. */
-function uncCut(r: NumericResult, digits: number): number | undefined {
-  const n = r.facts?.uncDigits;
-  if (n === undefined || !r.value || !isZero(r.value.im) || isZero(r.value.re)) return undefined;
-  return roundSignificant(r.value.re, digits).exp - n + 1;
+  // R40: only the screen's row mutes the digits past a constant's σ (`grouped`): the text, chips and Copy keep them all
+  return { text: c.text, latex: complexToLatex(c, grouped, grouped ? ctx.mute?.(r) : undefined) };
 }
 
 /**

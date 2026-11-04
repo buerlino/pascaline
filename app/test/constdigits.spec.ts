@@ -116,7 +116,7 @@ test("a tap on the row shows its σ line, a second hides it; with Muted digits a
   await expect(page.getByTestId("entry-label")).toHaveText("Preset name");
   await tap(page, ["alpha", "emark", "enter"]); // the name "P" (Alpha on the ᴇ key)
   await expect(page.getByTestId("notice")).toHaveText("Saved P");
-  await page.evaluate(() => window.pascaline.session.setUncertainty("sigma"));
+  await page.evaluate(() => (window.pascaline.session.settings.uncertainty = "sigma"));
   await tap(page, ["@mode", "d5"]);
   await page.getByTestId("menu").locator('[role="menuitem"][data-id="p1"]').tap();
   await expect.poll(() => page.evaluate(() => window.pascaline.session.settings.uncertainty)).toBe("muted");

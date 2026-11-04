@@ -316,10 +316,10 @@ describe("presets (R88)", () => {
 
   it("R40: Numbers holds Uncertainty: a capture keeps it, an apply sets it back", async () => {
     const { session, presets } = await setup();
-    session.setUncertainty("muted");
+    session.settings.uncertainty = "muted";
     const id = presets.capture("Quiet", ["numbers"]);
     expect(presets.list[0]?.groups.numbers).toMatchObject({ uncertainty: "muted" });
-    session.setUncertainty("sigma");
+    session.settings.uncertainty = "sigma";
     await presets.apply(id);
     expect(session.settings.uncertainty).toBe("muted");
   });

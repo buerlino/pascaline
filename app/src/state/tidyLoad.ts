@@ -4,11 +4,17 @@
 /** R91: the tidy-up of Giac's latex (render/tidy.ts) is only needed once a result is in, so it is a chunk of its own: it
  *  loads beside the first job (and when idle, main.ts), and a failed load is tried again by the next job. */
 let tidyChunk: Promise<typeof import("../render/tidy.ts")> | undefined;
+/** R40: told the chunk once it is in (the session: the row's muted digits and σ line ride in it, render/tidy.ts). */
+let loaded: (m: typeof import("../render/tidy.ts")) => void = () => {};
+export const onTidy = (f: typeof loaded): void => void (loaded = f);
 export const loadTidy = (): Promise<typeof import("../render/tidy.ts")> =>
-  (tidyChunk ??= import("../render/tidy.ts").catch((e: unknown) => {
-    tidyChunk = undefined;
-    throw e;
-  }));
+  (tidyChunk ??= import("../render/tidy.ts").then(
+    (m) => (loaded(m), m),
+    (e: unknown) => {
+      tidyChunk = undefined;
+      throw e;
+    },
+  ));
 /** Start the tidy chunk's load beside a job; a failure here is dealt with where the result is drawn (tidyOr). */
 export const prefetchTidy = (): Promise<typeof import("../render/tidy.ts")> => {
   const p = loadTidy();

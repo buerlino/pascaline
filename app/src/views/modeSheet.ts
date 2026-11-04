@@ -308,7 +308,11 @@ function numbersItems(session: Session): MenuItem[] {
     get value() {
       return uncText(`unc.setting.${s.uncertainty}`);
     },
-    adjust: (by) => session.setUncertainty(cycle(UNCERTAINTY_VIEWS, s.uncertainty, by)),
+    // set here, not by a Session setter: the setting's code stays off the start chunk (R40, docs/04 8.3)
+    adjust: (by) => {
+      s.uncertainty = cycle(UNCERTAINTY_VIEWS, s.uncertainty, by);
+      session.save();
+    },
   };
   return [mark, cycleRow, decimals, uncertainty];
 }

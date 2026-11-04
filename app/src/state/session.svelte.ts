@@ -22,6 +22,7 @@ import {
   renderNumeric,
   commaResult,
   type FmtMode,
+  type DisplayContext,
   type FormStep,
   type Polar,
   type Rational,
@@ -33,7 +34,7 @@ import { idbKv, type Kv } from "./storage.ts";
 import { TapCounter } from "./taps.svelte.ts";
 import { commaInput } from "../entry/commaInput.ts";
 import { casItem, chipFactsOf, chipOf, HISTORY_LIMIT, homeItem, withUnit } from "./results.ts";
-import { prefetchTidy, tidyOr } from "./tidyLoad.ts";
+import { onTidy, prefetchTidy, tidyOr } from "./tidyLoad.ts";
 export { loadTidy } from "./tidyLoad.ts";
 import type { Copies, RemovedKind, RemovedRows } from "./removedRows.ts";
 import { restoredItem } from "./storedItem.ts";
@@ -140,8 +141,10 @@ export interface UsedValue {
 /** R98: the Undo copy's code (removedRows.ts) is out of the start chunk: main.ts fetches it when idle, and the first
  *  Clear or Delete, or a start that finds a stored copy, waits for it. A failed load is tried again by the next one. */
 let removedCode: typeof import("./removedRows.ts") | undefined;
-/** R40: the σ line's code, once a tap on a row with σ loaded it (Session.sigmaReady). */
-let sigmaCode = $state.raw<typeof import("./sigmaLine.ts")>();
+/** R40: the σ line's and the muted digits' code: the tidy chunk, once it is in (main.ts loads it when idle, and each
+ *  job beside it; a failed load is tried again by the next job). Until then a row draws every digit plain. */
+let sigmaCode = $state.raw<typeof import("../render/tidy.ts")>();
+onTidy((m) => (sigmaCode = m));
 export const loadRemoved = (): Promise<typeof import("./removedRows.ts") | undefined> =>
   import("./removedRows.ts").then((m) => (removedCode = m), () => undefined);
 
@@ -166,7 +169,7 @@ export function migrateSettings(saved: unknown, firstLook: Look = defaultSetting
   if (x["format"] === "std" || x["format"] === "sci" || x["format"] === "eng" || x["format"] === "pfx") s.format = x["format"];
   if (x["entry"] === "textbook" || x["entry"] === "line") s.entry = x["entry"];
   if (x["decimalMark"] === "point" || x["decimalMark"] === "comma") s.decimalMark = x["decimalMark"];
-  if (x["uncertainty"] === "sigma" || x["uncertainty"] === "muted") s.uncertainty = x["uncertainty"]; // R40: absent is the default
+  if (x["uncertainty"] === "muted") s.uncertainty = "muted"; // R40: anything else is the default, sigma
   if (typeof x["digits"] === "number" && Number.isFinite(x["digits"])) s.digits = clampDigits(x["digits"]);
   if (Array.isArray(x["fmtCycle"])) s.fmtCycle = normalizeCycle(x["fmtCycle"].filter(isFmtMode));
   if (typeof x["fixDecimals"] === "number" && Number.isFinite(x["fixDecimals"])) s.fixDecimals = clamp(x["fixDecimals"], 0, 12);
@@ -396,10 +399,6 @@ export class Session {
     this.settings.fmtCycle = normalizeCycle([...ticked]);
     this.save();
   }
-  setUncertainty(u: UncertaintyView): void {
-    this.settings.uncertainty = u;
-    this.save();
-  }
   setFixDecimals(n: number): void {
     this.settings.fixDecimals = clamp(n, 0, 12);
     this.save();
@@ -502,7 +501,7 @@ export class Session {
         defines = p.defines;
         if (p.inexact) live.inexactInput = true;
         if (p.named) named = chipFactsOf(p.named);
-        if (p.consts) consts = entry.constTableOf(p.consts); // R40: G26's uncDigits (and σ) come back for them
+        consts = p.consts; // R40: G26's uncDigits (and σ) come back for them
       }
     } catch (e) {
       live.status = "error";
@@ -513,7 +512,7 @@ export class Session {
     try {
       if (view === "home") {
         const tidy = prefetchTidy();
-        const r = await (named || consts ? this.calc.home(giac, s, named, consts) : this.calc.home(giac, s));
+        const r = await this.calc.home(giac, s, named, consts); // an absent table is not sent (EngineCalc.home)
         if (live.status !== "pending") return;
         const latex = !r.ok ? "" : r.latex !== undefined ? await tidyOr(tidy, r.latex, homeResultToLatex(r.display)) : homeResultToLatex(r.display);
         if (live.status !== "pending") return;
@@ -580,26 +579,21 @@ export class Session {
     return modeOf(item, this.settings);
   }
 
-  /** R40: the σ line a tap on the row shows (Settings › Numbers › Uncertainty), in the row's notation; null: none, or
-   *  its code is not loaded yet (sigmaReady). */
-  sigma(item: HistoryItem): string | null {
-    if (item.status !== "done" || this.settings.uncertainty !== "sigma" || !sigmaCode) return null;
-    return sigmaCode.sigmaLine(item.facts, this.modeOf(item) ?? this.settings.format, this.decimalComma);
+  /** R40: the σ line a tap on the row shows (Settings › Numbers › Uncertainty), in the row's notation; null: none;
+   *  undefined: its code is not in yet (sigmaCode). */
+  sigma(item: HistoryItem): string | null | undefined {
+    return sigmaCode?.sigmaOf(item, this.settings);
   }
-  /** Loads the σ line's code (a chunk of its own, off the start chunk); a failed load is tried again by the next tap. */
-  sigmaReady(): Promise<void> {
-    return import("./sigmaLine.ts").then((m) => void (sigmaCode = m), () => {});
-  }
-
   /** The mark before a finished result (docs/04 2.4), for the form it is drawn in; null: a non-number, or none known. */
   mark(item: HistoryItem): MarkInfo | null {
     if (item.status !== "done") return null;
     return markFor(item, this.modeOf(item), this.displayContext());
   }
 
-  displayContext(): { format: NumberFormat; digits: number; fixDecimals: number; angle: AngleUnit; decimalComma?: boolean } {
+  /** `mute` (R40): the muted digits' code once in; only the screen's row (`grouped`) uses it (displayMode.ts renderPoint). */
+  displayContext(): DisplayContext {
     const s = this.settings;
-    return { format: s.format, digits: s.digits, fixDecimals: s.fixDecimals, angle: s.angle, ...(this.decimalComma ? { decimalComma: true } : {}) };
+    return { format: s.format, digits: s.digits, fixDecimals: s.fixDecimals, angle: s.angle, ...(this.decimalComma ? { decimalComma: true } : {}), mute: sigmaCode?.muter };
   }
 
   /**
