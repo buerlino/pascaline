@@ -32,6 +32,7 @@ import { ICDF_DIGITS, ICDF_FAILED, erfValueText, icdfCalls, icdfPolished } from 
 import type { GiacValue } from "./bridge.ts";
 import { callsOf, functionsIn, isError, LIST_TYPE, matrixTyped, type Quoting, RATIONAL, splitList, topLevelArgs, wholeCall } from "./giacPrint.ts";
 import { complexReads, complexReplacedIn, complexSafe, forValue, nonReal, purgeReads } from "./complex.ts";
+import { literalStart } from "./literalPrec.ts";
 
 export interface Giac {
   eval(input: string): string;
@@ -547,10 +548,18 @@ export function exactFacts(
   // a double where MPFR digits were asked, in an element that is no number yet (atParts): Giac's evalf of the value
   const whole = (prec: number): GiacValue => at(`evalf(${src},${prec})`, prec);
   if (erf !== safe) giac.eval(`${ICDF_FAILED}:=0`);
-  const P2 = [P, P + 20];
-  const first = erf !== safe ? null : src === name && P2.every((d) => v.at?.[String(d)] !== undefined) ? v : giac.value(src, P2);
+  // G141: the check starts at the longest exact integer's digits plus 20 (literalStart; a rational is no cancellation).
+  // Past MAX_EVAL_DIGITS, or when that start gives no value (the budget), it runs from P, unchecked (⚠, never ≈).
+  const lit = v.kind === "integer" || v.kind === "rational" ? { at: P, unchecked: false } : literalStart(text, P, MAX_EVAL_DIGITS);
+  const from = (start: number): ElementFacts[] | null => {
+    const P2 = [start, start + 20];
+    const first = erf !== safe ? null : src === name && P2.every((d) => v.at?.[String(d)] !== undefined) ? v : giac.value(src, P2);
+    return factsFrom(giac, name, v, first, read, whole, known, shape, digits, maxExactDigits, text, start, underflowAt);
+  };
   try {
-    const out = factsFrom(giac, name, v, first, read, whole, known, shape, digits, maxExactDigits, text, underflowAt);
+    const raised = lit.at > P ? from(lit.at) : null;
+    let out = raised ?? from(P);
+    if ((lit.unchecked || (lit.at > P && !raised)) && out) out = out.map((f) => (f.exact ? f : { ...f, warn: f.warn ?? ("unchecked" as const) }));
     if (erf === safe || !out) return out;
     return giac.eval(ICDF_FAILED).trim() !== "0" ? out.map((f) => (f.exact ? f : { ...f, warn: "unaudited" as const })) : out;
   } finally {
@@ -558,8 +567,8 @@ export function exactFacts(
   }
 }
 
-/** exactFacts past the exact elements: `read` gives the value at a precision, `w` at P and P+20 when one call gave both
- *  (null: read each), `known` the facts so far. */
+/** exactFacts past the exact elements: `read` gives the value at a precision, `w` at S and S+20 when one call gave both
+ *  (null: read each), `known` the facts so far; S the precision the check starts at (P, or more for a long literal, G141). */
 function factsFrom(
   giac: Giac,
   name: string,
@@ -572,12 +581,13 @@ function factsFrom(
   digits: number,
   maxExactDigits: number,
   text: string,
+  S: number,
   underflowAt?: (k: number) => boolean,
 ): ElementFacts[] | null {
   const P = valuePrecision(digits);
   const n = size(shape);
   const level = (prec: number): Parts[] | null => {
-    const at = atParts(w && prec <= P + 20 ? w : read(prec), prec, P + 2, n);
+    const at = atParts(w && w.at?.[String(prec)] !== undefined ? w : read(prec), prec, P + 2, n);
     const again = at === "double" ? atParts(whole(prec), prec, P + 2, n) : at;
     return again === "double" ? null : again;
   };
@@ -586,11 +596,11 @@ function factsFrom(
     const big = level(P + 20);
     return big ? [{ value: { re: big[0]!.re, im: big[0]!.im }, exact: true, reliableDigits: null, big: true }] : null;
   }
-  const A = level(P);
-  const B = A && level(P + 20);
+  const A = level(S);
+  const B = A && level(S + 20);
   if (!A || !B) return null;
   const real = known.every(
-    (f, k) => f !== null || (isZero(A[k]!.im) && isZero(B[k]!.im) && B[k]!.re.sticky && !endsEarly(B[k]!.re, confirmedComplex(A[k]!, B[k]!, P, P))),
+    (f, k) => f !== null || (isZero(A[k]!.im) && isZero(B[k]!.im) && B[k]!.re.sticky && !endsEarly(B[k]!.re, confirmedComplex(A[k]!, B[k]!, S, P))),
   );
   let parts: ReturnType<typeof splitParts> = null;
   // G58: not for a text whose symbolic re and im can loop (heavySplit); its parts are the evalf's. F73: nor for a
@@ -617,32 +627,32 @@ function factsFrom(
   };
   const kept = (L: Parts[]): Parts[] => L.map((x, k) => ({ ...x, re: exactPart(k, "re") ?? x.re, im: exactPart(k, "im") ?? x.im }));
   const levels = new Map([
-    [P, kept(A)],
-    [P + 20, kept(B)],
+    [S, kept(A)],
+    [S + 20, kept(B)],
   ]);
   const at = (prec: number): Parts[] | null => {
     const L = levels.get(prec) ?? level(prec);
     return L && kept(L);
   };
-  return agreedFacts(known, digits, P, at, underflowAt);
+  return agreedFacts(known, digits, P, S, at, underflowAt);
 }
 
-/** The facts of the elements not known yet (`facts` null there) from the agreement of their values at P, P+20 and the
- *  further levels (`evalfAt`), see exactFacts. */
-function agreedFacts(facts: readonly (ElementFacts | null)[], digits: number, P: number, evalfAt: (prec: number) => Parts[] | null, underflowAt?: (k: number) => boolean): ElementFacts[] | null {
-  const A = evalfAt(P);
-  const B = A && evalfAt(P + 20);
+/** The facts of the elements not known yet (`facts` null there) from the agreement of their values at S, S+20 and the
+ *  further levels (`evalfAt`), see exactFacts; at most P digits are confirmed. */
+function agreedFacts(facts: readonly (ElementFacts | null)[], digits: number, P: number, S: number, evalfAt: (prec: number) => Parts[] | null, underflowAt?: (k: number) => boolean): ElementFacts[] | null {
+  const A = evalfAt(S);
+  const B = A && evalfAt(S + 20);
   if (!A || !B) return null;
-  // Further steps: P+20 against P+40, then the extra precision doubles (P+80, P+160, …, at most MAX_EVAL_DIGITS) while
+  // Further steps: S+20 against S+40, then the extra precision doubles (S+80, S+160, …, at most MAX_EVAL_DIGITS) while
   // fewer than `digits` agree and the budget lasts; the first agreement stops it (G23). Each level is read once and
   // shared by all elements.
   const levels: ({ re: DecimalValue; im: DecimalValue }[] | null)[] = [A, B];
-  const precs = [P, P + 20];
+  const precs = [S, S + 20];
   const t0 = Date.now();
   const more = (i: number): boolean => {
     if (i < levels.length) return levels[i] !== null;
     if (levels[i - 1] === null) return false;
-    const prec = P + 40 * 2 ** (i - 2);
+    const prec = S + 40 * 2 ** (i - 2);
     if (prec > MAX_EVAL_DIGITS || (i > 2 && Date.now() - t0 > EXTRA_BUDGET_MS)) return false;
     levels[i] = evalfAt(prec);
     precs[i] = prec;
@@ -661,9 +671,9 @@ function agreedFacts(facts: readonly (ElementFacts | null)[], digits: number, P:
     // two precisions confirm nothing: the facts of an unaudited double, as Giac's numeric integration has them.
     if (isDouble(A[k]!, B[k]!) || B[k]!.double) return doubleFacts(A[k]!, B[k]!, { re: A[k]!.re, im: A[k]!.im });
     let leading = leadingZero[k]! && !under;
-    let reliable = leadingZero[k] ? (leading ? 0 : digits) : confirmedComplex(A[k]!, B[k]!, P, P);
-    let value = denoised(A[k]!, B[k]!, P);
-    let at = P + 20;
+    let reliable = leadingZero[k] ? (leading ? 0 : digits) : confirmedComplex(A[k]!, B[k]!, S, P);
+    let value = denoised(A[k]!, B[k]!, S);
+    let at = S + 20;
     for (let i = 2; reliable < digits && !(leading && i >= 2 + LEADING_ZERO_STEPS) && more(i); i++) {
       const next = levels[i];
       if (!next) break;
@@ -829,22 +839,25 @@ function floatFactsOf(
     const v = at(d, name);
     return v && facts(v, () => Math.min(digits, d), "unchecked");
   }
-  // Rule 2: P against P+20, and P+20 against P+40 when fewer than the digits agree (a cancellation only needs more
-  // working digits). Null when P or P+20 could not be evaluated, with the facts of P alone in `once`.
+  // Rule 2: S against S+20, and S+20 against S+40 when fewer than the digits agree (a cancellation only needs more
+  // working digits). Null when S or S+20 could not be evaluated, with the facts of S alone in `once`. G141: S is P, or
+  // the longest exact integer's digits plus 20 (literalStart); past MAX_EVAL_DIGITS the check runs from P, unchecked.
+  const lit = literalStart(expr, P, MAX_EVAL_DIGITS);
+  const S = lit.at;
   const agreed = (text: string | null): { facts: ElementFacts[] } | { once: ElementFacts[] } | null => {
-    const A = at(P, "pasm", (n) => Math.max(n, P), text);
-    const B = A && at(P + 20, "pasm2", (n) => Math.max(n, P) + 20, text);
+    const A = at(S, "pasm", (n) => Math.max(n, S), text);
+    const B = A && at(S + 20, "pasm2", (n) => Math.max(n, S) + 20, text);
     if (A && B) {
-      const reliable = B.map((b, k) => Math.min(confirmedComplex(A[k]!, b, P, P), A[k]!.short ?? P));
+      const reliable = B.map((b, k) => Math.min(confirmedComplex(A[k]!, b, S, P), A[k]!.short ?? P));
       if (reliable.some((n) => n < digits)) {
-        const C = at(P + 40, "pasm3", (n) => Math.max(n, P) + 40, text);
+        const C = at(S + 40, "pasm3", (n) => Math.max(n, S) + 40, text);
         if (C) {
           giac.eval(`${name}:=pasm3`);
-          return { facts: facts(C, (k) => Math.max(reliable[k]!, confirmedComplex(B[k]!, C[k]!, P + 20, P))) };
+          return { facts: facts(C, (k) => Math.max(reliable[k]!, confirmedComplex(B[k]!, C[k]!, S + 20, P)), lit.unchecked ? "unchecked" : undefined) };
         }
       }
       giac.eval(`${name}:=pasm2`);
-      return { facts: facts(B, (k) => reliable[k]!) };
+      return { facts: facts(B, (k) => reliable[k]!, lit.unchecked ? "unchecked" : undefined) };
     }
     if (A) {
       giac.eval(`${name}:=pasm`);
