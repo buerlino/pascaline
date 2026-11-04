@@ -5,6 +5,9 @@ History only: read it when a decision is questioned. What still binds is in [../
 
 ## Decided proposals moved here later
 
+### Shortened 2026-11-04 (Opus pass 63) to make room for G148f1's default, as it stood
+- **G148 (Opus pass 62), G148f1 (Opus pass 63):** approx or evalf of a value past MPFR's range is refused as the bare input is (Overflow, Underflow), inside a larger input too (1/approx(exp(-10^20)) Overflow, 2*approx(exp(-10^20)) Underflow). For an infinite or float 0 output of an input that calls approx or evalf, the input with each call replaced by its first argument is evaluated exactly and asked overflowAt, then underflow. An infinite, undef or exact 0 bare form keeps its answer. Such an output costs two to four Giac calls more (the bare value, overflowAt, underflow, the purge); an output neither infinite nor 0 costs none. Would change if: a cheaper test tells exp(-10^20) from 0.
+
 ### Shortened 2026-11-04 (Opus pass 62) to make room for G148's, G161's and G163's defaults, as they stood
 - **P23 (decided 2026-10-21, ended 2026-10-27, the owner): the core freeze and its net.** The freeze ended on 2026-10-27; the net stays: the core list runs on every merge and after each Opus pass on the night's device; a red result is a bug to fix (a FIX or a backlog bug line), not a gate; the list changes only with the owner. Rule: brief section 0, `tests/core/README.md`. Full text: archive.
 - **P17 (2026-10-18; two lanes 2026-10-29, the owner): the pipeline is the only path** (`scripts/pipeline.sh`, brief 0c): two lanes, one run each (A ron's UI, B the release and the engine), one merge queue holding `integ` from the merge of phase-1 into the branch to the merge (A47b); an Opus pass after every three packages of a lane holds it too. Full text: archive. Would change if: the queue's waits cost more than the second lane gains.
