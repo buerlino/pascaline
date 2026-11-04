@@ -5,6 +5,7 @@
   // when the residual check failed, and the polynomial roots when asked for.
   import { t } from "../../i18n/index.ts";
   import { longpress } from "../longpress.ts";
+  import Grouped from "../Grouped.svelte";
   import type { SolveApp } from "./app.svelte.ts";
 
   let { app }: { app: SolveApp } = $props();
@@ -30,7 +31,7 @@
               <button type="button" onpointerdown={(e) => e.preventDefault()} onclick={() => app.selectUnknown(name)}>{@render label(name)}</button>
             </th>
             <td use:longpress={() => void app.copyValue(name)} data-value={app.value(name)} data-solved={app.report?.ok && app.report.names.includes(name) && !app.report.roots}>
-              {app.fmtValue(name)}{#if app.warned[name]}<span class="warn" data-testid="mark" title={t("mark.warn")}> ⚠</span>{/if}
+              <Grouped text={app.drawn(app.fmtValue(name))} />{#if app.warned[name]}<span class="warn" data-testid="mark" title={t("mark.warn")}> ⚠</span>{/if}
             </td>
           </tr>
         {/each}
@@ -41,7 +42,7 @@
     <div class="report" data-testid="solve-report" data-warn={app.report.warn} data-ok={app.report.ok}>
       {#if app.report.roots}
         <ol class="roots" data-testid="solve-roots">
-          {#each app.report.roots as r, i (i)}<li>{@render label(app.report.names[0] ?? "")} = {app.mark(r)}{#if app.report.rootWarns?.[i]}<span class="warn" data-testid="mark" title={t("mark.warn")}> ⚠</span>{/if}</li>{/each}
+          {#each app.report.roots as r, i (i)}<li>{@render label(app.report.names[0] ?? "")} = <Grouped text={app.drawn(app.mark(r))} />{#if app.report.rootWarns?.[i]}<span class="warn" data-testid="mark" title={t("mark.warn")}> ⚠</span>{/if}</li>{/each}
         </ol>
       {/if}
       <p class="info" class:late={app.report.info === t("history.working")}>

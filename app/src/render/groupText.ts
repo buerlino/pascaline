@@ -8,3 +8,8 @@ const GROUP_TEXT: Readonly<Record<GroupSep, string>> = { thin: "\u2009", apos: "
 
 /** Each number of `s` grouped as a mantissa is (R55), `sep` between the groups (the caller has applied groupSepFor). */
 export const groupText = (s: string, sep: GroupSep = "thin"): string => s.replace(/\d+(?:\.\d+)?/g, (n) => groupDigits(n, GROUP_TEXT[sep]));
+
+/** R125: a number as an app's readout draws it (Solve, Function): its text, the decimal comma's `,` included when that
+ *  is the mark (R108: elements are then separated by `;`, so a comma between digits is the mark), grouped as Home's row. */
+export const groupMarked = (s: string, sep: GroupSep, decimalComma: boolean): string =>
+  decimalComma ? s.replace(/\d+(?:,\d+)?/g, (n) => groupDigits(n.replace(",", "."), GROUP_TEXT[sep]).replace(".", ",")) : groupText(s, sep);

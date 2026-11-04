@@ -29,6 +29,7 @@
   --fs-result: 26px;
   --fs-entry: 28px;
   --fs-value: 0.94em;
+  --group-gap: 0.1667em; /* R125: a digit group's thin space in an app's readout (\, = 3 mu, as MathLive draws Home's) */
   --lh-small: 16px;
   /* spacing on a 4 px grid (--sp-N is N × 4 px); the half steps keep the heights the screens already had */
   --sp-05: 2px;

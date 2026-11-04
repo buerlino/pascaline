@@ -4,6 +4,7 @@
   // numbers through the Home formatter. ▲▼ (or a swipe, or the wheel) scroll by rows; the menu sets start and step.
   import { t } from "../../i18n/index.ts";
   import { curveColors, type FunctionApp } from "./app.svelte.ts";
+  import Grouped from "../Grouped.svelte";
 
   let { app }: { app: FunctionApp } = $props();
 
@@ -48,10 +49,10 @@
       <tbody>
         {#each app.numXs as x, r (r)}
           <tr>
-            <td class="x" data-x={x}>{app.fmtX(x)}</td>
+            <td class="x" data-x={x}><Grouped text={app.drawn(app.fmtX(x))} /></td>
             {#each app.numSlots as s, c (s)}
               {@const cell = app.numCell(r, c)}
-              <td data-text={cell ? app.fmt(cell) : ""}>{app.fmt(cell)}{#if app.warned(cell)}<span class="warn" data-testid="mark" title={t("mark.warn")}> ⚠</span>{/if}</td>
+              <td data-text={cell ? app.fmt(cell) : ""}><Grouped text={app.drawn(app.fmt(cell))} />{#if app.warned(cell)}<span class="warn" data-testid="mark" title={t("mark.warn")}> ⚠</span>{/if}</td>
             {/each}
           </tr>
         {/each}

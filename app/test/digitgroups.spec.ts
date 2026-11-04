@@ -147,3 +147,40 @@ test("the setting survives a relaunch, goes into a preset and into a backup", as
   );
   expect(backup?.groupSep).toBe("apos");
 });
+
+test("Solve's Num view draws the separator: the root of x=123456789 is 123’456’789; data-value and Copy stay plain", async ({ page }) => {
+  await page.evaluate(() => (window.pascaline.session.settings.groupSep = "apos"));
+  await tap(page, ["@place", "d4", "@symb"]);
+  await expect(page.getByTestId("entry-label")).toHaveText("E1:");
+  await tap(page, ["x", "shift", "dot", ...NINE, "enter"]);
+  await tap(page, ["@num"]);
+  const x = page.locator('[data-testid="solve-table"] tr[data-name="x"] td');
+  await expect(x).toBeVisible();
+  await tap(page, ["@menu", "d1"]); // Solve
+  await expect(x).toHaveAttribute("data-value", "123456789");
+  await expect(x).toHaveText("123’456’789");
+  await tap(page, ["copy"]);
+  await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toBe("123456789");
+  await page.evaluate(() => (window.pascaline.session.settings.groupSep = "thin")); // the default: a gap, not a character
+  await expect(x).toHaveText("123456789");
+  await expect(x.locator(".gsep")).toHaveCount(2);
+});
+
+test("Function's Num cells draw the separator: x·1000000 at x = 0.1 is 100’000; data-text stays plain", async ({ page }) => {
+  await page.evaluate(() => (window.pascaline.session.settings.groupSep = "apos"));
+  await tap(page, ["@symb"]);
+  await expect(page.getByTestId("entry-label")).toHaveText("F1(x)=");
+  await tap(page, ["x", "mul", "d1", "d0", "d0", "d0", "d0", "d0", "d0", "enter"]);
+  await tap(page, ["@num"]);
+  const row = page.locator('[data-testid="num-table"] tbody tr').nth(1); // the start 0, the step 0.1 (function.spec.ts)
+  await expect(row.locator("td.x")).toHaveText("0.1");
+  const cell = row.locator("td").nth(1);
+  await expect(cell).toHaveAttribute("data-text", "100000");
+  await expect(cell).toHaveText("100’000");
+  await page.evaluate(() => {
+    window.pascaline.session.settings.groupSep = "comma";
+    window.pascaline.session.setDecimalMark("comma"); // a stored comma under the decimal comma: the thin space
+  });
+  await expect(cell).toHaveText("100000");
+  await expect(cell.locator(".gsep")).toHaveCount(1);
+});
