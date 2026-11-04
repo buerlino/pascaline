@@ -101,8 +101,11 @@ export function startFiles(manifest: Record<string, ManifestChunk>): string[] {
 
 /** G163: the unit view's entries plus the shared chunks that hold its modules, raw: 66.26 kB measured (open 26.91, find 9.05,
  *  calc 0.43, userCells 4.64, factors 15.00, slot 10.23; entries alone 36.39 kB), a pin at 66.5 kB so it cannot grow unseen
- *  (decisions.md R24b and R24c: G163, Opus pass 62); raised only with its reason in a report, as START_PIN_GZIP is. */
-export const UNIT_VIEW_PIN_RAW = 66_500;
+ *  (decisions.md R24b and R24c: G163, Opus pass 62); raised only with its reason in a report, as START_PIN_GZIP is.
+ *  66.50 → 66.55 kB (R125): the branch measures 66,504 B (open 27,148 B, +238 B; the others as above): the separator
+ *  in the unit view's groups (groupText's three separators, the rule for a comma under the decimal comma) and the sheet's
+ *  view loaded with Find on units (R125 fix round 1: More… under load opened a Find nobody drew). 66,504 B + 0.05 kB. */
+export const UNIT_VIEW_PIN_RAW = 66_550;
 
 /** The budgets of docs/04 section 8.3 that apply to files of the build; the device bars are not here. */
 function subjects(manifest: Record<string, ManifestChunk>, all: string[], modules: Record<string, string[]> | null): { present: Subject[]; absent: string[]; missing: string[] } {
