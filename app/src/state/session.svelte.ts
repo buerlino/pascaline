@@ -56,6 +56,9 @@ export type DecimalMark = "point" | "comma";
 /** R40, Settings › Numbers › Uncertainty: the digits past a constant's σ are muted, and a tap on the row shows σ (`sigma`,
  *  the default) or nothing (`muted`). A third value, the concise form `3.986004(89)ᴇ14`, is a later package's. */
 export type UncertaintyView = "sigma" | "muted";
+/** R124, Settings › Numbers › Marks: a mark in --muted, a ⚠ in colour (as before R124), or a ⚠ in colour with its reason
+ *  line under the row (`reason`, the default; the line's code is clipboard/whyLine.ts, loaded with the first ⚠). */
+export type MarkStyle = "muted" | "colour" | "reason";
 export interface Settings extends CalcSettings {
   entry: EntryMode;
   decimalMark: DecimalMark;
@@ -64,6 +67,7 @@ export interface Settings extends CalcSettings {
   /** Decimals of the Fixed mode. */
   fixDecimals: number;
   uncertainty: UncertaintyView;
+  marks: MarkStyle;
   haptics: HapticsSettings;
   /** Settings › Appearance (R50e): family, brightness, High contrast, Plain keys. */
   look: Look;
@@ -82,6 +86,7 @@ export const defaultSettings: Settings = {
   fmtCycle: [...DEFAULT_FMT_CYCLE],
   fixDecimals: 4,
   uncertainty: "sigma",
+  marks: "reason",
   haptics: { on: false, strength: 50, ms: 15 },
   look: defaultLook(),
 };
@@ -170,6 +175,7 @@ export function migrateSettings(saved: unknown, firstLook: Look = defaultSetting
   if (x["entry"] === "textbook" || x["entry"] === "line") s.entry = x["entry"];
   if (x["decimalMark"] === "point" || x["decimalMark"] === "comma") s.decimalMark = x["decimalMark"];
   if (x["uncertainty"] === "muted") s.uncertainty = "muted"; // R40: anything else is the default, sigma
+  if (x["marks"] === "muted" || x["marks"] === "colour") s.marks = x["marks"]; // R124: anything else is the default
   if (typeof x["digits"] === "number" && Number.isFinite(x["digits"])) s.digits = clampDigits(x["digits"]);
   if (Array.isArray(x["fmtCycle"])) s.fmtCycle = normalizeCycle(x["fmtCycle"].filter(isFmtMode));
   if (typeof x["fixDecimals"] === "number" && Number.isFinite(x["fixDecimals"])) s.fixDecimals = clamp(x["fixDecimals"], 0, 12);

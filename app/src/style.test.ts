@@ -128,6 +128,28 @@ describe("muted digits (R40)", () => {
     });
 });
 
+// R124: Settings › Numbers › Marks. "⚠ + reason" draws a ⚠ row's reason line in --warn (the mark's colour) under the row,
+// on the history's ground or a picked row; "Muted" draws every mark in --muted. Both keep the text floor in all 40 theme
+// combinations, and the unit view's result follows the same style.
+describe("the mark style (R124)", () => {
+  const history = readFileSync(new URL("./views/History.svelte", import.meta.url), "utf8");
+  const panel = readFileSync(new URL("./units/panel.css", import.meta.url), "utf8");
+  it("History.svelte draws the reason line in --warn and a muted style's mark in --muted", () => {
+    expect(/\.reason\s*\{[^}]*color:\s*var\(--warn\)/.test(history)).toBe(true);
+    expect(/\[data-marks="muted"\][^{]*\.mark[^{]*\{[^}]*color:\s*var\(--muted\)/.test(history)).toBe(true);
+  });
+  it("the unit view draws a muted style's mark and ⚠ in --muted, and its why-line only with the reason", () => {
+    expect(/\[data-marks="muted"\][^{]*\.mark[^{]*\{[^}]*color:\s*var\(--muted\)/.test(panel)).toBe(true);
+    expect(/\[data-marks="muted"\][^{]*\.warn[^{]*\{[^}]*color:\s*var\(--muted\)/.test(panel)).toBe(true);
+    expect(/\[data-marks="(?:muted|colour)"\][^{]*\.why[^{]*\{[^}]*display:\s*none/.test(panel)).toBe(true);
+  });
+  for (const [sel, t, hc] of allThemeBlocks())
+    it(`${sel}: the reason line, --warn on --bg and on --pick, at least 4.5:1 (High contrast: 7:1 on --bg)`, () => {
+      expect(contrast(t["warn"] as string, t["bg"] as string), "--warn on --bg").toBeGreaterThanOrEqual(hc ? 7 : 4.5);
+      expect(contrast(t["warn"] as string, t["pick"] as string), "--warn on --pick").toBeGreaterThanOrEqual(4.5);
+    });
+});
+
 describe("no colour is written directly in the sheet", () => {
   it("Sheet.svelte uses tokens only", () => {
     const src = readFileSync(new URL("./views/Sheet.svelte", import.meta.url), "utf8");
