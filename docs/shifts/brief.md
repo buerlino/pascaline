@@ -55,13 +55,14 @@ With the lanes, start both from the phase-1 worktree: `cd .claude/worktrees/phas
 12. **No lanes in the morning** (a selftest failed): the owner starts `scripts/night.sh` without `--lane`, and henri runs lane B's rows, then lane A's, as one queue.
 
 ### Night 2026-11-05 to 11-06, to 05:30, both lanes on the Tab One (owner, 2026-11-05)
-`ANDROID_SERIAL=HA24BZ2Y` for both lanes, `--until 05:30`; before the start the owner plugs in and unlocks the Tab One, and `tools/stay-awake.sh HA24BZ2Y --restore` runs (STAY_ON=7). CORE DEVICE after each pass. Lane A runs R59 (decisions.md "A62, R59's gate"); lane B runs G165, G166, G164, G167, A69, A71 in that order. Every "After" was checked against the merges on 2026-11-05 ("–" is merged); a step whose "After" is not merged is skipped. Follow each Opus pass as written (rule 3).
+`ANDROID_SERIAL=HA24BZ2Y` for both lanes, `--until 05:30`; before the start the owner plugs in and unlocks the Tab One, and `tools/stay-awake.sh HA24BZ2Y --restore` runs (STAY_ON=7). CORE DEVICE after each pass. Lane A runs R132 (the release bar's point 4, owner 2026-11-05), then R59 (decisions.md "A62, R59's gate"); lane B runs G165, G166, G164, G167, A69, A71 in that order. Every "After" was checked against the merges on 2026-11-05 ("–" is merged); a step whose "After" is not merged is skipped. Follow each Opus pass as written (rule 3).
 
 ### Lane A queue (ron's UI)
 Milestone reviews (section 0): after R50e (with R116's gallery groups "Entry highlights (R116)" and the lifted --pick on the History picked row; R113's rings, gallery home-tips-small); after R24d (with R92's Constants and Tools; R108's gallery group "Decimal comma in apps"; R89 on the Fairphone: save two presets with different free keys and switch; R111's note at 360 px; R33's stored-name colour in each theme, decisions.md "Owner answers of 2026-11-02"; R120's gallery unitresult-t10-comma; R124's gallery group "Mark style (R124)" and R125's "Digit groups (R125)", ’ and , grouping only before the point since R125f1).
 
 | Step | What | Agent, model | Branch | After |
 |---|---|---|---|---|
+| 480 | [R132](packages/R132.md) a Find key updates the list within one frame (E3 missed: 31.9 ms against 16, A4b) | ron, Opus | `p1/ron-findfast` | – |
 | 473 | [R59](packages/R59.md) the library rows: import (file or clipboard), export, the format for your AI | ron, Opus | `p1/ron-m4-library` | – |
 
 ### Lane B queue (the release, then the engine)
