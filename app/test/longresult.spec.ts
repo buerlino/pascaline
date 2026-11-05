@@ -30,4 +30,11 @@ test("CAS Σ cos(k)/k to 2000: a drawn note, no LaTeX source, and Copy still hol
   const text = await page.evaluate(() => navigator.clipboard.readText());
   expect(text.length).toBeGreaterThan(1_700_000); // what Copy copies on phase-1: the full text (1,749,440 characters)
   expect(text.length).toBeLessThan(1_800_000);
+  // R135f2: the tap on the result puts nothing on the line (its 1.77 MB of LaTeX overflowed MathLive's stack)
+  const line = (): Promise<string> => page.evaluate(() => window.pascaline.entry.value);
+  await row.locator("button.result").click();
+  await expect(page.getByTestId("notice")).toHaveText("Too long to insert: Copy holds it");
+  const after = await line();
+  expect(after).toBe("");
+  expect(after.length).toBeLessThan(100);
 });

@@ -14,6 +14,7 @@
   import * as route from "./keyboard/route.ts";
   import type { RouteCtx } from "./keyboard/route.ts";
   import { resultToEntry } from "./render/insertable.ts";
+  import { tooLongToInsert, tooLongToInsertNote } from "./render/longResult.ts";
   import type { UserKeys } from "./keyboard/userKeys.svelte.ts";
   import { noDigit } from "./state/displayMode.ts";
   import type { HistoryItem, Session, View } from "./state/session.svelte.ts";
@@ -148,6 +149,7 @@
     const { units, ...number } = item;
     const shown = noDigit(session.mark(item)) ? "⚠" : session.display(units && !chip ? number : item).latex;
     if (chip) entry.insertResult(shown, chip);
+    else if (tooLongToInsert(shown, false)) withClip((c) => c.say(tooLongToInsertNote())); // R135f2: too long to draw, so to insert
     else entry.insert(resultToEntry(shown)); // too long for a chip: as drawn
   }
 
