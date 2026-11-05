@@ -43,20 +43,20 @@ alpha_alu:=23*10^-6
 lambda_alu:=1914*10^-1
 // test: lambda_alu == 7/100*20 + 190
 
-// source: Deutsches Kupferinstitut, data sheet Cu-ETP (CW004A), annealed: E = 127 kN/mm² (to verify: owner)
+// source: Deutsches Kupferinstitut, Werkstoff-Datenblatt Cu-ETP (CW004A), edition 2005, annealed: E = 127 kN/mm² (to verify: owner)
 // Modulus of elasticity of copper Cu-ETP, annealed, in Pa
 E_copper:=127*10^9
 // test: E_copper/10^6 == 127000
 
-// source: Deutsches Kupferinstitut, data sheet Cu-ETP (CW004A): 8.93 g/cm³ (to verify: owner)
+// source: Deutsches Kupferinstitut, Werkstoff-Datenblatt Cu-ETP (CW004A), edition 2005: 8.93 g/cm³ (to verify: owner)
 // Density of copper Cu-ETP, in kg/m³
 rho_copper:=8930
 
-// source: Deutsches Kupferinstitut, data sheet Cu-ETP (CW004A): 17×10⁻⁶ per K, 20 to 100 °C (to verify: owner)
+// source: Deutsches Kupferinstitut, Werkstoff-Datenblatt Cu-ETP (CW004A), edition 2005: 17×10⁻⁶ per K, 20 to 100 °C (to verify: owner)
 // Coefficient of linear thermal expansion of copper Cu-ETP, 20 to 100 °C, in 1/K
 alpha_copper:=17*10^-6
 
-// source: Deutsches Kupferinstitut, data sheet Cu-ETP (CW004A): 394 W/(m·K) at 20 °C (to verify: owner)
+// source: Deutsches Kupferinstitut, Werkstoff-Datenblatt Cu-ETP (CW004A), edition 2005: 394 W/(m·K) at 20 °C (to verify: owner)
 // Thermal conductivity of copper Cu-ETP at 20 °C, in W/(m·K)
 lambda_copper:=394
 
@@ -86,4 +86,4 @@ thermal_strain(alpha,dT):=alpha*dT
 // Axial stiffness k = E·A/L of a bar, in N/m (E in Pa, A in m², L in m)
 axial_stiffness(E,A,L):=E*A/L
 // test: axial_stiffness(E_steel,1/1000,2) == 105000000
-// test: simplify(2*axial_stiffness(a,b,2*c) - axial_stiffness(a,b,c)) == 0
+// test: axial_stiffness(E_alu,1/500,4) == 35000000

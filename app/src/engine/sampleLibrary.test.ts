@@ -68,6 +68,14 @@ describe("the sample library file (G164, no engine)", () => {
     }
     expect(quoted).toBe(13);
   });
+  // G164 fix round 2: the owner checks a value against one document, so a source names its edition: a standard's year
+  // after its number (`EN 1993-1-1:2005`), another document's `edition <year>`
+  it("each source names its edition", () => {
+    for (const { l, i } of values) {
+      const src = lines[i - 2]!.replace(/^\/\/ source: /, "");
+      expect(src, l.slice(0, l.indexOf(":="))).toMatch(/^[^:]*?(:(19|20)\d{2}|, edition (19|20)\d{2})\b/);
+    }
+  });
 });
 
 /** A number the source quotes and its unit: `210 000 N/mm²`, `12×10⁻⁶ per K`, `8.93 g/cm³`. */
@@ -114,5 +122,23 @@ describe.skipIf(!giacAvailable())("the sample library file (G164, real Giac)", (
     if (!r.ok) throw new Error(r.error);
     expect(r.tests).toBe(lib.defs.reduce((n, d) => n + d.tests.length, 0));
     expect(r.plan.added.length).toBe(lib.defs.length);
+  });
+  // G164 fix round 2: a test runs in the user's engine, beside the names they have stored, so it names only numbers,
+  // built-ins and the file's own names; each other name it reads is stored as 0 first (`c:=0` made 2*k(a,b,2c) - k(a,b,c)
+  // ∞ − ∞, undef, and refused the whole file)
+  it("passes its tests with every other name a test reads stored as 0", async () => {
+    const lib = parseLibrary(readFileSync(SAMPLE), parse, LIBRARY_FORMAT);
+    const own = new Set(lib.defs.map((d) => d.name));
+    const host = await nodeHost();
+    const free = new Set(lib.defs.flatMap((d) => d.tests.flatMap((t) => parse(t.expr).reads)).filter((n) => !own.has(n)));
+    const stored: string[] = [];
+    for (const n of free) {
+      if (host.eval(`type(${n})`).output.trim() === "func") continue;
+      host.eval(`${n}:=0`);
+      stored.push(n);
+    }
+    expect(stored, "names a test reads that are neither the file's nor built-ins").toEqual([]);
+    const r = importLibrary(host, lib, []);
+    if (!r.ok) throw new Error(r.error);
   });
 });
