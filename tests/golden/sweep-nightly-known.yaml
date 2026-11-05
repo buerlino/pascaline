@@ -736,5 +736,3 @@ known:
   - { id: 'rad 12 \frac{\frac{3}{\frac{\pi}{2}-10^{-9}}^{\tan\left(1ᴇ1000\right)}}{\arcsin\left(10^{-15}\right)}', check: "⚠n", package: F155 }
   - { id: 'rad 12 \tan\left(1ᴇ1000\right)', check: "⚠n", package: F155 }
   - { id: 'rad 12 \tanh\left(\sqrt{\ln\left(-\pi\right)}\right)\times \sin\left(\frac{1ᴇ1000}{1ᴇ-300}\right)', check: "⚠n", package: F155 }
-  # F163 (G156): a negative |x| over a cancellation, then |x|+1ᴇ-300 shows 1E-300 (G138, seed 1793847163)
-  - { id: 'rad 30 \left|\left(\left(\sqrt{0.5+10^{-132}}-\sqrt{0.5}\right)\times 10^{132}+2\right)\times \left(\left(1+10^{-151}\right)^{3\times 10^{151}}\right)\right|+\left(1ᴇ-300\right)', check: "≈", package: F163 }

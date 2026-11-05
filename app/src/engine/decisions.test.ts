@@ -3,12 +3,11 @@
 // (G71) on the cut and tie cases of tests/golden/precision.yaml and home.yaml, each row with its golden id and the
 // verdict the golden case implies (decided with its text, refused, or ⚠), plus one row per decision function family.
 // The rows pin today's behaviour: a change that breaks a cut or a tie fails here, by name, before the golden gate.
-// Expected texts are the golden rows' (oracle: mpmath, or derived as each row says); `known` rows pin a wrong answer
-// of today with the oracle's value beside it (the report of G146 lists them).
+// Expected texts are the golden rows' (oracle: mpmath, or derived as each row says).
 import { beforeAll, describe, expect, it } from "vitest";
 import { EngineHost } from "./host.ts";
 import { defaultHomeSettings, toExactLiterals } from "./homeEval.ts";
-import { decidedAtDouble, decideTwice, restsOnDecision, type Decision } from "./decisions.ts";
+import { decidedAtDouble, decideTwice, evenPowerRoot, restsOnDecision, type Decision } from "./decisions.ts";
 import { notBuiltin, valuePrecision, withDigits } from "./numeric.ts";
 import { formatComplex } from "./format.ts";
 import { engineGiac, giacAvailable, loadNodeGiac, type EngineGiac } from "./nodeGiac.ts";
@@ -35,17 +34,17 @@ const ROWS: readonly Row[] = [
   { id: "prec-g38-30-floor-sin1e50", input: "floor(sin(10^50)*10^12)", digits: 30, rests: true, verdict: "-789672493430" },
   { id: "prec-g38-30-abs-sin1e50", input: "abs(sin(10^50))", digits: 30, rests: true, verdict: `-${sinOf(50)}`, why: "sin(10^50) < 0 (oracle), so |sin(10^50)| = -sin(10^50)" },
   { id: "prec-g38-30-gt-sin1e50", input: "sin(10^50)>0", digits: 30, rests: true, verdict: "false" },
-  // Giac's P text holds no abs( (sqrt of the square came back as -sin(10^50), decided at P inside): not decided again
-  { id: "prec-g38-30-sqrt-sq-sin1e50", input: "sqrt(sin(10^50)^2)", digits: 30, rests: false, verdict: `-${sinOf(50)}`, why: "as abs" },
+  // G156: a root of an even power rests on a decision (Giac's P text holds no abs(: it came back as -sin(10^50))
+  { id: "prec-g38-30-sqrt-sq-sin1e50", input: "sqrt(sin(10^50)^2)", digits: 30, rests: true, verdict: `-${sinOf(50)}`, why: "as abs" },
   { id: "prec-g38-30-max-sin1e50", input: "max(sin(10^50),0)", digits: 30, rests: true, verdict: "0" },
   { id: "prec-g38-30-piecewise-sin1e50", input: "piecewise(sin(10^50)>0,1,2)", digits: 30, rests: true, verdict: "2" },
   { id: "prec-g38-30-floor-ramanujan", input: "floor(exp(pi*sqrt(163))*10^20)", digits: 30, rests: true, verdict: "26253741264076874399999999999925007259" },
   { id: "prec-g38-cas-floor-sin1e60", input: "floor(sin(10^60)*10^12)", digits: 12, rests: true, verdict: "830389765219" },
-  // --- G57: refused ---
+  // --- G57: refused; G156: a long literal raises P + 20 and P + 40 (G141), which then decide the floor of sin(10^100) ---
   { id: "prec-g38-cas-floor-cos-pi/7", input: "floor(cos(pi/7)-cos(2*pi/7)+cos(3*pi/7)+1/2)", digits: 12, rests: true, verdict: "refused" },
-  { id: "prec-g38-cas-floor-sin1e100", input: "floor(sin(10^100)*10^12)", digits: 12, rests: true, verdict: "refused" },
-  { id: "prec-g38-30-floor-sin1e100", input: "floor(sin(10^100)*10^12)", digits: 30, rests: true, verdict: "refused" },
-  { id: "g38-floor-cos-pi/7-1e-100", input: "floor(cos(pi/7)-cos(2*pi/7)+cos(3*pi/7)+1/2-10^-100)", digits: 12, rests: true, verdict: "refused" },
+  { id: "prec-g38-cas-floor-sin1e100", input: "floor(sin(10^100)*10^12)", digits: 12, rests: true, verdict: "-372376123662" },
+  { id: "prec-g38-30-floor-sin1e100", input: "floor(sin(10^100)*10^12)", digits: 30, rests: true, verdict: "-372376123662" },
+  { id: "g38-floor-cos-pi/7-1e-100", input: "floor(cos(pi/7)-cos(2*pi/7)+cos(3*pi/7)+1/2-10^-100)", digits: 12, rests: true, verdict: "0" },
   // --- home.yaml G38 at 12 digits ---
   { id: "g38-round-sin1e50", input: "round(sin(10^50)*10^12)", digits: 12, rests: true, verdict: "-789672493429" },
   { id: "g38-floor-log10-1000", input: "floor(log10(1000))", digits: 12, rests: true, verdict: "3" },
@@ -56,7 +55,7 @@ const ROWS: readonly Row[] = [
   { id: "sigfig-tie-25-1", input: "sigfig(25,1)", digits: 12, rests: false, verdict: "30" },
   { id: "sigfig-sqrt2-3", input: "sigfig(sqrt(2),3)", digits: 12, rests: true, verdict: "141/100" },
   { id: "g139-sigfig-near-tie", input: "sigfig(1.25-sin(10^-50),2)", digits: 12, rests: true, verdict: "6/5" },
-  { id: "g139-sigfig-far-tie", input: "sigfig(1.25-sin(10^-120),2)", digits: 12, rests: true, verdict: "refused" },
+  { id: "g139-sigfig-far-tie", input: "sigfig(1.25-sin(10^-120),2)", digits: 12, rests: true, verdict: "6/5" },
   { id: "g139-eseries-tie-3.3", input: "eseries(6,sqrt(33/10))", digits: 12, rests: true, verdict: "11/5" },
   { id: "g139-eseries-near-tie", input: "eseries(6,sqrt(33/10)+sin(10^-50))", digits: 12, rests: true, verdict: "11/5" },
   // --- G71 census and the tier-1 decisions at 12 digits ---
@@ -72,24 +71,34 @@ const ROWS: readonly Row[] = [
   { id: "family:sign-proven-tie", input: "sign(sin(pi/7)^2+cos(pi/7)^2-1)", digits: 12, rests: true, verdict: "0", why: "sign(0) = 0" },
   // G157 (patch 0028): trunc stays unevaluated where Giac cannot prove the sign; the cut is still read on its argument
   { id: "family:trunc-proven-tie", input: "trunc(-(sin(pi/7)^2+cos(pi/7)^2))", digits: 12, rests: true, verdict: "-1", why: "trunc(-1) = -1" },
-  { id: "family:trunc-unproved-tie", input: "trunc(cos(pi/7)-cos(2*pi/7)+cos(3*pi/7)-1/2-10^-100)", digits: 12, rests: true, verdict: "refused", why: "the argument is -10^-100 (the sum is 1/2), on a cut Giac cannot prove" },
+  { id: "family:trunc-unproved-tie", input: "trunc(cos(pi/7)-cos(2*pi/7)+cos(3*pi/7)-1/2)", digits: 12, rests: true, verdict: "refused", why: "the argument is 0 (the sum is 1/2), on a cut Giac cannot prove" },
+  // G156: 10^-100 raises the decision runs to 161 and 181 digits, where the argument -10^-100 agrees with itself
+  { id: "family:trunc-raised", input: "trunc(cos(pi/7)-cos(2*pi/7)+cos(3*pi/7)-1/2-10^-100)", digits: 12, rests: true, verdict: "0", why: "trunc(-10^-100) = 0" },
   { id: "family:frac-proven-tie", input: "frac(sin(pi/7)^2+cos(pi/7)^2)", digits: 12, rests: true, verdict: "0", why: "frac(1) = 0" },
   // ... and one with no value to put in its place (Heaviside(0), round at a half, a comparison at 0) stays ⚠ (G57)
   { id: "family:heaviside-proven-tie", input: "Heaviside(sin(pi/7)^2+cos(pi/7)^2-1)", digits: 12, rests: true, verdict: "⚠", why: "Heaviside(0): conventions differ" },
   { id: "family:round-proven-tie", input: "round(sin(pi/7)^2+cos(pi/7)^2-1/2)", digits: 12, rests: true, verdict: "⚠", why: "round(1/2): a tie no value is put in for" },
   { id: "family:gt-proven-tie", input: "sin(pi/7)^2+cos(pi/7)^2-1>0", digits: 12, rests: true, verdict: "⚠", why: "0 > 0 on a cut" },
+  // --- G156 (F163, found by G146): the decision runs start at G141's raised P, and a root of an even power rests on a
+  // decision. sin(10^100) = -0.372376123661… (prec-G23-sin-1e100) and sin(10^70) = -0.148099131372… (g71's note), so
+  // each |…| is -sin(…); Giac at P = 40 printed sin(…), and P + 20 took sin(10^100) as positive too.
+  { id: "g156-abs-sin1e100", input: "abs(sin(10^100))", digits: 12, rests: true, verdict: `-${sinOf(100)}`, why: "sin(10^100) < 0 (oracle)" },
+  { id: "g156-30-abs-sin1e100", input: "abs(sin(10^100))", digits: 30, rests: true, verdict: `-${sinOf(100)}`, why: "as at 12 digits" },
+  { id: "g156-sqrt-sq-sin1e100", input: "sqrt(sin(10^100)^2)", digits: 12, rests: true, verdict: `-${sinOf(100)}`, why: "as abs" },
+  { id: "g156-sqrt-sq-sin1e70", input: "sqrt(sin(10^70)^2)", digits: 12, rests: true, verdict: `-${sinOf(70)}`, why: "sin(10^70) < 0 (oracle)" },
+  // past the cap (MAX_EVAL_DIGITS): no precision we run holds the literal, so a number is refused; a text with a free
+  // name decides on its symbols, as before
+  { id: "g156-abs-sin1e2000", input: "abs(sin(10^2000))", digits: 12, rests: true, verdict: "refused", why: "a 2001-digit literal" },
+  { id: "g156-floor-sin1e1000", input: "floor(sin(10^1000)*10^12)", digits: 12, rests: true, verdict: "refused", why: "1001 digits + P + 40 > 1000" },
+  { id: "family:past-cap-free-name", input: "sign(x)+10^2000", digits: 12, rests: true, verdict: `sign(x)+1${"0".repeat(2000)}`, why: "the literal is in no decision's argument" },
+  // the literal is in a comparison: Giac's P text is true or false (no free name), or a branch with one
+  { id: "g156-gt-sin1e2000", input: "sin(10^2000)>0", digits: 12, rests: true, verdict: "refused", why: "a 2001-digit literal in the comparison" },
+  { id: "g156-piecewise-sin1e2000", input: "piecewise(sin(10^2000)>0,x,2*x)", digits: 12, rests: true, verdict: "refused", why: "as the comparison alone; x is in a branch" },
+  // a negative even power (the number reader reads 2 without its sign)
+  { id: "g156-sqrt-inv-sq-sin1e100", input: "sqrt(sin(10^100)^(-2))", digits: 12, rests: true, verdict: `(-${sinOf(100)})^-1`, why: "1/|sin(10^100)|, sin(10^100) < 0 (oracle)" },
+  { id: "family:sqrt-sq-short", input: "sqrt(sin(1)^2)", digits: 12, rests: true, verdict: "sin(1)", why: "sin(1) > 0" },
 ];
 
-/** Known wrong today (found by G146): Home shows these with ≈ and the wrong sign. sin(10^100) = -0.372376123661…
- *  (prec-G23-sin-1e100) and sin(10^70) = -0.148099131372… (g71-heaviside-sin1e70's note), so each value is -sin(…);
- *  Giac at P = 40 takes both sines as positive and prints sin(…) (`text`). abs has no cut (decisionCuts: "continuous"),
- *  and P + 20 takes sin(10^100) as positive too, so the texts agree; sqrt of a square prints no abs( and calls no
- *  decision function, so restsOnDecision is false and decideTwice never runs (its verdict on sin(10^70) would be right). */
-const KNOWN: readonly (Row & { text: string; oracle: string })[] = [
-  { id: "known:abs-sin1e100", input: "abs(sin(10^100))", digits: 12, text: sinOf(100), rests: true, verdict: sinOf(100), oracle: `-${sinOf(100)}` },
-  { id: "known:sqrt-sq-sin1e100", input: "sqrt(sin(10^100)^2)", digits: 12, text: sinOf(100), rests: false, verdict: sinOf(100), oracle: `-${sinOf(100)}` },
-  { id: "known:sqrt-sq-sin1e70", input: "sqrt(sin(10^70)^2)", digits: 12, text: sinOf(70), rests: false, verdict: `-${sinOf(70)}`, oracle: `-${sinOf(70)}` },
-];
 
 /** The verdict of a decision, as the rows write it. */
 function verdictOf(d: Decision): string {
@@ -124,22 +133,15 @@ describe.skipIf(!giacAvailable())("decideTwice (G38, G57; real Giac)", () => {
     });
   }
 
-  for (const r of KNOWN) {
-    it(`${r.id} (known wrong in Home; the value is ${r.oracle.slice(0, 5)}…): ${r.input} prints ${r.text.slice(0, 5)}… at P`, () => {
-      const got = decide(r);
-      expect(got).toEqual({ text: r.text, rests: r.rests, verdict: r.verdict });
-      // Home keeps the P text when rests is false, the verdict otherwise: either way not the oracle's sign
-      expect(r.rests ? got.verdict : got.text).not.toBe(r.oracle);
-    });
-  }
-
   it("a decided text from the P + 40 run is kept in pasdec2 for the caller (from), and the agreeing one is not", () => {
-    const exact = toExactLiterals("floor(sin(10^60)*10^12)");
+    // a stored 10^60 is no typed literal, so P + 20 (60 digits) does not hold it and disagrees with P; P + 40 decides
+    giac.eval("hw:=10^60");
+    const exact = "floor(sin(hw)*10^12)";
     const text = withDigits(giac, valuePrecision(12), 12, () => giac.eval(`(${exact})`));
     const d = decideTwice(giac, exact, text, 12, 12);
     expect(d).toMatchObject({ text: "830389765219", from: "pasdec2" });
     expect(giac.eval("pasdec2")).toBe("830389765219");
-    giac.eval("purge(pasdec2)");
+    giac.eval("purge(pasdec2,hw)");
     const same = decideTwice(giac, "max(sin(10^50),0)", "0", 12, 12);
     expect(same).toEqual({ text: "0" });
     expect(giac.eval("pasdec2")).toBe("pasdec2");
@@ -177,4 +179,23 @@ describe.skipIf(!giacAvailable())("decidedAtDouble (G71, F59; real Giac)", () =>
     giac.eval("purge(pasg146)");
     expect(d && "facts" in d ? d.facts.map((f) => f.reliableDigits) : d).toEqual([14]);
   });
+});
+
+describe("evenPowerRoot (G156)", () => {
+  it.each([
+    ["sqrt(sin(10^100)^2)", true],
+    ["sqrt(sin(10^100)^(-2))", true],
+    ["sqrt(x^-4)", true],
+    ["sqrt(x^(-3))", false],
+    ["sqrt(4*x^(4))", true],
+    ["(sin(10^70)^2)^(1/2)", true],
+    ["sqrt(x^2+1)", true],
+    ["sqrt(2)", false],
+    ["sqrt(x^3)", false],
+    ["sqrt(x^(2/3))", false],
+    ["sqrt(x^0)", false],
+    ["sqrt(x)^2", false],
+    ["x^2+x^(1/3)", false],
+    ['sqrt("a^2")', false],
+  ])("%s → %s", (input, want) => expect(evenPowerRoot(input, "typed")).toBe(want));
 });
