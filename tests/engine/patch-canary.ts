@@ -66,6 +66,12 @@ const CANARIES: [string, string, RegExp, string][] = [
   // G166, patch 0032: atan(tan(a)) floors the double of a/pi+1/2, 16 digits: atan(tan(10^15)) = 10^15-318309886183790*pi (n one
   // low, 2.11), and next to the pole 1-10^-15/pi rounds to 1 (atan(tan(pi/2-10^-15)) = pi/2-10^-15-pi)
   ["0032-atan-tan-reduction-digits.patch", "giac-2.1.0/src/usual.cc", /gen tmp2=evalf_double\(e\._SYMBptr->feuille,0,contextptr\);\s*if \(tmp2\.type<_IDNT\)\s*tmp2=_floor\(tmp2\/tmp\+plus_one_half,contextptr\);\s*else\s*tmp2=_floor\(e\._SYMBptr->feuille\/tmp\+plus_one_half,contextptr\);/, "if (atan_tan_no_floor(contextptr))"],
+  // G175, patch 0033: pow takes (e^a)^b as e^(a*b) for any a (sqrt(exp(4*i)) = exp(2*i), the other root)
+  ["0033-pow-exp-principal-branch.patch", "giac-2.1.0/src/gen.cc", /if \(u==at_exp\)\{\s*\/\/ \(e\^a\)\^b=e\^\(a\*b\)[\s\S]{0,200}?gen res=exp\(base\._SYMBptr->feuille\*exponent,contextptr\);/, "if (u==at_sign && exponent.type==_INT_ && !complex_mode(contextptr) && !has_i(base)){"],
+  // normal takes sqrt(s*d^2) as abs(d)*sqrt(s), and the root of D^d*S as D times that of S, for a d, D with a complex value
+  // and no literal i (normal(sqrt(acosh(-1/2)^3)) = abs(z)*sqrt(z), simplify z*sqrt(z))
+  ["0033-pow-exp-principal-branch.patch", "giac-2.1.0/src/sym2poly.cc", /if \(keep_abs\)\{\s*tmparg=abs\(tmparg,contextptr\);\s*tmpd=abs\(tmpd,contextptr\);/, "zint2simpldoublpos(cont,simpl,doubl,pos,2,contextptr);"],
+  ["0033-pow-exp-principal-branch.patch", "giac-2.1.0/src/sym2poly.cc", /D=D\*pow\(jt->fact,jt->mult\/d\);\s*\}\s*\/\/ Check sign of D/, "const factorization f=rsqff(*num._POLYptr);"],
   // G126, patch 0015: the ln forms of asin and asinh cancel for a large x on one side (acos(-10^20+1/2) lost 40 digits)
   ["0015-asin-asinh-ln-cancellation.patch", "giac-2.1.0/src/usual.cc", /^static gen asinasln\(const gen & x,GIAC_CONTEXT\)\{\s*return -cst_i\*ln\(cst_i\*x\+sqrt\(1-x\*x,contextptr\),contextptr\);/, "static gen asinasln(const gen & x,GIAC_CONTEXT){"],
   ["0015-asin-asinh-ln-cancellation.patch", "giac-2.1.0/src/usual.cc", /^static gen asinhasln\(const gen & x,GIAC_CONTEXT\)\{\s*return ln\(x\+sqrt\(x\*x\+1,contextptr\),contextptr\);/, "static gen asinhasln(const gen & x,GIAC_CONTEXT){"],

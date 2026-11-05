@@ -1,0 +1,104 @@
+# Upstream: giac 2.1.0 gen.cc pow and sym2poly.cc normal. (1) pow: (e^a)^b was rewritten as e^(a*b) for any a and any non-integer b, a rule that holds only when im(a) lies in (-pi,pi]: sqrt(exp(4*i)) gave exp(2*i), about -0.416+0.909*i (the principal root is -exp(2*i), 0.416-0.909*i), sqrt(exp(2+4*i)) the negation too, and sqrt(exp(3*acosh(-2))) gave -i*(2+sqrt(3))^(3/2) (right +i*(2+sqrt(3))^(3/2): exp(3*acosh(-2)) is a negative real). Now the principal value e^(b*(a-2*k*pi*i)) is taken, k the integer that brings im(a)-2*k*pi into (-pi,pi], decided on the double of im(a) with a margin of 1e-9 at the half-integers of im(a)/(2*pi); at the cut (2*m+1)*pi a k is taken only where recursive_normal proves im(a)-(2*m+1)*pi = 0 (then arg = +pi), else the power stays as typed and its evalf is the principal value; so does an im(a) past 2^21*pi. An integer b, im(a) inside (-pi,pi) and an a with no numeric value (a free x) keep the rule. (2) normal and simplify: in_normalize_sqrt took sqrt(s*d^2/den^2) as abs(d)/abs(den)*sqrt(s) and sym2rxroot the d-th root of D^d*S as D times that of S for any d, D with no literal i; acosh(-1/2) is ln(-1/2+sqrt(-1/2+1)*sqrt(-1/2-1)), whose value 2*pi*i/3 has no literal i, so normal(sqrt(acosh(-1/2)^3)) gave abs(z)*sqrt(z) (2.143+2.143*i) and simplify z*sqrt(z) (-2.143+2.143*i), right 2.143-2.143*i. Now a factor whose double is complex (a numeric value that is not real) is not taken out of the root.
+# Changed by Pascaline contributors, 2026-11-06
+--- a/src/gen.cc
++++ b/src/gen.cc
+@@ -6901,6 +6901,36 @@
+     return im==0?1:2;
+   }
+ 
++  // Pascaline patch 0033 (G175): (e^a)^b is e^(a*b) only when b is an integer or im(a) lies in (-pi,pi]; the rule took
++  // any a, so sqrt(exp(4*i)) gave exp(2*i), the other root. The principal value is e^(b*(a-2*k*pi*i)), k the integer that
++  // brings im(a)-2*k*pi into (-pi,pi], for any b. 1: the rule as before (an integer b, im(a) inside (-pi,pi) on its double
++  // with a margin of 1e-9*pi, or an a with no numeric value: Giac's convention, a free x is real); 2: k is set; 0: k is
++  // not decided (|im(a)| past 2^21*pi, or im(a) at the cut, (2*m+1)*pi, and not proved there), the power stays as it is
++  // (its evalf is the principal value). On the cut e^a is a negative real and its principal power takes arg = +pi.
++  static int pow_of_exp_branch(const gen & a,const gen & b,gen & k,GIAC_CONTEXT){
++    if (b.type==_INT_ || is_integer(b))
++      return 1;
++    gen iv=evalf_double(im(evalf(a,1,contextptr),contextptr),1,contextptr);
++    if (iv.type!=_DOUBLE_)
++      return 1;
++    double t=iv._DOUBLE_val;
++    if (std::abs(t)<M_PI*(1-1e-9))
++      return 1;
++    t/=2*M_PI;
++    if (!(std::abs(t)<1048576))
++      return 0;
++    double m=std::floor(t),h=t-m-0.5;
++    if (std::abs(h)>1e-9){
++      k=int(m)+(h>0?1:0);
++      return 2;
++    }
++    if (is_exactly_zero(recursive_normal(im(a,contextptr)-(2*int(m)+1)*cst_pi,contextptr))){
++      k=int(m);
++      return 2;
++    }
++    return 0;
++  }
++
+   // Pascaline patch 0025 (G149, G160): b^(n*s/d) (n an integer, d an integer denominator) is ((b^s)^(1/d))^r*(b^s)^q
+   // with n = q*d+r only when (b^s)^(1/d) is b^(s/d), that is when im(s*ln(b)) lies in (-pi,pi] (for a negative b in
+   // complex mode Giac takes (-b)^s and exp(i*pi*s/d), so im(s*ln(-b))); the rule took any b and s, so 2^sqrt(-1-10^-3),
+@@ -7154,12 +7184,14 @@
+ 	else
+ 	  return 1;
+       }
+-      if (u==at_exp){
++      gen expk; // Pascaline patch 0033 (G175): was u==at_exp, for any a
++      int expb=u==at_exp?pow_of_exp_branch(base._SYMBptr->feuille,exponent,expk,contextptr):0;
++      if (expb){
+ 	// (e^a)^b=e^(a*b)
+ 	// but we keep (e^a)^b if b is integer and e^(a*b) is not simplified
+ 	// for rational dependance
+         // or inside integration
+-	gen res=exp(base._SYMBptr->feuille*exponent,contextptr);
++	gen res=exp((expb==2 && !is_exactly_zero(expk)?base._SYMBptr->feuille-2*expk*cst_pi*cst_i:base._SYMBptr->feuille)*exponent,contextptr);
+ 	if (exponent.type!=_INT_ || !res.is_symb_of_sommet(at_exp))
+ 	  return res;
+       }
+--- a/src/sym2poly.cc
++++ b/src/sym2poly.cc
+@@ -828,6 +828,15 @@
+     return totally_converted;
+   }
+ 
++  // Pascaline patch 0033 (G175): false when g has a numeric value that is not real (its double has a nonzero
++  // imaginary part); a g with no numeric value is real by Giac's convention (a free x).
++  static bool sqrt_extract_real(const gen & g,GIAC_CONTEXT){
++    if (g.type<=_ZINT || g.type==_FRAC)
++      return true;
++    gen gv=evalf_double(evalf(g,1,contextptr),1,contextptr);
++    return gv.type!=_CPLX || is_exactly_zero(*(gv._CPLXptr+1));
++  }
++
+   static bool sym2rxrootnum(vecteur & v,const vecteur & lv,gen & num,gen & tmpden,GIAC_CONTEXT){
+     // make the polynomial X^d - num
+     // check for irreducibility
+@@ -1152,6 +1161,13 @@
+         Dl=vecteur(l.begin()+embeddings,l.end());
+ 	// Dl=*Dl[embeddings]._VECTptr;
+       }
++      // Pascaline patch 0033 (G175): the d-th root of D^d*S is D times that of S for a real D (a negative D is turned
++      // just below) only; for a D with a complex value it is another root (normal(sqrt(acosh(-1/2)^3)) took L*sqrt(L)),
++      // so nothing is extracted and the root of num stays whole.
++      if (!sqrt_extract_real(r2e(D,Dl,contextptr),contextptr)){
++	S=*num._POLYptr;
++	D=polynome(plus_one,S.dim);
++      }
+       if (is_positive(r2e(-D,Dl,contextptr),contextptr)){
+ 	D=-D;
+ 	if (d%2)
+@@ -2962,6 +2978,13 @@
+ 	  s=s*jt->fact;
+ 	d=d*pow(jt->fact,jt->mult/2);
+       }
++      // Pascaline patch 0033 (G175): sqrt(s*d^2/den^2) = abs(d)/abs(den)*sqrt(s) holds for a real d and den only;
++      // has_i above sees a literal i, so a d with a complex value and no i took it: acosh(-1/2) is
++      // ln(-1/2+sqrt(-1/2+1)*sqrt(-1/2-1)), and normal(sqrt(acosh(-1/2)^3)) gave abs(L)*sqrt(L), the other root.
++      if (!sqrt_extract_real(r2e(d,lv,contextptr),contextptr) || !sqrt_extract_real(r2e(den,lv,contextptr),contextptr)){
++	lin.pop_back();
++	continue;
++      }
+       // Extract integer content of s
+       gen cont=Tppz<gen>(s);
+       if (s.dim==0 && !s.coord.empty() && is_positive(-s.coord[0].value,contextptr)){

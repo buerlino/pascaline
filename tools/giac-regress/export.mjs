@@ -342,6 +342,19 @@ export const PATCHED_IDS = new Map([
   ["g166-atan-tan-1e15-12", "0032-atan-tan-reduction-digits.patch"],
   ["g166-atan-tan-1e17-12", "0032-atan-tan-reduction-digits.patch"],
   ["g166-atan-tan-pi/2-minus-1e-15-typed-12", "0032-atan-tan-reduction-digits.patch"],
+  // G175 (F135, F134): a root of exp(a) with im(a) past pi (stock: e^(a*b), the other root), and normal and simplify of the root
+  // of a complex power (stock: abs(z)*sqrt(z), z*sqrt(z)); g175-cas-* is the CAS view, and the guards g175-keep-* pass on stock
+  // and stay in the check file
+  ["g175-sqrt-exp-4i-12", "0033-pow-exp-principal-branch.patch"],
+  ["g175-sqrt-exp-4i-30", "0033-pow-exp-principal-branch.patch"],
+  ["g175-sqrt-e-pow-4i-12", "0033-pow-exp-principal-branch.patch"],
+  ["g175-exp-4i-pow-half-12", "0033-pow-exp-principal-branch.patch"],
+  ["g175-sqrt-exp-2+4i-12", "0033-pow-exp-principal-branch.patch"],
+  ["g175-sqrt-exp-3acosh-neg2-12", "0033-pow-exp-principal-branch.patch"],
+  ["g175-sqrt-exp-3acosh-neg2-30", "0033-pow-exp-principal-branch.patch"],
+  ["g175-simplify-sqrt-acosh-neg-half-cubed-12", "0033-pow-exp-principal-branch.patch"],
+  ["g175-normal-sqrt-acosh-neg-half-cubed-12", "0033-pow-exp-principal-branch.patch"],
+  ["g175-normal-sqrt-acosh-neg-half-sq-12", "0033-pow-exp-principal-branch.patch"],
   // G126: asin, acos and asinh of a large argument on the cancelling side of their ln forms (stock: 20 to all digits lost, or
   // undef where the sum is an exact 0); the guards g126-asin-neg-1e20-12, g126-acos-*-1e20/1e300, g126-acosh-*, g126-atanh-*
   // and the small arguments pass on stock and stay in the check file
