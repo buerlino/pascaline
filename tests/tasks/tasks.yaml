@@ -29,10 +29,10 @@ tasks:
     title: Parallel combination 4.7k ‖ 10k (resistors)
     milestone: 6
     status: active   # since S25 (prefix chips were dropped, night review 2026-10-31 fh-8): Find's par() and plain digits
-    budget: 16   # S25: the measured count (14 planned with prefix chips); the owner agrees it
-    # Math, p a r (r a flick down on 8; Find's first hit after three letters, rank.ts), Enter (par(), cursor inside); 4 7 0 0 , 1 0 0 0 0,
-    # Enter. With 4.7ᴇ3 and 10ᴇ3 the count is the same
-    keys: [math, emark, vars, {down: d8}, enter, d4, d7, d0, d0, comma, d1, d0, d0, d0, d0, enter]
+    budget: 14   # S25: the measured count, the same as the plan with prefix chips; the owner agrees it
+    # Math, p a r (r a flick down on 8; Find's first hit after three letters, rank.ts), Enter (par(), cursor inside); 4 7 0 0 , 1 ᴇ 4,
+    # Enter (Enter right after an exponent evaluates, as in t03). 4700 and 1ᴇ4 are the shortest (4.7ᴇ3 costs 5, 10000 costs 5)
+    keys: [math, emark, vars, {down: d8}, enter, d4, d7, d0, d0, comma, d1, emark, d4, enter]
     expect: { value: "3197.278911564625850340136054421768707483", text: "3197.27891156" }
     source: derived   # 4700 × 10000 / (4700 + 10000) = 470000/147, exact fraction
     baseline:

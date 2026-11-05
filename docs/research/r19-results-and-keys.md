@@ -55,6 +55,6 @@ Measured (`results-geometry.mjs`): status line 28; keypad 514 = padding 8 + 3 cl
 | R1: R82's short rows (42 / 32 px), now under 700 px tall | 351, 0.418, 271 (219) | 252, 0.341, 172 (120) |
 | R2: keypad gaps 6 → 4, padding 8 → 4 | 323, 0.385, 243 (191) | 224, 0.303, 144 (92) |
 | R1 + R2 | 377, 0.449, 297 (245) | 278, 0.376, 198 (146) |
-| R3: the picked row's buttons in the empty line's slot | picked = unpicked, +52, no jump | the same |
+| R3: the picked row's buttons in the empty line's slot (measured: the 52 px line laid over the 79.6 px entry line) | picked = unpicked, +52, no jump | the same |
 
 R3 works because ▲ picks only on an empty line (`route.ts:172`). Three 1÷3 rows hide 50 px today at 412 × 839, and 66 with docs/05 3.5's 8 px more between entries. With R2 they hide 40 even with the 8 px. **Recommendation: R2 + R3 at every size, and R1 below 760 px tall** (R82's `max-height: 700px` → 760). 360 × 740 then reaches 0.376 and every size passes the floor, which the test should check at 360 × 740 too. Cost: the keys sit 2 px closer, and short screens get 42 px keys (as under 700 px today).

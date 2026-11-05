@@ -5,7 +5,7 @@ Pipeline run 643, branch `p1/sandra-resultskeys` from `phase-1` 6ce82ab8. The no
 
 ## What I verified (rerun commands)
 
-- **t01 and t03 on today's keys** (`tests/tasks/tasks.yaml`). Prefix chips were dropped (night review 2026-10-31 fh-8), so t01 is now active as Math, p a r, Enter, `4700 , 10000`, Enter: **16 presses** (the plan with chips was 14). Find puts `fn:par` first after three letters (`rank.ts` search: `p` → prefixes, `pa` → `unit:Pa`, `par` → `fn:par`). t03 is now active as `2.2ᴇ-9 × 4.7ᴇ3`: **13 presses** (the plan was 10). Rerun: `cd app && PW_PORT=<port> GIAC_OUT=<dir> npx playwright test test/tasks.spec.ts`: 14 passed; t01 16/16, t03 13/13.
+- **t01 and t03 on today's keys** (`tests/tasks/tasks.yaml`). Prefix chips were dropped (night review 2026-10-31 fh-8), so t01 is now active as Math, p a r, Enter, `4700 , 1ᴇ4`, Enter: **14 presses**, the same as the plan with chips (`1ᴇ4` is the shortest 10k; Enter right after an exponent evaluates, as in t03). Find puts `fn:par` first after three letters (`rank.ts` search: `p` → prefixes, `pa` → `unit:Pa`, `par` → `fn:par`). t03 is now active as `2.2ᴇ-9 × 4.7ᴇ3`: **13 presses** (the plan was 10). Rerun: `cd app && PW_PORT=<port> GIAC_OUT=<dir> npx playwright test test/tasks.spec.ts`: 14 passed; t01 14/14, t03 13/13.
 - **Find's letters on digit keys** (found while replaying t01). In Find a digit key types its digit, or picks row n on an empty filter (`app/src/views/sheetKeys.ts` `findKey` :85-86), so `p a 8` searched "pa8". The letter is a flick down. tasks.yaml's header said `r = d8, s = d9`, and t06's pending plan typed `e 9`. Both now use `{down: d8}` / `{down: d9}`. The docs were wrong, the code is right.
 - **Geometry** (`node tools/probes/results-geometry.mjs --options`, about 40 s). Every strip and option in r19 part 3. The probe had been broken since R15c4: the first-start tips caught its taps, and it now opens with `tips=off`.
 - **Jobs and key layouts** (`node tools/probes/results-keys.mjs --ends`, about 20 s). The counts in r19 parts 1 and 2. In the app: ⇤ ⇥ and the box ends work, and a tap reaches the line's ends only inside the formula's box.
@@ -81,7 +81,7 @@ At 360 × 740 (1.36 rows) touch costs one scroll from k = 2 on. A visit with n a
 
 ## Needs a decision
 
-- The pick (above). t01's budget of 16 and t03's of 13 are measured counts that the owner agrees when a task goes active (`tests/tasks/README.md`).
+- The pick (above). t01's budget of 14 and t03's of 13 are measured counts that the owner agrees when a task goes active (`tests/tasks/README.md`).
 
 ## Not done
 

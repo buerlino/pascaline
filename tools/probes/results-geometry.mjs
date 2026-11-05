@@ -146,12 +146,25 @@ try {
         await tapKeys(['up']);
         await page.getByTestId('row-actions').waitFor();
         const picked = await box('.history');
-        // R3: the buttons in the entry line's place: the history gains the entry line's height less the buttons'
-        // the buttons sit in the empty entry line's slot, which keeps its height: the history keeps its unpicked height
-        const r3 = free.h;
+        // R3, measured: the row's buttons taken out of the flow and laid over the empty entry line's slot (centred in
+        // it; the field hidden), then the history read again. `fits` says the buttons lie inside the entry line's box.
+        await page.evaluate(() => {
+          const scr = document.querySelector('.screen'), entry = document.querySelector('.entry'), bar = document.querySelector('[data-testid="row-actions"]');
+          const s = scr.getBoundingClientRect(), e = entry.getBoundingClientRect(), b0 = bar.getBoundingClientRect();
+          const st = document.createElement('style'); st.id = 'opt-r3';
+          st.textContent = `.entry .field{visibility:hidden!important}[data-testid="row-actions"]{position:absolute!important;left:0;right:0;top:${(e.top - s.top + (e.height - b0.height) / 2).toFixed(1)}px}`;
+          document.head.append(st);
+        });
+        await page.waitForTimeout(100);
+        const r3 = await box('.history');
+        const fits = await page.evaluate(() => {
+          const e = document.querySelector('.entry').getBoundingClientRect(), b = document.querySelector('[data-testid="row-actions"]').getBoundingClientRect();
+          return b.top >= e.top - 0.5 && b.bottom <= e.bottom + 0.5;
+        });
+        await page.evaluate(() => document.getElementById('opt-r3')?.remove());
         await tapKeys(['esc']);
         await page.evaluate((i) => document.getElementById(i)?.remove(), id);
-        console.log(`option ${name.padEnd(14)} keypad ${kp.h.toFixed(0)} px (lowest key ${minKey.toFixed(0)}), viewport ${scr.h.toFixed(0)} = share ${(scr.h / m.window).toFixed(4)}, history ${free.h.toFixed(0)} px (${(free.h / item.pitch).toFixed(2)} rows of 1÷3), picked ${picked.h.toFixed(0)} px; with R3 picked ${r3.toFixed(0)} px`);
+        console.log(`option ${name.padEnd(14)} keypad ${kp.h.toFixed(0)} px (lowest key ${minKey.toFixed(0)}), viewport ${scr.h.toFixed(0)} = share ${(scr.h / m.window).toFixed(4)}, history ${free.h.toFixed(0)} px (${(free.h / item.pitch).toFixed(2)} rows of 1÷3), picked ${picked.h.toFixed(0)} px; R3 picked (measured) ${r3.h.toFixed(0)} px, buttons inside the entry line: ${fits}`);
       }
     }
     await page.context().close();
