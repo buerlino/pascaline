@@ -18,19 +18,21 @@
 #   compare       hand-measured presses on other tools; null until the owner measures them (README.md)
 #
 # Find letters are written as the key that types them (docs/04 section 3.7): c = tmpl, e = frac, h = cos, k = log,
-# m = neg, p = emark, r = d8, s = d9, a = vars. All pending sequences are planned from docs/03 and docs/04; where a
-# detail is open (for example whether the unit view needs Alpha for letters) the plan assumes the shortest form.
+# m = neg, p = emark, a = vars; a digit key types its digit there (or picks row n on an empty filter), so its letter is
+# a flick down: r = {down: d8}, s = {down: d9} (app/src/views/sheetKeys.ts findKey, :85-86).
+# All pending sequences are planned from docs/03 and docs/04; where a detail is open (for example whether the unit
+# view needs Alpha for letters) the plan assumes the shortest form.
 schema: 1
 
 tasks:
   - id: t01
     title: Parallel combination 4.7k ‖ 10k (resistors)
     milestone: 6
-    status: pending
-    needs: "Find (R4a), prefix chips (milestone 5, gated by t03)"
-    budget: 14
-    # Math, p a r, Enter (par(), cursor inside); 4 . 7 chip-k , 1 0 chip-k, Enter. With 4700 typed the count is the same
-    keys: [math, emark, vars, d8, enter, d4, dot, d7, {tap: "prefix:k"}, comma, d1, d0, {tap: "prefix:k"}, enter]
+    status: active   # since S25 (prefix chips were dropped, night review 2026-10-31 fh-8): Find's par() and plain digits
+    budget: 16   # S25: the measured count (14 planned with prefix chips); the owner agrees it
+    # Math, p a r (r a flick down on 8; Find's first hit after three letters, rank.ts), Enter (par(), cursor inside); 4 7 0 0 , 1 0 0 0 0,
+    # Enter. With 4.7ᴇ3 and 10ᴇ3 the count is the same
+    keys: [math, emark, vars, {down: d8}, enter, d4, d7, d0, d0, comma, d1, d0, d0, d0, d0, enter]
     expect: { value: "3197.278911564625850340136054421768707483", text: "3197.27891156" }
     source: derived   # 4700 × 10000 / (4700 + 10000) = 470000/147, exact fraction
     baseline:
@@ -56,12 +58,12 @@ tasks:
     compare: { g2_virtual_calc: null, phone_calculator: null }
 
   - id: t03
-    title: 2.2n × 4.7k with prefix chips, against 2.2E-9 × 4.7E3
+    title: 2.2n × 4.7k typed as 2.2ᴇ-9 × 4.7ᴇ3
     milestone: 5
-    status: pending
-    needs: "prefix chips (milestone 5; they stay only if this task shows they win)"
-    budget: 10
-    keys: [d2, dot, d2, {tap: "prefix:n"}, mul, d4, dot, d7, {tap: "prefix:k"}, enter]
+    status: active   # since S25: prefix chips were dropped (night review 2026-10-31 fh-8), so E-notation is the way
+    budget: 13   # S25: the measured count (10 planned with prefix chips); the owner agrees it
+    # 2 . 2 ᴇ (−) 9 × 4 . 7 ᴇ 3, Enter; × ends the exponent by itself (R3)
+    keys: [d2, dot, d2, emark, neg, d9, mul, d4, dot, d7, emark, d3, enter]
     expect: { value: "0.00001034", text: "1.034E-5" }
     source: derived   # 2.2 × 4.7 = 10.34 and 10^-9 × 10^3 = 10^-6
     baseline:
@@ -107,8 +109,8 @@ tasks:
     status: pending
     needs: "Find (R4a)"
     budget: 12
-    # Math, e s Enter (eseries(), cursor inside), 2 4 , 3 8 7 0, Enter
-    keys: [math, frac, d9, enter, d2, d4, comma, d3, d8, d7, d0, enter]
+    # Math, e s (s a flick down on 9) Enter (eseries(), cursor inside), 2 4 , 3 8 7 0, Enter
+    keys: [math, frac, {down: d9}, enter, d2, d4, comma, d3, d8, d7, d0, enter]
     expect: { value: "3900", text: "3900" }
     source: derived   # IEC 60063 E24: …, 3.6, 3.9, 4.3, … ; |3.87 − 3.9| < |3.87 − 3.6|
     baseline: null    # nothing computes it today; the engineer reads a table
