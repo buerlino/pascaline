@@ -12,3 +12,10 @@ export const MAX_DRAWN_LATEX = 6000;
  *  decimal units, one decimal from 1 MB. */
 export const tooLongNote = (n: number): string =>
   t("render.tooLong", { size: n < 1e6 ? `${Math.max(1, Math.round(n / 1e3))} kB` : `${(n / 1e6).toFixed(1)} MB` });
+
+/** R135f2: a result with no chip goes on the entry line as drawn; over the cut that is 1.77 MB of LaTeX for MathLive's
+ *  parser (it overflowed its stack on Σ cos(k)/k to 2000), so it is not inserted at all. A chip carries its value instead. */
+export const tooLongToInsert = (shown: string, hasChip: boolean): boolean => !hasChip && shown.length > MAX_DRAWN_LATEX;
+
+/** The notice for a tap on such a result. */
+export const tooLongToInsertNote = (): string => t("render.tooLongInsert");
