@@ -10,10 +10,10 @@
 **The freeze ended** on 2026-10-27. **The net stays:** every merge runs the core list (R74; [tests/core/core.yaml](../../tests/core/core.yaml), 66 cases, all active), night.sh runs the device's core list after each Opus pass when the night has a device (A33, A41), and the owner's [morning check](../../tests/core/MORNING.md) runs on the night's device. A red result is a bug to fix (a FIX of the next Opus pass, or a backlog bug line past a day of work), not a gate. **The pace** (owner, 2026-10-27; the date 2026-11-01): Claude Max runs to 2026-11-17. Each night carries about 9 hours of real work, the most important steps first, so a usage limit late costs the least; the day runs what needs the owner's eye.
 
 **Two lanes** (owner, 2026-10-29; decisions.md P17 and "Owner answers of 2026-10-29"): lane A (ron's UI) and lane B (the release, then the engine) run around the clock, each with its own table in section 0c, merged through one queue (A47b). ron's packages run at night too: the owner's look moves to the milestone reviews (Lane A's queue), and a package's "owner's eye" item joins the next review. Device steps and the owner's acts (a key, a tag, a phone) stay by day. The order:
-1. **Find:** built; A4b (the Tab One's timing, the bar's point 4) by day; R91's before/after is in [ONE-TIME.md](../../tests/core/ONE-TIME.md).
-2. **The Settings base** (owner, 2026-10-27; decisions.md "Settings in the Mode sheet, and presets"; [mockups/settings.html](../mockups/settings.html)): merged up to R89 → R59 and R12b → R12c → R41; R53; R36, R33 → R40 (R37 parked).
+1. **Find:** built; A4b and A74 merged (E3 met on the Tab One); R91's before/after is in [ONE-TIME.md](../../tests/core/ONE-TIME.md).
+2. **The Settings base** (owner, 2026-10-27; decisions.md "Settings in the Mode sheet, and presets"; [mockups/settings.html](../mockups/settings.html)): merged up to R89 → R59 and R12b → R12c → R41; R53; R36, R33 → R40.
 3. **The units** (owner, 2026-10-29: right after R86, R57, R50e): R24b–R24d, G81, R60–R63, R71 and R92 (the units menu's Constants and Tools) merged.
-4. **Lane B, to v0.1.0** (the APK and the website from one tag): A7, A9, A43, A45 and A48–A50 merged; A8 (the owner's test tag); then wrong numbers by reach, C4. The bar and the days: [release-0.1.0.md](../release-0.1.0.md); from its freeze (Thu 11-12) both lanes run only its fixes.
+4. **Lane B, to v0.1.0** (the APK and the website from one tag): A7, A9, A43, A45 and A48–A50 merged; A8 and A70 merged (the release test, 11-05); then wrong numbers by reach, C4. The bar and the days: [release-0.1.0.md](../release-0.1.0.md); from its freeze (Thu 11-12) both lanes run only its fixes.
 5. **Every morning:** the owner's check (MORNING.md, on the night's device when the night had one, about 10 minutes). The day session writes each failed step as a backlog bug line on phase-1 and logs one line in `.coord/log.md`: `- HH:MM morning <date>: clean` or `- HH:MM morning <date>: fails <ids>`.
 
 **The weekly extreme night** (owner, 2026-10-29; replaces the nightly fuzz of 2026-10-27): once a week lane B runs the extreme-input packages (none open) and the fuzz, in 10-minute slices (G167: from `app/`, each command as `../tools/devlock.sh slice <name> node scripts/sweep.ts …`; n = 4 for the 5,000 `--edges` trees: a part of 1,250 takes about 2 min at G138's 90 s per 1,000 trees, never more than 5,000 trees a part (8 min): `--nightly --edges --seed <clock> --count 5000 --part i/4` for i = 1..4, then `--shrink <seed>`; a missing part is named and exit 1; a long shrink: `--shrink <seed> --part i/m` for each i, then `--shrink <seed> --join`), with its triage (each week the text of G138, its package file at d1278849, with a new ID); the Opus pass files the backlog lines. Wrong numbers of everyday or medium reach run any time, by reach.
@@ -29,6 +29,9 @@
 | # | Package | Agent, model | Lane | Starts when merged | Size |
 |---|---|---|---|---|---|
 | [A61](packages/A61.md) | What the WebView answers to `persisted()` | annabell, Sonnet | day (the Fairphone) | R96f1 | ~0.2 d |
+| [S33](packages/S33.md) | One place per pipeline rule: brief 0c against rules section 4 | sandra, Opus | day, no lane running | A75 | ~0.5 d |
+| [A76](packages/A76.md) | The release builds only what ships; the update test from the last release | annabell, Sonnet | day | the v0.1.0 tag | ~0.3 d |
+| [A77](packages/A77.md), [R138](packages/R138.md), [A78](packages/A78.md) | The name N62, in this order | annabell, ron, annabell | day, no lane running | TMview, repo moved | ~1.3 d |
 
 **Why these models:** Opus where a slip breaks entry, the unit chain or stored data for every later package, or gives a wrong number (P17: the engine, input and units); sandra and sofia run Opus; Sonnet elsewhere (an existing pattern, pinned by tests); the audit model follows P17.
 
@@ -50,7 +53,7 @@ With the lanes, start both from the phase-1 worktree: `cd .claude/worktrees/phas
 12. **No lanes in the morning** (a selftest failed): the owner starts `scripts/night.sh` without `--lane`, and henri runs lane B's rows, then lane A's, as one queue.
 
 ### Night 2026-11-05 to 11-06, to 05:30, both lanes on the Tab One (owner, 2026-11-05)
-`ANDROID_SERIAL=HA24BZ2Y` for both lanes, `--until 05:30`; before the start the owner plugs in and unlocks the Tab One, and `tools/stay-awake.sh HA24BZ2Y --restore` runs (STAY_ON=7). CORE DEVICE after each pass. Lane A runs R132 (the release bar's point 4, owner 2026-11-05), then R59 (decisions.md "A62, R59's gate"), then the rest of its table; lane B runs G165, G166, G164, G167, A69, A71, then the rest of its table (owner, 2026-11-05: "add everything"; A65, A66 and A74 on the night's device). Every "After" was checked against the merges on 2026-11-05 ("–" is merged); a step whose "After" is not merged is skipped. Follow each Opus pass as written (rule 3).
+`ANDROID_SERIAL=HA24BZ2Y` for both lanes, `--until 05:30`; before the start the owner plugs in and unlocks the Tab One, and `tools/stay-awake.sh HA24BZ2Y --restore` runs (STAY_ON=7). CORE DEVICE after each pass. Lane A runs R132 (the release bar's point 4, owner 2026-11-05), then R59 (decisions.md "A62, R59's gate"), then the rest of its table; lane B runs G165, G166, G164, G167, A69, A71, then the rest of its table (owner, 2026-11-05: "add everything"; A65, A66 and A74 on the night's device). Every "After" was checked against the merges on 2026-11-05 ("–" is merged); a step whose "After" is not merged is skipped. Follow each Opus pass as written (rule 3). Then lane A runs the declutter (owner, 2026-11-05 evening; decisions.md "The declutter"), S26 to R137, and lane B ends with G189 and A75.
 
 ### Lane A queue (ron's UI)
 Milestone reviews (section 0): after R50e (with R116's gallery groups "Entry highlights (R116)" and the lifted --pick on the History picked row; R113's rings, gallery home-tips-small); after R24d (with R92's Constants and Tools; R108's gallery group "Decimal comma in apps"; R89 on the Fairphone: save two presets with different free keys and switch; R111's note at 360 px; R33's stored-name colour in each theme, decisions.md "Owner answers of 2026-11-02"; R120's gallery unitresult-t10-comma; R124's gallery group "Mark style (R124)" and R125's "Digit groups (R125)", ’ and , grouping only before the point since R125f1; G164's sample sources, decisions.md "Needs the user"; R59 on the Tab One: import a .txt library from Downloads and from Drive, paste a long one from the clipboard, read the 9 s notice; R135's note on CAS Σ cos(k)/k to 2000).
@@ -58,9 +61,19 @@ Milestone reviews (section 0): after R50e (with R116's gallery groups "Entry hig
 | Step | What | Agent, model | Branch | After |
 |---|---|---|---|---|
 | 512 | [R129](packages/R129.md) the study's mockups: results mode, the six top-right keys, the room (pass 77; the owner picks by day) | ron, Sonnet | `p1/ron-resultsmockup` | – |
+| 514 | [S26](packages/S26.md) the safe cuts: unlinked archive files, the spike's raw data, `.gitignore` | sandra, Opus | `p1/sandra-cutsafe` | – |
+| 515 | [S27](packages/S27.md) the live research notes under 90 kB | sandra, Opus | `p1/sandra-researchdiet` | – |
+| 516 | [S34](packages/S34.md) docs/04 from its cap to about 60 kB | sandra, Opus | `p1/sandra-archdiet` | – |
+| 517 | [S28](packages/S28.md) the probes and tools no package uses; the tools READMEs | sandra, Opus | `p1/sandra-toolsdiet` | – |
+| 518 | [S29](packages/S29.md) the archive keeps only what is cited; Phase 0 moves into it | sandra, Opus | `p1/sandra-archivecut` | S26, S28 |
+| 519 | [S30](packages/S30.md) the mockups of merged packages, the reports past a week | sandra, Opus | `p1/sandra-mockupcut` | – |
+| 520 | [S31](packages/S31.md) docs/01–03 trimmed to what binds | sandra, Opus | `p1/sandra-plansdiet` | S29 |
+| 521 | [S32](packages/S32.md) docs/05, docs/06, feedback.md and the READMEs say today's app | sandra, Opus | `p1/sandra-uidocsdiet` | S30 |
+| 522 | [R136](packages/R136.md) the bench hooks and flags no tool uses | ron, Sonnet | `p1/ron-deadhooks` | – |
+| 523 | [R137](packages/R137.md) one fake store and one set of e2e helpers | ron, Sonnet | `p1/ron-testfakes` | R136 |
 
 ### Lane B queue (the release, then the engine)
-A8 and [A57](packages/A57.md) run by day; the night review's queue goes on in [its note](../research/night-review-2026-11-02.md) section 2.
+[A57](packages/A57.md) runs by day; the night review's queue goes on in [its note](../research/night-review-2026-11-02.md) section 2.
 
 | Step | What | Agent, model | Branch | After |
 |---|---|---|---|---|
@@ -90,6 +103,8 @@ A8 and [A57](packages/A57.md) run by day; the night review's queue goes on in [i
 | 487 | [A65](packages/A65.md) the sync folder on Android (the night's device) | annabell, Opus | `p1/annabell-syncfolder` | – |
 | 488 | [A66](packages/A66.md) an optional key click, off by default (the night's device) | annabell, Sonnet | `p1/annabell-keyclick` | – |
 | 490 | [A73f1](packages/A73f1.md) why a CAS-view start is 200 ms slower than Home (the night's device) | annabell, Sonnet | `p1/annabell-casstart` | R133 |
+| 524 | [G189](packages/G189.md) test-only engine data out of `app/src`; F155's passing rows out | gorge, Sonnet | `p1/gorge-testdata` | – |
+| 525 | [A75](packages/A75.md) the pipeline deletes package files; gc ages reports by commit; the release-guard test runs | annabell, Opus | `p1/annabell-housekeeping` | – |
 
 ### The commands henri replies with (one per decision; `scripts/night.sh` runs it)
 - `scripts/pipeline.sh <agent> "<ID>" --model <sonnet|opus> --audit-model auto`: the next queue step not done (the queue's skip rule above); `--audit-model opus` where its row says "audit Opus".
