@@ -28,11 +28,6 @@
 
 | # | Package | Agent, model | Lane | Starts when merged | Size |
 |---|---|---|---|---|---|
-| [A4b](packages/A4b.md) | Find's timing on the Tab One (the bar's point 4) | annabell, Sonnet | day (the Tab One) | – | ~0.2 d |
-| [A8](packages/A8.md) | The release workflow (merged 9c7ee4e0; A8f2 merged 9624810e, so its after-merge steps run again on the moved tag) | annabell, Opus | day (then the test tag `v0.1.0-test`) | A7 | ~0.5 d |
-| [A70](packages/A70.md) | The release APK from the test tag runs on the Tab One | annabell, Sonnet | day (the Tab One) | the moved tag's green run (A8f2 merged 9624810e) | ~0.2 d |
-| [A72](packages/A72.md) | The WebView's first frame is Dark (A59f1, the splash-exit flash) | annabell, Sonnet | day (a device) | – | ~0.2 d |
-| [A73](packages/A73.md) | What makes the start slow with a full CAS history (F172) | annabell, Sonnet | day (the Tab One) | – | ~0.3 d |
 | [A61](packages/A61.md) | What the WebView answers to `persisted()` | annabell, Sonnet | day (the Fairphone) | R96f1 | ~0.2 d |
 
 **Why these models:** Opus where a slip breaks entry, the unit chain or stored data for every later package, or gives a wrong number (P17: the engine, input and units); sandra and sofia run Opus; Sonnet elsewhere (an existing pattern, pinned by tests); the audit model follows P17.
@@ -55,7 +50,7 @@ With the lanes, start both from the phase-1 worktree: `cd .claude/worktrees/phas
 12. **No lanes in the morning** (a selftest failed): the owner starts `scripts/night.sh` without `--lane`, and henri runs lane B's rows, then lane A's, as one queue.
 
 ### Night 2026-11-05 to 11-06, to 05:30, both lanes on the Tab One (owner, 2026-11-05)
-`ANDROID_SERIAL=HA24BZ2Y` for both lanes, `--until 05:30`; before the start the owner plugs in and unlocks the Tab One, and `tools/stay-awake.sh HA24BZ2Y --restore` runs (STAY_ON=7). CORE DEVICE after each pass. Lane A runs R132 (the release bar's point 4, owner 2026-11-05), then R59 (decisions.md "A62, R59's gate"); lane B runs G165, G166, G164, G167, A69, A71 in that order. Every "After" was checked against the merges on 2026-11-05 ("–" is merged); a step whose "After" is not merged is skipped. Follow each Opus pass as written (rule 3).
+`ANDROID_SERIAL=HA24BZ2Y` for both lanes, `--until 05:30`; before the start the owner plugs in and unlocks the Tab One, and `tools/stay-awake.sh HA24BZ2Y --restore` runs (STAY_ON=7). CORE DEVICE after each pass. Lane A runs R132 (the release bar's point 4, owner 2026-11-05), then R59 (decisions.md "A62, R59's gate"), then the rest of its table; lane B runs G165, G166, G164, G167, A69, A71, then the rest of its table (owner, 2026-11-05: "add everything"; A65, A66 and A74 on the night's device). Every "After" was checked against the merges on 2026-11-05 ("–" is merged); a step whose "After" is not merged is skipped. Follow each Opus pass as written (rule 3).
 
 ### Lane A queue (ron's UI)
 Milestone reviews (section 0): after R50e (with R116's gallery groups "Entry highlights (R116)" and the lifted --pick on the History picked row; R113's rings, gallery home-tips-small); after R24d (with R92's Constants and Tools; R108's gallery group "Decimal comma in apps"; R89 on the Fairphone: save two presets with different free keys and switch; R111's note at 360 px; R33's stored-name colour in each theme, decisions.md "Owner answers of 2026-11-02"; R120's gallery unitresult-t10-comma; R124's gallery group "Mark style (R124)" and R125's "Digit groups (R125)", ’ and , grouping only before the point since R125f1).
@@ -64,6 +59,11 @@ Milestone reviews (section 0): after R50e (with R116's gallery groups "Entry hig
 |---|---|---|---|---|
 | 480 | [R132](packages/R132.md) a Find key updates the list within one frame (E3 missed: 31.9 ms against 16, A4b) | ron, Opus | `p1/ron-findfast` | – |
 | 473 | [R59](packages/R59.md) the library rows: import (file or clipboard), export, the format for your AI | ron, Opus | `p1/ron-m4-library` | – |
+| 481 | [R133](packages/R133.md) History draws the newest 5 rows until the engine is ready (F172) | ron, Sonnet | `p1/ron-histfirst` | – |
+| 512 | [R134](packages/R134.md) shared and why-line texts are plain: no LaTeX commands or class wrappers (F162, F171) | ron, Sonnet | `p1/ron-plaintext` | – |
+| 513 | [R135](packages/R135.md) a result too long to draw shows a drawn note, never raw LaTeX (F71) | ron, Sonnet | `p1/ron-longresult` | – |
+| 482 | [R126](packages/R126.md) the backup's keys, pad cells and presets written down for your AI | ron, Sonnet | `p1/ron-backupformat` | R59 |
+| 483 | [R129](packages/R129.md) the study's mockups: results mode, the six top-right keys | ron, Sonnet | `p1/ron-resultsmockup` | S25 |
 
 ### Lane B queue (the release, then the engine)
 A8 and [A57](packages/A57.md) run by day; the night review's queue goes on in [its note](../research/night-review-2026-11-02.md) section 2.
@@ -76,6 +76,34 @@ A8 and [A57](packages/A57.md) run by day; the night review's queue goes on in [i
 | 477 | [G167](packages/G167.md) the weekly fuzz in 10-minute slices (before Wed 11-11) | gorge, Sonnet | `p1/gorge-fuzzslices` | – |
 | 478 | [A69](packages/A69.md) a night stops before the disk is full; runs leave no temp folders | annabell, Sonnet | `p1/annabell-diskguard` | – |
 | 479 | [A71](packages/A71.md) the red-first check can test against the stock engine | annabell, Sonnet | `p1/annabell-redstock` | – |
+| 484 | [A74](packages/A74.md) Find per key on the Tab One again after R132 (E3, the bar's point 4) | annabell, Sonnet | `p1/annabell-findagain` | R132 |
+| 491 | [G175](packages/G175.md) √ of exp(z) or of a complex power keeps the principal root (F135, F134; silent) | gorge, Opus | `p1/gorge-sqrtexp` | – |
+| 492 | [G177](packages/G177.md) cos, sin, tan of half a complex atan, asin, acos take the right sign (F137; silent) | gorge, Opus | `p1/gorge-halfatrig` | – |
+| 493 | [G171](packages/G171.md) a non-square power stays refused when the input calls a storing function (F88; silent) | gorge, Opus | `p1/gorge-nonsquarestore` | – |
+| 494 | [G176](packages/G176.md) the limit of trunc at an integer from the right side (F170) | gorge, Opus | `p1/gorge-limtrunc` | – |
+| 495 | [G178](packages/G178.md) a divergent integral inside an expression is refused, not ⚠ 1 (F115) | gorge, Opus | `p1/gorge-intdivexpr` | – |
+| 496 | [G168](packages/G168.md) no value is a plain refusal: `undef`, empty calls, `DelAVars()`, the budget message (F93, F109) | gorge, Opus | `p1/gorge-novalue` | – |
+| 497 | [G183](packages/G183.md) a crashed engine restarts and says so, never a JS error text (F122, F145, G94) | gorge, Opus | `p1/gorge-trapnet` | – |
+| 498 | [G184](packages/G184.md) a Home step stopped by the time budget says "Stopped: it took too long" (F70) | gorge, Opus | `p1/gorge-floatstop` | – |
+| 499 | [G185](packages/G185.md) a Home Enter that does not return in time is stopped with the time-limit message (F62) | gorge, Opus | `p1/gorge-homewatch` | G183 |
+| 500 | [G169](packages/G169.md) a list as a distribution's x gives one value per element (F105, F93) | gorge, Opus | `p1/gorge-listlast` | – |
+| 501 | [G172](packages/G172.md) a list element only a double can value shows its number with ⚠ (F73) | gorge, Opus | `p1/gorge-listdouble` | – |
+| 502 | [G173](packages/G173.md) no Giac print forms: empty `seq[]`, `matrix[…]` in a list, `when` (F127, F108) | gorge, Opus | `p1/gorge-printforms` | – |
+| 503 | [G179](packages/G179.md) a stored value read later keeps the mark it left with (F80, F63) | gorge, Opus | `p1/gorge-storedmark` | – |
+| 504 | [G180](packages/G180.md) DEG sqrt(asinh(asin(3.7))) gets the same mark on any clock (F159) | gorge, Opus | `p1/gorge-degmarkclock` | – |
+| 505 | [G186](packages/G186.md) Home's checks end on acos, asin, acosh of a huge or tiny real (F145) | gorge, Opus | `p1/gorge-cuthang` | – |
+| 506 | [G187](packages/G187.md) a power that underflows past the range says Underflow, not a stack overflow (F122) | gorge, Opus | `p1/gorge-powunder` | – |
+| 507 | [G170](packages/G170.md) ilaplace leaves no broken entry in Giac's variable list (F89) | gorge, Opus | `p1/gorge-ilaplacevars` | – |
+| 508 | [G174](packages/G174.md) names stored through an argument (QR, LU…) reach the log; restart shows none of ours (F87, F96, F97) | gorge, Opus | `p1/gorge-argnames` | – |
+| 509 | [G181](packages/G181.md) atanh and atan of a tiny non-real exact argument give z (F177) | gorge, Opus | `p1/gorge-atanhtiny` | G166 |
+| 510 | [G182](packages/G182.md) the why line past the 1000-digit cap says what was checked (F178) | gorge, Sonnet | `p1/gorge-whypastcap` | G181 |
+| 511 | [G188](packages/G188.md) the view sweep survives an engine crash and names it (G94) | gorge, Opus | `p1/gorge-viewcrash` | – |
+| 485 | [A64](packages/A64.md) two pipeline guards that misfire | annabell, Opus | `p1/annabell-guardfix` | – |
+| 486 | [A67](packages/A67.md) red-first counts only a test the branch adds or tightens | annabell, Opus | `p1/annabell-redfirst` | – |
+| 487 | [A65](packages/A65.md) the sync folder on Android (the night's device) | annabell, Opus | `p1/annabell-syncfolder` | – |
+| 488 | [A66](packages/A66.md) an optional key click, off by default (the night's device) | annabell, Sonnet | `p1/annabell-keyclick` | – |
+| 489 | [S25](packages/S25.md) results mode and the six top-right keys, a study | sandra, Opus | `p1/sandra-resultskeys` | – |
+| 490 | [A73f1](packages/A73f1.md) why a CAS-view start is 200 ms slower than Home (the night's device) | annabell, Sonnet | `p1/annabell-casstart` | R133 |
 
 ### The commands henri replies with (one per decision; `scripts/night.sh` runs it)
 - `scripts/pipeline.sh <agent> "<ID>" --model <sonnet|opus> --audit-model auto`: the next queue step not done (the queue's skip rule above); `--audit-model opus` where its row says "audit Opus".
