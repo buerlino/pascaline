@@ -61,3 +61,12 @@ describe("Android splash and bars are the Dark background (A59)", () => {
     expect(item(s, "android:windowLightNavigationBar")).toBe("false");
   });
 });
+
+describe("the WebView's first frame is the Dark background (A72)", () => {
+  it("capacitor.config.ts sets android.backgroundColor to it", () => {
+    const cfg = read(join(repo, "app/capacitor.config.ts"));
+    const m = /android:\s*\{[^}]*?backgroundColor:\s*'(#[0-9a-fA-F]{6})'/.exec(cfg) ?? /^\s*backgroundColor:\s*'(#[0-9a-fA-F]{6})'/m.exec(cfg);
+    expect(m, "backgroundColor in capacitor.config.ts").not.toBeNull();
+    expect((m as RegExpExecArray)[1]!.toLowerCase()).toBe(darkBg());
+  });
+});
