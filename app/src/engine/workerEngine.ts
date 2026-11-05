@@ -56,7 +56,7 @@ export interface WorkerEngineOptions {
 export const DEFS_LOAD_TIMEOUT_MS = 3000;
 
 type Pending = { resolve: (r: Response) => void; reject: (e: Error) => void };
-export type RequestBody = Request extends infer R ? (R extends { id: number } ? Omit<R, "id"> : never) : never;
+type RequestBody = Request extends infer R ? (R extends { id: number } ? Omit<R, "id"> : never) : never;
 
 /** Vite's BASE_URL made absolute against the page: with `base: "./"` a relative base would
  *  otherwise resolve against the worker script's own folder (assets/). */
