@@ -40,7 +40,7 @@ Work continues on `phase-1`; `master` follows it from 2026-11-03 (decisions.md, 
 - **F171, no package (R40f1's Not done).** A picked row's why-line names a Greek constant chip by its LaTeX: G times α reads `≈ uses G (± …), \alpha (± …)` (whyLine.ts constantsUsed takes the chip's LaTeX name). Family 9.
 - **F170, no package (G157f1's Not done).** `limit(trunc(x),x,-1,1)` shows = -1 (right 0): Giac's limit substitutes -1, since trunc has no series rule and is not in series.cc's sign/floor/ceil/round list (floor has taylor_floor). Golden `g157f1-limit-trunc-neg1-right` pending. Families 3, 8.
 - **F169, no package (R114's Not done).** The unit view's own field still takes MathLive's paste: Ctrl+V of `1e-3` there is e − 3. Family 7.
-- **F172, package A73 (A62).** With 200 CAS history items stored, engine ready on the Tab One is 1835 ms (1305 without; bar 1.5 s), the replay the same; cause not isolated.
+- **F172, A73 measured (report).** Stored history costs nothing (200 stored, Home last: 1274 ms against 1299 empty); the rows drawn at start do, by content: 20 program-definition rows 1821 ms, 20 plain rows 1469, 5 program rows 1345 (bar 1.5 s). A CAS-view start with nothing stored is also 1499 (worker's wasm instantiate slower), cause open. Fix package for ron in the report.
 - **Night review 2026-11-02:** the rest in [research/night-review-2026-11-02.md](research/night-review-2026-11-02.md).
 
 ### Background stream (extreme inputs; at night, by reach)
