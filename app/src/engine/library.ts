@@ -15,10 +15,11 @@ import { dropAngleFactor, PASDEG, rewriteAngles } from "./angles.ts";
 import { isFlagName } from "./flags.ts";
 import { callsOf, isName, names, noneOpen, typedFromPrinted, walk, wordsOf } from "./giacPrint.ts";
 
-/** r10 section 1.2: the limits of one file. */
-export const LIB_MAX_BYTES = 256 * 1024;
+import { HEADER, LIB_MAX_BYTES } from "./libraryHeader.ts";
+export { LIB_MAX_BYTES } from "./libraryHeader.ts";
+
+/** r10 section 1.2: the limits of one file (its bytes: libraryHeader.ts). */
 export const LIB_MAX_DEFS = 200;
-const HEADER = /^\/\/ pascaline library (\d+)$/;
 export interface LibTest {
   expr: string;
   /** 1-based line in the file. */
