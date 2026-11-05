@@ -53,14 +53,12 @@ With the lanes, start both from the phase-1 worktree: `cd .claude/worktrees/phas
 `ANDROID_SERIAL=HA24BZ2Y` for both lanes, `--until 05:30`; before the start the owner plugs in and unlocks the Tab One, and `tools/stay-awake.sh HA24BZ2Y --restore` runs (STAY_ON=7). CORE DEVICE after each pass. Lane A runs R132 (the release bar's point 4, owner 2026-11-05), then R59 (decisions.md "A62, R59's gate"), then the rest of its table; lane B runs G165, G166, G164, G167, A69, A71, then the rest of its table (owner, 2026-11-05: "add everything"; A65, A66 and A74 on the night's device). Every "After" was checked against the merges on 2026-11-05 ("–" is merged); a step whose "After" is not merged is skipped. Follow each Opus pass as written (rule 3).
 
 ### Lane A queue (ron's UI)
-Milestone reviews (section 0): after R50e (with R116's gallery groups "Entry highlights (R116)" and the lifted --pick on the History picked row; R113's rings, gallery home-tips-small); after R24d (with R92's Constants and Tools; R108's gallery group "Decimal comma in apps"; R89 on the Fairphone: save two presets with different free keys and switch; R111's note at 360 px; R33's stored-name colour in each theme, decisions.md "Owner answers of 2026-11-02"; R120's gallery unitresult-t10-comma; R124's gallery group "Mark style (R124)" and R125's "Digit groups (R125)", ’ and , grouping only before the point since R125f1; G164's sample sources, decisions.md "Needs the user").
+Milestone reviews (section 0): after R50e (with R116's gallery groups "Entry highlights (R116)" and the lifted --pick on the History picked row; R113's rings, gallery home-tips-small); after R24d (with R92's Constants and Tools; R108's gallery group "Decimal comma in apps"; R89 on the Fairphone: save two presets with different free keys and switch; R111's note at 360 px; R33's stored-name colour in each theme, decisions.md "Owner answers of 2026-11-02"; R120's gallery unitresult-t10-comma; R124's gallery group "Mark style (R124)" and R125's "Digit groups (R125)", ’ and , grouping only before the point since R125f1; G164's sample sources, decisions.md "Needs the user"; R59 on the Tab One: import a .txt library from Downloads and from Drive, paste a long one from the clipboard, read the 9 s notice).
 
 | Step | What | Agent, model | Branch | After |
 |---|---|---|---|---|
-| 473 | [R59](packages/R59.md) the library rows: import (file or clipboard), export, the format for your AI | ron, Opus | `p1/ron-m4-library` | – |
-| 512 | [R134](packages/R134.md) shared and why-line texts are plain: no LaTeX commands or class wrappers (F162, F171) | ron, Sonnet | `p1/ron-plaintext` | – |
 | 513 | [R135](packages/R135.md) a result too long to draw shows a drawn note, never raw LaTeX (F71) | ron, Sonnet | `p1/ron-longresult` | – |
-| 482 | [R126](packages/R126.md) the backup's keys, pad cells and presets written down for your AI | ron, Sonnet | `p1/ron-backupformat` | R59 |
+| 482 | [R126](packages/R126.md) the backup's keys, pad cells and presets written down for your AI | ron, Sonnet | `p1/ron-backupformat` | – |
 | 483 | [R129](packages/R129.md) the study's mockups: results mode, the six top-right keys | ron, Sonnet | `p1/ron-resultsmockup` | S25 |
 
 ### Lane B queue (the release, then the engine)
