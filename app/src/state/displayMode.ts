@@ -108,49 +108,10 @@ export function factsOf(r: NumericResult): Facts {
   };
 }
 
-/** Fraction modes need an exact rational; polar needs a complex result (and the engine). */
-export function isApplicable(mode: FmtMode, f: Facts): boolean {
-  if (!f.numeric) return false;
-  if (mode === "frac" || mode === "mixed") return f.rational;
-  if (mode === "polar") return f.complex;
-  return true;
-}
-
 /** The Format key's ticked modes, in canonical order, keeping only notations; never empty. */
 export function normalizeCycle(modes: readonly unknown[] | undefined): FmtMode[] {
   const picked = NOTATION_MODES.filter((m) => modes?.includes(m));
   return picked.length > 0 ? picked : [...DEFAULT_FMT_CYCLE];
-}
-
-/**
- * The a b/c key: the form after `current` (undefined = the base form). Each result type has one toggle: a fraction
- * that is not whole goes decimal ↔ fraction, a complex number a+bi ↔ polar. Home (`exactBase` false): the base is the
- * decimal (in the result's notation). CAS (`exactBase` true): the base is the exact result, which already is the
- * fraction, so a fraction toggles with its decimal ("dec"). null: nothing to switch (a whole number, a symbolic result).
- */
-export function nextForm(current: FormStep | undefined, f: Facts, exactBase: boolean): { form: FormStep | undefined } | null {
-  if (!f.numeric) return null;
-  const other: FormStep | null = f.complex ? "polar" : f.properFraction ? (exactBase ? "dec" : "frac") : null;
-  if (other === null) return null;
-  return { form: current === other ? undefined : other };
-}
-
-/**
- * The mode after `current`. Home (`exactBase` false): the global mode counts as the current one and the cycle wraps.
- * CAS (`exactBase` true): the exact result is the first step and the cycle returns to it. null: nothing to cycle
- * (no ticked mode applies to this result).
- */
-export function nextMode(
-  current: FmtMode | undefined,
-  ticked: readonly FmtMode[],
-  facts: Facts,
-  exactBase: boolean,
-): { mode: FmtMode | undefined } | null {
-  const list = FMT_MODES.filter((m) => ticked.includes(m) && isApplicable(m, facts));
-  if (list.length === 0) return null;
-  const seq: (FmtMode | undefined)[] = exactBase ? [undefined, ...list] : list;
-  const i = seq.indexOf(current);
-  return { mode: seq[(i + 1) % seq.length] };
 }
 
 export interface DisplayContext {

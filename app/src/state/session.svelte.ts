@@ -1,23 +1,19 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // The calculator session: current view, modifier keys, settings and the history of both views.
 // Plain logic on Svelte 5 runes; the engine comes in through the Calc port.
-import { PASDEG } from "../engine/pasdeg.ts";
 import { CalcCancelled, type AngleUnit, type CalcError, type Calc, type CalcSettings, type ChipFactsTable, type ConstTable, type NumberFormat, type UserName } from "../calc/port.ts";
 import { ANS_KEY, pruneChips, validChips, type Chip, type ChipTable } from "../input/chips.ts";
 import { parseFailText } from "../input/errors.ts";
 import { loadEntry, loadParser } from "../input/parser.ts";
 import { t, type MessageKey } from "../i18n/index.ts";
 import { EngineMemoryError } from "../engine/types.ts";
-import { decimalToString, type ComplexValue, type MarkInfo } from "../engine/format.ts";
+import { type ComplexValue, type MarkInfo } from "../engine/format.ts";
 import { homeResultToLatex, type GroupSep } from "../render/home.ts";
 import {
   DEFAULT_FMT_CYCLE,
-  factsOf,
   isFmtMode,
   isFormStep,
   markFor,
-  nextForm,
-  nextMode,
   normalizeCycle,
   renderNumeric,
   commaResult,
@@ -151,6 +147,10 @@ let removedCode: typeof import("./removedRows.ts") | undefined;
  *  job beside it; a failed load is tried again by the next job). Until then a row draws every digit plain. */
 let sigmaCode = $state.raw<typeof import("../render/tidy.ts")>();
 onTidy((m) => (sigmaCode = m));
+/** R135: the Format and a b/c keys' code (cycleForms.ts), out of the start chunk the same way. */
+let formsCode: typeof import("./cycleForms.ts") | undefined;
+export const loadForms = (): Promise<typeof import("./cycleForms.ts") | undefined> =>
+  import("./cycleForms.ts").then((m) => (formsCode = m), () => undefined);
 export const loadRemoved = (): Promise<typeof import("./removedRows.ts") | undefined> =>
   import("./removedRows.ts").then((m) => (removedCode = m), () => undefined);
 
@@ -610,59 +610,16 @@ export class Session {
     return { format: s.format, digits: s.digits, fixDecimals: s.fixDecimals, angle: s.angle, ...(this.decimalComma ? { decimalComma: true } : {}), groupSep: s.groupSep, mute: sigmaCode?.muter };
   }
 
-  /**
-   * The Format key: show the last result of the current view in the next ticked mode (Settings). Changes that
-   * result only. Resolves true when the display changed.
-   */
+  /** The Format key (cycleForms.ts): the last result of the open view in the next ticked mode. Resolves true when the display changed. */
   async cycleFormat(): Promise<boolean> {
-    const item = this.items.at(-1);
-    if (!item || item.status !== "done" || this.busy) return false;
-    if (item.form !== undefined) {
-      // a form chosen with a b/c: the Format key goes back to the number in its notation
-      delete item.form;
-      this.saveHistory();
-      return true;
-    }
-    const exactBase = item.view === "cas";
-    const next = nextMode(item.fmt ?? (exactBase ? undefined : this.settings.format), this.settings.fmtCycle, factsOf(item), exactBase);
-    if (!next) return false;
-    if (next.mode === "polar" && item.value && item.polar?.angle !== this.settings.angle && !(await this.computePolar(item, item.value)))
-      return false;
-    item.fmt = next.mode;
-    this.saveHistory();
-    return true;
+    const m = formsCode ?? (await loadForms()); // (loaded: no await, the act is done before the next key)
+    return m ? m.cycleFormat(this, this.calc) : false;
   }
 
-  /**
-   * The a b/c key on an empty line (R10): show the last result of the current view in its other form (decimal ↔
-   * fraction as on the G2; a+bi ↔ polar). Changes that result only. Resolves true
-   * when the display changed; false when no other form applies (a whole number, a symbolic result).
-   */
+  /** The a b/c key on an empty line (R10, cycleForms.ts): the last result in its other form. Resolves true when the display changed. */
   async cycleForm(): Promise<boolean> {
-    const item = this.items.at(-1);
-    if (!item || item.status !== "done" || this.busy) return false;
-    const next = nextForm(item.form, factsOf(item), item.view === "cas");
-    if (!next) return false;
-    if (next.form === "polar" && item.value && item.polar?.angle !== this.settings.angle && !(await this.computePolar(item, item.value)))
-      return false;
-    if (next.form === undefined) delete item.form;
-    else item.form = next.form;
-    this.saveHistory();
-    return true;
-  }
-
-  /** abs and arg of the value, from the engine (arg follows the angle unit setting). */
-  private async computePolar(item: HistoryItem, v: ComplexValue): Promise<boolean> {
-    const z = `((${decimalToString(v.re)})+(${decimalToString(v.im)})*i)`;
-    const s: CalcSettings = { digits: this.settings.digits, angle: this.settings.angle, format: this.settings.format };
-    try {
-      const [r, th] = [await this.calc.home(`abs(${z})`, s), await this.calc.home(`(arg(${z})/${PASDEG})`, s)] // G46: Giac answers in radians; the factor gives the mode's unit;
-      if (!r.ok || !th.ok || !r.value || !th.value) return false;
-      item.polar = { r: r.value.re, theta: th.value.re, angle: this.settings.angle };
-      return true;
-    } catch {
-      return false;
-    }
+    const m = formsCode ?? (await loadForms());
+    return m ? m.cycleForm(this, this.calc) : false;
   }
 
   /** Delete one row of the open view (R11). A running row is not deleted: Cancel stops it first. Undo brings it back (R98).

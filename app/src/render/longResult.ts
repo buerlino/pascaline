@@ -11,4 +11,4 @@ export const MAX_DRAWN_LATEX = 6000;
 /** The note drawn in place of a result that is too long (or that MathLive refused): the size of the text it speaks of,
  *  decimal units, one decimal from 1 MB. */
 export const tooLongNote = (n: number): string =>
-  t("render.tooLong", { size: n >= 1e6 ? `${(n / 1e6).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1e3))} kB` });
+  t("render.tooLong", { size: n < 1e6 ? `${Math.max(1, Math.round(n / 1e3))} kB` : `${(n / 1e6).toFixed(1)} MB` });
