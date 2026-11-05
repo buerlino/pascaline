@@ -2,7 +2,8 @@
 # Probe (structure audit, 2026-10-20): which files in app/src change most, and which carry the bug fixes.
 # For every non-test file under app/src that exists at REV: lines added + removed over all non-merge commits
 # reachable from REV, the number of those commits, the commits whose subject starts with "fix", and the commits
-# cited as fixes in docs/research/bug-patterns.md (backquoted 7-hex ids) that touch the file, with their lines.
+# cited as fixes in the rows of docs/research/bug-patterns.md (backquoted 7-hex ids; the rows live in git at ROWS_AT since
+# S27 dropped them) that touch the file, with their lines.
 #   python3 -I tools/probes/churn.py [REV] [TOP]          # default HEAD, 15
 # Read-only (git only); no network.
 import collections, re, subprocess, sys
@@ -32,7 +33,8 @@ def numstat(args):
 alive = {f for f in git("ls-tree", "-r", "--name-only", rev, "app/src").split() if is_src(f)}
 churn, commits = numstat([rev, "--", "app/src"])
 _, fixes = numstat(["-i", "-E", "--grep=^fix", rev, "--", "app/src"])
-cited = sorted(set(re.findall(r"`([0-9a-f]{7})`", open("docs/research/bug-patterns.md").read())))
+ROWS_AT = "742169a8"  # the last commit with bug-patterns.md's per-bug rows (S27, 2026-11-06)
+cited = sorted(set(re.findall(r"`([0-9a-f]{7})`", git("show", f"{ROWS_AT}:docs/research/bug-patterns.md"))))
 bug_churn, bug_commits = collections.Counter(), collections.Counter()
 for h in cited:
     try:
@@ -52,4 +54,4 @@ for f, c in sorted(((f, c) for f, c in churn.items() if f in alive), key=lambda 
     print(f"| `{f[8:]}` | {lines[f]} | {c} | {commits[f]} | {fixes[f]} | {bug_commits[f]} ({bug_churn[f]}) |")
 print(f"\nBy `fix…` commits: " + ", ".join(f"{f[8:]} {n}" for f, n in fixes.most_common(10) if f in alive))
 print(f"By cited fix commits: " + ", ".join(f"{f[8:]} {n}" for f, n in bug_commits.most_common(10) if f in alive))
-print(f"{len(cited)} commit ids cited in bug-patterns.md; {sum(1 for f in alive)} source files in app/src at {rev}.")
+print(f"{len(cited)} commit ids cited in bug-patterns.md at {ROWS_AT}; {sum(1 for f in alive)} source files in app/src at {rev}.")

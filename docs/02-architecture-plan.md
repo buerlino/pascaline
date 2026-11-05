@@ -139,7 +139,7 @@ The **Python app** gets `scipy.optimize` (`brentq`, `root`, `least_squares`) and
 | **Units, constants** | The unit view on Giac (P15): units after the formula, no Units app; unit factors and constants come from libqalculate at build time, through the Find index (docs/04 section 4) | the unit view, Find index |
 | **Lists, matrices** | Giac | List/matrix editors (grid) |
 | **Python** | Removed by P11 (2026-10-13); programs are Giac function definitions | Section 3 |
-| **Help** | Giac ships short help with syntax and examples for every command (as in Xcas/KhiCAS); licence: the English lines are GPL-3.0-or-later by Giac's README (R5, `docs/research/giac-help-licence.md`; confirmed by Parisse on 2026-10-19, P10) | Help texts for apps and keys |
+| **Help** | Giac ships short help with syntax and examples for every command (as in Xcas/KhiCAS); licence: the English lines are GPL-3.0-or-later by Giac's README (R5, `docs/archive/giac-help-licence.md`; confirmed by Parisse on 2026-10-19, P10) | Help texts for apps and keys |
 | **Notes** | CodeMirror (Markdown) | Small |
 | **Keyboard** | — | **Ours.** Same logical layout as the Prime, our own visual design |
 | **RPN entry mode** | Giac operations on a stack | About 2–3 weeks (Phase 2) |
