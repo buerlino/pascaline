@@ -5,6 +5,9 @@ History only: read it when a decision is questioned. What still binds is in [../
 
 ## Decided proposals moved here later
 
+### Shortened 2026-11-05 (Opus pass 72) to make room for R132's lines, as it stood
+- **A62, R59's gate (owner, 2026-11-05):** the 50 ms count above an empty log's first restore (57 ms, paid by everyone); after G83 a 200-program library costs 39 ms (Tab One, `0da228a0`: replay 96 ms p50, 119 p95), so R59 goes ahead. Would change if: an empty log's restore drops well below 57 ms.
+
 ### Shortened 2026-11-04 (Opus pass 66) to make room for A62's question, as they stood
 - **Owner answers of 2026-11-02 (vision; interview with sandra).** A working engineer, phone first; units and constants are the task to win. No AI in the app: the engineer's own AI writes the files (S4's two stay; paste, picker, "Copy for your AI"); a sync folder (Syncthing) takes everything. Marks: ⚠ in colour with its reason; σ: muted digits, σ on tap; a digit-group separator; each also a setting. Motion: the press only. R37 parked; R53 held for one study (results mode, the six top-right keys) and a mockup. New work ships if ready; the fuzz night is Wed 11-04. Full text: archive. Would change if: an outside round shows another first user.
 - **Owner answers of 2026-11-02.** Stored names (R33) get a colour token of their own per theme, picked at the R24d review. Key vibration (A9, R112): the app's switch alone decides; one pulse per touch, at finger-down. Phone checks: Android's splash and status bar take the Dark background (A59); R15c4's rings (R113). Opus pass 50's defaults kept; `persisted()` read on the Fairphone (A61). Full text: archive. Would change if: users want the system switch to mute the keys.
