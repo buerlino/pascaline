@@ -104,7 +104,7 @@ export function reportMarkdown(head: string[], findings: readonly Finding[]): st
   for (const c of checks) {
     lines.push(`## ${c}`, "", "| angle digits | LaTeX | shown | oracle | smallest failing subtree | its shown | its oracle |", "|---|---|---|---|---|---|---|");
     for (const f of findings.filter((x) => checkOf(x.run) === c)) {
-      const same = f.smallest === f.run;
+      const same = keyOf(f.smallest) === keyOf(f.run); // by key: a finding read back from JSON (G167's shrink parts) has lost object identity
       lines.push(
         `| ${f.run.angle} ${f.run.digits} | \`${cell(f.run.latex)}\` | ${cell(shownOf(f.run))} | ${cell(oracleText(f.oracle))} | ${same ? "(itself)" : `\`${cell(f.smallest.latex)}\``} | ${same ? "" : cell(shownOf(f.smallest))} | ${same ? "" : cell(oracleText(f.smallestOracle))} |`,
       );

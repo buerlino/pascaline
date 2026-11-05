@@ -8,7 +8,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterAll, describe, expect, it } from "vitest";
 import { childrenOf } from "../../tools/probes/sweep/edges.ts";
-import { shrink, type Finding } from "../../tools/probes/sweep/nightly.ts";
+import { reportMarkdown, shrink, type Finding } from "../../tools/probes/sweep/nightly.ts";
 import { pythonFor, Runner, runsOf } from "../../tools/probes/sweep/run.ts";
 import { failedOf, mergeParts, parsePart, readSet, sliceOf, sweepRuns, writeSaved, type PartFile, type ShrinkFile } from "./sweep-parts.ts";
 
@@ -99,6 +99,11 @@ describe("sweep parts: a real small run", () => {
     }
     const joined = readSet<ShrinkFile>(dir, "shrink", seed);
     if (!joined.ok) throw new Error(joined.message);
-    expect(joined.files.flatMap((f) => f.findings).map(shape)).toEqual(oneShot);
+    const joinedFindings = joined.files.flatMap((f) => f.findings);
+    expect(joinedFindings.map(shape)).toEqual(oneShot);
+    // the report too: a finding with no smaller failing child reads "(itself)" after the JSON round trip, as in the one-piece run
+    const head = ["# head"];
+    const oneShotReport = reportMarkdown(head, await findingsOf(wholeFailed));
+    expect(reportMarkdown(head, joinedFindings)).toEqual(oneShotReport);
   });
 });
