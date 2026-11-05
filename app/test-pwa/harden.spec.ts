@@ -2,7 +2,7 @@
 // A49: the web version survives updates and bad deploys. Production build only (npm run test:pwa). Expected values: derived
 // (the rules in the package: manifest id, update line, hashed engine files, kill switch, missing chunk, persist).
 import { createHash } from "node:crypto";
-import { cpSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { expect, test, type Page } from "@playwright/test";
@@ -12,11 +12,16 @@ import { serve, type Site } from "./site.ts";
 
 const APP = process.cwd();
 const DIST = join(APP, "dist");
+const copies: string[] = []; // A69: every copy is removed in afterAll
 const copyOf = (): string => {
   const dir = mkdtempSync(join(tmpdir(), "pwa-site-"));
+  copies.push(dir);
   cpSync(DIST, dir, { recursive: true });
   return dir;
 };
+test.afterAll(() => {
+  for (const d of copies.splice(0)) rmSync(d, { recursive: true, force: true });
+});
 /** A second deploy: one changed file, the worker rewritten from it. */
 function secondBuild(marker = "v2-marker"): string {
   const dir = copyOf();

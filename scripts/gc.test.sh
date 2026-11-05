@@ -44,6 +44,13 @@ echo "### z on branch p1/gone2" > "$T/003-dead/spec.md"; echo 999999 > "$T/003-d
 for n in 5 6; do mkdir -p "$T/device-$n/tree/app/node_modules"; head -c 200000 /dev/zero > "$T/device-$n/tree/app/node_modules/big.bin"; echo c > "$T/device-$n/core.log"; done
 old "$T/device-5/tree/app/node_modules/big.bin" "$T/device-5/tree/app/node_modules" "$T/device-5/tree/app" "$T/device-5/tree" "$T/device-5/core.log" "$T/device-5"
 
+# A69: Claude's scratch folders (<tmp>/claude-<uid>/<worktree path, / and . as ->) of runs whose worktree is gone are removed; a live one is kept
+enc() { local p="$1"; echo "${p//[\/.]/-}"; }
+CT="$tmp/ctmp"; export PASCALINE_CLAUDE_TMP="$CT"; mkdir -p "$CT"
+git worktree add -q --detach "$r/.claude/worktrees/pl-005-live" phase-1
+sgone="$CT/$(enc "$r/.claude/worktrees/pl-002-gone")"; slive="$CT/$(enc "$r/.claude/worktrees/pl-005-live")"; sother="$CT/-home-other-project"
+mkdir -p "$sgone/x" "$slive/x" "$sother/x"; head -c 100000 /dev/zero > "$sgone/x/big"
+
 snap() { { find "$T" "$C" engine -type f -printf '%p %s %T@\n'; find "$T" "$C" engine -type d -printf 'd %p\n'; } | grep -v 'gc-.*-dry.md' | sort | md5sum; }
 before="$(snap)"
 out="$(bash scripts/gc.sh 2>&1)"; echo "$out" > "${GC_TEST_OUT:-/dev/null}"
@@ -56,6 +63,9 @@ grep -qF "$T/device-5/tree" <<<"$out" || fail "A56f1: dry run does not list the 
 grep -qE 'device-5/tree .*[0-9]+ kB' <<<"$out" || fail "A56f1: the device tree is listed without its size"
 grep -qF "device-6" <<<"$out" && fail "A56f1: dry run lists a fresh device step"
 grep -qF "key-$kx" <<<"$out" && fail "dry run lists a used key"
+grep -qF "$sgone" <<<"$out" || fail "A69: dry run does not list the scratch folder of a gone worktree"
+grep -qF "$slive" <<<"$out" && fail "A69: dry run lists a live run's scratch folder"
+[[ -d "$sgone" ]] || fail "A69: dry run removed a scratch folder"
 grep -qF open.md <<<"$out" && fail "lists an open note"
 grep -qE 'space freed' <<<"$out" || fail "no space freed line"
 grep -qE 'saving' <<<"$out" || fail "no gzip saving line"
@@ -79,6 +89,14 @@ d="$T/archive/$(date +%F)"
 [[ ! -d "$T/archive/2026-01-01" ]] || fail "old archive folder kept"
 [[ -d "$T/002-live" && ! -d "$d/002-live" ]] || fail "A47a: gc --apply archived a run dir whose pid is alive"
 [[ -d "$d/003-dead" && ! -d "$T/003-dead" ]] || fail "A47a: gc --apply kept a run dir whose pid is gone"
+[[ ! -e "$sgone" ]] || fail "A69: gc --apply kept the scratch folder of a run whose worktree is gone"
+[[ -d "$slive/x" ]] || fail "A69: gc --apply removed a live run's scratch folder"
+[[ -d "$sother/x" ]] || fail "A69: gc --apply removed a scratch folder that is not a run worktree's"
+# the pipeline's own helper: removes exactly the folder named for one worktree path
+mkdir -p "$CT/$(enc "$r/.claude/worktrees/pl-006-a")/y" "$CT/$(enc "$r/.claude/worktrees/pl-006-ab")/y"
+claude_scratch_remove "$r/.claude/worktrees/pl-006-a"
+[[ ! -e "$CT/$(enc "$r/.claude/worktrees/pl-006-a")" && -d "$CT/$(enc "$r/.claude/worktrees/pl-006-ab")/y" ]] || fail "A69: claude_scratch_remove removed the wrong folder or none"
+claude_scratch_remove "" ; claude_scratch_remove "/"; [[ -d "$CT" && -d "$slive/x" ]] || fail "A69: claude_scratch_remove with an empty or root path touched other folders"
 first="$(wc -l < "$T/gc-$(date +%F).md")"
 bash scripts/gc.sh --apply >/dev/null 2>&1
 [[ "$(wc -l < "$T/gc-$(date +%F).md")" -gt "$first" ]] || fail "second apply overwrote the report"
