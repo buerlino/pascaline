@@ -366,9 +366,43 @@ head_is() {  # <dir> <sha>
 }
 
 # ---- A36: a regression test must fail on the old code ----
-# red_first_wanted <package spec file>: succeeds when the package says its tests fail on phase-1.
+# red_first_wanted <package spec file>: succeeds when the package says its tests fail on phase-1 or on the stock build.
 red_first_wanted() {
-  grep -qiE '(fail|failing) on phase-1' "$1" 2>/dev/null
+  grep -qiE '(fail|failing) on (phase-1|the stock (build|engine))' "$1" 2>/dev/null
+}
+# red_first_stock_wanted <package spec file> (A71): succeeds when the package says its tests fail on the stock build (G125: an earlier merge
+# already fixed the bug, so the tests fail only on stock giac_2.1.0-1, not on phase-1). It wins when the file says both.
+red_first_stock_wanted() {
+  grep -qiE '(fail|failing) on the stock (build|engine)' "$1" 2>/dev/null
+}
+# ---- A71: the stock engine ----
+# stock_engine_ensure <worktree holding the sources> <out root> <log>: <root>/stock-<key> exists with its stamp, built once by
+# build-wasm.sh with GIAC_PATCHES=none (no patch applied); <key> comes from `build-wasm.sh stock-key` (the tarball's SHA-256, the
+# script's hash and the files of wasm/). A finished build is reused. Sets stock_dir; on failure sets engine_why and returns 1. Main shell only (the build is a
+# child session the pipeline owns, under host-cpu: a held lock is kept, like engine_build, A54). The build is 5 minutes and more.
+stock_dir=""
+stock_engine_ensure() {
+  local src="$1" root="$2" log="$3" key dest tmp rc=0 took=0
+  stock_dir=""; engine_why=""
+  key="$("$src/engine/giac/build-wasm.sh" stock-key 2>/dev/null)" && [[ "$key" =~ ^[0-9a-f]+$ ]] || { engine_why="no stock key from $src/engine/giac/build-wasm.sh (no GIAC_PATCHES=none there?)"; return 1; }
+  dest="$root/stock-$key"
+  if [[ -f "$dest/giac.wasm" && "$(engine_stamp "$dest")" == "$key" ]]; then stock_dir="$dest"; return 0; fi
+  [[ $host_cpu_held -eq 1 ]] || took=1
+  host_cpu_take "engine-stock-$key" "stock engine $key:" || { engine_why="host-cpu lock busy"; return 1; }
+  if [[ -f "$dest/giac.wasm" && "$(engine_stamp "$dest")" == "$key" ]]; then  # built by another run while this one waited
+    [[ $took -eq 0 ]] || host_cpu_drop
+    stock_dir="$dest"; return 0
+  fi
+  tmp="$root/.tmp-stock-$key.$$"; rm -rf "$tmp"; mkdir -p "$tmp"
+  own_sh 'GIAC_PATCHES=none GIAC_BUILD_OUT="$1" GIAC_BUILD_DIR="$2" exec timeout -k 60 3600 "$3"' "$tmp" "$root/.build-stock-$key" "$src/engine/giac/build-wasm.sh" > "$log" 2>&1 < /dev/null || rc=1
+  if [[ $rc -eq 0 && -f "$tmp/stock-$key/giac.wasm" ]]; then
+    echo "$key" > "$tmp/stock-$key/.engine-key"
+    rm -rf "$dest"; mv "$tmp/stock-$key" "$dest"
+  else rc=1; fi
+  rm -rf "$tmp" "$root/.build-stock-$key"
+  [[ $took -eq 0 ]] || host_cpu_drop
+  [[ $rc -eq 0 ]] || { engine_why="stock build-wasm.sh failed: $(tail -n 2 "$log" | tr '\n' ' ' | cut -c1-160)"; return 1; }
+  stock_dir="$dest"
 }
 # red_first_stage <tests/golden/x.yaml>: the golden stage that reads the file (golden.ts); empty when none does.
 red_first_stage() {
@@ -376,15 +410,27 @@ red_first_stage() {
     home|precision|solve|function|bench|units|parser) basename "$1" .yaml;;
   esac
 }
-# red_first <worktree> <spec file> <phase-1 engine dir> <log>: for a package that says its tests fail on phase-1, runs the vitest files and
-# golden cases the branch adds or changes on phase-1's code (a scratch worktree with those files laid over it). Succeeds when the
+# red_first <worktree> <spec file> <phase-1 engine dir> <log> [<stock engine dir>]: for a package that says its tests fail on phase-1, runs the vitest files and
+# golden cases the branch adds or changes on phase-1's code (a scratch worktree with those files laid over it). A package that says its
+# tests fail on the stock build (A71) runs the golden cases, and the vitest files that read GIAC_OUT, on phase-1's code with GIAC_OUT
+# set to the stock engine dir (stock_engine_ensure); no other vitest file runs, it would test phase-1's code, not the stock engine. The log's first line names the engine. Succeeds when the
 # stage is skipped (also when the branch adds no vitest file or golden case) or at least one of them fails there; otherwise prints the reason on stdout and fails. PASCALINE_REDFIRST_VITEST
 # (default "npx vitest run") is called with the files, PASCALINE_REDFIRST_GOLDEN (default "node scripts/golden.ts") with ONLY set.
 red_first() {
-  local wt="$1" spec="$2" eng="$3" log="$4" f ids="" stages="" scratch rc red=0 ran=0 err="" stage
-  red_first_wanted "$spec" || { echo "red-first: skipped (the package does not say its tests fail on phase-1)" > "$log"; return 0; }
+  local wt="$1" spec="$2" eng="$3" log="$4" stock="${5:-}" f ids="" stages="" scratch rc red=0 ran=0 err="" stage
+  local where="phase-1" label="phase-1" vitest_out=""  # where: the words of the reason; vitest_out: GIAC_OUT of the vitest run ("" = the caller's)
+  red_first_wanted "$spec" || { echo "red-first: skipped (the package does not say its tests fail on phase-1 or on the stock build)" > "$log"; return 0; }
+  if red_first_stock_wanted "$spec"; then
+    where="the stock build"; label="stock"
+    [[ -n "$stock" ]] || { echo "no stock engine (the package says its tests fail on the stock build; stock_engine_ensure gave none)"; return 1; }
+    eng="$stock"; vitest_out="$stock"
+  fi
   local -a files=() gfiles=()
   mapfile -t files < <(git -C "$wt" diff --name-only --diff-filter=AMR phase-1...HEAD | grep -E '^app/.*\.test\.ts$' || true)
+  if [[ $label == stock ]]; then  # only the files that read the engine can see the stock build
+    local -a keep=(); for f in "${files[@]}"; do [[ -n "$f" ]] && git -C "$wt" show "HEAD:$f" | grep -q 'GIAC_OUT' && keep+=("$f"); done
+    files=("${keep[@]}")
+  fi
   mapfile -t gfiles < <(git -C "$wt" diff --name-only --diff-filter=AMR phase-1...HEAD -- 'tests/golden/*.yaml' || true)
   for f in "${gfiles[@]}"; do
     [[ -n "$f" ]] || continue
@@ -392,10 +438,10 @@ red_first() {
     ids+=" $(git -C "$wt" diff -U0 phase-1...HEAD -- "$f" | grep '^+' | grep -oE '\bid: *"?[A-Za-z0-9_.-]+' | sed -E 's/id: *"?//' | tr '\n' ' ')"
     case ",$stages," in *",$stage,"*) ;; *) stages+="${stages:+,}$stage";; esac
   done
-  if [[ ${#files[@]} -eq 0 && -z "${ids// /}" ]]; then echo "red-first: skipped (no new or changed vitest file or golden case; e2e is not run on phase-1)" > "$log"; return 0; fi
+  if [[ ${#files[@]} -eq 0 && -z "${ids// /}" ]]; then echo "red-first: skipped (no new or changed golden case$([[ $label == stock ]] && echo ' or vitest file that reads GIAC_OUT' || echo ' or vitest file'); e2e is not run on $where)" > "$log"; return 0; fi
   scratch="$(mktemp -d)"; rmdir "$scratch"
   git -C "$wt" worktree add -q --detach "$scratch" phase-1 >/dev/null 2>&1 || { echo "could not make a scratch worktree of phase-1"; return 1; }
-  : > "$log"
+  echo "red-first: $label engine, GIAC_OUT=$eng (phase-1's code)" > "$log"
   for f in "${files[@]}" "${gfiles[@]}"; do
     [[ -n "$f" ]] || continue
     mkdir -p "$scratch/$(dirname "$f")"; git -C "$wt" show "HEAD:$f" > "$scratch/$f"
@@ -404,18 +450,18 @@ red_first() {
   [[ ! -d "$wt/app/src/find/_gen" ]] || { mkdir -p "$scratch/app/src/find"; cp -a "$wt/app/src/find/_gen" "$scratch/app/src/find/"; }
   if [[ ${#files[@]} -gt 0 ]]; then
     ran=1; rc=0
-    own_sh 'cd "$1" && eval "$2"' "$scratch/app" "${PASCALINE_REDFIRST_VITEST:-FORCE_COLOR=0 NO_COLOR=1 timeout 600 npx vitest run} $(printf '%q ' "${files[@]#app/}")" >> "$log" 2>&1 < /dev/null || rc=$?
+    own_sh 'cd "$1" && { [ -z "$3" ] || export GIAC_OUT="$3"; } && eval "$2"' "$scratch/app" "${PASCALINE_REDFIRST_VITEST:-FORCE_COLOR=0 NO_COLOR=1 timeout 600 npx vitest run} $(printf '%q ' "${files[@]#app/}")" "$vitest_out" >> "$log" 2>&1 < /dev/null || rc=$?
     if [[ $rc -eq 0 ]]; then :
-    elif [[ $rc -eq 124 ]]; then err="stage error: vitest timed out on phase-1"
+    elif [[ $rc -eq 124 ]]; then err="stage error: vitest timed out on $where"
     elif grep -qE '(Test Files|Tests) +[0-9]+ failed' "$log"; then red=1
-    else err="stage error: vitest exit $rc on phase-1 without failed tests (no test files, import or environment error?)"; fi
+    else err="stage error: vitest exit $rc on $where without failed tests (no test files, import or environment error?)"; fi
   fi
   if [[ -n "${ids// /}" && $red -eq 0 && -z "$err" ]]; then
     ran=1; rc=0
     own_sh 'cd "$1" && GIAC_OUT="$2" ONLY="$3" eval "$4"' "$scratch/app" "$eng" "$stages" "${PASCALINE_REDFIRST_GOLDEN:-timeout 900 node scripts/golden.ts}" >> "$log" 2>&1 < /dev/null || rc=$?
     if [[ $rc -eq 0 ]]; then :
-    elif [[ $rc -eq 124 ]]; then err="stage error: golden timed out on phase-1"
-    elif ! grep -q 'GOLDEN GATE FAILED' "$log"; then err="stage error: golden exit $rc on phase-1 without GOLDEN GATE FAILED (engine or environment error?)"
+    elif [[ $rc -eq 124 ]]; then err="stage error: golden timed out on $where"
+    elif ! grep -q 'GOLDEN GATE FAILED' "$log"; then err="stage error: golden exit $rc on $where without GOLDEN GATE FAILED (engine or environment error?)"
     else  # red only when a detail line (two spaces, the stage, the id, a colon: golden.ts:218) names the id as a whole token; the FAIL summary line names no case
       local re
       for f in $ids; do
@@ -426,7 +472,7 @@ red_first() {
   fi
   rm -f "$scratch/app/node_modules"; git -C "$wt" worktree remove --force "$scratch" >/dev/null 2>&1 || rm -rf "$scratch"
   [[ -z "$err" ]] || { echo "$err"; return 1; }
-  [[ $red -eq 1 ]] || { echo "every new test passes on phase-1"; return 1; }
+  [[ $red -eq 1 ]] || { echo "every new test passes on $where"; return 1; }
 }
 # A25: the paths whose change plans the golden check: the engine, the parser, units, Find, the golden cases, and every script
 # the golden gate or its engine stages run (golden.ts and golden/, golden-*.ts, invariants, calls-budget, behaviour-diff, the sweeps).

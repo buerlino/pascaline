@@ -7,6 +7,10 @@
 #
 # Stages: fetch gmp mpfr gsl giac link (default: all, gsl skipped with WITH_GSL=0)
 # Output: engine/giac/_out/<variant>/giac.{mjs,wasm}; variant = gsl (default) | base (WITH_GSL=0, comparisons only)
+# GIAC_PATCHES=none (A71): no patch of patches/ is applied, the stock giac_2.1.0-1 for the red-first check of a package that says its
+#   tests "fail on the stock build" (scripts/pipeline-lib.sh); variant = stock-<key> (stock-base-<key> with WITH_GSL=0), where
+#   <key> is `build-wasm.sh stock-key`: a hash of the tarball's SHA-256, of this script and of the files in wasm/, so a stock build is made once and reused.
+#   Use GIAC_BUILD_DIR of its own, so a build with patches is not clobbered.
 # Needs: emsdk (EMSDK_DIR, default ~/emsdk) at $EMSDK_VERSION, or EMSDK_DIR=system for an emcc already on PATH (unpinned; F-Droid tests).
 # PASCALINE_DL_DIR overrides the download cache (e.g. to share one cache between git worktrees).
 # Nothing here touches the user's shell rc files.
@@ -19,6 +23,7 @@ OUT="${GIAC_BUILD_OUT:-$HERE/_out}"
 PREFIX="$BUILD/prefix"
 JOBS="${JOBS:-$(nproc)}"
 WITH_GSL="${WITH_GSL:-1}"
+GIAC_PATCHES="${GIAC_PATCHES:-all}"
 
 EMSDK_DIR="${EMSDK_DIR:-$HOME/emsdk}"
 EMSDK_VERSION="6.0.12"
@@ -184,7 +189,17 @@ GIAC_SOURCES=(input_lexer.cc sym2poly.cc gausspol.cc threaded.cc moyal.cc maple.
   graphe.cc graphtheory.cc nautywrapper.c)
 # markup.cc (improved LaTeX export) is excluded: with EMCC2, tex.cc defines stand-ins for it.
 
-variant() { [[ "$WITH_GSL" == 1 ]] && echo gsl || echo base; }
+# stock_key: the key of a stock build (A71, A71f1): the tarball's SHA-256, this script's own hash and every file of wasm/ (api.cc and
+# stubs.cc are compiled into the stock build too), by name in a fixed order; engine_key's inputs without patches/.
+stock_key() {
+  { printf '%s\n' "$GIAC_SHA256" "$(sha256sum "${BASH_SOURCE[0]}" | cut -d' ' -f1)"
+    (cd "$HERE/wasm" && LC_ALL=C find . -type f | LC_ALL=C sort | xargs -r sha256sum); } | sha256sum | cut -c1-16
+}
+
+variant() {
+  local v=gsl; [[ "$WITH_GSL" == 1 ]] || v=base
+  [[ "$GIAC_PATCHES" != none ]] && echo "$v" || { [[ "$v" == gsl ]] && echo "stock-$(stock_key)" || echo "stock-base-$(stock_key)"; }
+}
 
 stage_giac() {
   log "giac $GIAC_VERSION ($(variant))"
@@ -197,6 +212,7 @@ stage_giac() {
   local p
   for p in "$HERE"/patches/*.patch; do
     [[ -e "$p" ]] || continue
+    [[ "$GIAC_PATCHES" != none ]] || { echo "GIAC_PATCHES=none: ${p##*/} not applied"; continue; }
     echo "patch: ${p##*/}"
     patch -d "$src" -p1 --forward < "$p"
   done
@@ -229,7 +245,8 @@ stage_link() {
   mkdir -p "$out"
   local f
   local src="$BUILD/giac-$GIAC_VERSION"  # api.cc reads Giac's headers (G85's bridge); config.h comes from the giac stage
-  for f in api stubs; do em++ -std=c++17 "${GIAC_CXXFLAGS[@]}" -I"$src" -I"$src/src" -I"$PREFIX/include" -c "$HERE/wasm/$f.cc" -o "$obj/$f.o"; done
+  local extra=(); [[ "$GIAC_PATCHES" != none ]] || extra=(-DPASCALINE_STOCK_GIAC)  # api.cc skips what patches 0002 and 0004 add
+  for f in api stubs; do em++ -std=c++17 "${GIAC_CXXFLAGS[@]}" "${extra[@]}" -I"$src" -I"$src/src" -I"$PREFIX/include" -c "$HERE/wasm/$f.cc" -o "$obj/$f.o"; done
   local libs=("$PREFIX/lib/libmpfr.a" "$PREFIX/lib/libgmp.a")  # mpfr before gmp
   [[ "$WITH_GSL" == 1 ]] && libs=("$PREFIX/lib/libgsl.a" "$PREFIX/lib/libgslcblas.a" "${libs[@]}")
   em++ "${GIAC_LDFLAGS[@]}" "$obj"/*.o "${libs[@]}" -o "$out/giac.mjs"
@@ -238,6 +255,8 @@ stage_link() {
 
 main() {
   local stages=("$@")
+  [[ "$GIAC_PATCHES" == all || "$GIAC_PATCHES" == none ]] || { echo "GIAC_PATCHES is '$GIAC_PATCHES': all (default) or none" >&2; exit 1; }
+  [[ "${stages[0]:-}" != stock-key ]] || { stock_key; return; }  # needs no emsdk
   [[ ${#stages[@]} -gt 0 ]] || stages=(fetch gmp mpfr gsl giac link)
   emsdk_env
   local s
