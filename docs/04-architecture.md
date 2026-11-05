@@ -344,7 +344,7 @@ One IndexedDB database `pascaline`, store `kv` (`state/storage.ts`). Keys:
 | `defsStarts` | starts that began the replay and never got ready; at 2 the engine starts without the log (G19) |
 | `tipsSeen` | tips shown (R15c4) |
 | `userKeys`, `unitPadCells`, `taps`, `app.function`, `app.solve` | the user keys, the unit pad cells (R24d); the counters (R9 Shift/Alpha, R70 presses, R88 preset applies); per app (R53's `uses` counters) |
-| `presets` | R88 (`state/presetRecord.ts`): `{ presets: [{ id, name, groups }], active, next }`; groups `mode`, `numbers`, `look`, `vibration`, `keys` (the `userKeys` and `unitPadCells` records, migrated with them) |
+| `presets` | R88 (`state/presetRecord.ts`): `{ presets: [{ id, name, groups }], active, next }`; groups `mode`, `numbers`, `look`, `vibration`, `keys` (both key records, migrated too); AI format: `views/aiFormat.md` part 2 (R126) |
 | `units.targets` | the last target per dimension |
 | `backup.last`, `backup.offered`, `backup.undo` | not backed up |
 
