@@ -1,8 +1,8 @@
-# Upstream: giac 2.1.0 gen.cc pow and sym2poly.cc normal. (1) pow: (e^a)^b was rewritten as e^(a*b) for any a and any non-integer b, a rule that holds only when im(a) lies in (-pi,pi]: sqrt(exp(4*i)) gave exp(2*i), about -0.416+0.909*i (the principal root is -exp(2*i), 0.416-0.909*i), sqrt(exp(2+4*i)) the negation too, and sqrt(exp(3*acosh(-2))) gave -i*(2+sqrt(3))^(3/2) (right +i*(2+sqrt(3))^(3/2): exp(3*acosh(-2)) is a negative real). Now the principal value e^(b*(a-2*k*pi*i)) is taken, k the integer that brings im(a)-2*k*pi into (-pi,pi], decided on the double of im(a) with a margin of 1e-9 at the half-integers of im(a)/(2*pi); at the cut (2*m+1)*pi a k is taken only where recursive_normal proves im(a)-(2*m+1)*pi = 0 (then arg = +pi), else the power stays as typed and its evalf is the principal value; so does an im(a) past 2^21*pi. An integer b, im(a) inside (-pi,pi) and an a with no numeric value (a free x) keep the rule. (2) normal and simplify: in_normalize_sqrt took sqrt(s*d^2/den^2) as abs(d)/abs(den)*sqrt(s) and sym2rxroot the d-th root of D^d*S as D times that of S for any d, D with no literal i; acosh(-1/2) is ln(-1/2+sqrt(-1/2+1)*sqrt(-1/2-1)), whose value 2*pi*i/3 has no literal i, so normal(sqrt(acosh(-1/2)^3)) gave abs(z)*sqrt(z) (2.143+2.143*i) and simplify z*sqrt(z) (-2.143+2.143*i), right 2.143-2.143*i. Now a factor whose double is complex (a numeric value that is not real) is not taken out of the root.
+# Upstream: giac 2.1.0 gen.cc pow and sym2poly.cc normal. (1) pow: (e^a)^b was rewritten as e^(a*b) for any a and any non-integer b, a rule that holds only when im(a) lies in (-pi,pi]: sqrt(exp(4*i)) gave exp(2*i), about -0.416+0.909*i (the principal root is -exp(2*i), 0.416-0.909*i), sqrt(exp(2+4*i)) the negation too, and sqrt(exp(3*acosh(-2))) gave -i*(2+sqrt(3))^(3/2) (right +i*(2+sqrt(3))^(3/2): exp(3*acosh(-2)) is a negative real). Now the principal value e^(b*(a-2*k*pi*i)) is taken, k the integer that brings im(a)-2*k*pi into (-pi,pi], decided on the double of im(a) with a margin of 1e-9 at the half-integers of im(a)/(2*pi); at the cut (2*m+1)*pi a k is taken only where recursive_normal proves im(a)-(2*m+1)*pi = 0 (then arg = +pi), else the power stays as typed and its evalf is the principal value. Past |im(a)| = 2^21*pi the double has too few digits for k: im(a)/(2*pi)+1/2 is floored at raised Digits (Digits plus its own digits plus 20, 40, ... 1280, as patch 0032), k taken when two levels agree clear of an integer, else the power stays (sqrt(exp(10^7*i)) gave the other root too). An integer b, im(a) inside (-pi,pi) and an a with no numeric value (a free x) keep the rule. (2) normal and simplify: in_normalize_sqrt took sqrt(s*d^2/den^2) as abs(d)/abs(den)*sqrt(s) and sym2rxroot the d-th root of D^d*S as D times that of S for any d, D with no literal i; acosh(-1/2) is ln(-1/2+sqrt(-1/2+1)*sqrt(-1/2-1)), whose value 2*pi*i/3 has no literal i, so normal(sqrt(acosh(-1/2)^3)) gave abs(z)*sqrt(z) (2.143+2.143*i) and simplify z*sqrt(z) (-2.143+2.143*i), right 2.143-2.143*i. Now a factor whose double is complex (a numeric value that is not real) is not taken out of the root.
 # Changed by Pascaline contributors, 2026-11-06
 --- a/src/gen.cc
 +++ b/src/gen.cc
-@@ -6901,6 +6901,36 @@
+@@ -6901,6 +6901,76 @@
      return im==0?1:2;
    }
  
@@ -10,8 +10,48 @@
 +  // any a, so sqrt(exp(4*i)) gave exp(2*i), the other root. The principal value is e^(b*(a-2*k*pi*i)), k the integer that
 +  // brings im(a)-2*k*pi into (-pi,pi], for any b. 1: the rule as before (an integer b, im(a) inside (-pi,pi) on its double
 +  // with a margin of 1e-9*pi, or an a with no numeric value: Giac's convention, a free x is real); 2: k is set; 0: k is
-+  // not decided (|im(a)| past 2^21*pi, or im(a) at the cut, (2*m+1)*pi, and not proved there), the power stays as it is
-+  // (its evalf is the principal value). On the cut e^a is a negative real and its principal power takes arg = +pi.
++  // not decided (im(a) at the cut, (2*m+1)*pi, and not proved there, or a large im(a) that no precision clears of it, or
++  // whose double is not finite), the power stays as it is (its evalf is the principal value). On the cut e^a is a
++  // negative real and its principal power takes arg = +pi. Past |im(a)| = 2^21*pi the double has too few digits for k:
++  // im(a)/(2*pi)+1/2 is floored at Digits plus its own digits plus 20, 40, ... 1280, as patch 0032 does, and k taken when
++  // two levels in a row agree, each clear of an integer by more than 10^10 units of its last digit.
++  static bool pow_of_exp_bigk(const gen & a,double t,gen & k,GIAC_CONTEXT){
++    int nd0=decimal_digits(contextptr)+int(std::floor(std::log10(std::abs(t))))+1;
++    int save_decimal_digits=decimal_digits(contextptr);
++    gen prev,x=im(a,contextptr)/cst_two_pi+plus_one_half;
++    bool have_prev=false;
++    for (int extra=20;extra<=1280;extra*=2){
++      int nd=nd0+extra;
++      set_decimal_digits(nd,contextptr);
++      gen q;
++      try {
++	q=evalf(x,1,contextptr);
++      } catch (...) {
++	set_decimal_digits(save_decimal_digits,contextptr);
++	throw;
++      }
++      set_decimal_digits(save_decimal_digits,contextptr);
++      if (q.type!=_REAL && q.type!=_DOUBLE_)
++	return false;
++      gen m=_floor(q,contextptr);
++      if (m.type!=_INT_ && m.type!=_ZINT)
++	return false;
++      gen f=q-m;
++      gen dist=is_greater(plus_one_half,f,contextptr)?f:1-f;
++      if (!is_strictly_greater(dist*pow(gen(10),nd-10,contextptr),abs(q,contextptr),contextptr)){
++	have_prev=false;
++	continue;
++      }
++      if (have_prev && m==prev){
++	k=m;
++	return true;
++      }
++      prev=m;
++      have_prev=true;
++    }
++    return false;
++  }
++
 +  static int pow_of_exp_branch(const gen & a,const gen & b,gen & k,GIAC_CONTEXT){
 +    if (b.type==_INT_ || is_integer(b))
 +      return 1;
@@ -23,7 +63,7 @@
 +      return 1;
 +    t/=2*M_PI;
 +    if (!(std::abs(t)<1048576))
-+      return 0;
++      return std::abs(t)<1e300 && pow_of_exp_bigk(a,t,k,contextptr)?2:0;
 +    double m=std::floor(t),h=t-m-0.5;
 +    if (std::abs(h)>1e-9){
 +      k=int(m)+(h>0?1:0);
@@ -39,7 +79,7 @@
    // Pascaline patch 0025 (G149, G160): b^(n*s/d) (n an integer, d an integer denominator) is ((b^s)^(1/d))^r*(b^s)^q
    // with n = q*d+r only when (b^s)^(1/d) is b^(s/d), that is when im(s*ln(b)) lies in (-pi,pi] (for a negative b in
    // complex mode Giac takes (-b)^s and exp(i*pi*s/d), so im(s*ln(-b))); the rule took any b and s, so 2^sqrt(-1-10^-3),
-@@ -7154,12 +7184,14 @@
+@@ -7154,12 +7224,14 @@
  	else
  	  return 1;
        }

@@ -768,6 +768,12 @@ Digits:=40:; pc("g175-sqrt-exp-3acosh-neg2-12",'(sqrt(exp(3*acosh(-2))))',(72097
 // g175-sqrt-exp-3acosh-neg2-30 (precision.yaml, derived)
 Digits:=40:; pc("g175-sqrt-exp-3acosh-neg2-30",'(sqrt(exp(3*acosh(-2))))',(720976852010750476930014792258/10^29)*i,5/10^30);
 // patch 0033-pow-exp-principal-branch.patch
+// g175-sqrt-exp-1e7i-12 (precision.yaml, oracle)
+Digits:=40:; pc("g175-sqrt-exp-1e7i-12",'(sqrt(exp(10^7*i)))',(215324886878/10^12)+(976542468657/10^12)*i,5/10^13+5/10^13);
+// patch 0033-pow-exp-principal-branch.patch
+// g175-sqrt-exp-1e20i-12 (precision.yaml, oracle)
+Digits:=40:; pc("g175-sqrt-exp-1e20i-12",'(sqrt(exp(10^20*i)))',(939140672222/10^12)-(343532819071/10^12)*i,5/10^13+5/10^13);
+// patch 0033-pow-exp-principal-branch.patch
 // g175-simplify-sqrt-acosh-neg-half-cubed-12 (precision.yaml, oracle)
 Digits:=40:; pc("g175-simplify-sqrt-acosh-neg-half-cubed-12",'(simplify(sqrt(acosh(-1/2)^3)))',(214325044527/10^11)-(214325044527/10^11)*i,5/10^12+5/10^12);
 // patch 0033-pow-exp-principal-branch.patch

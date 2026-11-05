@@ -350,6 +350,8 @@ export const PATCHED_IDS = new Map([
   ["g175-sqrt-e-pow-4i-12", "0033-pow-exp-principal-branch.patch"],
   ["g175-exp-4i-pow-half-12", "0033-pow-exp-principal-branch.patch"],
   ["g175-sqrt-exp-2+4i-12", "0033-pow-exp-principal-branch.patch"],
+  ["g175-sqrt-exp-1e7i-12", "0033-pow-exp-principal-branch.patch"],
+  ["g175-sqrt-exp-1e20i-12", "0033-pow-exp-principal-branch.patch"],
   ["g175-sqrt-exp-3acosh-neg2-12", "0033-pow-exp-principal-branch.patch"],
   ["g175-sqrt-exp-3acosh-neg2-30", "0033-pow-exp-principal-branch.patch"],
   ["g175-simplify-sqrt-acosh-neg-half-cubed-12", "0033-pow-exp-principal-branch.patch"],
