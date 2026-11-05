@@ -31,7 +31,7 @@ async function library(page: Page): Promise<void> {
   await tap(page, ["@mode", "d6"]);
   await row(page, "data").tap();
   await row(page, "library").tap();
-  await expect(page.getByTestId("sheet-title")).toHaveText("Mode › Settings › Data › Library");
+  await expect(page.getByTestId("sheet-title")).toHaveText(/Settings › Data › Library$/);
 }
 async function fromClipboard(page: Page, text: string): Promise<void> {
   await putClipboard(page, text);
@@ -55,12 +55,13 @@ test("beams.txt through the picker: beam_M is in Find with its description, and 
   expect((await names(page))["beam_M"]).toBe("Maximum bending moment of a simply supported beam under a uniform load q over span L: q·L²/8");
   expect(await cas(page, "beam_M(2,4)")).toBe("4");
 
-  // Find (Math), b e a m: the library's function, its description in the preview
-  await tap(page, ["math", "math", "frac", "vars", "neg"]);
-  const hit = page.getByTestId("find").locator('[role="menuitem"][data-id="userfn:beam_M"]');
-  await expect(hit).toBeVisible();
-  await hit.locator("xpath=.").evaluate((e) => (e as HTMLElement).scrollIntoView());
-  await expect(page.getByTestId("find").getByText(/Maximum bending moment/).first()).toBeAttached();
+  // Vars (Find on the user's names, R4b), b e a m: the library's function, its description in the preview
+  await tap(page, ["vars", "math", "frac", "vars", "neg"]);
+  const find = page.getByTestId("find");
+  await expect(find.getByTestId("sheet-filter")).toHaveText("beam");
+  await expect(find.locator('[role="menuitem"]').first()).toHaveAttribute("data-id", "userfn:beam_M");
+  await expect(find.locator('[role="menuitem"][data-id="userfn:beam_w"]')).toBeVisible();
+  await expect(find.getByTestId("find-preview")).toHaveText("beam_M(…) · Maximum bending moment of a simply supported beam under a uniform load q over span L: q·L²/8");
   await tap(page, ["esc"]);
 
   // the export: the stamp, each description over its definition; imported again it changes nothing, and its own

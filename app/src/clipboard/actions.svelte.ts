@@ -104,7 +104,7 @@ export class ClipActions {
   async library(job: "file" | "clipboard" | "export" | "format", file?: File): Promise<void> {
     const m = await import("../views/libraryJobs.ts");
     const host: LibraryHost = {
-      calc: this.shell.calc,
+      jobs: () => m.jobsFor(this.shell.calc),
       say: (s, long) => this.say(s, long ? LONG_NOTICE_MS : NOTICE_MS),
       readText: () => this.serial(async () => (await this.port()).readText()),
       writeText: (t) => this.serial(async () => (await this.port()).writeText(t)),

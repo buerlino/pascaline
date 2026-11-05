@@ -7,7 +7,6 @@ import type { ChipEntry, ChipFactsTable } from "./chipFacts.ts";
 import type { PrecisionWarn, PrecisionWhy } from "./format.ts";
 import type { Refusal } from "./converge.ts";
 import type { Quantity, UnitError, UnitJob } from "../units/types.ts";
-import type { LibraryReply } from "./library.ts";
 
 export type { ChipEntry, ChipFactsTable, ConstEntry, ConstTable, HomeResult, HomeSettings };
 
@@ -282,10 +281,6 @@ export interface MathEngine {
   eval(input: string): Promise<EvalResult>;
   /** The definitions log (docs/04 6.2): what the user defined, the stored log included once it has been read. */
   definitions(): Promise<readonly DefEntry[]>;
-  /** R59: a library file's text at `version` (its stamp brought up to date), checked as a whole and imported; the
-   *  log keeps the changes when it is taken, and the engine restarts from the unchanged log when it was changed and
-   *  then refused. `replace`: the user has seen the own names it replaces. */
-  importLibrary?(text: string, version: number, replace: boolean): Promise<LibraryReply>;
   /**
    * Abort whatever is running: terminates the worker, starts a new one and replays the variable
    * definitions. Pending calls reject with EngineCancelled. Mode settings are re-applied on the next call.

@@ -6,7 +6,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { ClipActions } from "../clipboard/actions.svelte.ts";
 import type { MenuItem } from "../apps/types.ts";
 import type { LibraryReply } from "../calc/port.ts";
-import { aiFormat, copyFormat, exportLib, importClipboard, importInput, importNotice, libraryName, type LibraryHost } from "./libraryJobs.ts";
+import { aiFormat, copyFormat, exportLib, importClipboard, importInput, importNotice, jobsFor, libraryName, type LibraryHost } from "./libraryJobs.ts";
 import { librarySection } from "./libraryRows.ts";
 
 const plan = { added: ["beam_M", "g0"], same: ["x"], replaced: [] };
@@ -18,10 +18,10 @@ function host(replies: LibraryReply[], over: Partial<LibraryHost> = {}) {
   const calls: [Uint8Array | string, boolean][] = [];
   let refreshed = 0;
   const h: LibraryHost = {
-    calc: {
+    jobs: () => ({
       importLibrary: async (input, replace) => (calls.push([input, replace]), replies.shift() ?? good),
       exportLibrary: async () => ({ text: "// pascaline library 4\n\n// d\nf(x):=x\n", skipped: [{ name: "C", why: "a decimal" }] }),
-    },
+    }),
     say: (s) => void said.push(s),
     readText: async () => "// pascaline library 4\n",
     writeText: async () => true,
@@ -101,7 +101,7 @@ describe("the jobs", () => {
     expect(saved).toHaveLength(1);
     expect(saved[0]).toMatch(/^pascaline-library-\d{4}-\d{2}-\d{2}\.txt text\/plain \d+$/);
     expect(t.said).toEqual(["Library saved. 1 left out (assumptions, and decimals in the backup only): C"]);
-    const empty = host([], { calc: { exportLibrary: async () => ({ text: "// pascaline library 4\n", skipped: [] }) }, saveFile: async () => (saved.push("again"), "saved") });
+    const empty = host([], { jobs: () => ({ importLibrary: async () => good, exportLibrary: async () => ({ text: "// pascaline library 4\n", skipped: [] }) }), saveFile: async () => (saved.push("again"), "saved") });
     await exportLib(empty.h);
     expect(empty.said).toEqual(["No definitions to export"]);
     expect(saved).toHaveLength(1);
@@ -117,7 +117,7 @@ describe("the jobs", () => {
     expect(aiFormat("<!-- a -->\n# T {version}\n<!-- b\n c -->\nx\n", 9)).toBe("# T 9\nx\n");
   });
   it("no engine (the fake one): says so", async () => {
-    const t = host([], { calc: {} });
+    const t = host([], { jobs: () => jobsFor({}) });
     await importInput(t.h, "x");
     await exportLib(t.h);
     expect(t.said).toEqual(["The library needs the engine, which is not running", "The library needs the engine, which is not running"]);

@@ -21,7 +21,8 @@ export type Request =
   /** The unit view (G16): a job built from the Find index's factors (units/build.ts), evaluated in Home's mode. */
   | { id: number; type: "units"; job: UnitJob; settings: HomeSettings }
   /** R59: a library file's text at `version`, imported against the client's log (library.ts importText). */
-  | { id: number; type: "library"; text: string; version: number; log: DefEntry[]; replace: boolean };
+  | { id: number; type: "library"; input: Uint8Array | string; version: number; log: DefEntry[]; replace: boolean }
+  | { id: number; type: "libraryExport"; version: number; log: DefEntry[] };
 
 /** `defs`: what an input defined or purged (defs.ts); the client keeps the log, stores it and gives it to a fresh
  *  worker after a Cancel, a crash or a relaunch. */
@@ -37,4 +38,5 @@ export type Response =
   | { id: number; type: "table"; result: HomeResult[][] }
   | { id: number; type: "units"; result: Quantity | UnitError }
   | ({ id: number; type: "library" } & LibraryReply)
+  | { id: number; type: "libraryExport"; text: string; skipped: { name: string; why: string }[] }
   | { id: number; type: "fatal"; message: string; memory?: true };

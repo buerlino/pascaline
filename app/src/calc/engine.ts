@@ -16,7 +16,6 @@ import {
 } from "../engine/types.ts";
 import { WorkerEngine } from "../engine/workerEngine.ts";
 import { userNamesOf } from "../engine/defs.ts";
-import type { LibraryReply } from "../engine/library.ts";
 import { mark } from "../marks.ts";
 import { CalcCancelled, type Calc, type CalcSettings, type ChipFactsTable, type ConstTable, type CasOutcome, type HomeOutcome, type Quantity, type UnitError, type UnitRequest, type UserName } from "./port.ts";
 import type { IndexItem } from "../find/types.ts";
@@ -91,7 +90,8 @@ export interface EngineCalcOptions {
 }
 
 export class EngineCalc implements Calc {
-  private readonly engine: MathEngine;
+  /** Read by code that loads later and posts its own requests (R59: calc/library.ts); the views use the port's calls. */
+  readonly engine: MathEngine;
   private readonly findIndex: (() => Promise<readonly IndexItem[]>) | undefined;
   constructor(engine: MathEngine = new WorkerEngine(), o: EngineCalcOptions = {}) {
     this.engine = engine;
@@ -152,26 +152,6 @@ export class EngineCalc implements Calc {
 
   async cancel(): Promise<void> {
     await this.engine.cancel();
-  }
-
-  /** R59: decoded, and its stamp brought up to date, here (the engine imports nothing from state/, G147); then read,
-   *  checked and imported as a whole in the worker. A file the decoder refuses never reaches it. */
-  async importLibrary(input: Uint8Array | string, replace: boolean): Promise<LibraryReply> {
-    const [lib, fmt] = await Promise.all([import("../engine/library.ts"), import("../state/libraryFormat.ts")]);
-    let text: string;
-    try {
-      text = fmt.upToDate(lib.decodeLibrary(input));
-    } catch (e) {
-      if (e instanceof lib.LibError) return { result: { ok: false, error: e.message, line: e.line, dirty: false }, lines: [] };
-      throw e;
-    }
-    if (!this.engine.importLibrary) throw new Error("no library import in this engine");
-    return mapCancel(this.engine.importLibrary(text, fmt.LIBRARY_FORMAT.version, replace));
-  }
-
-  async exportLibrary(): Promise<{ text: string; skipped: { name: string; why: string }[] }> {
-    const [lib, fmt] = await Promise.all([import("../engine/library.ts"), import("../state/libraryFormat.ts")]);
-    return lib.exportLibrary(await this.engine.definitions(), fmt.LIBRARY_FORMAT);
   }
 }
 

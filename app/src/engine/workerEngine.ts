@@ -22,7 +22,6 @@ import {
 import type { Quantity, UnitError, UnitJob } from "../units/types.ts";
 import type { ConstTable } from "./constUnc.ts";
 import type { ChipFactsTable } from "./chipFacts.ts";
-import type { LibraryReply } from "./library.ts";
 
 /** The part of a Worker that WorkerEngine uses (lets tests drive it without a browser). */
 export interface WorkerLike {
@@ -57,7 +56,7 @@ export interface WorkerEngineOptions {
 export const DEFS_LOAD_TIMEOUT_MS = 3000;
 
 type Pending = { resolve: (r: Response) => void; reject: (e: Error) => void };
-type RequestBody = Request extends infer R ? (R extends { id: number } ? Omit<R, "id"> : never) : never;
+export type RequestBody = Request extends infer R ? (R extends { id: number } ? Omit<R, "id"> : never) : never;
 
 /** Vite's BASE_URL made absolute against the page: with `base: "./"` a relative base would
  *  otherwise resolve against the worker script's own folder (assets/). */
@@ -156,8 +155,9 @@ export class WorkerEngine implements MathEngine {
     }
   }
 
-  /** Applies what a call defined to the log, and stores it. */
-  private keep(changes: readonly DefChange[]): void {
+  /** Applies what a call defined to the log, and stores it. Public for code that loads later and posts its own
+   *  requests (R59, calc/library.ts), so nothing of it is in the start chunk. */
+  keep(changes: readonly DefChange[]): void {
     if (!changes.length) return;
     this.log = applyDefChanges(this.log, changes);
     // a purge reaches the entries a safe start left out too, or stored() would bring the name back (G19)
@@ -257,17 +257,6 @@ export class WorkerEngine implements MathEngine {
     return { output: r.output, ok: r.ok, engineMs: r.engineMs };
   }
 
-  /** R59: the import runs against the log as stored (the gate first, so the stored one is in); a refusal after the
-   *  engine was changed restarts it from the unchanged log, the path Cancel takes (r10 section 3.1). */
-  async importLibrary(text: string, version: number, replace: boolean): Promise<LibraryReply> {
-    await this.gate;
-    const r = await this.call({ type: "library", text, version, log: [...this.stored()], replace });
-    if (r.type !== "library") throw new Error(`unexpected ${r.type}`);
-    if (r.result.ok) this.keep(r.result.changes);
-    else if (r.result.dirty) await this.cancel();
-    return { result: r.result, lines: r.lines };
-  }
-
   cancel(): Promise<EngineTimings> {
     const wasReached = this.reached;
     this.stop(new EngineCancelled());
@@ -342,8 +331,9 @@ export class WorkerEngine implements MathEngine {
     this.readyPromise.catch(() => {});
   }
 
-  /** A request, posted once the stored definitions have gone to the worker (at once when they have). */
-  private call(body: RequestBody): Promise<Response> {
+  /** A request, posted once the stored definitions have gone to the worker (at once when they have). Public for code
+   *  that loads later (R59, calc/library.ts). */
+  call(body: RequestBody): Promise<Response> {
     if (this.gateOpen) return this.post(body);
     const gen = this.generation;
     return this.gate.then(() => {

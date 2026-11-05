@@ -6,13 +6,15 @@
 // user's own names changes nothing and opens a sheet that lists them, with Replace and import / Cancel (r10 section 3.1,
 // principle 3). Loaded on the press only (ClipActions.library), never at start.
 import type { MenuItem } from "../apps/types.ts";
-import type { Calc, LibraryReply } from "../calc/port.ts";
+import type { Calc, LibraryJobs, LibraryReply } from "../calc/port.ts";
+import { jobs as engineJobs } from "../calc/library.ts";
 import { dataText, type DataKey } from "../i18n/enData.ts";
 import { DATA_VERSION } from "../state/storage.ts";
 import raw from "./aiFormat.md?raw";
 
 export interface LibraryHost {
-  readonly calc: Pick<Calc, "importLibrary" | "exportLibrary">;
+  /** The engine's import and export (jobsFor); undefined where there are none (the fake engine). */
+  jobs(): LibraryJobs | undefined;
   /** A notice; `long`: one that names lines and reasons, which stays up longer. */
   say(message: string, long?: boolean): void;
   readText(): Promise<string | null>;
@@ -61,12 +63,28 @@ export function importNotice(reply: LibraryReply): string {
 }
 
 /** One import of `input` (a file's bytes or a text); a clash opens the sheet that may import it again with replace. */
+/** The jobs on the port's engine; undefined where there is none, or no worker behind it (the fake engine). */
+export function jobsFor(calc: Pick<Calc, "engine">): LibraryJobs | undefined {
+  try {
+    return calc.engine ? engineJobs(calc.engine) : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/** The host's jobs, or undefined, said. */
+function jobsOf(host: LibraryHost): LibraryJobs | undefined {
+  const jobs = host.jobs();
+  if (!jobs) host.say(dataText("library.noEngine"));
+  return jobs;
+}
+
 export async function importInput(host: LibraryHost, input: Uint8Array | string, replace = false): Promise<void> {
-  const run = host.calc.importLibrary;
-  if (!run) return host.say(dataText("library.noEngine"));
+  const jobs = jobsOf(host);
+  if (!jobs) return;
   let reply: LibraryReply;
   try {
-    reply = await run.call(host.calc, input, replace);
+    reply = await jobs.importLibrary(input, replace);
   } catch {
     await host.refresh();
     return host.say(dataText("library.failed"));
@@ -85,11 +103,15 @@ export function clashItems(host: LibraryHost, input: Uint8Array | string, notice
   ];
 }
 
-/** Import a library: the picked file, read whole (the size check refuses it in the engine's reader, r10 1.2). */
+/** One byte past a library's limit (engine/library.ts LIB_MAX_BYTES, 256 kB, r10 1.2): a bigger pick (a video by
+ *  mistake) is never read whole, and the engine's reader refuses what it got as over the limit, in its own words. */
+export const READ_CAP = 256 * 1024 + 1;
+
+/** Import a library: the picked file, read up to READ_CAP. */
 export async function importFile(host: LibraryHost, file: File): Promise<void> {
   let bytes: Uint8Array;
   try {
-    bytes = new Uint8Array(await file.arrayBuffer());
+    bytes = new Uint8Array(await file.slice(0, READ_CAP).arrayBuffer());
   } catch {
     return host.say(dataText("library.unreadable"));
   }
@@ -119,11 +141,11 @@ const SAVED: Record<"saved" | "offered" | "cancelled" | "failed", DataKey> = {
 
 /** Export the library: the log's functions and exact values; what was left out is said after the result. */
 export async function exportLib(host: LibraryHost): Promise<void> {
-  const run = host.calc.exportLibrary;
-  if (!run) return host.say(dataText("library.noEngine"));
-  let out: Awaited<ReturnType<typeof run>>;
+  const jobs = jobsOf(host);
+  if (!jobs) return;
+  let out: Awaited<ReturnType<LibraryJobs["exportLibrary"]>>;
   try {
-    out = await run.call(host.calc);
+    out = await jobs.exportLibrary();
   } catch {
     return host.say(dataText("library.saveFailed"));
   }

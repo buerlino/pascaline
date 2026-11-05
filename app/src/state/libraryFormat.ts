@@ -11,13 +11,21 @@ export const LIBRARY_FORMAT: LibraryFormat = {
   migrate: (text, from) => migratedText("library", text, from),
 };
 
-/** R59: a decoded library text (engine/library.ts decodeLibrary) with an older stamp brought up to DATA_VERSION: the
- *  stamp rewritten and the text below it migrated, line for line, so the worker reads it with no migration of its own
- *  and every line number stays the file's. A missing or newer stamp is left as it is, for the reader to refuse. */
-export function upToDate(text: string): string {
+/** R59: a library file with an older stamp brought up to DATA_VERSION, for the worker, which runs no migration: the
+ *  stamp rewritten and the text below it migrated line for line, so every line number stays the file's. Anything else
+ *  goes on as it came (not UTF-8, a missing or newer stamp, already up to date), for the worker's reader to take or
+ *  refuse with its own words (engine/library.ts parseLibrary). */
+export function upToDate(input: Uint8Array | string): Uint8Array | string {
+  let text: string;
+  try {
+    text = typeof input === "string" ? input : new TextDecoder("utf-8", { fatal: true }).decode(input);
+  } catch {
+    return input;
+  }
+  text = text.replace(/^\ufeff/, "").replace(/\r\n?/g, "\n");
   const nl = text.indexOf("\n");
   const m = /^\/\/ pascaline library (\d+)$/.exec((nl < 0 ? text : text.slice(0, nl)).trim());
   const from = m ? Number(m[1]) : DATA_VERSION;
-  if (from >= DATA_VERSION) return text;
+  if (from >= DATA_VERSION) return input;
   return `// pascaline library ${DATA_VERSION}\n${migratedText("library", nl < 0 ? "" : text.slice(nl + 1), from)}`;
 }

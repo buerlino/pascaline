@@ -6,13 +6,15 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { EngineCalc } from "../calc/engine.ts";
+import type { LibraryJobs } from "../calc/port.ts";
+import { jobs } from "../calc/library.ts";
 import { createRequestHandler } from "../engine/host.ts";
 import { giacAvailable, loadNodeGiac } from "../engine/nodeGiac.ts";
 import type { Request, Response } from "../engine/protocol.ts";
 import { WorkerEngine, type WorkerLike } from "../engine/workerEngine.ts";
-import type { ImportResult } from "../engine/library.ts";
+import { LIB_MAX_BYTES, type ImportResult } from "../engine/library.ts";
 import { DATA_VERSION } from "../state/storage.ts";
-import { aiFormat, formatExample } from "./libraryJobs.ts";
+import { aiFormat, formatExample, importFile, READ_CAP, type LibraryHost } from "./libraryJobs.ts";
 
 class InProcessWorker implements WorkerLike {
   onmessage: ((ev: { data: Response }) => void) | null = null;
@@ -31,10 +33,13 @@ class InProcessWorker implements WorkerLike {
 }
 
 const settings = { digits: 12, angle: "rad", format: "std" } as const;
-const fresh = (): { calc: EngineCalc; engine: WorkerEngine; workers: () => number } => {
+/** The port's calls (cas, names) and its library jobs, on one engine. */
+const fresh = (): { calc: EngineCalc & LibraryJobs; engine: WorkerEngine; workers: () => number } => {
   let n = 0;
   const engine = new WorkerEngine({ createWorker: () => (n++, new InProcessWorker()) });
-  return { calc: new EngineCalc(engine), engine, workers: () => n };
+  const port = new EngineCalc(engine);
+  const calc = Object.assign(port, jobs(port.engine));
+  return { calc, engine, workers: () => n };
 };
 const ok = (r: ImportResult): Extract<ImportResult, { ok: true }> => {
   if (!r.ok) throw new Error(r.error);
@@ -78,6 +83,16 @@ describe.skipIf(!giacAvailable())("the library through the Calc port (real Giac)
     expect(await calc.names()).toEqual([]);
     const bad = (await calc.importLibrary(new Uint8Array([0x2f, 0x2f, 0xff]), false)).result;
     expect(bad).toMatchObject({ ok: false, line: 0, error: "the file is not UTF-8 text" });
+  });
+
+  it("a picked file over the limit is read only to one byte past it, and refused as over the limit", { timeout: 30_000 }, async () => {
+    expect(READ_CAP).toBe(LIB_MAX_BYTES + 1);
+    const { calc } = fresh();
+    const said: string[] = [];
+    const big = new File([`// pascaline library 4\n${"// x\n".repeat(80_000)}`], "big.txt");
+    const host = { jobs: () => calc, say: (s: string) => void said.push(s), refresh: async () => {}, showMenu: () => {} } as unknown as LibraryHost;
+    await importFile(host, big);
+    expect(said).toEqual(["Library refused, nothing changed: the file is over 256 kB"]);
   });
 
   it("a failing test: every failure with its line, and the engine restarts from the unchanged log", { timeout: 30_000 }, async () => {

@@ -99,9 +99,8 @@ function definitionOf(block: string, tree: GiacParse): { name: string; kind: "fn
   return tree.program ? { name: tree.top[0]!, kind: "fn" } : undefined;
 }
 
-/** R59: a file's text, checked for size and encoding, with a BOM dropped and CR LF / CR made LF (r10 section 1.2). The
- *  app decodes a picked file with it before the stamp is brought up to date (state/libraryFormat.ts upToDate). */
-export function decodeLibrary(input: Uint8Array | string): string {
+/** R59: a file's text, checked for size and encoding, with a BOM dropped and CR LF / CR made LF (r10 section 1.2). */
+function decodeLibrary(input: Uint8Array | string): string {
   const bytes = typeof input === "string" ? new TextEncoder().encode(input) : input;
   if (bytes.length > LIB_MAX_BYTES) throw new LibError(0, `the file is over ${LIB_MAX_BYTES / 1024} kB`);
   let text: string;
@@ -315,13 +314,16 @@ export interface LibraryReply {
   lines: { name: string; line: number }[];
 }
 
-/** R59, the worker's side of an import: a text already at `version` (the app brought its stamp up to date, so no
- *  migration runs here) read and checked as a whole, then imported into `engine`. A refusal of the reader is a result
- *  like the import's own, with its line. */
-export function importText(engine: LibraryEngine & { parse(text: string): GiacParse }, text: string, version: number, log: readonly DefEntry[], replace: boolean): LibraryReply {
+/** R59: the format as the worker has it: the version alone. The app brings an older stamp up to date before it sends
+ *  a file (state/libraryFormat.ts upToDate: the migration steps are state/'s, G147), so no migration runs here. */
+const inWorker = (version: number): LibraryFormat => ({ version, migrate: (t) => t });
+
+/** R59, the worker's side of an import: a file (bytes, or a decoded text) at `version` read and checked as a whole,
+ *  then imported into `engine`. A refusal of the reader is a result like the import's own, with its line. */
+export function importText(engine: LibraryEngine & { parse(text: string): GiacParse }, input: Uint8Array | string, version: number, log: readonly DefEntry[], replace: boolean): LibraryReply {
   let lib: LibFile;
   try {
-    lib = parseLibrary(text, engine.parse, { version, migrate: (t) => t });
+    lib = parseLibrary(input, engine.parse, inWorker(version));
   } catch (e) {
     if (e instanceof LibError) return { result: fail(e.message, e.line), lines: [] };
     throw e;
@@ -377,4 +379,9 @@ export function exportLibrary(log: readonly DefEntry[], format: LibraryFormat): 
     out.push("", `// ${describe(e)}`, e.cmds.map((c) => writeUserNames(dropAngleFactor(c, "typed"))).join("\n"));
   }
   return { text: out.join("\n") + "\n", skipped };
+}
+
+/** R59, the worker's side of an export: `exportLibrary` of the client's log, at `version`. */
+export function exportText(log: readonly DefEntry[], version: number): ReturnType<typeof exportLibrary> {
+  return exportLibrary(log, inWorker(version));
 }
