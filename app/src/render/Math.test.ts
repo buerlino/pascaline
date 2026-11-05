@@ -23,7 +23,7 @@ describe("Math: a result too long to draw (R135)", () => {
     const before = renderStats.count;
     const html = draw(long);
     expect(renderStats.count).toBe(before);
-    expect(html).toContain("Too long to draw (8 kB): Copy holds it");
+    expect(html).toContain("Too long to draw (6 kB): Copy holds it");
     expect(html).not.toContain("777777");
     expect(html).not.toContain("\\frac");
   });
@@ -65,7 +65,7 @@ describe("Math: a result too long to draw (R135)", () => {
 
 describe("sizeText", () => {
   it("kB below 1 MB, MB with one decimal above", () => {
-    expect(sizeText(8001)).toBe("8 kB");
+    expect(sizeText(6001)).toBe("6 kB");
     expect(sizeText(1_773_448)).toBe("1.8 MB");
     expect(sizeText(120)).toBe("1 kB");
   });

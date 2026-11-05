@@ -3,10 +3,10 @@
 // says so (Copy holds the whole text). Pure module: no MathLive, so the start chunk pays nothing for it.
 import { t } from "../i18n/index.ts";
 
-/** The longest LaTeX the app draws. MathLive's SSR build takes about 36 ms for 4 kB and 118 ms for 16 kB on the desktop
+/** The longest LaTeX the app draws. MathLive's SSR build takes about 36 ms for 4 kB, 55 ms for 6 kB and 118 ms for 16 kB on the desktop
  *  (the Tab One is 5-8× slower), and its parser overflows the stack past ~200 kB; the longest golden or gallery result is
  *  far below this (R135's report has the measurements). */
-export const MAX_DRAWN_LATEX = 8000;
+export const MAX_DRAWN_LATEX = 6000;
 
 export const tooLongToDraw = (latex: string): boolean => latex.length > MAX_DRAWN_LATEX;
 
