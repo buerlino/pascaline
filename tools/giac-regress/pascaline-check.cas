@@ -795,6 +795,10 @@ Digits:=40:; pc("g157f1-int-trunc-half-5/2",'(int(trunc(x),x,1/2,5/2))',2,5/10^1
 Digits:=40:; pc("g157f1-int-floor-sym-3/2",'(int(floor(x),x,-3/2,3/2))',-(15/10^1),5/10^12);
 // g157f1-int-trunc-x-free-trunc-0 (precision.yaml, derived)
 Digits:=40:; pc("g157f1-int-trunc-x-free-trunc-0",'(subst(int(trunc(x)*trunc(ag157),x,-3/2,-1/2),ag157=0))',0,1/10^30);
+// g166-keep-atan-tan-neg-pi/2-plus-1e-15-12 (precision.yaml, oracle)
+Digits:=40:; pc("g166-keep-atan-tan-neg-pi/2-plus-1e-15-12",'(atan(tan(-pi/2+10^-15)))',-(157079632679/10^11),5/10^12);
+// g166-keep-atan-tan-1e14-12 (precision.yaml, oracle)
+Digits:=40:; pc("g166-keep-atan-tan-1e14-12",'(atan(tan(10^14)))',(210969811707/10^12),5/10^13);
 // g165-keep-acos-cos-1e-30-12 (precision.yaml, oracle)
 Digits:=40:; pc("g165-keep-acos-cos-1e-30-12",'(acos(cos(10^-30)))',(1/10^30),5/10^42);
 // g149-cas-keep-forms (precision.yaml g149-cas-keep-acosh-neg2, g149-cas-keep-ln-neg-pi-pow-3/2, g149-cas-keep-sqrt-neg-pi-cubed, g149f1-cas-keep-*, derived)

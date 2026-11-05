@@ -63,6 +63,9 @@ const CANARIES: [string, string, RegExp, string][] = [
   // G165, patch 0031: the same rule takes n = round(a/pi) at the current Digits with no look at a tie: a/pi = 1/2-10^-50/pi reads as
   // 1/2, so n = 1 and acos(cos(10^-50)) = -10^-50 (right 10^-50)
   ["0031-asin-half-integer-tie.patch", "giac-2.1.0/src/usual.cc", /^\/\/ asin\(sin\(a\)\)==a-2\*k\*pi or pi-a-2\*k\*pi\s*gen n=_round\(a\/cste,contextptr\);\s*b=a-n\*cste;/, "// asin(sin(a))==a-2*k*pi or pi-a-2*k*pi"],
+  // G166, patch 0032: atan(tan(a)) floors the double of a/pi+1/2, 16 digits: atan(tan(10^15)) = 10^15-318309886183790*pi (n one
+  // low, 2.11), and next to the pole 1-10^-15/pi rounds to 1 (atan(tan(pi/2-10^-15)) = pi/2-10^-15-pi)
+  ["0032-atan-tan-reduction-digits.patch", "giac-2.1.0/src/usual.cc", /gen tmp2=evalf_double\(e\._SYMBptr->feuille,0,contextptr\);\s*if \(tmp2\.type<_IDNT\)\s*tmp2=_floor\(tmp2\/tmp\+plus_one_half,contextptr\);\s*else\s*tmp2=_floor\(e\._SYMBptr->feuille\/tmp\+plus_one_half,contextptr\);/, "if (atan_tan_no_floor(contextptr))"],
   // G126, patch 0015: the ln forms of asin and asinh cancel for a large x on one side (acos(-10^20+1/2) lost 40 digits)
   ["0015-asin-asinh-ln-cancellation.patch", "giac-2.1.0/src/usual.cc", /^static gen asinasln\(const gen & x,GIAC_CONTEXT\)\{\s*return -cst_i\*ln\(cst_i\*x\+sqrt\(1-x\*x,contextptr\),contextptr\);/, "static gen asinasln(const gen & x,GIAC_CONTEXT){"],
   ["0015-asin-asinh-ln-cancellation.patch", "giac-2.1.0/src/usual.cc", /^static gen asinhasln\(const gen & x,GIAC_CONTEXT\)\{\s*return ln\(x\+sqrt\(x\*x\+1,contextptr\),contextptr\);/, "static gen asinhasln(const gen & x,GIAC_CONTEXT){"],
