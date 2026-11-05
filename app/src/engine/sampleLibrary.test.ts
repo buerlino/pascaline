@@ -11,7 +11,7 @@ import { LIBRARY_FORMAT } from "../state/libraryFormat.ts";
 
 const SAMPLE = new URL("../../public/samples/materials.txt", import.meta.url);
 /** The units a value's description may name, in words after "in" (SI only: the file holds SI values). */
-const UNIT_IN_WORDS = / in (Pa|kg\/m³|1\/K|W\/\(m·K\))(\s|$|[,;(])/;
+const UNIT_IN_WORDS = / in (Pa|kg\/m³|N\/m³|1\/K|W\/\(m·K\))(\s|$|[,;(])/;
 const SOURCE = /^\/\/ source: \S.*\S$/;
 const TO_VERIFY = "(to verify: owner)";
 
@@ -44,7 +44,61 @@ describe("the sample library file (G164, no engine)", () => {
       if (!lines[i - 2]!.includes("verified:")) expect(lines[i - 2]!.endsWith(TO_VERIFY)).toBe(true);
     });
   }
+  // G164 fix 1: a value is the source's own number in the description's unit, by an exact factor of ten, never a
+  // conversion the source does not make (24 kN/m³ is a weight density: as kg/m³ it needs g, and 2400 used g = 10).
+  // A source quoting a formula instead of one number has a `// test:` line under its value that checks the arithmetic.
+  it("each value is the number its source quotes, in the description's unit (an exact power of ten, no g)", () => {
+    let quoted = 0;
+    for (const { l, i } of values) {
+      const name = l.slice(0, l.indexOf(":="));
+      const src = lines[i - 2]!;
+      const unit = UNIT_IN_WORDS.exec(lines[i - 1]!)?.[1];
+      const q = [...src.matchAll(QUOTED)][0]; // the standard's own number, before any "taken as"
+      if (!q) {
+        expect(lines[i + 1], `${name}: no single number in its source, so a test line under it`).toMatch(/^\/\/ test: /);
+        continue;
+      }
+      quoted++;
+      const [, digits, sup, srcUnit] = q;
+      const to = SOURCE_UNITS[srcUnit!]!;
+      expect(to.unit, `${name}: the source's ${srcUnit} is not the description's ${unit}`).toBe(unit);
+      const v = /^(\d+)(?:\*10\^(-?\d+))?$/.exec(l.slice(l.indexOf(":=") + 2))!;
+      const expected = exact(digits!.replace(/ /g, ""), (sup ? Number(fromSuperscript(sup)) : 0) + to.exp10);
+      expect(exact(v[1]!, Number(v[2] ?? 0)), name).toEqual(expected);
+    }
+    expect(quoted).toBe(13);
+  });
 });
+
+/** A number the source quotes and its unit: `210 000 N/mm²`, `12×10⁻⁶ per K`, `8.93 g/cm³`. */
+const QUOTED = /(?<![\d.,])(\d(?:[\d ]*\d)?(?:\.\d+)?)(?:×10([⁻⁰¹²³⁴⁵⁶⁷⁸⁹]+))? (N\/mm²|kN\/mm²|GPa|kg\/m³|g\/cm³|kN\/m³|per K|per °C|W\/\(m·K\))/g;
+/** Each source unit as the description's unit times 10^exp10 (a per-°C difference is a per-K one). */
+const SOURCE_UNITS: Record<string, { unit: string; exp10: number }> = {
+  "N/mm²": { unit: "Pa", exp10: 6 },
+  "kN/mm²": { unit: "Pa", exp10: 9 },
+  GPa: { unit: "Pa", exp10: 9 },
+  "kg/m³": { unit: "kg/m³", exp10: 0 },
+  "g/cm³": { unit: "kg/m³", exp10: 3 },
+  "kN/m³": { unit: "N/m³", exp10: 3 },
+  "per K": { unit: "1/K", exp10: 0 },
+  "per °C": { unit: "1/K", exp10: 0 },
+  "W/(m·K)": { unit: "W/(m·K)", exp10: 0 },
+};
+function fromSuperscript(s: string): string {
+  return [...s].map((c) => (c === "⁻" ? "-" : String("⁰¹²³⁴⁵⁶⁷⁸⁹".indexOf(c)))).join("");
+}
+/** A decimal times 10^e as [integer without trailing zeros, its power of ten]: equal numbers give equal pairs. */
+function exact(decimal: string, e: number): [bigint, number] {
+  const [int, frac = ""] = decimal.split(".");
+  let m = BigInt(int! + frac);
+  e -= frac.length;
+  if (m === 0n) return [0n, 0];
+  while (m % 10n === 0n) {
+    m /= 10n;
+    e++;
+  }
+  return [m, e];
+}
 
 describe.skipIf(!giacAvailable())("the sample library file (G164, real Giac)", () => {
   let parse: (text: string) => GiacParse;
