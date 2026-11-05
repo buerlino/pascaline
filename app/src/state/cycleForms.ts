@@ -61,10 +61,9 @@ async function computePolar(s: Session, calc: Calc, item: HistoryItem, v: Comple
   }
 }
 
-/** The Format key: the last result of the open view in the next ticked mode (Settings), that result only. True when the display changed. */
-export async function cycleFormat(s: Session, calc: Calc): Promise<boolean> {
-  const item = s.items.at(-1);
-  if (!item || item.status !== "done" || s.busy) return false;
+/** The Format key: `item` (the last result of the open view at the press, Session.lastForKey) in the next ticked mode
+ *  (Settings), that result only. True when the display changed. */
+export async function cycleFormat(s: Session, calc: Calc, item: HistoryItem): Promise<boolean> {
   if (item.form !== undefined) {
     // a form chosen with a b/c: the Format key goes back to the number in its notation
     delete item.form;
@@ -81,11 +80,9 @@ export async function cycleFormat(s: Session, calc: Calc): Promise<boolean> {
   return true;
 }
 
-/** The a b/c key on an empty line (R10): the last result in its other form (decimal ↔ fraction, a+bi ↔ polar), that result
+/** The a b/c key on an empty line (R10): `item` (the last result at the press) in its other form (decimal ↔ fraction, a+bi ↔ polar), that result
  *  only. True when the display changed; false when no other form applies (a whole number, a symbolic result). */
-export async function cycleForm(s: Session, calc: Calc): Promise<boolean> {
-  const item = s.items.at(-1);
-  if (!item || item.status !== "done" || s.busy) return false;
+export async function cycleForm(s: Session, calc: Calc, item: HistoryItem): Promise<boolean> {
   const next = nextForm(item.form, factsOf(item), item.view === "cas");
   if (!next) return false;
   if (next.form === "polar" && item.value && item.polar?.angle !== s.settings.angle && !(await computePolar(s, calc, item, item.value)))

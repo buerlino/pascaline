@@ -612,14 +612,24 @@ export class Session {
 
   /** The Format key (cycleForms.ts): the last result of the open view in the next ticked mode. Resolves true when the display changed. */
   async cycleFormat(): Promise<boolean> {
+    const item = this.lastForKey(); // at the press, before any await: a later row must not take the act (R135f1)
+    if (!item) return false;
     const m = formsCode ?? (await loadForms()); // (loaded: no await, the act is done before the next key)
-    return m ? m.cycleFormat(this, this.calc) : false;
+    return m ? m.cycleFormat(this, this.calc, item) : false;
+  }
+
+  /** The row the Format and a b/c keys act on: the open view's last row, when it is done and nothing runs. */
+  private lastForKey(): HistoryItem | undefined {
+    const item = this.items.at(-1);
+    return item && item.status === "done" && !this.busy ? item : undefined;
   }
 
   /** The a b/c key on an empty line (R10, cycleForms.ts): the last result in its other form. Resolves true when the display changed. */
   async cycleForm(): Promise<boolean> {
+    const item = this.lastForKey();
+    if (!item) return false;
     const m = formsCode ?? (await loadForms());
-    return m ? m.cycleForm(this, this.calc) : false;
+    return m ? m.cycleForm(this, this.calc, item) : false;
   }
 
   /** Delete one row of the open view (R11). A running row is not deleted: Cancel stops it first. Undo brings it back (R98).
