@@ -7,18 +7,18 @@
 import type { Row } from "./sheet.svelte.ts";
 import { ROW_FLOOR } from "./sheetFit.ts";
 
-/** Rows built past the last one in view, so a short scroll or ▼ finds its row there. */
-export const MARGIN = 4;
+/** Rows built past the last one in view (a row cut at the bottom edge, the next one); a scroll builds a page ahead
+ *  and ▼ the rows past the highlight. */
+export const MARGIN = 2;
 /** Before the sheet's room is measured (its first frame): about a phone's list. */
 export const FIRST = 16;
 
-/** The rows `px` of height can show: at the floor height, the most it can hold. */
-const fits = (px: number): number => Math.ceil(Math.max(0, px) / ROW_FLOOR);
-
-/** How many of a search's `total` hits are built: those the sheet's `room` (px) can show plus a margin; more when the
- *  list has been scrolled (`seen`: px from its top to the bottom of what was scrolled into view, and a page further)
- *  or the highlight is on row `at` (its place among the rows, -1: none). */
-export function builtRows(total: number, room: number, seen: number, at: number): number {
+/** How many of a search's `total` hits are built: those the list's `room` (px, the most it can grow to) can show at
+ *  `rowPx` a row (the lowest a row is) plus a margin; more when the list has been scrolled (`seen`: px from its top to
+ *  the bottom of what was scrolled into view, and a page further) or the highlight is on row `at` (its place among
+ *  the rows, -1: none). */
+export function builtRows(total: number, room: number, seen: number, at: number, rowPx = ROW_FLOOR): number {
+  const fits = (px: number): number => Math.ceil(Math.max(0, px) / rowPx);
   const first = room > 0 ? fits(room) + MARGIN : FIRST;
   return Math.min(total, Math.max(first, fits(seen) + MARGIN, at + 1 + MARGIN));
 }

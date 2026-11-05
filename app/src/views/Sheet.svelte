@@ -98,14 +98,17 @@
   let room = $state(0);
   $effect(() => {
     if (!overlay || typeof ResizeObserver === "undefined") return;
-    const ro = new ResizeObserver(([e]) => (room = e?.contentRect.height ?? 0));
+    // the most the list can grow to: the overlay less the sheet's title row, preview and padding
+    const ro = new ResizeObserver(() => {
+      if (overlay && panel && list) room = overlay.clientHeight - (panel.offsetHeight - list.offsetHeight);
+    });
     ro.observe(overlay);
     return () => ro.disconnect();
   });
   /** How far down these rows were scrolled into view (px, a page ahead). */
   let scrolled = $state.raw<{ of: readonly unknown[]; px: number }>({ of: [], px: 0 });
   const at = $derived(searching ? rows.findIndex((r) => r.index === level.highlight) : -1);
-  const built = $derived(searching ? builtRows(rows.length, room, scrolled.of === rows ? scrolled.px : 0, at) : rows.length);
+  const built = $derived(searching ? builtRows(rows.length, room, scrolled.of === rows ? scrolled.px : 0, at, row) : rows.length);
   const shown = $derived(built < rows.length ? rows.slice(0, built) : rows);
   const byId = $derived(keyedById(rows, searching));
   const rest = $derived(rows.slice(built).reduce((h, r, k) => h + rowHeight(row, { reason: twoLines(items, built + k), steps: hasSteps(r.item), options: hasOptions(r.item) }), 0));

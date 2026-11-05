@@ -60,7 +60,7 @@ test.beforeEach(async ({ page }) => {
 
 test("a Find key builds only the rows in view plus a margin, and a hit that stays keeps its row", async ({ page }) => {
   const room = await find(page).evaluate((e) => e.clientHeight);
-  const most = Math.ceil(room / 36) + 4; // sheetWindow.ts: the rows the room holds at the floor height, and the margin
+  const most = Math.ceil(room / 36) + 2; // sheetWindow.ts: at most the rows the overlay holds at the floor height, and the margin
   const first = await typeCounted(page, "p");
   expect(first.hits).toBe(50);
   expect(first.shown).toBeLessThanOrEqual(most);
