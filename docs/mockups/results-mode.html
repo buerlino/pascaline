@@ -1,0 +1,337 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Results mode, keys and room</title>
+<style>
+/* R129, from S25 (docs/research/r19-results-and-keys.md and docs/shifts/2026-11-05-sandra-resultskeys-report.md).
+   Nothing here is built and nothing loads from outside this file: system fonts, no network. The phones use the Pascaline
+   theme's colours (app/src/style.css, the dark and light blocks). Every phone is drawn 1:1 in CSS px; "Scale" only
+   shrinks the picture. A number on the page names the probe it came from, or says "drawn" (a design value for the
+   picture, not measured; R53b measures it in the app) or "derived" (arithmetic on measured numbers). */
+:root { --page: #f4f5f7; --ink: #1a1d22; --muted: #5b6575; --rule: #b9c0cc; --card: #ffffff; --ok: #1f6f54; --bad: #b3261e; --floor: #b05a00; color-scheme: light dark; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --page: #14161a; --ink: #e8ebef; --muted: #98a2b3; --rule: #3a4250; --card: #1d2026; --ok: #5fc9a0; --bad: #ff8e86; --floor: #f0a050; }
+}
+* { box-sizing: border-box; }
+body { margin: 0; padding: 16px; background: var(--page); color: var(--ink); font: 15px/1.5 system-ui, sans-serif; max-width: 1500px; margin-inline: auto; }
+h1 { font-size: 1.5rem; margin: 0 0 4px; }
+h2 { font-size: 1.2rem; margin: 36px 0 6px; padding-top: 8px; border-top: 1px solid var(--rule); }
+h3 { font-size: 1.02rem; margin: 0 0 4px; }
+p, li { max-width: 84ch; }
+.muted { color: var(--muted); }
+.bar { position: sticky; top: 0; z-index: 5; background: var(--page); padding: 8px 0; display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; border-bottom: 1px solid var(--rule); }
+.bar button { font: inherit; font-size: 13px; padding: 2px 10px; border-radius: 6px; border: 1px solid var(--rule); background: var(--card); color: var(--ink); cursor: pointer; }
+.bar button[aria-pressed="true"] { background: var(--ok); color: #fff; border-color: var(--ok); }
+.bar a { font-size: 13px; color: var(--ink); text-decoration: none; padding: 1px 6px; border-radius: 4px; background: var(--card); border: 1px solid var(--rule); }
+.bar .sep { width: 1px; align-self: stretch; background: var(--rule); }
+.cards { display: flex; flex-wrap: wrap; gap: 28px 32px; align-items: flex-start; }
+.card { flex: 0 1 auto; min-width: 0; max-width: 100%; }
+.card.k { flex-basis: 100%; }
+.pair { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-start; }
+.col { max-width: 100%; }
+.cap { font-size: 12.5px; margin: 4px 0 0; }
+.cap b { font-weight: 650; }
+.src { color: var(--muted); font-size: 12px; }
+.fail { color: var(--bad); font-weight: 650; }
+.pass { color: var(--ok); font-weight: 650; }
+.spec { font-size: 13px; margin: 2px 0 8px; max-width: 84ch; }
+.tablewrap { overflow-x: auto; max-width: 100%; }
+table { border-collapse: collapse; font-size: 13px; }
+th, td { border: 1px solid var(--rule); padding: 3px 8px; text-align: left; vertical-align: top; }
+th { background: var(--card); }
+td.n, th.n { text-align: right; white-space: nowrap; }
+.pick { border-left: 4px solid var(--ok); padding: 6px 12px; background: var(--card); max-width: 100ch; }
+.key-l { display: flex; flex-wrap: wrap; gap: 4px 18px; font-size: 13px; color: var(--muted); }
+body[data-show="dark"] .phone.light, body[data-show="light"] .phone.dark { display: none; }
+body[data-show="dark"] .col.light, body[data-show="light"] .col.dark { display: none; }
+.zoomer { zoom: var(--zoom, 1); }
+body[data-zoom="60"] { --zoom: .6; }
+body[data-zoom="80"] { --zoom: .8; }
+
+/* ---- the phone, 1:1 (the Pascaline theme: app/src/style.css) ---- */
+.phone { --w: 412px; --h: 839px; width: var(--w); height: var(--h); position: relative; overflow: hidden; outline: 1px solid var(--rule); background: var(--bg); color: var(--text); font: 14px/1.25 system-ui, sans-serif; display: flex; flex-direction: column; flex: none; }
+.phone.dark { --bg: #0b1020; --panel: #121a2e; --line: #2d3a5a; --key-num: #1f2a45; --key-op: #18233d; --key-fn: #172443; --key-ctl: #2a2433; --key-nav: #141d33; --key-enter: #2346d8; --text: #eef1f8; --text-dead: #76819c; --muted: #a3adc6; --shift: #ffc233; --alpha: #86c5ff; --error: #ff8e86; --chip-bg: #1d3070; --approx: #86c5ff; --warn: #ffc233; --pick: #1b3246; --focus: #ffc233; --key-pfx: #203374; color-scheme: dark; }
+.phone.light { --bg: #f5f6fa; --panel: #e7eaf3; --line: #b7bfd4; --key-num: #ffffff; --key-op: #e6eaf5; --key-fn: #e1e8fb; --key-ctl: #f8ecd2; --key-nav: #eceef3; --key-enter: #0025b5; --text: #0f172a; --text-dead: #6b7489; --muted: #4a556e; --shift: #8a5300; --alpha: #0b4fc4; --error: #a8241c; --chip-bg: #d8e1fb; --approx: #0b4fc4; --warn: #854800; --pick: #bbcff1; --focus: #0025b5; --key-pfx: #d6dcf3; color-scheme: light; }
+.phone .status { flex: none; height: 28px; display: flex; align-items: center; gap: 8px; padding: 0 8px; border-bottom: 1px solid var(--line); font-size: 14px; white-space: nowrap; background: var(--bg); }
+.status .place { display: flex; align-items: center; gap: 2px; }
+.status .tile { width: 30px; height: 22px; border-radius: 6px; background: var(--chip-bg); display: flex; align-items: center; justify-content: center; }
+.status .name { font-weight: 700; margin-left: 4px; }
+.status .caret { color: var(--muted); font-size: 12px; }
+.status .grow { flex: 1 1 0; }
+.status .chip { padding: 4px 6px; color: var(--muted); }
+.status .pill { display: flex; border: 1px solid var(--line); border-radius: 6px; color: var(--muted); }
+.status .pill span { padding: 3px 6px; }
+.status .pill span + span { padding-left: 0; }
+.status .menu { width: 36px; margin-right: -8px; text-align: center; }
+/* the viewport (.screen): the history and the entry line */
+.screen { flex: none; display: flex; flex-direction: column; background: var(--bg); position: relative; }
+.hist { flex: 1 1 0; min-height: 0; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; padding: 0 12px; position: relative; }
+.item { flex: none; margin-top: 10px; position: relative; }
+.item .in { color: var(--muted); font-size: 14px; display: flex; gap: 8px; }
+.item .in i { font-style: normal; color: var(--text-dead); font-size: 10px; min-width: 18px; }
+.item .out { text-align: right; font-size: 26px; line-height: 34px; letter-spacing: -.2px; white-space: nowrap; }
+.item .out em { font-style: normal; color: var(--approx); font-size: 18px; margin-right: 6px; }
+.item .out small { font-size: 14px; color: var(--muted); margin-left: 6px; }
+.entry { flex: none; height: 79.6px; padding: 0 12px; display: flex; align-items: center; font-size: 28px; border-top: 1px solid var(--line); position: relative; }
+.entry .caret-bar { width: 2px; height: 32px; background: var(--shift); }
+.band { position: absolute; left: 0; right: 0; height: 52px; border-top: 1px dashed var(--shift); border-bottom: 1px dashed var(--shift); background: repeating-linear-gradient(135deg, transparent 0 7px, color-mix(in srgb, var(--shift) 22%, transparent) 7px 8px); color: var(--shift); font-size: 11px; display: flex; align-items: center; justify-content: center; text-align: center; padding: 0 8px; z-index: 2; }
+.floor { position: absolute; left: 0; right: 0; border-top: 2px dashed var(--floor); z-index: 3; pointer-events: none; }
+.floor span { position: absolute; right: 4px; top: 2px; background: var(--floor); color: #fff; font-size: 10px; padding: 0 5px; border-radius: 3px; }
+.light .floor span { color: #fff; }
+.vpedge { position: absolute; left: 0; right: 0; border-top: 1px solid var(--muted); z-index: 3; pointer-events: none; opacity: .0; }
+/* the keypad */
+.kp { flex: none; background: var(--panel); border-top: 1px solid var(--line); display: flex; flex-direction: column; }
+.kp .r { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); }
+.kp .r.five { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.kk { position: relative; border-radius: 8px; display: grid; place-items: center; font-size: 13px; line-height: 1; min-width: 0; background: var(--key-num); }
+.kk.nav { background: var(--key-nav); }
+.kk.fn { background: var(--key-fn); }
+.kk.ctl { background: var(--key-ctl); }
+.kk.op { background: var(--key-op); box-shadow: inset 0 0 0 1px var(--line); }
+.kk.enter { background: var(--key-enter); }
+.kk.user { background: transparent; border: 1px dashed var(--shift); color: var(--shift); font-size: 12px; }
+.kk .s { position: absolute; top: 3px; left: 5px; font-size: 10px; color: var(--shift); white-space: nowrap; }
+.kk.lab .p { margin-top: 8px; }
+.kk.moved { box-shadow: 0 0 0 2px var(--alpha); }
+.kk.free { border: 1px dashed var(--line); background: transparent; }
+.kk.free .s { color: var(--text-dead); }
+.kk.void { border: 1px dashed var(--line); background: transparent; color: var(--muted); font-size: 11px; }
+.disc { grid-column: 3 / span 2; grid-row: 1 / span 3; position: relative; display: grid; place-items: center; }
+.disc .ring { height: 100%; aspect-ratio: 1; border-radius: 50%; background: var(--key-ctl); position: relative; color: var(--muted); }
+.disc i { position: absolute; font-style: normal; font-size: 14px; }
+.disc .n { top: 6%; left: 50%; transform: translateX(-50%); } .disc .d { bottom: 6%; left: 50%; transform: translateX(-50%); }
+.disc .w { left: 10%; top: 50%; transform: translateY(-50%); } .disc .e { right: 10%; top: 50%; transform: translateY(-50%); }
+.disc b { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 28%; aspect-ratio: 1; border-radius: 50%; border: 1px dashed var(--line); }
+.cluster { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); }
+.strip { flex: none; display: grid; place-items: center; font-size: 12px; color: var(--muted); text-align: center; border-bottom: 1px solid var(--line); }
+.ghostrow { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); }
+.ghostrow div { border: 1px dashed var(--line); border-radius: 8px; display: grid; place-items: center; font-size: 11px; color: var(--muted); }
+/* results mode: W and W2 */
+.slice { flex: none; height: 44px; background: var(--panel); border-top: 1px solid var(--line); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; color: var(--muted); font-size: 12px; }
+.slice::before { content: ""; width: 36px; height: 4px; border-radius: 2px; background: var(--line); }
+.rowbar { flex: none; height: 52px; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 4px; padding: 6px 8px; border-top: 1px solid var(--line); background: var(--bg); }
+.rowbar div { border-radius: 8px; background: var(--key-nav); display: grid; place-items: center; font-size: 12.5px; border: 1px solid var(--line); }
+.rowbar div.off { color: var(--text-dead); border-style: dashed; }
+.step { margin-top: 10px; border-radius: 8px; padding: 0 8px; margin-inline: -8px; position: relative; flex: none; }
+.step.picked { background: var(--pick); box-shadow: inset 3px 0 0 var(--focus); }
+.step .tag { height: 16px; line-height: 16px; font-size: 13px; color: var(--text); font-weight: 700; }
+.step .tag u { text-decoration: none; color: var(--muted); font-weight: 400; }
+.step .in { color: var(--muted); font-size: 14px; height: 24.8px; line-height: 24.8px; }
+.step .out { text-align: right; font-size: 26px; line-height: 34px; white-space: nowrap; height: 34px; }
+.step .out em { font-style: normal; color: var(--approx); font-size: 18px; margin-right: 6px; }
+.step .out small { font-size: 12.5px; color: var(--muted); margin-right: 10px; vertical-align: 3px; }
+.step .out .w { color: var(--warn); font-size: 18px; margin-right: 6px; }
+.step .why { height: 16px; line-height: 16px; font-size: 12px; color: var(--warn); }
+.step.line1 { height: 34px; display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+.step.line1 .nm { font-size: 17px; font-weight: 600; }
+.step.line1 .nm em { font-style: normal; color: var(--approx); margin: 0 4px; font-weight: 400; }
+.step.line1 .fx { color: var(--muted); font-size: 13px; margin-left: auto; }
+.step.line1 small { color: var(--muted); font-size: 12px; }
+.step.line1 .w { color: var(--warn); }
+.step.why1 { height: 16px; line-height: 16px; font-size: 12px; color: var(--warn); margin-top: 0; padding-left: 8px; }
+</style>
+</head>
+<body data-show="dark" data-zoom="100">
+<h1>Results mode, the six keys and the viewport room</h1>
+<p class="muted">2026-11-05, package R129, built from S25 (<a href="../research/r19-results-and-keys.md">r19</a>, <a href="../shifts/2026-11-05-sandra-resultskeys-report.md">its report</a>). Three things to pick, one per section: <strong>the keys</strong> (section 1), <strong>what results mode shows</strong> (section 2) and <strong>the room</strong> (section 3). S25's recommendation comes first in each. Nothing here is built. Keys move once (decisions.md, 2026-11-02 point 5), so the keys pick is final.</p>
+<p class="muted">Every phone is drawn 1:1 in CSS px, at 412 × 839 (the Pixel 7 profile of <code>results-geometry.mjs</code>) and 360 × 740 (the narrow size of the e2e tests). Where a number is printed it names its probe: <code>geometry</code> = <code>node tools/probes/results-geometry.mjs --options</code>, <code>keys</code> = <code>node tools/probes/results-keys.mjs</code>. <em>Drawn</em> = a design value for the picture that nobody measured (R53b measures it in the app). <em>Derived</em> = arithmetic on measured numbers.</p>
+
+<div class="bar" id="bar">
+  <button type="button" data-show="dark" aria-pressed="true">Dark</button>
+  <button type="button" data-show="light" aria-pressed="false">Light</button>
+  <button type="button" data-show="both" aria-pressed="false">Both</button>
+  <span class="sep"></span>
+  <span class="muted" style="font-size:13px">Scale:</span>
+  <button type="button" data-zoom="100" aria-pressed="true">100 %</button>
+  <button type="button" data-zoom="80" aria-pressed="false">80 %</button>
+  <button type="button" data-zoom="60" aria-pressed="false">60 %</button>
+  <span class="sep"></span>
+  <a href="#keys">1 Keys</a><a href="#results">2 Results mode</a><a href="#room">3 Room</a><a href="#pick">The pick</a>
+</div>
+
+<h2 id="keys">1 · The six top-right keys</h2>
+<p>The cluster's right wing is six keys in pairs level with the round pad. The three layouts are r19 part 2's table. The tap legend is the large one, the Shift legend is small at the top left (the keypad's rule, <code>spec/keyboard.yaml</code>). A key whose face changes from today has a blue ring. Under each: the presses per action (<code>keys</code>; a Shift layer is Shift + key = 2, or 1 by a flick up) and what moves. The ghost row under the cluster is maths row 3. The ten benchmark tasks use none of the six keys, so no layout changes a task's count (<code>keys</code>, r19 part 2).</p>
+<div class="key-l"><span>dashed amber = a free key (U1…U6)</span><span>small amber = Shift layer</span><span>blue ring = face changed from K0</span><span>dashed grey = a Shift cell left free</span></div>
+<div class="cards" id="keycards"></div>
+
+<h2 id="results">2 · Results mode: what the collapsed viewport shows</h2>
+<p>The keypad is collapsed to the 44 px slice (S9, <code>docs/archive/r13-results-mode.md</code> 1.1): the viewport is <strong>767 px</strong> at 412 × 839 and <strong>668 px</strong> at 360 × 740 (the entry line, 79.6 px, stays; history 687.4 px, 635.4 picked, <code>geometry</code> and r13 1.1). The third row is picked and shows <strong>the line of six</strong> (Insert, Recall, Copy, Store ▶, Delete, Plot; 52 px, one line above the entry line, r13 1.3). Plot is dimmed because the row is not a CAS row (R53 item 7). The five steps are an RC filter; the values and σ are made up for the picture. Row heights of a bare row (64.8 px, pitch 74.8) are measured (r19 part 1); the name tag (16 px), the reason line (16 px) and W2's one-line row (34 px) are <em>drawn</em>, not measured.</p>
+<p><strong>W</strong> (recommended): today's rows plus a name tag over the input of a stored row (<code>v = 20 m/s</code> over <code>72 km/h → m/s</code>), σ muted beside the result, ⚠ with its reason line. <strong>W2</strong>: one line per step, <code>name = result unit</code>, the formula muted at the right; it loses the 2D result (a fraction or a root is not drawn stacked). A step's name here is its stored name, so what W shows beyond today is the name and, with the named-values change (r19 part 1, R53c), the unit and σ the name keeps.</p>
+<div class="cards" id="rescards"></div>
+
+<h2 id="room">3 · The viewport room</h2>
+<p>The keypad takes 514 px of 839 today: padding 8 + three cluster rows of 36 + seven maths rows of 48 + nine gaps of 6 + padding 8 (<code>geometry</code>), and the viewport (history + the 79.6 px entry line) is what is left of the window after the 28 px status line. The dashed amber line is the <strong>0.35 floor</strong> (28 + 0.35 × window): the viewport's lower edge must reach it. The hatched band is the 52 px line of a picked row (<code>geometry</code>): in R1, R2 and today it is taken from the history; with R3 it lies over the empty entry line, so the history does not move. The keypad is drawn at its rows and gaps, unlabelled; the splits of R1 (rows 42 and 32) and R2 (gaps and padding 4) are the options' CSS in <code>geometry --options</code>, and the sum is its keypad height. History rows are 1÷3 (pitch 86.8 px, from 217 px = 2.50 rows).</p>
+<div class="key-l"><span>R1 = R82's short rows (key rows 42, cluster rows 32), now under 760 px tall instead of 700</span><span>R2 = keypad gaps 6 → 4, padding 8 → 4</span><span>R3 = the picked row's buttons in the empty entry line's slot</span></div>
+<div class="cards" id="roomcards"></div>
+<h3 style="margin-top:22px">The numbers in one table</h3>
+<div class="tablewrap"><table id="roomtab"></table></div>
+
+<h2 id="pick">The pick</h2>
+<p class="pick"><strong>Needs the user (R129).</strong> Pick one per section; S25's recommendation first. <strong>Keys:</strong> K1 (recommended: Undo | Redo and Copy | Paste each one tap, ⇤ | ⇥ on Shift) · K0 (today) · K2 (⇤ ⇥ off the keys, four free Shift cells, no jumps on a long line). <strong>Results mode:</strong> W (recommended: today's rows plus the stored name, which keeps its unit and σ) · W2 (one line per step). <strong>Room:</strong> R2 + R3 at every size with R1 below 760 px tall (recommended) · R2 alone · R1 + R2 · today. The keys pick is final (keys move once); K0 beats K1 only if ⇤ ⇥ taps outnumber Redo + Paste, and R127's per-key counts on the owner's phone (Settings › Counters) are not read yet.</p>
+
+<script>
+/* ---------- helpers ---------- */
+const STATUS = '<span class="place"><span class="tile"><svg width="14" height="13" viewBox="0 0 14 13" aria-hidden="true"><path d="M1.5 6.5 7 1.5l5.5 5M3 5.5V11.5h8V5.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></span><span class="name">Home</span><span class="caret">▾</span></span><span class="grow"></span><span class="chip">RAD</span><span class="pill"><span>STD</span><span>12</span></span><span class="menu">☰</span>';
+const status = () => `<div class="status">${STATUS}</div>`;
+const SIZES = [{ w: 412, h: 839, name: '412 × 839' }, { w: 360, h: 740, name: '360 × 740' }];
+const THEMES = ['dark', 'light'];
+const fmt = (x) => (Math.round(x * 10) / 10).toString();
+
+/* ---------- 1 · keys ---------- */
+// [tap, shift] per cell; rows 0..2, columns left, right (the wing). K0: spec/keyboard.yaml:88-111; K1/K2: r19 part 2.
+const K = {
+  K0: { title: 'K0 · today', tag: 'R3, spec/keyboard.yaml', cells: [[['View', 'Help'], ['Esc', 'Clear']], [['Undo', 'Redo'], ['Copy', 'Paste']], [['⇤', '⇤□'], ['⇥', '□⇥']]],
+    note: 'The line ends are one tap; the partners (Redo, Paste) and the box ends are behind Shift. Nothing moves.',
+    press: { redo: '2 (flick 1)', paste: '2 (flick 1)', ends: '1', box: '2 (flick 1)', sum: 18, free: 0 },
+    moves: 'Nothing. The reference layout the owner has used for three weeks.' },
+  K1: { title: 'K1 · partners on one layer (recommended)', tag: 'S25', cells: [[['View', 'Help'], ['Esc', 'Clear']], [['Undo', '⇤'], ['Redo', '⇥']], [['Copy', '⇤□'], ['Paste', '□⇥']]],
+    note: 'Every row reads as one pair on each layer; Copy | Paste is also the G2’s pairing. View keeps results mode and Shift + View keeps Help.',
+    press: { redo: '1', paste: '1', ends: '2 (flick 1)', box: '2 (flick 1)', sum: 18, free: 0 },
+    moves: 'Four keys change their face: Undo (Shift: Redo → ⇤), the old Copy cell (now Redo, Shift ⇥), the old ⇤ cell (now Copy, Shift ⇤□) and the old ⇥ cell (now Paste, Shift □⇥). Redo and Paste go from 2 presses to 1; ⇤ and ⇥ from 1 to 2. In <code>spec/keyboard.yaml</code>: <code>redo</code> and <code>paste</code> become keys, <code>lstart</code> and <code>lend</code> go (R53a).' },
+  K2: { title: 'K2 · partners on one layer, ⇤ ⇥ off the keys', tag: 'S25', cells: [[['View', 'Help'], ['Esc', 'Clear']], [['Undo', null], ['Redo', null]], [['Copy', null], ['Paste', null]]],
+    note: 'Four Shift cells are free. A tap at the line’s end replaces ⇤ ⇥ only while the line fits the field; on a long line that scrolls sideways there is no way to the ends (r19 part 2, checked with <code>keys --ends</code>).',
+    press: { redo: '1', paste: '1', ends: 'a tap 1; none on a long line', box: 'a tap 1', sum: 14, free: 4 },
+    moves: 'The same four keys change their face as in K1; ⇤ ⇥ ⇤□ □⇥ are gone from the keys (P12 point 8’s removal test brought the jumps back once).' },
+};
+const same = (a, b) => a[0] === b[0] && a[1] === b[1];
+function kcell(c, base, extra = '') {
+  if (c[0] === null) return '';
+  const moved = base && !same(c, base) ? ' moved' : '';
+  const free = c[1] === null ? '<span class="s">–</span>' : `<span class="s">${c[1]}</span>`;
+  return `<div class="kk nav lab${moved}${c[1] === null ? ' free' : ''}">${free}<span class="p">${c[0]}</span></div>`;
+}
+function clusterPhone(theme, w, k, base) {
+  const disc = '<div class="disc"><div class="ring"><i class="n">▲</i><i class="w">◀</i><i class="e">▶</i><i class="d">▼</i><b></b></div></div>';
+  // the grid places the wing in columns 5-6 and the pad in 3-4 over the three rows
+  const cl = `<div class="cluster" style="padding:8px;gap:6px;grid-template-rows:repeat(3,36px)">`
+    + `<div class="kk user" style="grid-area:1/1">U1</div><div class="kk user" style="grid-area:1/2">U2</div>`
+    + `<div class="kk user" style="grid-area:2/1">U3</div><div class="kk user" style="grid-area:2/2">U4</div>`
+    + `<div class="kk user" style="grid-area:3/1">U5</div><div class="kk user" style="grid-area:3/2">U6</div>${disc}`
+    + [0, 1, 2].map((r) => [0, 1].map((c) => kcell(k.cells[r][c], base ? base.cells[r][c] : null).replace('class="kk', `style="grid-area:${r + 1}/${5 + c}" class="kk`)).join('')).join('')
+    + '</div>';
+  const ghost = '<div class="ghostrow" style="padding:0 8px 8px;gap:6px;height:56px">' + ['Vars', 'Math', 'Tmpl', 'x', 'a b/c', '⌫'].map((t) => `<div style="height:48px">${t}</div>`).join('') + '</div>';
+  return `<div class="phone ${theme}" style="--w:${w}px;--h:auto;height:auto" role="img" aria-label="${k.title}, ${w} px wide">${status()}`
+    + `<div class="strip" style="height:40px">history and entry line</div><div class="kp" style="border-top:0">${cl}${ghost}</div></div>`;
+}
+document.getElementById('keycards').innerHTML = Object.entries(K).map(([id, k]) => {
+  const base = id === 'K0' ? null : K.K0;
+  const p = k.press;
+  const phones = (theme) => `<div class="col ${theme}"><div class="zoomer"><div class="pair">${[412, 360].map((w) => clusterPhone(theme, w, k, base)).join('')}</div></div></div>`;
+  return `<div class="card k" id="${id}"><h3>${k.title} <span class="muted">(${k.tag})</span></h3><p class="spec">${k.note}</p>`
+    + `${THEMES.map(phones).join('')}`
+    + `<div class="tablewrap" style="margin-top:8px"><table><tr><th>Presses (<code>keys</code>)</th><th class="n">Redo</th><th class="n">Paste</th><th class="n">⇤ ⇥</th><th class="n">⇤□ □⇥</th><th class="n">Sum of the twelve actions</th><th class="n">Free Shift cells</th></tr>`
+    + `<tr><td>${id}</td><td class="n">${p.redo}</td><td class="n">${p.paste}</td><td class="n">${p.ends}</td><td class="n">${p.box}</td><td class="n">${p.sum}</td><td class="n">${p.free}</td></tr></table></div>`
+    + `<p class="cap"><b>What moves:</b> ${k.moves}</p></div>`;
+}).join('');
+
+/* ---------- 2 · results mode ---------- */
+const RC = [
+  { name: 'R', input: '4.7 kΩ', res: '4.7 kΩ', mark: '=', sigma: 'σ 0.24 kΩ' },
+  { name: 'C', input: '100 nF', res: '100 nF', mark: '=', sigma: 'σ 10 nF' },
+  { name: 'τ', input: 'R·C', res: '470 µs', mark: '=', sigma: 'σ 53 µs' },
+  { name: 'f', input: '1 ÷ (2π·τ)', res: '338.6 Hz', mark: '≈', sigma: 'σ 38 Hz' },
+  { name: 'H', input: '1 ÷ √(1 + (1 kHz ÷ f)²)', res: '0.32', mark: '≈', warn: 'σ of f is 38 Hz, so two digits hold' },
+];
+const PICK = 2;
+const VP = { 412: 767, 360: 668 };
+function resPhone(theme, s, kind) {
+  const vp = VP[s.w], hist = vp - 79.6;
+  const rows = RC.map((r, i) => {
+    const pk = i === PICK ? ' picked' : '';
+    if (kind === 'W') {
+      return `<div class="step${pk}"><div class="tag">${r.name} <u>= ${r.res}</u></div><div class="in">${r.input}</div>`
+        + `<div class="out">${r.sigma ? `<small>${r.sigma}</small>` : ''}${r.warn ? '<span class="w">⚠</span>' : ''}<em>${r.mark}</em>${r.res}</div>${r.warn ? `<div class="why">⚠ ${r.warn}</div>` : ''}</div>`;
+    }
+    return `<div class="step line1${pk}"><span class="nm">${r.name}<em>${r.mark === '≈' ? '≈' : '='}</em>${r.res}</span>${r.warn ? '<span class="w">⚠</span>' : ''}${r.sigma ? `<small>${r.sigma}</small>` : ''}<span class="fx">${r.input}</span></div>`
+      + (r.warn ? `<div class="step why1">⚠ ${r.warn}</div>` : '');
+  }).join('');
+  const bar = '<div class="rowbar">' + ['Insert', 'Recall', 'Copy', 'Store ▶', 'Delete'].map((t) => `<div>${t}</div>`).join('') + '<div class="off">Plot</div></div>';
+  return `<div class="phone ${theme}" style="--w:${s.w}px;--h:${s.h}px" role="img" aria-label="${kind}, collapsed, ${s.name}">${status()}`
+    + `<div class="screen" style="height:${vp}px"><div class="hist" style="padding-left:20px;padding-right:20px">${rows}</div>${bar}<div class="entry"><span class="caret-bar"></span></div></div>`
+    + `<div class="slice">Keys</div></div>`;
+}
+const FITS = (kind) => kind === 'W'
+  ? 'Rows: bare row 64.8 px, pitch 74.8 (r19 part 1, measured); the name tag adds a 16 px line (drawn).'
+  : 'Rows: one line of 34 px + 10 px gap = pitch 44 (drawn), against today’s 74.8: about 1.7 times the rows, not yet measured (r19 “to verify”, R53b).';
+document.getElementById('rescards').innerHTML = [['W', 'W · today’s rows plus the stored name (recommended)'], ['W2', 'W2 · one line per step']].map(([kind, title]) => {
+  const col = (theme) => `<div class="col ${theme}"><div class="zoomer"><div class="pair">${SIZES.map((s) => `<div>${resPhone(theme, s, kind)}<p class="cap"><b>${s.name}: viewport ${VP[s.w]} px</b> <span class="src">(${s.w === 412 ? 'geometry; r13 1.1' : 'derived: 740 − 28 − 44'}); history ${fmt(VP[s.w] - 79.6)} px, ${fmt(VP[s.w] - 79.6 - 52)} px with the line of six</span></p></div>`).join('')}</div></div></div>`;
+  return `<div class="card"><h3>${title}</h3><p class="spec">${FITS(kind)}</p>${THEMES.map(col).join('')}</div>`;
+}).join('');
+
+/* ---------- 3 · room ---------- */
+// geometry --options (r19 part 3): viewport, share, history unpicked (picked); R3 = picked equals unpicked.
+const ROOM = [
+  { id: 'today', title: 'Today', kp: { pad: 8, gap: 6, cl: 36, kr: 48 }, band: 'hist', m: { 412: [297, 0.354, 217, 165], 360: [198, 0.268, 118, 66] } },
+  { id: 'R1', title: 'R1 · short rows', kp: { pad: 8, gap: 6, cl: 32, kr: 42 }, band: 'hist', m: { 412: [351, 0.418, 271, 219], 360: [252, 0.341, 172, 120] } },
+  { id: 'R2', title: 'R2 · tight gaps', kp: { pad: 4, gap: 4, cl: 36, kr: 48 }, band: 'hist', m: { 412: [323, 0.385, 243, 191], 360: [224, 0.303, 144, 92] } },
+  { id: 'R1+R2', title: 'R1 + R2', kp: { pad: 4, gap: 4, cl: 32, kr: 42 }, band: 'hist', m: { 412: [377, 0.449, 297, 245], 360: [278, 0.376, 198, 146] } },
+  { id: 'R3', title: 'R3 · the buttons in the entry line’s slot (keypad as today)', kp: { pad: 8, gap: 6, cl: 36, kr: 48 }, band: 'entry', m: { 412: [297, 0.354, 217, 217], 360: [198, 0.268, 118, 118] }, r3: true },
+  { id: 'rec', title: 'Recommended: R2 + R3, with R1 below 760 px tall', kp: null, band: 'entry', rec: true,
+    m: { 412: [323, 0.385, 243, 243], 360: [278, 0.376, 198, 198] } },
+];
+function kpFor(o, s) {
+  if (o.rec) return s.h < 760 ? { pad: 4, gap: 4, cl: 32, kr: 42 } : { pad: 4, gap: 4, cl: 36, kr: 48 };
+  return o.kp;
+}
+function kpHeight(k) { return 2 * k.pad + 3 * k.cl + 7 * k.kr + 9 * k.gap; }
+function keypadHtml(k, w) {
+  const row = (cls, h, cells) => `<div class="r ${cls.five ? 'five' : ''}" style="height:${h}px;gap:${k.gap}px">${cells}</div>`;
+  const nav = (n, cl = 'nav') => Array.from({ length: n }, () => `<div class="kk ${cl}"></div>`).join('');
+  const cluster = [0, 1, 2].map(() => row({}, k.cl, '<div class="kk user"></div><div class="kk user"></div><div class="kk ctl"></div><div class="kk ctl"></div><div class="kk nav"></div><div class="kk nav"></div>'));
+  const fn = [0, 1, 2].map(() => row({}, k.kr, nav(6, 'fn')));
+  const num = [0, 1, 2, 3].map((i) => row({ five: true }, k.kr, nav(4, 'num') + `<div class="kk ${i === 3 ? 'enter' : 'op'}"></div>`));
+  return `<div class="kp" style="padding:${k.pad}px;gap:${k.gap}px;height:${kpHeight(k)}px;border-top:0">${[...cluster, ...fn, ...num].join('')}</div>`;
+}
+function roomPhone(theme, s, o) {
+  const [vp] = o.m[s.w];
+  const k = kpFor(o, s);
+  const tot = 28 + vp + kpHeight(k);
+  const hist = vp - 79.6;
+  const items = Array.from({ length: 14 }, (_, i) => 14 - i).map((n) => `<div class="item" style="height:76.8px"><div class="in"><i>#${n}</i>1÷3</div><div class="out"><em>≈</em>0.333333333333</div></div>`).join('');
+  const band = o.band === 'hist'
+    ? `<div class="band" style="bottom:79.6px">picked: 52 px taken from the history</div>`
+    : `<div class="band" style="bottom:13.8px">R3: the line lies over the entry line</div>`;
+  const floorY = 28 + 0.35 * s.h;
+  return `<div class="phone ${theme}" style="--w:${s.w}px;--h:${s.h}px" role="img" aria-label="${o.title}, ${s.name}">${status()}`
+    + `<div class="screen" style="height:${vp}px"><div class="hist">${items}</div>${band}<div class="entry"><span class="caret-bar"></span></div></div>`
+    + keypadHtml(k, s.w) + `<div class="floor" style="top:${floorY}px"><span>0.35 floor</span></div></div>`;
+}
+const roomCap = (o, s) => {
+  const [vp, sh, h, hp] = o.m[s.w];
+  const k = kpFor(o, s);
+  const pass = sh >= 0.35 - 1e-9;
+  const src = o.rec ? 'derived from the R2 and R1 + R2 rows' : o.r3 ? 'geometry (viewport as today)' : 'geometry --options';
+  return `<p class="cap"><b>${s.name}</b>: viewport <b>${vp} px</b>, share <b class="${pass ? 'pass' : 'fail'}">${sh.toFixed(3)}${pass ? '' : ' (under the floor)'}</b><br>history ${h} px unpicked, ${hp} px picked<br><span class="src">keypad ${kpHeight(k)} px = ${2 * k.pad} + 3 × ${k.cl} + 7 × ${k.kr} + 9 × ${k.gap}; ${src}</span></p>`;
+};
+document.getElementById('roomcards').innerHTML = ROOM.map((o) => {
+  const col = (theme) => `<div class="col ${theme}"><div class="zoomer"><div class="pair">${SIZES.map((s) => `<div>${roomPhone(theme, s, o)}${roomCap(o, s)}</div>`).join('')}</div></div></div>`;
+  return `<div class="card" id="room-${o.id.replace(/\W/g, '')}"><h3>${o.title}</h3>${THEMES.map(col).join('')}</div>`;
+}).join('');
+const rt = ['<tr><th>Option</th><th class="n">412 × 839: viewport</th><th class="n">share</th><th class="n">history (picked)</th><th class="n">360 × 740: viewport</th><th class="n">share</th><th class="n">history (picked)</th></tr>'];
+for (const o of ROOM) {
+  const c = (s) => { const [vp, sh, h, hp] = o.m[s]; return `<td class="n">${vp}</td><td class="n ${sh >= 0.35 ? 'pass' : 'fail'}">${sh.toFixed(3)}</td><td class="n">${h} (${hp})</td>`; };
+  rt.push(`<tr><td>${o.title}</td>${c(412)}${c(360)}</tr>`);
+}
+rt.push('<tr><td colspan="7" class="src">Source: <code>geometry --options</code> and r19 part 3. R3’s history is derived: the picked line leaves the history (today’s picked value + 52). The recommended row is derived from R2 (412 × 839) and R1 + R2 (360 × 740). Floor: share 0.35 (<code>app/test/status.spec.ts:15</code>, run at 412 × 839 only).</td></tr>');
+document.getElementById('roomtab').innerHTML = rt.join('');
+
+/* ---------- the Dark / Light / Both bar ---------- */
+const bar = document.getElementById('bar');
+function show(mode) {
+  document.body.dataset.show = mode;
+  bar.querySelectorAll('button[data-show]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.show === mode)));
+  try { localStorage.setItem('results-theme', mode); } catch { /* private window */ }
+}
+function zoom(z) {
+  document.body.dataset.zoom = z;
+  bar.querySelectorAll('button[data-zoom]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.zoom === z)));
+  try { localStorage.setItem('results-zoom', z); } catch { /* private window */ }
+}
+bar.addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; if (b.dataset.show) show(b.dataset.show); if (b.dataset.zoom) zoom(b.dataset.zoom); });
+try { const m = localStorage.getItem('results-theme'); if (m) show(m); const z = localStorage.getItem('results-zoom'); if (z) zoom(z); } catch { /* no storage */ }
+</script>
+</body>
+</html>
