@@ -249,10 +249,11 @@ describe.skipIf(!giacAvailable())("G38: the exact path decides at P and at P + 2
   });
 
   // G57 (night check 2026-10-19 2.8): a decision the precisions do not agree on, or a tie Giac cannot prove, is refused:
-  // any number shown would be a guess. Both inputs sit closer to the cut than P + 40 digits can see.
+  // any number shown would be a guess. The input sits closer to the cut than P + 40 digits can see.
   const UNDECIDED = "undecided: the value sits on a cut Giac cannot decide";
-  it("an unproven tie is refused: floor(…+1/2) is exactly 1 and floor(…+1/2-10^-100) exactly 0 (source: derived, cos(pi/7)-cos(2*pi/7)+cos(3*pi/7) = 1/2; Giac gave 0 for both)", () => {
-    for (const input of ["floor(cos(pi/7)-cos(2*pi/7)+cos(3*pi/7)+1/2-10^-100)", "floor(cos(pi/7)-cos(2*pi/7)+cos(3*pi/7)+1/2)"]) {
+  it("an unproven tie is refused: floor(…+1/2) is exactly 1 (source: derived, cos(pi/7)-cos(2*pi/7)+cos(3*pi/7) = 1/2; Giac gave 0); with -10^-100 it is decided 0 at G141's raised P (G156)", () => {
+    expect(host.home("floor(cos(pi/7)-cos(2*pi/7)+cos(3*pi/7)+1/2-10^-100)", defaultHomeSettings).result).toMatchObject({ ok: true, display: "0" });
+    for (const input of ["floor(cos(pi/7)-cos(2*pi/7)+cos(3*pi/7)+1/2)"]) {
       const r = host.home(input, defaultHomeSettings).result;
       expect(r, input).toMatchObject({ ok: false, error: "undecided", display: UNDECIDED });
       const c = host.cas(input, defaultCasSettings).result;
@@ -268,9 +269,15 @@ describe.skipIf(!giacAvailable())("G38: the exact path decides at P and at P + 2
     expect(host.cas("cu57", defaultCasSettings).result.text).toBe("cu57");
   });
 
-  it("P + 20 and P + 40 disagree: floor(sin(10^100)*10^12) is refused (source: oracle, mpmath at 300 digits: -372376123662)", () => {
-    expect(host.home("floor(sin(10^100)*10^12)", defaultHomeSettings).result).toMatchObject({ ok: false, error: "undecided" });
-    expect(host.cas("floor(sin(10^100)*10^12)", defaultCasSettings).result).toMatchObject({ ok: false, error: "undecided" });
+  // G156: the typed 10^100 raises the decision runs (G141's start), which then agree; a stored one is in no typed literal
+  // and floor's P text is a short integer, so P + 20 and P + 40 stay at 60 and 80 digits and disagree.
+  it("P + 20 and P + 40 disagree: floor(sin(w)*10^12) with w:=10^100 stored is refused; typed, it is decided (source: oracle, mpmath at 300 digits: -372376123662)", () => {
+    host.home("hw156:=10^100", defaultHomeSettings);
+    expect(host.home("floor(sin(hw156)*10^12)", defaultHomeSettings).result).toMatchObject({ ok: false, error: "undecided" });
+    expect(host.cas("floor(sin(hw156)*10^12)", defaultCasSettings).result).toMatchObject({ ok: false, error: "undecided" });
+    host.home("purge(hw156)", defaultHomeSettings);
+    expect(host.home("floor(sin(10^100)*10^12)", defaultHomeSettings).result).toMatchObject({ ok: true, display: "-372376123662" });
+    expect(host.cas("floor(sin(10^100)*10^12)", defaultCasSettings).result).toMatchObject({ ok: true, text: "-372376123662" });
   });
 
   // G103f1 (third audit): cutHit built its powers of ten from the decimal exponent with no bound. floor(exp(10^8)) made

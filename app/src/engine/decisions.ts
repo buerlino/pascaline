@@ -2,7 +2,8 @@
 // G38 (docs/04 2.4 rule 2): the decisions Giac makes inside an exact evaluation at `Digits` (a sign, a place between two
 // integers, a branch), and their second run at P + 20 and P + 40. Split out of numeric.ts (G71). Synchronous, UI-free;
 // only erasable TypeScript syntax.
-import { DOUBLE_DIGITS, hasFloat, namePrint, numbersAt, shapeOfValue, size, valuePrecision, withDigits, type ElementFacts, type Giac, type Shape } from "./numeric.ts";
+import { literalStart } from "./literalPrec.ts";
+import { DOUBLE_DIGITS, hasFloat, MAX_EVAL_DIGITS, namePrint, numbersAt, shapeOfValue, size, valuePrecision, withDigits, type ElementFacts, type Giac, type Shape } from "./numeric.ts";
 import { callsOf, closing, functionsIn, isError, isName, namesIn, type Quoting, RATIONAL, topLevelArgs, UNCLOSED, walk, withoutStrings } from "./giacPrint.ts";
 import { decimalFromString, isZero, type DecimalValue } from "./format.ts";
 import type { GiacValue } from "./bridge.ts";
@@ -95,11 +96,32 @@ export function decidingStored(giac: Giac): (name: string) => boolean {
 /** The result of `input` (printed as `result`) may rest on a decision Giac made at `Digits`: the input calls a
  *  decision function, or a name that is not a Giac built-in (`stored`: a stored function's body may decide,
  *  `f(x):=floor(x*10^12)` then `f(sin(10^60))`), or holds a comparison, or the result holds `abs(` (sqrt of an even
- *  power comes back as one). An input of rationals only (rationalOnly) decides exactly. */
+ *  power comes back as one), or a root of an even power (evenPowerRoot). An input of rationals only (rationalOnly)
+ *  decides exactly. */
 export function restsOnDecision(input: string, q: Quoting, result: string, stored: (name: string) => boolean = () => false): boolean {
   if (rationalOnly(input, q)) return false;
   const calls = functionsIn(input, q);
-  return calls.some((f) => DECISION_FUNCTIONS.has(f)) || hasComparison(input, q) || result.includes("abs(") || calls.some(stored);
+  return calls.some((f) => DECISION_FUNCTIONS.has(f)) || hasComparison(input, q) || result.includes("abs(") || evenPowerRoot(input, q) || calls.some(stored);
+}
+
+/** A power with an even integer exponent (`^2`, `^(4)`; not `^0`, `^(2/3)`, `^2.5`). */
+const EVEN_POWER = /\^\s*(?:(\d+)(?![\d.])|\(\s*(\d+)\s*\))/g;
+
+function holdsEvenPower(s: string): boolean {
+  for (const m of s.matchAll(EVEN_POWER)) {
+    const n = (m[1] ?? m[2]!).replace(/^0+/, "");
+    if (n && "02468".includes(n.charAt(n.length - 1))) return true;
+  }
+  return false;
+}
+
+/** G156: a `sqrt(` whose argument holds an even power, or a `^(1/2)` in an input that holds one. Giac takes the root
+ *  of a square by the sign of its base at Digits (sqrt(sin(10^100)^2) printed sin(10^100) at P = 40, with no abs( and
+ *  no decision function), so the result rests on a decision. */
+export function evenPowerRoot(input: string, q: Quoting): boolean {
+  const s = withoutStrings(input, '""', q);
+  if (callsOf(s, ["sqrt"], q).some((c) => c.close >= 0 && holdsEvenPower(s.slice(c.open + 1, c.close)))) return true;
+  return /\^\s*\(\s*1\s*\/\s*2\s*\)/.test(s) && holdsEvenPower(s);
 }
 
 /** A quantity whose sign (`zero`), distance to the nearest integer (`int`) or to the nearest half-integer (`half`)
@@ -184,11 +206,11 @@ export function decisionCuts(expr: string): Cut[] {
  * and not 0 (`floor(cos(pi/7)-cos(2*pi/7)+cos(3*pi/7)+1/2-10^-100)` is 0, Giac gives 0 at 40 and 60 digits and 1 at
  * 80), so neither text can be trusted. So is a proven tie on a comparison or a round (no value to put in its place).
  * `floor(cos(pi/7)-cos(2*pi/7)+cos(3*pi/7)+1/2)` (exactly 1) is undecided too: Giac does not prove the sum is 1/2.
- * A quantity that is not a real number (a free name, a bound variable) is skipped.
+ * A quantity that is not a real number (a free name, a bound variable) is skipped. `P`: the base of the two precisions
+ * (decideTwice's, raised for a long literal, G156).
  */
-export function onCut(giac: Giac, expr: string, digits: number, restore: number): { tie: string } | Undecided | null {
+export function onCut(giac: Giac, expr: string, digits: number, restore: number, P = valuePrecision(digits)): { tie: string } | Undecided | null {
   if (/:=|=>/.test(expr) || callsOf(expr, ["sto"], "typed").length) return null;
-  const P = valuePrecision(digits);
   const cuts = decisionCuts(expr);
   if (!cuts.length) return null;
   return withDigits(giac, P + 40, restore, () => {
@@ -296,6 +318,14 @@ function cutHit(giac: Giac, c: Cut, P: number): { cut: Cut; n: string; proven: b
   return { cut: c, n: near, proven };
 }
 
+/** Giac's constants, which no value replaces. */
+const CONSTANTS: ReadonlySet<string> = new Set(["pi", "e", "i", "euler_gamma", "infinity", "undef"]);
+
+/** `text` (Giac's print) holds a name that is no constant: its decisions are on symbols, not on digits. */
+function holdsFreeName(text: string): boolean {
+  return namesIn(text, "printed").some((n) => !CONSTANTS.has(n));
+}
+
 /** A decision that did not hold. `refused` (G57): the two precisions printed different texts, or the decision sits on
  *  a cut Giac cannot prove a tie on, so any value shown would be a guess and the result is refused (`error.undecided`);
  *  without it (a higher precision failed to run, a proven tie with no value to put in its place) the result is ⚠. */
@@ -311,10 +341,22 @@ export type Decision = { text: string; from?: string; value?: GiacValue } | Unde
  * `pasdec2`). An agreed text keeps its mark (a rational one stays `=`). A floor, ceil, iPart, frac, fPart or sign that
  * sits on its cut (onCut) takes the value it has exactly there when Giac proves the tie; an unproven one is undecided,
  * because Giac decides it by its rounding error and both precisions can agree on a wrong text. G57: an undecided result
- * whose texts differ or whose tie is unproven is `refused`.
+ * whose texts differ or whose tie is unproven is `refused`. G156: P + 20 and P + 40 are counted from G141's raised
+ * start when the input holds a long exact literal (a literal past the cap refuses a number).
  */
 export function decideTwice(giac: Giac, expr: string, text: string, digits: number, restore: number): Decision {
-  const P = valuePrecision(digits);
+  // G156: a long exact literal raises the base as it raises the agreement check's start (G141, literalStart): at P + 20
+  // and P + 40 a 101-digit 10^100 is rounded, and both took the same wrong sign of sin(10^100) (abs(sin(10^100)) showed
+  // ≈ -0.372376123661). Past the cap a number is refused: no precision we run holds the literal (a text with a free
+  // name decides as before, on its symbols). With a raised base, a run that fails (the budget) refuses too. The P text's
+  // integers raise it as well (a stored 10^100: abs(sin(w)) prints sin(1000…0)), but refuse nothing: a long integer
+  // there may be the value itself (sign(…)*factorial(500)).
+  const P0 = valuePrecision(digits);
+  const typed = literalStart(expr, P0, MAX_EVAL_DIGITS, "typed");
+  if (typed.unchecked && !holdsFreeName(text)) return { undecided: true, refused: true };
+  const printed = literalStart(text, P0, MAX_EVAL_DIGITS, "printed");
+  const P = Math.max(typed.at, printed.unchecked ? P0 : printed.at);
+  const failed: Undecided = P > P0 ? { undecided: true, refused: true } : { undecided: true };
   // G103: the P + 20 text is only compared, so it goes through bridge-3 (nothing stored, nothing to purge; no `=` read
   // as a store, as giac_eval's equaltosto would). A print bridge-3 cut at 2 kB is read whole.
   const compared = (d: number): string | null =>
@@ -344,10 +386,10 @@ export function decideTwice(giac: Giac, expr: string, text: string, digits: numb
   if (t2 === text) out = { text };
   else {
     const t3 = t2 === null ? null : kept(expr);
-    out = t3 !== null && t3 === t2 ? { text: t3, from: "pasdec2", value: keptValue! } : t3 !== null ? { undecided: true, refused: true } : { undecided: true };
+    out = t3 !== null && t3 === t2 ? { text: t3, from: "pasdec2", value: keptValue! } : t3 !== null ? { undecided: true, refused: true } : failed;
   }
   if ("undecided" in out) return decided(out);
-  const cut = onCut(giac, expr, digits, restore);
+  const cut = onCut(giac, expr, digits, restore, P);
   if (!cut) return decided(out);
   if ("undecided" in cut) return decided(cut);
   const tie = kept(cut.tie);
