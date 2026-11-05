@@ -132,36 +132,8 @@ export function copyMark(i: CopySource, ctx: DisplayContext): { mark: Mark; n?: 
 
 const markText = (m: ReturnType<typeof copyMark>): string => (m === undefined ? "=" : m.mark === "⚠" && m.n !== undefined && !m.warn ? `⚠ ${m.n}` : m.mark);
 
-/** A fraction part or exponent: bare when it is one token, else in brackets. */
-const group = (s: string): string => (/^-?[\w.]+$/.test(s) ? s : `(${s})`);
-
-/** An entry as plain text for a shared session: the LaTeX as typed (the parser's output is for the engine, not for people). */
-export function entryText(latex: string): string {
-  return latex
-    .replace(/\\left|\\right/g, "")
-    .replace(/\\operatorname\{\\mathrm\{([^{}]*)\}\}|\\operatorname\{([^{}]*)\}|\\mathrm\{([^{}]*)\}/g, (_m, a: string, b: string, c: string) => a ?? b ?? c)
-    .replace(/\\(?:t|d)?frac(?!\{)(\w)(\w)/g, "\\frac{$1}{$2}") // MathLive writes \frac13 for 1/3
-    .replace(/\\(?:t|d)?frac\{([^{}]*)\}\{([^{}]*)\}/g, (_m, a: string, b: string) => `${group(a)}/${group(b)}`)
-    .replace(/\\sqrt\{([^{}]*)\}/g, "sqrt($1)")
-    .replace(/\\times/g, "×")
-    .replace(/\\cdot/g, "·")
-    .replace(/\\div/g, "÷")
-    .replace(/\\pi(?![A-Za-z])/g, "π")
-    .replace(/\\imaginaryI/g, "i")
-    .replace(/\\exponentialE/g, "e")
-    .replace(/\\blacktriangleright/g, "▶")
-    .replace(/\\to(?![A-Za-z])/g, " → ") // the unit view's request: `25 mm → m`
-    .replace(/\\pm(?![A-Za-z])/g, "±")
-    .replace(/\\[,;:! ]/g, " ")
-    .replace(/\^\{([^{}]*)\}/g, (_m, a: string) => `^${group(a)}`)
-    .replace(/_\{([^{}]*)\}/g, "_$1")
-    .replace(/\\res\{\d+\}\{([^{}]*)\}/g, "$1")
-    .replace(/\\ans(?![A-Za-z])/g, "Ans")
-    .replace(/\\const\{[^{}]*\}\{([^{}]*)\}/g, "$1")
-    .replace(/[{}]/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
-}
+import { entryText } from "./plaintext.ts";
+export { entryText };
 
 /** The session as text: one line per finished entry, `input mark result` with the full value; an error line shows the message. */
 export function sessionText(items: readonly CopySource[], o: TextOptions, ctx: DisplayContext): string {

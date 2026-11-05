@@ -28,6 +28,20 @@ describe("whyLine", () => {
     const i = item({ latex: "\\const{G}{G}\\times2", chips: { "const:G": { value: "(667430/10^16)", exact: false, unc: "0.00015E-11" } } });
     expect(line(i, { mark: "≈" })).toBe("≈ uses G (± 1.5·10⁻¹⁵)");
   });
+  it("R134: a constant is named by its symbol as text: a Greek letter, a symbol with braces", () => {
+    const chips = {
+      "const:G": { value: "(667430/10^16)", exact: false, unc: "0.00015E-11" },
+      "const:alpha": { value: "0.0072973525643", exact: false, unc: "1.1E-12" },
+      "const:mu0": { value: "1.25663706127E-6", exact: false, unc: "2.0E-16" },
+      "const:mu_B": { value: "9.2740100657E-24", exact: false, unc: "2.9E-33" },
+    };
+    const ga = item({ latex: "\\const{G}{G}\\times\\const{alpha}{\\alpha}", chips });
+    expect(line(ga, { mark: "≈" })).toBe("≈ uses G (± 1.5·10⁻¹⁵), α (± 1.1·10⁻¹²)");
+    const mu = item({ latex: "\\const{mu0}{\\mu_{0}}\\times 2", chips });
+    expect(line(mu, { mark: "≈" })).toBe("≈ uses μ_0 (± 2.0·10⁻¹⁶)");
+    const b = item({ latex: "\\const{mu_B}{\\mu_{\\mathrm{B}}}", chips });
+    expect(line(b, { mark: "≈" })).toBe("≈ uses μ_B (± 2.9·10⁻³³)");
+  });
   it("R36f1: the σ's digits as the chip table holds them, neither rounded nor cut, a trailing zero kept", () => {
     expect(uncText("0.000123E-5")).toBe("1.23·10⁻⁹"); // three digits stay three
     expect(uncText("0.00999E-3")).toBe("9.99·10⁻⁶"); // not rounded up to 1.0·10⁻⁵
