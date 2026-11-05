@@ -45,7 +45,7 @@ Work continues on `phase-1`; `master` follows it from 2026-11-03 (decisions.md, 
 - **Night review 2026-11-02:** the rest in [research/night-review-2026-11-02.md](research/night-review-2026-11-02.md).
 
 ### Background stream (extreme inputs; at night, by reach)
-- **F167, fixed by G160 (patch 0025 amended; review vg-1, exotic, `ff37a93f6`).** CAS `evalf((10^400)^(i/1000))` gave 0.9999966-0.0025942·i, no ⚠ (right 0.6049972+0.7962276·i); a base whose double is not finite is now decided by evalf(ln(b)). Golden `g160-*`. Family 3.
+- **F167, fixed by G160 (patch 0025; review vg-1).** CAS `evalf((10^400)^(i/1000))` gave 0.9999966-0.0025942·i, no ⚠ (right 0.6049972+0.7962276·i). Golden `g160-*`. Family 3.
 - **F87, no package (G93's report).** CAS `restart(0)`, `restart_vars(0)`, `restart(1)` and Home `restart(1)` show "pcasans: recursive definition" (pasans in Home): the answer lists our Ans slot's own name. The command took effect. Our name on screen (family 9); not reachable by keys until Find.
 - **F88, no package (G105f1's report).** nonsquare.ts reads Giac's print of `string(part)` (a quoted string, quotes doubled), so changesState and functionsIn find nothing in it: a candidate that stores or calls a user function is evaluated again (G101 says not). Reading it with parsePrinted changes which F69 refusals happen: its own package and tests.
 - **F89, no package (G92's report).** Giac's `laplace` and `ilaplace` on tanh(sqrt(x)) leave VARS() entries that are no names (bytes, empty, error texts), then garbage after every command: freed memory in Giac's variable list. The put-back skips them. Not reachable by keys (laplace needs Find); an upstream candidate. Also `ilaplace(1/(x^2+1)^2)` (G110's census).
