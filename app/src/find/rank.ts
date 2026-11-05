@@ -103,6 +103,45 @@ function preparedLive(live: readonly FindItem[] | undefined): Prepared[] {
   return p;
 }
 
+/** a[ai…] is a prefix of b[bi…]. */
+function startsAt(a: string, ai: number, b: string, bi: number): boolean {
+  if (b.length - bi < a.length - ai) return false;
+  for (let j = ai; j < a.length; j++) if (a.charCodeAt(j) !== b.charCodeAt(bi + j - ai)) return false;
+  return true;
+}
+
+/** A name a longer query could still reach, though this one may not match it: `qc` is a prefix of it, or one edit
+ *  (as oneEdit counts them) from one of its prefixes, without the fuzzy step's guards (query length, gauge, longer
+ *  name). With a match of `qc` it holds every item a one-letter extension of `qc` matches (search's narrowing below). */
+function nearAny(p: Prepared, qc: string): boolean {
+  for (const n of p.names) {
+    const c = n.compact;
+    if (qc.charCodeAt(0) !== c.charCodeAt(0) && qc.charCodeAt(1) !== c.charCodeAt(1)) continue;
+    let i = 0;
+    while (i < qc.length && i < c.length && qc.charCodeAt(i) === c.charCodeAt(i)) i++;
+    if (i >= qc.length - 1) return true; // a prefix, or the last letter is the edit
+    if (startsAt(qc, i + 1, c, i + 1) || startsAt(qc, i, c, i + 1) || startsAt(qc, i + 1, c, i)) return true;
+    if (qc.charCodeAt(i) === c.charCodeAt(i + 1) && qc.charCodeAt(i + 1) === c.charCodeAt(i) && startsAt(qc, i + 2, c, i + 2)) return true;
+  }
+  return false;
+}
+
+/** The last search's candidates (R132, E3): every item that matched it or is `nearAny` it. When the next query only
+ *  adds a letter (its words the same but the last one longer, or a new word), each level only narrows: an exact or
+ *  prefix name still starts with the shorter query, a word prefix of the longer word is one of the shorter, and a
+ *  one-edit name of the longer query starts with the shorter one or is `nearAny` it. So the next search reads only the
+ *  candidates, and its hits and order are those of a search over every item (rank.test.ts checks it). */
+interface Narrow { index: PreparedIndex; live: readonly FindItem[] | undefined; filter: string; q: string; qc: string; qw: readonly string[]; cands: Prepared[] }
+let last: Narrow | undefined;
+
+function narrows(n: Narrow, q: string, qc: string, qw: readonly string[]): boolean {
+  if (n.qc.length < 2 || !q.startsWith(n.q) || !qc.startsWith(n.qc) || qc.length > n.qc.length + 1) return false;
+  if (qw.length < n.qw.length) return false;
+  const k = n.qw.length - 1;
+  for (let i = 0; i < k; i++) if (qw[i] !== n.qw[i]) return false;
+  return k < 0 || (qw[k] as string).startsWith(n.qw[k] as string);
+}
+
 export function search(index: PreparedIndex, query: string, ctx: FindContext = {}): FindHit[] {
   const raw = query.trim();
   const rawc = compact(raw);
@@ -110,14 +149,23 @@ export function search(index: PreparedIndex, query: string, ctx: FindContext = {
   const qc = compact(q);
   const qw = words(q);
   const filter = ctx.filter ? new Set(ctx.filter) : undefined;
+  const filterKey = ctx.filter ? [...ctx.filter].join(" ") : "";
   const prefer = new Set(ctx.prefer ?? []);
   const hits: FindHit[] = [];
-  for (const list of [preparedLive(ctx.live), index.items]) for (const p of list) {
+  const prev = last !== undefined && last.index === index && last.live === ctx.live && last.filter === filterKey && narrows(last, q, qc, qw) ? last : undefined;
+  const lists = prev ? [prev.cands] : [preparedLive(ctx.live), index.items];
+  const cands: Prepared[] = [];
+  for (const list of lists) for (const p of list) {
     if (filter && !filter.has(p.item.kind)) continue;
     const { score, matched } = q ? level(p, q, qc, qw, rawc) : { score: 1, matched: p.item.names[0] ?? "" };
-    if (!score) continue;
+    if (!score) {
+      if (q && qc.length >= 2 && nearAny(p, qc)) cands.push(p);
+      continue;
+    }
+    cands.push(p);
     hits.push({ item: p.item, score, matched });
   }
+  last = q && qc.length >= 2 ? { index, live: ctx.live, filter: filterKey, q, qc, qw, cands } : undefined;
   hits.sort((a, b) =>
     b.score - a.score
     || a.item.tier - b.item.tier
@@ -125,4 +173,9 @@ export function search(index: PreparedIndex, query: string, ctx: FindContext = {
     || a.matched.length - b.matched.length
     || (a.item.id < b.item.id ? -1 : a.item.id > b.item.id ? 1 : 0));
   return hits.slice(0, ctx.limit ?? 50);
+}
+
+/** Forget the last search's candidates: the next search reads every item (rank.test.ts compares the two). */
+export function forgetLastSearch(): void {
+  last = undefined;
 }
