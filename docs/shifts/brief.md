@@ -60,12 +60,9 @@ Milestone reviews (section 0): after R50e (with R116's gallery groups "Entry hig
 
 | Step | What | Agent, model | Branch | After |
 |---|---|---|---|---|
-| 512 | [R129](packages/R129.md) the study's mockups: results mode, the six top-right keys, the room (pass 77; the owner picks by day) | ron, Sonnet | `p1/ron-resultsmockup` | – |
-| 514 | [S26](packages/S26.md) the safe cuts: unlinked archive files, the spike's raw data, `.gitignore` | sandra, Opus | `p1/sandra-cutsafe` | – |
-| 515 | [S27](packages/S27.md) the live research notes under 90 kB | sandra, Opus | `p1/sandra-researchdiet` | – |
 | 516 | [S34](packages/S34.md) docs/04 from its cap to about 60 kB | sandra, Opus | `p1/sandra-archdiet` | – |
 | 517 | [S28](packages/S28.md) the probes and tools no package uses; the tools READMEs | sandra, Opus | `p1/sandra-toolsdiet` | – |
-| 518 | [S29](packages/S29.md) the archive keeps only what is cited; Phase 0 moves into it | sandra, Opus | `p1/sandra-archivecut` | S26, S28 |
+| 518 | [S29](packages/S29.md) the archive keeps only what is cited; Phase 0 moves into it | sandra, Opus | `p1/sandra-archivecut` | S28 |
 | 519 | [S30](packages/S30.md) the mockups of merged packages, the reports past a week | sandra, Opus | `p1/sandra-mockupcut` | – |
 | 520 | [S31](packages/S31.md) docs/01–03 trimmed to what binds | sandra, Opus | `p1/sandra-plansdiet` | S29 |
 | 521 | [S32](packages/S32.md) docs/05, docs/06, feedback.md and the READMEs say today's app | sandra, Opus | `p1/sandra-uidocsdiet` | S30 |

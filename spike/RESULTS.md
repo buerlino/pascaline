@@ -44,7 +44,7 @@ Benchmark: `spike/bench/cases.yaml`, 55 inputs across arithmetic, trig, algebra,
 - **Firefox rounds `performance.now()` to 1 ms** here (no cross-origin isolation), so its sub-millisecond values show as 0 or 1.
 - Both engines gave **identical output on all 55 cases** in both browsers. All 15 cases with a provable expected value (`source: derived`) matched.
 - **Cancel** (terminate worker → new worker → replay settings and variable log): a long `ifactor` was interrupted every time (`EngineCancelled`), and a variable defined before the cancel (`pasvar:=7`) was intact afterwards (`pasvar*6` → `42`, 5/5 runs). Replay of the log took ≤1 ms.
-- Raw per-case data: `spike/bench-results/*.json` (committed 2026-10-12, moved from the archived `spike/app/bench/results/`; the bench app is in `git show 8ff8576:spike/app`).
+- Raw per-case data: `spike/bench-results/*.json` at `27f8378d` (committed 2026-10-12, deleted 2026-11-06 by S26; moved from the archived `spike/app/bench/results/`; the bench app is in `git show 8ff8576:spike/app`).
 
 ### Q1 on the Lenovo Tab One (2026-10-10, 23:45–23:50)
 Device HA24BZ2Y: Android 15 (SDK 35), MediaTek MT8786 (mt6768), 8 cores, 3.9 GB RAM, Android WebView 131.0.6778.260 as found. Plugged into USB, screen on, battery 66–68 %, 27.9–29.5 °C. Capacitor 8.5.3, compileSdk/targetSdk 36, AGP 8.13, Gradle 8.14.3, Java 21. APK 6.6 MB (release; the 9.75 MB wasm is 3.4 MB deflated inside). Tools: `spike/tools/device-build.sh`, `spike/tools/device_run.py`, raw runs in `.coord/device-runs.jsonl` (gitignored), medians by `spike/tools/runs_summary.py`; see `spike/android/NOTES.md`.
@@ -133,9 +133,9 @@ Cost against benefit:
 - **Reuse:** a maintained unit and physical-constant database, conversions and uncertainty propagation (first-order Gaussian, matches the oracle) that we would otherwise write and maintain ourselves (principle 1). GPL-2.0-or-later combines fine with our GPL-3.0-or-later.
 - **Caveats for integration:** qalc's bare names collide with variables (`R` is röntgen, `g` gram, `NA` = N·A); our parser must emit explicit unit/constant tokens (e.g. from a `_unit` keyboard template), never raw text. Output must go through our formatter (12 digits, MathPrint), not qalc's print. The data needs its own checks (the `hp` typo shows why).
 
-S8+ / Tab One recipe (annabell): copy `spike/qalc/page/*` and `qalc.{mjs,wasm}` into `app/public/qalc/` of a measurement build only (never committed), `tools/device-build.sh --measure --install`, then 5× `tools/device_run.py page /qalc/index.html`, with a `--wait` that matches its log line; the page logs `PASCALINE_BENCH qalc {ready_ms, first_result_ms, …}`.
+S8+ / Tab One recipe (annabell): copy `spike/qalc/page/*` (at `bb97f736`) and `qalc.{mjs,wasm}` into `app/public/qalc/` of a measurement build only (never committed), `tools/device-build.sh --measure --install`, then 5× `tools/device_run.py page /qalc/index.html`, with a `--wait` that matches its log line; the page logs `PASCALINE_BENCH qalc {ready_ms, first_result_ms, …}`.
 
-Reproduce (moved to `engine/qalc/` in milestone 4, A2): `engine/qalc/build-wasm.sh dev`; `node engine/qalc/smoke.mjs engine/qalc/_out/dev`; `APP_DIR=<checkout>/app node spike/qalc/bench-chromium.mjs $QALC_WORK/out 7`; `tests/golden/.venv/bin/python engine/qalc/check.py engine/qalc/_out/dev`.
+Reproduce (moved to `engine/qalc/` in milestone 4, A2): `engine/qalc/build-wasm.sh dev`; `node engine/qalc/smoke.mjs engine/qalc/_out/dev`; `APP_DIR=<checkout>/app node spike/qalc/bench-chromium.mjs $QALC_WORK/out 7` (the script at `bb97f736`); `tests/golden/.venv/bin/python engine/qalc/check.py engine/qalc/_out/dev`.
 
 ## Components used (name, version, licence, URL, prebuilt?)
 | Component | Version | Licence | URL | Prebuilt? | Used for |
@@ -211,4 +211,4 @@ Phase 0 is closed and Phase 1 replaced these spikes. Their results stay above; t
 | `research/` scripts | `trixie-build.sh` (P2 container build), `coverage-probe.mjs` (R3) | `engine/giac/build-wasm-release.sh`; the five notes are in `docs/research/` |
 | `node/` | Node smoke tests, variant compare, prebuilt smoke | `engine/giac/smoke.mjs`; `app/scripts/compare-engines.ts` |
 
-Other moves: `MORNING-REPORT.md` → `docs/shifts/2026-10-11-morning-report.md`; `spike/node/interrupt-test.mjs` → `tests/engine/interrupt-test.mjs` (C1, earlier). Still here: `qalc/` (P3; moves to `engine/qalc/` when P3 starts), this file, `DECISIONS.md`, and the gitignored `prebuilt/` (Parisse's build, kept for comparisons). The spike apps' build outputs (`spike/app/public/engine/`, `spike/app/dist/`: copies of our wasm and of Parisse's prebuilt) and `node_modules` were deleted from disk with the folders.
+Other moves: `MORNING-REPORT.md` → `docs/shifts/2026-10-11-morning-report.md`; `spike/node/interrupt-test.mjs` → `tests/engine/interrupt-test.mjs` (C1, earlier). Still here: this file, `DECISIONS.md`, and the gitignored `prebuilt/` (Parisse's build, kept for comparisons). The spike apps' build outputs (`spike/app/public/engine/`, `spike/app/dist/`: copies of our wasm and of Parisse's prebuilt) and `node_modules` were deleted from disk with the folders.

@@ -58,7 +58,7 @@ At 360 × 740 (1.36 rows) touch costs one scroll from k = 2 on. A visit with n a
 
 **tests/tasks/README.md**, "Going active": "Milestone 4 turns on t05 (Find); milestone 5 on t01–t04 and t10 (t01 and t03 since S25, without prefix chips); milestone 6 on t06–t09."
 
-**docs/shifts/packages/R129.md**, the whole file (the mockup package text):
+**`shifts/packages/R129.md` at `d99189e5`**, the whole file (the mockup package text):
 
 > ### ron, R129: the study's mockups: results mode, the six top-right keys and the viewport room, branch `p1/ron-resultsmockup`
 > **Lane:** A, day (the owner picks from it), **Sonnet** (a mockup page; nothing merges into `app/src`). **Starts when:** S25 is merged.
