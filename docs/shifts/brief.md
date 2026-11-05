@@ -65,9 +65,6 @@ A8 and [A57](packages/A57.md) run by day; the night review's queue goes on in [i
 
 | Step | What | Agent, model | Branch | After |
 |---|---|---|---|---|
-| 478 | [A69](packages/A69.md) a night stops before the disk is full; runs leave no temp folders | annabell, Sonnet | `p1/annabell-diskguard` | – |
-| 479 | [A71](packages/A71.md) the red-first check can test against the stock engine | annabell, Sonnet | `p1/annabell-redstock` | – |
-| 484 | [A74](packages/A74.md) Find per key on the Tab One again after R132 (E3, the bar's point 4) | annabell, Sonnet | `p1/annabell-findagain` | R132 |
 | 491 | [G175](packages/G175.md) √ of exp(z) or of a complex power keeps the principal root (F135, F134; silent) | gorge, Opus | `p1/gorge-sqrtexp` | – |
 | 492 | [G177](packages/G177.md) cos, sin, tan of half a complex atan, asin, acos take the right sign (F137; silent) | gorge, Opus | `p1/gorge-halfatrig` | – |
 | 493 | [G171](packages/G171.md) a non-square power stays refused when the input calls a storing function (F88; silent) | gorge, Opus | `p1/gorge-nonsquarestore` | – |
@@ -151,4 +148,4 @@ Then reply as the pipeline's prompt asks (at most five lines). Nobody is waiting
 - **The net (P23):** a merge that turns a core case red is a bug the next Opus pass sends back as a FIX (section 0c, Opus pass step 3).
 
 ## 8a. Review and merge
-Every review and merge is a pipeline run (rules section 4; CLAUDE.md): the audit by sofia on `git diff -U5 phase-1...<branch>` plus the block's "Done when" lines, then `git merge --no-ff --signoff` into `phase-1`. A finished branch from before the pipeline is merged with `scripts/pipeline.sh <agent> "<ID>" --no-worker` (A10). The Opus pass (section 0c) applies the reports' shared-file text, deletes merged package files and their rows, and files proposals under "Needs the user". Never push.
+Every review and merge is a pipeline run (rules section 4; CLAUDE.md): the audit by sofia on `git diff -U5 phase-1...<branch>` plus the block's "Done when" lines, then `git merge --no-ff --signoff` into `phase-1`. A finished branch from before the pipeline is merged with `scripts/pipeline.sh <agent> "<ID>" --no-worker` (A10). The Opus pass (section 0c) applies the reports' shared-file text, deletes merged package files and their rows, and files proposals under "Needs the user". A package whose bug an earlier merge already fixed (G125) writes that its new tests `fail on the stock build`: red-first then runs its new golden cases, and the vitest files that read `GIAC_OUT`, on phase-1's code with the stock engine (built once by the pipeline), and the branch merges review-only (A71). Never push.

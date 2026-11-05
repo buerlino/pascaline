@@ -7,7 +7,6 @@ Phase 0 decisions (D1–D9, P1, P2): [spike/DECISIONS.md](../spike/DECISIONS.md)
 
 The owner's other open items are in [backlog.md](backlog.md), "Needs the user". Once decided, an entry moves to "Decided proposals".
 
-
 **G164's sample sources** (`app/public/samples/materials.txt`): check its 16 sources by the freeze (11-12), and keep copper on its data sheet (G164's report).
 
 **R59: the Math key's Find and the user's functions.** An imported function is found in Vars' Find (R4b), not in the Math key's Find. Recommendation: list the user's names there too, as a later small package, so a library function is found where the built-ins are.

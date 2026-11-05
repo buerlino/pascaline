@@ -437,8 +437,8 @@ The types live in the code; this is the map. Views see `Calc` (`app/src/calc/por
 | Precache total | ≤ 18 MB | 12.4 MB (2026-10-18) | size test |
 | Keyboard usable / engine ready (Tab One) | < 1 s / < 1.5 s, with the `defs` replay | 722 / 1103 ms cold (2026-10-19, `874ab01`, 1 GB engine); 1489 ms engine ready with 200 definitions (A4a, 2026-10-16) | device runs |
 | Enter → result p95 (Tab One) | < 150 ms at 12 digits; at 30 digits ≤ 1.3 × the 12-digit p95 | RAD 147.9 ms at 12, 152.6 at 30; DEG 149.1 and 141.4 (A16 after G53, 2026-10-20) | device runs |
-| Find key → list (Tab One) | p95 ≤ 16 ms | desktop prototype p95 1.04–1.23 ms | `?bench=find` (A4b) |
-| Find open | ≤ 100 ms warm, ≤ 300 ms cold | — | device runs |
+| Find key → list (Tab One) | p95 ≤ 16 ms | 14.1 ms (A74) | `?bench=find` (A4b) |
+| Find open | ≤ 100 ms warm, ≤ 300 ms cold | max of 50: 244 ms (A74) | device runs |
 | Units first result (Tab One) | < 1 s | — | device runs |
 | Unit evaluation (desktop) | p95 ≤ 5 ms | median 0.91 ms, p95 ≈ 2 ms (G16) | the golden units section |
 | `defs` replay | ≤ 50 ms at 200 definitions | 158 ms (A12, Tab One); a 200-program library 403 ms, after G83 96 ms p50 (p95 119), 57 of it an empty log's first restore (A62) | device runs |
