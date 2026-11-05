@@ -7,7 +7,7 @@ Phase 0 decisions (D1–D9, P1, P2): [spike/DECISIONS.md](../spike/DECISIONS.md)
 
 The owner's other open items are in [backlog.md](backlog.md), "Needs the user". Once decided, an entry moves to "Decided proposals".
 
-None open.
+**A4b: Find on the Tab One misses E3** (`?bench=find`, 7 runs): p95 31.9 ms against 16; the search is 6 ms, the list's DOM update the rest, so docs/04 3.2's incremental Find does not help. Propose a cheaper list (R-package), then re-measure; or accept for v0.1.0.
 
 ## Decided proposals
 
