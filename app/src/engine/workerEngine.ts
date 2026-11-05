@@ -22,6 +22,7 @@ import {
 import type { Quantity, UnitError, UnitJob } from "../units/types.ts";
 import type { ConstTable } from "./constUnc.ts";
 import type { ChipFactsTable } from "./chipFacts.ts";
+import type { LibraryReply } from "./library.ts";
 
 /** The part of a Worker that WorkerEngine uses (lets tests drive it without a browser). */
 export interface WorkerLike {
@@ -254,6 +255,17 @@ export class WorkerEngine implements MathEngine {
     if (r.type !== "result") throw new Error(`unexpected ${r.type}`);
     this.keep(r.defs);
     return { output: r.output, ok: r.ok, engineMs: r.engineMs };
+  }
+
+  /** R59: the import runs against the log as stored (the gate first, so the stored one is in); a refusal after the
+   *  engine was changed restarts it from the unchanged log, the path Cancel takes (r10 section 3.1). */
+  async importLibrary(text: string, version: number, replace: boolean): Promise<LibraryReply> {
+    await this.gate;
+    const r = await this.call({ type: "library", text, version, log: [...this.stored()], replace });
+    if (r.type !== "library") throw new Error(`unexpected ${r.type}`);
+    if (r.result.ok) this.keep(r.result.changes);
+    else if (r.result.dirty) await this.cancel();
+    return { result: r.result, lines: r.lines };
   }
 
   cancel(): Promise<EngineTimings> {

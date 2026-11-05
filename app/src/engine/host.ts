@@ -54,6 +54,7 @@ import { contextDiff, hostContext, isFlagName, namesFlag, namesUnreadFlag } from
 import { contextOf, gated, type GatedGiac } from "./ctxGate.ts";
 import { aboutsOf, leakPart, namesAssuming, putBack, selfHolding, setsAssumption } from "./assumed.ts";
 import { plainRowsText } from "./matrixType.ts";
+import { importText } from "./library.ts";
 
 /** G65: what the call after an input found: the names it read and stored (stateRead.ts), and Giac's settings. */
 interface AfterInput {
@@ -1256,6 +1257,9 @@ export function createRequestHandler(load: GiacLoader, post: (r: Response) => vo
           break;
         case "units":
           post({ id: req.id, type: "units", result: host.units(req.job, req.settings) });
+          break;
+        case "library":
+          post({ id: req.id, type: "library", ...importText(host, req.text, req.version, req.log, req.replace) });
           break;
       }
     } catch (e) {

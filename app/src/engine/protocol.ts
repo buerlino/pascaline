@@ -5,6 +5,7 @@ import type { AnalysisRequest, AnalysisResult, CasResult, CasSettings, HomeResul
 import type { Quantity, UnitError, UnitJob } from "../units/types.ts";
 import type { ConstTable } from "./constUnc.ts";
 import type { ChipFactsTable } from "./chipFacts.ts";
+import type { LibraryReply } from "./library.ts";
 
 export type Request =
   | { id: number; type: "init"; baseUrl: string; replay: DefEntry[] }
@@ -18,7 +19,9 @@ export type Request =
   | { id: number; type: "analyze"; req: AnalysisRequest; settings: HomeSettings }
   | { id: number; type: "table"; req: TableRequest; settings: HomeSettings }
   /** The unit view (G16): a job built from the Find index's factors (units/build.ts), evaluated in Home's mode. */
-  | { id: number; type: "units"; job: UnitJob; settings: HomeSettings };
+  | { id: number; type: "units"; job: UnitJob; settings: HomeSettings }
+  /** R59: a library file's text at `version`, imported against the client's log (library.ts importText). */
+  | { id: number; type: "library"; text: string; version: number; log: DefEntry[]; replace: boolean };
 
 /** `defs`: what an input defined or purged (defs.ts); the client keeps the log, stores it and gives it to a fresh
  *  worker after a Cancel, a crash or a relaunch. */
@@ -33,4 +36,5 @@ export type Response =
   | { id: number; type: "analyze"; result: AnalysisResult }
   | { id: number; type: "table"; result: HomeResult[][] }
   | { id: number; type: "units"; result: Quantity | UnitError }
+  | ({ id: number; type: "library" } & LibraryReply)
   | { id: number; type: "fatal"; message: string; memory?: true };

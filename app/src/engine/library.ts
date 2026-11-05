@@ -99,10 +99,9 @@ function definitionOf(block: string, tree: GiacParse): { name: string; kind: "fn
   return tree.program ? { name: tree.top[0]!, kind: "fn" } : undefined;
 }
 
-/** Reads a library file: encoding, size, stamp, blocks, every rule that needs no evaluation (r10 section 1.3). Throws a
- *  LibError for the first problem. A string is taken as the text of a file already decoded. `parse`: Giac's tree of a
- *  text (bridge-2, never evaluated), which says what a body or a test stores (G100). */
-export function parseLibrary(input: Uint8Array | string, parse: (text: string) => GiacParse, format: LibraryFormat): LibFile {
+/** R59: a file's text, checked for size and encoding, with a BOM dropped and CR LF / CR made LF (r10 section 1.2). The
+ *  app decodes a picked file with it before the stamp is brought up to date (state/libraryFormat.ts upToDate). */
+export function decodeLibrary(input: Uint8Array | string): string {
   const bytes = typeof input === "string" ? new TextEncoder().encode(input) : input;
   if (bytes.length > LIB_MAX_BYTES) throw new LibError(0, `the file is over ${LIB_MAX_BYTES / 1024} kB`);
   let text: string;
@@ -111,7 +110,14 @@ export function parseLibrary(input: Uint8Array | string, parse: (text: string) =
   } catch {
     throw new LibError(0, "the file is not UTF-8 text");
   }
-  const lines = text.replace(/^﻿/, "").replace(/\r\n?/g, "\n").split("\n");
+  return text.replace(/^﻿/, "").replace(/\r\n?/g, "\n");
+}
+
+/** Reads a library file: encoding, size, stamp, blocks, every rule that needs no evaluation (r10 section 1.3). Throws a
+ *  LibError for the first problem. A string is taken as the text of a file already decoded. `parse`: Giac's tree of a
+ *  text (bridge-2, never evaluated), which says what a body or a test stores (G100). */
+export function parseLibrary(input: Uint8Array | string, parse: (text: string) => GiacParse, format: LibraryFormat): LibFile {
+  const lines = decodeLibrary(input).split("\n");
   const h = HEADER.exec(lines[0]!.trim());
   if (!h) throw new LibError(1, `the first line must be \`// pascaline library ${format.version}\``);
   const version = Number(h[1]);
@@ -300,6 +306,27 @@ export function importLibrary(engine: LibraryEngine, lib: LibFile, log: readonly
     return fail(`line ${f.line}: test failed: ${f.expr} gave ${f.got}${more}`, f.line, { plan, failures, dirty: true });
   }
   return { ok: true, plan, changes, log: out, tests, ms: performance.now() - t0 };
+}
+
+/** R59: what the worker answers to a library request: the import's result, and each definition's name with its line
+ *  (the clash notice names the lines). */
+export interface LibraryReply {
+  result: ImportResult;
+  lines: { name: string; line: number }[];
+}
+
+/** R59, the worker's side of an import: a text already at `version` (the app brought its stamp up to date, so no
+ *  migration runs here) read and checked as a whole, then imported into `engine`. A refusal of the reader is a result
+ *  like the import's own, with its line. */
+export function importText(engine: LibraryEngine & { parse(text: string): GiacParse }, text: string, version: number, log: readonly DefEntry[], replace: boolean): LibraryReply {
+  let lib: LibFile;
+  try {
+    lib = parseLibrary(text, engine.parse, { version, migrate: (t) => t });
+  } catch (e) {
+    if (e instanceof LibError) return { result: fail(e.message, e.line), lines: [] };
+    throw e;
+  }
+  return { result: importLibrary(engine, lib, log, { replace }), lines: lib.defs.map((d) => ({ name: d.name, line: d.line })) };
 }
 
 /** `fn` with our degree factor at 1 (Giac always runs in radians, G46), and the mode's factor put back afterwards: the

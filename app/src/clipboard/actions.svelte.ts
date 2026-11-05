@@ -13,6 +13,7 @@ import { copyExact } from "./exact.ts";
 import { whyLine } from "./whyLine.ts";
 import type { ClipboardPort } from "./port.ts";
 import type { CopySource, TextOptions } from "./text.ts";
+import type { LibraryHost } from "../views/libraryJobs.ts";
 
 /** A history item as the copy texts read it: the engine's facts (R3 keeps them in `facts`) on the item itself. */
 const source = (i: HistoryItem): CopySource => i;
@@ -21,6 +22,8 @@ const source = (i: HistoryItem): CopySource => i;
 const impl = () => import("./impl.ts");
 
 const NOTICE_MS = 2200;
+/** A notice that names lines and reasons (a library's refusal, R59) stays up long enough to be read. */
+const LONG_NOTICE_MS = 9000;
 
 /** What the row actions do on the entry line; App owns these (a tap on a row uses them before this code has loaded). */
 export interface RowOps {
@@ -70,10 +73,10 @@ export class ClipActions {
     return this.givenPort ?? (this.chosen ??= (await impl()).choosePort());
   }
 
-  say(message: string): void {
+  say(message: string, ms = NOTICE_MS): void {
     this.notice = message;
     if (this.timer !== undefined) clearTimeout(this.timer);
-    this.timer = setTimeout(() => (this.notice = null), NOTICE_MS);
+    this.timer = setTimeout(() => (this.notice = null), ms);
   }
 
   /** Settings › Data › Save a backup (R38a): the backup code loads on the press; the result is the notice in the stage
@@ -94,6 +97,24 @@ export class ClipActions {
     const m = await import("../views/restoreSheet.svelte.ts");
     const say = (s: string): void => this.say(s);
     await (file === "undo" ? m.offerUndo(say) : m.offerRestore(file, this.shell, say));
+  }
+
+  /** Settings › Data › Library (R59): import a picked file or the clipboard's text, export, copy the format for your
+   *  AI. The library code loads on the press; every outcome is the notice (views/libraryJobs.ts). */
+  async library(job: "file" | "clipboard" | "export" | "format", file?: File): Promise<void> {
+    const m = await import("../views/libraryJobs.ts");
+    const host: LibraryHost = {
+      calc: this.shell.calc,
+      say: (s, long) => this.say(s, long ? LONG_NOTICE_MS : NOTICE_MS),
+      readText: () => this.serial(async () => (await this.port()).readText()),
+      writeText: (t) => this.serial(async () => (await this.port()).writeText(t)),
+      refresh: () => this.session.refreshNames(),
+      showMenu: (title, items) => this.shell.showMenu(title, items, { remember: false }),
+      saveFile: async (name, mime, text) => (await import("./files.ts")).saveFile(name, mime, text),
+    };
+    if (job === "file") return file ? m.importFile(host, file) : undefined;
+    if (job === "clipboard") return m.importClipboard(host);
+    return job === "export" ? m.exportLib(host) : m.copyFormat(host);
   }
 
   /** The row an action means: the given one, else the newest finished result of the open view. */
