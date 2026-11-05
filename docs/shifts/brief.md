@@ -31,6 +31,7 @@
 | [A61](packages/A61.md) | What the WebView answers to `persisted()` | annabell, Sonnet | day (the Fairphone) | R96f1 | ~0.2 d |
 | [S33](packages/S33.md) | One place per pipeline rule: brief 0c against rules section 4 | sandra, Opus | day, no lane running | A75 | ~0.5 d |
 | [A76](packages/A76.md) | The release builds only what ships; the update test from the last release | annabell, Sonnet | day | the v0.1.0 tag | ~0.3 d |
+| [A77](packages/A77.md), [R138](packages/R138.md), [A78](packages/A78.md) | The name N62, in this order | annabell, ron, annabell | day, no lane running | TMview, repo moved | ~1.3 d |
 
 **Why these models:** Opus where a slip breaks entry, the unit chain or stored data for every later package, or gives a wrong number (P17: the engine, input and units); sandra and sofia run Opus; Sonnet elsewhere (an existing pattern, pinned by tests); the audit model follows P17.
 
