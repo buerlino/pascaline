@@ -7,6 +7,7 @@ import { tc } from "./strings.ts";
 import type { AppShell } from "../apps/shell.svelte.ts";
 import type { MenuItem } from "../apps/types.ts";
 import type { HistoryItem, Session } from "../state/session.svelte.ts";
+import type { TapCounts } from "../state/taps.svelte.ts";
 import { commaResult } from "../state/displayMode.ts";
 import { copyExact } from "./exact.ts";
 import { whyLine } from "./whyLine.ts";
@@ -79,6 +80,12 @@ export class ClipActions {
    *  (the status line has no room). */
   async saveBackup(): Promise<void> {
     this.say(await (await import("../state/backup.ts")).saveBackup());
+  }
+
+  /** Settings › Counters › Export the counts (R127): the counts as they stand; the result is the notice. */
+  async saveCounts(counts: TapCounts): Promise<void> {
+    const m = await import("../state/countsFile.ts");
+    this.say(await m.saveCounts(m.countsText(counts)));
   }
 
   /** Settings › Data › Restore from a file, with the picked file, or Undo the restore (R38b): the restore code loads on

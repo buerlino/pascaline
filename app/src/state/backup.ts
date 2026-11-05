@@ -220,7 +220,7 @@ export const VALIDATORS: Validators = {
     ),
   unitPadCells: (v) =>
     slotsOk(v, CELL_KEYS, ["tap", "up", "down"], (b) => text(b["unit"]) && (b["prefix"] === undefined || text(b["prefix"])) && (b["label"] === undefined || text(b["label"]))),
-  taps: (v) => isObject(v) && isCount(v["shift"]) && isCount(v["alpha"]) && typeof v["since"] === "string" && (v["presses"] === undefined || isCount(v["presses"])) && (v["presets"] === undefined || isCount(v["presets"])),
+  taps: (v) => isObject(v) && isCount(v["shift"]) && isCount(v["alpha"]) && typeof v["since"] === "string" && (v["presses"] === undefined || isCount(v["presses"])) && (v["presets"] === undefined || isCount(v["presets"])) && (v["keys"] === undefined || (isObject(v["keys"]) && Object.values(v["keys"]).every(isCount))), // keys: R127, absent before
   presets: presetsOk,
   "app.function": isObject,
   "app.solve": isObject,

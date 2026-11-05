@@ -186,6 +186,7 @@
             disabled={r.item.disabled}
             data-active={r.index === level.highlight}
             data-id={r.item.id}
+            data-count={r.item.count ?? "row"}
             style:left={px(c?.x)}
             style:top={px(c?.y)}
             style:width={px(c?.w)}
@@ -221,6 +222,7 @@
             data-selected={r.item.selected}
             data-active={r.index === level.highlight}
             data-id={r.item.id}
+            data-count={r.item.count ?? "row"}
             style:height={px(rowHeight(row, { reason: second, steps, options: options !== undefined }))}
             onclick={() => ontap(r.index)}
           >

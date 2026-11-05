@@ -155,7 +155,7 @@ test.describe("by touch", () => {
   test("Counters: the Shift and Alpha counts, the presets switched (R89), since when, and Reset, which keeps the sheet open", async ({ page }) => {
     await tap(page, ["shift", "shift", "alpha", "alpha"]);
     await tap(page, ["@mode", "d6", "d6"]);
-    expect(await rowIds(page)).toEqual(["presses", "shift", "alpha", "presets", "since", "reset"]);
+    expect(await rowIds(page)).toEqual(["presses", "shift", "alpha", "presets", "since", "export", "reset"]);
     await expect(row(page, "presses").getByTestId("sheet-value")).toHaveText("8"); // R70: Shift Shift Alpha Alpha, the format chip, ▲, 6, 6
     await expect(row(page, "shift").getByTestId("sheet-value")).toHaveText("2");
     await expect(row(page, "alpha").getByTestId("sheet-value")).toHaveText("2");

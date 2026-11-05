@@ -16,6 +16,25 @@ export function touchPresses(g: FinishedTouch): 0 | 1 {
   return 0;
 }
 
+/** The key and layer of a finished touch, for the per-key counts (R127; a count name is "<key id>:<layer>", and a hardware
+ *  key's layer is hw): "<key id>:<layer>" with the layer the pad shows for
+ *  a tap (Alpha over Shift) and up or down for a flick; a trackpad drag is "trackpad:drag". Undefined where
+ *  `touchPresses` is 0. */
+export function touchKey(
+  g: { kind: "pad"; key: { id: string } | undefined; steps: { count: number } } | { kind: "key"; key: { id: string } | undefined; flick: { state: "tap" | "up" | "down" | "cancelled" } } | { kind: "repeat" },
+  layer: { shift: boolean; alpha: boolean },
+): string | undefined {
+  if (g.kind === "repeat") return undefined;
+  if (g.kind === "pad" && g.steps.count > 0) return "trackpad:drag";
+  const st = g.kind === "key" ? g.flick.state : "tap";
+  return g.key && st !== "cancelled" ? `${g.key.id}:${st === "tap" ? (layer.alpha ? "alpha" : layer.shift ? "shift" : "primary") : st}` : undefined;
+}
+
+/** The count name of a hardware key that is no keypad key (R127): `hw:letter`, `hw:symbol`, `hw:dead`, `hw:other`. (A hardware
+ *  key that runs a keypad key, Enter and Esc included, is "<key id>:hw".) */
+export const HW_KINDS = ["letter", "symbol", "dead", "other"] as const;
+export const hwKind = (kind: (typeof HW_KINDS)[number]): string => `hw:${kind}`;
+
 /** What a finger can tap on the screen outside the keypad. */
 const TAPPABLE = "button, [role=menuitem], [role=button], [data-testid=sheet-catch]";
 const KEYPAD = "[data-key], [data-trackpad]";
@@ -26,20 +45,29 @@ export function isScreenTap(target: { closest(selector: string): unknown } | nul
   return target.closest(TAPPABLE) !== null && target.closest(KEYPAD) === null;
 }
 
-/** A hardware key's handler that counts the press first (docs/04 5.2: every key press counts 1). Its last argument is the
- *  event's KeyboardEvent.repeat: a held key counts once, so an auto-repeat runs the key again but counts nothing (R70f1). */
-export function counted<A extends unknown[]>(count: () => void, run: (...a: A) => void): (...a: [...A, repeat: boolean]) => void {
+/** What a screen tap hit, as the count's kind (R127): a menu row's `data-count` (its own kind, R92: units-const,
+ *  units-tools; else "row"), else button. */
+export function screenKind(target: { closest(selector: string): unknown }): string {
+  return `screen:${(target.closest("[data-count]") as { dataset: { count: string } } | null)?.dataset.count ?? "button"}`;
+}
+
+/** A hardware key's handler that counts the press first (docs/04 5.2: every key press counts 1; `count` gets the handler's
+ *  own arguments, R127). Its last argument is the event's KeyboardEvent.repeat: a held key counts once, so an auto-repeat
+ *  runs the key again but counts nothing (R70f1). */
+export function counted<A extends unknown[]>(count: (...a: NoInfer<A>) => void, run: (...a: A) => void): (...a: [...A, repeat: boolean]) => void {
   return (...a) => {
-    if (a[a.length - 1] !== true) count();
-    run(...(a.slice(0, -1) as A));
+    const args = a.slice(0, -1) as A;
+    if (a[a.length - 1] !== true) count(...args);
+    run(...args);
   };
 }
 
 /** Count every tap on the screen (a history row, a Find result, a chip, a menu item). Captured, so the count is in before
  *  the tap's own handler runs (Reset then zeroes it; a Settings tap counts itself). Returns the cleanup. */
-export function countScreenTaps(count: () => void): () => void {
+export function countScreenTaps(count: (kind: string) => void): () => void {
   const on = (ev: MouseEvent): void => {
-    if (isScreenTap(ev.target instanceof Element ? ev.target : null)) count();
+    const el = ev.target instanceof Element ? ev.target : null;
+    if (el && isScreenTap(el)) count(screenKind(el));
   };
   document.addEventListener("click", on, true);
   return () => document.removeEventListener("click", on, true);
