@@ -559,7 +559,9 @@ export function exactFacts(
   try {
     const raised = lit.at > P ? from(lit.at) : null;
     let out = raised ?? from(P);
-    if ((lit.unchecked || (lit.at > P && !raised)) && out) out = out.map((f) => (f.exact ? f : { ...f, warn: f.warn ?? ("unchecked" as const) }));
+    // a value whose check confirmed no digit stays "no digit confirmed" (G23): ⚠ unchecked would show its wrong digits
+    if ((lit.unchecked || (lit.at > P && !raised)) && out)
+      out = out.map((f) => (f.exact || f.reliableDigits === 0 ? f : { ...f, warn: f.warn ?? ("unchecked" as const) }));
     if (erf === safe || !out) return out;
     return giac.eval(ICDF_FAILED).trim() !== "0" ? out.map((f) => (f.exact ? f : { ...f, warn: "unaudited" as const })) : out;
   } finally {

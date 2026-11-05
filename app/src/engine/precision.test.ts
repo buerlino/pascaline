@@ -45,7 +45,11 @@ describe.skipIf(!giacAvailable())("honest precision (real Giac)", () => {
     const valued = { ...bridge, value: (text: string, at: readonly number[]) => (precs.push(...at), bridge.value(text, at)) };
     const hard = new EngineHost(counted, valued).home("sin(10^2000)", defaultHomeSettings).result;
     expect(hard.facts.reliableDigits).toBe(0);
-    expect(markOf(precisionFacts(hard), { format: "STD", digits: 12 })).toMatchObject({ mark: "⚠", n: 0 });
+    // G141f1: past MAX_EVAL_DIGITS the literal guard leaves a no-digit value as it is, no "unchecked" that shows the wrong double
+    expect(hard.facts.warn).toBeUndefined();
+    const hardMark = markOf(precisionFacts(hard), { format: "STD", digits: 12 });
+    expect(hardMark).toMatchObject({ mark: "⚠", n: 0 });
+    expect(hardMark?.warn).toBeUndefined();
     expect(precs.length).toBeGreaterThan(2);
     expect(Math.max(...precs)).toBeLessThanOrEqual(MAX_EVAL_DIGITS);
   });
