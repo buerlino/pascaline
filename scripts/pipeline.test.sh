@@ -395,6 +395,53 @@ eval "$(sed -n '/^want_checks() {/,/^}/p' "$here/pipeline.sh")"
 changed() { echo docs/x.md; }; checks=auto
 spec_file="$tmp/spec-red"; [[ ",$(want_checks)," == *,redfirst,* ]] || fail "A36: want_checks lacks redfirst for a package that says so"
 spec_file="$tmp/spec-plain"; [[ ",$(want_checks)," != *,redfirst,* ]] || fail "A36: want_checks has redfirst without the claim"
+# A71: "fail on the stock build": the same stage on phase-1's code with the stock engine (GIAC_OUT of the stock build); the log says which engine ran
+git -C "$rf" checkout -q -b p1/vgiac phase-1; echo 'FAILS-ON-OLD reads GIAC_OUT' > "$rf/app/d.test.ts"; git -C "$rf" add -A; gc "$rf" t; git -C "$rf" checkout -q phase-1
+printf 'X, A2: tests that fail on the stock build\n' > "$tmp/spec-stock"
+printf '#!/bin/sh\necho "GIAC_OUT=$GIAC_OUT" > "%s/vitest-ran"\ngrep -q FAILS-ON-OLD "$@" && { echo " Test Files  1 failed (1)"; echo "      Tests  1 failed (1)"; exit 1; }\nexit 0\n' "$tmp" > "$tmp/fakevitest-env.sh"
+printf '#!/bin/sh\necho "GIAC_OUT=$GIAC_OUT ONLY=$ONLY" > "%s/golden-ran"\ncase "$GIAC_OUT" in *stock*) echo "FAIL home: 12/13 match"; echo "  home newcase: got 1, expect 2"; echo "GOLDEN GATE FAILED"; exit 1;; esac\nexit 0\n' "$tmp" > "$tmp/fakegolden-env.sh"
+chmod +x "$tmp/fakevitest-env.sh" "$tmp/fakegolden-env.sh"
+red_first_wanted "$tmp/spec-stock" && red_first_stock_wanted "$tmp/spec-stock" && ! red_first_stock_wanted "$tmp/spec-red" && ! red_first_stock_wanted "$tmp/spec-plain" || fail "A71: red_first_stock_wanted / red_first_wanted do not know 'fail on the stock build'"
+export PASCALINE_REDFIRST_VITEST="$tmp/fakevitest-env.sh" PASCALINE_REDFIRST_GOLDEN="$tmp/fakegolden-env.sh"
+mkdir -p "$tmp/stock-eng" "$tmp/patched-eng"
+rm -f "$tmp/golden-ran"; w="$(rfwt p1/home)"
+red_first "$w" "$tmp/spec-stock" "$tmp/patched-eng" "$tmp/rf.log" "$tmp/stock-eng" >/dev/null || fail "A71: a golden case failing on the stock engine is refused"
+grep -q "GIAC_OUT=$tmp/stock-eng ONLY=home" "$tmp/golden-ran" || fail "A71: the golden stage did not run with GIAC_OUT on the stock engine: $(cat "$tmp/golden-ran" 2>&1)"
+grep -q "stock engine.*$tmp/stock-eng" "$tmp/rf.log" || fail "A71: the red-first log does not say the stock engine was used: $(head -n2 "$tmp/rf.log")"
+noscratch stock-golden
+out="$(red_first "$w" "$tmp/spec-stock" "$tmp/patched-eng" "$tmp/rf.log" "$tmp/patched-eng")" && fail "A71: a golden case passing on the engine given as stock passes the stage"
+grep -q 'every new test passes on the stock build' <<<"$out" || fail "A71: no 'every new test passes on the stock build': $out"; noscratch stock-green
+out="$(red_first "$w" "$tmp/spec-stock" "$tmp/patched-eng" "$tmp/rf.log")" && fail "A71: a stock spec without a stock engine passes"
+grep -q 'no stock engine' <<<"$out" || fail "A71: no reason for a missing stock engine: $out"; noscratch stock-missing
+# the phase-1 claim is as before: phase-1's engine, 'on phase-1' in the reason
+out="$(red_first "$w" "$tmp/spec-red" "$tmp/patched-eng" "$tmp/rf.log" "$tmp/stock-eng")" && fail "A71: a phase-1 spec used the stock engine (the golden case failed there)"
+grep -q 'every new test passes on phase-1' <<<"$out" && grep -q "GIAC_OUT=$tmp/patched-eng " "$tmp/golden-ran" || fail "A71: a phase-1 spec does not run on phase-1's engine: $out"; noscratch stock-phase1
+# vitest files: only those that read GIAC_OUT run, with the stock engine
+rm -f "$tmp/vitest-ran"; w="$(rfwt p1/fail)"
+red_first "$w" "$tmp/spec-stock" "$tmp/patched-eng" "$tmp/rf.log" "$tmp/stock-eng" >/dev/null || fail "A71: a branch whose only test does not read GIAC_OUT does not skip"
+[[ ! -e "$tmp/vitest-ran" ]] || fail "A71: a vitest file that does not read GIAC_OUT ran in the stock check"; noscratch stock-vitest-skip
+w="$(rfwt p1/vgiac)"; red_first "$w" "$tmp/spec-stock" "$tmp/patched-eng" "$tmp/rf.log" "$tmp/stock-eng" >/dev/null || fail "A71: a vitest file that reads GIAC_OUT and fails on the stock engine is refused"
+grep -q "GIAC_OUT=$tmp/stock-eng" "$tmp/vitest-ran" || fail "A71: vitest ran without GIAC_OUT on the stock engine: $(cat "$tmp/vitest-ran" 2>&1)"; noscratch stock-vitest
+unset PASCALINE_REDFIRST_VITEST PASCALINE_REDFIRST_GOLDEN
+# the stock engine: built once per key by build-wasm.sh with GIAC_PATCHES=none, reused after, stamped
+sk="$tmp/sk"; mkdir -p "$sk/tools" "$sk/engine/giac"; cp "$sb/tools/devlock.sh" "$sk/tools/"
+cat > "$sk/engine/giac/build-wasm.sh" <<STUB
+#!/bin/sh
+[ "\$1" = stock-key ] && { echo k71; exit 0; }
+[ "\$GIAC_PATCHES" = none ] || exit 9
+echo run >> "$sk/builds"; mkdir -p "\$GIAC_BUILD_OUT/stock-k71" && echo wasm > "\$GIAC_BUILD_OUT/stock-k71/giac.wasm"
+STUB
+chmod +x "$sk/engine/giac/build-wasm.sh"
+mkdir -p "$sk/_out"
+(cd "$sk" && stock_engine_ensure "$sk" "$sk/_out" "$sk/build.log") || fail "A71: stock_engine_ensure failed: $engine_why"
+[[ "$stock_dir" == "$sk/_out/stock-k71" && -f "$stock_dir/giac.wasm" && "$(engine_stamp "$stock_dir")" == k71 ]] || fail "A71: stock_engine_ensure gave '$stock_dir' without a stamped build"
+(cd "$sk" && stock_engine_ensure "$sk" "$sk/_out" "$sk/build.log") || fail "A71: the second stock_engine_ensure failed"
+[[ "$(wc -l < "$sk/builds")" -eq 1 ]] || fail "A71: the stock engine was built $(wc -l < "$sk/builds") times, once expected"
+grep -q 'GIAC_PATCHES=none' "$here/../engine/giac/build-wasm.sh" && GIAC_PATCHES=none "$here/../engine/giac/build-wasm.sh" stock-key | grep -qE '^[0-9a-f]{16}$' || fail "A71: build-wasm.sh has no GIAC_PATCHES=none or no stock-key"
+[[ "$("$here/../engine/giac/build-wasm.sh" stock-key)" == "$(GIAC_PATCHES=none "$here/../engine/giac/build-wasm.sh" stock-key)" ]] || fail "A71: the stock key depends on GIAC_PATCHES"
+# want_checks: redfirst for a spec that says the stock build, too
+spec_file="$tmp/spec-stock"; [[ ",$(want_checks)," == *,redfirst,* ]] || fail "A71: want_checks lacks redfirst for a package that says 'fail on the stock build'"
+grep -q 'stock_engine_ensure' "$here/pipeline.sh" || fail "A71: pipeline.sh does not build the stock engine"
 # the whole run: a sandbox with a worker that adds a passing test; the failure line reaches fail-<round>.txt
 sb4="$tmp/sb4"; mkdir -p "$sb4/bin" "$sb4/tools" "$sb4/docs/shifts" "$sb4/app/node_modules/x"; git init -q -b main "$sb4"
 cp "$sb/tools/devlock.sh" "$sb4/tools/"; cp "$sb/bin/npm" "$sb4/bin/"; : > "$sb4/docs/shifts/brief.md"; echo t > "$sb4/app/keep"
