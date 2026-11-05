@@ -111,6 +111,10 @@ const CANARIES: [string, string, RegExp, string][] = [
   ["0029-int-trunc-split.patch", "giac-2.1.0/src/intg.cc", /sign_floor_ceil_round_tab\)\.empty\(\) \)\s*return false;\s*if \(f\.type!=_SYMB/, "bool approxint_exact(const gen &f,const gen &x,GIAC_CONTEXT){"],
   // ... and an exact 0 fails the check against tegral's own error (int(trunc(x),x,-3/2,3/2) = [0,-2.9e-07])
   ["0029-int-trunc-split.patch", "giac-2.1.0/src/intg.cc", /return simplifier\(exactvalue,contextptr\);\s*\*logptr\(contextptr\) << gettext\("Error while checking exact value with approximate value, returning both!"\)/, "gen ck_int_numerically(const gen & f"],
+  // G152, patch 0030: a negative real float to a float power k+1/2 is exp(e*ln(b)), whose real part is noise (evalf(sqrt(-pi))
+  // = 4.1e-41+1.77*i at Digits 40, 9.6e-15+1.77*i at Digits 12), so acosh(cosh(3*sqrt(-pi))) took the other side of its cut
+  ["0030-pow-half-odd-negative-float.patch", "giac-2.1.0/src/gen.cc", /return std::pow\(base\._DOUBLE_val,exponent\._DOUBLE_val\);\s*#endif\s*else\s*return exp\(exponent\*log\(base,contextptr\),contextptr\);/, "switch ( (base.type<< _DECALAGE) | exponent.type ) {"],
+  ["0030-pow-half-odd-negative-float.patch", "giac-2.1.0/src/gen.cc", /\|\| base\.type==_FLOAT_ \|\| \( \(base\.type<_POLY \|\| base\.type==_FLOAT_\) && \(exponent\.type==_REAL \|\| exponent\.type==_DOUBLE_ \|\| exponent\.type==_FLOAT_\)\)\)\s*return exp\(operator_times\(exponent,log\(base,contextptr\),contextptr\),contextptr\);/, "Use matpow to force computation of a power of matrix via jordanisation"],
   // G135, patch 0019: atan keeps an exact argument on its cut symbolic (atan(2*i)), which Giac's cos rule reads on the other side
   ["0019-atan-exact-cut.patch", "giac-2.1.0/src/usual.cc", /atan\(b,contextptr\)\),_SEQ__VECT\)\);\s*gen tmp=evalf_double\(e,0,contextptr\);\s*if \(tmp\.type==_DOUBLE_\)\{/, "return symbolic(at_program,gen(makevecteur(a,0,atan(b,contextptr)),_SEQ__VECT));"],
   // G135, patch 0019: cos(atan(f)) = sqrt(1/(f^2+1)) takes the other root where f^2+1 is a negative real (cos(quote(atan(2*i))) = i*sqrt(3)/3)
