@@ -315,8 +315,15 @@ export interface LibraryReply {
 }
 
 /** R59: the format as the worker has it: the version alone. The app brings an older stamp up to date before it sends
- *  a file (state/libraryFormat.ts upToDate: the migration steps are state/'s, G147), so no migration runs here. */
-const inWorker = (version: number): LibraryFormat => ({ version, migrate: (t) => t });
+ *  a file (state/libraryFormat.ts upToDate: the migration steps are state/'s, G147), so no migration runs here; an
+ *  older stamp that still arrives is refused, never read as if it were up to date (principle 3). */
+const inWorker = (version: number): LibraryFormat => ({
+  version,
+  migrate: (t, from) => {
+    if (from < version) throw new LibError(1, `the app did not bring this file up to date (version ${from}; this one reads ${version})`);
+    return t;
+  },
+});
 
 /** R59, the worker's side of an import: a file (bytes, or a decoded text) at `version` read and checked as a whole,
  *  then imported into `engine`. A refusal of the reader is a result like the import's own, with its line. */

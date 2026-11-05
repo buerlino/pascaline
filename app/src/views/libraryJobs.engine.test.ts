@@ -96,6 +96,19 @@ describe.skipIf(!giacAvailable())("the library through the Calc port (real Giac)
     expect((await calc.names()).find((u) => u.name === "beam_M")?.desc).toMatch(/^Maximum bending moment/);
   });
 
+  it("a version-2 file is migrated on its way to the worker: pasexp is gone, ph is stored with exp, its test passes (derived: exp(iπ) = −1)", { timeout: 30_000 }, async () => {
+    const { calc } = fresh();
+    const reply = await calc.importLibrary("// pascaline library 2\n// phasor\nph(w):=pasexp(i*w)\n// test: simplify(ph(pi)+1)==0\n", false);
+    const r = ok(reply.result);
+    expect(r.plan.added).toEqual(["ph"]);
+    expect(r.tests).toBe(1);
+    expect(reply.lines).toEqual([{ name: "ph", line: 3 }]);
+    const cmds = r.log.find((e) => e.name === "ph")!.cmds.join("\n");
+    expect(cmds).toMatch(/\bexp\(/);
+    expect(cmds).not.toMatch(/pasexp/);
+    expect((await calc.cas("ph(pi)", settings)).text).toBe("-1");
+  });
+
   it("refuses a bad text whole, with its line, before the engine sees it (not UTF-8 too)", { timeout: 30_000 }, async () => {
     const { calc } = fresh();
     const r = (await calc.importLibrary("// pascaline library 4\n// fine\nokfn(x):=x+1\nassume(x>0)\n", false)).result;
