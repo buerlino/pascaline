@@ -227,3 +227,15 @@ describe("storageRaw.ts opens the same store as storage.ts", () => {
     expect(facts("storageRaw.ts")).toEqual(main);
   });
 });
+
+describe("the taps part with the per-key counts (R127)", () => {
+  const base = { shift: 1, alpha: 2, presses: 3, presets: 0, since: "2026-11-05" };
+  it("is accepted with or without keys", () => {
+    expect(VALIDATORS["taps"]?.(base)).toBe(true);
+    expect(VALIDATORS["taps"]?.({ ...base, keys: {} })).toBe(true);
+    expect(VALIDATORS["taps"]?.({ ...base, keys: { "d7:primary": 2, "screen:row": 1 } })).toBe(true);
+  });
+  it("refuses a keys field that is not a map of counts", () => {
+    for (const keys of [[], "x", 3, null, { a: -1 }, { a: 1.5 }, { a: "2" }]) expect(VALIDATORS["taps"]?.({ ...base, keys }), JSON.stringify(keys)).toBe(false);
+  });
+});
