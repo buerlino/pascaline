@@ -308,9 +308,11 @@ export const LAZY_PARTS = ["src/views/sheetKeys.ts", "src/views/tmplSheet.ts", "
  *  60.72 → 60.99 kB (R127): the branch measures 60,970 B (172.99 kB raw, +0.25 kB over the pin): the per-key press counts,
  *  which run on every press and so ride in the start chunk (TapCounts.keys and its stored reader, the key and layer a
  *  touch names in pressCount.ts, a hardware key's and a screen tap's name, the call sites in Keypad and App); the
- *  export, its file and its row ride in the Mode sheet's chunk. The pin is 60,970 B + 0.02 kB (+0.05 kB would pass the
- *  budget of 61 kB). */
-export const START_PIN_GZIP = 60_990;
+ *  export, its file and its row ride in the Mode sheet's chunk.
+ *  60.99 → 61.00 kB (R127 fix round 2): after the review fix (a held ⌫ keeps the repeat layer; the hardware kinds are named
+ *  hw:<kind>) the branch measures 60,992 B (173,080 B raw), 2 B over the pin. The pin is now the budget of 61 kB itself, so
+ *  nothing is left to grow: the next package that touches the start chunk must split something out first. */
+export const START_PIN_GZIP = 61_000;
 
 /** R103 (vr-4): the classic inline scripts of index.html run before the first paint, outside every chunk: the stored look
  *  (R50e) and the too-old WebView check. Their gzip sizes, each script alone and summed (as the start chunk sums its
