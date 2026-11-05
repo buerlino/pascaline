@@ -810,7 +810,7 @@ git merge-base --is-ancestor phase-1 "$audited" || queue_stop "phase-1 moved whi
 merge_key_before=""; [[ $engine_managed -eq 0 ]] || merge_key_before="$(engine_key "$main" phase-1)"
 if git -C "$integ" merge --no-ff --signoff -m "Merge $branch: $id (pipeline run $n)" "$audited" > "$run/merge.log" 2>&1; then
   mc="$(git -C "$integ" rev-parse --short HEAD)"
-  git worktree remove --force "$wt" >/dev/null 2>&1 || true
+  git worktree remove --force "$wt" >/dev/null 2>&1 || true; claude_scratch_remove "$wt"  # A69: the run's Claude scratch folder goes with its worktree
   git -C "$integ" branch -d "$branch" >/dev/null 2>&1 || true
   log "pipeline #$n $id: MERGED $mc (audited ${audited:0:9})"
   result="RESULT #$n $id: MERGED $mc"
