@@ -74,3 +74,27 @@ test("Save a backup works when the sheet opened before the clipboard code arrive
   expect(JSON.parse(readFileSync((await file.path()) as string, "utf8"))).toHaveProperty("pascaline-backup", 1);
   await expect(page.getByTestId("notice")).toHaveText("Backup offered as a download");
 });
+
+test("Settings › Counters › Export the counts saves pascaline-counts/1 with the presses per key and layer (R127)", async ({ page }) => {
+  await page.setViewportSize({ width: 412, height: 915 });
+  await savePicker(page, "fake");
+  await open(page, "");
+  await tap(page, ["d7", "d7", "shift", "sin"]); // d7 twice; Shift, then sin in the Shift layer
+  await tap(page, ["@mode", "d6", "d6"]);
+  await expect(page.getByTestId("sheet-title")).toHaveText("Mode › Settings › Counters");
+  await page.getByTestId("menu").locator('[data-id="export"]').tap();
+  await expect(page.getByTestId("notice")).toHaveText("Counts saved");
+  const file = await savedText(page);
+  expect(file?.name).toMatch(/^pascaline-counts-\d{4}-\d{2}-\d{2}\.json$/);
+  const o = JSON.parse(file?.text ?? "{}") as { format: string; since: string; presses: number; keys: Record<string, number> };
+  expect(Object.keys(o)).toEqual(["format", "since", "presses", "keys"]);
+  expect(o.format).toBe("pascaline-counts/1");
+  expect(o.since).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  expect(o.keys["d7:primary"]).toBe(2);
+  expect(o.keys["sin:shift"]).toBe(1);
+  expect(o.keys["shift:primary"]).toBe(1);
+  expect(o.keys["screen:button"] ?? 0).toBeGreaterThanOrEqual(1); // the Mode chip
+  expect(Object.values(o.keys).reduce((a, b) => a + b, 0)).toBe(o.presses);
+  const counts = Object.values(o.keys);
+  expect(counts).toEqual([...counts].sort((a, b) => b - a));
+});

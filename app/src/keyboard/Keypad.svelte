@@ -6,7 +6,7 @@
   import { fitLegends } from "./fit.ts";
   import { keyNames, loadKeyNames } from "./keyNamesLoader.svelte.ts";
   import { actionFor, gridPlace, keyboard, labelFor, type Key, type Layer } from "./keyboard.ts";
-  import { touchPresses } from "../state/pressCount.ts";
+  import { touchKey, touchPresses } from "../state/pressCount.ts";
   import { sheetChunk } from "../views/sheetView.svelte.ts";
   import type { UserKeys } from "./userKeys.svelte.ts";
 
@@ -42,8 +42,9 @@
     /** A key fires; `layer` overrides the Shift/Alpha state: "primary" for a trackpad step, "shift" for a flick up,
      *  "alpha" for a flick down (on Shift and Alpha themselves: the lock flicks). */
     onpress: (key: Key, layer?: Layer) => void;
-    /** One press was made, as docs/04 5.2 counts them (R70): a tap, a flick, a drag, a held ⌫ once. */
-    oncount?: () => void;
+    /** One press was made, as docs/04 5.2 counts them (R70): a tap, a flick, a drag, a held ⌫ once. `key`: which one,
+     *  "<key id>:<layer>" (R127, state/pressCount.ts). */
+    oncount?: (key?: string) => void;
     /** A finger went down on the pad: the key vibration, one pulse per touch (R112). A drag step or an armed flick makes none. */
     ontouch?: () => void;
   } = $props();
@@ -208,9 +209,9 @@
     }
 
     if (target && target !== "pad" && REPEAT_KEYS.includes(target.id)) {
-      oncount();
-      onpress(target);
       // the repeats keep the layer of the first press (Shift ⌫ = Del), which used up a one-shot Shift
+      oncount(`${target.id}:${alpha ? "alpha" : shift ? "shift" : "primary"}`);
+      onpress(target);
       const layer: Layer = alpha ? "alpha" : shift ? "shift" : "primary";
       gestures.set(ev.pointerId, { kind: "repeat", repeat: new Repeat(() => onpress(target, layer)) });
       return;
@@ -260,7 +261,7 @@
    * touch is the key, ⌫ stops repeating.
    */
   function finish(g: Gesture): void {
-    if (touchPresses(g) > 0) oncount();
+    if (touchPresses(g) > 0) oncount(touchKey(g, { shift, alpha }));
     if (g.kind === "pad") {
       if (g.steps.count === 0 && g.key) onpress(g.key);
     } else if (g.kind === "key") {
