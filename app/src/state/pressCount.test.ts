@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // What counts as one press (R70; docs/04 section 5.2): a key tap, a flick, a drag on the trackpad, a tap on the screen.
 import { describe, expect, it } from "vitest";
-import { counted, isScreenTap, screenKind, touchKey, touchPresses } from "./pressCount.ts";
+import { counted, HW_KINDS, hwKind, isScreenTap, screenKind, touchKey, touchPresses } from "./pressCount.ts";
 
 const key = {};
 /** A stand-in element that answers `closest` for the selectors it is given. */
@@ -104,5 +104,8 @@ describe("which key and layer a press was (R127)", () => {
     f("d7", "primary", false);
     f("d7", "primary", true); // an auto-repeat counts nothing
     expect(seen).toEqual(["d7:hwprimary"]);
+  });
+  it("a hardware key that is no keypad key is named hw:<kind>, never a key id (R127)", () => {
+    expect(HW_KINDS.map(hwKind)).toEqual(["hw:letter", "hw:symbol", "hw:dead", "hw:other"]);
   });
 });

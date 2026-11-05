@@ -17,7 +17,7 @@
   import type { UserKeys } from "./keyboard/userKeys.svelte.ts";
   import { noDigit } from "./state/displayMode.ts";
   import type { HistoryItem, Session, View } from "./state/session.svelte.ts";
-  import { counted, countScreenTaps } from "./state/pressCount.ts";
+  import { counted, countScreenTaps, hwKind } from "./state/pressCount.ts";
   import { createLoaders, type FindCode, type ModeSheetCode } from "./appLoaders.ts";
   import { tipsDue } from "./state/tips.ts";
   import History from "./views/History.svelte";
@@ -54,7 +54,8 @@
   onMount(() => {
     if (host) entry.setHost(host);
     // R70, R107: a hardware key (`<` `>` `!` and a dead one too) and a tap are presses (docs/04 5.2)
-    const hw = (name: string) => (): void => session.taps.press(`${name}:hw`); // R127: which one; a hardware key that runs a keypad key is "<key id>:hw"
+    const hw = (name: string) => (): void => session.taps.press(`${name}:hw`); // R127: a hardware key that runs a keypad key is "<key id>:hw"
+    const hwOther = (kind: Parameters<typeof hwKind>[0]) => (): void => session.taps.press(hwKind(kind)); // ... else "hw:<kind>" (state/pressCount.ts)
     // R45: a hardware Enter is the Enter key (a picked row, an open sheet), not a bare submit
     entry.onEnter = counted(hw("enter"), () => {
       const key = keyboard.byId.get("enter");
@@ -71,14 +72,14 @@
       const key = keyboard.byId.get(id);
       if (key) press(userKeys.resolve(key), layer);
     });
-    entry.onLetter = counted(hw("letter"), typeLetter);
+    entry.onLetter = counted(hwOther("letter"), typeLetter);
     shell.goTo = goTo; // the Apps sheet's Home and CAS rows
     shell.openSettings = openSettings;
     shell.settingsMenu = () => (loaders.modeSheet ? (settingsMenu ??= loaders.modeSheet.settingsMenu(session, settingsEnv)) : undefined); // (R49)
     shell.homeView = () => (session.view === "cas" ? "cas" : "home"); // the last row of every Menu
-    entry.onSymbol = counted(hw("symbol"), (ch) => entry.run({ kind: "insert", latex: ch }));
-    entry.onDead = counted(hw("dead"), dead);
-    entry.onPress = counted(hw("other"), () => {}); // R107f1: a leaving ) or | is a press that needs nothing more
+    entry.onSymbol = counted(hwOther("symbol"), (ch) => entry.run({ kind: "insert", latex: ch }));
+    entry.onDead = counted(hwOther("dead"), dead);
+    entry.onPress = counted(hwOther("other"), () => {}); // R107f1: a leaving ) or | is a press that needs nothing more
     entry.onPaste = (text) => route.pasteText(ctx, text); // R114: Ctrl+V and every system paste take the Paste key's path
     // the first start (R15c4): once the keypad is drawn and the browser is idle, so the tips never compete with the start
     void tipsDue(location.search).then((due) => due && ("requestIdleCallback" in window ? requestIdleCallback(showTips, { timeout: 2000 }) : setTimeout(showTips, 500)));

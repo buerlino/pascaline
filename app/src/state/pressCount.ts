@@ -30,6 +30,11 @@ export function touchKey(
   return g.key && st !== "cancelled" ? `${g.key.id}:${st === "tap" ? (layer.alpha ? "alpha" : layer.shift ? "shift" : "primary") : st}` : undefined;
 }
 
+/** The count name of a hardware key that is no keypad key (R127): `hw:letter`, `hw:symbol`, `hw:dead`, `hw:other`. (A hardware
+ *  key that runs a keypad key, Enter and Esc included, is "<key id>:hw".) */
+export const HW_KINDS = ["letter", "symbol", "dead", "other"] as const;
+export const hwKind = (kind: (typeof HW_KINDS)[number]): string => `hw:${kind}`;
+
 /** What a finger can tap on the screen outside the keypad. */
 const TAPPABLE = "button, [role=menuitem], [role=button], [data-testid=sheet-catch]";
 const KEYPAD = "[data-key], [data-trackpad]";

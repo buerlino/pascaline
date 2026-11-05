@@ -210,9 +210,9 @@
 
     if (target && target !== "pad" && REPEAT_KEYS.includes(target.id)) {
       // the repeats keep the layer of the first press (Shift ⌫ = Del), which used up a one-shot Shift
-      const layer: Layer = alpha ? "alpha" : shift ? "shift" : "primary";
-      oncount(`${target.id}:${layer}`);
+      oncount(`${target.id}:${alpha ? "alpha" : shift ? "shift" : "primary"}`);
       onpress(target);
+      const layer: Layer = alpha ? "alpha" : shift ? "shift" : "primary";
       gestures.set(ev.pointerId, { kind: "repeat", repeat: new Repeat(() => onpress(target, layer)) });
       return;
     }
