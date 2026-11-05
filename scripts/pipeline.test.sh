@@ -13,10 +13,10 @@ integ="$(git worktree list --porcelain | awk '/^worktree /{w=$2} /^branch refs\/
 export PASCALINE_ALLOW_UNPACKAGED_IDS=1
 fails=0; count=0
 fail() { echo "FAIL: $*" >&2; fails=$((fails + 1)); }
-re='^### (ron|gorge|annabell|sandra), ([A-Z][0-9]+[a-z0-9]*):.*branch `([^`]+)`'
+re='^### (ron|gorge|annabell|sandra), ([A-Z][0-9]+[a-z0-9]*)( \([^)]*\))?:.*branch `([^`]+)`'
 while IFS= read -r line; do
   [[ "$line" =~ $re ]] || { fail "heading without agent, ID and branch: $line"; continue; }
-  agent="${BASH_REMATCH[1]}"; pid="${BASH_REMATCH[2]}"; br="${BASH_REMATCH[3]}"
+  agent="${BASH_REMATCH[1]}"; pid="${BASH_REMATCH[2]}"; br="${BASH_REMATCH[4]}"
   count=$((count + 1))
   out="$("$script" "$agent" "$pid" --dry-run 2>&1)"; rc=$?
   [[ $rc -eq 0 ]] || { fail "$agent $pid: exit $rc: $(tail -n 1 <<<"$out")"; continue; }
