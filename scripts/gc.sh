@@ -74,6 +74,13 @@ act() { if [[ $apply -eq 1 ]]; then "$@"; else echo "would: $*"; fi; }
   for f in "$coord"/tmpbuild/* $(find "$coord" -maxdepth 1 -name 'henri_*.out' -mtime +2 2>/dev/null); do
     [[ -e "$f" ]] || continue; act rm -rf "$f"; echo "- $f"
   done
+  # A69: Claude's scratch folders of runs whose worktree is gone: <claude tmp>/<main>--claude-worktrees-pl-*, kept when a live worktree has that name
+  live=" "; while read -r w; do live+="$(claude_scratch_name "$w") "; done < <(git worktree list --porcelain | awk '/^worktree /{print $2}')
+  sc_prefix="$(claude_scratch_name "$main")--claude-worktrees-pl-"
+  for e in "$(claude_tmp_dir)/$sc_prefix"*; do
+    [[ -d "$e" && "$live" != *" ${e##*/} "* ]] || continue
+    freed=$((freed + $(kb "$e"))); act rm -rf "$e"; echo "- $e (Claude scratch of a run whose worktree is gone)"
+  done
   echo; echo "## Pruned (engine builds no branch uses; archive folders older than 14 days)"
   keep=""; keys_ok=1
   # a key counts only when git could read the tree: engine_key hides a failing ls-tree (the hash of nothing), and a lost key prunes a build in use

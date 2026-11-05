@@ -54,6 +54,20 @@ merge_failure_reason() {
   else echo "merge failed: $(tail -n 1 "$2" | cut -c1-200)"; fi
 }
 
+# ---- A69: Claude's scratch folders ----
+# Claude Code keeps a scratch folder per working directory in <tmp>/claude-<uid>/<the path, / and . written as ->; a gorge run leaves about
+# 560 MB in it when its worktree is removed. claude_tmp_dir: the user's own root (PASCALINE_CLAUDE_TMP for tests).
+claude_tmp_dir() { echo "${PASCALINE_CLAUDE_TMP:-/tmp/claude-$(id -u)}"; }
+# claude_scratch_name <worktree path>: the folder's name.
+claude_scratch_name() { local p="$1"; echo "${p//[\/.]/-}"; }
+# claude_scratch_remove <worktree path>: removes the one folder named for that path; an empty or root path removes nothing.
+claude_scratch_remove() {
+  local name root; name="$(claude_scratch_name "${1:-}")"; root="$(claude_tmp_dir)"
+  [[ "$name" =~ [^-] ]] || return 0
+  [[ -d "$root/$name" ]] && rm -rf "${root:?}/$name"
+  return 0
+}
+
 # ---- engine builds (A28) ----
 # engine_key <git dir> <rev>: a hash of the engine's inputs at <rev> (build-wasm.sh, patches/ without its README, wasm/), from the
 # blob ids in the tree, so it needs no checkout and takes milliseconds.
