@@ -5,6 +5,13 @@ History only: read it when a decision is questioned. What still binds is in [../
 
 ## Decided proposals moved here later
 
+### Shortened 2026-11-05 (Opus pass 73) to make room for R59's lines, as they stood
+- **Honest precision** (G2): rule: docs/04 2.4 rules 2–3; assignments evaluated once. **G44, G23:** the inverse distributions are solved against our MPFR forward functions and every fallback keeps ⚠ with Giac's value; Home's 50 ms budget is checked between levels. Full text: archive, "Shortened 2026-10-21 (P23)". Would change if: a G2 user types Giac's aliases.
+- **G148, G148f1, G148f2 (Opus passes 62, 63, 65):** approx or evalf of a value past MPFR's range is refused as the bare input is, inside a larger input too; an infinite or undef output of a finite bare input asks each call's argument too. Full text: archive. Would change if: a cheaper test tells exp(-10^20) from 0.
+- **G161 (Opus passes 60, 62):** W, VA and var are three kinds (an energy unit counts as W; owner 2026-11-04): a conversion or a sum between kinds is refused, "VA, var and W differ by the power factor" (P/S + Q/S and √(P² + Q²) too); a product is not (P/S = 0.6); a VA or var result offers no W chip. Would change if: a power-triangle rule is packaged.
+- **G16:** an exact 0 loses its dimension; terms that cancel exactly are a known gap. **G17:** dB is a field-ratio level (1 Np = 20/ln 10 dB, 1 bel = 10 dB), dBm and dBW to 1 mW and 1 W; °C, °F and the levels alone convert by offset or level; a lone dB, bel or Np with no end slot, a level of a ratio ≤ 0 and a temperature below 0 K are refused.
+- **Function app:** window x ∈ [-10, 10] square and centred; trace step 0.1 at the default window (1-2-5 rule elsewhere); Num from 0 by 0.1, `NaN` at a pole; a value the Num entry refuses (a step of 0 too) gets a notice, never a silent return (R99, Opus pass 35); Intersection asks for the second function.
+
 ### Shortened 2026-11-05 (Opus pass 72) to make room for R132's lines, as it stood
 - **A62, R59's gate (owner, 2026-11-05):** the 50 ms count above an empty log's first restore (57 ms, paid by everyone); after G83 a 200-program library costs 39 ms (Tab One, `0da228a0`: replay 96 ms p50, 119 p95), so R59 goes ahead. Would change if: an empty log's restore drops well below 57 ms.
 

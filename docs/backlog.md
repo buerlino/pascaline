@@ -27,6 +27,7 @@ Work continues on `phase-1`; `master` follows it from 2026-11-03 (decisions.md, 
 6. **v0.1.0** (the days: [release-0.1.0.md](release-0.1.0.md)): the test tag on 11-03; go or slip on 11-14; read the usage meter each morning and at each lane start (tripwire 85 %). **A49/A52, switching a broken web worker off:** `app/pwa/README.md` (the kill run on the deployed tag, up to 90 min; the fixed tag's normal run brings the worker back).
 7. **Later:** the outside rounds (two 30-minute rounds after R4b and R24c, [r18](research/r18-outside-test.md)); at milestone 5, time ten tasks by hand (E-notation against units).
 8. **G164's sample library:** check its 16 sources before the freeze (decisions.md "Needs the user").
+9. **R59:** should the Math key's Find list your own functions too (decisions.md "Needs the user")?
 
 ### Upstream reports (owner; drafts in `../outreach/upstream-reports.md`)
 - **MathLive**, filed 2026-10-19: [#3122](https://github.com/arnog/mathlive/issues/3122) (⌫ at `\left…\right`), [#3123](https://github.com/arnog/mathlive/issues/3123) (touch caret), [#3124](https://github.com/arnog/mathlive/issues/3124) (focus restore); [#3125](https://github.com/arnog/mathlive/issues/3125) (Redo after ⌫, 2026-10-20); M5 (`isImplicitArg` takes no matrix, F68) drafted by R75.
@@ -36,7 +37,7 @@ Work continues on `phase-1`; `master` follows it from 2026-11-03 (decisions.md, 
 
 ### Open bugs (everyday reach; order: brief section 0; family n: [bug-patterns.md](research/bug-patterns.md) section 3; each line names its package, which holds the evidence)
 - **F179, package G171 (sandra, 2026-11-05).** With `A:=[[1,2,3]]` and a program that stores (`g(M):={cnt:=cnt+1;return M;}`), Home and CAS `A^2+g(1)` show = 15, `g(A)^2` = 14, `inv(g(A))` a row: the non-square check gives up when the input calls a storing function. Silent, with your own programs.
-- **F180, no package (sandra, 2026-11-05).** Share session writes template LaTeX half-read: `\sum_{k=1}^{10}k` → `\sum_k=1^10k`, `\sqrt[3]{8}` → `\sqrt[3]8`, `\lim_{x\to0}x` → `\lim_x → 0x`; their plain form is a design question (R134 takes the Greek letters).
+- **F180, no package (sandra, 2026-11-05).** Share session writes template LaTeX half-read: `\sum_{k=1}^{10}k` → `\sum_k=1^10k`, `\sqrt[3]{8}` → `\sqrt[3]8`, `\lim_{x\to0}x` → `\lim_x → 0x`; their plain form is a design question (R134 took the Greek letters; `\sin`, `\measuredangle` and the relations stay LaTeX too).
 - **F85, no package (G102's Not done; cost only).** A Home input with chips is parsed twice per Enter (G100); the parse is its own bridge-2 call, so G102 could not fold it.
 - **F80, package G179 (G99; `tools/probes/bridge-forms.ts`).** After Home `(BesselJ(1,2))=>y`, `int(y^2,y,0,1)` shows `⚠ 0.333333333333` (right `≈`): Home stores at Digits 40, where `=>` keeps y as `BesselJ(1,2)` unevaluated, and Giac's int with that y errors (Bad Argument Value). `y:=` keeps the float. Test: `boundNames.test.ts` (`it.fails`), seqsweep `12 bound: int…`. Family 8.
 - **F73, package G172 (it waited for the end of the freeze; owner, 2026-10-24; G103 reads the doubles).** A double in a list shows Giac's text (`[BesselJ(1,2),1/3]`), not numbers with ⚠; no wrong value reaches the screen. Left: `hasFloat` (reads `1..3` and strings). Families 5, 6.
