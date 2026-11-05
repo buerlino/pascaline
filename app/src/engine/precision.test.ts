@@ -45,9 +45,30 @@ describe.skipIf(!giacAvailable())("honest precision (real Giac)", () => {
     const valued = { ...bridge, value: (text: string, at: readonly number[]) => (precs.push(...at), bridge.value(text, at)) };
     const hard = new EngineHost(counted, valued).home("sin(10^2000)", defaultHomeSettings).result;
     expect(hard.facts.reliableDigits).toBe(0);
-    expect(markOf(precisionFacts(hard), { format: "STD", digits: 12 })).toMatchObject({ mark: "⚠", n: 0 });
+    // G141f1: past MAX_EVAL_DIGITS the literal guard leaves a no-digit value as it is, no "unchecked" that shows the wrong double
+    expect(hard.facts.warn).toBeUndefined();
+    const hardMark = markOf(precisionFacts(hard), { format: "STD", digits: 12 });
+    expect(hardMark).toMatchObject({ mark: "⚠", n: 0 });
+    expect(hardMark?.warn).toBeUndefined();
     expect(precs.length).toBeGreaterThan(2);
     expect(Math.max(...precs)).toBeLessThanOrEqual(MAX_EVAL_DIGITS);
+  });
+
+  it("G141f2: past the cap the float path leaves a no-digit value without a warn, as exactFacts does (derived)", () => {
+    // derived: at P and P + 20 Giac's sin(10^2000) agrees on no digit (G23 above), so "no digit confirmed", not the wrong double
+    const noDigit = { mark: "⚠", n: 0 };
+    const cas = host.cas("evalf(sin(10^2000))", defaultCasSettings).result;
+    expect(cas.numeric?.facts.reliableDigits).toBe(0);
+    expect(cas.numeric?.facts.warn).toBeUndefined();
+    expect(markOf(precisionFacts(cas.numeric!), { format: "STD", digits: 12 })).toEqual(noDigit);
+    const h = home("evalf(sin(10^2000))+1");
+    expect(h.facts.reliableDigits).toBe(0);
+    expect(h.facts.warn).toBeUndefined();
+    expect(mark("evalf(sin(10^2000))+1")).toEqual(noDigit);
+    // derived: (1-cos(10^-600))*10^1200+1 is 1.5; at P and P + 20 both round the 10^-600 away and agree on 1, so ⚠ unchecked
+    const c = host.cas("evalf((1-cos(10^-600))*10^1200+1)", defaultCasSettings).result;
+    expect(c.numeric?.facts.warn).toBe("unchecked");
+    expect(markOf(precisionFacts(c.numeric!), { format: "STD", digits: 12 })).toMatchObject({ mark: "⚠", warn: "unchecked" });
   });
 
   it("1/4 is = and 1/3 is ≈ (derived; docs/04 2.3 #9)", () => {

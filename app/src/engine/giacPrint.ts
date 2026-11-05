@@ -372,17 +372,24 @@ export function renameNames(text: string, to: ReadonlyMap<string, string>, q: Qu
  *  string) replaced by `f` of its mantissa and exponent part (`e-3`, or undefined) where `f` gives a text. G117: `..`
  *  is Giac's range operator, so a number ends before it and one starts right after it (`1.5..3` is 1.5 and 3). */
 export function mapNumbers(text: string, f: (mant: string, exp: string | undefined) => string | null, q: Quoting): string {
-  const t = withoutStrings(text, (x) => " ".repeat(x.length), q);
-  const re = new RegExp(`${NAME}|(\\d+\\.(?!\\.)\\d*|(?<!\\.)\\.\\d+|\\d+)([eE][+-]?\\d+)?`, "g");
   let out = "";
   let i = 0;
-  for (let m = re.exec(t); m; m = re.exec(t)) {
-    const to = m[1] === undefined ? null : f(m[1], m[2]);
+  for (const n of numbers(text, q)) {
+    const to = f(n.mant, n.exp);
     if (to === null) continue;
-    out += text.slice(i, m.index) + to;
-    i = m.index + m[0].length;
+    out += text.slice(i, n.at) + to;
+    i = n.end;
   }
   return out + text.slice(i);
+}
+
+/** Every number literal of `text` as mapNumbers reads them, in order: its mantissa, exponent part, start and end. */
+export function* numbers(text: string, q: Quoting): Generator<{ mant: string; exp: string | undefined; at: number; end: number }> {
+  const t = withoutStrings(text, (x) => " ".repeat(x.length), q);
+  const re = new RegExp(`${NAME}|(\\d+\\.(?!\\.)\\d*|(?<!\\.)\\.\\d+|\\d+)([eE][+-]?\\d+)?`, "g");
+  for (let m = re.exec(t); m; m = re.exec(t)) {
+    if (m[1] !== undefined) yield { mant: m[1], exp: m[2], at: m.index, end: m.index + m[0].length };
+  }
 }
 
 /** Every place `lit` stands in `text` as a whole literal (no name character, `.` or `^` before it, no name character
