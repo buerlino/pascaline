@@ -59,6 +59,7 @@ The owner's other open items are in [backlog.md](backlog.md), "Needs the user". 
 - **Owner answers of 2026-10-19 (feel).** R34: one shared entry line, as on the G2 (an unentered line follows you between views; after Enter it clears); R43, R7's defaults and A4a points 3 and 4 as built. Full text: archive.
 
 ### Precision, engine and parser
+- **G141 (Opus pass 68): a literal past `MAX_EVAL_DIGITS` makes the value ⚠ unchecked,** a power of ten too (`(1-cos(10^-600))*10^1200+1` showed ≈ 1, right 1.5); G126's and G153's rows turn ⚠ until S20.
 - **G133f1 (Opus pass 24):** Home's "Underflow" for an exact 0 it cannot prove (`re(asin(i/10))`) is a bug line, F139 (wrong reason, no wrong number), not a plan change.
 - **Opus passes 55–78 (R69, R79, R80, G56, G75, G77, G82f1, G85–G90, G97, G99–G103, A32, S17, S23):** built; their rules are in docs/04 and the code. Full text: [archive](archive/decisions-2026-10.md), "Shortened 2026-10-30 (16:00 review)".
 - **G78 (Opus pass 45; F50, F51):** `√(asinh(asin 3.7))` stays refused at Home's budget; a series or limit whose value is ±∞ keeps Giac's infinity; an infinity inside a taken `when` or `piecewise` branch is not looked for. Full text: archive. Would change if: the owner wants these refused or computed.

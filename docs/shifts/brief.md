@@ -68,7 +68,6 @@ A8 and [A57](packages/A57.md) run by day. Steps 449–452 and 408 run only on th
 |---|---|---|---|---|
 | 449 | [G141](packages/G141.md) a long exact literal raises the agreement check's precision | gorge, Opus | `p1/gorge-literalprec` | the weekly night |
 | 450 | [G142](packages/G142.md) complex acosh of a small number at 30 digits | gorge, Opus | `p1/gorge-acoshsmall` | the weekly night |
-| 452 | [G160](packages/G160.md) patch 0025 decides a huge base by its logarithm (F167) | gorge, Opus | `p1/gorge-powbigbase` | the weekly night |
 | 408 | [G138](packages/G138.md) the weekly fuzz and its triage | gorge, Opus | `p1/gorge-nightfuzz-1104` | the weekly night (Wed 11-04) |
 | 451 | [G156](packages/G156.md) \|x\| shown negative when both runs share an error (F163) | gorge, Opus | `p1/gorge-abssign` | the weekly night; G141 |
 | 437 | [G152](packages/G152.md) acosh's sign and tiny imaginary part (F143, F144) | gorge, Opus | `p1/gorge-acoshsign` | G142 |
