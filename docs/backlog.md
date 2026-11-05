@@ -40,7 +40,7 @@ Work continues on `phase-1`; `master` follows it from 2026-11-03 (decisions.md, 
 - **F171, no package (R40f1's Not done).** A picked row's why-line names a Greek constant chip by its LaTeX: G times α reads `≈ uses G (± …), \alpha (± …)` (whyLine.ts constantsUsed takes the chip's LaTeX name). Family 9.
 - **F170, no package (G157f1's Not done).** `limit(trunc(x),x,-1,1)` shows = -1 (right 0): Giac's limit substitutes -1, since trunc has no series rule and is not in series.cc's sign/floor/ceil/round list (floor has taylor_floor). Golden `g157f1-limit-trunc-neg1-right` pending. Families 3, 8.
 - **F169, no package (R114's Not done).** The unit view's own field still takes MathLive's paste: Ctrl+V of `1e-3` there is e − 3. Family 7.
-- **F172, no package (A62).** With 200 CAS history items stored, engine ready on the Tab One is 1835 ms (1305 without; bar 1.5 s), the replay the same; cause not isolated.
+- **F172, package A73 (A62).** With 200 CAS history items stored, engine ready on the Tab One is 1835 ms (1305 without; bar 1.5 s), the replay the same; cause not isolated.
 - **Night review 2026-11-02:** the rest in [research/night-review-2026-11-02.md](research/night-review-2026-11-02.md).
 
 ### Background stream (extreme inputs; at night, by reach)
@@ -88,7 +88,7 @@ Work continues on `phase-1`; `master` follows it from 2026-11-03 (decisions.md, 
 - Plots of user functions after v0.1.0 (owner, 2026-11-02; R56b covers Solve); **R58b** Alpha letters are always names in CAS (G2 item 62 can reverse it).
 - **G9. Number formats against the G2** (item 15): decide in the settings and help pass. **K1:** a pending one-shot Shift is used up by the first drag step. **K5:** the gestures in the help texts.
 - **A9's leftover:** the strength slider does nothing on a motor without amplitude control (Fairphone 6); a composition of ticks would give it (owner, 2026-11-02: a package later).
-- **A59's leftover:** 1–2 light frames (YAVG 19–65) at the splash exit; A59f1 by day on a device: Capacitor's backgroundColor the Dark bg.
+- **A59's leftover:** 1–2 light frames (YAVG 19–65) at the splash exit; package A72 (A59f1) by day on a device: Capacitor's backgroundColor the Dark bg.
 - **R92's leftover:** UPART (the result's unit alone) is not built; its Tools row is off.
 - **R107's leftover (pass 35):** a dead hardware key on the unit view's field (`units/open.ts`, `c.dead()`) counts no press (docs/04 5.2); its keys go through the counted `onKey`.
 - **The pipeline:** `resolve_audit_model` is tested only by dry-run echo lines; the size test skips CSS. `tests/engine/patch-canary.ts` unpacks the Giac tarball per canary (40 times, 100 s of CPU), so golden `flags` times out under load (A51: timing): unpack it once. Red-first (`pipeline-lib.sh`) runs vitest on the branch's engine (G133f1's engine test passes there) and reads ids as `[A-Za-z0-9_.-]` (ids with `/` or `^` are invisible).

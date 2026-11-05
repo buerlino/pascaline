@@ -31,6 +31,8 @@
 | [A4b](packages/A4b.md) | Find's timing on the Tab One (the bar's point 4) | annabell, Sonnet | day (the Tab One) | – | ~0.2 d |
 | [A8](packages/A8.md) | The release workflow (merged 9c7ee4e0; A8f2 merged 9624810e, so its after-merge steps run again on the moved tag) | annabell, Opus | day (then the test tag `v0.1.0-test`) | A7 | ~0.5 d |
 | [A70](packages/A70.md) | The release APK from the test tag runs on the Tab One | annabell, Sonnet | day (the Tab One) | the moved tag's green run (A8f2 merged 9624810e) | ~0.2 d |
+| [A72](packages/A72.md) | The WebView's first frame is Dark (A59f1, the splash-exit flash) | annabell, Sonnet | day (a device) | – | ~0.2 d |
+| [A73](packages/A73.md) | What makes the start slow with a full CAS history (F172) | annabell, Sonnet | day (the Tab One) | – | ~0.3 d |
 | [A61](packages/A61.md) | What the WebView answers to `persisted()` | annabell, Sonnet | day (the Fairphone) | R96f1 | ~0.2 d |
 
 **Why these models:** Opus where a slip breaks entry, the unit chain or stored data for every later package, or gives a wrong number (P17: the engine, input and units); sandra and sofia run Opus; Sonnet elsewhere (an existing pattern, pinned by tests); the audit model follows P17.
