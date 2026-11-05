@@ -11,7 +11,7 @@ The owner's other open items are in [backlog.md](backlog.md), "Needs the user". 
 
 **R59: the Math key's Find and the user's functions.** An imported function is found in Vars' Find (R4b), not in the Math key's Find. Recommendation: list the user's names there too, as a later small package, so a library function is found where the built-ins are.
 
-**S25:** pick from R129 ([r19](research/r19-results-and-keys.md)).
+**S25: the six keys, results mode and the room** (pick from R129's mockup; [r19](research/r19-results-and-keys.md)). Recommendation: keys K1, results mode as the worksheet W, the room R2 + R3 with R1 below 760 px; agree t01's budget 14 and t03's 13 (measured).
 
 ## Decided proposals
 

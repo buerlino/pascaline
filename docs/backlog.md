@@ -28,6 +28,7 @@ Work continues on `phase-1`; `master` follows it from 2026-11-03 (decisions.md, 
 7. **Later:** the outside rounds (two 30-minute rounds after R4b and R24c, [r18](research/r18-outside-test.md)); at milestone 5, time ten tasks by hand (E-notation against units).
 8. **G164's sample library:** check its 16 sources before the freeze (decisions.md "Needs the user").
 9. **R59:** should the Math key's Find list your own functions too (decisions.md "Needs the user")?
+10. **S25:** pick the keys, results mode and the room from R129's mockup (decisions.md "Needs the user").
 
 ### Upstream reports (owner; drafts in `../outreach/upstream-reports.md`)
 - **MathLive**, filed 2026-10-19: [#3122](https://github.com/arnog/mathlive/issues/3122) (⌫ at `\left…\right`), [#3123](https://github.com/arnog/mathlive/issues/3123) (touch caret), [#3124](https://github.com/arnog/mathlive/issues/3124) (focus restore); [#3125](https://github.com/arnog/mathlive/issues/3125) (Redo after ⌫, 2026-10-20); M5 (`isImplicitArg` takes no matrix, F68) drafted by R75.

@@ -29,7 +29,6 @@
 | # | Package | Agent, model | Lane | Starts when merged | Size |
 |---|---|---|---|---|---|
 | [A61](packages/A61.md) | What the WebView answers to `persisted()` | annabell, Sonnet | day (the Fairphone) | R96f1 | ~0.2 d |
-| [R129](packages/R129.md) | The study's mockups: results mode, the six top-right keys | ron, Sonnet | day (the owner picks) | S25, its file rewritten from S25's report (pass 75) | ~0.5 d |
 
 **Why these models:** Opus where a slip breaks entry, the unit chain or stored data for every later package, or gives a wrong number (P17: the engine, input and units); sandra and sofia run Opus; Sonnet elsewhere (an existing pattern, pinned by tests); the audit model follows P17.
 
@@ -58,7 +57,7 @@ Milestone reviews (section 0): after R50e (with R116's gallery groups "Entry hig
 
 | Step | What | Agent, model | Branch | After |
 |---|---|---|---|---|
-| 489 | [S25](packages/S25.md) results mode and the six top-right keys, a study (from lane B, pass 75) | sandra, Opus | `p1/sandra-resultskeys` | – |
+| 512 | [R129](packages/R129.md) the study's mockups: results mode, the six top-right keys, the room (pass 77; the owner picks by day) | ron, Sonnet | `p1/ron-resultsmockup` | – |
 
 ### Lane B queue (the release, then the engine)
 A8 and [A57](packages/A57.md) run by day; the night review's queue goes on in [its note](../research/night-review-2026-11-02.md) section 2.

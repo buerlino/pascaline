@@ -14,7 +14,7 @@ Every press counts 1: Shift and Alpha, Enter, a letter typed in Find. A held ⌫
 - Expected values are `derived` or `oracle` (mpmath in `tests/golden/.venv`), never from memory of another calculator.
 
 ## Going active
-Set `status: active`, make sure every step in `keys` can be replayed (`replay()` in the spec knows keys and `{tap: "result:last"}`; teach it a new tap target when the feature that has it lands), and check the budget. Milestone 4 turns on t05 (Find); milestone 5 on t01–t04 and t10; milestone 6 on t06–t09.
+Set `status: active`, make sure every step in `keys` can be replayed (`replay()` in the spec knows keys and `{tap: "result:last"}`; teach it a new tap target when the feature that has it lands), and check the budget. Milestone 4 turns on t05 (Find); milestone 5 on t01–t04 and t10 (t01 and t03 since S25, without prefix chips); milestone 6 on t06–t09.
 
 ## The comparison column (`compare`)
 Hand-measured presses for the same task on the reference calculator (Virtual Calculator) and on a typical phone calculator, same counting rule. **Empty until the owner measures them**: nothing here may be guessed. A measurement goes in `compare.g2_virtual_calc` / `compare.phone_calculator` with the date in a comment.
