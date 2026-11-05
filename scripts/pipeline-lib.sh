@@ -410,6 +410,11 @@ red_first_stage() {
     home|precision|solve|function|bench|units|parser) basename "$1" .yaml;;
   esac
 }
+# reads_engine <file text> (A71f2): succeeds when a vitest file can see which engine build it runs on: it names GIAC_OUT, or it imports
+# nodeGiac (app/src/engine/nodeGiac.ts reads GIAC_OUT; 49 engine test files, host.test.ts among them, load the engine only through it).
+reads_engine() {
+  grep -qE 'GIAC_OUT|nodeGiac' <<<"$1"
+}
 # red_first <worktree> <spec file> <phase-1 engine dir> <log> [<stock engine dir>]: for a package that says its tests fail on phase-1, runs the vitest files and
 # golden cases the branch adds or changes on phase-1's code (a scratch worktree with those files laid over it). A package that says its
 # tests fail on the stock build (A71) runs the golden cases, and the vitest files that read GIAC_OUT, on phase-1's code with GIAC_OUT
@@ -428,7 +433,7 @@ red_first() {
   local -a files=() gfiles=()
   mapfile -t files < <(git -C "$wt" diff --name-only --diff-filter=AMR phase-1...HEAD | grep -E '^app/.*\.test\.ts$' || true)
   if [[ $label == stock ]]; then  # only the files that read the engine can see the stock build
-    local -a keep=(); for f in "${files[@]}"; do [[ -n "$f" ]] && git -C "$wt" show "HEAD:$f" | grep -q 'GIAC_OUT' && keep+=("$f"); done
+    local -a keep=(); for f in "${files[@]}"; do [[ -n "$f" ]] && reads_engine "$(git -C "$wt" show "HEAD:$f")" && keep+=("$f"); done
     files=("${keep[@]}")
   fi
   mapfile -t gfiles < <(git -C "$wt" diff --name-only --diff-filter=AMR phase-1...HEAD -- 'tests/golden/*.yaml' || true)
