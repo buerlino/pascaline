@@ -5,6 +5,7 @@
   import { CAS_SOFT_BUDGET_MS } from "../calc/port.ts";
   import Math from "../render/Math.svelte";
   import { mathlive } from "../render/mathlive.svelte.ts";
+  import { MAX_DRAWN_LATEX } from "../render/longResult.ts";
   import { markText, noDigit as hasNoDigit } from "../state/displayMode.ts";
   import { edgeFade } from "./edgeFade.ts";
   import type { MarkInfo } from "../engine/format.ts";
@@ -210,9 +211,9 @@
           {@const m = mark(item)}
           {@const noDigit = hasNoDigit(m)}
           {#if m}<span class="mark" data-mark={m.mark} data-testid="mark" title={t(`mark.${m.mark === "=" ? "exact" : m.mark === "≈" ? "approx" : "warn"}`)}>{noDigit ? t("mark.noDigit") : markText(m)}</span>{/if}
-          <button type="button" class="result" data-text={d.text} title={t("history.insert")}
+          <button type="button" class="result" data-text={d.latex.length > MAX_DRAWN_LATEX ? "" : d.text} title={t("history.insert")}
             onpointerdown={(e) => e.preventDefault()} onclick={() => tapped(() => oninsert(item))}>
-            {#if !noDigit}<Math latex={d.latex} />{/if}
+            {#if !noDigit}<Math latex={d.latex} size={d.text.length} />{/if}
           </button>
         {/if}
       </div>

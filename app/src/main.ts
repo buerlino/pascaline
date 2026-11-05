@@ -12,7 +12,7 @@ import { loadSheetView } from "./views/sheetView.svelte.ts";
 import { EntryController } from "./entry/controller.ts";
 import { lineKeeper, lineRecord } from "./entry/keep.ts";
 import { renderStats } from "./render/mathlive.svelte.ts";
-import { loadRemoved, loadTidy, Session } from "./state/session.svelte.ts";
+import { loadForms, loadRemoved, loadTidy, Session } from "./state/session.svelte.ts";
 import { AppShell } from "./apps/shell.svelte.ts";
 import { idbKv } from "./state/storage.ts";
 import { UserKeys } from "./keyboard/userKeys.svelte.ts";
@@ -124,6 +124,7 @@ requestAnimationFrame(() =>
     idle(() => void import("./views/modeSheet.ts")); // fetched when idle, so the first Mode or Settings open is not slower
     idle(() => void loadSheetView().catch(() => {})); // the sheet's view, likewise (R46)
     idle(() => void loadTidy().catch(() => {})); // the result tidy-up (R91), likewise
+    idle(() => void loadForms()); // the Format and a b/c keys (R135), likewise
     idle(() => void loadRemoved()); // the Undo copy of Clear and Delete (R98), likewise
     // The history is read after the keypad is up, so it does not compete with the first paint. The kept line comes
     // after it (an Ans on it is the restored last result) and only into the view it was typed in.

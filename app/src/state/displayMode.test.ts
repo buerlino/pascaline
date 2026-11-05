@@ -5,10 +5,7 @@ import { decimalFromRational, type ComplexValue } from "../engine/format.ts";
 import {
   DEFAULT_FMT_CYCLE,
   factsOf,
-  isApplicable,
-  nextMode,
   normalizeCycle,
-  nextForm,
   markFor,
   markText,
   renderNumeric,
@@ -17,6 +14,7 @@ import {
   type FmtMode,
   type NumericResult,
 } from "./displayMode.ts";
+import { isApplicable, nextForm, nextMode } from "./cycleForms.ts";
 
 const q = (p: bigint, d = 1n) => decimalFromRational(p, d);
 const real = (p: bigint, d = 1n): ComplexValue => ({ re: q(p, d), im: q(0n) });
