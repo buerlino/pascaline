@@ -50,8 +50,21 @@ describe.skipIf(!giacAvailable())("honest precision (real Giac)", () => {
     const hardMark = markOf(precisionFacts(hard), { format: "STD", digits: 12 });
     expect(hardMark).toMatchObject({ mark: "⚠", n: 0 });
     expect(hardMark?.warn).toBeUndefined();
-    expect(precs.length).toBeGreaterThan(2);
+    // G166: the 2001-digit literal is past MAX_EVAL_DIGITS (G141), so the check stops at P + 20 (no level holds it)
+    expect(precs).toEqual([40, 60]);
     expect(Math.max(...precs)).toBeLessThanOrEqual(MAX_EVAL_DIGITS);
+  });
+
+  it("G166: past the cap the check reads no level above P + 20, so the clock cannot choose the value shown (derived)", async () => {
+    // derived: no level up to MAX_EVAL_DIGITS holds the 5001-digit literal, so Giac's atan(tan(10^5000)) is a different
+    // number at 40, 60, 80, … 680 digits (-0.27 at 60, -0.16 at 680); the steps the 50 ms budget allowed chose which one
+    // was shown (-0.2 on the desktop, 0.5 or -0.9 on a clock 8× fast: golden stage steps)
+    const { giac, bridge } = await loadNodeGiac();
+    const precs: number[] = [];
+    const valued = { ...bridge, value: (text: string, at: readonly number[]) => (precs.push(...at), bridge.value(text, at)) };
+    const r = new EngineHost(giac, valued).home("atan(tan(10^5000))", defaultHomeSettings).result;
+    expect(Math.max(...precs)).toBeLessThanOrEqual(60);
+    expect(markOf(precisionFacts(r), { format: "STD", digits: 12 })).toMatchObject({ mark: "⚠", n: 0 });
   });
 
   it("G141f2: past the cap the float path leaves a no-digit value without a warn, as exactFacts does (derived)", () => {
