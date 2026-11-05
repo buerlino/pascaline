@@ -24,6 +24,17 @@ export function builtRows(total: number, room: number, seen: number, at: number,
   return Math.min(total, Math.max(first, fits(seen) + MARGIN, at + 1 + MARGIN));
 }
 
+/** The rows with the row object `made` holds for an item at the same place with the same number (else the new one,
+ *  kept for the next draw): Svelte's keyed list leaves such a row as it is, so a key patches only rows that changed. */
+export function sameRows(made: WeakMap<MenuItem, Row>, rows: readonly Row[]): Row[] {
+  return rows.map((r) => {
+    const m = made.get(r.item);
+    if (m !== undefined && m.index === r.index && m.n === r.n) return m;
+    made.set(r.item, r);
+    return r;
+  });
+}
+
 /** The rows are drawn keyed by their item's id (a search whose ids are unique), else by their place. */
 export function keyedById(rows: readonly Row[], searching: boolean): boolean {
   return searching && new Set(rows.map((r) => r.item.id)).size === rows.length;

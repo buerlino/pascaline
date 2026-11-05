@@ -9,9 +9,10 @@
   import { t } from "../i18n/index.ts";
   import { ICONS } from "./icons.ts";
   import MathView from "../render/Math.svelte";
-  import type { Sheet } from "./sheet.svelte.ts";
+  import type { MenuItem } from "../apps/types.ts";
+  import type { Row, Sheet } from "./sheet.svelte.ts";
   import { fitCell, fitRow, hasOptions, hasSteps, ROW, rowHeight, showsReason, twoLines } from "./sheetFit.ts";
-  import { builtRows, keyedById, plainRow, rowKey } from "./sheetWindow.ts";
+  import { builtRows, keyedById, plainRow, rowKey, sameRows } from "./sheetWindow.ts";
 
   let {
     sheet,
@@ -41,7 +42,9 @@
   } = $props();
 
   const level = $derived(sheet.level);
-  const rows = $derived(level.rows);
+  /** The rows drawn so far (R132): an item at the same place with the same number stays the same row object. */
+  const made = new WeakMap<MenuItem, Row>();
+  const rows = $derived(sameRows(made, level.rows));
   const items = $derived(rows.map((r) => r.item));
   const columns = $derived(level.columns);
   /** The palettes' normal cell height: Tmpl's templates need more than the Shift palettes' one symbol or word. */

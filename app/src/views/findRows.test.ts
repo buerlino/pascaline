@@ -12,9 +12,10 @@ import { describe, expect, it } from "vitest";
 import { findMenu } from "../find/finder.ts";
 import { makeIndex } from "../find/testIndex.ts";
 import type { IndexItem } from "../find/types.ts";
+import type { MenuItem } from "../apps/types.ts";
 import { Sheet, type Row } from "./sheet.svelte.ts";
 import { ROW_FLOOR } from "./sheetFit.ts";
-import { builtRows, FIRST, keyedById, MARGIN, rowKey } from "./sheetWindow.ts";
+import { builtRows, FIRST, keyedById, MARGIN, rowKey, sameRows } from "./sheetWindow.ts";
 
 const file = join(dirname(fileURLToPath(import.meta.url)), "../find/_gen/find-index.json");
 const raw = existsSync(file) ? (JSON.parse(readFileSync(file, "utf8")) as IndexItem[]) : [];
@@ -31,7 +32,9 @@ interface Drawn {
   readonly patched: number;
   readonly kept: number;
 }
-function draw(before: ReadonlyMap<string | number, Row>, rows: readonly Row[], searching: boolean, at: number, seen = 0): Drawn {
+const made = new WeakMap<MenuItem, Row>(); // as Sheet.svelte's (each test's Find makes its own items)
+function draw(before: ReadonlyMap<string | number, Row>, level: readonly Row[], searching: boolean, at: number, seen = 0): Drawn {
+  const rows = sameRows(made, level);
   const n = searching ? builtRows(rows.length, ROOM, seen, at) : rows.length;
   const byId = keyedById(rows, searching);
   const now = new Map(rows.slice(0, n).map((r) => [rowKey(r, byId), r] as const));
