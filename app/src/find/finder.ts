@@ -101,9 +101,17 @@ export function itemRow(it: FindItem, pick: (it: FindItem) => void): MenuItem {
   return { id: it.id, label: it.title, value: shownName(it), preview: preview(it), ...(note ? { note } : {}), run: () => pick(it) };
 }
 
-/** Find's sheet: the categories on an empty query, and the search for typed letters (in a category: its items only). */
+/** Find's sheet: the categories on an empty query, and the search for typed letters (in a category: its items only).
+ *  An item's row is made once, so the sheet draws a hit that stays in the result as the same row. */
 export function findMenu(index: FindIndex, pick: (it: FindItem) => void): { categories: MenuItem[]; search: (q: string) => MenuItem[] } {
-  const rows = (hits: readonly FindItem[]): MenuItem[] => hits.map((it) => itemRow(it, pick));
+  // one row object per item while Find is open: a hit that stays from key to key is the same row (R132, E3)
+  const made = new Map<FindItem, MenuItem>();
+  const rowOf = (it: FindItem): MenuItem => {
+    let r = made.get(it);
+    if (r === undefined) made.set(it, (r = itemRow(it, pick)));
+    return r;
+  };
+  const rows = (hits: readonly FindItem[]): MenuItem[] => hits.map(rowOf);
   const find = (q: string, within?: ReadonlySet<string>): MenuItem[] =>
     rows(search(index.prepared, q, { limit: within ? index.items.length : 50 }).map((h) => h.item).filter((it) => !within || within.has(it.id)).slice(0, 50));
   const categories = CATEGORIES.map((cat): MenuItem => {

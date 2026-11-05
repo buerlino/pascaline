@@ -11,6 +11,7 @@
   import MathView from "../render/Math.svelte";
   import type { Sheet } from "./sheet.svelte.ts";
   import { fitCell, fitRow, hasOptions, hasSteps, ROW, rowHeight, showsReason, twoLines } from "./sheetFit.ts";
+  import { builtRows, keyedById, rowKey } from "./sheetWindow.ts";
 
   let {
     sheet,
@@ -90,6 +91,30 @@
     ro.observe(overlay);
     return () => ro.disconnect();
   });
+
+  // A search's hits (Find, R132, docs/04 3.2 E3): only the rows the room shows plus a margin are built, the rest as the
+  // list is scrolled or the highlight moves down, under a spacer as tall as they are (sheetWindow.ts); keyed by item.
+  const searching = $derived(level.searching);
+  let room = $state(0);
+  $effect(() => {
+    if (!overlay || typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(([e]) => (room = e?.contentRect.height ?? 0));
+    ro.observe(overlay);
+    return () => ro.disconnect();
+  });
+  /** How far down these rows were scrolled into view (px, a page ahead). */
+  let scrolled = $state.raw<{ of: readonly unknown[]; px: number }>({ of: [], px: 0 });
+  const at = $derived(searching ? rows.findIndex((r) => r.index === level.highlight) : -1);
+  const built = $derived(searching ? builtRows(rows.length, room, scrolled.of === rows ? scrolled.px : 0, at) : rows.length);
+  const shown = $derived(built < rows.length ? rows.slice(0, built) : rows);
+  const byId = $derived(keyedById(rows, searching));
+  const rest = $derived(rows.slice(built).reduce((h, r, k) => h + rowHeight(row, { reason: twoLines(items, built + k), steps: hasSteps(r.item), options: hasOptions(r.item) }), 0));
+  function onListScroll(): void {
+    measure();
+    if (!list || built >= rows.length) return;
+    const px = list.scrollTop + 2 * list.clientHeight;
+    if (px > (scrolled.of === rows ? scrolled.px : 0)) scrolled = { of: rows, px };
+  }
 
   // Scroll cue (fixes finding 5): a fade at each cut edge, and the item count in the title row when not all fit.
   let cutTop = $state(false);
@@ -207,8 +232,8 @@
         <!-- a text to read (R87, a licence): the list's scroll and fade, no rows; ▲ ▼ page through it -->
         <div class="list doc" class:cut-top={cutTop} class:cut-bottom={cutBottom} data-testid="sheet-text" bind:this={list} onscroll={measure}>{level.text}</div>
       {:else}
-      <div class="list" class:cut-top={cutTop} class:cut-bottom={cutBottom} style:--row={px(row)} bind:this={list} onscroll={measure}>
-        {#each rows as r, i (r.index)}
+      <div class="list" class:cut-top={cutTop} class:cut-bottom={cutBottom} style:--row={px(row)} bind:this={list} onscroll={onListScroll}>
+        {#each shown as r, i (rowKey(r, byId))}
           {@const steps = hasSteps(r.item)}
           {@const options = r.item.options}
           {@const reason = showsReason(items, i)}
@@ -229,6 +254,7 @@
             <span class="n">{r.n === undefined ? "" : r.n % 10}</span>{#if r.item.glyph}<span class="tile math" class:small={"text" in r.item.glyph && r.item.glyph.text.length > 1} data-testid="row-glyph" aria-hidden="true">{@html "icon" in r.item.glyph ? ICONS.home : r.item.glyph.text}</span>{/if}<span class="text"><span class="label">{r.item.label}</span>{#if reason}<span class="reason">{r.item.reason}</span>{:else if r.item.hint}<span class="reason" data-testid="row-hint">{r.item.hint}</span>{:else if r.item.dots && steps}<span class="dots under" data-testid="row-dots" aria-hidden="true">{#each r.item.dots as c}<i style:background={c}></i>{/each}</span>{/if}</span>{#if r.item.dots && !steps}<span class="dots" data-testid="row-dots" aria-hidden="true">{#each r.item.dots as c}<i style:background={c}></i>{/each}</span>{/if}{#if r.item.note}<span class="note" data-testid="row-note">{r.item.note}</span>{/if}{#if options}<span class="seg" data-testid="row-options">{#each options as o (o.id)}<button type="button" class="opt" data-option={o.id} aria-label={o.spoken} aria-pressed={o.selected} disabled={r.item.disabled || o.disabled} onclick={(e) => { e.stopPropagation(); onoption(r.index, o.id); }}>{o.label}</button>{/each}</span>{/if}{#if steps}<button type="button" class="step" data-testid="step-down" aria-label={t("sheet.stepDown")} disabled={r.item.disabled} onclick={(e) => { e.stopPropagation(); sheet.adjustAt(r.index, -1); }}>◀</button>{/if}{#if r.item.value !== undefined}<span class="value" data-testid="sheet-value">{r.item.value}</span>{/if}{#if steps}<button type="button" class="step" data-testid="step-up" aria-label={t("sheet.stepUp")} disabled={r.item.disabled} onclick={(e) => { e.stopPropagation(); sheet.adjustAt(r.index, 1); }}>▶</button>{/if}{#if r.item.selected !== undefined}<span class="tick" aria-hidden="true">{r.item.selected ? "✓" : ""}</span>{/if}{#if r.item.submenu}<span class="more" aria-hidden="true">›</span>{/if}
           </div>
         {/each}
+        {#if built < rows.length}<div class="rest" data-testid="sheet-rest" aria-hidden="true" style:height={px(rest)}></div>{/if}
         {#if rows.length === 0}<p class="empty" data-testid="sheet-empty">{t("sheet.noMatch")}</p>{/if}
       </div>
       {/if}
@@ -645,6 +671,10 @@
   }
   button.cell[data-active="true"] .pick {
     color: var(--text);
+  }
+  /* the hits not built yet (R132): their height, so the scroll and its cues are as with every row there */
+  .rest {
+    flex-shrink: 0;
   }
   .empty {
     margin: var(--sp-2) var(--sp-3);

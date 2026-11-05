@@ -92,14 +92,25 @@ export class Level {
   /** The rows on screen. Without a filter every item keeps its place and number (disabled ones too); with one, the
    *  matches are numbered in order. A search's hits are the rows as they come, without numbers. */
   get rows(): Row[] {
-    if (this.searching) return this.items.map((item, index) => ({ item, index, n: undefined }));
+    if (this.searching) return this.items.map((item, index) => this.row(item, index, undefined));
     const out: Row[] = [];
     this.items.forEach((item, index) => {
       if (!matches(item.label, this.filter)) return;
       const k = out.length + 1;
-      out.push({ item, index, n: k <= 10 ? k : undefined });
+      out.push(this.row(item, index, k <= 10 ? k : undefined));
     });
     return out;
+  }
+
+  /** The rows made so far: an item at the same place with the same number is the same row, so the sheet's keyed list
+   *  leaves it as it is (R132: a Find key patches only the rows that changed). */
+  private readonly made = new WeakMap<MenuItem, Row>();
+  private row(item: MenuItem, index: number, n: number | undefined): Row {
+    const r = this.made.get(item);
+    if (r !== undefined && r.index === index && r.n === n) return r;
+    const made: Row = { item, index, n };
+    this.made.set(item, made);
+    return made;
   }
 
   get current(): MenuItem | undefined {
