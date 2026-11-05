@@ -23,6 +23,8 @@ const shown = (hs: readonly FindHit[]): string[] => hs.map((h) => `${h.item.id} 
 function typeAndCompare(index: PreparedIndex, q: string, ctx: FindContext, limit: number): number {
   const keys = Array.from({ length: q.length }, (_, i) => q.slice(0, i + 1));
   forgetLastSearch();
+  search(index, q.slice(0, 1), { ...ctx, limit }); // the first key kept (finder.ts warms them), as Find has it
+  search(index, "zzzz"); // and another query between: the first key's own candidates still narrow the second
   const narrowed = keys.map((k) => shown(search(index, k, { ...ctx, limit })));
   const fresh = keys.map((k) => (forgetLastSearch(), shown(search(index, k, { ...ctx, limit }))));
   let differ = 0;
@@ -47,10 +49,10 @@ function typos(s: string): string[] {
 }
 
 describe("search narrows a longer query to the last one's candidates (R132)", () => {
-  it("finds what a fresh search finds when a letter makes a typo reachable (abcd → abcde finds acde)", () => {
+  it("finds what a fresh search finds when a letter makes a typo reachable (abcd → abcde finds acde) or a word starts (-- → --x)", () => {
     const item = (id: string, name: string): FindItem => ({ id, kind: "unit", names: [name], title: name, tier: 0, insert: "x" });
-    const index = prepare([item("unit:acde", "acde"), item("unit:abcx", "abcx"), item("unit:bbcd", "bbcd"), item("unit:psia", "psia")]);
-    for (const q of ["abcde", "abcd ex", "psigx", "bbdce"]) expect(typeAndCompare(index, q, {}, 50), q).toBe(0);
+    const index = prepare([item("unit:acde", "acde"), item("unit:abcx", "abcx"), item("unit:bbcd", "bbcd"), item("unit:psia", "psia"), item("unit:xray", "x ray")]);
+    for (const q of ["abcde", "abcd ex", "psigx", "bbdce", "--xr", "a-b ray", "x r"]) expect(typeAndCompare(index, q, {}, 50), q).toBe(0);
     forgetLastSearch();
     for (const k of ["a", "ab", "abc", "abcd"]) search(index, k);
     expect(search(index, "abcde").map((h) => h.item.id)).toContain("unit:acde");

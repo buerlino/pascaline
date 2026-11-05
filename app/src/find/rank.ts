@@ -126,21 +126,30 @@ function nearAny(p: Prepared, qc: string): boolean {
   return false;
 }
 
-/** The last search's candidates (R132, E3): every item that matched it or is `nearAny` it. When the next query only
- *  adds a letter (its words the same but the last one longer, or a new word), each level only narrows: an exact or
- *  prefix name still starts with the shorter query, a word prefix of the longer word is one of the shorter, and a
- *  one-edit name of the longer query starts with the shorter one or is `nearAny` it. So the next search reads only the
- *  candidates, and its hits and order are those of a search over every item (rank.test.ts checks it). */
-interface Narrow { index: PreparedIndex; live: readonly FindItem[] | undefined; filter: string; q: string; qc: string; qw: readonly string[]; cands: Prepared[] }
+/** The last search's candidates (R132, E3): every item that matched it, and from three letters on every item
+ *  `nearAny` it. When the next query only adds a letter (its words the same but the last one longer, or a new word),
+ *  each level only narrows: an exact or prefix name still starts with the shorter query, a word prefix of the longer
+ *  word is one of the shorter, and a one-edit name of the longer query (four letters or more) starts with the shorter
+ *  one or is `nearAny` it. So the next search reads only the candidates, and its hits and order are those of a search
+ *  over every item (narrow.test.ts checks it). The near items are kept from three letters on, where the next key can
+ *  be the first fuzzy one; the third key reads every item once to find them. */
+interface Narrow { index: PreparedIndex; live: readonly FindItem[] | undefined; filter: string; q: string; qc: string; qw: readonly string[]; near: boolean; cands: Prepared[] }
 let last: Narrow | undefined;
+/** The near items are needed for a query of this many letters (compact) or more. */
+const NEAR_FROM = 3;
 
 function narrows(n: Narrow, q: string, qc: string, qw: readonly string[]): boolean {
-  if (n.qc.length < 2 || !q.startsWith(n.q) || !qc.startsWith(n.qc) || qc.length > n.qc.length + 1) return false;
+  if (!n.qw.length || !q.startsWith(n.q) || !qc.startsWith(n.qc) || qc.length > n.qc.length + 1) return false;
+  if (qc.length >= NEAR_FROM && !n.near) return false;
   if (qw.length < n.qw.length) return false;
   const k = n.qw.length - 1;
   for (let i = 0; i < k; i++) if (qw[i] !== n.qw[i]) return false;
-  return k < 0 || (qw[k] as string).startsWith(n.qw[k] as string);
+  return (qw[k] as string).startsWith(n.qw[k] as string);
 }
+
+/** One-letter searches, kept per index (the same letter always gives the same hits, P11): a Find's first key is the
+ *  one that reads every item and builds the most rows. `warmSearch` fills them in idle moments (finder.ts). */
+let firstKeys = new WeakMap<PreparedIndex, Map<string, { hits: FindHit[]; cands: Prepared[] }>>();
 
 export function search(index: PreparedIndex, query: string, ctx: FindContext = {}): FindHit[] {
   const raw = query.trim();
@@ -148,34 +157,57 @@ export function search(index: PreparedIndex, query: string, ctx: FindContext = {
   const q = norm(raw);
   const qc = compact(q);
   const qw = words(q);
-  const filter = ctx.filter ? new Set(ctx.filter) : undefined;
   const filterKey = ctx.filter ? [...ctx.filter].join(" ") : "";
+  const memoKey = qc.length === 1 && !ctx.live?.length ? `${filterKey}|${(ctx.prefer ?? []).join(" ")}|${raw}` : undefined;
+  const memo = memoKey === undefined ? undefined : firstKeys.get(index)?.get(memoKey);
+  if (memo) {
+    last = qw.length ? { index, live: ctx.live, filter: filterKey, q, qc, qw, near: false, cands: memo.cands } : undefined;
+    return memo.hits.slice(0, ctx.limit ?? 50);
+  }
+  const filter = ctx.filter ? new Set(ctx.filter) : undefined;
   const prefer = new Set(ctx.prefer ?? []);
   const hits: FindHit[] = [];
   const prev = last !== undefined && last.index === index && last.live === ctx.live && last.filter === filterKey && narrows(last, q, qc, qw) ? last : undefined;
   const lists = prev ? [prev.cands] : [preparedLive(ctx.live), index.items];
+  const near = qc.length >= NEAR_FROM;
   const cands: Prepared[] = [];
   for (const list of lists) for (const p of list) {
     if (filter && !filter.has(p.item.kind)) continue;
     const { score, matched } = q ? level(p, q, qc, qw, rawc) : { score: 1, matched: p.item.names[0] ?? "" };
     if (!score) {
-      if (q && qc.length >= 2 && nearAny(p, qc)) cands.push(p);
+      if (near && nearAny(p, qc)) cands.push(p);
       continue;
     }
     cands.push(p);
     hits.push({ item: p.item, score, matched });
   }
-  last = q && qc.length >= 2 ? { index, live: ctx.live, filter: filterKey, q, qc, qw, cands } : undefined;
+  last = q && qw.length ? { index, live: ctx.live, filter: filterKey, q, qc, qw, near, cands } : undefined;
   hits.sort((a, b) =>
     b.score - a.score
     || a.item.tier - b.item.tier
     || Number(prefer.has(b.item.kind)) - Number(prefer.has(a.item.kind))
     || a.matched.length - b.matched.length
     || (a.item.id < b.item.id ? -1 : a.item.id > b.item.id ? 1 : 0));
+  if (memoKey !== undefined) {
+    let m = firstKeys.get(index);
+    if (!m) firstKeys.set(index, (m = new Map()));
+    m.set(memoKey, { hits, cands });
+  }
   return hits.slice(0, ctx.limit ?? 50);
 }
 
-/** Forget the last search's candidates: the next search reads every item (rank.test.ts compares the two). */
+/** The letters and digits a Find query starts with, searched ahead (finder.ts, in idle moments). */
+export const FIRST_KEYS = "abcdefghijklmnopqrstuvwxyz0123456789";
+/** Search one first key ahead, so the key itself only reads the result (Find's own context: no filter, no live). */
+export function warmSearch(index: PreparedIndex, ch: string): void {
+  if (firstKeys.get(index)?.has(`||${ch}`)) return;
+  const keep = last; // a search typed meanwhile still narrows from its own last key
+  search(index, ch);
+  last = keep;
+}
+
+/** Forget the last search and the one-letter ones: the next search reads every item (narrow.test.ts compares them). */
 export function forgetLastSearch(): void {
   last = undefined;
+  firstKeys = new WeakMap();
 }

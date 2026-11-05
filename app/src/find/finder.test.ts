@@ -6,7 +6,8 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it, vi } from "vitest";
 import { CATEGORIES, categoryItems } from "./categories.ts";
-import { constChipOf, findMenu, itemRow, makeIndexIdle, pauseWhile, unitNote } from "./finder.ts";
+import { constChipOf, findMenu, itemRow, makeIndexIdle, pauseWhile, unitNote, warmFirstKeys } from "./finder.ts";
+import { FIRST_KEYS, forgetLastSearch, search } from "./rank.ts";
 import { makeIndex } from "./testIndex.ts";
 import type { FindItem, IndexItem } from "./types.ts";
 
@@ -116,6 +117,35 @@ describe.skipIf(!full)("the idle load", () => {
       const idle = await makeIndexIdle(raw);
       expect(calls).toBe(3 + Math.ceil(raw.length / 200));
       expect(idle.byId.size).toBe(raw.length);
+    } finally {
+      pauseWhile(() => false);
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it("searches each first key ahead, one per idle moment with room and none while a job runs (R132)", () => {
+    const moments: IdleRequestCallback[] = [];
+    vi.stubGlobal("requestIdleCallback", (cb: IdleRequestCallback) => moments.push(cb));
+    const ix = makeIndex(raw);
+    forgetLastSearch();
+    let jobs = 1;
+    pauseWhile(() => jobs-- > 0);
+    try {
+      const fresh = FIRST_KEYS.split("").map((ch) => search(ix.prepared, ch).map((h) => h.item.id));
+      forgetLastSearch();
+      warmFirstKeys(ix.prepared);
+      let rounds = 0;
+      while (moments.length && rounds++ < 500) {
+        const cb = moments.shift() as IdleRequestCallback;
+        let left = 1; // one search's room: the callback asks again for the next letter
+        cb({ didTimeout: false, timeRemaining: () => (rounds === 2 ? 0 : left-- > 0 ? 50 : 0) });
+      }
+      expect(rounds).toBe(1 + 1 + FIRST_KEYS.length); // a job running, then no room, then one letter per moment
+      const all = ix.prepared.items;
+      ix.prepared.items = []; // read, not searched: with no items to search, only the kept results can give hits
+      const warm = FIRST_KEYS.split("").map((ch) => search(ix.prepared, ch).map((h) => h.item.id));
+      ix.prepared.items = all;
+      expect(warm).toEqual(fresh);
     } finally {
       pauseWhile(() => false);
       vi.unstubAllGlobals();

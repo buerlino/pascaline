@@ -11,7 +11,7 @@ import { constKey, type Chip } from "../input/chips.ts";
 import type { Layer } from "../keyboard/keyboard.ts";
 import type { UserBinding, UserKeys } from "../keyboard/userKeys.svelte.ts";
 import { CATEGORIES, categoryItems } from "./categories.ts";
-import { prepare, search, type PreparedIndex } from "./rank.ts";
+import { FIRST_KEYS, prepare, search, warmSearch, type PreparedIndex } from "./rank.ts";
 import type { FindItem, IndexItem } from "./types.ts";
 
 export interface FindIndex {
@@ -54,6 +54,19 @@ export async function makeIndexIdle(raw: readonly IndexItem[]): Promise<FindInde
   return { prepared, items, byId: new Map(items.map((it) => [it.id, it])) };
 }
 
+/** R132 (E3): each letter's search done ahead, one per idle moment and never while a job runs, so Find's first key,
+ *  the one that reads every item and builds the most rows, only reads the result (rank.ts, warmSearch). A Math press
+ *  does not hurry it: a first key not yet done is searched as before. */
+export function warmFirstKeys(prepared: PreparedIndex): void {
+  if (typeof requestIdleCallback !== "function") return;
+  let k = 0;
+  const step = (d: IdleDeadline): void => {
+    while (k < FIRST_KEYS.length && !busy() && d.timeRemaining() > 8) warmSearch(prepared, FIRST_KEYS[k++] as string);
+    if (k < FIRST_KEYS.length) requestIdleCallback(step);
+  };
+  requestIdleCallback(step);
+}
+
 let loading: Promise<FindIndex> | null = null;
 /** Fetch and prepare the index, once; a failed fetch is tried again on the next call. `urgent` (a Math press): the
  *  preparing still to do runs at once. */
@@ -65,6 +78,7 @@ export function loadIndex(urgent = false): Promise<FindIndex> {
       return r.json() as Promise<IndexItem[]>;
     })
     .then(makeIndexIdle)
+    .then((ix) => (warmFirstKeys(ix.prepared), ix))
     .catch((e: unknown) => {
       loading = null;
       throw e;
