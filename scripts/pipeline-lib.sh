@@ -377,8 +377,8 @@ red_first_stock_wanted() {
 }
 # ---- A71: the stock engine ----
 # stock_engine_ensure <worktree holding the sources> <out root> <log>: <root>/stock-<key> exists with its stamp, built once by
-# build-wasm.sh with GIAC_PATCHES=none (no patch applied); <key> comes from `build-wasm.sh stock-key` (the tarball's SHA-256 and the
-# script's hash). A finished build is reused. Sets stock_dir; on failure sets engine_why and returns 1. Main shell only (the build is a
+# build-wasm.sh with GIAC_PATCHES=none (no patch applied); <key> comes from `build-wasm.sh stock-key` (the tarball's SHA-256, the
+# script's hash and the files of wasm/). A finished build is reused. Sets stock_dir; on failure sets engine_why and returns 1. Main shell only (the build is a
 # child session the pipeline owns, under host-cpu: a held lock is kept, like engine_build, A54). The build is 5 minutes and more.
 stock_dir=""
 stock_engine_ensure() {
