@@ -32,7 +32,7 @@ import { ICDF_DIGITS, ICDF_FAILED, erfValueText, icdfCalls, icdfPolished } from 
 import type { GiacValue } from "./bridge.ts";
 import { callsOf, functionsIn, isError, LIST_TYPE, matrixTyped, type Quoting, RATIONAL, splitList, topLevelArgs, wholeCall } from "./giacPrint.ts";
 import { complexReads, complexReplacedIn, complexSafe, forValue, nonReal, purgeReads } from "./complex.ts";
-import { literalStart } from "./literalPrec.ts";
+import { literalStart, uncheckedPastCap } from "./literalPrec.ts";
 
 export interface Giac {
   eval(input: string): string;
@@ -549,7 +549,7 @@ export function exactFacts(
   const whole = (prec: number): GiacValue => at(`evalf(${src},${prec})`, prec);
   if (erf !== safe) giac.eval(`${ICDF_FAILED}:=0`);
   // G141: the check starts at the longest exact integer's digits plus P when they pass P - 20 (literalStart; a number, rational or complex, is no
-  // cancellation: G141f1, a pasted E8365 copy). Past MAX_EVAL_DIGITS, or when that start gives no value (the budget), it runs from P, unchecked (⚠, never ≈); a value whose check confirmed no digit stays "no digit confirmed" (G23), as ⚠ would show its wrong digits.
+  // cancellation: G141f1, a pasted E8365 copy). Past MAX_EVAL_DIGITS, or when that start gives no value (the budget), it runs from P (uncheckedPastCap).
   const lit = v.kind === "integer" || v.kind === "rational" || v.kind === "complex" ? { at: P, unchecked: false } : literalStart(text, P, MAX_EVAL_DIGITS, "printed");
   const from = (start: number): ElementFacts[] | null => {
     const P2 = [start, start + 20];
@@ -559,7 +559,7 @@ export function exactFacts(
   try {
     const raised = lit.at > P ? from(lit.at) : null;
     const unchecked = lit.unchecked || (lit.at > P && !raised);
-    const out = (raised ?? from(P))?.map((f) => (!unchecked || f.exact || f.reliableDigits === 0 ? f : { ...f, warn: f.warn ?? ("unchecked" as const) })) ?? null;
+    const out = (raised ?? from(P))?.map((f) => (unchecked ? uncheckedPastCap(f) : f)) ?? null;
     if (erf === safe || !out) return out;
     return giac.eval(ICDF_FAILED).trim() !== "0" ? out.map((f) => (f.exact ? f : { ...f, warn: "unaudited" as const })) : out;
   } finally {
@@ -841,7 +841,7 @@ function floatFactsOf(
   }
   // Rule 2: S against S+20, and S+20 against S+40 when fewer than the digits agree (a cancellation only needs more
   // working digits). Null when S or S+20 could not be evaluated, with the facts of S alone in `once`. G141: S is P, or
-  // the longest exact integer's digits plus P (literalStart); past MAX_EVAL_DIGITS the check runs from P, unchecked. Not
+  // the longest exact integer's digits plus P (literalStart); past MAX_EVAL_DIGITS the check runs from P (uncheckedPastCap). Not
   // for G44's polish (`lit` P): its Newton steps at S would cost many times more (normald_icdf(10^-300) at 341 digits).
   const agreed = (text: string | null, lit = literalStart(expr, P, MAX_EVAL_DIGITS, "typed")): { facts: ElementFacts[] } | { once: ElementFacts[] } | null => {
     const S = lit.at;
@@ -853,11 +853,11 @@ function floatFactsOf(
         const C = at(S + 40, "pasm3", (n) => Math.max(n, S) + 40, text);
         if (C) {
           giac.eval(`${name}:=pasm3`);
-          return { facts: facts(C, (k) => Math.max(reliable[k]!, confirmedComplex(B[k]!, C[k]!, S + 20, P)), lit.unchecked ? "unchecked" : undefined) };
+          return { facts: facts(C, (k) => Math.max(reliable[k]!, confirmedComplex(B[k]!, C[k]!, S + 20, P))).map((f) => (lit.unchecked ? uncheckedPastCap(f) : f)) };
         }
       }
       giac.eval(`${name}:=pasm2`);
-      return { facts: facts(B, (k) => reliable[k]!, lit.unchecked ? "unchecked" : undefined) };
+      return { facts: facts(B, (k) => reliable[k]!).map((f) => (lit.unchecked ? uncheckedPastCap(f) : f)) };
     }
     if (A) {
       giac.eval(`${name}:=pasm`);

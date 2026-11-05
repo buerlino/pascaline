@@ -6,6 +6,7 @@
 // intermediate loss with no long literal (a tiny value stored in a name) is not caught here (S20's intervals are the
 // general cure). The literals are read by giacPrint's number reader. Only erasable TypeScript syntax, so Node runs this
 // file directly.
+import type { PrecisionWarn } from "./format.ts";
 import { numbers, type Quoting } from "./giacPrint.ts";
 
 /** A literal with more digits than P minus this raises where the agreement check starts (G141): at P it would leave
@@ -58,4 +59,13 @@ export function literalStart(text: string, P: number, cap: number, q: Quoting): 
   if (n + LITERAL_MARGIN <= P) return { at: P, unchecked: false };
   if (n + P + LEVELS_ABOVE <= cap) return { at: n + P, unchecked: false };
   return { at: P, unchecked: true };
+}
+
+/**
+ * The one past-the-cap rule (G141f2): an element that is not exact and has confirmed digits gets "unchecked" (a warn it
+ * already has is kept). An exact element stays as it is, and so does a no-digit one, which stays "no digit confirmed"
+ * (G23), as ⚠ unchecked would show its wrong digits. An element with no count (null) gets the warn, so it never reads ≈.
+ */
+export function uncheckedPastCap<F extends { exact: boolean; reliableDigits: number | null; warn?: PrecisionWarn }>(f: F): F {
+  return f.exact || (f.reliableDigits !== null && f.reliableDigits <= 0) ? f : { ...f, warn: f.warn ?? "unchecked" };
 }
