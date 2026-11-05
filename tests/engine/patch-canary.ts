@@ -89,7 +89,8 @@ const CANARIES: [string, string, RegExp, string][] = [
   // at Digits 14 ran again at 30 digits, where Gamma has no complex MPFR path, and stayed Gamma(1.0000000000000+i)
   ["0024-evalf-complex-double-workaround.patch", "giac-2.1.0/src/usual.cc", /^bool need_workaround\(const gen & g\)\{\s*if \(g\.type==_REAL \|\| \(g\.type==_CPLX && g\._CPLXptr->type==_REAL && \(g\._CPLXptr\+1\)->type==_REAL\)\)\s*return false;\s*if \(g\.type<=_CPLX\)\s*return g!=0 && g\/g!=1;/, "bool need_workaround(const gen & g){"],
   // G149, patch 0025: pow writes b^(n*s/d) as ((b^s)^(1/d))^r*(b^s)^q for any b and s, another branch where im(s*ln(b)) is
-  // past pi (2^sqrt(-1-10^-3) = (2^(10*i*sqrt(10010)))^(1/1000), the root of 2^(1000.5*i))
+  // past pi (2^sqrt(-1-10^-3) = (2^(10*i*sqrt(10010)))^(1/1000), the root of 2^(1000.5*i); G160: also for a b whose double is not
+  // finite, (10^400)^(i/1000) = ((10^400)^i)^(1/1000))
   ["0025-pow-root-extract-branch.patch", "giac-2.1.0/src/gen.cc", /gen res\(1\);\s*if \(r\)\{\s*if \(complex_mode\(contextptr\) && fastsign\(base,contextptr\)==-1\)\{/, "// extract integral powers in a product exponent"],
   // G151, patch 0026: asinh of an exact real ends in its ln form, which cancels at evalf for a small x
   // (surd(asinh(1/10^100),3) took the noise's sign, the complex root)

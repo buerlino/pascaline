@@ -59,9 +59,7 @@ With the lanes, start both from the phase-1 worktree: `cd .claude/worktrees/phas
 ### Lane A queue (ron's UI)
 Milestone reviews (section 0): after R50e (with R116's gallery groups "Entry highlights (R116)" and the lifted --pick on the History picked row; R113's rings, gallery home-tips-small); after R24d (with R92's Constants and Tools; R108's gallery group "Decimal comma in apps"; R89 on the Fairphone: save two presets with different free keys and switch; R111's note at 360 px; R33's stored-name colour in each theme, decisions.md "Owner answers of 2026-11-02"; R120's gallery unitresult-t10-comma; R124's gallery group "Mark style (R124)" and R125's "Digit groups (R125)", ’ and , grouping only before the point since R125f1).
 
-| Step | What | Agent, model | Branch | After |
-|---|---|---|---|---|
-| 471 | [R127](packages/R127.md) press counters per key and layer, and their export for your AI | ron, Sonnet | `p1/ron-keycounts` | – |
+No step left in lane A this night (R127 merged, Opus pass 67).
 
 ### Lane B queue (the release, then the engine)
 A8 and [A57](packages/A57.md) run by day. Steps 449–452 and 408 run only on the weekly extreme night, Wed 11-04 to Thu 11-05 (owner, 2026-11-02; G148 ran early, Opus pass 62); the night review's queue goes on in [its note](../research/night-review-2026-11-02.md) section 2.
@@ -70,7 +68,6 @@ A8 and [A57](packages/A57.md) run by day. Steps 449–452 and 408 run only on th
 |---|---|---|---|---|
 | 449 | [G141](packages/G141.md) a long exact literal raises the agreement check's precision | gorge, Opus | `p1/gorge-literalprec` | the weekly night |
 | 450 | [G142](packages/G142.md) complex acosh of a small number at 30 digits | gorge, Opus | `p1/gorge-acoshsmall` | the weekly night |
-| 452 | [G160](packages/G160.md) patch 0025 decides a huge base by its logarithm (F167) | gorge, Opus | `p1/gorge-powbigbase` | the weekly night |
 | 408 | [G138](packages/G138.md) the weekly fuzz and its triage | gorge, Opus | `p1/gorge-nightfuzz-1104` | the weekly night (Wed 11-04) |
 | 451 | [G156](packages/G156.md) \|x\| shown negative when both runs share an error (F163) | gorge, Opus | `p1/gorge-abssign` | the weekly night; G141 |
 | 437 | [G152](packages/G152.md) acosh's sign and tiny imaginary part (F143, F144) | gorge, Opus | `p1/gorge-acoshsign` | G142 |

@@ -167,6 +167,19 @@ describe.skipIf(!full)("R92: the units menu's Constants and Tools", () => {
     expect(level(lists, "uconst:Math").map((r) => r.value)).toEqual(["e", "π", "i"]);
   });
 
+  it("the pick rows carry the press count kinds the removal tests read (R127): units-const for constants, units-tools for tools", () => {
+    const lists = level(menu.categories, "ucat:const");
+    for (const l of lists) {
+      const rows = level(lists, l.id);
+      expect(rows.length, l.id).toBeGreaterThan(0);
+      expect(rows.map((r) => r.count), l.id).toEqual(rows.map(() => "units-const"));
+      expect((l.submenu?.search?.("a") ?? []).every((r) => r.count === "units-const"), l.id).toBe(true);
+    }
+    const toolRows = level(menu.categories, "ucat:tools");
+    expect(toolRows.length).toBeGreaterThan(0);
+    expect(toolRows.map((r) => r.count)).toEqual(toolRows.map(() => "units-tools"));
+  });
+
   it("a list searches its own constants by name", () => {
     const physics = level(menu.categories, "ucat:const").find((l) => l.id === "uconst:Physics");
     expect(physics?.submenu?.search?.("grav").map((r) => r.id)).toContain("const:g_0");

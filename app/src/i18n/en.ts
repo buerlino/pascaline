@@ -167,6 +167,7 @@ export const en = {
   "settings.taps.shift": "Shift taps",
   "settings.taps.alpha": "Alpha taps",
   "settings.taps.since": "Counted on this device since",
+  "settings.taps.export": "Export the counts",
   "settings.taps.reset": "Reset the counter",
   "settings.on": "On",
   "settings.off": "Off",

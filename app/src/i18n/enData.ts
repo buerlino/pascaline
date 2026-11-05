@@ -9,6 +9,11 @@ export const enData = {
   "backup.offered": "Backup offered as a download",
   "backup.cancelled": "Backup cancelled",
   "backup.failed": "Could not save the backup",
+  // R127: Settings › Counters › Export the counts
+  "counts.saved": "Counts saved",
+  "counts.offered": "Counts offered as a download",
+  "counts.cancelled": "Counts cancelled",
+  "counts.failed": "Could not save the counts",
   // R96: the store's state, the level's last row, with the last backup under it
   "store.kept": "Kept on this device",
   "store.mayDelete": "Kept, but the browser may delete it: save a backup",

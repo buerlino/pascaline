@@ -129,7 +129,7 @@ function constantsRow(index: FindIndex, pick: (c: ConstPick) => void): MenuItem 
     if (l.name === "Math" && l.items !== "generated") {
       const items = l.items.flatMap((sym): MenuItem[] => {
         const m = MATH[sym];
-        return m ? [{ id: `math:${m.id}`, label: unitText(`units.const.${m.id}` as UnitMessageKey), value: sym, run: () => pick({ latex: m.latex }) }] : [];
+        return m ? [{ id: `math:${m.id}`, label: unitText(`units.const.${m.id}` as UnitMessageKey), value: sym, count: "units-const", run: () => pick({ latex: m.latex }) }] : [];
       });
       return { id: `uconst:${l.name}`, label: title, submenu: { title, items } };
     }
@@ -137,7 +137,7 @@ function constantsRow(index: FindIndex, pick: (c: ConstPick) => void): MenuItem 
       ? index.items.filter((it) => it.kind === "const" && !named.has(it.id))
       : l.items.flatMap((id) => index.byId.get(`const:${id}`) ?? []);
     const ids = new Set(its.map((it) => it.id));
-    const row = (it: FindItem): MenuItem => itemRow(it, (x) => pick({ item: x }));
+    const row = (it: FindItem): MenuItem => ({ ...itemRow(it, (x) => pick({ item: x })), count: "units-const" });
     const within = (q: string): MenuItem[] =>
       search(index.prepared, q, { filter: ["const"], limit: index.items.length }).map((h) => h.item).filter((it) => ids.has(it.id)).slice(0, 50).map(row);
     return { id: `uconst:${l.name}`, label: title, submenu: { title, items: its.map(row), search: within } };
@@ -152,7 +152,7 @@ function toolsRow(tools: readonly UnitTool[]): MenuItem {
   const items = tools.map((t): MenuItem => {
     const label = unitText(`units.tool.${t.id}`);
     const run = t.run;
-    return run ? { id: `utool:${t.id}`, label, run } : { id: `utool:${t.id}`, label, disabled: true, ...(t.reason ? { reason: t.reason } : {}) };
+    return run ? { id: `utool:${t.id}`, label, count: "units-tools", run } : { id: `utool:${t.id}`, label, count: "units-tools", disabled: true, ...(t.reason ? { reason: t.reason } : {}) };
   });
   return { id: "ucat:tools", label: title, submenu: { title, items } };
 }
