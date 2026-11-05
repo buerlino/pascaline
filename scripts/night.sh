@@ -24,6 +24,8 @@
 # night.sh to end (at most 5 h, PASCALINE_NIGHT_LANE_WAIT), so the writer reads both lanes' lines.
 # After every pass night.sh runs `scripts/pipeline.sh device <p>` with p from the pass's RESULT line (A47a may move it).
 # A usage limit inside the closing steps waits and retries the same step.
+# Disk (A69): before each step (the closing ones too) it needs NIGHT_MIN_FREE_GB (default 5) free on the file system of the phase-1
+# worktree; under it the lane logs `STOPPED night.sh (lane X): disk <n> GB free` and ends (exit 1), starting no step.
 # --dry-run starts no henri and runs nothing: it prints each step's kind on a simulated clock (PASCALINE_NIGHT_NOW=HH:MM,
 # default now, advanced --dry-step minutes per step, default 30), the two closing steps, and writes no log.
 #
@@ -182,6 +184,14 @@ run_cmd() {  # <cmd>: run one pipeline line; returns its exit code (75: usage li
   fi
   return $rc
 }
+disk_check() {  # A69: under NIGHT_MIN_FREE_GB (default 5) free on the worktree's file system the lane ends before asking henri
+  [[ $dry -eq 0 ]] || return 0
+  local min="${NIGHT_MIN_FREE_GB:-5}" kb; kb="$(df -Pk "$integ" 2>/dev/null | awk 'NR==2{print $4}')"
+  [[ "$kb" =~ ^[0-9]+$ ]] || return 0
+  if (( kb < min * 1048576 )); then
+    log "STOPPED night.sh$lane_text: disk $((kb / 1048576)) GB free"; say "STOPPED night.sh$lane_text: disk $((kb / 1048576)) GB free (under $min GB)"; exit 1
+  fi
+}
 tick() { steps=$((steps + 1)); [[ $dry -eq 0 ]] || fake=$((fake + dry_step * 60)); }
 check_stop() {  # A47c: the owner's --stop, read before each step and in every wait
   [[ $dry -eq 0 && -f "$stopf" ]] || return 0
@@ -204,7 +214,7 @@ wait_lane() {  # <lane>: lane A's report waits for lane B's night.sh to end (bot
 }
 
 while :; do
-  check_stop
+  check_stop; disk_check
   n=$((steps + 1))
   if (( closing == 0 )); then
     why=""

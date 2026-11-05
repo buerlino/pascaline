@@ -91,14 +91,19 @@ n=$(echo "$*" | grep -oE 'henri-[0-9]+' | cut -d- -f2)
 cat > "$SBN_IN.$n"; echo "$n" >> "$SBN_ASKED"
 r=$(sed -n "${n}p" "$SBN_REPLIES"); echo "${r:-SHIFT DONE}"
 STUB
-chmod +x "$sb/scripts/pipeline.sh" "$sb/bin/claude"; git -C "$sb" add -A; gc "$sb" init; git -C "$sb" branch phase-1
+# a fake df (A69): SBN_DF_KB set = that many KB available on every file system
+cat > "$sb/bin/df" <<'STUB'
+#!/bin/sh
+if [ -n "$SBN_DF_KB" ]; then printf 'Filesystem 1024-blocks Used Available Capacity Mounted on\n/dev/fake 100000000 1 %s 1%% /\n' "$SBN_DF_KB"; else exec /usr/bin/df "$@"; fi
+STUB
+chmod +x "$sb/scripts/pipeline.sh" "$sb/bin/claude" "$sb/bin/df"; git -C "$sb" add -A; gc "$sb" init; git -C "$sb" branch phase-1
 git -C "$sb" worktree add -q "$sb/.claude/worktrees/phase-1" phase-1
 # sbnight <case> <night.sh args...>: a real (not dry) night.sh in the sandbox; the case's files are $tmp/<case>.*
 sbnight() {
   local k="$1"; shift; : > "$tmp/$k.calls"; : > "$tmp/$k.asked"; [[ -f "$tmp/$k.replies" ]] || : > "$tmp/$k.replies"
   (cd "$sb" && unset PASCALINE_COORD PASCALINE_LANE && PATH="$sb/bin:$PATH" PASCALINE_NIGHT_INHIBITED=1 PASCALINE_NIGHT_POLL=1 \
     SBN_CALLS="$tmp/$k.calls" SBN_ASKED="$tmp/$k.asked" SBN_IN="$tmp/$k.in" SBN_REPLIES="$tmp/$k.replies" SBN_NIGHT="$night" \
-    SBN_STOP_ON="${SBN_STOP_ON:-}" SBN_STOP_LANE="${SBN_STOP_LANE:-}" timeout -k 5 60 "$night" "$@")
+    SBN_DF_KB="${SBN_DF_KB:-}" SBN_STOP_ON="${SBN_STOP_ON:-}" SBN_STOP_LANE="${SBN_STOP_LANE:-}" timeout -k 5 60 "$night" "$@")
 }
 lg="$sb/.coord/log.md"
 # the guard: a running lane A refuses a second --lane A and a start without --lane, not --lane B
@@ -137,6 +142,18 @@ grep -q 'R2' "$tmp/s1.calls" && fail "--stop A: lane A started another step afte
 [[ "$(wc -l < "$tmp/s1.asked")" -eq 1 ]] || fail "--stop A: henri was asked again after the stop"
 [[ ! -e "$sb/.coord/night-A.pid" && ! -e "$sb/.coord/night-A.stop" ]] || fail "--stop A: the pid or stop file is left"
 grep -q 'lane=A ron R1' "$tmp/s1.calls" || fail "the pipeline does not get PASCALINE_LANE=A: $(cat "$tmp/s1.calls")"
+
+# A69: under NIGHT_MIN_FREE_GB (default 5) free, the lane stops before asking henri and starts no step; at the limit it runs
+printf '%s\n' 'scripts/pipeline.sh ron "R1" --model sonnet' > "$tmp/d1.replies"
+out="$(SBN_DF_KB=3145728 sbnight d1 --lane A 2>&1)"; rc=$?
+[[ $rc -ne 0 ]] || fail "disk guard: 3 GB free did not end the lane with an error (rc $rc): $out"
+grep -qE '^- [0-9:]+ \[A\] STOPPED night.sh \(lane A\): disk 3 GB free$' "$lg" || fail "disk guard: no 'STOPPED night.sh (lane A): disk 3 GB free' line: $(tail -n 4 "$lg")"
+[[ ! -s "$tmp/d1.asked" && ! -s "$tmp/d1.calls" ]] || fail "disk guard: henri was asked or a step started with 3 GB free: $(cat "$tmp/d1.calls")"
+[[ ! -e "$sb/.coord/night-A.pid" ]] || fail "disk guard: the pid file is left"
+out="$(SBN_DF_KB=5242880 sbnight d2 --lane A 2>&1)"; rc=$?
+[[ $rc -eq 0 ]] && grep -q '^1$' "$tmp/d2.asked" || fail "disk guard: exactly 5 GB free stopped the lane (rc $rc): $out"
+out="$(SBN_DF_KB=3145728 NIGHT_MIN_FREE_GB=2 sbnight d3 --lane A 2>&1)"; rc=$?
+[[ $rc -eq 0 ]] && grep -q '^1$' "$tmp/d3.asked" || fail "disk guard: NIGHT_MIN_FREE_GB=2 with 3 GB free stopped the lane (rc $rc): $out"
 
 # the closing: lane B runs its last pass and its device step (number from the pass's RESULT line), and no report
 printf '%s\n' 'scripts/pipeline.sh ron "R1" --model sonnet' 'scripts/pipeline.sh pass 7 "R1" "none"' > "$tmp/c1.replies"
