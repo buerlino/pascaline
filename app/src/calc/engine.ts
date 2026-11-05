@@ -105,24 +105,14 @@ export class EngineCalc implements Calc {
     return t.safeStart ? { safeStart: t.safeStart } : {};
   }
 
-  async home(giac: string, s: CalcSettings, chips?: ChipFactsTable, consts?: ConstTable): Promise<HomeOutcome> {
-    try {
-      const settings = { ...defaultHomeSettings, digits: s.digits, angle: s.angle };
-      // an absent table is not sent (WorkerEngine.home); the session sends `consts` only when the input holds one (R40)
-      const r = await this.engine.home(giac, settings, consts, chips && Object.keys(chips).length ? chips : undefined);
-      return { ...passed(r, HOME_KEYS), ...(r.rational && r.exact !== undefined ? { exact: r.exact } : {}) };
-    } catch (e) {
-      throw e instanceof EngineCancelled ? new CalcCancelled() : e;
-    }
+  home(giac: string, s: CalcSettings, chips?: ChipFactsTable, consts?: ConstTable): Promise<HomeOutcome> {
+    // an absent table is not sent (WorkerEngine.home); the session sends `consts` only when the input holds one (R40)
+    const r = this.engine.home(giac, homeSettings(s), consts, chips && Object.keys(chips).length ? chips : undefined);
+    return mapCancel(r.then((r) => ({ ...passed(r, HOME_KEYS), ...(r.rational && r.exact !== undefined ? { exact: r.exact } : {}) })));
   }
 
-  async cas(giac: string, s: CalcSettings): Promise<CasOutcome> {
-    try {
-      const r = await this.engine.cas(giac, { ...defaultCasSettings, digits: s.digits, angle: s.angle });
-      return passed(r, CAS_KEYS);
-    } catch (e) {
-      throw e instanceof EngineCancelled ? new CalcCancelled() : e;
-    }
+  cas(giac: string, s: CalcSettings): Promise<CasOutcome> {
+    return mapCancel(this.engine.cas(giac, { ...defaultCasSettings, digits: s.digits, angle: s.angle }).then((r) => passed(r, CAS_KEYS)));
   }
 
   solve(req: SolveRequest, s: CalcSettings): Promise<SolveOutcome> {
