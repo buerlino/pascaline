@@ -19,11 +19,11 @@ const items = (n: number): HistoryItem[] =>
     startedAt: 0,
   }));
 
-const draw = (n: number, engineState?: "starting" | "ready" | "failed"): string[] => {
+const draw = (n: number, engineState: "starting" | "ready" | "failed"): string[] => {
   const { body } = render(History, {
     props: {
       items: items(n),
-      ...(engineState ? { engineState } : {}),
+      engineState,
       display: (i: HistoryItem) => ({ text: i.text, latex: i.resultLatex }),
       mark: () => null,
       onrecall: () => {},
@@ -45,8 +45,7 @@ describe("History rows drawn", () => {
     expect(draw(200, "ready")).toHaveLength(20);
     expect(draw(200, "failed")).toHaveLength(20);
   });
-  it("without a state (the engine is up): the page of 20; fewer rows than five are all drawn", () => {
-    expect(draw(200)).toHaveLength(20);
+  it("fewer rows than five are all drawn", () => {
     expect(draw(3, "starting")).toHaveLength(3);
   });
 });
