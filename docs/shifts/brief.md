@@ -28,11 +28,6 @@
 
 | # | Package | Agent, model | Lane | Starts when merged | Size |
 |---|---|---|---|---|---|
-| [A4b](packages/A4b.md) | Find's timing on the Tab One (the bar's point 4) | annabell, Sonnet | day (the Tab One) | – | ~0.2 d |
-| [A8](packages/A8.md) | The release workflow (merged 9c7ee4e0; A8f2 merged 9624810e, so its after-merge steps run again on the moved tag) | annabell, Opus | day (then the test tag `v0.1.0-test`) | A7 | ~0.5 d |
-| [A70](packages/A70.md) | The release APK from the test tag runs on the Tab One | annabell, Sonnet | day (the Tab One) | the moved tag's green run (A8f2 merged 9624810e) | ~0.2 d |
-| [A72](packages/A72.md) | The WebView's first frame is Dark (A59f1, the splash-exit flash) | annabell, Sonnet | day (a device) | – | ~0.2 d |
-| [A73](packages/A73.md) | What makes the start slow with a full CAS history (F172) | annabell, Sonnet | day (the Tab One) | – | ~0.3 d |
 | [A61](packages/A61.md) | What the WebView answers to `persisted()` | annabell, Sonnet | day (the Fairphone) | R96f1 | ~0.2 d |
 
 **Why these models:** Opus where a slip breaks entry, the unit chain or stored data for every later package, or gives a wrong number (P17: the engine, input and units); sandra and sofia run Opus; Sonnet elsewhere (an existing pattern, pinned by tests); the audit model follows P17.
@@ -55,7 +50,7 @@ With the lanes, start both from the phase-1 worktree: `cd .claude/worktrees/phas
 12. **No lanes in the morning** (a selftest failed): the owner starts `scripts/night.sh` without `--lane`, and henri runs lane B's rows, then lane A's, as one queue.
 
 ### Night 2026-11-05 to 11-06, to 05:30, both lanes on the Tab One (owner, 2026-11-05)
-`ANDROID_SERIAL=HA24BZ2Y` for both lanes, `--until 05:30`; before the start the owner plugs in and unlocks the Tab One, and `tools/stay-awake.sh HA24BZ2Y --restore` runs (STAY_ON=7). CORE DEVICE after each pass. Lane A runs R132 (the release bar's point 4, owner 2026-11-05), then R59 (decisions.md "A62, R59's gate"); lane B runs G165, G166, G164, G167, A69, A71 in that order. Every "After" was checked against the merges on 2026-11-05 ("–" is merged); a step whose "After" is not merged is skipped. Follow each Opus pass as written (rule 3).
+`ANDROID_SERIAL=HA24BZ2Y` for both lanes, `--until 05:30`; before the start the owner plugs in and unlocks the Tab One, and `tools/stay-awake.sh HA24BZ2Y --restore` runs (STAY_ON=7). CORE DEVICE after each pass. Lane A runs R132 (the release bar's point 4, owner 2026-11-05), then R59 (decisions.md "A62, R59's gate"), then the rest of its table; lane B runs G165, G166, G164, G167, A69, A71, then the rest of its table (owner, 2026-11-05: "add everything"; A65, A66 and A74 on the night's device). Every "After" was checked against the merges on 2026-11-05 ("–" is merged); a step whose "After" is not merged is skipped. Follow each Opus pass as written (rule 3).
 
 ### Lane A queue (ron's UI)
 Milestone reviews (section 0): after R50e (with R116's gallery groups "Entry highlights (R116)" and the lifted --pick on the History picked row; R113's rings, gallery home-tips-small); after R24d (with R92's Constants and Tools; R108's gallery group "Decimal comma in apps"; R89 on the Fairphone: save two presets with different free keys and switch; R111's note at 360 px; R33's stored-name colour in each theme, decisions.md "Owner answers of 2026-11-02"; R120's gallery unitresult-t10-comma; R124's gallery group "Mark style (R124)" and R125's "Digit groups (R125)", ’ and , grouping only before the point since R125f1).
@@ -64,6 +59,9 @@ Milestone reviews (section 0): after R50e (with R116's gallery groups "Entry hig
 |---|---|---|---|---|
 | 480 | [R132](packages/R132.md) a Find key updates the list within one frame (E3 missed: 31.9 ms against 16, A4b) | ron, Opus | `p1/ron-findfast` | – |
 | 473 | [R59](packages/R59.md) the library rows: import (file or clipboard), export, the format for your AI | ron, Opus | `p1/ron-m4-library` | – |
+| 481 | [R133](packages/R133.md) History draws the newest 5 rows until the engine is ready (F172) | ron, Sonnet | `p1/ron-histfirst` | – |
+| 482 | [R126](packages/R126.md) the backup's keys, pad cells and presets written down for your AI | ron, Sonnet | `p1/ron-backupformat` | R59 |
+| 483 | [R129](packages/R129.md) the study's mockups: results mode, the six top-right keys | ron, Sonnet | `p1/ron-resultsmockup` | S25 |
 
 ### Lane B queue (the release, then the engine)
 A8 and [A57](packages/A57.md) run by day; the night review's queue goes on in [its note](../research/night-review-2026-11-02.md) section 2.
@@ -76,6 +74,13 @@ A8 and [A57](packages/A57.md) run by day; the night review's queue goes on in [i
 | 477 | [G167](packages/G167.md) the weekly fuzz in 10-minute slices (before Wed 11-11) | gorge, Sonnet | `p1/gorge-fuzzslices` | – |
 | 478 | [A69](packages/A69.md) a night stops before the disk is full; runs leave no temp folders | annabell, Sonnet | `p1/annabell-diskguard` | – |
 | 479 | [A71](packages/A71.md) the red-first check can test against the stock engine | annabell, Sonnet | `p1/annabell-redstock` | – |
+| 484 | [A74](packages/A74.md) Find per key on the Tab One again after R132 (E3, the bar's point 4) | annabell, Sonnet | `p1/annabell-findagain` | R132 |
+| 485 | [A64](packages/A64.md) two pipeline guards that misfire | annabell, Opus | `p1/annabell-guardfix` | – |
+| 486 | [A67](packages/A67.md) red-first counts only a test the branch adds or tightens | annabell, Opus | `p1/annabell-redfirst` | – |
+| 487 | [A65](packages/A65.md) the sync folder on Android (the night's device) | annabell, Opus | `p1/annabell-syncfolder` | – |
+| 488 | [A66](packages/A66.md) an optional key click, off by default (the night's device) | annabell, Sonnet | `p1/annabell-keyclick` | – |
+| 489 | [S25](packages/S25.md) results mode and the six top-right keys, a study | sandra, Opus | `p1/sandra-resultskeys` | – |
+| 490 | [A73f1](packages/A73f1.md) why a CAS-view start is 200 ms slower than Home (the night's device) | annabell, Sonnet | `p1/annabell-casstart` | R133 |
 
 ### The commands henri replies with (one per decision; `scripts/night.sh` runs it)
 - `scripts/pipeline.sh <agent> "<ID>" --model <sonnet|opus> --audit-model auto`: the next queue step not done (the queue's skip rule above); `--audit-model opus` where its row says "audit Opus".
