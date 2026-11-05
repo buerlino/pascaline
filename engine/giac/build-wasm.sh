@@ -241,7 +241,8 @@ stage_link() {
   mkdir -p "$out"
   local f
   local src="$BUILD/giac-$GIAC_VERSION"  # api.cc reads Giac's headers (G85's bridge); config.h comes from the giac stage
-  for f in api stubs; do em++ -std=c++17 "${GIAC_CXXFLAGS[@]}" -I"$src" -I"$src/src" -I"$PREFIX/include" -c "$HERE/wasm/$f.cc" -o "$obj/$f.o"; done
+  local extra=(); [[ "$GIAC_PATCHES" != none ]] || extra=(-DPASCALINE_STOCK_GIAC)  # api.cc skips what patches 0002 and 0004 add
+  for f in api stubs; do em++ -std=c++17 "${GIAC_CXXFLAGS[@]}" "${extra[@]}" -I"$src" -I"$src/src" -I"$PREFIX/include" -c "$HERE/wasm/$f.cc" -o "$obj/$f.o"; done
   local libs=("$PREFIX/lib/libmpfr.a" "$PREFIX/lib/libgmp.a")  # mpfr before gmp
   [[ "$WITH_GSL" == 1 ]] && libs=("$PREFIX/lib/libgsl.a" "$PREFIX/lib/libgslcblas.a" "${libs[@]}")
   em++ "${GIAC_LDFLAGS[@]}" "$obj"/*.o "${libs[@]}" -o "$out/giac.mjs"
