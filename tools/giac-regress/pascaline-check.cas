@@ -757,6 +757,12 @@ Digits:=40:; pc("g133-acos-tiny-complex-30",'(acos(1/10^20+i/10^20))',(157079632
 Digits:=40:; pc("g133f1-asinh-5asin-i-div3-12",'(asinh(asin(i/3)*5))',(107623936313/10^11)+(157079632679/10^11)*i,5/10^12+5/10^12);
 // g133f1-asinh-5asin-i-div3-30 (precision.yaml, oracle)
 Digits:=40:; pc("g133f1-asinh-5asin-i-div3-30",'(asinh(asin(i/3)*5))',(107623936313497218446641260308/10^29)+(157079632679489661923132169164/10^29)*i,5/10^30+5/10^30);
+// g152-keep-acosh-cos-3sqrt-pi-12 (precision.yaml, oracle)
+Digits:=40:; pc("g152-keep-acosh-cos-3sqrt-pi-12",'(acosh(cos(3*sqrt(pi))))',(965823754463/10^12)*i,5/10^13);
+// g152-keep-acosh-cosh-sqrt-neg-30-12 (precision.yaml, oracle)
+Digits:=40:; pc("g152-keep-acosh-cosh-sqrt-neg-30-12",'(acosh(cosh(sqrt(-30))))',(805959732128/10^12)*i,5/10^13);
+// g152-keep-asin-cosh-3sqrt-neg-pi-plus-half-12 (precision.yaml, oracle)
+Digits:=40:; pc("g152-keep-asin-cosh-3sqrt-neg-pi-plus-half-12",'(asin(cosh(3*sqrt(-pi))+1/2))',(157079632679/10^11)-(368689899101/10^12)*i,5/10^12+5/10^13);
 // g149-keep-sqrt-neg1-1e-3-12 (precision.yaml, oracle)
 Digits:=40:; pc("g149-keep-sqrt-neg1-1e-3-12",'(sqrt(-1-10^-3))',(100049987506/10^11)*i,5/10^12);
 // g149-keep-2-pow-sqrt-neg3/2-12 (precision.yaml, oracle)

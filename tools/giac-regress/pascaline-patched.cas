@@ -608,6 +608,15 @@ Digits:=40:; pc("g142-acosh-1e-6-over-ln-neg-1.000001-30",'(acosh(10^-6/ln(-(100
 // patch 0020-complex-sqrt-asin-small.patch
 // g142-g116-sqrt-ln-sqrt-over-acosh-30 (precision.yaml, oracle)
 Digits:=40:; pc("g142-g116-sqrt-ln-sqrt-over-acosh-30",'(sqrt(ln(sqrt(-(1000001/10^6))))/acosh(10^-6/ln(-(1000001/10^6))))',-(564189379425529487310951720032/10^30)+(564189787669987433919358526273/10^30)*i,5/10^31+5/10^31);
+// patch 0030-pow-half-odd-negative-float.patch
+// g152-acosh-cosh-3sqrt-neg-pi-30 (precision.yaml, oracle)
+Digits:=40:; pc("g152-acosh-cosh-3sqrt-neg-pi-30",'(acosh(cosh(3*sqrt(-pi))))',(965823754463038395030784316536/10^30)*i,5/10^31);
+// patch 0030-pow-half-odd-negative-float.patch
+// g152-acosh-cosh-pi-sqrt-neg-pi-12 (precision.yaml, oracle)
+Digits:=40:; pc("g152-acosh-cosh-pi-sqrt-neg-pi-12",'(acosh(cosh(pi*sqrt(-pi))))',(714857310348/10^12)*i,5/10^13);
+// patch 0030-pow-half-odd-negative-float.patch
+// g152-acosh-cosh-pi-sqrt-neg-pi-30 (precision.yaml, oracle)
+Digits:=40:; pc("g152-acosh-cosh-pi-sqrt-neg-pi-30",'(acosh(cosh(pi*sqrt(-pi))))',(71485731034787863164046878444/10^29)*i,5/10^31);
 // patch 0026-asinh-small-real-exact.patch
 // g151-cbrt-asinh-1e-100-30 (precision.yaml, oracle)
 Digits:=40:; pc("g151-cbrt-asinh-1e-100-30",'(surd(asinh(10^-100),3))',(464158883361277889241007635092/10^63),5/10^64);
@@ -725,6 +734,15 @@ Digits:=40:; pc("g131-nan-times-complex",'when(string(evalf(acos(900719925474099
 // patch 0024-evalf-complex-double-workaround.patch
 // g140-evalf-gamma-1+i-14 (home.yaml g140-gamma-1+i-12, oracle)
 Digits:=14:; pc("g140-evalf-gamma-1+i-14",'evalf(Gamma(1+i))',(4980156681183560427/10^19)-(1549498283018106851/10^19)*i,1/10^13);
+// patch 0030-pow-half-odd-negative-float.patch
+// g152-evalf-sqrt-neg-pi-re-40 (precision.yaml g152-cas-*, derived)
+Digits:=40:; pc("g152-evalf-sqrt-neg-pi-re-40",'when(re(evalf(sqrt(-pi)))==0,1,0)',1,1/10^30);
+// patch 0030-pow-half-odd-negative-float.patch
+// g152-evalf-neg-pi-pow-3/2-re-40 (precision.yaml g152-cas-*, derived)
+Digits:=40:; pc("g152-evalf-neg-pi-pow-3/2-re-40",'when(re(evalf((-pi)^(3/2)))==0,1,0)',1,1/10^30);
+// patch 0030-pow-half-odd-negative-float.patch
+// g152-evalf-sqrt-neg-pi-re-14 (precision.yaml g152-cas-*, derived)
+Digits:=14:; pc("g152-evalf-sqrt-neg-pi-re-14",'when(re(evalf(sqrt(-pi)))==0,1,0)',1,1/10^30);
 // patch 0028-trunc-toward-zero.patch
 // g157-trunc-name-forms (precision.yaml g157-trunc-x, g157-cas-trunc-x-minus-floor-x, g157-cas-trunc-neg-x, g157-cas-trunc-x-1, g157-cas-stored-trunc-name-eval, derived)
 Digits:=40:; purge(x):; pc("g157-trunc-name-forms",'when(string(trunc(x))=="trunc(x)" and string(trunc(x)-floor(x))=="trunc(x)-floor(x)" and string(trunc(-x))=="trunc(-x)" and string(trunc(x,1))=="trunc(x,1)",1,0)',1,1/10^30);

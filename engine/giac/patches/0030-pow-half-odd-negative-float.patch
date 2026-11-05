@@ -1,0 +1,63 @@
+# Upstream: giac 2.1.0 gen.cc pow. A negative real float b to a float power k+1/2 is exp(e*ln(b)), whose real part |b|^e*cos(pi*e) is rounding noise with pi rounded: evalf(sqrt(-pi)) (sqrt(-pi) stays pow(-pi,1/2), and evalf makes 1/2 a float) was 4.1e-41+1.772453850905516027298167483341145182798*i at Digits 40 and 9.55e-15+1.77245385091*i at Digits 12, where the value is purely imaginary; the sign of the noise chose a side of a cut downstream: cosh(3*sqrt(-pi)) = cos(3*sqrt(pi)), a real in (-1,1), had the imaginary part -1.4e-40, so acosh of it was -0.9658237544630*i (right +0.9658237544630*i, i*acos). Now b^(n/2) with n odd, |n| < 2^20, is sqrt(b)^n, and sqrt of a negative float is i*sqrt(-b) with an exact zero real part; other exponents, a positive b and a complex b keep exp(e*ln(b)).
+# Changed by Pascaline contributors, 2026-11-05
+--- a/src/gen.cc
++++ b/src/gen.cc
+@@ -6960,6 +6960,39 @@
+     return std::abs(t)<M_PI*(1-1e-9);
+   }
+ 
++  // Pascaline patch 0030 (G152): 2*e when the float e (a double or an MPFR) is k+1/2 for an integer k, |2*e| < 2^20 (odd);
++  // 0 otherwise.
++  static int pow_half_odd(const gen & e){
++    if (e.type==_DOUBLE_){
++      double t=2*e._DOUBLE_val;
++      if (t!=std::floor(t) || std::abs(t)>=1048576) return 0;
++      int n=int(t);
++      return n%2?n:0;
++    }
++#ifdef HAVE_LIBMPFR
++    if (e.type==_REAL){
++      mpfr_t t;
++      mpfr_init2(t,mpfr_get_prec(e._REALptr->inf)+1);
++      mpfr_mul_2ui(t,e._REALptr->inf,1,MPFR_RNDN); // exact
++      int n=0;
++      if (mpfr_integer_p(t) && mpfr_cmpabs_ui(t,1048576)<0){
++        long m=mpfr_get_si(t,MPFR_RNDN);
++        if (m%2) n=int(m);
++      }
++      mpfr_clear(t);
++      return n;
++    }
++#endif
++    return 0;
++  }
++  // A real float (a double or an MPFR) below 0.
++  static bool pow_negative_float(const gen & b){
++    if (b.type==_DOUBLE_) return b._DOUBLE_val<0;
++#ifdef HAVE_LIBMPFR
++    if (b.type==_REAL) return mpfr_sgn(b._REALptr->inf)<0;
++#endif
++    return false;
++  }
+   gen pow(const gen & base,const gen & exponent,GIAC_CONTEXT){
+     if (base.type==_VECT && exponent.type==_VECT && (base.subtype==_SET__VECT || exponent.subtype==_SET__VECT)){
+       return _symmetric_difference(makesequence(base,exponent),contextptr);
+@@ -7039,6 +7072,18 @@
+       }
+       return pow(base,new_ref_symbolic(symbolic(at_prod,makesequence(exponent._FRACptr->num,symb_inv(exponent._FRACptr->den)))),contextptr);
+     }
++    // Pascaline patch 0030 (G152): a negative real float b to a float power k+1/2 (the evalf of sqrt(-pi), which stays
++    // pow(-pi,1/2) until evalf makes 1/2 a float) went to exp(e*ln(b)) below, whose real part is |b|^e*cos(pi*e) with pi
++    // rounded: evalf(sqrt(-pi)) was 4.1e-41+1.7724...*i at Digits 40 (9.6e-15 at Digits 12), where the value is purely
++    // imaginary, and the sign of that noise chose the side of a cut downstream: cosh(3*sqrt(-pi)) had an imaginary part
++    // -1.4e-40, so acosh of it (a real in (-1,1), acosh = i*acos) took -0.9658*i (right +0.9658*i). b^(n/2), n = 2*e odd,
++    // is sqrt(b)^n, and sqrt of a negative float is i*sqrt(-b) with an exact zero real part.
++    if (pow_negative_float(base) && (escape_real(contextptr) || complex_mode(contextptr))){
++      int n=pow_half_odd(exponent);
++      if (n==1) return sqrt(base,contextptr);
++      if (n==-1) return inv(sqrt(base,contextptr),contextptr);
++      if (n) return pow(sqrt(base,contextptr),n);
++    }
+     if (is_inf(base)){ 
+       if (is_zero(exponent,contextptr))
+ 	return undef;
