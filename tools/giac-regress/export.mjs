@@ -172,6 +172,7 @@ export const KNOWN_IDS = new Set([
   "g156-30-abs-sin1e100",
   "g156-sqrt-sq-sin1e100",
   "g156-sqrt-sq-sin1e70",
+  "g156-sqrt-inv-sq-sin1e100",
   "g71-round-besselj-1e12",
   "g71-floor-besselj-1e12",
   "g71-round-besselj",

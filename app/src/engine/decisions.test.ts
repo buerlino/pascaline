@@ -90,7 +90,12 @@ const ROWS: readonly Row[] = [
   // name decides on its symbols, as before
   { id: "g156-abs-sin1e2000", input: "abs(sin(10^2000))", digits: 12, rests: true, verdict: "refused", why: "a 2001-digit literal" },
   { id: "g156-floor-sin1e1000", input: "floor(sin(10^1000)*10^12)", digits: 12, rests: true, verdict: "refused", why: "1001 digits + P + 40 > 1000" },
-  { id: "family:past-cap-free-name", input: "sign(x)+10^2000", digits: 12, rests: true, verdict: `sign(x)+1${"0".repeat(2000)}`, why: "x is free" },
+  { id: "family:past-cap-free-name", input: "sign(x)+10^2000", digits: 12, rests: true, verdict: `sign(x)+1${"0".repeat(2000)}`, why: "the literal is in no decision's argument" },
+  // the literal is in a comparison: Giac's P text is true or false (no free name), or a branch with one
+  { id: "g156-gt-sin1e2000", input: "sin(10^2000)>0", digits: 12, rests: true, verdict: "refused", why: "a 2001-digit literal in the comparison" },
+  { id: "g156-piecewise-sin1e2000", input: "piecewise(sin(10^2000)>0,x,2*x)", digits: 12, rests: true, verdict: "refused", why: "as the comparison alone; x is in a branch" },
+  // a negative even power (the number reader reads 2 without its sign)
+  { id: "g156-sqrt-inv-sq-sin1e100", input: "sqrt(sin(10^100)^(-2))", digits: 12, rests: true, verdict: `(-${sinOf(100)})^-1`, why: "1/|sin(10^100)|, sin(10^100) < 0 (oracle)" },
   { id: "family:sqrt-sq-short", input: "sqrt(sin(1)^2)", digits: 12, rests: true, verdict: "sin(1)", why: "sin(1) > 0" },
 ];
 
@@ -127,6 +132,20 @@ describe.skipIf(!giacAvailable())("decideTwice (G38, G57; real Giac)", () => {
       expect({ rests: got.rests, verdict: got.verdict }).toEqual({ rests: r.rests, verdict: r.verdict });
     });
   }
+
+  it("a decided text from the P + 40 run is kept in pasdec2 for the caller (from), and the agreeing one is not", () => {
+    // a stored 10^60 is no typed literal, so P + 20 (60 digits) does not hold it and disagrees with P; P + 40 decides
+    giac.eval("hw:=10^60");
+    const exact = "floor(sin(hw)*10^12)";
+    const text = withDigits(giac, valuePrecision(12), 12, () => giac.eval(`(${exact})`));
+    const d = decideTwice(giac, exact, text, 12, 12);
+    expect(d).toMatchObject({ text: "830389765219", from: "pasdec2" });
+    expect(giac.eval("pasdec2")).toBe("830389765219");
+    giac.eval("purge(pasdec2,hw)");
+    const same = decideTwice(giac, "max(sin(10^50),0)", "0", 12, 12);
+    expect(same).toEqual({ text: "0" });
+    expect(giac.eval("pasdec2")).toBe("pasdec2");
+  });
 
   it("iPart (known): Giac's iPart prints a float, so Home does not decide it again; it shows ⚠ with no digit (oracle -148099131371)", () => {
     const r = host.home("iPart(sin(10^70)*10^12)", defaultHomeSettings).result;
@@ -165,6 +184,9 @@ describe.skipIf(!giacAvailable())("decidedAtDouble (G71, F59; real Giac)", () =>
 describe("evenPowerRoot (G156)", () => {
   it.each([
     ["sqrt(sin(10^100)^2)", true],
+    ["sqrt(sin(10^100)^(-2))", true],
+    ["sqrt(x^-4)", true],
+    ["sqrt(x^(-3))", false],
     ["sqrt(4*x^(4))", true],
     ["(sin(10^70)^2)^(1/2)", true],
     ["sqrt(x^2+1)", true],

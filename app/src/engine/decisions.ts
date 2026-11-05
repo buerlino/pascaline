@@ -104,12 +104,14 @@ export function restsOnDecision(input: string, q: Quoting, result: string, store
   return calls.some((f) => DECISION_FUNCTIONS.has(f)) || hasComparison(input, q) || result.includes("abs(") || evenPowerRoot(input, q) || calls.some(stored);
 }
 
-/** `s` holds a power with an even integer exponent (`^2`, `^(4)`; not `^0`, `^(2/3)`, `^2.5`), by the number reader. */
+/** `s` holds a power with an even integer exponent (`^2`, `^(4)`, `^-2`, `^(-2)`; not `^0`, `^(2/3)`, `^2.5`), by the
+ *  number reader (which reads the number without its sign). */
 function holdsEvenPower(s: string, q: Quoting): boolean {
   for (const n of numbers(s, q)) {
     if (n.exp !== undefined || n.mant.includes(".")) continue;
-    const bracketed = s.startsWith("^(", n.at - 2);
-    if (bracketed ? !s.startsWith(")", n.end) : s.charAt(n.at - 1) !== "^") continue;
+    const lead = s.slice(Math.max(0, n.at - 3), n.at);
+    const bracketed = lead.endsWith("^(") || lead.endsWith("^(-");
+    if (bracketed ? !s.startsWith(")", n.end) : !lead.endsWith("^") && !lead.endsWith("^-")) continue;
     const v = BigInt(n.mant);
     if (v > 0n && v % 2n === 0n) return true;
   }
@@ -120,9 +122,42 @@ function holdsEvenPower(s: string, q: Quoting): boolean {
  *  of a square by the sign of its base at Digits (sqrt(sin(10^100)^2) printed sin(10^100) at P = 40, with no abs( and
  *  no decision function), so the result rests on a decision. */
 export function evenPowerRoot(input: string, q: Quoting): boolean {
-  if (callsOf(input, ["sqrt"], q).some((c) => c.close >= 0 && holdsEvenPower(input.slice(c.open + 1, c.close), q))) return true;
+  return callsOf(input, ["sqrt"], q).some((c) => c.close >= 0 && holdsEvenPower(input.slice(c.open + 1, c.close), q)) || halfOfEvenPower(input, q);
+}
+
+/** A `^(1/2)` in an input that holds an even power (evenPowerRoot's second form). */
+function halfOfEvenPower(input: string, q: Quoting): boolean {
   const half = [...numbers(input, q)].some((n) => n.mant === "1" && n.exp === undefined && input.startsWith("^(", n.at - 2) && input.startsWith("/2)", n.end));
   return half && holdsEvenPower(input, q);
+}
+
+/** `seg` holds a comparison outside its brackets and strings. */
+function topComparison(seg: string): boolean {
+  return walk(seg, 0, (k, depth) => depth === 0 && comparisonAt(seg, k) > 0, "typed") >= 0;
+}
+
+/**
+ * G156: the texts the decisions of `expr` are made on: the arguments of a decision function (abs included) and of a
+ * stored function that decides (`stored`, decidingStored), each argument or bracket (and `expr` itself) with a comparison
+ * at its top, the argument of a sqrt over an even power, and all of `expr` for a ^(1/2) over one or for an abs( Giac
+ * printed (`text`) that `expr` does not call. A literal outside them (`sign(x)+10^2000`) is no decision's.
+ */
+export function decisionArgs(expr: string, text: string, stored: (name: string) => boolean): string[] {
+  const named = new Map(callsOf(expr, undefined, "typed").map((c) => [c.open, c.name]));
+  const opens: number[] = [];
+  walk(expr, 0, (k, _d, ch) => void ("([{".includes(ch) && opens.push(k)), "typed");
+  const out = topComparison(expr) ? [expr] : [];
+  for (const open of opens) {
+    const close = closing(expr, open, "typed");
+    if (close < 0) return [expr];
+    const inner = expr.slice(open + 1, close);
+    const args = topLevelArgs(inner, "typed");
+    const name = named.get(open);
+    const decides = name !== undefined && (DECISION_FUNCTIONS.has(name) || (name === "sqrt" && holdsEvenPower(inner, "typed")) || stored(name));
+    out.push(...(decides ? args : args.filter(topComparison)));
+  }
+  if (halfOfEvenPower(expr, "typed") || (text.includes("abs(") && ![...named.values()].includes("abs"))) out.push(expr);
+  return out;
 }
 
 /** A quantity whose sign (`zero`), distance to the nearest integer (`int`) or to the nearest half-integer (`half`)
@@ -319,14 +354,6 @@ function cutHit(giac: Giac, c: Cut, P: number): { cut: Cut; n: string; proven: b
   return { cut: c, n: near, proven };
 }
 
-/** Giac's constants, which no value replaces. */
-const CONSTANTS: ReadonlySet<string> = new Set(["pi", "e", "i", "euler_gamma", "infinity", "undef"]);
-
-/** `text` (Giac's print) holds a name that is no constant: its decisions are on symbols, not on digits. */
-function holdsFreeName(text: string): boolean {
-  return namesIn(text, "printed").some((n) => !CONSTANTS.has(n));
-}
-
 /** A decision that did not hold. `refused` (G57): the two precisions printed different texts, or the decision sits on
  *  a cut Giac cannot prove a tie on, so any value shown would be a guess and the result is refused (`error.undecided`);
  *  without it (a higher precision failed to run, a proven tie with no value to put in its place) the result is ⚠. */
@@ -348,13 +375,15 @@ export type Decision = { text: string; from?: string; value?: GiacValue } | Unde
 export function decideTwice(giac: Giac, expr: string, text: string, digits: number, restore: number): Decision {
   // G156: a long exact literal raises the base as it raises the agreement check's start (G141, literalStart): at P + 20
   // and P + 40 a 101-digit 10^100 is rounded, and both took the same wrong sign of sin(10^100) (abs(sin(10^100)) showed
-  // ≈ -0.372376123661). Past the cap a number is refused: no precision we run holds the literal (a text with a free
-  // name decides as before, on its symbols). With a raised base, a run that fails (the budget) refuses too. The P text's
+  // ≈ -0.372376123661). A literal past the cap in a text a decision is made on (decisionArgs) refuses the result: no
+  // precision we run holds it (`sin(10^2000)>0` printed false or true at P, a name in a branch or not); one elsewhere
+  // (`sign(x)+10^2000`) decides as before. With a raised base, a run that fails (the budget) refuses too. The P text's
   // integers raise it as well (a stored 10^100: abs(sin(w)) prints sin(1000…0)), but refuse nothing: a long integer
   // there may be the value itself (sign(…)*factorial(500)).
   const P0 = valuePrecision(digits);
   const typed = literalStart(expr, P0, MAX_EVAL_DIGITS, "typed");
-  if (typed.unchecked && !holdsFreeName(text)) return { undecided: true, refused: true };
+  const pastCap = (a: string): boolean => literalStart(a, P0, MAX_EVAL_DIGITS, "typed").unchecked;
+  if (typed.unchecked && decisionArgs(expr, text, decidingStored(giac)).some(pastCap)) return { undecided: true, refused: true };
   const printed = literalStart(text, P0, MAX_EVAL_DIGITS, "printed");
   const P = Math.max(typed.at, printed.unchecked ? P0 : printed.at);
   const failed: Undecided = P > P0 ? { undecided: true, refused: true } : { undecided: true };
