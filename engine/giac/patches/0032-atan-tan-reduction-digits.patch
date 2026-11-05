@@ -1,0 +1,87 @@
+# Upstream: giac 2.1.0 usual.cc atan. The rule atan(tan(a)) = a-n*pi took n = floor(a/pi+1/2) from the double of a (usual.cc:764-766 of the stock tarball), which has 16 digits: atan(tan(10^15)) gave 10^15-318309886183790*pi, 2.10969811707, outside (-pi/2, pi/2) (right -1.03189453652, n one higher); 10^17 gave -216.29, 30! a number near 2.8e17; next to the pole a/pi+1/2 = 1-10^-15/pi rounded to 1 in the double, so atan(tan(pi/2-10^-15)) gave pi/2-10^-15-pi, -1.5708 (right +1.5708), and degree mode the same with 180. Now a/pi+1/2 (re(a) for a complex a) is evaluated at Digits plus its own digits plus 20, 40, ... 1280, and n is taken when two levels in a row give the same floor, each clear of an integer by more than 10^10 units of its last digit; otherwise atan stays unevaluated and evalf gives the principal value. atan(tan(2)) = 2-pi and atan(tan(x)) for a free x keep their form.
+# Changed by Pascaline contributors, 2026-11-05
+--- a/src/usual.cc
++++ b/src/usual.cc
+@@ -599,6 +599,60 @@
+   static gen atanasln(const gen & e,GIAC_CONTEXT){
+     return plus_one_half*cst_i*ln(rdiv(cst_i+e,cst_i-e,contextptr),contextptr);
+   }
++  // Pascaline patch 0032 (G166): n = floor(x/cste+1/2) for the rule atan(tan(a)) = a-n*cste, x = a or re(a) a real
++  // with a numeric value. The rule took n from the double of x/cste+1/2, which has 16 digits: at x = 10^15 its last
++  // digit was off by one (atan(tan(10^15)) = 10^15-318309886183790*pi, 2.11, outside (-pi/2, pi/2); right n ends in 1),
++  // at 10^17 and 30! by more, and next to the pole (x/cste+1/2 = 1-10^-15/pi) the double rounded to 1 (atan(tan(pi/2-
++  // 10^-15)) = pi/2-10^-15-pi, right pi/2-10^-15). Now x/cste+1/2 is evaluated at Digits plus its own digits plus 20,
++  // 40, ... 1280; n is decided when two levels in a row give the same floor, each clear of an integer by more than
++  // 10^10 units of its last digit. Otherwise (a tie, an x whose double is not finite) atan stays unevaluated and evalf
++  // gives the principal value of atan(tan(a)).
++  static bool atan_tan_floor(const gen & x,const gen & cste,double r,gen & n,GIAC_CONTEXT){
++    if (!(r==r) || r-r!=0)
++      return false;
++    int nd0=decimal_digits(contextptr);
++    double ar=absdouble(r);
++    if (ar>=1)
++      nd0+=int(std::floor(std::log10(ar)))+1;
++    int save_decimal_digits=decimal_digits(contextptr);
++    gen prev;
++    bool have_prev=false;
++    for (int extra=20;extra<=1280;extra*=2){
++      int nd=nd0+extra;
++      set_decimal_digits(nd,contextptr);
++      gen q;
++      try {
++	q=evalf(x/cste+plus_one_half,1,contextptr);
++      } catch (...) {
++	set_decimal_digits(save_decimal_digits,contextptr);
++	throw;
++      }
++      set_decimal_digits(save_decimal_digits,contextptr);
++      if (q.type!=_REAL && q.type!=_DOUBLE_)
++	return false;
++      gen m=_floor(q,contextptr);
++      if (m.type!=_INT_ && m.type!=_ZINT)
++	return false;
++      gen aq=abs(q,contextptr);
++      if (is_greater(1,aq,contextptr))
++	aq=1;
++      gen f=q-m;
++      gen dist=is_greater(plus_one_half,f,contextptr)?f:1-f;
++      bool clear=is_strictly_greater(dist*pow(gen(10),nd-10,contextptr),aq,contextptr);
++      if (!clear){
++	have_prev=false;
++	continue;
++      }
++      if (have_prev && m==prev){
++	n=m;
++	return true;
++      }
++      prev=m;
++      have_prev=true;
++    }
++    return false;
++  }
++
+   gen atan(const gen & e0,GIAC_CONTEXT){
+     if (e0.type==_FLOAT_)
+ #ifdef BCD
+@@ -789,14 +843,17 @@
+       // Pascaline patch 0013 (G121): atan(tan(a)) = a-n*pi with n = floor(a/pi+1/2) is a rule for a real a; _floor of a
+       // complex also floors its imaginary part, so atan(tan(4*i)) gave 4*i-i*pi (right 4*i). tan has the real period pi:
+       // n comes from re(a) alone, and a re(a-n*pi) at the cut +-pi/2 keeps atan unevaluated; a complex symbolic a too.
++      // Pascaline patch 0032 (G166): n is decided at raised Digits (atan_tan_floor), for re(a) as for a real a.
+       if (tmp2.type==_CPLX){
+ 	gen r=evalf_double(re(tmp2,contextptr)/tmp+plus_one_half,1,contextptr);
+-	if (r.type!=_DOUBLE_ || absdouble(r._DOUBLE_val-std::floor(r._DOUBLE_val+.5))<1e-12)
++	if (r.type!=_DOUBLE_ || !atan_tan_floor(re(e._SYMBptr->feuille,contextptr),tmp,r._DOUBLE_val,tmp2,contextptr))
++	  return symb_atan(e);
++      }
++      else if (tmp2.type<_IDNT){
++	gen r=evalf_double(tmp2/tmp+plus_one_half,1,contextptr);
++	if (r.type!=_DOUBLE_ || !atan_tan_floor(e._SYMBptr->feuille,tmp,r._DOUBLE_val,tmp2,contextptr))
+ 	  return symb_atan(e);
+-	tmp2=_floor(r,contextptr);
+       }
+-      else if (tmp2.type<_IDNT)
+-	tmp2=_floor(tmp2/tmp+plus_one_half,contextptr);
+       else if (!is_real(e._SYMBptr->feuille,contextptr))
+ 	return symb_atan(e);
+       else

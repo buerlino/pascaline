@@ -335,6 +335,12 @@ export const PATCHED_IDS = new Map([
   ["g165-acos-cos-1e-100-12", "0031-asin-half-integer-tie.patch"],
   ["g165-acos-cos-1e-300-12", "0031-asin-half-integer-tie.patch"],
   ["g165-acos-cos-neg-1e-50-12", "0031-asin-half-integer-tie.patch"],
+  // G166 (F174): atan(tan(a)) for a large a (stock: n = floor(a/pi+1/2) from the double of a, one low at 10^15); g138-atan-tan-1e15-12,
+  // g138-deg-* and g166-atan-tan-pi/2-minus-1e-15-12 are typed as LaTeX (or DEG), g166-cas-* is the CAS view, and the guards
+  // g166-keep-atan-tan-1e14-12 and g166-keep-atan-tan-neg-pi/2-plus-1e-15-12 pass on stock and stay in the check file;
+  // g166-atan-tan-30!-30 is in CANCELS_IDS
+  ["g166-atan-tan-1e15-12", "0032-atan-tan-reduction-digits.patch"],
+  ["g166-atan-tan-1e17-12", "0032-atan-tan-reduction-digits.patch"],
   // G126: asin, acos and asinh of a large argument on the cancelling side of their ln forms (stock: 20 to all digits lost, or
   // undef where the sum is an exact 0); the guards g126-asin-neg-1e20-12, g126-acos-*-1e20/1e300, g126-acosh-*, g126-atanh-*
   // and the small arguments pass on stock and stay in the check file
@@ -495,6 +501,7 @@ export const PATCHED_IDS = new Map([
 // (ln(x+sqrt(x^2+1)) keeps about 20 of them at Digits 40).
 export const CANCELS_IDS = new Set([
   "g116-asin-cos-30!-12",
+  "g166-atan-tan-30!-30",
   "g122-asin-cos-1e50-12",
   "g122-acos-sin-1e50-12",
   "g122-asin-sin-1e50-12",
