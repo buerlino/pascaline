@@ -139,6 +139,12 @@ describe("sessionText: a unit-view row (R63f2)", () => {
   it("the decimal comma rewrites the unit text too", () => {
     expect(sessionText([t10], { decimalComma: true }, { ...CTX, decimalComma: true }).endsWith(" 39,488 ± 1,2 m²")).toBe(true);
   });
+  it("R134: a rare pair (drawn in pas-rare) is written without its class", () => {
+    const rare = done({ ...t04, units: { input: "5\\,\\class{pas-rare}{\\mathrm{M}\\mathrm{m}}\\to\\,\\mathrm{m}", text: " m" } });
+    const line = sessionText([rare], {}, CTX);
+    expect(line).toBe("5 Mm → m ≈ 0.1570796326794896619 m");
+    expect(line).not.toContain("\\");
+  });
   it("a row without those fields keeps today's line", () => {
     expect(sessionText([{ ...t04, units: {} }], {}, CTX)).toBe("2×π×25 ≈ 0.1570796326794896619");
     expect(sessionText([{ ...t04, units: { input: 5, text: " m" } }], {}, CTX)).toBe("2×π×25 ≈ 0.1570796326794896619");
@@ -195,6 +201,23 @@ describe("entryText", () => {
     expect(entryText("\\frac{a+1}{b}^{-1}")).toBe("(a+1)/b^-1");
     expect(entryText("\\frac13")).toBe("1/3");
     expect(entryText("\\res{1}{0.5}+\\ans")).toBe("0.5+Ans");
+  });
+  it("R134: a class wrapper, Greek letters, constants with braces and a command before \\mathrm read as text", () => {
+    expect(entryText("\\class{pas-rare}{\\mathrm{M}\\mathrm{m}}")).toBe("Mm");
+    expect(entryText("\\htmlStyle{background:red}{\\mathrm{m}^{2}}")).toBe("m^2");
+    expect(entryText("2\\alpha+\\varepsilon")).toBe("2α+ε");
+    expect(entryText("\\theta+\\Delta x")).toBe("θ+Δ x");
+    expect(entryText("\\alpha x")).toBe("α x");
+    expect(entryText("\\pi r")).toBe("π r");
+    expect(entryText("2\\varphi\\Omega")).toBe("2φΩ");
+    expect(entryText("\\mu_{0}")).toBe("μ_0");
+    expect(entryText("G\\times\\const{alpha}{\\alpha}")).toBe("G×α");
+    expect(entryText("\\const{mu_0}{\\mu_{0}}\\times2")).toBe("μ_0×2");
+    expect(entryText("\\const{mu_B}{\\mu_{\\mathrm{B}}}")).toBe("μ_B");
+    expect(entryText("\\const{x}{\\mathrm{inverse\\_conductance}}")).toBe("inverse_conductance");
+    expect(entryText("\\to\\mathrm{m}")).toBe("→ m");
+    expect(entryText("\\mathrm{\\mu}\\mathrm{m}")).toBe("μm");
+    expect(entryText("5\\,\\class{pas-rare}{\\mathrm{M}\\mathrm{m}}\\to\\mathrm{m}")).toBe("5 Mm → m");
   });
 });
 
