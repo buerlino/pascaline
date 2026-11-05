@@ -1,0 +1,51 @@
+# Upstream: giac 2.1.0 usual.cc asin. asin(sin(a)) = +-(a-n*pi) with n = round(a/pi) (and asin(cos(a)), acos(sin(a)), acos(cos(a)) through it) took a/pi at the current Digits, so an a/pi within a unit of its last digit of a half-integer was a tie and round() chose the parity of n: acos(cos(10^-50)) = pi/2-asin(sin(pi/2-10^-50)) read a/pi = 1/2-10^-50/pi as 1/2 at Digits 40, took n = 1 and returned the exact -1/10^50 (right 1/10^50); acos(cos(10^-30)) at Digits 12 the same. Where a/pi is within 1e-9 of a half-integer, n is now taken again from a/pi at Digits plus 20, 40, ... 1280 until a/pi is clear of the half-integer by more than 10^10 units of its last digit; a tie no precision decides keeps asin unevaluated (evalf then gives the principal value). Other n keep their exact answer (asin(cos(10)) = -pi/2+10-3*pi).
+# Changed by Pascaline contributors, 2026-11-05
+--- a/src/usual.cc
++++ b/src/usual.cc
+@@ -2616,6 +2616,46 @@ namespace giac {
+ 	if ((n.type!=_INT_ && n.type!=_ZINT) || d.type!=_DOUBLE_ || d._DOUBLE_val>0.5-1e-12)
+ 	  return symb_asin(e);
+       }
++      else {
++	// Pascaline patch 0031 (G165): a/pi near a half-integer is a tie at the current Digits, and round() of the tie
++	// picks the parity: acos(cos(10^-50)) = pi/2-asin(sin(pi/2-10^-50)), a/pi = 1/2-10^-50/pi read as 1/2 at Digits 40,
++	// n = 1, so -10^-50 (right 10^-50; 10^-30 the same at Digits 12). Such an n is taken again from a/pi at Digits
++	// plus 20, 40, ... 1280, until a/pi is clear of the half-integer by more than 10^10 units of its last digit;
++	// a tie no precision decides keeps asin unevaluated (evalf then gives the principal value).
++	gen q0=evalf(a/cste,1,contextptr);
++	gen d0=evalf_double(abs(q0-n,contextptr),1,contextptr);
++	if (d0.type!=_DOUBLE_ || d0._DOUBLE_val>0.5-1e-9){
++	  int save_decimal_digits=decimal_digits(contextptr);
++	  bool decided=false;
++	  for (int extra=20;extra<=1280 && !decided;extra*=2){
++	    int nd=save_decimal_digits+extra;
++	    set_decimal_digits(nd,contextptr);
++	    gen q;
++	    try {
++	      q=evalf(e._SYMBptr->feuille/cste,1,contextptr);
++	    } catch (...) {
++	      set_decimal_digits(save_decimal_digits,contextptr);
++	      throw;
++	    }
++	    set_decimal_digits(save_decimal_digits,contextptr);
++	    if (q.type!=_REAL && q.type!=_DOUBLE_)
++	      return symb_asin(e);
++	    gen m=_round(q,contextptr);
++	    if (m.type!=_INT_)
++	      return symb_asin(e);
++	    gen aq=abs(q,contextptr);
++	    if (is_greater(1,aq,contextptr))
++	      aq=1;
++	    gen t=(plus_one_half-abs(q-m,contextptr))*pow(gen(10),nd-10,contextptr);
++	    if (is_strictly_greater(t,aq,contextptr)){
++	      n=m;
++	      decided=true;
++	    }
++	  }
++	  if (!decided)
++	    return symb_asin(e);
++	}
++      }
+       if ((n.type==_INT_ && n.val%2==0) || (n.type==_ZINT && mpz_even_p(*n._ZINTptr)))
+ 	return e._SYMBptr->feuille-n*cste;
+       return n*cste-e._SYMBptr->feuille;

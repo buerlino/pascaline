@@ -329,6 +329,12 @@ export const PATCHED_IDS = new Map([
   ["g122-asin-sin-20!-12", "0014-asin-big-reduction.patch"],
   ["g122-acos-cos-20!-12", "0014-asin-big-reduction.patch"],
   ["g122-asin-sin-1e20-12", "0014-asin-big-reduction.patch"],
+  // G165 (F173): acos(cos(a)) for a tiny exact a, a/pi a tie at Digits 40 (stock: n = 1, so -a); g138-acos-cos-1e-50-12 is typed as
+  // LaTeX, g165-deg-* is left out (angle mode), and the guard g165-keep-acos-cos-1e-30-12 passes on stock and stays in the check file
+  ["g165-acos-cos-1e-40-12", "0031-asin-half-integer-tie.patch"],
+  ["g165-acos-cos-1e-100-12", "0031-asin-half-integer-tie.patch"],
+  ["g165-acos-cos-1e-300-12", "0031-asin-half-integer-tie.patch"],
+  ["g165-acos-cos-neg-1e-50-12", "0031-asin-half-integer-tie.patch"],
   // G126: asin, acos and asinh of a large argument on the cancelling side of their ln forms (stock: 20 to all digits lost, or
   // undef where the sum is an exact 0); the guards g126-asin-neg-1e20-12, g126-acos-*-1e20/1e300, g126-acosh-*, g126-atanh-*
   // and the small arguments pass on stock and stay in the check file
