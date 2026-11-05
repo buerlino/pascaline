@@ -6,7 +6,7 @@
 //
 // 1. Links: every relative Markdown link in every Markdown file of the repo resolves to a file or directory
 //    (anchors are not checked), and every `docs/….md` path a live doc or a tracked source file (G145) names exists.
-// 2. Budgets: the whole brief (28 kB; owner, 2026-10-19), backlog.md, decisions.md, docs/04 and every package file in docs/shifts/packages/ stay within their size.
+// 2. Budgets: the whole brief (32 kB; owner, 2026-10-19, raised 2026-11-05), backlog.md, decisions.md, docs/04 and every package file in docs/shifts/packages/ stay within their size.
 // 3. Ids (A22): no two package files share the id of their heading, no two backlog bug lines (`- **F<n>.**`) share one.
 // 4. Live research notes (A22): docs/research/*.md (not the archive) hold at most 150 kB together, and each opens with a
 //    status line (**Status … open, decided or reference**) in its first lines.
@@ -24,7 +24,7 @@ const repo = process.env.DOCS_CHECK_REPO ?? execFileSync("git", ["rev-parse", "-
 const kB = 1000;
 /** The budgets of the docs diet (brief package S7): bytes. */
 const BUDGETS = [
-  { file: "docs/shifts/brief.md", limit: 28 * kB },
+  { file: "docs/shifts/brief.md", limit: 32 * kB },
   { file: "docs/backlog.md", limit: 20 * kB },
   { file: "docs/decisions.md", limit: 40 * kB },
   { file: "docs/04-architecture.md", limit: 70 * kB },

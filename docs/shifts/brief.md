@@ -60,6 +60,8 @@ Milestone reviews (section 0): after R50e (with R116's gallery groups "Entry hig
 | 480 | [R132](packages/R132.md) a Find key updates the list within one frame (E3 missed: 31.9 ms against 16, A4b) | ron, Opus | `p1/ron-findfast` | – |
 | 473 | [R59](packages/R59.md) the library rows: import (file or clipboard), export, the format for your AI | ron, Opus | `p1/ron-m4-library` | – |
 | 481 | [R133](packages/R133.md) History draws the newest 5 rows until the engine is ready (F172) | ron, Sonnet | `p1/ron-histfirst` | – |
+| 512 | [R134](packages/R134.md) shared and why-line texts are plain: no LaTeX commands or class wrappers (F162, F171) | ron, Sonnet | `p1/ron-plaintext` | – |
+| 513 | [R135](packages/R135.md) a result too long to draw shows a drawn note, never raw LaTeX (F71) | ron, Sonnet | `p1/ron-longresult` | – |
 | 482 | [R126](packages/R126.md) the backup's keys, pad cells and presets written down for your AI | ron, Sonnet | `p1/ron-backupformat` | R59 |
 | 483 | [R129](packages/R129.md) the study's mockups: results mode, the six top-right keys | ron, Sonnet | `p1/ron-resultsmockup` | S25 |
 
@@ -75,6 +77,27 @@ A8 and [A57](packages/A57.md) run by day; the night review's queue goes on in [i
 | 478 | [A69](packages/A69.md) a night stops before the disk is full; runs leave no temp folders | annabell, Sonnet | `p1/annabell-diskguard` | – |
 | 479 | [A71](packages/A71.md) the red-first check can test against the stock engine | annabell, Sonnet | `p1/annabell-redstock` | – |
 | 484 | [A74](packages/A74.md) Find per key on the Tab One again after R132 (E3, the bar's point 4) | annabell, Sonnet | `p1/annabell-findagain` | R132 |
+| 491 | [G175](packages/G175.md) √ of exp(z) or of a complex power keeps the principal root (F135, F134; silent) | gorge, Opus | `p1/gorge-sqrtexp` | – |
+| 492 | [G177](packages/G177.md) cos, sin, tan of half a complex atan, asin, acos take the right sign (F137; silent) | gorge, Opus | `p1/gorge-halfatrig` | – |
+| 493 | [G171](packages/G171.md) a non-square power stays refused when the input calls a storing function (F88; silent) | gorge, Opus | `p1/gorge-nonsquarestore` | – |
+| 494 | [G176](packages/G176.md) the limit of trunc at an integer from the right side (F170) | gorge, Opus | `p1/gorge-limtrunc` | – |
+| 495 | [G178](packages/G178.md) a divergent integral inside an expression is refused, not ⚠ 1 (F115) | gorge, Opus | `p1/gorge-intdivexpr` | – |
+| 496 | [G168](packages/G168.md) no value is a plain refusal: `undef`, empty calls, `DelAVars()`, the budget message (F93, F109) | gorge, Opus | `p1/gorge-novalue` | – |
+| 497 | [G183](packages/G183.md) a crashed engine restarts and says so, never a JS error text (F122, F145, G94) | gorge, Opus | `p1/gorge-trapnet` | – |
+| 498 | [G184](packages/G184.md) a Home step stopped by the time budget says "Stopped: it took too long" (F70) | gorge, Opus | `p1/gorge-floatstop` | – |
+| 499 | [G185](packages/G185.md) a Home Enter that does not return in time is stopped with the time-limit message (F62) | gorge, Opus | `p1/gorge-homewatch` | G183 |
+| 500 | [G169](packages/G169.md) a list as a distribution's x gives one value per element (F105, F93) | gorge, Opus | `p1/gorge-listlast` | – |
+| 501 | [G172](packages/G172.md) a list element only a double can value shows its number with ⚠ (F73) | gorge, Opus | `p1/gorge-listdouble` | – |
+| 502 | [G173](packages/G173.md) no Giac print forms: empty `seq[]`, `matrix[…]` in a list, `when` (F127, F108) | gorge, Opus | `p1/gorge-printforms` | – |
+| 503 | [G179](packages/G179.md) a stored value read later keeps the mark it left with (F80, F63) | gorge, Opus | `p1/gorge-storedmark` | – |
+| 504 | [G180](packages/G180.md) DEG sqrt(asinh(asin(3.7))) gets the same mark on any clock (F159) | gorge, Opus | `p1/gorge-degmarkclock` | – |
+| 505 | [G186](packages/G186.md) Home's checks end on acos, asin, acosh of a huge or tiny real (F145) | gorge, Opus | `p1/gorge-cuthang` | – |
+| 506 | [G187](packages/G187.md) a power that underflows past the range says Underflow, not a stack overflow (F122) | gorge, Opus | `p1/gorge-powunder` | – |
+| 507 | [G170](packages/G170.md) ilaplace leaves no broken entry in Giac's variable list (F89) | gorge, Opus | `p1/gorge-ilaplacevars` | – |
+| 508 | [G174](packages/G174.md) names stored through an argument (QR, LU…) reach the log; restart shows none of ours (F87, F96, F97) | gorge, Opus | `p1/gorge-argnames` | – |
+| 509 | [G181](packages/G181.md) atanh and atan of a tiny non-real exact argument give z (F177) | gorge, Opus | `p1/gorge-atanhtiny` | G166 |
+| 510 | [G182](packages/G182.md) the why line past the 1000-digit cap says what was checked (F178) | gorge, Sonnet | `p1/gorge-whypastcap` | G181 |
+| 511 | [G188](packages/G188.md) the view sweep survives an engine crash and names it (G94) | gorge, Opus | `p1/gorge-viewcrash` | – |
 | 485 | [A64](packages/A64.md) two pipeline guards that misfire | annabell, Opus | `p1/annabell-guardfix` | – |
 | 486 | [A67](packages/A67.md) red-first counts only a test the branch adds or tightens | annabell, Opus | `p1/annabell-redfirst` | – |
 | 487 | [A65](packages/A65.md) the sync folder on Android (the night's device) | annabell, Opus | `p1/annabell-syncfolder` | – |
