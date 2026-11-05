@@ -548,8 +548,8 @@ export function exactFacts(
   // a double where MPFR digits were asked, in an element that is no number yet (atParts): Giac's evalf of the value
   const whole = (prec: number): GiacValue => at(`evalf(${src},${prec})`, prec);
   if (erf !== safe) giac.eval(`${ICDF_FAILED}:=0`);
-  // G141: the check starts at the longest exact integer's digits plus P when they pass P - 20 (literalStart; a number, rational or
-  // complex, is no cancellation: G141f1, a pasted E8365 copy). Past MAX_EVAL_DIGITS, or when that start gives no value (the budget), it runs from P, unchecked (⚠, never ≈).
+  // G141: the check starts at the longest exact integer's digits plus P when they pass P - 20 (literalStart; a number, rational or complex, is no
+  // cancellation: G141f1, a pasted E8365 copy). Past MAX_EVAL_DIGITS, or when that start gives no value (the budget), it runs from P, unchecked (⚠, never ≈); a value whose check confirmed no digit stays "no digit confirmed" (G23), as ⚠ would show its wrong digits.
   const lit = v.kind === "integer" || v.kind === "rational" || v.kind === "complex" ? { at: P, unchecked: false } : literalStart(text, P, MAX_EVAL_DIGITS, "printed");
   const from = (start: number): ElementFacts[] | null => {
     const P2 = [start, start + 20];
@@ -558,10 +558,8 @@ export function exactFacts(
   };
   try {
     const raised = lit.at > P ? from(lit.at) : null;
-    let out = raised ?? from(P);
-    // a value whose check confirmed no digit stays "no digit confirmed" (G23): ⚠ unchecked would show its wrong digits
-    if ((lit.unchecked || (lit.at > P && !raised)) && out)
-      out = out.map((f) => (f.exact || f.reliableDigits === 0 ? f : { ...f, warn: f.warn ?? ("unchecked" as const) }));
+    const unchecked = lit.unchecked || (lit.at > P && !raised);
+    const out = (raised ?? from(P))?.map((f) => (!unchecked || f.exact || f.reliableDigits === 0 ? f : { ...f, warn: f.warn ?? ("unchecked" as const) })) ?? null;
     if (erf === safe || !out) return out;
     return giac.eval(ICDF_FAILED).trim() !== "0" ? out.map((f) => (f.exact ? f : { ...f, warn: "unaudited" as const })) : out;
   } finally {
