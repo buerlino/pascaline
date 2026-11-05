@@ -725,6 +725,18 @@ Digits:=40:; pc("g157f1-int-ceil-half-3/2",'(int(ceil(x),x,1/2,3/2))',(15/10^1),
 // patch 0029-int-trunc-split.patch
 // g157f1-int-trunc-x-free-trunc-neg1 (precision.yaml, derived)
 Digits:=40:; pc("g157f1-int-trunc-x-free-trunc-neg1",'(subst(int(trunc(x)*trunc(ag157),x,-3/2,-1/2),ag157=-1))',(5/10^1),5/10^13);
+// patch 0031-asin-half-integer-tie.patch
+// g165-acos-cos-1e-40-12 (precision.yaml, oracle)
+Digits:=40:; pc("g165-acos-cos-1e-40-12",'(acos(cos(10^-40)))',(1/10^40),5/10^52);
+// patch 0031-asin-half-integer-tie.patch
+// g165-acos-cos-1e-100-12 (precision.yaml, oracle)
+Digits:=40:; pc("g165-acos-cos-1e-100-12",'(acos(cos(10^-100)))',(1/10^100),5/10^112);
+// patch 0031-asin-half-integer-tie.patch
+// g165-acos-cos-1e-300-12 (precision.yaml, oracle)
+Digits:=40:; pc("g165-acos-cos-1e-300-12",'(acos(cos((1/10^300))))',(1/10^300),5/10^312);
+// patch 0031-asin-half-integer-tie.patch
+// g165-acos-cos-neg-1e-50-12 (precision.yaml, oracle)
+Digits:=40:; pc("g165-acos-cos-neg-1e-50-12",'(acos(cos(-10^-50)))',(1/10^50),5/10^62);
 // patch 0006-reim-root-of-unknown-sign.patch
 // g96-cas-im-2sqrt (bench.yaml, derived)
 Digits:=40:; pc("g96-cas-im-2sqrt",'subst(im(2*sqrt(x)),x,-1)',2,1/10^30);
