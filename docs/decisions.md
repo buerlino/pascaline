@@ -9,13 +9,14 @@ The owner's other open items are in [backlog.md](backlog.md), "Needs the user". 
 
 **A4b: Find on the Tab One misses E3** (`?bench=find`, 7 runs): p95 31.9 ms against 16; the search is 6 ms, the list's DOM update the rest, so docs/04 3.2's incremental Find does not help. Propose a cheaper list (R-package), then re-measure; or accept for v0.1.0.
 
+**G164's sample sources** (`app/public/samples/materials.txt`): check its 16 sources by the freeze (11-12), and keep copper on its data sheet (G164's report).
+
 ## Decided proposals
 
 ### Pipeline and process
 - **Owner answers of 2026-11-05 (morning).** The weekly fuzz runs in 10-minute slices from Wed 11-11 (G167: `--part i/n` and a separate shrink, Opus pass 69); the red-first check can test the stock engine for a G125 package (A71); sofia's gate script calls `tools/devlock.sh` by its absolute path. Would change if: the fuzz count is cut to fit one slice.
 - **Owner answers of 2026-11-02, evening ([night review](research/night-review-2026-11-02.md) section 6, the full text).** The queue as proposed; red-first counts only added or tightened tests (A67); R37 parked. Would change if: a fix needs a test loosened.
-- **Owner answers of 2026-10-31, evening.** A53's diff stage stays (trigger ten minutes); the rest is built (A52f1, A58, G155) or packaged (A57). Full text: archive.
-- **Owner answers of 2026-10-31 (night review 2026-10-30, [its note](archive/night-review-2026-10-31.md) section 6).** Gated website deploys (A52); R103 trimmed; R90 dropped; the docs budgets stay; one-time phone checks in `tests/core/ONE-TIME.md`. Full text: archive. Would change if: A8 gates both deploys.
+- **Owner answers of 2026-10-31 (night review 2026-10-30, [its note](archive/night-review-2026-10-31.md) section 6; evening).** Gated website deploys (A52); A53's diff stage stays (trigger ten minutes); R103 trimmed; R90 dropped; the docs budgets stay; one-time phone checks in `tests/core/ONE-TIME.md`. Full text: archive. Would change if: A8 gates both deploys.
 - **G125 (Opus pass 5): a bug an earlier merge already fixed.** Its package keeps its tests as regression tests: they must fail on the stock build (`engine/giac/_out/release`) instead of on phase-1, the Opus pass rewrites its "Done when", and the branch merges review-only (`--no-worker`). Would change if: a test passes on stock too.
 - **Owner answers of 2026-10-29.** The start chunk is split (R91); ron runs at night too, three milestone reviews (brief section 0); the fuzz runs one night a week; `--effort high` with the usage tripwire. Full text: archive. Would change if: the tripwire fires twice in a week, or backlog conflicts cost more than one resolve round a day.
 - **Owner answers of 2026-10-28 (after the day shift).** Home's sequences as G119 shows them (F108); R90 dropped 2026-10-31 (R24c brought the unit view); Find's ten categories stay. Full text: archive.

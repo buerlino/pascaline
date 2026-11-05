@@ -16,7 +16,7 @@
 4. **Lane B, to v0.1.0** (the APK and the website from one tag): A7, A9, A43, A45 and A48–A50 merged; A8 (the owner's test tag); then wrong numbers by reach, C4. The bar and the days: [release-0.1.0.md](../release-0.1.0.md); from its freeze (Thu 11-12) both lanes run only its fixes.
 5. **Every morning:** the owner's check (MORNING.md, on the night's device when the night had one, about 10 minutes). The day session writes each failed step as a backlog bug line on phase-1 and logs one line in `.coord/log.md`: `- HH:MM morning <date>: clean` or `- HH:MM morning <date>: fails <ids>`.
 
-**The weekly extreme night** (owner, 2026-10-29; replaces the nightly fuzz of 2026-10-27): once a week lane B runs the extreme-input packages (none open; G165 and G166 run by reach) and the fuzz, in 10-minute slices from G167, with its triage (each week the text of G138, its package file at d1278849, with a new ID); the Opus pass files the backlog lines. Wrong numbers of everyday or medium reach run any time, by reach.
+**The weekly extreme night** (owner, 2026-10-29; replaces the nightly fuzz of 2026-10-27): once a week lane B runs the extreme-input packages (none open) and the fuzz, in 10-minute slices from G167, with its triage (each week the text of G138, its package file at d1278849, with a new ID); the Opus pass files the backlog lines. Wrong numbers of everyday or medium reach run any time, by reach.
 
 **No package yet** (backlog, by reach): F73, F80, F85, F70, F71; the background stream F62, G94; what G116 finds. S20 (the MPFI spike) by day.
 
@@ -53,7 +53,7 @@ With the lanes, start both from the phase-1 worktree: `cd .claude/worktrees/phas
 `ANDROID_SERIAL=HA24BZ2Y` for both lanes, `--until 05:30`; before the start the owner plugs in and unlocks the Tab One, and `tools/stay-awake.sh HA24BZ2Y --restore` runs (STAY_ON=7). CORE DEVICE after each pass. Lane A runs R132 (the release bar's point 4, owner 2026-11-05), then R59 (decisions.md "A62, R59's gate"), then the rest of its table; lane B runs G165, G166, G164, G167, A69, A71, then the rest of its table (owner, 2026-11-05: "add everything"; A65, A66 and A74 on the night's device). Every "After" was checked against the merges on 2026-11-05 ("–" is merged); a step whose "After" is not merged is skipped. Follow each Opus pass as written (rule 3).
 
 ### Lane A queue (ron's UI)
-Milestone reviews (section 0): after R50e (with R116's gallery groups "Entry highlights (R116)" and the lifted --pick on the History picked row; R113's rings, gallery home-tips-small); after R24d (with R92's Constants and Tools; R108's gallery group "Decimal comma in apps"; R89 on the Fairphone: save two presets with different free keys and switch; R111's note at 360 px; R33's stored-name colour in each theme, decisions.md "Owner answers of 2026-11-02"; R120's gallery unitresult-t10-comma; R124's gallery group "Mark style (R124)" and R125's "Digit groups (R125)", ’ and , grouping only before the point since R125f1).
+Milestone reviews (section 0): after R50e (with R116's gallery groups "Entry highlights (R116)" and the lifted --pick on the History picked row; R113's rings, gallery home-tips-small); after R24d (with R92's Constants and Tools; R108's gallery group "Decimal comma in apps"; R89 on the Fairphone: save two presets with different free keys and switch; R111's note at 360 px; R33's stored-name colour in each theme, decisions.md "Owner answers of 2026-11-02"; R120's gallery unitresult-t10-comma; R124's gallery group "Mark style (R124)" and R125's "Digit groups (R125)", ’ and , grouping only before the point since R125f1; G164's sample sources, decisions.md "Needs the user").
 
 | Step | What | Agent, model | Branch | After |
 |---|---|---|---|---|
@@ -70,9 +70,6 @@ A8 and [A57](packages/A57.md) run by day; the night review's queue goes on in [i
 
 | Step | What | Agent, model | Branch | After |
 |---|---|---|---|---|
-| 474 | [G165](packages/G165.md) acos(cos(x)) for a tiny exact x keeps its sign (F173) | gorge, Opus | `p1/gorge-acostiny` | – |
-| 475 | [G166](packages/G166.md) atan(tan(x)) inside (-π/2, π/2) for a large x and next to the pole (F174) | gorge, Opus | `p1/gorge-atantan` | – |
-| 476 | [G164](packages/G164.md) a sample library for your AI: a few materials, each value with its source (the owner reads the sources at the milestone review) | gorge, Opus | `p1/gorge-samplelib` | – |
 | 477 | [G167](packages/G167.md) the weekly fuzz in 10-minute slices (before Wed 11-11) | gorge, Sonnet | `p1/gorge-fuzzslices` | – |
 | 478 | [A69](packages/A69.md) a night stops before the disk is full; runs leave no temp folders | annabell, Sonnet | `p1/annabell-diskguard` | – |
 | 479 | [A71](packages/A71.md) the red-first check can test against the stock engine | annabell, Sonnet | `p1/annabell-redstock` | – |
