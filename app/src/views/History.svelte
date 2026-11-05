@@ -25,7 +25,11 @@
     undo = null,
     onundo,
     selected = null,
+    engineState,
   }: {
+    /** R133: while the engine starts only the newest FIRST_PAINT rows are drawn (their cost is on the main thread the
+     *  start needs); a frame after it is ready or failed the page grows to PAGE. */
+    engineState: "starting" | "ready" | "failed";
     items: HistoryItem[];
     /** P4: the row picked with Up from an empty entry line (index into items), or null. */
     selected?: number | null;
@@ -110,11 +114,21 @@
   // Only the newest entries are drawn (layout and MathLive markup cost grow with every drawn item, which
   // slowed both the engine start and Enter with a full history). Scrolling to the top draws earlier ones.
   const PAGE = 20;
-  let shownCount = $state(PAGE);
+  /** R133 (F172): the rows drawn while the engine starts (the start pays for the rows drawn, by their content). */
+  const FIRST_PAINT = 5;
+  // Mounted with the engine already up (back from an app): the full page at once.
+  // svelte-ignore state_referenced_locally (the start state only; the effect below moves it on)
+  let shownCount = $state(engineState === "starting" ? FIRST_PAINT : PAGE);
+  const full = $derived(shownCount >= PAGE);
+  $effect(() => {
+    if (engineState === "starting" || full) return;
+    const frame = requestAnimationFrame(() => (shownCount = PAGE));
+    return () => cancelAnimationFrame(frame);
+  });
   const shown = $derived(items.length > shownCount ? items.slice(items.length - shownCount) : items);
   let sentinel: HTMLElement | undefined = $state();
   $effect(() => {
-    if (!sentinel || !scroller) return;
+    if (!sentinel || !scroller || !full) return; // the first rows only: the sentinel waits for the page (R133)
     const io = new IntersectionObserver(
       (entries) => {
         if (entries.some((e) => e.isIntersecting)) void showEarlier();
