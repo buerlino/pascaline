@@ -397,6 +397,7 @@ spec_file="$tmp/spec-red"; [[ ",$(want_checks)," == *,redfirst,* ]] || fail "A36
 spec_file="$tmp/spec-plain"; [[ ",$(want_checks)," != *,redfirst,* ]] || fail "A36: want_checks has redfirst without the claim"
 # A71: "fail on the stock build": the same stage on phase-1's code with the stock engine (GIAC_OUT of the stock build); the log says which engine ran
 git -C "$rf" checkout -q -b p1/vgiac phase-1; echo 'FAILS-ON-OLD reads GIAC_OUT' > "$rf/app/d.test.ts"; git -C "$rf" add -A; gc "$rf" t; git -C "$rf" checkout -q phase-1
+git -C "$rf" checkout -q -b p1/vnode phase-1; printf 'import { nodeHost } from "./engine/nodeGiac.ts";\nFAILS-ON-OLD\n' > "$rf/app/e.test.ts"; git -C "$rf" add -A; gc "$rf" t; git -C "$rf" checkout -q phase-1
 printf 'X, A2: tests that fail on the stock build\n' > "$tmp/spec-stock"
 printf '#!/bin/sh\necho "GIAC_OUT=$GIAC_OUT" > "%s/vitest-ran"\ngrep -q FAILS-ON-OLD "$@" && { echo " Test Files  1 failed (1)"; echo "      Tests  1 failed (1)"; exit 1; }\nexit 0\n' "$tmp" > "$tmp/fakevitest-env.sh"
 printf '#!/bin/sh\necho "GIAC_OUT=$GIAC_OUT ONLY=$ONLY" > "%s/golden-ran"\ncase "$GIAC_OUT" in *stock*) echo "FAIL home: 12/13 match"; echo "  home newcase: got 1, expect 2"; echo "GOLDEN GATE FAILED"; exit 1;; esac\nexit 0\n' "$tmp" > "$tmp/fakegolden-env.sh"
@@ -422,6 +423,9 @@ red_first "$w" "$tmp/spec-stock" "$tmp/patched-eng" "$tmp/rf.log" "$tmp/stock-en
 [[ ! -e "$tmp/vitest-ran" ]] || fail "A71: a vitest file that does not read GIAC_OUT ran in the stock check"; noscratch stock-vitest-skip
 w="$(rfwt p1/vgiac)"; red_first "$w" "$tmp/spec-stock" "$tmp/patched-eng" "$tmp/rf.log" "$tmp/stock-eng" >/dev/null || fail "A71: a vitest file that reads GIAC_OUT and fails on the stock engine is refused"
 grep -q "GIAC_OUT=$tmp/stock-eng" "$tmp/vitest-ran" || fail "A71: vitest ran without GIAC_OUT on the stock engine: $(cat "$tmp/vitest-ran" 2>&1)"; noscratch stock-vitest
+# A71f2: a file that imports nodeGiac (the module that reads GIAC_OUT) without naming it also runs, on the stock engine
+rm -f "$tmp/vitest-ran"; w="$(rfwt p1/vnode)"; red_first "$w" "$tmp/spec-stock" "$tmp/patched-eng" "$tmp/rf.log" "$tmp/stock-eng" >/dev/null || fail "A71f2: a vitest file that imports nodeGiac and fails on the stock engine is refused"
+grep -q "GIAC_OUT=$tmp/stock-eng" "$tmp/vitest-ran" 2>/dev/null || fail "A71f2: the nodeGiac file did not run with GIAC_OUT on the stock engine: $(cat "$tmp/vitest-ran" 2>&1)"; noscratch stock-vitest-nodegiac
 unset PASCALINE_REDFIRST_VITEST PASCALINE_REDFIRST_GOLDEN
 # the stock engine: built once per key by build-wasm.sh with GIAC_PATCHES=none, reused after, stamped
 sk="$tmp/sk"; mkdir -p "$sk/tools" "$sk/engine/giac"; cp "$sb/tools/devlock.sh" "$sk/tools/"
