@@ -71,4 +71,99 @@ middle(l):=median(l)
 g0:=980665/100000
 // test: abs(g0-9.80665) < 1e-12
 ```
-<!-- Part 2, the backup file: R126 writes it here. -->
+
+## Part 2: the backup file (keys, unit pad cells and presets)
+
+The backup is one JSON file. It holds the app's own stored records, so you write only the three parts below and leave every other part out (`settings`, `history`, `defs` and the rest belong to the app). The user restores the file under Settings › Data › Restore from a file. The app checks the whole file first and refuses all of it at the first problem, naming the part; a restore that passes first keeps what it replaces, for one Undo.
+
+### The envelope
+- Strict JSON, UTF-8, at most 4 MB.
+- `"pascaline-backup"`: the whole number `1`.
+- `"dataVersion"` (`{version}`) and `"made"` (an ISO date-time) are information; write them.
+- `"parts"`: an object with any of `userKeys`, `unitPadCells`, `presets`. A file with only one of them is a valid backup. Any other part name is accepted only if the app writes it itself; do not write one.
+- Each part is `{ "@pascaline": {version}, "value": … }`. `"@pascaline"` is the version of the record: a whole number from 0 to {version}, and you write {version}. A larger number is refused.
+- A ticked part replaces the app's whole part, not a piece of it: slots the file does not hold go back to their defaults. To keep what the user has, work from their own backup file (Settings › Data › Save a backup) and change only these parts; the user unticks the other parts in the restore sheet.
+
+### Part `userKeys`: the six free keys
+- `value` is an object whose keys are `u1` … `u6`. Each holds up to three slots, named by layer: `primary` (the tap), `shift` (a flick up) and `alpha` (a flick down).
+- A slot is `{ "label": "…", "action": { … } }`, or `null` to empty that slot. A slot that is not written keeps its default (empty).
+- `label`: non-empty text, drawn on the key; keep it to a few characters.
+- `action`: an object with exactly one of these four fields (the app's own `sample`, `chip`, `units` and `line` extras are accepted but not meant for you, so do not write them):
+  - `"insert"`: a LaTeX template put into the line. `#0` is the place for the main argument: what the user selected, else an empty placeholder where the cursor goes. A function you defined is `"\\operatorname{name}\\left(#0\\right)"`, never loose letters (those read as a product of letters); a built-in is as in `"\\sinh\\left(#0\\right)"`. These are JSON strings, so every backslash is doubled.
+  - `"type"`: text typed as if by the keys, such as `"mol"`.
+  - `"special"`: a place or sheet, one of `"home"`, `"cas"`, `"settings"`, `"mode"`, `"units"`, `"find"`, `"vars"`, `"memory"`, `"none"`.
+  - `"cmd"`: an editing command of the entry field; do not write it.
+- An empty tap slot is a dead key. Any other field is refused.
+
+### Part `unitPadCells`: the unit pad's user cells
+- While a unit slot is open, U1–U6 become unit cells. `value` is an object whose keys are `u1` … `u6`; each holds up to three legs: `tap`, `up` (a flick up) and `down` (a flick down).
+- A leg is `{ "unit": "…" }` with an optional `"prefix": "…"` and an optional `"label": "…"`, or `null` to empty the leg. A leg that is not written keeps its default.
+- `unit`: the id of the unit as the pad and Find write it, such as `N`, `Pa`, `m`, `s`, `L`, `ohm`, `oC`. `prefix`: the id of an SI prefix such as `k`, `M`, `G`, `m` (milli), `u` (micro), `n`. kN is `"unit": "N"` with `"prefix": "k"`; mm is `"unit": "m"` with `"prefix": "m"`.
+- `label`: the text drawn on the cell, only where the ids would not draw what you want. All three are non-empty text. The check does not look the ids up: use only ids the pad or Find has.
+
+### Part `presets`: named sets of settings
+- `value` is `{ "presets": [ … ], "active": null, "next": N }`.
+- A preset is `{ "id": n, "name": "…", "groups": { … } }`. `id`: a whole number from 1, each once. `name`: non-empty, each once (capitals and outer spaces do not tell two names apart). `next`: a whole number greater than every id. `active`: `null`, or the id of the preset to show as the last one applied.
+- `groups` holds at least one of the groups below, each an object of the fields it sets. Applying a preset sets the fields it holds and leaves every other setting alone. A field with a value the app cannot read is left alone. Write only the fields listed here.
+- `mode`: `angle` = "rad" or "deg"; `format` = "std", "sci", "eng" or "pfx"; `digits` = a whole number from 1 to 30; `entry` = "textbook" or "line".
+- `numbers`: `decimalMark` = "point" or "comma"; `fixDecimals` = a whole number from 0 to 12; `uncertainty` = "sigma" or "muted"; `marks` = "muted", "colour" or "reason"; `groupSep` = "thin", "apos" or "comma".
+- `look`: `family` = "pascaline", "graphite", "solarized", "gruvbox" or "nord"; `brightness` = "system", "light" or "dark"; `contrast` = true or false; `plain` = true or false.
+- `vibration`: `on` = true or false; `strength` = a whole number from 0 to 100; `ms` = a whole number from 5 to 100.
+- `keys`: `userKeys` and `unitPadCells`, each exactly the `value` of the part of that name above. Applying the preset puts those slots and cells on the keys.
+
+### What refuses a file
+- Not JSON, not UTF-8, over 4 MB, no `"pascaline-backup"`, or a format number above 1.
+- A part name the app does not know, a part without `"@pascaline"` or `"value"`, or a stamp that is not a whole number from 0 to {version}.
+- A key id other than `u1` … `u6`, a layer other than `primary`, `shift` and `alpha`, a leg other than `tap`, `up` and `down`.
+- A slot with an empty label or an action the keypad does not know; a leg without a non-empty `unit`; an empty `prefix` or `label`.
+- Presets: an id or name used twice, a missing or empty name, groups that are empty or not objects of objects, `active` naming no preset, `next` not greater than every id.
+
+### Worked example of a backup
+```json
+{
+  "pascaline-backup": 1,
+  "dataVersion": {version},
+  "made": "2026-11-05T12:00:00.000Z",
+  "parts": {
+    "userKeys": {
+      "@pascaline": {version},
+      "value": {
+        "u1": {
+          "primary": { "label": "sinh", "action": { "insert": "\\sinh\\left(#0\\right)" } },
+          "shift": { "label": "mol", "action": { "type": "mol" } },
+          "alpha": null
+        },
+        "u2": { "primary": { "label": "Home", "action": { "special": "home" } } }
+      }
+    },
+    "unitPadCells": {
+      "@pascaline": {version},
+      "value": {
+        "u1": { "tap": { "unit": "N", "prefix": "k" }, "up": { "unit": "Pa", "prefix": "M" } },
+        "u2": { "tap": { "unit": "m", "prefix": "m" }, "down": null }
+      }
+    },
+    "presets": {
+      "@pascaline": {version},
+      "value": {
+        "presets": [
+          {
+            "id": 1,
+            "name": "Lab",
+            "groups": {
+              "mode": { "angle": "deg", "format": "eng", "digits": 6 },
+              "numbers": { "decimalMark": "comma", "marks": "reason" },
+              "keys": {
+                "userKeys": { "u1": { "primary": { "label": "sinh", "action": { "insert": "\\sinh\\left(#0\\right)" } } } },
+                "unitPadCells": { "u1": { "tap": { "unit": "N", "prefix": "k" } } }
+              }
+            }
+          }
+        ],
+        "active": null,
+        "next": 2
+      }
+    }
+  }
+}
+```
