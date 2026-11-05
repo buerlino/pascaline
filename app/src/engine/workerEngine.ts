@@ -155,8 +155,9 @@ export class WorkerEngine implements MathEngine {
     }
   }
 
-  /** Applies what a call defined to the log, and stores it. */
-  private keep(changes: readonly DefChange[]): void {
+  /** Applies what a call defined to the log, and stores it. Public for code that loads later and posts its own
+   *  requests (R59, calc/library.ts), so nothing of it is in the start chunk. */
+  keep(changes: readonly DefChange[]): void {
     if (!changes.length) return;
     this.log = applyDefChanges(this.log, changes);
     // a purge reaches the entries a safe start left out too, or stored() would bring the name back (G19)
@@ -330,8 +331,9 @@ export class WorkerEngine implements MathEngine {
     this.readyPromise.catch(() => {});
   }
 
-  /** A request, posted once the stored definitions have gone to the worker (at once when they have). */
-  private call(body: RequestBody): Promise<Response> {
+  /** A request, posted once the stored definitions have gone to the worker (at once when they have). Public for code
+   *  that loads later (R59, calc/library.ts). */
+  call(body: RequestBody): Promise<Response> {
     if (this.gateOpen) return this.post(body);
     const gen = this.generation;
     return this.gate.then(() => {

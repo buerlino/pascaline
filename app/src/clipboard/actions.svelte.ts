@@ -13,6 +13,7 @@ import { copyExact } from "./exact.ts";
 import { whyLine } from "./whyLine.ts";
 import type { ClipboardPort } from "./port.ts";
 import type { CopySource, TextOptions } from "./text.ts";
+import type { LibrarySource } from "../views/libraryJobs.ts";
 
 /** A history item as the copy texts read it: the engine's facts (R3 keeps them in `facts`) on the item itself. */
 const source = (i: HistoryItem): CopySource => i;
@@ -70,10 +71,10 @@ export class ClipActions {
     return this.givenPort ?? (this.chosen ??= (await impl()).choosePort());
   }
 
-  say(message: string): void {
+  say(message: string, ms = NOTICE_MS): void {
     this.notice = message;
     if (this.timer !== undefined) clearTimeout(this.timer);
-    this.timer = setTimeout(() => (this.notice = null), NOTICE_MS);
+    this.timer = setTimeout(() => (this.notice = null), ms);
   }
 
   /** Settings › Data › Save a backup (R38a): the backup code loads on the press; the result is the notice in the stage
@@ -94,6 +95,14 @@ export class ClipActions {
     const m = await import("../views/restoreSheet.svelte.ts");
     const say = (s: string): void => this.say(s);
     await (file === "undo" ? m.offerUndo(say) : m.offerRestore(file, this.shell, say));
+  }
+
+  /** Settings › Data › Library (R59): import a picked file or the clipboard's text, export, copy the format for your
+   *  AI. The library code loads on the press; every outcome is the notice (views/libraryJobs.ts). */
+  async library(job: "file" | "clipboard" | "export" | "format", file?: File): Promise<void> {
+    const m = await import("../views/libraryJobs.ts");
+    const src: LibrarySource = { shell: this.shell, session: this.session, say: (s, ms) => this.say(s, ms), clip: (run) => this.serial(async () => run(await this.port())) };
+    return m.runJob(m.hostOf(src), job, file);
   }
 
   /** The row an action means: the given one, else the newest finished result of the open view. */
