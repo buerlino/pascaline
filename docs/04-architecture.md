@@ -180,7 +180,7 @@ Every Giac path (exp, the hyperbolics, complex trig, inverse trig, integration, 
 - **The index exists** (G4; generator `tools/find-index/generate.mjs`, sources and schema in 3.3; ranking `app/src/find/rank.ts`, `prepare()` and `search()`): its size and the query score are in 8.3, the item counts and the prototype's timing in [research/r12-evidence.md](research/r12-evidence.md) section 6.
 
 ### 3.2 Decision: where it runs
-**Main thread.** 1.2 ms per key on the desktop leaves room for a 10× slower Tab One inside 16 ms; a worker would add a message round trip per key. **Gate:** `?bench=find` replays 50 queries one character at a time, timing key → list rendered; p95 ≤ 16 ms on the Tab One (annabell). If it misses, first filter incrementally (each key narrows the previous candidates), then move ranking to a worker.
+**Main thread** (a worker adds a round trip per key). **Gate:** `?bench=find` replays 50 queries one character at a time, timing key → list rendered; p95 ≤ 16 ms on the Tab One (annabell). A4b: 31.9 ms. R132 (2026-11-05): only the hits in view are built, keyed by item; a longer query searches the last one's candidates, first keys are searched when idle (rank.ts); 6x throttled p95 24.9 → 11.2 ms.
 
 ### 3.3 Decision: the index
 
@@ -223,7 +223,7 @@ Every key types its Alpha letter in lower case (no Alpha press); Shift + key typ
 `tests/tasks/find-queries.yaml` (`query`, `expect` id, `note`), run by Vitest against the generated index and the real ranking (`app/src/find/queries.test.ts`). **Gate:** every phrase in the top 3, at least 90 % first. It holds 108 active phrases (`newton` and `kb` are ambiguous on purpose) and 8 `pending` ones for milestone 6. The owner adds a phrase whenever Find misses one.
 
 ### 3.9 Budgets, risks, would change
-Budgets: 8.3. Risks: alias quality (only the query test and real use show it); the chip look (screenshot test). Would change if the Tab One misses 16 ms (incremental filtering, then a worker), or the index outgrows 100 kB gzip (split functions and units into two files).
+Budgets: 8.3. Risks: alias quality (only the query test and real use show it); the chip look (screenshot test). Would change if the Tab One misses 16 ms after R132 (a worker), or the index outgrows 100 kB gzip (split functions and units into two files).
 
 ---
 
