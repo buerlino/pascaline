@@ -551,15 +551,17 @@ export function exactFacts(
   // G141: the check starts at the longest exact integer's digits plus P when they pass P - 20 (literalStart; a number, rational or complex, is no
   // cancellation: G141f1, a pasted E8365 copy). Past MAX_EVAL_DIGITS, or when that start gives no value (the budget), it runs from P (uncheckedPastCap).
   const lit = v.kind === "integer" || v.kind === "rational" || v.kind === "complex" ? { at: P, unchecked: false } : literalStart(text, P, MAX_EVAL_DIGITS, "printed");
-  const from = (start: number): ElementFacts[] | null => {
+  // G166: past the cap no level holds the literal, so further levels add noise, not digits, and how many the budget
+  // (EXTRA_BUDGET_MS) allowed chose the value shown: atan(tan(10^5000)) showed -0.2 on the desktop, 0.5 on a clock 8× fast.
+  const from = (start: number, steps = true): ElementFacts[] | null => {
     const P2 = [start, start + 20];
     const first = erf !== safe ? null : src === name && P2.every((d) => v.at?.[String(d)] !== undefined) ? v : giac.value(src, P2);
-    return factsFrom(giac, name, v, first, read, whole, known, shape, digits, maxExactDigits, text, start, underflowAt);
+    return factsFrom(giac, name, v, first, read, whole, known, shape, digits, maxExactDigits, text, start, steps, underflowAt);
   };
   try {
     const raised = lit.at > P ? from(lit.at) : null;
     const unchecked = lit.unchecked || (lit.at > P && !raised);
-    const out = (raised ?? from(P))?.map((f) => (unchecked ? uncheckedPastCap(f) : f)) ?? null;
+    const out = (raised ?? from(P, !unchecked))?.map((f) => (unchecked ? uncheckedPastCap(f) : f)) ?? null;
     if (erf === safe || !out) return out;
     return giac.eval(ICDF_FAILED).trim() !== "0" ? out.map((f) => (f.exact ? f : { ...f, warn: "unaudited" as const })) : out;
   } finally {
@@ -582,6 +584,7 @@ function factsFrom(
   maxExactDigits: number,
   text: string,
   S: number,
+  steps: boolean,
   underflowAt?: (k: number) => boolean,
 ): ElementFacts[] | null {
   const P = valuePrecision(digits);
@@ -634,12 +637,12 @@ function factsFrom(
     const L = levels.get(prec) ?? level(prec);
     return L && kept(L);
   };
-  return agreedFacts(known, digits, P, S, at, underflowAt);
+  return agreedFacts(known, digits, P, S, at, underflowAt, steps);
 }
 
 /** The facts of the elements not known yet (`facts` null there) from the agreement of their values at S, S+20 and the
- *  further levels (`evalfAt`), see exactFacts; at most P digits are confirmed. */
-function agreedFacts(facts: readonly (ElementFacts | null)[], digits: number, P: number, S: number, evalfAt: (prec: number) => Parts[] | null, underflowAt?: (k: number) => boolean): ElementFacts[] | null {
+ *  further levels (`evalfAt`; none if not `steps`: past the cap, G166), see exactFacts; at most P digits are confirmed. */
+export function agreedFacts(facts: readonly (ElementFacts | null)[], digits: number, P: number, S: number, evalfAt: (prec: number) => Parts[] | null, underflowAt?: (k: number) => boolean, steps = true): ElementFacts[] | null {
   const A = evalfAt(S);
   const B = A && evalfAt(S + 20);
   if (!A || !B) return null;
@@ -651,7 +654,7 @@ function agreedFacts(facts: readonly (ElementFacts | null)[], digits: number, P:
   const t0 = Date.now();
   const more = (i: number): boolean => {
     if (i < levels.length) return levels[i] !== null;
-    if (levels[i - 1] === null) return false;
+    if (levels[i - 1] === null || !steps) return false;
     const prec = S + 40 * 2 ** (i - 2);
     if (prec > MAX_EVAL_DIGITS || (i > 2 && Date.now() - t0 > EXTRA_BUDGET_MS)) return false;
     levels[i] = evalfAt(prec);
