@@ -11,7 +11,7 @@
   import MathView from "../render/Math.svelte";
   import type { Sheet } from "./sheet.svelte.ts";
   import { fitCell, fitRow, hasOptions, hasSteps, ROW, rowHeight, showsReason, twoLines } from "./sheetFit.ts";
-  import { builtRows, keyedById, rowKey } from "./sheetWindow.ts";
+  import { builtRows, keyedById, plainRow, rowKey } from "./sheetWindow.ts";
 
   let {
     sheet,
@@ -111,6 +111,8 @@
   const built = $derived(searching ? builtRows(rows.length, room, scrolled.of === rows ? scrolled.px : 0, at, row) : rows.length);
   const shown = $derived(built < rows.length ? rows.slice(0, built) : rows);
   const byId = $derived(keyedById(rows, searching));
+  /** Every hit drawn is plain (Find's are): the light row, the same markup without the blocks it does not need. */
+  const plain = $derived(searching && shown.every((r) => plainRow(r.item)));
   const rest = $derived(rows.slice(built).reduce((h, r, k) => h + rowHeight(row, { reason: twoLines(items, built + k), steps: hasSteps(r.item), options: hasOptions(r.item) }), 0));
   function onListScroll(): void {
     measure();
@@ -236,6 +238,12 @@
         <div class="list doc" class:cut-top={cutTop} class:cut-bottom={cutBottom} data-testid="sheet-text" bind:this={list} onscroll={measure}>{level.text}</div>
       {:else}
       <div class="list" class:cut-top={cutTop} class:cut-bottom={cutBottom} style:--row={px(row)} bind:this={list} onscroll={onListScroll}>
+        {#if plain}
+        {#each shown as r (rowKey(r, byId))}
+          <!-- svelte-ignore a11y_click_events_have_key_events, a11y_interactive_supports_focus (the keypad drives the rows; nothing in a sheet takes focus) -->
+          <div role="menuitem" class="row" aria-label={r.item.label} data-active={r.index === level.highlight} data-id={r.item.id} data-count={r.item.count ?? "row"} style:height={px(row)} onclick={() => ontap(r.index)}><span class="n"></span><span class="text"><span class="label">{r.item.label}</span></span>{#if r.item.note}<span class="note" data-testid="row-note">{r.item.note}</span>{/if}{#if r.item.value !== undefined}<span class="value" data-testid="sheet-value">{r.item.value}</span>{/if}</div>
+        {/each}
+        {:else}
         {#each shown as r, i (rowKey(r, byId))}
           {@const steps = hasSteps(r.item)}
           {@const options = r.item.options}
@@ -257,6 +265,7 @@
             <span class="n">{r.n === undefined ? "" : r.n % 10}</span>{#if r.item.glyph}<span class="tile math" class:small={"text" in r.item.glyph && r.item.glyph.text.length > 1} data-testid="row-glyph" aria-hidden="true">{@html "icon" in r.item.glyph ? ICONS.home : r.item.glyph.text}</span>{/if}<span class="text"><span class="label">{r.item.label}</span>{#if reason}<span class="reason">{r.item.reason}</span>{:else if r.item.hint}<span class="reason" data-testid="row-hint">{r.item.hint}</span>{:else if r.item.dots && steps}<span class="dots under" data-testid="row-dots" aria-hidden="true">{#each r.item.dots as c}<i style:background={c}></i>{/each}</span>{/if}</span>{#if r.item.dots && !steps}<span class="dots" data-testid="row-dots" aria-hidden="true">{#each r.item.dots as c}<i style:background={c}></i>{/each}</span>{/if}{#if r.item.note}<span class="note" data-testid="row-note">{r.item.note}</span>{/if}{#if options}<span class="seg" data-testid="row-options">{#each options as o (o.id)}<button type="button" class="opt" data-option={o.id} aria-label={o.spoken} aria-pressed={o.selected} disabled={r.item.disabled || o.disabled} onclick={(e) => { e.stopPropagation(); onoption(r.index, o.id); }}>{o.label}</button>{/each}</span>{/if}{#if steps}<button type="button" class="step" data-testid="step-down" aria-label={t("sheet.stepDown")} disabled={r.item.disabled} onclick={(e) => { e.stopPropagation(); sheet.adjustAt(r.index, -1); }}>◀</button>{/if}{#if r.item.value !== undefined}<span class="value" data-testid="sheet-value">{r.item.value}</span>{/if}{#if steps}<button type="button" class="step" data-testid="step-up" aria-label={t("sheet.stepUp")} disabled={r.item.disabled} onclick={(e) => { e.stopPropagation(); sheet.adjustAt(r.index, 1); }}>▶</button>{/if}{#if r.item.selected !== undefined}<span class="tick" aria-hidden="true">{r.item.selected ? "✓" : ""}</span>{/if}{#if r.item.submenu}<span class="more" aria-hidden="true">›</span>{/if}
           </div>
         {/each}
+        {/if}
         {#if built < rows.length}<div class="rest" data-testid="sheet-rest" aria-hidden="true" style:height={px(rest)}></div>{/if}
         {#if rows.length === 0}<p class="empty" data-testid="sheet-empty">{t("sheet.noMatch")}</p>{/if}
       </div>
