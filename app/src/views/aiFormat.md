@@ -88,12 +88,12 @@ The backup is one JSON file. It holds the app's own stored records, so you write
 - `value` is an object whose keys are `u1` … `u6`. Each holds up to three slots, named by layer: `primary` (the tap), `shift` (a flick up) and `alpha` (a flick down).
 - A slot is `{ "label": "…", "action": { … } }`, or `null` to empty that slot. A slot that is not written keeps its default (empty).
 - `label`: non-empty text, drawn on the key; keep it to a few characters.
-- `action`: an object with exactly one of these fields:
+- `action`: an object with exactly one of these four fields (the app's own `sample`, `chip`, `units` and `line` extras are accepted but not meant for you, so do not write them):
   - `"insert"`: a LaTeX template put into the line. `#0` is the place for the main argument: what the user selected, else an empty placeholder where the cursor goes. A function you defined is `"\\operatorname{name}\\left(#0\\right)"`, never loose letters (those read as a product of letters); a built-in is as in `"\\sinh\\left(#0\\right)"`. These are JSON strings, so every backslash is doubled.
   - `"type"`: text typed as if by the keys, such as `"mol"`.
   - `"special"`: a place or sheet, one of `"home"`, `"cas"`, `"settings"`, `"mode"`, `"units"`, `"find"`, `"vars"`, `"memory"`, `"none"`.
   - `"cmd"`: an editing command of the entry field; do not write it.
-- An empty tap slot is a dead key. Any field other than the ones above is refused.
+- An empty tap slot is a dead key. Any other field is refused.
 
 ### Part `unitPadCells`: the unit pad's user cells
 - While a unit slot is open, U1–U6 become unit cells. `value` is an object whose keys are `u1` … `u6`; each holds up to three legs: `tap`, `up` (a flick up) and `down` (a flick down).

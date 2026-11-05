@@ -118,6 +118,11 @@ describe("the format's backup part: every rule it states is the code's (R126)", 
     expect(slot({ label: "", action: { type: "x" } })).toBe(false);
     expect(slot({ label: "x", action: { type: "x", insert: "y" } })).toBe(false);
     expect(slot({ label: "x", action: { sin: "x" } })).toBe(false);
+    // the text: four fields, the app's own extras tolerated, any other field refused
+    expect(slot({ label: "x", action: { type: "x", line: { type: "y" } } })).toBe(true);
+    expect(slot({ label: "x", action: { type: "x", foo: 1 } })).toBe(false);
+    expect(s).toContain("exactly one of these four fields");
+    expect(s).toContain("Any other field is refused.");
     expect(VALIDATORS["userKeys"]?.({ u7: { primary: null } })).toBe(false);
     expect(VALIDATORS["userKeys"]?.({ u1: { ctrl: null } })).toBe(false);
     // the action forms the text names, and every special it lists
