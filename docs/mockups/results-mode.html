@@ -124,6 +124,7 @@ body[data-zoom="80"] { --zoom: .8; }
 .step .out em { font-style: normal; color: var(--approx); font-size: 18px; margin-right: 6px; }
 .step .out small { font-size: 12.5px; color: var(--muted); margin-right: 10px; vertical-align: 3px; }
 .step .out .w { color: var(--warn); font-size: 18px; margin-right: 6px; }
+.step .tag, .step .why, .step.line1, .step.why1 { outline: 1px dashed var(--warn); outline-offset: -1px; }
 .step .why { height: 16px; line-height: 16px; font-size: 12px; color: var(--warn); }
 .step.line1 { height: 34px; display: flex; align-items: center; gap: 8px; white-space: nowrap; }
 .step.line1 .nm { font-size: 17px; font-weight: 600; }
@@ -158,7 +159,7 @@ body[data-zoom="80"] { --zoom: .8; }
 <div class="cards" id="keycards"></div>
 
 <h2 id="results">2 · Results mode: what the collapsed viewport shows</h2>
-<p>The keypad is collapsed to the 44 px slice (S9, <code>docs/archive/r13-results-mode.md</code> 1.1): the viewport is <strong>767 px</strong> at 412 × 839 and <strong>668 px</strong> at 360 × 740 (the entry line, 79.6 px, stays; history 687.4 px, 635.4 picked, <code>geometry</code> and r13 1.1). The third row is picked and shows <strong>the line of six</strong> (Insert, Recall, Copy, Store ▶, Delete, Plot; 52 px, one line above the entry line, r13 1.3). Plot is dimmed because the row is not a CAS row (R53 item 7). The five steps are an RC filter; the values and σ are made up for the picture. Row heights of a bare row (64.8 px, pitch 74.8) are measured (r19 part 1); the name tag (16 px), the reason line (16 px) and W2's one-line row (34 px) are <em>drawn</em>, not measured.</p>
+<p>The keypad is collapsed to the 44 px slice (S9, <code>docs/archive/r13-results-mode.md</code> 1.1): the viewport is <strong>767 px</strong> at 412 × 839 and <strong>668 px</strong> at 360 × 740 (the entry line, 79.6 px, stays; history 687.4 px, 635.4 picked, <code>geometry</code> and r13 1.1). The third row is picked and shows <strong>the line of six</strong> (Insert, Recall, Copy, Store ▶, Delete, Plot; 52 px, one line above the entry line, r13 1.3). Plot is dimmed because the row is not a CAS row (R53 item 7). The five steps are an RC filter; the values and σ are made up for the picture. Row heights of a bare row (64.8 px, pitch 74.8) are measured (r19 part 1); the name tag (16 px), the reason line (16 px) and W2's one-line row (34 px) are <em>drawn</em>, not measured, and carry a <strong>dashed amber outline</strong> on the pictures. <strong>Marks:</strong> every result is drawn with ≈, never =. R, C and τ are stored names with σ, and a name's facts are “never exact” (r19 part 1, <code>chipFacts.ts:72</code>), so the mark stays honest; the app would show ≈ there too. The values, σ and the ⚠ reason are made up for the picture.</p>
 <p><strong>W</strong> (recommended): today's rows plus a name tag over the input of a stored row (<code>v = 20 m/s</code> over <code>72 km/h → m/s</code>), σ muted beside the result, ⚠ with its reason line. <strong>W2</strong>: one line per step, <code>name = result unit</code>, the formula muted at the right; it loses the 2D result (a fraction or a root is not drawn stacked). A step's name here is its stored name, so what W shows beyond today is the name and, with the named-values change (r19 part 1, R53c), the unit and σ the name keeps.</p>
 <div class="cards" id="rescards"></div>
 
@@ -229,11 +230,11 @@ document.getElementById('keycards').innerHTML = Object.entries(K).map(([id, k]) 
 
 /* ---------- 2 · results mode ---------- */
 const RC = [
-  { name: 'R', input: '4.7 kΩ', res: '4.7 kΩ', mark: '=', sigma: 'σ 0.24 kΩ' },
-  { name: 'C', input: '100 nF', res: '100 nF', mark: '=', sigma: 'σ 10 nF' },
-  { name: 'τ', input: 'R·C', res: '470 µs', mark: '=', sigma: 'σ 53 µs' },
-  { name: 'f', input: '1 ÷ (2π·τ)', res: '338.6 Hz', mark: '≈', sigma: 'σ 38 Hz' },
-  { name: 'H', input: '1 ÷ √(1 + (1 kHz ÷ f)²)', res: '0.32', mark: '≈', warn: 'σ of f is 38 Hz, so two digits hold' },
+  { name: 'R', input: '4.7 kΩ', res: '4.7 kΩ', sigma: 'σ 0.24 kΩ' },
+  { name: 'C', input: '100 nF', res: '100 nF', sigma: 'σ 10 nF' },
+  { name: 'τ', input: 'R·C', res: '470 µs', sigma: 'σ 53 µs' },
+  { name: 'f', input: '1 ÷ (2π·τ)', res: '338.6 Hz', sigma: 'σ 38 Hz' },
+  { name: 'H', input: '1 ÷ √(1 + (1 kHz ÷ f)²)', res: '0.32', warn: 'σ of f is 38 Hz, so two digits hold' },
 ];
 const PICK = 2;
 const VP = { 412: 767, 360: 668 };
@@ -242,10 +243,10 @@ function resPhone(theme, s, kind) {
   const rows = RC.map((r, i) => {
     const pk = i === PICK ? ' picked' : '';
     if (kind === 'W') {
-      return `<div class="step${pk}"><div class="tag">${r.name} <u>= ${r.res}</u></div><div class="in">${r.input}</div>`
-        + `<div class="out">${r.sigma ? `<small>${r.sigma}</small>` : ''}${r.warn ? '<span class="w">⚠</span>' : ''}<em>${r.mark}</em>${r.res}</div>${r.warn ? `<div class="why">⚠ ${r.warn}</div>` : ''}</div>`;
+      return `<div class="step${pk}"><div class="tag">${r.name} <u>≈ ${r.res}</u></div><div class="in">${r.input}</div>`
+        + `<div class="out">${r.sigma ? `<small>${r.sigma}</small>` : ''}${r.warn ? '<span class="w">⚠</span>' : ''}<em>≈</em>${r.res}</div>${r.warn ? `<div class="why">⚠ ${r.warn}</div>` : ''}</div>`;
     }
-    return `<div class="step line1${pk}"><span class="nm">${r.name}<em>${r.mark === '≈' ? '≈' : '='}</em>${r.res}</span>${r.warn ? '<span class="w">⚠</span>' : ''}${r.sigma ? `<small>${r.sigma}</small>` : ''}<span class="fx">${r.input}</span></div>`
+    return `<div class="step line1${pk}"><span class="nm">${r.name}<em>≈</em>${r.res}</span>${r.warn ? '<span class="w">⚠</span>' : ''}${r.sigma ? `<small>${r.sigma}</small>` : ''}<span class="fx">${r.input}</span></div>`
       + (r.warn ? `<div class="step why1">⚠ ${r.warn}</div>` : '');
   }).join('');
   const bar = '<div class="rowbar">' + ['Insert', 'Recall', 'Copy', 'Store ▶', 'Delete'].map((t) => `<div>${t}</div>`).join('') + '<div class="off">Plot</div></div>';
@@ -254,8 +255,8 @@ function resPhone(theme, s, kind) {
     + `<div class="slice">Keys</div></div>`;
 }
 const FITS = (kind) => kind === 'W'
-  ? 'Rows: bare row 64.8 px, pitch 74.8 (r19 part 1, measured); the name tag adds a 16 px line (drawn).'
-  : 'Rows: one line of 34 px + 10 px gap = pitch 44 (drawn), against today’s 74.8: about 1.7 times the rows, not yet measured (r19 “to verify”, R53b).';
+  ? 'Rows: bare row 64.8 px, pitch 74.8 (r19 part 1, measured). The name tag’s line and the reason line are not measured: they are drawn dashed, at 16 px each, only to give the picture a shape.'
+  : 'Rows: W2’s one-line row is not measured: it is drawn dashed, at 34 px. r19 part 1 says one line “would hold about twice the rows”, to verify (R53b); this page does not count the rows that fit.';
 document.getElementById('rescards').innerHTML = [['W', 'W · today’s rows plus the stored name (recommended)'], ['W2', 'W2 · one line per step']].map(([kind, title]) => {
   const col = (theme) => `<div class="col ${theme}"><div class="zoomer"><div class="pair">${SIZES.map((s) => `<div>${resPhone(theme, s, kind)}<p class="cap"><b>${s.name}: viewport ${VP[s.w]} px</b> <span class="src">(${s.w === 412 ? 'geometry; r13 1.1' : 'derived: 740 − 28 − 44'}); history ${fmt(VP[s.w] - 79.6)} px, ${fmt(VP[s.w] - 79.6 - 52)} px with the line of six</span></p></div>`).join('')}</div></div></div>`;
   return `<div class="card"><h3>${title}</h3><p class="spec">${FITS(kind)}</p>${THEMES.map(col).join('')}</div>`;
