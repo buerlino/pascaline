@@ -4,7 +4,7 @@
 // only erasable TypeScript syntax.
 import { literalStart } from "./literalPrec.ts";
 import { DOUBLE_DIGITS, hasFloat, MAX_EVAL_DIGITS, namePrint, numbersAt, shapeOfValue, size, valuePrecision, withDigits, type ElementFacts, type Giac, type Shape } from "./numeric.ts";
-import { callsOf, closing, functionsIn, isError, isName, namesIn, type Quoting, RATIONAL, topLevelArgs, UNCLOSED, walk, withoutStrings } from "./giacPrint.ts";
+import { callsOf, closing, functionsIn, isError, isName, namesIn, numbers, type Quoting, RATIONAL, topLevelArgs, UNCLOSED, walk, withoutStrings } from "./giacPrint.ts";
 import { decimalFromString, isZero, type DecimalValue } from "./format.ts";
 import type { GiacValue } from "./bridge.ts";
 import { ESERIES_CUT } from "./eseries.ts";
@@ -104,13 +104,14 @@ export function restsOnDecision(input: string, q: Quoting, result: string, store
   return calls.some((f) => DECISION_FUNCTIONS.has(f)) || hasComparison(input, q) || result.includes("abs(") || evenPowerRoot(input, q) || calls.some(stored);
 }
 
-/** A power with an even integer exponent (`^2`, `^(4)`; not `^0`, `^(2/3)`, `^2.5`). */
-const EVEN_POWER = /\^\s*(?:(\d+)(?![\d.])|\(\s*(\d+)\s*\))/g;
-
-function holdsEvenPower(s: string): boolean {
-  for (const m of s.matchAll(EVEN_POWER)) {
-    const n = (m[1] ?? m[2]!).replace(/^0+/, "");
-    if (n && "02468".includes(n.charAt(n.length - 1))) return true;
+/** `s` holds a power with an even integer exponent (`^2`, `^(4)`; not `^0`, `^(2/3)`, `^2.5`), by the number reader. */
+function holdsEvenPower(s: string, q: Quoting): boolean {
+  for (const n of numbers(s, q)) {
+    if (n.exp !== undefined || n.mant.includes(".")) continue;
+    const bracketed = s.startsWith("^(", n.at - 2);
+    if (bracketed ? !s.startsWith(")", n.end) : s.charAt(n.at - 1) !== "^") continue;
+    const v = BigInt(n.mant);
+    if (v > 0n && v % 2n === 0n) return true;
   }
   return false;
 }
@@ -119,9 +120,9 @@ function holdsEvenPower(s: string): boolean {
  *  of a square by the sign of its base at Digits (sqrt(sin(10^100)^2) printed sin(10^100) at P = 40, with no abs( and
  *  no decision function), so the result rests on a decision. */
 export function evenPowerRoot(input: string, q: Quoting): boolean {
-  const s = withoutStrings(input, '""', q);
-  if (callsOf(s, ["sqrt"], q).some((c) => c.close >= 0 && holdsEvenPower(s.slice(c.open + 1, c.close)))) return true;
-  return /\^\s*\(\s*1\s*\/\s*2\s*\)/.test(s) && holdsEvenPower(s);
+  if (callsOf(input, ["sqrt"], q).some((c) => c.close >= 0 && holdsEvenPower(input.slice(c.open + 1, c.close), q))) return true;
+  const half = [...numbers(input, q)].some((n) => n.mant === "1" && n.exp === undefined && input.startsWith("^(", n.at - 2) && input.startsWith("/2)", n.end));
+  return half && holdsEvenPower(input, q);
 }
 
 /** A quantity whose sign (`zero`), distance to the nearest integer (`int`) or to the nearest half-integer (`half`)
