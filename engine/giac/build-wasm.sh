@@ -9,7 +9,7 @@
 # Output: engine/giac/_out/<variant>/giac.{mjs,wasm}; variant = gsl (default) | base (WITH_GSL=0, comparisons only)
 # GIAC_PATCHES=none (A71): no patch of patches/ is applied, the stock giac_2.1.0-1 for the red-first check of a package that says its
 #   tests "fail on the stock build" (scripts/pipeline-lib.sh); variant = stock-<key> (stock-base-<key> with WITH_GSL=0), where
-#   <key> is `build-wasm.sh stock-key`: a hash of the tarball's SHA-256 and of this script, so a stock build is made once and reused.
+#   <key> is `build-wasm.sh stock-key`: a hash of the tarball's SHA-256, of this script and of the files in wasm/, so a stock build is made once and reused.
 #   Use GIAC_BUILD_DIR of its own, so a build with patches is not clobbered.
 # Needs: emsdk (EMSDK_DIR, default ~/emsdk) at $EMSDK_VERSION, or EMSDK_DIR=system for an emcc already on PATH (unpinned; F-Droid tests).
 # PASCALINE_DL_DIR overrides the download cache (e.g. to share one cache between git worktrees).
@@ -189,8 +189,12 @@ GIAC_SOURCES=(input_lexer.cc sym2poly.cc gausspol.cc threaded.cc moyal.cc maple.
   graphe.cc graphtheory.cc nautywrapper.c)
 # markup.cc (improved LaTeX export) is excluded: with EMCC2, tex.cc defines stand-ins for it.
 
-# stock_key: the key of a stock build (A71): the tarball's SHA-256 and this script's own hash.
-stock_key() { printf '%s\n' "$GIAC_SHA256" "$(sha256sum "${BASH_SOURCE[0]}" | cut -d' ' -f1)" | sha256sum | cut -c1-16; }
+# stock_key: the key of a stock build (A71, A71f1): the tarball's SHA-256, this script's own hash and every file of wasm/ (api.cc and
+# stubs.cc are compiled into the stock build too), by name in a fixed order; engine_key's inputs without patches/.
+stock_key() {
+  { printf '%s\n' "$GIAC_SHA256" "$(sha256sum "${BASH_SOURCE[0]}" | cut -d' ' -f1)"
+    (cd "$HERE/wasm" && LC_ALL=C find . -type f | LC_ALL=C sort | xargs -r sha256sum); } | sha256sum | cut -c1-16
+}
 
 variant() {
   local v=gsl; [[ "$WITH_GSL" == 1 ]] || v=base

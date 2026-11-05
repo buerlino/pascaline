@@ -439,6 +439,11 @@ cd "$sk" && stock_engine_ensure "$sk" "$sk/_out" "$sk/build.log" || fail "A71: t
 [[ "$(wc -l < "$sk/builds")" -eq 1 ]] || fail "A71: the stock engine was built $(wc -l < "$sk/builds") times, once expected"
 grep -q 'GIAC_PATCHES=none' "$here/../engine/giac/build-wasm.sh" && GIAC_PATCHES=none "$here/../engine/giac/build-wasm.sh" stock-key | grep -qE '^[0-9a-f]{16}$' || fail "A71: build-wasm.sh has no GIAC_PATCHES=none or no stock-key"
 [[ "$("$here/../engine/giac/build-wasm.sh" stock-key)" == "$(GIAC_PATCHES=none "$here/../engine/giac/build-wasm.sh" stock-key)" ]] || fail "A71: the stock key depends on GIAC_PATCHES"
+# A71f1: the stock key follows wasm/ (api.cc) and ignores patches/
+ek="$tmp/engine-key"; rm -rf "$ek"; mkdir -p "$ek"; cp -a "$here/../engine/giac/." "$ek/" 2>/dev/null; rm -rf "$ek/_out" "$ek/_build" "$ek/_downloads"
+k0="$("$ek/build-wasm.sh" stock-key)"; echo "// changed" >> "$ek/wasm/api.cc"; k1="$("$ek/build-wasm.sh" stock-key)"
+[[ "$k0" != "$k1" ]] || fail "A71f1: the stock key did not change when wasm/api.cc changed"
+echo "# changed" >> "$ek/patches/README.md"; echo "--- a" > "$ek/patches/9999-new.patch"; [[ "$("$ek/build-wasm.sh" stock-key)" == "$k1" ]] || fail "A71f1: the stock key changed when only patches/ changed"
 # want_checks: redfirst for a spec that says the stock build, too
 spec_file="$tmp/spec-stock"; [[ ",$(want_checks)," == *,redfirst,* ]] || fail "A71: want_checks lacks redfirst for a package that says 'fail on the stock build'"
 grep -q 'stock_engine_ensure' "$here/pipeline.sh" || fail "A71: pipeline.sh does not build the stock engine"
