@@ -13,7 +13,8 @@ const config: CapacitorConfig = {
   appName: 'Pascaline',
   webDir: 'dist',
   loggingBehavior: measure ? 'production' : 'none',
-  android: { path: '../android', webContentsDebuggingEnabled: webviewDebug }
+  // A72: the WebView's first frame, before the page paints, is the Dark --bg (app/src/style.css), not the default white
+  android: { path: '../android', backgroundColor: '#0b1020', webContentsDebuggingEnabled: webviewDebug }
 };
 
 export default config;
