@@ -13,7 +13,7 @@ import { copyExact } from "./exact.ts";
 import { whyLine } from "./whyLine.ts";
 import type { ClipboardPort } from "./port.ts";
 import type { CopySource, TextOptions } from "./text.ts";
-import type { LibraryHost } from "../views/libraryJobs.ts";
+import type { LibrarySource } from "../views/libraryJobs.ts";
 
 /** A history item as the copy texts read it: the engine's facts (R3 keeps them in `facts`) on the item itself. */
 const source = (i: HistoryItem): CopySource => i;
@@ -22,8 +22,6 @@ const source = (i: HistoryItem): CopySource => i;
 const impl = () => import("./impl.ts");
 
 const NOTICE_MS = 2200;
-/** A notice that names lines and reasons (a library's refusal, R59) stays up long enough to be read. */
-const LONG_NOTICE_MS = 9000;
 
 /** What the row actions do on the entry line; App owns these (a tap on a row uses them before this code has loaded). */
 export interface RowOps {
@@ -103,18 +101,8 @@ export class ClipActions {
    *  AI. The library code loads on the press; every outcome is the notice (views/libraryJobs.ts). */
   async library(job: "file" | "clipboard" | "export" | "format", file?: File): Promise<void> {
     const m = await import("../views/libraryJobs.ts");
-    const host: LibraryHost = {
-      jobs: () => m.jobsFor(this.shell.calc),
-      say: (s, long) => this.say(s, long ? LONG_NOTICE_MS : NOTICE_MS),
-      readText: () => this.serial(async () => (await this.port()).readText()),
-      writeText: (t) => this.serial(async () => (await this.port()).writeText(t)),
-      refresh: () => this.session.refreshNames(),
-      showMenu: (title, items) => this.shell.showMenu(title, items, { remember: false }),
-      saveFile: async (name, mime, text) => (await import("./files.ts")).saveFile(name, mime, text),
-    };
-    if (job === "file") return file ? m.importFile(host, file) : undefined;
-    if (job === "clipboard") return m.importClipboard(host);
-    return job === "export" ? m.exportLib(host) : m.copyFormat(host);
+    const src: LibrarySource = { shell: this.shell, session: this.session, say: (s, ms) => this.say(s, ms), clip: (run) => this.serial(async () => run(await this.port())) };
+    return m.runJob(m.hostOf(src), job, file);
   }
 
   /** The row an action means: the given one, else the newest finished result of the open view. */
