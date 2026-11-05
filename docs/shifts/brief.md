@@ -62,13 +62,10 @@ Milestone reviews (section 0): after R50e (with R116's gallery groups "Entry hig
 No step left in lane A this night (R127 merged, Opus pass 67).
 
 ### Lane B queue (the release, then the engine)
-A8 and [A57](packages/A57.md) run by day. Steps 449 and 451 run only on the weekly extreme night, Wed 11-04 to Thu 11-05 (owner, 2026-11-02; G148 ran early, Opus pass 62); the night review's queue goes on in [its note](../research/night-review-2026-11-02.md) section 2.
+A8 and [A57](packages/A57.md) run by day; the night review's queue goes on in [its note](../research/night-review-2026-11-02.md) section 2.
 
 | Step | What | Agent, model | Branch | After |
 |---|---|---|---|---|
-| 449 | [G141](packages/G141.md) a long exact literal raises the agreement check's precision | gorge, Opus | `p1/gorge-literalprec` | the weekly night |
-| 451 | [G156](packages/G156.md) \|x\| shown negative when both runs share an error (F163) | gorge, Opus | `p1/gorge-abssign` | the weekly night; G141 |
-| 437 | [G152](packages/G152.md) acosh's sign and tiny imaginary part (F143, F144) | gorge, Opus | `p1/gorge-acoshsign` | – |
 | 472 | [G164](packages/G164.md) a sample library for your AI: a few materials, each value with its source (the owner reads the sources at the milestone review) | gorge, Opus | `p1/gorge-samplelib` | – |
 
 ### The commands henri replies with (one per decision; `scripts/night.sh` runs it)
