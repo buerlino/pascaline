@@ -11,6 +11,8 @@ The owner's other open items are in [backlog.md](backlog.md), "Needs the user". 
 
 **G164's sample sources** (`app/public/samples/materials.txt`): check its 16 sources by the freeze (11-12), and keep copper on its data sheet (G164's report).
 
+**R59: the Math key's Find and the user's functions.** An imported function is found in Vars' Find (R4b), not in the Math key's Find. Recommendation: list the user's names there too, as a later small package, so a library function is found where the built-ins are.
+
 ## Decided proposals
 
 ### Pipeline and process
@@ -142,10 +144,10 @@ The defaults that bind code and tests, one line each. A default changes when its
 - **R116, the entry's highlights (Opus pass 51):** the caret is --alpha; the bracket box and the selection are --pick with --text on them. Full text: archive. Would change if: the owner wants the text floor in the box.
 
 **Engine, precision and formats**
-- **Honest precision** (G2): rule: docs/04 2.4 rules 2–3; assignments evaluated once. **G44, G23:** the inverse distributions are solved against our MPFR forward functions and every fallback keeps ⚠ with Giac's value; Home's 50 ms budget is checked between levels. Full text: archive, "Shortened 2026-10-21 (P23)". Would change if: a G2 user types Giac's aliases.
+- **Honest precision** (G2): rule: docs/04 2.4 rules 2–3; assignments evaluated once. **G44, G23:** the inverse distributions are solved against our MPFR forward functions, every fallback keeps ⚠. Full text: archive, "Shortened 2026-10-21 (P23)". Would change if: a G2 user types Giac's aliases.
 - **Stored definitions** (G3): rule: docs/04 6.2 `defs` and 2.4 "Built in G3"; k ≥ 15 in `evalf(<exact>,k)`; the defs load times out after 3 s and a timed-out store is never saved over.
 - **G154 (Opus pass 42): no size, no underflow.** A value that is MPFR's 0 at every precision is refused "Underflow" only when Giac states its size; otherwise it shows ⚠ 0 (backlog F161). Full text: archive. Would change if: Giac can size such a sum.
-- **G148, G148f1, G148f2 (Opus passes 62, 63, 65):** approx or evalf of a value past MPFR's range is refused as the bare input is, inside a larger input too; an infinite or undef output of a finite bare input asks each call's argument too. Full text: archive. Would change if: a cheaper test tells exp(-10^20) from 0.
+- **G148, G148f1, G148f2 (Opus passes 62, 63, 65):** approx or evalf past MPFR's range is refused as the bare input is, inside a larger input and per call too. Full text: archive. Would change if: a cheaper test tells exp(-10^20) from 0.
 - **G22 (why):** `once` for a value evaluated once; every stored name with a known digit count is named when the perturbation costs digits. **G26:** `uncDigits` counts on the value as shown; none for lists, matrices, complex results or names holding a constant.
 - **Home and CAS share one Giac context, each with its own Ans** (`pasans`, `pcasans`). Would change if: G2 item 52 shows separate variables.
 - **G92, G93 (Opus pass 73): what Giac changes behind the host** is put back after each input (`assumed.ts`, a probed list); `restart(1)` keeps Giac's meaning. Full text: archive.
@@ -157,7 +159,7 @@ The defaults that bind code and tests, one line each. A default changes when its
 - **G5:** a list's mark: docs/04 2.4. **Chips and Ans** (R2): rule: docs/04 2.8; a chip has two arguments (key, shown); an operator on an empty line starts with Ans only when the view has a result.
 - **Time limits:** CAS 10 s soft budget (Cancel prominent), Giac's 600 s net; Solve and analysis 30 s; Cancel replays the definitions only (not Ans).
 - **Solve and Plot:** a root is accepted at relative residual ≤ 1e-15 at 30 digits, else ⚠ (systems: < 1e-6 with ⚠); Plot searches only the visible window; the signed area by Romberg, `int`, then `gaussquad` with ⚠. Full text: archive.
-- **Function app:** window x ∈ [-10, 10] square and centred; trace step 0.1 at the default window (1-2-5 rule elsewhere); Num from 0 by 0.1, `NaN` at a pole; a value the Num entry refuses (a step of 0 too) gets a notice, never a silent return (R99, Opus pass 35); Intersection asks for the second function.
+- **Function app:** window x ∈ [-10, 10] square; trace step 0.1 (1-2-5 rule); Num from 0 by 0.1, `NaN` at a pole; a refused Num value gets a notice (R99). Full text: archive.
 - **Parser (L6):** odd root templates are real roots; `{…}` is a list; the decimal comma is MathLive's `3{,}5` in either mode, and `{,}5` is 0.5 as `.5` is (R99); a bare comma, like `;`, separates arguments (R57); `p(x):=…` makes p a function (R56).
 - **Discrete distributions (G113, G113f1; patches 0009, 0010):** off the integers or below the support a pmf is an exact 0 and a cdf takes floor(k). Full text: archive.
 - **G140 (Opus pass 34): a value Giac holds only as a double** is an unaudited double: ⚠, at most 14 digits, never ≈. Full text: archive. Would change if: Giac gets an MPFR path for them.
@@ -168,12 +170,12 @@ The defaults that bind code and tests, one line each. A default changes when its
 - **G158 (Opus pass 52):** `sem` and `median` refuse a second list or loose values ("needs one list of values"; `median(1,2,3)` too: one rule, Find's syntax is `median(list)`); `percentile`'s wrong count gets our words (G158f1). Weighted sem: when the owner asks.
 
 **Units**
-- **G16:** an exact 0 loses its dimension; terms that cancel exactly are a known gap. **G17:** dB is a field-ratio level (1 Np = 20/ln 10 dB, 1 bel = 10 dB), dBm and dBW to 1 mW and 1 W; °C, °F and the levels alone convert by offset or level; a lone dB, bel or Np with no end slot, a level of a ratio ≤ 0 and a temperature below 0 K are refused.
+- **G17:** dB is a field-ratio level, dBm and dBW to 1 mW and 1 W; offsets and levels alone convert, impossible levels and temperatures are refused (G16's zero: G35, below). Full text: archive.
 - **G18:** ± is `pasupm(value,sigma)`, each an independent standard uncertainty in the slot's unit; ± inside sin, cos, tan works. **G25:** a typed product is kept when at most one token carries a prefix or its factor is 1 (N·m, kW·h), else SI with a prefix.
 - **G13:** the 13 CODATA overrides and the hp, mmHg, inHg factors stay in `find/factors.yaml` until qalc agrees (`refresh-factors.mjs` shows the change, P22). **G7:** `rev`, `revolution`, `cycle` name `rev`; StdT 273.15 K and StdP 101325 Pa.
 - **R28:** rule: docs/04 4.3 (`pasu<n>` in the order written, the end slot after `\to`); a slot only right after a number literal; σ is a number literal, or `n %` of the value (R104, docs/04 4.2); a product with a slot keeps its brackets.
 - **R24a, R24af1:** ⁻¹ turns the power's sign, ², ³, ⁴ set its size; √ arms like a prefix; ÷ on an empty slot becomes negated powers; the reading goes by sign and Find's titles; a prefixed pair counts only when its factor and dimension match, and a unit without an exact factor never pairs.
-- **G161 (Opus passes 60, 62):** W, VA and var are three kinds (an energy unit counts as W; owner 2026-11-04): a conversion or a sum between kinds is refused, "VA, var and W differ by the power factor" (P/S + Q/S and √(P² + Q²) too); a product is not (P/S = 0.6); a VA or var result offers no W chip. Would change if: a power-triangle rule is packaged.
+- **G161 (Opus passes 60, 62):** W, VA and var are three kinds; a conversion or a sum between kinds is refused, a product is not. Full text: archive. Would change if: a power-triangle rule is packaged.
 - **R60:** the alternatives row (units/alternatives.ts) takes a temperature's three units (absolute K, °C, °F; interval K, Δ°C, Δ°F) and no target; Δ°C is K's Find alias, so its tap shows K. Would change if: R62 labels the alias.
 - **R61 (Opus pass 28):** a unit result's σ chip is an independent input of σ, as a constant (G26), also beside the constant it came from; one chip used twice is one input; a σ of 0 is none. Full text: archive. Would change if: a chip keeps its inputs' basis (G81).
 - **R63:** in the unit view a result chip is a number: a slot after it, filled with its unit, and its σ goes in as pasupm keyed by the chip's name, one input per chip (R115; G18 for a typed ±); Ans gets no slot (no Ans value there). Would change if: the owner wants a chip's σ dropped there.
@@ -187,6 +189,7 @@ The defaults that bind code and tests, one line each. A default changes when its
 **Library, release and process**
 - **The check of 2026-10-19:** (1) a Home value that leaves its evaluation (stored, Ans, a `\res` chip, an export) is the value shown, whatever the angle mode is later; a CAS value stays symbolic (G34). Would change if: (1) the G2 is found to re-read a stored Home value in the new mode.
 - **G33:** a definition's description is the comment line above it; G30's E-series tables are checked against round(10^(2+k/n)) with the one published exception (9.20 at E192).
+- **R59, R59f1 (Opus passes 72, 73):** the clash sheet (Replace and import / Cancel) stays (r10 3.1); WorkerEngine's call and keep are public (the library stays out of the start chunk); the owner counts the removal test's imports by hand. Would change if: an import count is wanted.
 - **The release path (A7, A8, A45, A48; 2026-10-15, owner 2026-10-29 and 2026-11-03):** v0.1.0, APK and website from one tag (A48); golden on the release engine before signing; the web names (`sw.js`, IndexedDB, manifest `id`) frozen. The test tag is `vX.Y.Z-test`; `master` follows phase-1 from 2026-11-03 (owner). Full text: archive.
 - **Releases:** the engine is built in the pinned container (P2 met: +2.3 % start), under `setarch -R` so `giac.wasm` is bit-reproducible. **Minimum WebView:** Chrome 95, with an inline "update" notice below it (minSdk 24).
 - **Tests:** the golden gate as docs/04 7.3; a pending task's budget is its planned press count, values `derived` or `oracle`; timing tests skip their assertion when the load average exceeds the cores; Vitest has no DOM, a DOM count is a Playwright test (R132, Opus pass 72). Full text: archive.
