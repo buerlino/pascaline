@@ -12,6 +12,9 @@ export type { ConstEntry, ConstTable } from "../engine/constUnc.ts";
 export type { AnalysisRequest, AnalysisResult, HomeResult, KnownValue, SolveOutcome, SolveRequest, SolveRoot, TableRequest, ValueFacts } from "../engine/types.ts";
 export type { UserName } from "../engine/defs.ts";
 import type { UserName } from "../engine/defs.ts";
+import type { LibraryReply } from "../engine/library.ts";
+import type { MathEngine } from "../engine/types.ts";
+export type { LibraryReply } from "../engine/library.ts";
 import type { Refusal } from "../engine/converge.ts";
 import type { Quantity, UnitError, UnitRequest } from "../units/types.ts";
 export type { Quantity, UnitError, UnitRequest, UnitSlot, UnitToken } from "../units/types.ts";
@@ -121,4 +124,17 @@ export interface Calc {
   units(req: UnitRequest, settings: CalcSettings): Promise<Quantity | UnitError>;
   /** Stop the running job. Variables survive. Resolves when the engine can take calls again. */
   cancel(): Promise<void>;
+  /** R59: the engine behind the port, for the library's jobs (calc/library.ts jobs), which load on the first use and
+   *  post their own requests; absent where there is no Giac (the fake engine). A field, so the start chunk carries no
+   *  code for it. */
+  readonly engine?: MathEngine;
+}
+
+/** R59 (calc/library.ts): what Settings › Data › Library does with the engine. */
+export interface LibraryJobs {
+  /** A library file (its bytes, or a text from the clipboard) checked and imported as a whole; the log keeps it when it
+   *  is taken, and nothing changes when it is refused. `replace`: the user agreed to the own names it replaces. */
+  importLibrary(input: Uint8Array | string, replace: boolean): Promise<LibraryReply>;
+  /** The definitions log as a library file, with what was left out and why. */
+  exportLibrary(): Promise<{ text: string; skipped: { name: string; why: string }[] }>;
 }

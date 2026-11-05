@@ -9,7 +9,7 @@ import { defaultCasSettings } from "./types.ts";
 import { defaultHomeSettings } from "./homeEval.ts";
 import { renameOurCalls, writeUserNames } from "./ourNames.ts";
 import type { GiacParse } from "./bridge.ts";
-import { exportLibrary, importLibrary, LibError, parseLibrary, type ImportResult } from "./library.ts";
+import { exportLibrary, importLibrary, importText, LibError, parseLibrary, type ImportResult } from "./library.ts";
 import { LIBRARY_FORMAT } from "../state/libraryFormat.ts";
 
 /** G100: Giac's tree of a text, for parseLibrary; set when an engine is found. */
@@ -440,5 +440,25 @@ describe("renameOurCalls (no engine)", () => {
     expect(writeUserNames('s:=("a\\",pasmod(a,3)")+pasmod(b,3)')).toBe('s:=("a\\",pasmod(a,3)")+mod(b,3)');
     const log = [{ name: "L", kind: "var" as const, cmds: [cmd], preview: "", view: "cas" as const, time: 0 }];
     expect(exportLibrary(log, LIBRARY_FORMAT).text).toContain('L:=([("C:"+char(92)),mod(a,3)])');
+  });
+});
+
+describe("the worker's reader (no engine)", () => {
+  const noEngine = {
+    parse: (): GiacParse => {
+      throw new Error("parsed before the stamp was checked");
+    },
+    cas: () => {
+      throw new Error("defined");
+    },
+    eval: () => {
+      throw new Error("evaluated");
+    },
+  };
+  it("R59: an older stamp sent straight to importText is refused at line 1, not read as if up to date (principle 3)", () => {
+    const r = importText(noEngine, "// pascaline library 1\n// phasor\nph(w):=pasexp(i*w)\n", LIBRARY_FORMAT.version, [], false);
+    expect(r.result).toMatchObject({ ok: false, line: 1, dirty: false });
+    expect(!r.result.ok && r.result.error).toMatch(/^line 1: the app did not bring this file up to date \(version 1; /);
+    expect(r.lines).toEqual([]);
   });
 });

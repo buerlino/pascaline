@@ -15,10 +15,11 @@ import { dropAngleFactor, PASDEG, rewriteAngles } from "./angles.ts";
 import { isFlagName } from "./flags.ts";
 import { callsOf, isName, names, noneOpen, typedFromPrinted, walk, wordsOf } from "./giacPrint.ts";
 
-/** r10 section 1.2: the limits of one file. */
-export const LIB_MAX_BYTES = 256 * 1024;
+import { HEADER, LIB_MAX_BYTES } from "./libraryHeader.ts";
+export { LIB_MAX_BYTES } from "./libraryHeader.ts";
+
+/** r10 section 1.2: the limits of one file (its bytes: libraryHeader.ts). */
 export const LIB_MAX_DEFS = 200;
-const HEADER = /^\/\/ pascaline library (\d+)$/;
 export interface LibTest {
   expr: string;
   /** 1-based line in the file. */
@@ -99,10 +100,8 @@ function definitionOf(block: string, tree: GiacParse): { name: string; kind: "fn
   return tree.program ? { name: tree.top[0]!, kind: "fn" } : undefined;
 }
 
-/** Reads a library file: encoding, size, stamp, blocks, every rule that needs no evaluation (r10 section 1.3). Throws a
- *  LibError for the first problem. A string is taken as the text of a file already decoded. `parse`: Giac's tree of a
- *  text (bridge-2, never evaluated), which says what a body or a test stores (G100). */
-export function parseLibrary(input: Uint8Array | string, parse: (text: string) => GiacParse, format: LibraryFormat): LibFile {
+/** R59: a file's text, checked for size and encoding, with a BOM dropped and CR LF / CR made LF (r10 section 1.2). */
+function decodeLibrary(input: Uint8Array | string): string {
   const bytes = typeof input === "string" ? new TextEncoder().encode(input) : input;
   if (bytes.length > LIB_MAX_BYTES) throw new LibError(0, `the file is over ${LIB_MAX_BYTES / 1024} kB`);
   let text: string;
@@ -111,7 +110,14 @@ export function parseLibrary(input: Uint8Array | string, parse: (text: string) =
   } catch {
     throw new LibError(0, "the file is not UTF-8 text");
   }
-  const lines = text.replace(/^﻿/, "").replace(/\r\n?/g, "\n").split("\n");
+  return text.replace(/^﻿/, "").replace(/\r\n?/g, "\n");
+}
+
+/** Reads a library file: encoding, size, stamp, blocks, every rule that needs no evaluation (r10 section 1.3). Throws a
+ *  LibError for the first problem. A string is taken as the text of a file already decoded. `parse`: Giac's tree of a
+ *  text (bridge-2, never evaluated), which says what a body or a test stores (G100). */
+export function parseLibrary(input: Uint8Array | string, parse: (text: string) => GiacParse, format: LibraryFormat): LibFile {
+  const lines = decodeLibrary(input).split("\n");
   const h = HEADER.exec(lines[0]!.trim());
   if (!h) throw new LibError(1, `the first line must be \`// pascaline library ${format.version}\``);
   const version = Number(h[1]);
@@ -302,6 +308,37 @@ export function importLibrary(engine: LibraryEngine, lib: LibFile, log: readonly
   return { ok: true, plan, changes, log: out, tests, ms: performance.now() - t0 };
 }
 
+/** R59: what the worker answers to a library request: the import's result, and each definition's name with its line
+ *  (the clash notice names the lines). */
+export interface LibraryReply {
+  result: ImportResult;
+  lines: { name: string; line: number }[];
+}
+
+/** R59: the format as the worker has it: the version alone. The app brings an older stamp up to date before it sends
+ *  a file (state/libraryFormat.ts upToDate: the migration steps are state/'s, G147), so no migration runs here; an
+ *  older stamp that still arrives is refused, never read as if it were up to date (principle 3). */
+const inWorker = (version: number): LibraryFormat => ({
+  version,
+  migrate: (t, from) => {
+    if (from < version) throw new LibError(1, `the app did not bring this file up to date (version ${from}; this one reads ${version})`);
+    return t;
+  },
+});
+
+/** R59, the worker's side of an import: a file (bytes, or a decoded text) at `version` read and checked as a whole,
+ *  then imported into `engine`. A refusal of the reader is a result like the import's own, with its line. */
+export function importText(engine: LibraryEngine & { parse(text: string): GiacParse }, input: Uint8Array | string, version: number, log: readonly DefEntry[], replace: boolean): LibraryReply {
+  let lib: LibFile;
+  try {
+    lib = parseLibrary(input, engine.parse, inWorker(version));
+  } catch (e) {
+    if (e instanceof LibError) return { result: fail(e.message, e.line), lines: [] };
+    throw e;
+  }
+  return { result: importLibrary(engine, lib, log, { replace }), lines: lib.defs.map((d) => ({ name: d.name, line: d.line })) };
+}
+
 /** `fn` with our degree factor at 1 (Giac always runs in radians, G46), and the mode's factor put back afterwards: the
  *  engine's mode setup does not run again for the same settings. */
 function inRadians<T>(engine: LibraryEngine, fn: () => T): T {
@@ -350,4 +387,9 @@ export function exportLibrary(log: readonly DefEntry[], format: LibraryFormat): 
     out.push("", `// ${describe(e)}`, e.cmds.map((c) => writeUserNames(dropAngleFactor(c, "typed"))).join("\n"));
   }
   return { text: out.join("\n") + "\n", skipped };
+}
+
+/** R59, the worker's side of an export: `exportLibrary` of the client's log, at `version`. */
+export function exportText(log: readonly DefEntry[], version: number): ReturnType<typeof exportLibrary> {
+  return exportLibrary(log, inWorker(version));
 }
