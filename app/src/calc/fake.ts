@@ -26,11 +26,14 @@ function echo(display: string): HomeResult {
 export class FakeCalc implements Calc {
   private readonly delayMs: number;
   private reject: ((e: Error) => void) | undefined;
-  constructor(delayMs = 0) {
+  private readonly readyMs: number;
+  /** delayMs: each answer; readyMs: the engine's start (R133's test holds "ready" back to see what is drawn before it). */
+  constructor(delayMs = 0, readyMs = 0) {
     this.delayMs = delayMs;
+    this.readyMs = readyMs;
   }
   ready(): Promise<{ safeStart?: { skipped: number } } | void> {
-    return Promise.resolve();
+    return this.readyMs > 0 ? new Promise((resolve) => setTimeout(resolve, this.readyMs)) : Promise.resolve();
   }
   private run<T>(v: T): Promise<T> {
     return new Promise<T>((resolve, reject) => {

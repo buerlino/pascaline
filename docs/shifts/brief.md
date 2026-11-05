@@ -57,9 +57,7 @@ Milestone reviews (section 0): after R50e (with R116's gallery groups "Entry hig
 
 | Step | What | Agent, model | Branch | After |
 |---|---|---|---|---|
-| 480 | [R132](packages/R132.md) a Find key updates the list within one frame (E3 missed: 31.9 ms against 16, A4b) | ron, Opus | `p1/ron-findfast` | – |
 | 473 | [R59](packages/R59.md) the library rows: import (file or clipboard), export, the format for your AI | ron, Opus | `p1/ron-m4-library` | – |
-| 481 | [R133](packages/R133.md) History draws the newest 5 rows until the engine is ready (F172) | ron, Sonnet | `p1/ron-histfirst` | – |
 | 512 | [R134](packages/R134.md) shared and why-line texts are plain: no LaTeX commands or class wrappers (F162, F171) | ron, Sonnet | `p1/ron-plaintext` | – |
 | 513 | [R135](packages/R135.md) a result too long to draw shows a drawn note, never raw LaTeX (F71) | ron, Sonnet | `p1/ron-longresult` | – |
 | 482 | [R126](packages/R126.md) the backup's keys, pad cells and presets written down for your AI | ron, Sonnet | `p1/ron-backupformat` | R59 |

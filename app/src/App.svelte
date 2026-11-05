@@ -321,6 +321,7 @@
         <History
           items={session.items}
           selected={picked}
+          engineState={session.engineState}
           display={(item) => session.display(item, true)}
           input={(item) => session.input(item)}
           mark={(item) => session.mark(item)}
