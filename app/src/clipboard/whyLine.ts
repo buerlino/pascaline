@@ -5,7 +5,7 @@
 import type { MarkInfo } from "../engine/format.ts";
 import type { HistoryItem } from "../state/session.svelte.ts";
 import { copyExact } from "./exact.ts";
-import { entryText, macroCalls } from "./text.ts";
+import { entryText, macroCalls } from "./plaintext.ts";
 import { tc } from "./strings.ts";
 
 const SUP = "⁰¹²³⁴⁵⁶⁷⁸⁹";

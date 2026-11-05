@@ -10,7 +10,7 @@ import { describe, expect, it } from "vitest";
 import { constChip } from "../entry/macros.ts";
 import type { IndexItem } from "../find/types.ts";
 import { SlotModel, slotCatalogue } from "../units/slot.ts";
-import { entryText, PLAIN_COMMANDS } from "./text.ts";
+import { entryText, PLAIN_COMMANDS } from "./plaintext.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const indexFile = join(here, "../find/_gen/find-index.json");
