@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { render } from "svelte/server";
 import type * as MathLive from "mathlive";
 import Math from "./Math.svelte";
-import { MAX_DRAWN_LATEX, sizeText } from "./longResult.ts";
+import { MAX_DRAWN_LATEX, tooLongNote } from "./longResult.ts";
 import { mathlive, renderStats } from "./mathlive.svelte.ts";
 
 const stand = (f: (latex: string) => string): typeof MathLive => ({ convertLatexToMarkup: f }) as unknown as typeof MathLive;
@@ -63,10 +63,10 @@ describe("Math: a result too long to draw (R135)", () => {
   });
 });
 
-describe("sizeText", () => {
+describe("tooLongNote", () => {
   it("kB below 1 MB, MB with one decimal above", () => {
-    expect(sizeText(6001)).toBe("6 kB");
-    expect(sizeText(1_773_448)).toBe("1.8 MB");
-    expect(sizeText(120)).toBe("1 kB");
+    expect(tooLongNote(6001)).toBe("Too long to draw (6 kB): Copy holds it");
+    expect(tooLongNote(1_773_448)).toContain("(1.8 MB)");
+    expect(tooLongNote(120)).toContain("(1 kB)");
   });
 });
