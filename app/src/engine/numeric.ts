@@ -548,9 +548,9 @@ export function exactFacts(
   // a double where MPFR digits were asked, in an element that is no number yet (atParts): Giac's evalf of the value
   const whole = (prec: number): GiacValue => at(`evalf(${src},${prec})`, prec);
   if (erf !== safe) giac.eval(`${ICDF_FAILED}:=0`);
-  // G141: the check starts at the longest exact integer's digits plus P when they pass P - 20 (literalStart; a rational
-  // is no cancellation). Past MAX_EVAL_DIGITS, or when that start gives no value (the budget), it runs from P, unchecked (⚠, never ≈).
-  const lit = v.kind === "integer" || v.kind === "rational" ? { at: P, unchecked: false } : literalStart(text, P, MAX_EVAL_DIGITS, "printed");
+  // G141: the check starts at the longest exact integer's digits plus P when they pass P - 20 (literalStart; a number, rational or
+  // complex, is no cancellation: G141f1, a pasted E8365 copy). Past MAX_EVAL_DIGITS, or when that start gives no value (the budget), it runs from P, unchecked (⚠, never ≈).
+  const lit = v.kind === "integer" || v.kind === "rational" || v.kind === "complex" ? { at: P, unchecked: false } : literalStart(text, P, MAX_EVAL_DIGITS, "printed");
   const from = (start: number): ElementFacts[] | null => {
     const P2 = [start, start + 20];
     const first = erf !== safe ? null : src === name && P2.every((d) => v.at?.[String(d)] !== undefined) ? v : giac.value(src, P2);
