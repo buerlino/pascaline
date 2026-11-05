@@ -7,7 +7,6 @@ Phase 0 decisions (D1–D9, P1, P2): [spike/DECISIONS.md](../spike/DECISIONS.md)
 
 The owner's other open items are in [backlog.md](backlog.md), "Needs the user". Once decided, an entry moves to "Decided proposals".
 
-**A4b/R132: Find on the Tab One misses E3** (A4b: p95 31.9 ms against 16). R132 builds only the hits in view and searches only the last key's candidates (6x-throttled desktop p95 24.9 → 11.2 ms). After annabell's Tab One run (A74): ≤ 16 ms ticks E3, else 32 → x ms for v0.1.0.
 
 **G164's sample sources** (`app/public/samples/materials.txt`): check its 16 sources by the freeze (11-12), and keep copper on its data sheet (G164's report).
 
