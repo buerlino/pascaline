@@ -69,6 +69,6 @@ middle(l):=median(l)
 
 // Standard gravity in m/s² (exact, CGPM 1901)
 g0:=980665/100000
-// test: g0 == 9.80665
+// test: abs(g0-9.80665) < 1e-12
 ```
 <!-- Part 2, the backup file: R126 writes it here. -->

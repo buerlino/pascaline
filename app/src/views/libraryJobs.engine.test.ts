@@ -2,7 +2,8 @@
 // R59: the library import and export through the Calc port, on the real engine in this thread (the worker's request
 // handler, as workerEngine.test.ts runs it): the format for your AI's own worked example imports and its tests pass, so
 // the copied format never lies; an older file's stamp is brought up to date with its lines kept; a refusal after the
-// engine was changed restarts it from the unchanged log; a clash defines nothing; the export imports again unchanged.
+// engine was changed, or an import that throws partway, restarts it from the unchanged log; a clash defines nothing;
+// the export imports again unchanged.
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { EngineCalc } from "../calc/engine.ts";
@@ -13,6 +14,7 @@ import { giacAvailable, loadNodeGiac } from "../engine/nodeGiac.ts";
 import type { Request, Response } from "../engine/protocol.ts";
 import { WorkerEngine, type WorkerLike } from "../engine/workerEngine.ts";
 import { LIB_MAX_BYTES, type ImportResult } from "../engine/library.ts";
+import { defaultCasSettings } from "../engine/types.ts";
 import { DATA_VERSION } from "../state/storage.ts";
 import { aiFormat, formatExample, importFile, READ_CAP, type LibraryHost } from "./libraryJobs.ts";
 
@@ -20,9 +22,11 @@ class InProcessWorker implements WorkerLike {
   onmessage: ((ev: { data: Response }) => void) | null = null;
   onerror: ((ev: { message?: string }) => void) | null = null;
   terminated = false;
-  private handle = createRequestHandler(
+  /** Replies of requests the test sent itself, not the engine's caller. */
+  protected hidden = new Set<number>();
+  protected handle = createRequestHandler(
     () => loadNodeGiac(),
-    (r) => setTimeout(() => !this.terminated && this.onmessage?.({ data: r }), 0),
+    (r) => setTimeout(() => !this.terminated && !this.hidden.has(r.id) && this.onmessage?.({ data: r }), 0),
   );
   postMessage(msg: Request): void {
     setTimeout(() => void this.handle(msg), 0);
@@ -32,11 +36,27 @@ class InProcessWorker implements WorkerLike {
   }
 }
 
+/** The first worker's first library import throws after one define: it defines beam_M as the import would, then
+ *  answers `fatal` without `memory` (a JS throw in the handler), which WorkerEngine only rejects. */
+class ThrowingImportWorker extends InProcessWorker {
+  static armed = true;
+  override postMessage(msg: Request): void {
+    if (msg.type !== "library" || !ThrowingImportWorker.armed) return super.postMessage(msg);
+    ThrowingImportWorker.armed = false;
+    const inner = -1;
+    this.hidden.add(inner);
+    setTimeout(async () => {
+      await this.handle({ id: inner, type: "cas", input: "beam_M(q,L):=q*L^2/8", settings: { ...defaultCasSettings } });
+      if (!this.terminated) this.onmessage?.({ data: { id: msg.id, type: "fatal", message: "boom partway" } });
+    }, 0);
+  }
+}
+
 const settings = { digits: 12, angle: "rad", format: "std" } as const;
 /** The port's calls (cas, names) and its library jobs, on one engine. */
-const fresh = (): { calc: EngineCalc & LibraryJobs; engine: WorkerEngine; workers: () => number } => {
+const fresh = (make: () => InProcessWorker = () => new InProcessWorker()): { calc: EngineCalc & LibraryJobs; engine: WorkerEngine; workers: () => number } => {
   let n = 0;
-  const engine = new WorkerEngine({ createWorker: () => (n++, new InProcessWorker()) });
+  const engine = new WorkerEngine({ createWorker: () => (n++, make()) });
   const port = new EngineCalc(engine);
   const calc = Object.assign(port, jobs(port.engine));
   return { calc, engine, workers: () => n };
@@ -103,6 +123,17 @@ describe.skipIf(!giacAvailable())("the library through the Calc port (real Giac)
     expect(!r.ok && r.failures?.map((f) => f.line)).toEqual([5, 6]);
     expect(workers()).toBe(2); // restarted
     expect((await calc.cas("tw(2)", settings)).text).toBe("tw(2)");
+    expect((await calc.cas("keep", settings)).text).toBe("7");
+    expect((await calc.names()).map((u) => u.name)).toEqual(["keep"]);
+  });
+
+  it("an import that throws partway: the call rejects, the engine restarts, and the name it defined is gone", { timeout: 30_000 }, async () => {
+    ThrowingImportWorker.armed = true;
+    const { calc, workers } = fresh(() => new ThrowingImportWorker());
+    await calc.cas("keep:=7", settings);
+    await expect(calc.importLibrary(new Uint8Array(beams), false)).rejects.toThrow("boom partway");
+    expect(workers()).toBe(2); // restarted
+    expect((await calc.cas("beam_M(2,4)", settings)).text).toBe("beam_M(2,4)");
     expect((await calc.cas("keep", settings)).text).toBe("7");
     expect((await calc.names()).map((u) => u.name)).toEqual(["keep"]);
   });

@@ -25,7 +25,18 @@ export function jobs(engine: MathEngine): LibraryJobs {
   const send = async (body: Body): Promise<Response> => worker.call({ ...body, log: [...(await worker.definitions())] } as Parameters<Posting["call"]>[0]);
   return {
     async importLibrary(input, replace): Promise<LibraryReply> {
-      const r = await send({ type: "library", input: upToDate(input), version: LIBRARY_FORMAT.version, replace });
+      let r: Response;
+      try {
+        r = await send({ type: "library", input: upToDate(input), version: LIBRARY_FORMAT.version, replace });
+      } catch (e) {
+        // The worker's import threw partway (a `fatal` reply that is not out of memory, which does not restart it): the
+        // definitions it already ran stay in Giac and in no log entry, so restart from the unchanged log, as a dirty
+        // refusal does. Not after the user's own Cancel (already restarted) nor a memory crash (restartAfterCrash).
+        // By name: a value import of engine/types.ts would move it out of the start chunk (see above).
+        const name = e instanceof Error ? e.name : "";
+        if (name !== "EngineCancelled" && name !== "EngineMemoryError") await worker.cancel();
+        throw e;
+      }
       if (r.type !== "library") throw new Error(`unexpected ${r.type}`);
       if (r.result.ok) worker.keep(r.result.changes);
       else if (r.result.dirty) await worker.cancel();
