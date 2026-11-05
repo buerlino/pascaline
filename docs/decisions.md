@@ -7,12 +7,12 @@ Phase 0 decisions (D1–D9, P1, P2): [spike/DECISIONS.md](../spike/DECISIONS.md)
 
 The owner's other open items are in [backlog.md](backlog.md), "Needs the user". Once decided, an entry moves to "Decided proposals".
 
-- **G138 (Opus pass 69, 2026-11-05): the weekly fuzz in slices. Recommendation: before Wed 11-11 a small gorge package gives `scripts/sweep.ts --nightly` a part option and a separate shrink step, to fit the 10-minute slices.** G138's run: 448 s sweep, 163 s shrink, in pieces. Would change if: the count is cut to fit one slice.
-- **A62 (Opus pass 66, 2026-11-04): R59's gate. Recommendation: count the 50 ms budget above an empty log's first restore (57 ms, paid by everyone), so a 200-program library costs 39 ms and R59 goes ahead.** Tab One, `0da228a0`, seven cold starts: the replay 96 ms p50, 119 p95 (A12: 403 before G83); keyboard 736 ms and engine ready 1305 ms, as without the library; the first Enter that loads a library function 123 ms p50, 166 p95 against A16's 150 ms. Would change if: you keep the literal 50 ms (then R59 waits for a faster replay).
+None open.
 
 ## Decided proposals
 
 ### Pipeline and process
+- **Owner answers of 2026-11-05 (morning).** The weekly fuzz runs in 10-minute slices from Wed 11-11 (G167: `--part i/n` and a separate shrink, Opus pass 69); the red-first check can test the stock engine for a G125 package (A71); sofia's gate script calls `tools/devlock.sh` by its absolute path. Would change if: the fuzz count is cut to fit one slice.
 - **Owner answers of 2026-11-02, evening ([night review](research/night-review-2026-11-02.md) section 6, the full text).** The queue as proposed; red-first counts only added or tightened tests (A67); R37 parked. Would change if: a fix needs a test loosened.
 - **Owner answers of 2026-10-31, evening.** A53's diff stage stays (trigger ten minutes); the rest is built (A52f1, A58, G155) or packaged (A57). Full text: archive.
 - **Owner answers of 2026-10-31 (night review 2026-10-30, [its note](archive/night-review-2026-10-31.md) section 6).** Gated website deploys (A52); R103 trimmed; R90 dropped; the docs budgets stay; one-time phone checks in `tests/core/ONE-TIME.md`. Full text: archive. Would change if: A8 gates both deploys.
@@ -68,7 +68,7 @@ The owner's other open items are in [backlog.md](backlog.md), "Needs the user". 
 - **G78f1, G68, G84, G70, G71, G67, G65 (Opus passes 46–49):** an underflow is refused with its reason; Solve confirms only the digits every solve agrees on; Area applies Home's refusals. Full text: archive.
 - **G58, G59 (Opus pass 45):** a Giac call deaf to its interrupt gets a `control_c()` patch at its cause (P19), `HOME_DEADLINE_MS` = 2 s until then; when the exact and numeric answers disagree Home shows ⚠ "the exact and numeric answers differ". Would change if: Parisse fixes the loops first.
 - **A20 (decided 2026-10-20, the owner): Home's budget counts steps, not milliseconds** (G82); CAS and Solve keep clocks. Full text: archive.
-- **A12 (2026-10-20, by "G33 and R56"): the user's functions load on first use (G83) before R59;** a 200-program library replayed at p50 403 ms on the Tab One, against 50 ms. Full text: archive. Would change if: annabell's run after G83 is still over 50 ms (A62: 96 ms; Needs the user).
+- **A12 (2026-10-20, by "G33 and R56"): the user's functions load on first use (G83) before R59;** a 200-program library replayed at p50 403 ms on the Tab One, against 50 ms. Full text: archive. **A62, R59's gate (owner, 2026-11-05):** the 50 ms count above an empty log's first restore (57 ms, paid by everyone); after G83 a 200-program library costs 39 ms (Tab One, `0da228a0`: replay 96 ms p50, 119 p95), so R59 goes ahead. Would change if: an empty log's restore drops well below 57 ms.
 - **A16 after G53 (decided 2026-10-20, the owner): Enter p95 on the Tab One is under the 150 ms bar** (145–147 ms at 12 digits, 2026-10-27, `777120e`). Full text: archive; [archive/shifts/A16-enter-p95.md](archive/shifts/A16-enter-p95.md).
 - **S13, G57 (decided 2026-10-20, the owner; built by G65, names now from the bridge, P20): names from Giac's state.** A run-once store (`sto`, `=>`, `[a,b]:=`) of an undecided value runs its right side alone, is decided, and is refused as `a:=` is. Would change if: A16's RAD Enter p95 > 150 ms. Full text: archive.
 - **P18 (2026-10-20): Giac evaluates, our layer decides** what is shown; no other engine answers at run time. Rule: docs/04 6.1. Full text: archive. Would change if: a feature needs a second engine at run time; the checks push the Tab One's Enter p95 past 150 ms.
