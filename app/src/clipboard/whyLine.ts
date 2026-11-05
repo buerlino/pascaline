@@ -5,6 +5,7 @@
 import type { MarkInfo } from "../engine/format.ts";
 import type { HistoryItem } from "../state/session.svelte.ts";
 import { copyExact } from "./exact.ts";
+import { entryText, macroCalls } from "./plaintext.ts";
 import { tc } from "./strings.ts";
 
 const SUP = "⁰¹²³⁴⁵⁶⁷⁸⁹";
@@ -26,10 +27,12 @@ export function uncText(unc: string): string | null {
 /** The constants a row's chips hold with an uncertainty, as `G (± 1.5·10⁻¹⁵)`, in the order they stand in the entry. */
 function constantsUsed(item: HistoryItem): string[] {
   const out: string[] = [];
-  for (const m of item.latex.matchAll(/\\const\{([^{}]*)\}\{([^{}]*)\}/g)) {
-    const unc = item.chips?.[`const:${m[1]}`]?.unc;
+  // brace-aware: a symbol holds braces (`\mu_{0}`, `\mu_{\mathrm{B}}`), and is named as plain text (`μ_0`), never as LaTeX (F171)
+  for (const m of macroCalls(item.latex, "const", 2)) {
+    const [id = "", symbol = ""] = m.args;
+    const unc = item.chips?.[`const:${id}`]?.unc;
     const u = unc === undefined ? null : uncText(unc);
-    const text = `${m[2]}${u ? ` (± ${u})` : ""}`;
+    const text = `${entryText(symbol)}${u ? ` (± ${u})` : ""}`;
     if (unc !== undefined && !out.includes(text)) out.push(text);
   }
   return out;
