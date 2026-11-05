@@ -487,6 +487,7 @@ if [[ $dry -eq 1 ]]; then
       echo "GIAC_OUT=$engine_root/key-$bkey (phase-1's engine, copied from gsl or built when missing; a build follows the worker when its key changes)"
     fi
     echo "red-first's phase-1 engine: $engine_root/key-$p1key"
+    echo "red-first's stock engine (a package that says its tests fail on the stock build): $engine_root/stock-<key of build-wasm.sh stock-key>, built once with GIAC_PATCHES=none under host-cpu when missing"
   fi
   echo "checks: $checks; merge: $merge; audit model: $audit_model; no-worker: $nowork"
   echo "checks run: typecheck, vitest, docs always; size when app/ changed; e2e when app/ changed; golden when engine or parser changed; shell when scripts/ or tools/*.sh changed"
@@ -633,7 +634,16 @@ run_checks() {  # <round>; returns 1 and writes fail-<round>.txt on failure
       shell)     # A47a: the shell tests (SELFTESTS); the full output in <log>.full, the FAIL lines here (never a machine failure: tests quote such lines)
                  local sr; selftest_run "$wt" "$out.full" > "$out.sr" || rc=1; sr="$(cat "$out.sr")"
                  { grep -E '^FAIL' "$out.full" | head -n 40 || true; echo "selftest: $sr (full output: $out.full)"; } > "$out";;
-      redfirst)  red_first "$wt" "$spec_file" "${p1_engine}" "$out" > "$out.why" || { rc=1; why="$(cat "$out.why")"; echo "red-first: $why" >> "$out"; redwhy="$why"; };;
+      redfirst)  # A71: "fail on the stock build": the stock engine (built once under host-cpu, reused) first; PASCALINE_STOCK_ENGINE names one instead
+                 local stock=""
+                 if red_first_stock_wanted "$spec_file"; then
+                   if [[ -n "${PASCALINE_STOCK_ENGINE:-}" ]]; then stock="$PASCALINE_STOCK_ENGINE"
+                   elif stock_engine_ensure "$integ" "$engine_root" "$run/engine-stock-build.log"; then stock="$stock_dir"
+                   else why="stock engine: $engine_why"; rc=1; echo "red-first: $why" > "$out"; redwhy="$why"; fi
+                 fi
+                 if ! red_first_stock_wanted "$spec_file" || [[ -n "$stock" ]]; then
+                   red_first "$wt" "$spec_file" "${p1_engine}" "$out" "$stock" > "$out.why" || { rc=1; why="$(cat "$out.why")"; echo "red-first: $why" >> "$out"; redwhy="$why"; }
+                 fi;;
       *) die "unknown check $name";;
     esac
     if [[ $rc -eq 1 && ( "$name" == e2e || "$name" == vitest ) ]] && mm="$(node "$wt/app/scripts/pipeline-logs.ts" mismatch "$name" "$out")"; then

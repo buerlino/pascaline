@@ -427,15 +427,15 @@ unset PASCALINE_REDFIRST_VITEST PASCALINE_REDFIRST_GOLDEN
 sk="$tmp/sk"; mkdir -p "$sk/tools" "$sk/engine/giac"; cp "$sb/tools/devlock.sh" "$sk/tools/"
 cat > "$sk/engine/giac/build-wasm.sh" <<STUB
 #!/bin/sh
-[ "\$1" = stock-key ] && { echo k71; exit 0; }
+[ "\$1" = stock-key ] && { echo ab71; exit 0; }
 [ "\$GIAC_PATCHES" = none ] || exit 9
-echo run >> "$sk/builds"; mkdir -p "\$GIAC_BUILD_OUT/stock-k71" && echo wasm > "\$GIAC_BUILD_OUT/stock-k71/giac.wasm"
+echo run >> "$sk/builds"; mkdir -p "\$GIAC_BUILD_OUT/stock-ab71" && echo wasm > "\$GIAC_BUILD_OUT/stock-ab71/giac.wasm"
 STUB
 chmod +x "$sk/engine/giac/build-wasm.sh"
 mkdir -p "$sk/_out"
-(cd "$sk" && stock_engine_ensure "$sk" "$sk/_out" "$sk/build.log") || fail "A71: stock_engine_ensure failed: $engine_why"
-[[ "$stock_dir" == "$sk/_out/stock-k71" && -f "$stock_dir/giac.wasm" && "$(engine_stamp "$stock_dir")" == k71 ]] || fail "A71: stock_engine_ensure gave '$stock_dir' without a stamped build"
-(cd "$sk" && stock_engine_ensure "$sk" "$sk/_out" "$sk/build.log") || fail "A71: the second stock_engine_ensure failed"
+cd "$sk" && stock_engine_ensure "$sk" "$sk/_out" "$sk/build.log" || fail "A71: stock_engine_ensure failed: $engine_why"; cd - >/dev/null
+[[ "$stock_dir" == "$sk/_out/stock-ab71" && -f "$stock_dir/giac.wasm" && "$(engine_stamp "$stock_dir")" == ab71 ]] || fail "A71: stock_engine_ensure gave '$stock_dir' without a stamped build"
+cd "$sk" && stock_engine_ensure "$sk" "$sk/_out" "$sk/build.log" || fail "A71: the second stock_engine_ensure failed: $engine_why"; cd - >/dev/null
 [[ "$(wc -l < "$sk/builds")" -eq 1 ]] || fail "A71: the stock engine was built $(wc -l < "$sk/builds") times, once expected"
 grep -q 'GIAC_PATCHES=none' "$here/../engine/giac/build-wasm.sh" && GIAC_PATCHES=none "$here/../engine/giac/build-wasm.sh" stock-key | grep -qE '^[0-9a-f]{16}$' || fail "A71: build-wasm.sh has no GIAC_PATCHES=none or no stock-key"
 [[ "$("$here/../engine/giac/build-wasm.sh" stock-key)" == "$(GIAC_PATCHES=none "$here/../engine/giac/build-wasm.sh" stock-key)" ]] || fail "A71: the stock key depends on GIAC_PATCHES"
