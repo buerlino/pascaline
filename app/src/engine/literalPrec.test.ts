@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // G141: the precision a long exact literal needs (literalPrec.ts). Engine-free; the values are counted by hand.
 import { describe, expect, it } from "vitest";
-import { literalDigits, literalStart } from "./literalPrec.ts";
+import { literalDigits, literalStart, uncheckedPastCap } from "./literalPrec.ts";
 
 const ONE_E100 = "1" + "0".repeat(100);
 
@@ -42,5 +42,17 @@ describe("literalStart", () => {
   it("is the digit count plus P up to the cap", () => {
     expect(literalStart("10^919", 40, 1000, "typed")).toEqual({ at: 960, unchecked: false });
     expect(literalStart("10^920", 40, 1000, "typed")).toEqual({ at: 40, unchecked: true });
+  });
+});
+
+describe("uncheckedPastCap (G141f2)", () => {
+  const f = (exact: boolean, reliableDigits: number | null, warn?: "unaudited" | "unchecked") => ({ exact, reliableDigits, ...(warn ? { warn } : {}) });
+  it("warns a float that has confirmed digits, keeping a warn it has", () => {
+    expect(uncheckedPastCap(f(false, 12))).toEqual(f(false, 12, "unchecked"));
+    expect(uncheckedPastCap(f(false, 12, "unaudited"))).toEqual(f(false, 12, "unaudited"));
+  });
+  it("leaves an exact element and a no-digit one as they are", () => {
+    expect(uncheckedPastCap(f(true, null))).toEqual(f(true, null));
+    expect(uncheckedPastCap(f(false, 0))).toEqual(f(false, 0));
   });
 });
