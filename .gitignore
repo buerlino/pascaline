@@ -11,7 +11,7 @@ playwright-report/
 # Python bytecode (tools/*.py, tests/golden/oracle.py)
 __pycache__/
 
-# Android build outputs (Capacitor project itself is committed later)
+# Android build outputs
 android/**/build/
 android/.gradle/
 android/local.properties
@@ -22,7 +22,6 @@ android/local.properties
 
 # Prebuilt third-party binaries: allowed only as spike shortcuts, never committed
 spike/**/prebuilt/
-spike/prebuilt/
 
 # Engine build trees and downloads (rebuilt from source by engine/*/build-*.sh)
 engine/**/_downloads/
@@ -47,8 +46,6 @@ engine/**/_out/
 .claude/settings.local.json
 # Python tooling venvs (mpmath oracle etc.)
 **/.venv/
-spike/**/_build/
-spike/**/_out/
 
 # app/: fonts and engine copied in by npm scripts; the Find index (generated from the source tarballs, npm run index)
 app/public/engine/
@@ -65,10 +62,8 @@ android/gradle/
 android/gradlew
 android/gradlew.bat
 
-# libqalculate build: build tree, downloaded tarballs and output (engine/qalc/build-wasm.sh)
+# libqalculate build tree (engine/qalc/build-wasm.sh; its _downloads/ and _out/ fall under engine/**/ above)
 engine/qalc/_work/
-engine/qalc/_downloads/
-engine/qalc/_out/
 
 # tools/probes output (rebuilt by the probes; tools/probes/README.md)
 tools/probes/_out/
