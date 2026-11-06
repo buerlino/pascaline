@@ -39,7 +39,7 @@ The section is **28 blocks of 8 beats** (17.9–97.4 s, 140 → 199 BPM), then t
 | | 21–22 | p(x):=x³ | stored |
 | GRAPHS (N62) | 23–24 | Solve app: x² − 2x = 168 | `x = -12`, `x = 14` |
 | | 25 / 26 | F1 = x³ − 2 / Plot, Root | `x = 1.25992104989` |
-| | 27–28 | signed area of x² on [0, 1] | `0.333333333333` |
+| | 27–28 | signed area of the same F1 on [0, 1] | `-1.75` |
 | | finale | 3x + 2y = 8, x − 4y = −2 as A⁻¹·b | `[[2],[1]]` |
 
 Between the beats: each clip's setup (CAS, an app, the theme) is recorded before its first press and cut away, so the
@@ -51,7 +51,9 @@ caption of the result on each eval beat.
 
 `SHOWCASE=1 PW_PORT=<free port> GIAC_OUT=<abs dir> npx playwright test test/showcase.spec.ts` (from `app/`, under
 `host-cpu`): every clip at its blocks' beat times; fails on a wrong press count, a wrong result, or a press more
-than 80 ms after its beat. 2026-11-06 on `189bdeb3`: 20/20, every press within 7 ms.
+than 80 ms after its beat, or a result not on screen before the cut (the next beat after the eval, 267–441 ms
+later). 2026-11-06 on `a1715b54`: 20/20, presses within 6 ms, results 51–312 ms after their eval. Tight: s8 and s9
+(301 and 312 ms of 348; their eval is a flick up on Enter, slower than a tap).
 
 ## Next
 
@@ -69,7 +71,8 @@ than 80 ms after its beat. 2026-11-06 on `189bdeb3`: 20/20, every press within 7
      its `input/` holds copies of this file, the yaml and the timeline: this repo is the source);
    - measured from the recordings: the delay from each beat to the key's highlight and to the result on screen. The
      presses shift earlier by the measured highlight delay; an eval whose result shows more than 2 frames after
-     beat 7 (CAS: 2¹⁰⁰, solve) is pressed that much earlier. The per-clip delays go in the run's report.
+     beat 7 (CAS: 2¹⁰⁰, solve) is pressed that much earlier; a flick eval (s8, s9) starts early enough that its
+     result shows on beat 7. The per-clip delays go in the run's report.
 2. **Final take** Sat 11-14 on the release candidate of v0.1.0 (release Sun 11-15), after the UI rows (R140–R150,
    R53) and the queue have merged; per chapter theme.
 3. **Blender** (owner): the screen plane, the camera keys, the song in the Video Editor from 17 s.
