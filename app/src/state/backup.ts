@@ -5,10 +5,10 @@
 import { validDefs } from "../engine/defs.ts";
 import { dataText, enData, type DataKey } from "../i18n/enData.ts";
 import { KeyboardSpecError, keyboard, parseAction } from "../keyboard/keyboard.ts";
-import { defaultLook, renamedLook, validLook } from "../theme/look.ts";
+import { defaultLook, validLook } from "../theme/look.ts";
 import { CELL_KEYS } from "../units/userCells.svelte.ts";
 import { isFmtMode, normalizeCycle } from "./displayMode.ts";
-import { migratePresetKeys, PRESETS_KEY, renamedLooks } from "./presetRecord.ts";
+import { migratePresetKeys, PRESETS_KEY, renamedLook, renamedLooks } from "./presetRecord.ts";
 import { DATA_VERSION, kvSet, unstamp, type Migrations } from "./storage.ts";
 import { MIGRATIONS } from "./migrations.ts";
 import { kvGetRaw, type RawRecord } from "./storageRaw.ts";
@@ -295,8 +295,8 @@ export function checkBackup(bytes: Uint8Array, validators: Validators = VALIDATO
   for (const [key, rec] of Object.entries(parts)) {
     let value: unknown;
     try {
-      value = up(key, rec);
       const from = (rec as Record<string, unknown>)[stampField(rec as Record<string, unknown>)] as number;
+      value = up(key, { [STAMP]: from, value: (rec as Record<string, unknown>)["value"] }); // an old stamp, as the store's own (R138)
       if (key === PRESETS_KEY) value = renamedLooks(migratePresetKeys(value, from, (k, v, at) => up(k, { [STAMP]: at, value: v })));
       if (key === "settings" && isObject(value) && "look" in value) value = { ...value, look: renamedLook(value["look"]) }; // R138
     } catch {

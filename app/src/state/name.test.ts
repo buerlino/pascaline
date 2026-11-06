@@ -3,17 +3,18 @@
 // readers also take the old marker and stamps (an old backup file, an old library file), the writers write the new ones.
 import { readFileSync } from "node:fs";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { backupName, checkBackup, makeBackup, type CheckedBackup } from "./backup.ts";
+import { backupName, checkBackup, makeBackup, VALIDATORS, type CheckedBackup } from "./backup.ts";
 import { reloadOnMissingChunk } from "./chunkReload.ts";
 import { COUNTS_FORMAT, countsName, countsText } from "./countsFile.ts";
 import { fakeIndexedDb } from "./fakeIdb.ts";
 import { LIBRARY_FORMAT, upToDate } from "./libraryFormat.ts";
 import { readPresets } from "./presetRecord.ts";
-import { DATA_VERSION, kvGet, kvSet, stamp, unstamp } from "./storage.ts";
+import { DATA_VERSION, kvSet, stamp, unstamp } from "./storage.ts";
 import { kvGetRaw } from "./storageRaw.ts";
 import { WRITER_LOCK } from "./writer.ts";
 import { HEADER } from "../engine/libraryHeader.ts";
-import { defaultLook, FAMILY_IDS, validLook } from "../theme/look.ts";
+import { defaultLook, FAMILY_IDS } from "../theme/look.ts";
+import { familyOf } from "../theme/lookView.ts";
 import { LOOK_KEY } from "../theme/lookApply.ts";
 import { libraryName } from "../views/libraryJobs.ts";
 
@@ -56,19 +57,22 @@ describe("the stored names (R138)", () => {
 });
 
 describe("the stamps: written new, read old and new (R138)", () => {
-  it("a record is stamped @n62; one stamped @pascaline reads the same", () => {
+  it("a record is stamped @n62 and read under it", () => {
     expect(stamp(1)).toEqual({ "@n62": DATA_VERSION, value: 1 });
-    const steps = { 2: { defs: (v: unknown) => [...(v as unknown[]), "step"] } };
-    const now = unstamp("defs", { "@n62": 2, value: ["a"] }, steps);
-    const old = unstamp("defs", { "@pascaline": 2, value: ["a"] }, steps);
-    expect(old).toEqual(now);
-    expect(now.value).toEqual(["a", "step"]);
+    const steps = { 2: { place: (v: unknown) => ({ ...(v as object), step: 1 }) } };
+    expect(unstamp("place", { "@n62": 2, value: { a: 1 } }, steps)).toEqual({ value: { a: 1, step: 1 }, upgraded: true });
   });
-  it("kvGet and kvGetRaw read an old-stamped record as its value, the raw read stamped @n62", async () => {
+  it("a backup part stamped @pascaline runs the same steps as one stamped @n62", () => {
+    const steps = { 2: { place: (v: unknown) => ({ ...(v as object), step: 1 }) } };
+    const file = (stamp: string): Uint8Array => bytes({ "n62-backup": 1, parts: { place: { [stamp]: 2, value: { a: 1 } } } });
+    const now = checkBackup(file("@n62"), VALIDATORS, steps);
+    expect(now).toMatchObject({ ok: true, parts: { place: { a: 1, step: 1 } } });
+    expect(checkBackup(file("@pascaline"), VALIDATORS, steps)).toEqual(now);
+  });
+  it("kvGetRaw reads an old-stamped record stamped @n62", async () => {
     const idb = fakeIndexedDb();
     idb.stores.set("kv", new Map<string, unknown>([["view", { "@pascaline": DATA_VERSION, value: "cas" }], ["place", { "@pascaline": 2, value: { a: 1 } }]]));
     vi.stubGlobal("indexedDB", idb.factory);
-    expect(await kvGet("view")).toEqual({ kind: "value", value: "cas" });
     expect(await kvGetRaw("view")).toEqual({ "@n62": DATA_VERSION, value: "cas" });
     expect(await kvGetRaw("place")).toEqual({ "@n62": 2, value: { a: 1 } });
   });
@@ -121,11 +125,11 @@ describe("the backup (R138)", () => {
 });
 
 describe("the house look (R138)", () => {
-  it("is n62; a stored look of family pascaline reads as n62", () => {
+  it("is n62, named N62", () => {
     expect(FAMILY_IDS[0]).toBe("n62");
     expect(FAMILY_IDS).not.toContain("pascaline");
     expect(defaultLook().family).toBe("n62");
-    expect(validLook({ family: "pascaline", brightness: "light" }, { ...defaultLook(), family: "nord" })).toMatchObject({ family: "n62", brightness: "light" });
+    expect(familyOf("n62").name).toBe("N62");
   });
   it("a stored preset holding the look pascaline reads as n62", () => {
     const { record } = readPresets({ presets: [{ id: 1, name: "A", groups: { look: { family: "pascaline" }, mode: { angle: "deg" } } }], active: null, next: 2 });

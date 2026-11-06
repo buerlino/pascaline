@@ -37,13 +37,9 @@ export const DATA_VERSION = 4;
  * written before this pairing; schema 4 was first stamped 3 and is guarded from 4 on.
  */
 export const SETTINGS_SINCE: Readonly<Record<number, number>> = { 4: 4 };
-/** The stamp's field; no value stored before versions has it. A record or backup part stamped with the field of the
- *  name before N62 (R138) reads the same: it is in an old backup file only, and is written back with today's field. */
+/** The stamp's field; no value stored before versions has it. The store under the name N62 starts empty (R138): the
+ *  field before it, `@pascaline`, comes only in an old backup file, whose check (state/backup.ts) reads it. */
 const STAMP = "@n62";
-const OLD_STAMP = "@pascaline";
-/** The stamp field `stored` holds, if any. */
-const stampOf = (stored: unknown): string | undefined =>
-  typeof stored === "object" && stored !== null ? (STAMP in stored ? STAMP : OLD_STAMP in stored ? OLD_STAMP : undefined) : undefined;
 
 /** Steps from version n to n+1, by key; a key without a step keeps its value. The table is MIGRATIONS in
  *  state/migrations.ts, a lazy chunk (R103). */
@@ -55,8 +51,7 @@ export const STEP_KEYS: Readonly<Record<number, readonly string[]>> = { 0: [], 1
 
 /** The version a stored record was written in (0 before versions). */
 function storedVersion(stored: unknown): number {
-  const f = stampOf(stored);
-  return f === undefined ? 0 : Number((stored as Record<string, unknown>)[f]);
+  return typeof stored === "object" && stored !== null && STAMP in stored ? Number((stored as Record<string, unknown>)[STAMP]) : 0;
 }
 
 /** A value as stored: stamped with the version it is written in (today's, or `version` for text read from elsewhere). */
@@ -76,7 +71,7 @@ export function needsSteps(key: string, stored: unknown): boolean {
  */
 export function unstamp(key: string, stored: unknown, steps: Migrations): { value: unknown; upgraded: boolean } {
   const from = storedVersion(stored);
-  let value = stampOf(stored) === undefined ? stored : (stored as Record<string, unknown>)["value"];
+  let value = typeof stored === "object" && stored !== null && STAMP in stored ? (stored as Record<string, unknown>)["value"] : stored;
   for (let v = from; v < DATA_VERSION; v++) {
     const step = steps[v]?.[key];
     if (step) value = step(value);
