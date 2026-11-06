@@ -1,17 +1,20 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// App icons and splash screens from the project logo (logo/android_logo/pascaline_back.svg + pascaline_front.svg,
+// App icons and splash screens from the project logo (logo/android_logo/n62_back.svg + n62_front.svg,
 // a 108×108 Android adaptive-icon pair: solid background, mark inside the 66-unit safe circle).
 // Writes the PWA icons (app/public/icons/) and the Android launcher icons and splash screens
 // (android/app/src/main/res/). Run after changing the logo: node scripts/gen-icons.mjs
 // Needs rsvg-convert (librsvg) on the PATH; the generated files are committed, so builds don't need it.
+// GEN_ICONS_OUT=<dir> writes to <dir>/pwa and <dir>/res instead; --svg-only writes only icon.svg (what the test compares, no rsvg-convert).
 import { execFileSync } from "node:child_process";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "../..");
-const pwa = join(root, "app/public/icons");
-const res = join(root, "android/app/src/main/res");
+const out = process.env.GEN_ICONS_OUT;
+const pwa = out ? join(out, "pwa") : join(root, "app/public/icons");
+const res = out ? join(out, "res") : join(root, "android/app/src/main/res");
+const svgOnly = process.argv.includes("--svg-only");
 
 /** The drawing inside a logo file's root <svg>, with the root's style (fill-rule, line caps) kept on a group. */
 function layer(file) {
@@ -22,10 +25,10 @@ function layer(file) {
   const body = svg.slice(open.index + open[0].length, svg.lastIndexOf("</svg>"));
   return `<g style="${style}">${body}</g>`;
 }
-const back = layer("pascaline_back.svg");
-const front = layer("pascaline_front.svg");
+const back = layer("n62_back.svg");
+const front = layer("n62_front.svg");
 const bgColour = /fill:\s*(rgb\([^)]*\)|#[0-9a-fA-F]{3,8})/.exec(back)?.[1];
-if (!bgColour) throw new Error("pascaline_back.svg: no fill colour");
+if (!bgColour) throw new Error("n62_back.svg: no fill colour");
 
 const XMLNS = 'xmlns="http://www.w3.org/2000/svg" xmlns:serif="http://www.serif.com/"';
 
@@ -50,10 +53,12 @@ function png(svg, w, h, out) {
 // PWA: "any" icons show the launcher's visible 72-unit square; the maskable one keeps the mark inside
 // the 40 % safe radius (mark radius 32.5 of a 90-unit crop = 36 %).
 const visible = [18, 18, 72];
+mkdirSync(pwa, { recursive: true });
 writeFileSync(
   join(pwa, "icon.svg"),
   `<?xml version="1.0" encoding="UTF-8"?>\n<!-- SPDX-License-Identifier: GPL-3.0-or-later -->\n<!-- Generated from logo/ by app/scripts/gen-icons.mjs; edit the logo, not this file. -->\n${icon(visible)}\n`,
 );
+if (svgOnly) process.exit(0);
 png(icon(visible), 192, 192, join(pwa, "icon-192.png"));
 png(icon(visible), 512, 512, join(pwa, "icon-512.png"));
 png(icon([9, 9, 90]), 512, 512, join(pwa, "icon-maskable-512.png"));
@@ -67,6 +72,7 @@ for (const [d, k] of Object.entries(densities)) {
 }
 const [r, g, b] = /rgb\((\d+),\s*(\d+),\s*(\d+)\)/.exec(bgColour)?.slice(1).map(Number) ?? [];
 const hex = bgColour.startsWith("#") ? bgColour : `#${[r, g, b].map((v) => v.toString(16).padStart(2, "0")).join("")}`.toUpperCase();
+mkdirSync(join(res, "values"), { recursive: true });
 writeFileSync(
   join(res, "values/ic_launcher_background.xml"),
   `<?xml version="1.0" encoding="utf-8"?>\n<resources>\n    <color name="ic_launcher_background">${hex}</color>\n</resources>\n`,

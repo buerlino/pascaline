@@ -1,7 +1,7 @@
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="logo/wordmark/pascaline_wordmark_light.svg">
-    <img alt="Pascaline" src="logo/wordmark/pascaline_wordmark_dark.svg" width="320">
+    <source media="(prefers-color-scheme: dark)" srcset="logo/wordmark/n62_wordmark_light.svg">
+    <img alt="N62" src="logo/wordmark/n62_wordmark_dark.svg" width="320">
   </picture>
 </p>
 
