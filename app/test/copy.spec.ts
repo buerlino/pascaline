@@ -69,19 +69,19 @@ test("Menu with a picked row copies that row, not the last result (R13, S2 I1)",
   await expect.poll(() => clipboard(page)).toBe(TWO_THIRDS);
 });
 
-test("Shift + Copy (Paste) pastes a number as the keyboard's own LaTeX", async ({ page }) => {
+test("Paste (one press, R146) pastes a number as the keyboard's own LaTeX", async ({ page }) => {
   await setClipboard(page, "1.5E-3");
-  await tap(page, ["shift", "copy"]);
+  await tap(page, ["paste"]);
   await expect.poll(() => entryValue(page)).toBe("1.5\\emark-3"); // drawn 1.5ᴇ-3, as the exponent key types it (R14)
   await tap(page, ["esc"]);
   await setClipboard(page, "1.5-2*i");
-  await tap(page, ["shift", "copy"]);
+  await tap(page, ["paste"]);
   await expect.poll(() => entryValue(page)).toBe("1.5-2\\imaginaryI");
 });
 
 test("Paste refuses what is not a number, and says so", async ({ page }) => {
   await setClipboard(page, "hello");
-  await tap(page, ["shift", "copy"]);
+  await tap(page, ["paste"]);
   await expect(page.getByTestId("notice")).toHaveText("Paste: not a number");
   expect(await entryValue(page)).toBe("");
 });
@@ -89,14 +89,14 @@ test("Paste refuses what is not a number, and says so", async ({ page }) => {
 test("copy → paste gives the value back (P5)", async ({ page }) => {
   await thirds(page);
   await tap(page, ["copy"]); // 2/3, 40 digits
-  await tap(page, ["shift", "copy"]);
+  await tap(page, ["paste"]);
   await expect.poll(() => entryValue(page)).toBe(TWO_THIRDS);
   await tap(page, ["enter"]);
   await done(page, 3);
   await expect(lastResult(page)).toHaveAttribute("data-text", "0.666666666667");
   // and a number with an exponent, through the E key of the clipboard text
   await setClipboard(page, "2.5E-4");
-  await tap(page, ["shift", "copy", "mul", "d4", "enter"]);
+  await tap(page, ["paste", "mul", "d4", "enter"]);
   await done(page, 4);
   await expect(lastResult(page)).toHaveAttribute("data-text", "0.001"); // 2.5E-4 × 4
 });
@@ -200,7 +200,7 @@ test("a key right after Paste waits for the pasted number: Paste, ÷ with a slow
     const read = navigator.clipboard.readText.bind(navigator.clipboard);
     navigator.clipboard.readText = () => new Promise((ok) => setTimeout(() => ok(read()), 400));
   });
-  await tap(page, ["shift", "copy", "div", "d3"]);
+  await tap(page, ["paste", "div", "d3"]);
   await expect.poll(() => entryValue(page)).toBe("\\frac{1.5}{3}");
   await tap(page, ["enter"]);
   await done(page, 1);

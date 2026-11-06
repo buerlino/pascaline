@@ -76,17 +76,20 @@ row_columns: { 6: 5, 7: 5, 8: 5, 9: 5 }
 keys:
   # ---- rows 0-2: the upper cluster, R3 (decisions.md "R15c", chosen by the owner 2026-10-17; built in R15c2). Three bands
   # of two columns: the free keys U1-U6 (`user: true`, all empty, set from Find, R4b), the round pad (one drag surface with
-  # a dashed hub, no OK; Keypad.svelte) and the editing wing, read in pairs level with the pad: View | Esc, Undo | Copy,
-  # ⇤ | ⇥. Apps, Menu and the views are on the status line (R15c1); Mode is on its chips. There is no Cancel key: Esc
-  # stops a running job, closes Settings, goes back one sheet level, drops a picked row, else clears the line. Only Esc
-  # (r1c5) and the pad keep their G2 cells; every other key here is ours (`assumed`). After R15c the cluster is fixed
+  # a dashed hub, no OK; Keypad.svelte) and the editing wing, read in pairs level with the pad, each pair on one layer
+  # (R146, S25's K1, owner 2026-11-06): Help | Esc, Undo | Redo, Copy | Paste on the tap; Settings | Clear, ⇤ | ⇥, ⇤□ | □⇥
+  # on Shift (a flick up reaches each). Apps, Menu and the views are on the status line (R15c1); Mode is on its chips;
+  # results mode is R53's handle and the swipe on the entry line, so there is no View key. There is no Cancel key: Esc
+  # stops a running job, closes Settings, goes back one sheet level, drops a picked row, else clears the line. Help (r1c4),
+  # Esc (r1c5) and the pad keep their G2 cells; every other key here is ours (`assumed`). After R15c the cluster is fixed
   # like the maths keys (docs/03 rule 8).
   - { id: u1, row: 0, col: 0, cls: nav, user: true, label: { primary: "$key.user" }, primary: { special: none }, source: assumed }
   - { id: u2, row: 0, col: 1, cls: nav, user: true, label: { primary: "$key.user" }, primary: { special: none }, source: assumed }
   - { id: up, row: 0, col: 2, span: 2, cls: ctl, label: { primary: "▲" }, primary: { cmd: moveUp }, source: virtual-calc }  # pad up; on an empty entry line it selects the last history row (App.svelte)
-  # View: results mode (P16, R53) on the tap, Help (milestone 6) on Shift; neither is built, so the key is drawn dimmed.
-  - { id: view, row: 0, col: 4, cls: nav, label: { primary: "$key.view", shift: "$key.help" },
-      primary: { special: none }, shift: { special: none }, source: assumed }
+  # Help (milestone 6, docs/06 section 1) is not built, so the tap is dead and the key is drawn dimmed. Shift + Help is
+  # Settings, one press beside Help (the G2's Shift + Help, User, is omitted: docs/06 section 2).
+  - { id: help, row: 0, col: 4, cls: nav, label: { primary: "$key.help", shift: "$key.settings" },
+      primary: { special: none }, shift: { special: settings }, source: virtual-calc }  # r1c4 (Help); shift Settings is ours
   - { id: esc, row: 0, col: 5, cls: nav, label: { primary: "$key.esc", shift: "$key.clear" },
       primary: { special: esc }, shift: { special: clear }, source: virtual-calc }  # r1c5; Esc also takes the old Cancel key's jobs (R15c point 3); shift Clear wipes the history on an empty line
   - { id: u3, row: 1, col: 0, cls: nav, user: true, label: { primary: "$key.user" }, primary: { special: none }, source: assumed }
@@ -95,20 +98,21 @@ keys:
       primary: { cmd: moveToPreviousChar }, source: virtual-calc }  # pad left; no shift layer (P12 point 7)
   - { id: right, row: 1, col: 3, cls: ctl, label: { primary: "▶" },
       primary: { cmd: moveToNextChar }, source: virtual-calc }  # pad right; no shift layer (P12 point 7)
-  # Undo | Redo: the entry line's own history (P13, R16; a chip comes back with its own value).
-  - { id: undo, row: 1, col: 4, cls: nav, label: { primary: "$key.undo", shift: "$key.redo" },
-      primary: { cmd: undo }, shift: { cmd: redo }, source: assumed }
-  # Copy | Paste (docs/04 2.6): the last result's full value, or the picked row's; Paste reads one number.
-  - { id: copy, row: 1, col: 5, cls: nav, label: { primary: "$key.copy", shift: "$key.paste" },
-      primary: { special: copy }, shift: { special: paste }, source: assumed }
+  # Undo | Redo: the entry line's own history (P13, R16; a chip comes back with its own value). Shift: ⇤ | ⇥, the start
+  # and end of the line.
+  - { id: undo, row: 1, col: 4, cls: nav, label: { primary: "$key.undo", shift: "⇤" },
+      primary: { cmd: undo }, shift: { cmd: moveToMathfieldStart }, source: assumed }
+  - { id: redo, row: 1, col: 5, cls: nav, label: { primary: "$key.redo", shift: "⇥" },
+      primary: { cmd: redo }, shift: { cmd: moveToMathfieldEnd }, source: assumed }
   - { id: u5, row: 2, col: 0, cls: nav, user: true, label: { primary: "$key.user" }, primary: { special: none }, source: assumed }
   - { id: u6, row: 2, col: 1, cls: nav, user: true, label: { primary: "$key.user" }, primary: { special: none }, source: assumed }
   - { id: down, row: 2, col: 2, span: 2, cls: ctl, label: { primary: "▼" }, primary: { cmd: moveDown }, source: virtual-calc }  # pad down
-  # ⇤ | ⇥: the start and end of the line; Shift: the start and end of the box the cursor is in (a numerator, an exponent).
-  - { id: lstart, row: 2, col: 4, cls: nav, label: { primary: "⇤", shift: "⇤□" },
-      primary: { cmd: moveToMathfieldStart }, shift: { cmd: moveToGroupStart }, source: assumed }
-  - { id: lend, row: 2, col: 5, cls: nav, label: { primary: "⇥", shift: "□⇥" },
-      primary: { cmd: moveToMathfieldEnd }, shift: { cmd: moveToGroupEnd }, source: assumed }
+  # Copy | Paste (docs/04 2.6): the last result's full value, or the picked row's; Paste reads one number. Shift: ⇤□ | □⇥,
+  # the start and end of the box the cursor is in (a numerator, an exponent).
+  - { id: copy, row: 2, col: 4, cls: nav, label: { primary: "$key.copy", shift: "⇤□" },
+      primary: { special: copy }, shift: { cmd: moveToGroupStart }, source: assumed }
+  - { id: paste, row: 2, col: 5, cls: nav, label: { primary: "$key.paste", shift: "□⇥" },
+      primary: { special: paste }, shift: { cmd: moveToGroupEnd }, source: assumed }
 
   # ---- row 3 (r4). P8, docs/04 section 5.1: Vars = Find on variables (R4b), Math = Find (R4a), shift Math = Memory
   # (R4b); shift Tmpl = the unit view (R24c). The Alpha letters stay. Tmpl opens the template palette (R10,

@@ -117,7 +117,7 @@ test("Redo after the first Undo is the line's own Redo: it neither clears again 
   await tap(page, ["shift", "esc"]);
   await tap(page, ["undo"]);
   await expect(rows(page)).toHaveCount(1);
-  await tap(page, ["shift", "undo"]); // Redo
+  await tap(page, ["redo"]);
   await expect(rows(page)).toHaveCount(1);
   expect(await entryValue(page)).toBe("");
   await tap(page, ["undo"]); // the line's own history is as it was: 1+1 comes back

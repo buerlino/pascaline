@@ -54,7 +54,7 @@ test("Solve: Copy copies the full root, and it pastes back as the same value (P5
   const text = await clipboard(page);
   expect(text.startsWith(LAMBERT5.slice(0, 26))).toBe(true);
   expect(digits(text)).toBeGreaterThan(25);
-  await tap(page, ["esc", "shift", "copy", "enter"]);
+  await tap(page, ["esc", "paste", "enter"]);
   await expect(page.locator('[data-testid="solve-table"] tr[data-name="x"] td')).toHaveAttribute("data-value", text);
 });
 
@@ -102,7 +102,7 @@ test("Function: Copy copies the full root x from the readout", async ({ page }) 
   const text = await clipboard(page);
   expect(text.startsWith(SQRT2.slice(0, 26))).toBe(true);
   expect(digits(text)).toBeGreaterThan(25);
-  await tap(page, ["@num", "esc", "shift", "copy"]); // paste on the Num start line
+  await tap(page, ["@num", "esc", "paste"]); // paste on the Num start line
   await expect.poll(() => entryValue(page)).toBe(text);
 });
 

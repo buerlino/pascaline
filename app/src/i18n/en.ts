@@ -9,9 +9,10 @@ export const en = {
   "key.shift": "shift",
   "key.alpha": "alpha",
   "key.help": "Help",
+  /** Shift + Help (R146): the legend must fit the cluster key at 360 px. */
+  "key.settings": "Settings",
   /** An empty user key (U1–U6, R15c): nothing set yet. */
   "key.user": "＋",
-  "key.view": "View",
   "key.copy": "Copy",
   "key.undo": "Undo",
   "key.redo": "Redo",

@@ -106,8 +106,8 @@ test.describe("at 412 × 915", () => {
           const el = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
           return el?.closest<HTMLElement>("[data-key]")?.dataset["key"] ?? el?.className ?? "nothing";
         });
-      }, ["up", "down", "left", "right", "view", "esc", "undo", "copy", "lstart", "lend"]);
-      expect(hits).toEqual(["up", "down", "left", "right", "view", "esc", "undo", "copy", "lstart", "lend"]);
+      }, ["up", "down", "left", "right", "help", "esc", "undo", "redo", "copy", "paste"]);
+      expect(hits).toEqual(["up", "down", "left", "right", "help", "esc", "undo", "redo", "copy", "paste"]);
     });
 
   // R15c1: Settings as the last row makes the Home menu (10 rows) and the Plot menu (9, two lines of reasons) taller than
@@ -221,6 +221,23 @@ test.describe("at 360 × 740", () => {
       expect(Math.abs(s.y + s.height - (pad.y + pad.height))).toBeLessThanOrEqual(1);
     });
 });
+
+// R146: Shift + Help's legend ("Settings") fits its cluster key at the legend size: fitLegends leaves it unshrunk (no
+// inline font size), Shift off and on, at 360 and 412 px wide
+for (const width of [360, 412])
+  test(`R146: the Settings legend on Help fits at the legend size at ${width} px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 800 });
+    await open(page);
+    const legend = page.locator('[data-key="help"] .shiftlegend');
+    for (const shift of [false, true]) {
+      if (shift) await tap(page, ["shift"]);
+      const fit = await page.locator('[data-key="help"]').evaluate((key) =>
+        [...key.querySelectorAll<HTMLElement>("[data-fit]")].map((el) => ({ text: el.textContent?.trim(), size: el.style.fontSize })),
+      );
+      expect(fit.find((f) => f.text === "Settings"), `shift ${shift}`).toEqual({ text: "Settings", size: "" });
+      if (!shift) await expect(legend).toHaveText("Settings");
+    }
+  });
 
 test("flow: a tap on a Tmpl cell closes the sheet, the template goes on the line with the cursor in its first box, and the next digit types into it", async ({ page }) => {
   await page.setViewportSize({ width: 412, height: 915 });
