@@ -16,7 +16,7 @@ const { parse, stringify } = createRequire(join(root, 'app/package.json'))('yaml
 const lists = parse(readFileSync(join(here, 'articles.yaml'), 'utf8'));
 const cache = join(root, 'tools/probes/_out/unit-freq/cache');
 const API = 'https://en.wikipedia.org/w/api.php';
-const UA = 'PascalineUnitCount/1.0 (offline research probe; https://github.com/buerlino/pascaline)';
+const UA = 'N62UnitCount/1.0 (offline research probe; https://github.com/n62-dev/n62)';
 export const fileOf = (title) => title.replace(/[^\p{L}\p{N}]+/gu, '_') + '.wiki';
 
 const lock = {};

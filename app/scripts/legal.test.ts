@@ -132,12 +132,34 @@ describe("PRIVACY.md", () => {
     expect(perms.length).toBeGreaterThan(0);
     for (const p of perms) expect(privacy()).toContain(p);
     expect(privacy()).toMatch(/IndexedDB/);
-    expect(privacy()).toMatch(/pascaline-calc\.org/);
+    expect(privacy()).toContain("`n62.dev`");
+    expect(privacy()).toContain("https://github.com/n62-dev/n62/issues");
     expect(privacy()).toMatch(/no analytics/i);
     expect(privacy()).toMatch(/no accounts/i);
   });
   it("README and the F-Droid recipe link it", () => {
     expect(read("README.md")).toContain("PRIVACY.md");
     expect(read("fdroid/dev.n62.calc.yml")).toContain("PRIVACY.md");
+  });
+});
+
+describe("A78: N62 on the web and in every link", () => {
+  const files = ["README.md", "CONTRIBUTING.md", "PRIVACY.md", "THIRD_PARTY.md", ".github/workflows/pages.yml", "engine/giac/build-wasm.sh", "engine/giac/README.md", "tools/probes/unit-freq/fetch.mjs", "app/src/views/aboutItems.ts", "fdroid/README.md"];
+  it("the old address and repository are in none of the files that carry links", () => {
+    for (const f of files) expect(read(f), f).not.toMatch(new RegExp("pascaline" + "-calc|buer" + "lino", "i"));
+  });
+  it("README links the website, PRIVACY the repository; the engine tarball mirror is a release asset of n62-dev/n62", () => {
+    expect(read("README.md")).toContain('href="https://n62.dev/"');
+    expect(read("PRIVACY.md")).toContain("contact@n62.dev");
+    expect(read("engine/giac/build-wasm.sh")).toContain("https://github.com/n62-dev/n62/releases/download/deps-giac-");
+    expect(read("engine/giac/README.md")).toContain("--repo n62-dev/n62");
+  });
+  it("the fastlane title is N62 and the texts do not name Pascaline", () => {
+    const dir = "fastlane/metadata/android/en-US/";
+    expect(read(dir + "title.txt").trim()).toBe("N62");
+    for (const f of ["short_description.txt", "full_description.txt"]) expect(read(dir + f), f).not.toMatch(/pascaline/i);
+  });
+  it("README, CONTRIBUTING and PRIVACY call the app N62 (the copyright line keeps its owner)", () => {
+    for (const f of ["README.md", "CONTRIBUTING.md", "PRIVACY.md"]) expect(read(f).replace(/Pascaline contributors/g, ""), f).not.toMatch(/Pascaline/);
   });
 });

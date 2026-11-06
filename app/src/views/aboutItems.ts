@@ -7,7 +7,7 @@ import { aboutText as t } from "../i18n/enAbout.ts";
 import { aboutData, aboutLoading, type AboutData } from "./aboutData.svelte.ts";
 import type { SettingsEnv } from "./yourKeys.ts";
 
-export const REPO_URL = "https://github.com/buerlino/pascaline";
+export const REPO_URL = "https://github.com/n62-dev/n62";
 const LICENCE = "GPL-3.0-or-later";
 
 const LOADING: MenuItem[] = [{ id: "loading", label: t("loading"), keep: true }];

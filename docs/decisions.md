@@ -7,6 +7,8 @@ Phase 0 decisions (D1–D9, P1, P2): [the archive](archive/phase-0-decisions.md)
 
 The owner's other open items are in [backlog.md](backlog.md), "Needs the user". Once decided, an entry moves to "Decided proposals".
 
+**The Giac mirror release (A78):** `build-wasm.sh` names `https://github.com/n62-dev/n62/releases/download/deps-giac-2.1.0-1-cdec2989/` as its second source, but that release was never created (404 on the new and the old repository; the first source, Parisse's folder, answers 200 and the cached tarball matches the pin). Recommendation: create it with the `gh release create` line in engine/giac/README.md when `gh` is logged in; builds work without it.
+
 **G164's sample sources** (`app/public/samples/materials.txt`): check its 16 sources by the freeze (11-12), and keep copper on its data sheet (G164's report).
 
 **R59: the Math key's Find and the user's functions.** An imported function is found in Vars' Find (R4b), not in the Math key's Find. Recommendation: list the user's names there too, as a later small package, so a library function is found where the built-ins are.

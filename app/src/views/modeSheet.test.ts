@@ -391,7 +391,7 @@ describe("Help and about (R87)", () => {
     const { version } = (await import("../../package.json")).default;
     expect(byId(s, "version")?.value).toBe(version);
     expect(byId(s, "licence")?.hint).toBe("GPL-3.0-or-later");
-    expect(byId(s, "source")?.hint).toBe("https://github.com/buerlino/pascaline");
+    expect(byId(s, "source")?.hint).toBe("https://github.com/n62-dev/n62");
     expect(s.activate(at(s, "licence"))).toEqual({ kind: "stay" });
     expect(s.level.text).toContain("GNU GENERAL PUBLIC LICENSE");
     expect(s.level.items).toEqual([]);

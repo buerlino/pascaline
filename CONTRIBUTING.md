@@ -1,6 +1,6 @@
-# Contributing to Pascaline
+# Contributing to N62
 
-Thanks for your interest! Pascaline is at an early stage, so **ideas and feedback are as valuable as code**. You can open an issue to:
+Thanks for your interest! N62 is at an early stage, so **ideas and feedback are as valuable as code**. You can open an issue to:
 - suggest a feature or tell us which calculator features you use most
 - report a **wrong result** (see [Reporting wrong results](#reporting-wrong-results))
 - point us to an open-source project we should reuse
@@ -11,7 +11,7 @@ Before writing code, please read the rules below. **The legal ones aren't option
 
 ## 1. Clean-room rules (most important)
 
-Pascaline is *inspired by* the HP Prime but contains **nothing from it**.
+N62 is *inspired by* the HP Prime but contains **nothing from it**.
 
 **Never contribute:**
 - code, firmware, ROMs or binaries from HP, Moravia or any HP calculator, emulator or app, including decompiled or disassembled code and "leaked" sources
@@ -31,7 +31,7 @@ Pascaline is *inspired by* the HP Prime but contains **nothing from it**.
 
 ## 2. Licence and sign-off
 
-- Pascaline is licensed under **GPL-3.0-or-later**. By contributing, you agree that your contribution is licensed the same way.
+- N62 is licensed under **GPL-3.0-or-later**. By contributing, you agree that your contribution is licensed the same way.
 - **Every source file** starts with an SPDX header, for example:
   ```ts
   // SPDX-License-Identifier: GPL-3.0-or-later
@@ -75,7 +75,7 @@ AI-assisted contributions are welcome, but **you** are responsible for them: und
 Please include:
 1. **What you typed**, exactly, and in which view or app (Home, CAS, Solve…)
 2. **Settings**: angle mode (deg/rad), exact or approximate, number format
-3. **What Pascaline showed** and **what you expected**
+3. **What N62 showed** and **what you expected**
 4. **How you know the expected answer**: another calculator (which one?), Wolfram Alpha, a textbook…
 5. App version and device
 
