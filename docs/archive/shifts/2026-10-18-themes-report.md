@@ -88,6 +88,6 @@ Typecheck, unit and e2e tests; the contrast test over all 40 combinations; `node
 2. **Five families or fewer.** The owner approved all five. The removal test (section 1, Would change if) trims the list later if a family goes unused.
 
 ## Files of this report
-- New: `docs/mockups/themes-r50.html` (the mockup), `tools/probes/themes-audit.mjs` (the probe), one row in `tools/probes/README.md`, this file.
+- New: the mockup (`archive/mockups/themes-r50.html` at `b693c31f`), `tools/probes/themes-audit.mjs` (the probe), one row in `tools/probes/README.md`, this file.
 - Not touched: `docs/decisions.md`, `docs/backlog.md`, `docs/shifts/brief.md`, `docs/feedback.md` and the package files. Another session had uncommitted edits to the first three when this was written. The package session makes the changes of sections 1 and 4 there.
 - Nothing is committed yet.

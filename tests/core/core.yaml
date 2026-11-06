@@ -497,7 +497,7 @@ cases:
     value: "4"
     source: derived
 
-  # ---- lists: a { } list (Shift 8) typed, stored and used (owner, 2026-10-24; core-stability report step 2) ----
+  # ---- lists: a { } list (Shift 8) typed, stored and used (owner, 2026-10-24; core-stability report (`archive/core-stability-2026-10-24.md` in docs/ at `4eacbed6`) step 2) ----
   # The expected text is the list's own display, with braces (G109); typed braces are Giac's list type (R80).
   - id: c57
     area: home

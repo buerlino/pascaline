@@ -48,8 +48,8 @@ The other four suggestions (section 3) are smaller and stand on their own:
 
 ### 1.2 Why it went this way
 - **The spike only proved it ran.** `caseval` was the quickest path to a running CAS in wasm, and the spike needed nothing more.
-- **The IR question came up once, on 2026-10-19** (multi-engine-answer.md 3.1, now P20). It was weighed as **our parser's** tree crossing the worker boundary. It was set aside because library files, the log, chips and Giac's output never had a tree of ours.
-- **That reasoning is right about our tree and misses Giac's.** Giac parses every one of those texts itself, and it does so without running anything: `quote(…)` with a head walk shows `cnt+=1`, `cnt++` and `increment(cnt)` as one node (structure-audit.md 2.4).
+- **The IR question came up once, on 2026-10-19** (`archive/multi-engine-answer.md` at `98e96656` section 3.1, now P20). It was weighed as **our parser's** tree crossing the worker boundary. It was set aside because library files, the log, chips and Giac's output never had a tree of ours.
+- **That reasoning is right about our tree and misses Giac's.** Giac parses every one of those texts itself, and it does so without running anything: `quote(…)` with a head walk shows `cnt+=1`, `cnt++` and `increment(cnt)` as one node (`archive/structure-audit.md` at `87a8c468` section 2.4).
 - **The walk was dear only because it was written in Giac's language.** It costs 0.5 ms per call that way, against 0.01 ms for the native `lname`. In C++ it would be a native walk (to verify, section 2).
 
 ### 1.3 Domain rules live in Svelte state, so the gate tests a copy
@@ -193,7 +193,7 @@ The engine's 256 text matches would drop by roughly the SHAPE, NAMES, STATE and 
 - **The bridge's cost and completeness** come only from the spike. What is proven:
   - the hook exists (`gen.cc`);
   - the types and setting accessors exist (`dispatch.h`, `global.h`);
-  - the data the bridge would return is there (`quote` and its head walk, `lname`, structure-audit.md 2.4).
+  - the data the bridge would return is there (`quote` and its head walk, `lname`, `archive/structure-audit.md` at `87a8c468` section 2.4).
 - **"About 185 matches removed"** is an estimate from the inventory's kinds.
 - **The device cost of a Giac call** (desktop 0.13 ms per call, `engine-calls.ts`; the Tab One 10–30× by the night check of 2026-10-19) is assumed, not measured for this.
 
