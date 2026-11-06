@@ -43,6 +43,7 @@ const clip = {
   "why.decided": "decided at limited precision",
   "why.differ": "the exact and numeric answers differ",
   "why.once": "evaluated once, nothing to compare",
+  "why.squareUnchecked": "a matrix power or inverse not checked",
   "why.isNotChecked": "is not checked",
   "why.areNotChecked": "are not checked",
   "why.notChecked": "not checked",

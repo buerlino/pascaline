@@ -53,7 +53,7 @@ function isWhy(x: unknown): x is PrecisionWhy {
   if (!x || typeof x !== "object" || Array.isArray(x)) return false;
   const names = (v: unknown): boolean => Array.isArray(v) && v.every((n) => typeof n === "string");
   const flag = (v: unknown): boolean => typeof v === "boolean";
-  const check: Record<keyof PrecisionWhy, (v: unknown) => boolean> = { unaudited: names, inherited: names, once: flag, decided: flag, differ: flag, rounded: names };
+  const check: Record<keyof PrecisionWhy, (v: unknown) => boolean> = { unaudited: names, inherited: names, once: flag, decided: flag, differ: flag, squareUnchecked: flag, rounded: names };
   return Object.entries(x).every(([k, v]) => Object.hasOwn(check, k) && check[k as keyof PrecisionWhy](v));
 }
 

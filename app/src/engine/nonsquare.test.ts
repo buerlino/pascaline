@@ -7,7 +7,7 @@ import { EngineHost, type GiacApi } from "./host.ts";
 import { defaultHomeSettings } from "./homeEval.ts";
 import { defaultCasSettings } from "./types.ts";
 import { giacAvailable, loadNodeGiac, nodeHost } from "./nodeGiac.ts";
-import { mayPowerMatrix, nonSquarePower, type Bodies } from "./nonsquare.ts";
+import { mayPowerMatrix, NO_BODIES, nonSquarePower, type Bodies } from "./nonsquare.ts";
 
 describe("mayPowerMatrix", () => {
   it("needs an operator and a list or a name", () => {
@@ -199,5 +199,125 @@ describe.skipIf(!giacAvailable())("G97 in the Num table", () => {
     const t = host.table({ fns: ["[[5],[1]]^x"], xs: ["2"] }, defaultHomeSettings);
     // a cell's error is the table's "engine"; its text keeps the reason
     expect(t[0]![0]).toMatchObject({ ok: false, display: "The matrix is not square" });
+  });
+});
+
+// G171 (backlog F88): an input that runs once (it calls g, which stores) keeps G97's refusal for a part that calls
+// nothing and reads nothing the run wrote, and is never `=` for a part it cannot evaluate. Source: derived (as G97's: A =
+// [[1,2,3]] is 1x3, so A², A⁻¹ and 2/A have no value; g(M) and h(M) return M, so g(A)^2 is A^2; [[1,2],[3,4]]² =
+// [[7,10],[15,22]] and 2² = 4). Each input runs once: cnt rises by 1.
+describe.skipIf(!giacAvailable())("G171 a non-square power next to a call of a program that stores", () => {
+  let host: EngineHost;
+  beforeAll(async () => {
+    const { giac, bridge } = await loadNodeGiac();
+    host = new EngineHost(giac, bridge);
+  });
+  const home = (input: string) => host.home(input, defaultHomeSettings).result;
+  const cas = (input: string) => host.cas(input, defaultCasSettings).result;
+  const cnt = (): number => Number(cas("cnt").text);
+  const setup = () => {
+    for (const d of ["cnt:=0", "g(M):={cnt:=cnt+1;return M;}", "h(M):=M", "A:=[[1,2,3]]"]) expect(cas(d)).toMatchObject({ ok: true });
+  };
+
+  it("guards: g(2)^2 = 4 exact, a square matrix kept, h([[1,2,3]])^2 refused", () => {
+    setup();
+    expect(home("g(2)^2")).toMatchObject({ ok: true, display: "4", approximate: false });
+    expect(cnt()).toBe(1);
+    expect(home("g([[1,2],[3,4]])^2")).toMatchObject({ ok: true, display: "[[7,10],[15,22]]" });
+    expect(cas("g([[1,2],[3,4]])^2")).toMatchObject({ ok: true, text: "[[7,10],[15,22]]" });
+    expect(home("h([[1,2,3]])^2")).toMatchObject({ ok: false, error: "notSquare" });
+    expect(cas("h([[1,2,3]])^2")).toMatchObject({ ok: false, error: "notSquare" });
+  });
+
+  it("refuses A^2+g(1) and h([[1,2,3]])^2+g(1), running each once", () => {
+    setup();
+    expect(home("A^2+g(1)")).toMatchObject({ ok: false, error: "notSquare" });
+    expect(cnt()).toBe(1);
+    expect(cas("A^2+g(1)")).toMatchObject({ ok: false, error: "notSquare" });
+    expect(cnt()).toBe(2);
+    expect(home("h([[1,2,3]])^2+g(1)")).toMatchObject({ ok: false, error: "notSquare" });
+    expect(cnt()).toBe(3);
+  });
+
+  it("refuses inv(g(A)) and 2/g(A) by the answer's shape, in Home and CAS", () => {
+    setup();
+    for (const [input, n] of [["inv(g(A))", 1], ["2/g(A)", 2], ["g(A)^3", 3]] as const) {
+      expect(home(input)).toMatchObject({ ok: false, error: "notSquare" });
+      expect(cnt()).toBe(2 * n - 1);
+      expect(cas(input)).toMatchObject({ ok: false, error: "notSquare" });
+      expect(cnt()).toBe(2 * n);
+    }
+  });
+
+  it("g(A)^2 is ⚠, never = (Giac's 14 is a dot product; the warning cannot tell a flat vector)", () => {
+    setup();
+    const r = home("g(A)^2");
+    expect(r).toMatchObject({ ok: true, display: "14", approximate: true, facts: { exact: false, warn: "unchecked", why: { once: true, squareUnchecked: true } } });
+    expect(cnt()).toBe(1);
+    expect(cas("g(A)^2")).toMatchObject({ ok: true, text: "14", approximate: true, facts: { warn: "unchecked", why: { once: true, squareUnchecked: true } } });
+    expect(cnt()).toBe(2);
+  });
+
+  // fix round 1: a refused store keeps the name's earlier value in CAS as in Home (which stores only on success)
+  it("a refused store keeps the earlier value: B:=5 then B:=inv(g(A)), and A:=inv(g(A))", () => {
+    setup();
+    expect(cas("B:=inv(g(A))")).toMatchObject({ ok: false, error: "notSquare" });
+    expect(cnt()).toBe(1);
+    expect(cas("B")).toMatchObject({ ok: true, text: "B" });
+    expect(cas("B:=5")).toMatchObject({ ok: true, text: "5" });
+    expect(cas("B:=inv(g(A))")).toMatchObject({ ok: false, error: "notSquare" });
+    expect(cas("B")).toMatchObject({ ok: true, text: "5" });
+    expect(home("B:=inv(g(A))")).toMatchObject({ ok: false, error: "notSquare" });
+    expect(home("B")).toMatchObject({ ok: true, display: "5" });
+    expect(cas("A:=inv(g(A))")).toMatchObject({ ok: false, error: "notSquare" });
+    expect(cas("A")).toMatchObject({ ok: true, text: "[[1,2,3]]" });
+    expect(home("A^2")).toMatchObject({ ok: false, error: "notSquare" });
+    expect(cnt()).toBe(4);
+  });
+
+  // fix round 1: the answer's shape is read in Giac, not from its print; Giac's matrix type (tran gives one) prints
+  // `matrix[[1,8,27]]` in CAS before G130's plain rows. Derived: T = tran([[1],[2],[3]]) = [[1,2,3]] is 1x3, so T^3 has
+  // no value (G97).
+  it("refuses g(T)^3 for T of Giac's matrix type, in Home and CAS", () => {
+    setup();
+    expect(cas("T:=tran([[1],[2],[3]])")).toMatchObject({ ok: true });
+    expect(cas("g(T)^3")).toMatchObject({ ok: false, error: "notSquare" });
+    expect(home("g(T)^3")).toMatchObject({ ok: false, error: "notSquare" });
+    expect(cnt()).toBe(2);
+  });
+});
+
+// G171 (F88): a candidate read as Giac prints the part, not as a string, so its call of g is seen and g is not run
+// again. No input reaches this on phase-1 through the host (an input calling a program that stores ran once and was not
+// walked), so the walk is called directly. Derived: g(A) is A = [[1,2,3]], 1x3; Giac's g(A)^2 is 14.
+describe.skipIf(!giacAvailable())("G171 F88 the candidate filter", () => {
+  it("does not evaluate a candidate that calls a function of the user's", async () => {
+    const giac = engineGiac(await loadNodeGiac());
+    giac.eval("pask:=0");
+    giac.eval("pasg(M):={pask:=pask+1;return M;}");
+    giac.eval("pasA:=[[1,2,3]]");
+    try {
+      expect(nonSquarePower(giac, "pasg(pasA)^2", "14", true, () => false, 0, (n) => n === "pasg", NO_BODIES)).toBe("unchecked");
+      expect(giac.eval("pask").trim()).toBe("0");
+      // the answer's shape decides only with the answer's name, read in Giac
+      giac.eval("pasZ:=[[1,1/2,1/3]]");
+      expect(nonSquarePower(giac, "inv(pasg(pasA))", "[[1,1/2,1/3]]", undefined, () => false, 0, (n) => n === "pasg", NO_BODIES)).toBe("unchecked");
+      expect(nonSquarePower(giac, "inv(pasg(pasA))", "[[1,1/2,1/3]]", undefined, () => false, 0, (n) => n === "pasg", NO_BODIES, false, "pasZ")).toBe(true);
+      expect(giac.eval("pask").trim()).toBe("0");
+    } finally {
+      giac.eval("purge(pask,pasg,pasA,pasZ)");
+    }
+  });
+
+  // A program with a local has no known body (G101): its call in a candidate is not run again, so p(A)^2 is ⚠ (phase-1
+  // ran it again through the string and refused); inv(p(A)) is still refused by the answer's shape.
+  it("a candidate that calls a program with a local is ⚠ in Home and CAS", async () => {
+    const { giac, bridge } = await loadNodeGiac();
+    const host = new EngineHost(giac, bridge);
+    expect(host.cas("A:=[[1,2,3]]", defaultCasSettings).result).toMatchObject({ ok: true });
+    expect(host.cas("p(M):={local t; t:=M; return t;}", defaultCasSettings).result).toMatchObject({ ok: true });
+    expect(host.home("p(A)^2", defaultHomeSettings).result).toMatchObject({ ok: true, display: "14", approximate: true, facts: { warn: "unchecked", why: { squareUnchecked: true } } });
+    expect(host.cas("p(A)^2", defaultCasSettings).result).toMatchObject({ ok: true, text: "14", approximate: true, facts: { why: { squareUnchecked: true } } });
+    expect(host.home("inv(p(A))", defaultHomeSettings).result).toMatchObject({ ok: false, error: "notSquare" });
   });
 });
