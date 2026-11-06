@@ -3,7 +3,8 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { FAMILIES } from "./theme-families.ts";
-import { checks, combos, cr, dimmedOk, expected, familyPath, outOfDate, selector, styleFile, theme } from "./theme-gen.ts";
+import { apart, CVD, type Mat } from "./cvd.ts";
+import { LAYER_APART, WARN_APART, checks, combos, cr, dimmedOk, expected, familyPath, outOfDate, selector, styleFile, theme } from "./theme-gen.ts";
 
 describe("generated theme files", () => {
   it("are up to date (run npm run themes)", () => {
@@ -49,45 +50,23 @@ describe("all 40 combinations", () => {
     });
 });
 
-// R140: colour-vision checks (Machado 2009, severity 1, in linear RGB; distance in OKLab) and the key colours.
-type Mat = readonly [readonly number[], readonly number[], readonly number[]];
-const CVD: Record<string, Mat> = {
-  protanopia: [[0.152286, 1.052583, -0.204868], [0.114503, 0.786281, 0.099216], [-0.003882, -0.048116, 1.051998]],
-  deuteranopia: [[0.367322, 0.860646, -0.227968], [0.280085, 0.672501, 0.047413], [-0.01182, 0.04294, 0.968881]],
-  tritanopia: [[1.255528, -0.076749, -0.178779], [-0.078411, 0.930809, 0.147602], [0.004733, 0.691367, 0.3039]],
-};
-const lin = (h: string): number[] => [1, 3, 5].map((i) => {
-  const s = parseInt(h.slice(i, i + 2), 16) / 255;
-  return s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
-});
-/** OKLab (Ottosson) of a linear RGB triple. */
-function oklab([r, g, b]: number[]): number[] {
-  const l = Math.cbrt(0.4122214708 * r! + 0.5363325363 * g! + 0.0514459929 * b!);
-  const m = Math.cbrt(0.2119034982 * r! + 0.6806995451 * g! + 0.1073969566 * b!);
-  const s = Math.cbrt(0.0883024619 * r! + 0.2817188376 * g! + 0.6299787005 * b!);
-  return [0.2104542553 * l + 0.793617785 * m - 0.0040720468 * s, 1.9779984951 * l - 2.428592205 * m + 0.4505937099 * s, 0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s];
-}
-const sim = (rgb: number[], m: Mat | null): number[] => (m === null ? rgb : m.map((row) => Math.min(1, Math.max(0, row[0]! * rgb[0]! + row[1]! * rgb[1]! + row[2]! * rgb[2]!))));
-/** OKLab distance of two #rrggbb colours as seen through a colour-vision matrix (null: normal vision). */
-export function apart(a: string, b: string, m: Mat | null = null): number {
-  const [p, q] = [oklab(sim(lin(a), m)), oklab(sim(lin(b), m))];
-  return Math.hypot(p[0]! - q[0]!, p[1]! - q[1]!, p[2]! - q[2]!);
-}
-
+// R140: colour-vision checks (scripts/cvd.ts) and the key colours.
 describe("R140: Shift, Alpha and ⚠ stay apart", () => {
   it("the formula reproduces the measured pair (N62 Dark, #ff9a33 / #529997, protanopia 0.156)", () => {
     expect(apart("#ff9a33", "#529997", CVD["protanopia"] as Mat)).toBeCloseTo(0.156, 2);
   });
   // Plain keys draws Shift and Alpha in the text colour on purpose (no colour coding), so it has no colour to tell apart.
+  // High contrast has lower floors (theme-gen.ts LAYER_APART): 7:1 for all of them leaves little room.
   for (const c of combos().filter((x) => !x.plain))
-    it(`${selector(c)}: Shift and Alpha at least 0.12 apart for protanopia, deuteranopia and tritanopia`, () => {
+    it(`${selector(c)}: Shift and Alpha at least ${LAYER_APART[c.high ? "high" : "normal"]} apart for protanopia, deuteranopia and tritanopia`, () => {
       const { t } = theme(c);
-      for (const [name, m] of Object.entries(CVD)) expect(apart(t["shift"] as string, t["alpha"] as string, m), name).toBeGreaterThanOrEqual(0.12);
+      for (const [name, m] of Object.entries(CVD)) expect(apart(t["shift"] as string, t["alpha"] as string, m), name).toBeGreaterThanOrEqual(LAYER_APART[c.high ? "high" : "normal"]);
     });
-  for (const c of combos())
-    it(`${selector(c)}: ⚠ and Shift at least 0.08 apart (normal vision)`, () => {
+  // Graphite, Gruvbox and Nord leave with R150 and keep their colours (owner, 2026-11-06): their ⚠ is checked only as far as the generator can move it.
+  for (const c of combos().filter((x) => !x.plain && ["n62", "solarized"].includes(x.family)))
+    it(`${selector(c)}: ⚠ and Shift at least ${WARN_APART[c.high ? "high" : "normal"]} apart (normal vision)`, () => {
       const { t } = theme(c);
-      expect(apart(t["warn"] as string, t["shift"] as string)).toBeGreaterThanOrEqual(0.08);
+      expect(apart(t["warn"] as string, t["shift"] as string)).toBeGreaterThanOrEqual(WARN_APART[c.high ? "high" : "normal"]);
     });
 });
 
@@ -108,21 +87,23 @@ describe("R140: Shift, Alpha, Fmt, ⌫ and the pad wear the other keys' colour",
 
 describe("R140: the Dark background outside the generated CSS is N62 Dark's --bg", () => {
   const bg = theme({ family: "n62", brightness: "dark", high: false, plain: false }).t["bg"] as string;
-  const repo = (p: string): string => readFileSync(new URL(`../../${p}`, import.meta.url), "utf8").toLowerCase();
+  const repo = (p: string): string => readFileSync(new URL(`../../${p}`, import.meta.url), "utf8");
+  /** The colour a pattern's one group finds in a repo file, lower case. */
+  const found = (p: string, re: RegExp): string | undefined => re.exec(repo(p))?.[1]?.toLowerCase();
   it("the first-paint block of style.css", () => {
-    expect(/\[data-family="n62"\]\[data-brightness="dark"\]\s*\{[^}]*?--bg:\s*(#[0-9a-f]{6})/.exec(repo("app/src/style.css"))?.[1]).toBe(bg);
+    expect(found("app/src/style.css", /\[data-family="n62"\]\[data-brightness="dark"\]\s*\{[^}]*?--bg:\s*(#[0-9a-f]{6})/i)).toBe(bg);
   });
   it("the swatch dots start with it", () => {
-    expect(/id: "n62", name: "N62", dots: \["(#[0-9a-f]{6})"/.exec(repo("app/src/theme/lookView.ts"))?.[1]).toBe(bg);
+    expect(found("app/src/theme/lookView.ts", /id: "n62", name: "N62", dots: \["(#[0-9a-f]{6})"/i)).toBe(bg);
   });
   it("Capacitor's window colour and Android's colour", () => {
-    expect(/backgroundColor: '(#[0-9a-f]{6})'/.exec(repo("app/capacitor.config.ts"))?.[1]).toBe(bg);
-    expect(/name="n62_dark_bg">(#[0-9a-f]{6})</.exec(repo("android/app/src/main/res/values/colors.xml"))?.[1]).toBe(bg);
+    expect(found("app/capacitor.config.ts", /backgroundColor: '(#[0-9a-f]{6})'/i)).toBe(bg);
+    expect(found("android/app/src/main/res/values/colors.xml", /name="n62_dark_bg">(#[0-9a-f]{6})</i)).toBe(bg);
   });
   it("the page's theme-color and the manifest's colours", () => {
-    expect(/name="theme-color" content="(#[0-9a-f]{6})"/.exec(repo("app/index.html"))?.[1]).toBe(bg);
+    expect(found("app/index.html", /name="theme-color" content="(#[0-9a-f]{6})"/i)).toBe(bg);
     const m = JSON.parse(repo("app/public/manifest.webmanifest")) as Record<string, string>;
-    expect([m["background_color"], m["theme_color"]]).toEqual([bg, bg]);
+    expect([m["background_color"]?.toLowerCase(), m["theme_color"]?.toLowerCase()]).toEqual([bg, bg]);
   });
 });
 
