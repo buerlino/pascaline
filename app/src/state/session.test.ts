@@ -7,6 +7,7 @@ import { safePrecision } from "../engine/homeEval.ts";
 import { t } from "../i18n/index.ts";
 import { loadRemoved, Session } from "./session.svelte.ts";
 import { fakeKv } from "./fakeKv.ts";
+import { EngineCrashError, EngineMemoryError } from "../engine/types.ts";
 
 
 const third: ComplexValue = {
@@ -326,5 +327,34 @@ describe("R66 (S12 row 2a): a power keeps Giac's principal root in Home and CAS"
     s.setView("cas");
     await s.submit("\\sqrt[3]{-8}");
     expect(s.cas[0]?.text).toBe("surd(-8,3)");
+  });
+});
+
+describe("an engine that stopped on the input (G183)", () => {
+  /** A Home and a CAS that reject with `e`. */
+  const failing = (e: unknown): Calc =>
+    Object.assign(new FakeCalc(), { ready: () => Promise.resolve(), home: () => Promise.reject(e), cas: () => Promise.reject(e), cancel: () => Promise.resolve() });
+
+  it("a crashed engine shows error.crashed, never the JS text", async () => {
+    const s = new Session(failing(new EngineCrashError("Maximum call stack size exceeded")), fakeKv());
+    await s.submit("1+1");
+    expect(s.home[0]).toMatchObject({ status: "error", text: t("error.crashed") });
+    expect(t("error.crashed")).toBe("The engine stopped on this input and was restarted");
+  });
+
+  it("any other rejection shows error.engine, not its text (Home and CAS)", async () => {
+    for (const e of [new RangeError("Maximum call stack size exceeded"), new Error("unexpected fatal"), "RuntimeError: unreachable"]) {
+      const s = new Session(failing(e), fakeKv());
+      await s.submit("1+1");
+      s.setView("cas");
+      await s.submit("1+1");
+      for (const row of [s.home[0], s.cas[0]]) expect(row).toMatchObject({ status: "error", text: t("error.engine") });
+    }
+  });
+
+  it("out of memory keeps its own line (G24)", async () => {
+    const s = new Session(failing(new EngineMemoryError()), fakeKv());
+    await s.submit("1+1");
+    expect(s.home[0]).toMatchObject({ status: "error", text: t("error.memory") });
   });
 });

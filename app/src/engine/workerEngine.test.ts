@@ -5,7 +5,7 @@ import type { Request, Response } from "./protocol.ts";
 import { createRequestHandler } from "./host.ts";
 import { defaultHomeSettings } from "./homeEval.ts";
 import { giacAvailable, loadNodeGiac } from "./nodeGiac.ts";
-import { EngineCancelled, EngineMemoryError, defaultCasSettings } from "./types.ts";
+import { EngineCancelled, EngineCrashError, EngineMemoryError, defaultCasSettings } from "./types.ts";
 import { WorkerEngine, type WorkerLike } from "./workerEngine.ts";
 import type { DefEntry } from "./defs.ts";
 
@@ -104,7 +104,7 @@ describe("WorkerEngine out of memory (G24, F32)", () => {
     // the id of the call just posted is the highest one the stand-in saw; reply to it
     const w = workers[0]!;
     await new Promise((r) => setTimeout(r, 5)); // the call is posted once the (empty) store has answered
-    w.onmessage?.({ data: { id: 2, type: "fatal", message: "[object WebAssembly.Exception]", memory: true } });
+    w.onmessage?.({ data: { id: 2, type: "fatal", message: "[object WebAssembly.Exception]", dead: "memory" } });
     await job;
     expect(workers).toHaveLength(2);
     expect(w.terminated).toBe(true);
@@ -321,7 +321,7 @@ class FatalOnReplayWorker implements WorkerLike {
     const bad = !this.lenient && ((msg.type === "init" && msg.replay.length > 0) || msg.type === "define");
     if (msg.type === "init") this.inits.push(msg.replay);
     setTimeout(() => {
-      if (bad) this.onmessage?.({ data: { id: msg.id, type: "fatal", message: "out of memory", memory: true } });
+      if (bad) this.onmessage?.({ data: { id: msg.id, type: "fatal", message: "out of memory", dead: "memory" } });
       else if (msg.type === "init") this.onmessage?.({ data: { id: msg.id, type: "ready", instantiateMs: 1, initMs: 1, replayMs: 0 } });
       else if (msg.type === "define") this.onmessage?.({ data: { id: msg.id, type: "defined", replayMs: 1, defs: [] } });
     }, 0);
@@ -468,4 +468,49 @@ describe.skipIf(!giacAvailable())("WorkerEngine safe start (real Giac in process
     expect((await engine.home("B", defaultHomeSettings)).display).toBe("5");
     engine.dispose();
   }, 10_000);
+});
+
+// --- G183 (F122, F145, G94): a trap in the engine -------------------------------------------------------------------
+
+/** Answers init and define, and remembers the id of every other request (the one a reply below answers). */
+class AnsweringWorker extends OkWorker {
+  calls: number[] = [];
+  override postMessage(msg: Request): void {
+    super.postMessage(msg);
+    if (msg.type !== "init" && msg.type !== "define") this.calls.push(msg.id);
+  }
+}
+
+describe("WorkerEngine after a trap in the engine (G183, stand-in worker)", () => {
+  it("a fatal reply marked crash rejects with EngineCrashError, and a clean worker replays the log (a stored a:=5)", async () => {
+    const workers: AnsweringWorker[] = [];
+    const store = new CountingStore();
+    store.saved = [entry("a", "a:=5")];
+    const engine = new WorkerEngine({ baseUrl: "/", createWorker: () => (workers.push(new AnsweringWorker()), workers.at(-1)!), defs: store });
+    await engine.ready();
+    const job = engine.home("(atan(ln(-pi)+9007199254740993))^(sin(10^-300)-10^300)", defaultHomeSettings);
+    await new Promise((r) => setTimeout(r, 5));
+    const w = workers[0]!;
+    w.onmessage?.({ data: { id: w.calls.at(-1)!, type: "fatal", message: "Maximum call stack size exceeded", dead: "crash" } });
+    await expect(job).rejects.toBeInstanceOf(EngineCrashError);
+    expect(w.terminated).toBe(true);
+    expect(workers).toHaveLength(2);
+    await engine.ready();
+    expect(workers[1]!.inits.at(-1)!.map((e) => e.cmds[0])).toEqual(["a:=5"]);
+    expect((await engine.definitions()).map((e) => e.name)).toEqual(["a"]);
+    engine.dispose();
+  });
+
+  it("a fatal reply marked memory is still the memory error (G24)", async () => {
+    const workers: AnsweringWorker[] = [];
+    const engine = new WorkerEngine({ baseUrl: "/", createWorker: () => (workers.push(new AnsweringWorker()), workers.at(-1)!) });
+    await engine.ready();
+    const job = engine.cas("ranm(40000,40000)", defaultCasSettings);
+    await new Promise((r) => setTimeout(r, 5));
+    const w = workers[0]!;
+    w.onmessage?.({ data: { id: w.calls.at(-1)!, type: "fatal", message: "Aborted(OOM)", dead: "memory" } });
+    await expect(job).rejects.toBeInstanceOf(EngineMemoryError);
+    expect(workers).toHaveLength(2);
+    engine.dispose();
+  });
 });

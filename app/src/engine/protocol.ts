@@ -39,4 +39,6 @@ export type Response =
   | { id: number; type: "units"; result: Quantity | UnitError }
   | ({ id: number; type: "library" } & LibraryReply)
   | { id: number; type: "libraryExport"; text: string; skipped: { name: string; why: string }[] }
-  | { id: number; type: "fatal"; message: string; memory?: true };
+  /** `dead` (G24, G183): the engine is not trusted after this throw (out of memory, a wasm trap, a stack overflow); the
+   *  client restarts the worker. Absent: a plain error, the worker is kept. */
+  | { id: number; type: "fatal"; message: string; dead?: "memory" | "crash" };
