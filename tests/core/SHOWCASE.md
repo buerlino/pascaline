@@ -57,10 +57,18 @@ later). 2026-11-06 on `a1715b54`: 20/20, presses within 6 ms, results 51–312 m
 
 ## Next
 
-1. **Recorder** (to build): per clip, `adb shell screenrecord` on the phone, a full-screen flash as the sync mark,
-   then at least 1.5 s of clean screen, the presses on the beat (the device harness, `playwright.device.config.ts`),
-   the file pulled. No tap dots. Android demo mode (fixed clock, full battery, no notifications). A test take on the
-   Fairphone first. **The stitch, as Blender needs it:**
+1. **Recorder** (built 2026-11-06: `tools/showcase/record.sh` and `stitch.py`, how they work in
+   [tools/showcase/README.md](../../tools/showcase/README.md)): per clip, `adb shell screenrecord` on the phone, a
+   full-screen flash as the sync mark, then 2 s of clean screen, the presses on the beat (a real touch over CDP:
+   down, 70 ms, up), the file pulled. No tap dots. Android demo mode (fixed clock, full battery, no notifications).
+   **Test take** (2026-11-06, Fairphone 6, the build of 11:40 before R139, clips s1, A, s8): 3/3 results right, every
+   press within 1 ms of its beat on the host; the screen answers 80–180 ms after the touch-down (highlight and
+   character together, on the lift), varying up to 70 ms within a clip, so the stitch maps time per press (at most
+   ~20 % faster or slower between presses, on a still screen); read back from `screen.mp4`, every press that changes
+   the screen is on its beat's frame (`OUTPUT SYNC: worst 0`). The result after the eval: CAS and Home about 50 ms
+   (the eval pressed 52 / 37 ms early), the unit view (s8) about 170 ms, after a "Working…" line. A pad key (`right`)
+   shows no highlight, only the caret's step. The take: `~/.cache/n62/showcase/test-take-2026-11-06/` (`check.mp4`
+   with the beat preview). **The stitch, as Blender needs it:**
    - frame 0 = song time 17.000 s, constant **60 fps**, 5280 frames (88 s); the Fairphone's 1116×2484;
    - every event on the **nearest** frame: video frame (0-based) = round((t − 17.0) × 60), Blender frame = that + 1;
      for each switch, press and eval (block 1's gap, 20.956 s, is frame 237). Blender cuts on the same frame;
