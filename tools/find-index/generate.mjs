@@ -10,8 +10,8 @@
 //
 // With --no-units the index holds functions only (a warning).
 // Env:
-//      PASCALINE_DL_DIR       Giac tarball cache (default engine/giac/_downloads)
-//      PASCALINE_QALC_DL_DIR  libqalculate tarball cache (default engine/qalc/_downloads)
+//      N62_DL_DIR       Giac tarball cache (default engine/giac/_downloads)
+//      N62_QALC_DL_DIR  libqalculate tarball cache (default engine/qalc/_downloads)
 //
 // Sources: Giac doc/aide_cas, English lines ("2 ...") only, never French (line "1"), entries starting with "_"
 // dropped (Giac's own units and constants, P3); libqalculate data/units.xml.in, variables.xml.in (the Physical

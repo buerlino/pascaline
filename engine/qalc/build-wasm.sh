@@ -10,8 +10,8 @@
 #   dev      local emsdk (~/emsdk, 6.0.12), fast iteration            -> engine/qalc/_out/dev/qalc.{mjs,wasm}
 #   release  Debian trixie's emscripten in the pinned container (P2)  -> engine/qalc/_out/release/qalc.{mjs,wasm} + SHA256SUMS
 #
-# Env: PASCALINE_DL_DIR (GMP/MPFR tarballs shared with Giac, default engine/giac/_downloads),
-#      PASCALINE_QALC_DL_DIR (libxml2 and libqalculate tarballs, default engine/qalc/_downloads, gitignored),
+# Env: N62_DL_DIR (GMP/MPFR tarballs shared with Giac, default engine/giac/_downloads),
+#      N62_QALC_DL_DIR (libxml2 and libqalculate tarballs, default engine/qalc/_downloads, gitignored),
 #      QALC_WORK (dev build tree, default engine/qalc/_work, gitignored; keep it under /home), JOBS (default 8),
 #      EMSDK_DIR (default ~/emsdk; "system" = an emcc already on PATH, for the F-Droid VM),
 #      NO_LOCK=1 (the caller holds the host-cpu lock), CONTAINER_ENGINE (default podman), KEEP_SCRATCH=1.
@@ -27,8 +27,8 @@ MODE="${1:-dev}"; shift || true
 JOBS="${JOBS:-8}"
 CE="${CONTAINER_ENGINE:-podman}"
 WORK="${QALC_WORK:-$HERE/_work}"
-DL="${PASCALINE_QALC_DL_DIR:-$HERE/_downloads}"
-GMPDL="${PASCALINE_DL_DIR:-$REPO/engine/giac/_downloads}"
+DL="${N62_QALC_DL_DIR:-$HERE/_downloads}"
+GMPDL="${N62_DL_DIR:-$REPO/engine/giac/_downloads}"
 BUILD="$WORK/build"
 PREFIX="$BUILD/prefix"
 export TMPDIR="$WORK/tmp"
@@ -177,8 +177,8 @@ case "$MODE" in
     build_here "$@"
     ;;
   release)
-    [[ -d "$GMPDL" ]] || { echo "no download cache at $GMPDL (set PASCALINE_DL_DIR)" >&2; exit 1; }
-    SCRATCH="$(mktemp -d "/tmp/pascaline-qalc.XXXXXX")"
+    [[ -d "$GMPDL" ]] || { echo "no download cache at $GMPDL (set N62_DL_DIR)" >&2; exit 1; }
+    SCRATCH="$(mktemp -d "/tmp/n62-qalc.XXXXXX")"
     cleanup() {
       drop_lock
       if [[ "${KEEP_SCRATCH:-0}" == 1 ]]; then echo "scratch kept: $SCRATCH" >&2; else "$CE" unshare rm -rf "$SCRATCH" 2>/dev/null || rm -rf "$SCRATCH"; fi
@@ -192,7 +192,7 @@ case "$MODE" in
     cp "$GMPDL/gmp-$GMP_VERSION.tar.xz" "$GMPDL/mpfr-$MPFR_VERSION.tar.xz" "$SCRATCH/dl/"
     cp "$DL/libxml2-$XML2_VERSION.tar.xz" "$DL/libqalculate-$QALC_VERSION.tar.gz" "$SCRATCH/qdl/"
     "$CE" run --rm --security-opt seccomp=unconfined -v "$SCRATCH/src:/src:Z" -v "$SCRATCH/dl:/dl:ro,Z" -v "$SCRATCH/qdl:/qdl:ro,Z" \
-      -e PASCALINE_DL_DIR=/dl -e PASCALINE_QALC_DL_DIR=/qdl -e QALC_WORK=/src/engine/qalc/_work -e EMSDK_DIR=system \
+      -e N62_DL_DIR=/dl -e N62_QALC_DL_DIR=/qdl -e QALC_WORK=/src/engine/qalc/_work -e EMSDK_DIR=system \
       -e JOBS="$JOBS" -e EMSCRIPTEN_PKG_VERSION="$EMSCRIPTEN_PKG_VERSION" \
       "$IMAGE" bash -euxc '
       export DEBIAN_FRONTEND=noninteractive

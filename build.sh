@@ -10,21 +10,21 @@
 #   --dev            engine built with the local emsdk instead (engine/giac/build-wasm.sh; fast iteration only)
 #   --engine-dir D   use an existing engine build (giac.mjs + giac.wasm in D) and skip the engine step
 #   --no-units       leave units, prefixes and constants out of the Find index (functions only); the numbers come from find/factors.yaml, no libqalculate build (A21)
-#   --measure        measurement build: timing marks to logcat (PASCALINE_MEASURE=1); never for release
+#   --measure        measurement build: timing marks to logcat (N62_MEASURE=1); never for release
 #   --test           device test build (A32): the WebView's remote debugging on so Playwright can attach over adb; never for release
-#   --unsigned       leave the APK unsigned (what F-Droid wants); default signs with the throwaway key in ~/.cache/pascaline/keys/ (PASCALINE_KEYS)
-#   --release        the release (A7): signed with the owner's key from PASCALINE_KEYSTORE, PASCALINE_KEYSTORE_PASS, PASCALINE_KEY_ALIAS and PASCALINE_KEY_PASS
+#   --unsigned       leave the APK unsigned (what F-Droid wants); default signs with the throwaway key in ~/.cache/n62/keys/ (N62_KEYS; copied once from ~/.cache/pascaline/keys/)
+#   --release        the release (A7): signed with the owner's key from N62_KEYSTORE, N62_KEYSTORE_PASS, N62_KEY_ALIAS and N62_KEY_PASS
 #                    (GitHub secrets in the release workflow, never a file here); fails before any build step when one is missing, the keystore file is
-#                    absent or the alias is `throwaway`, when tools/check-version.sh disagrees (with PASCALINE_RELEASE_TAG as its tag when set: vX.Y.Z or
+#                    absent or the alias is `throwaway`, when tools/check-version.sh disagrees (with N62_RELEASE_TAG as its tag when set: vX.Y.Z or
 #                    the test tag vX.Y.Z-<suffix>, only X.Y.Z compared with the version files; .github/workflows/release.yml sets it, A8), and
 #                    after Gradle unless the APK's certificate equals android/release-cert.sha256 (tools/release-verify.sh deletes it then). Never
 #                    creates or falls back to the throwaway key; refuses --dev, --measure, --test, --unsigned, --no-units and --web. Also writes
 #                    dist/n62-<versionName>.apk and .apk.sha256
 #   --install [S]    adb install -r on device S (default $ANDROID_SERIAL or the only device); installs dev.n62.calc only
-# Output: dist/pascaline.apk (last line printed; --release also dist/n62-<versionName>.apk and .apk.sha256); with --web, app/dist. Env: PASCALINE_DL_DIR (Giac/GMP/MPFR/GSL tarball cache), PASCALINE_QALC_DL_DIR (libqalculate tarball cache: names and titles for the Find index), ANDROID_HOME (default ~/Android/Sdk),
-# PASCALINE_KEYS (the throwaway signing key's folder, default ~/.cache/pascaline/keys), NO_LOCK=1 (the caller holds the host-cpu lock).
+# Output: dist/n62.apk (last line printed; --release also dist/n62-<versionName>.apk and .apk.sha256); with --web, app/dist. Env: N62_DL_DIR (Giac/GMP/MPFR/GSL tarball cache), N62_QALC_DL_DIR (libqalculate tarball cache: names and titles for the Find index), ANDROID_HOME (default ~/Android/Sdk),
+# N62_KEYS (the throwaway signing key's folder, default ~/.cache/n62/keys), N62_CACHE (the key and Gradle, default ~/.cache/n62), NO_LOCK=1 (the caller holds the host-cpu lock).
 set -euo pipefail
-export PASCALINE_LOCK_PID=$$   # A35: tools/devlock.sh records this pid; a lock whose pid is gone is broken by the next acquire
+export N62_LOCK_PID=$$   # A35: tools/devlock.sh records this pid; a lock whose pid is gone is broken by the next acquire
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$ROOT"
 
@@ -53,8 +53,8 @@ if (( RELEASE )); then
   tools/release-guard.sh || exit $?
 else
   # the release key reaches only a --release build: nothing in the caller's environment signs a dev build with it
-  unset PASCALINE_KEYSTORE_PASS PASCALINE_KEY_ALIAS PASCALINE_KEY_PASS
-  (( SIGN )) || unset PASCALINE_KEYSTORE
+  unset N62_KEYSTORE_PASS N62_KEY_ALIAS N62_KEY_PASS
+  (( SIGN )) || unset N62_KEYSTORE
 fi
 
 export ANDROID_HOME="${ANDROID_HOME:-$HOME/Android/Sdk}"
@@ -77,10 +77,10 @@ export GIAC_OUT
 
 # 2. web app -> app/dist. First the Find index (docs/04 3.3): app/src/find/_gen/find-index.json from the pinned
 #    tarballs and the numbers in find/factors.yaml (no libqalculate build, A21); it needs the app's packages (yaml).
-(( MEASURE )) && export PASCALINE_MEASURE=1 VITE_MEASURE=1
+(( MEASURE )) && export N62_MEASURE=1 VITE_MEASURE=1
 # WebView debugging is on only under --test; a value left in the caller's environment never reaches a release build
-unset PASCALINE_WEBVIEW_DEBUG
-(( TEST )) && export PASCALINE_WEBVIEW_DEBUG=1
+unset N62_WEBVIEW_DEBUG
+(( TEST )) && export N62_WEBVIEW_DEBUG=1
 INDEX_ARGS=(); (( WITH_UNITS )) || INDEX_ARGS=(--no-units)
 (cd app && npm ci --no-audit --no-fund >&2 && npm run index -- "${INDEX_ARGS[@]}" >&2 && npm run build >&2)
 
@@ -90,31 +90,39 @@ INDEX_ARGS=(); (( WITH_UNITS )) || INDEX_ARGS=(--no-units)
 [[ -d android ]] || (cd app && npx cap add android >&2)
 (cd app && npx cap sync android >&2)
 
-# 4. Gradle
+# 4. Gradle. The cache (the throwaway key and Gradle) is ~/.cache/n62 (N62_CACHE); until A80 it was ~/.cache/pascaline. A missing key
+#    there is copied from the old folder first (the old folder stays): a new key would make `install -r` fail and the install
+#    below uninstall the app, with its data.
+CACHE="${N62_CACHE:-$HOME/.cache/n62}"
+KEYS="${N62_KEYS:-$CACHE/keys}"
+OLD_KEY="$HOME/.cache/pascaline/keys/throwaway.jks"
+if (( ! RELEASE )) && [[ ! -f "$KEYS/throwaway.jks" && -f "$OLD_KEY" ]]; then
+  mkdir -p "$KEYS" && cp -p "$OLD_KEY" "$KEYS/"
+fi
 if (( RELEASE )); then
-  rm -f dist/pascaline.apk dist/n62-*.apk dist/n62-*.apk.sha256   # a failed release leaves no APK behind
+  rm -f dist/n62.apk dist/n62-*.apk dist/n62-*.apk.sha256   # a failed release leaves no APK behind
 elif (( SIGN )); then
   # One key for every checkout and worktree (outside git), so an install over the last one keeps the app's data;
   # android/_keys/ of the main checkout is where it lived until 2026-10-14 and is moved here once.
-  KEYS="${PASCALINE_KEYS:-${PASCALINE_CACHE:-$HOME/.cache/pascaline}/keys}"
   if [[ ! -f "$KEYS/throwaway.jks" && -f "$ROOT/android/_keys/throwaway.jks" ]]; then
     mkdir -p "$KEYS" && cp -p "$ROOT/android/_keys/throwaway.jks" "$KEYS/"
   fi
   if [[ ! -f "$KEYS/throwaway.jks" ]]; then
     mkdir -p "$KEYS"
     keytool -genkeypair -keystore "$KEYS/throwaway.jks" -alias throwaway -keyalg RSA -keysize 2048 -validity 3650 \
-      -storepass pascaline-throwaway -keypass pascaline-throwaway -dname "CN=pascaline throwaway, O=not for release" >&2
+      -storepass pascaline-throwaway -keypass pascaline-throwaway -dname "CN=n62 throwaway, O=not for release" >&2
   fi
-  export PASCALINE_KEYSTORE="$KEYS/throwaway.jks"
+  export N62_KEYSTORE="$KEYS/throwaway.jks"
 fi
 # Gradle: pinned distribution, SHA-256 checked, cached outside git (no wrapper jar in the repo; F-Droid uses its own Gradle)
 GRADLE_VERSION=8.14.3
 GRADLE_SHA256=bd71102213493060956ec229d946beee57158dbd89d0e62b91bca0fa2c5f3531
-CACHE="${PASCALINE_CACHE:-$HOME/.cache/pascaline}"
 GRADLE_HOME_DIR="$CACHE/gradle-$GRADLE_VERSION"
 if [[ ! -x "$GRADLE_HOME_DIR/bin/gradle" ]]; then
   mkdir -p "$CACHE"
   ZIP="$CACHE/gradle-$GRADLE_VERSION-bin.zip"
+  OLD_ZIP="$HOME/.cache/pascaline/gradle-$GRADLE_VERSION-bin.zip"   # A80: the old cache's download, SHA-256 checked below like a new one
+  [[ -f "$ZIP" || ! -f "$OLD_ZIP" ]] || cp -p "$OLD_ZIP" "$ZIP"
   if [[ ! -f "$ZIP" ]]; then
     curl -fL --retry 3 -o "$ZIP.part" "https://services.gradle.org/distributions/gradle-$GRADLE_VERSION-bin.zip"
     mv -f "$ZIP.part" "$ZIP"
@@ -133,18 +141,18 @@ else SRC=android/app/build/outputs/apk/release/app-release-unsigned.apk; fi
 [[ -f "$SRC" ]] || { echo "no APK at $SRC" >&2; exit 1; }
 mkdir -p dist
 if (( RELEASE )); then
-  tools/release-verify.sh "$SRC" >&2 || { rm -f dist/pascaline.apk; exit 1; }   # deletes the APK on a mismatch
+  tools/release-verify.sh "$SRC" >&2 || { rm -f dist/n62.apk; exit 1; }   # deletes the APK on a mismatch
   VNAME="$(sed -n 's/^  "version": *"\([^"]*\)".*/\1/p' app/package.json | head -n1)"
   cp "$SRC" "dist/n62-$VNAME.apk"
   (cd dist && sha256sum "n62-$VNAME.apk" > "n62-$VNAME.apk.sha256")
 fi
-cp "$SRC" dist/pascaline.apk
+cp "$SRC" dist/n62.apk
 
 if (( INSTALL )); then
   ADB=(adb); [[ -n "$SERIAL" ]] && ADB=(adb -s "$SERIAL")
-  if ! "${ADB[@]}" install -r dist/pascaline.apk >&2; then
+  if ! "${ADB[@]}" install -r dist/n62.apk >&2; then
     "${ADB[@]}" uninstall dev.n62.calc >&2   # signature clash: remove our own app only
-    "${ADB[@]}" install dist/pascaline.apk >&2
+    "${ADB[@]}" install dist/n62.apk >&2
   fi
 fi
-echo "$ROOT/dist/pascaline.apk"
+echo "$ROOT/dist/n62.apk"

@@ -10,11 +10,11 @@ import androidx.activity.OnBackPressedCallback;
 import com.getcapacitor.BridgeActivity;
 
 /**
- * Plain Capacitor shell. In measurement builds only (BuildConfig.MEASURE, set by PASCALINE_MEASURE=1) it logs
- * Java-side timing marks under the logcat tag PASCALINE_T, which tools/device_run.py lines up with the JS marks.
+ * Plain Capacitor shell. In measurement builds only (BuildConfig.MEASURE, set by N62_MEASURE=1) it logs
+ * Java-side timing marks under the logcat tag N62_T, which tools/device_run.py lines up with the JS marks.
  */
 public class MainActivity extends BridgeActivity {
-    private static final String TAG = "PASCALINE_T";
+    private static final String TAG = "N62_T";
 
     @Override
     public void onCreate(Bundle savedInstanceState) {

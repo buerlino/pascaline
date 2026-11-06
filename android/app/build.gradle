@@ -12,9 +12,9 @@ android {
         // checks them against app/package.json and the recipe). A measurement build says so in a suffix, so tools/device_run.py
         // can report the build type (its versionName ends in "-measure").
         versionName "0.1.0"
-        versionNameSuffix = (System.getenv('PASCALINE_MEASURE') == '1') ? "-measure" : ""
-        // Measurement builds (PASCALINE_MEASURE=1) log timing marks to logcat; normal builds never do.
-        buildConfigField "boolean", "MEASURE", (System.getenv('PASCALINE_MEASURE') == '1') ? "true" : "false"
+        versionNameSuffix = (System.getenv('N62_MEASURE') == '1') ? "-measure" : ""
+        // Measurement builds (N62_MEASURE=1) log timing marks to logcat; normal builds never do.
+        buildConfigField "boolean", "MEASURE", (System.getenv('N62_MEASURE') == '1') ? "true" : "false"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
              // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
@@ -29,18 +29,18 @@ android {
     }
     // D9: keep .wasm uncompressed in the APK (mmap-able, about 75 ms off cold start)
     androidResources { noCompress 'wasm' }
-    // Signing reads the whole key from the environment (A7): PASCALINE_KEYSTORE (file), PASCALINE_KEYSTORE_PASS,
-    // PASCALINE_KEY_ALIAS, PASCALINE_KEY_PASS. The throwaway defaults (alias `throwaway`, password `pascaline-throwaway`)
-    // apply only while PASCALINE_KEY_ALIAS is unset, so dev builds work unchanged; with an alias set, a missing password
-    // fails the build. Nothing is committed. Without PASCALINE_KEYSTORE, assembleRelease produces app-release-unsigned.apk.
-    def keystoreEnv = System.getenv('PASCALINE_KEYSTORE')
+    // Signing reads the whole key from the environment (A7): N62_KEYSTORE (file), N62_KEYSTORE_PASS,
+    // N62_KEY_ALIAS, N62_KEY_PASS. The throwaway defaults (alias `throwaway`, password `pascaline-throwaway`)
+    // apply only while N62_KEY_ALIAS is unset, so dev builds work unchanged; with an alias set, a missing password
+    // fails the build. Nothing is committed. Without N62_KEYSTORE, assembleRelease produces app-release-unsigned.apk.
+    def keystoreEnv = System.getenv('N62_KEYSTORE')
     if (keystoreEnv) {
-        def aliasEnv = System.getenv('PASCALINE_KEY_ALIAS')
-        def storePassEnv = System.getenv('PASCALINE_KEYSTORE_PASS')
-        def keyPassEnv = System.getenv('PASCALINE_KEY_PASS')
+        def aliasEnv = System.getenv('N62_KEY_ALIAS')
+        def storePassEnv = System.getenv('N62_KEYSTORE_PASS')
+        def keyPassEnv = System.getenv('N62_KEY_PASS')
         if (aliasEnv) {
             if (!storePassEnv || !keyPassEnv) {
-                throw new GradleException('PASCALINE_KEY_ALIAS is set: PASCALINE_KEYSTORE_PASS and PASCALINE_KEY_PASS must be set too')
+                throw new GradleException('N62_KEY_ALIAS is set: N62_KEYSTORE_PASS and N62_KEY_PASS must be set too')
             }
         } else {
             aliasEnv = 'throwaway'
@@ -48,7 +48,7 @@ android {
             keyPassEnv = keyPassEnv ?: storePassEnv
         }
         signingConfigs {
-            pascaline {
+            n62 {
                 storeFile file(keystoreEnv)
                 storePassword storePassEnv
                 keyAlias aliasEnv
@@ -58,7 +58,7 @@ android {
     }
     buildTypes {
         release {
-            if (keystoreEnv) { signingConfig signingConfigs.pascaline }
+            if (keystoreEnv) { signingConfig signingConfigs.n62 }
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }

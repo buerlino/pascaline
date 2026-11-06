@@ -97,10 +97,10 @@ describe(".github/workflows/release.yml", () => {
     }
     expect(JSON.stringify(job.env ?? {})).not.toMatch(/secrets\./);
     const s = steps[build] as Step;
-    expect(s.env?.["PASCALINE_KEYSTORE"]).toBe("${{ runner.temp }}/release.jks");
-    expect(s.env?.["PASCALINE_RELEASE_TAG"]).toBe("${{ env.TAG }}");
+    expect(s.env?.["N62_KEYSTORE"]).toBe("${{ runner.temp }}/release.jks");
+    expect(s.env?.["N62_RELEASE_TAG"]).toBe("${{ env.TAG }}");
     expect(s.run).toMatch(/umask 077/);
-    expect(s.run).toMatch(/chmod 600 "\$PASCALINE_KEYSTORE"/);
+    expect(s.run).toMatch(/chmod 600 "\$N62_KEYSTORE"/);
     expect(s.run).not.toMatch(/\becho\b|set -x/);
   });
 

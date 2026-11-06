@@ -5,15 +5,15 @@
 #   tools/device-build.sh [--measure] [--test] [--install] [--serial S] [--engine-dir DIR]
 #
 # Engine: --engine-dir, else $GIAC_OUT, else the main checkout's engine/giac/_out/gsl (works from a worktree).
-# Signed with the one throwaway key in ~/.cache/pascaline/keys/ (build.sh). --install runs `adb install -r` for
+# Signed with the one throwaway key in ~/.cache/n62/keys/ (build.sh). --install runs `adb install -r` for
 # dev.n62.calc only (never other apps); annabell only. --measure adds the timing marks (never for release).
 # --test: WebView debugging on, for the core list on the device (app/playwright.device.config.ts); never for release.
-# Output: prints the APK path on the last line (dist/pascaline.apk). build.sh takes the host-cpu lock.
+# Output: prints the APK path on the last line (dist/n62.apk). build.sh takes the host-cpu lock.
 set -euo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 MAIN="${REPO%%/.claude/worktrees/*}"
-export PASCALINE_DL_DIR="${PASCALINE_DL_DIR:-$MAIN/engine/giac/_downloads}"
+export N62_DL_DIR="${N62_DL_DIR:-$MAIN/engine/giac/_downloads}"
 ENGINE="${GIAC_OUT:-$MAIN/engine/giac/_out/gsl}"
 ARGS=() SERIAL="${ANDROID_SERIAL:-}" INSTALL=0
 while (( $# )); do

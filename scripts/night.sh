@@ -9,7 +9,7 @@
 #                                                       (defaults: no lane, no --until, 40 steps, 1800 s)
 #   scripts/night.sh --stop A|B|all                     (the owner's stop: logs `STOPPED night.sh (lane A): by the owner`)
 #
-# Lanes (A47c): --lane A|B exports PASCALINE_LANE, so every log line of the lane (night.sh's and the pipeline's) starts with [A]
+# Lanes (A47c): --lane A|B exports N62_LANE, so every log line of the lane (night.sh's and the pipeline's) starts with [A]
 # or [B] after its time; henri runs the table "### Lane X queue" and reads the last 80 lines of his lane plus the other lane's
 # MERGED, NOT MERGED and SKIPPED lines since the newest night header (henri_input). Without --lane: one queue, "The queue", as before.
 # The guard: one night.sh per lane, a pid file each (.coord/night-A.pid, night-B.pid; night-all.pid without --lane), checked with
@@ -21,12 +21,12 @@
 # N - 2, whichever comes first, the night closes with two steps: henri is asked only for the last Opus pass (or
 # NO PASS when no package finished since the last one), then night.sh runs `scripts/pipeline.sh report` and stops.
 # In lanes, --until is per lane; lane B's closing runs its last pass and no report; lane A's report waits for lane B's
-# night.sh to end (at most 5 h, PASCALINE_NIGHT_LANE_WAIT), so the writer reads both lanes' lines.
+# night.sh to end (at most 5 h, N62_NIGHT_LANE_WAIT), so the writer reads both lanes' lines.
 # After every pass night.sh runs `scripts/pipeline.sh device <p>` with p from the pass's RESULT line (A47a may move it).
 # A usage limit inside the closing steps waits and retries the same step.
 # Disk (A69): before each step (the closing ones too) it needs NIGHT_MIN_FREE_GB (default 5) free on the file system of the phase-1
 # worktree; under it the lane logs `STOPPED night.sh (lane X): disk <n> GB free` and ends (exit 1), starting no step.
-# --dry-run starts no henri and runs nothing: it prints each step's kind on a simulated clock (PASCALINE_NIGHT_NOW=HH:MM,
+# --dry-run starts no henri and runs nothing: it prints each step's kind on a simulated clock (N62_NIGHT_NOW=HH:MM,
 # default now, advanced --dry-step minutes per step, default 30), the two closing steps, and writes no log.
 #
 # Stops on SHIFT DONE, after the closing report, after 6 usage-limit waits, or when henri answers twice with
@@ -45,14 +45,14 @@ while [[ $# -gt 0 ]]; do case "$1" in
 [[ -z "$until_hm" || "$until_hm" =~ ^([01][0-9]|2[0-3]):[0-5][0-9]$ ]] || { echo "night.sh: --until takes HH:MM" >&2; exit 2; }
 self="$(readlink -f "$0")"
 main="$(cd "$(git rev-parse --git-common-dir)/.." && pwd)"; cd "$main"
-coord="${PASCALINE_COORD:-$main/.coord}"; tasks="$main/.tasks"
+coord="${N62_COORD:-$main/.coord}"; tasks="$main/.tasks"
 # shellcheck source=scripts/pipeline-lib.sh
 source "$(dirname "$self")/pipeline-lib.sh"
-poll="${PASCALINE_NIGHT_POLL:-60}"
+poll="${N62_NIGHT_POLL:-60}"
 
 # A47c: the lane, its pid file, its stop file
 key="${lane:-all}"; other=""; lane_text="${lane:+ (lane $lane)}"
-if [[ -n "$lane" ]]; then export PASCALINE_LANE="$lane"; other="$([[ "$lane" == A ]] && echo B || echo A)"; else unset PASCALINE_LANE; fi
+if [[ -n "$lane" ]]; then export N62_LANE="$lane"; other="$([[ "$lane" == A ]] && echo B || echo A)"; else unset N62_LANE; fi
 tag="$(lane_tag)"; pidf="$coord/night-$key.pid"; stopf="$coord/night-$key.stop"
 what() { if [[ "$1" == all ]]; then echo "a night without lanes"; else echo "lane $1"; fi; }
 night_alive() {  # <A|B|all>: prints the pid of a running night.sh of that lane (kill -0 and its command line), else fails
@@ -70,12 +70,12 @@ if [[ -n "$stop" ]]; then  # the owner's stop: never kills a running pipeline; p
   else echo "night.sh: $line; $(what "$stop") is not running (the line keeps it from being restarted)"; fi
   exit 0
 fi
-if [[ $dry -eq 0 && -z "${PASCALINE_NIGHT_INHIBITED:-}" ]] && command -v systemd-inhibit >/dev/null; then
-  PASCALINE_NIGHT_INHIBITED=1 exec systemd-inhibit --what=sleep:idle:handle-lid-switch --why="Pascaline night shift" "$self" "${orig_args[@]}"
+if [[ $dry -eq 0 && -z "${N62_NIGHT_INHIBITED:-}" ]] && command -v systemd-inhibit >/dev/null; then
+  N62_NIGHT_INHIBITED=1 exec systemd-inhibit --what=sleep:idle:handle-lid-switch --why="N62 night shift" "$self" "${orig_args[@]}"
 fi
 
 # The clock: real, or simulated in a dry run.
-if [[ $dry -eq 1 ]]; then fake="$(date -d "today ${PASCALINE_NIGHT_NOW:-$(date +%H:%M)}" +%s)"; fi
+if [[ $dry -eq 1 ]]; then fake="$(date -d "today ${N62_NIGHT_NOW:-$(date +%H:%M)}" +%s)"; fi
 now() { if [[ $dry -eq 1 ]]; then echo "$fake"; else date +%s; fi; }
 hm() { date -d "@$(now)" +%H:%M; }
 deadline=""
@@ -141,8 +141,8 @@ if [[ -n "$lane" ]]; then  # A47c: henri's lane
 fi
 
 ask_henri() {  # <n> <prompt>: henri's one-line reply
-  if [[ $dry -eq 1 ]]; then  # stand-in: PASCALINE_NIGHT_REPLIES names a file of replies, one per ask (a line "75: <cmd>" ends with exit 75)
-    local f="${PASCALINE_NIGHT_REPLIES:-}"
+  if [[ $dry -eq 1 ]]; then  # stand-in: N62_NIGHT_REPLIES names a file of replies, one per ask (a line "75: <cmd>" ends with exit 75)
+    local f="${N62_NIGHT_REPLIES:-}"
     if [[ -n "$f" && -f "$f" ]]; then sed -n "${1}p" "$f"; else echo "(dry run: henri not asked)"; fi
     return
   fi
@@ -204,7 +204,7 @@ pass_device() {  # A41, A47c: the device step after a pass, numbered from the pa
   else log "night.sh: the pass gave no RESULT pass line (${result_line:-none}); no device step"; fi
 }
 wait_lane() {  # <lane>: lane A's report waits for lane B's night.sh to end (both lanes' lines in the report), at most 5 h
-  local l="$1" p t0=$SECONDS cap="${PASCALINE_NIGHT_LANE_WAIT:-18000}"
+  local l="$1" p t0=$SECONDS cap="${N62_NIGHT_LANE_WAIT:-18000}"
   if [[ $dry -eq 1 ]]; then say "the report waits for lane $l to end first (night-$l.pid; at most $cap s)"; return 0; fi
   p="$(night_alive "$l")" || return 0
   log "night.sh: waiting for lane $l to end before the report (pid $p)"
@@ -257,12 +257,12 @@ while :; do
     [[ ! -f "$coord/log.md" ]] || henri_input "$coord/log.md" "$lane" | sed 's/^/  | /'
   fi
   cmd="$(ask_henri "$n" "$henri_prompt")"
-  if [[ $dry -eq 1 && -n "${PASCALINE_NIGHT_REPLIES:-}" ]]; then
+  if [[ $dry -eq 1 && -n "${N62_NIGHT_REPLIES:-}" ]]; then
     [[ "$cmd" != 75:\ * ]] || { dry_rc=75; cmd="${cmd#75: }"; }
     [[ -n "$cmd" ]] || cmd="SHIFT DONE"
   else [[ $dry -eq 0 ]] || cmd='scripts/pipeline.sh <agent> "<next step>" --model <m> --audit-model auto   (henri)'; fi
   say "henri #$n: $cmd"; log "henri #$n: $cmd"
-  if [[ $dry -eq 1 && -z "${PASCALINE_NIGHT_REPLIES:-}" ]]; then tick; continue; fi
+  if [[ $dry -eq 1 && -z "${N62_NIGHT_REPLIES:-}" ]]; then tick; continue; fi
   case "$cmd" in
     "SHIFT DONE") log "SHIFT DONE (night.sh$lane_text)"; say "done"; exit 0;;
     scripts/pipeline.sh\ *)

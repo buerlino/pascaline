@@ -16,12 +16,12 @@ export const SOURCES = {
   giac: {
     file: "giac_2.1.0-1.tar.gz", // G77: the pin of engine/giac/build-wasm.sh (GIAC_TARBALL, GIAC_SHA256)
     sha256: "cdec29897d6a55f9e53f82285ffd85cd82bcaba0bd90a494f710be002bd73f57",
-    dir: process.env.PASCALINE_DL_DIR ?? join(REPO, "engine/giac/_downloads"),
+    dir: process.env.N62_DL_DIR ?? join(REPO, "engine/giac/_downloads"),
   },
   qalc: {
     file: "libqalculate-5.13.1.tar.gz",
     sha256: "cf8d3eaf3d85030115701e997b6585e69573e71add88e7758486c5d1b01d3cc3",
-    dir: process.env.PASCALINE_QALC_DL_DIR ?? join(REPO, "engine/qalc/_downloads"),
+    dir: process.env.N62_QALC_DL_DIR ?? join(REPO, "engine/qalc/_downloads"),
   },
 };
 
@@ -30,7 +30,7 @@ export const SOURCES = {
 
 export function tarball(src) {
   const path = join(src.dir, src.file);
-  if (!existsSync(path)) throw new Error(`missing ${path} (set ${src === SOURCES.giac ? "PASCALINE_DL_DIR" : "PASCALINE_QALC_DL_DIR"})`);
+  if (!existsSync(path)) throw new Error(`missing ${path} (set ${src === SOURCES.giac ? "N62_DL_DIR" : "N62_QALC_DL_DIR"})`);
   const sha = createHash("sha256").update(readFileSync(path)).digest("hex");
   if (sha !== src.sha256) throw new Error(`SHA-256 mismatch: ${path}`);
   return path;

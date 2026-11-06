@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // A20: compares two golden runs of the Home and precision stages (the desktop's and the WebView's) case by case:
 // display, mark and copy text. A difference is a finding with its input.
-//   node scripts/golden-compare.ts desktop.json device.log   # JSON array, or logcat text with PASCALINE_BENCH golden lines
+//   node scripts/golden-compare.ts desktop.json device.log   # JSON array, or logcat text with N62_BENCH golden lines
 // Exit 0 only when no case differs and none is missing on either side.
 import { readFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
@@ -37,13 +37,13 @@ export function compareGolden(desktop: GoldenRecord[], device: GoldenRecord[]): 
   return out;
 }
 
-/** Records from a JSON array, or from logcat text: every `PASCALINE_BENCH golden {json}` line (a repeated case keeps its last). */
+/** Records from a JSON array, or from logcat text: every `N62_BENCH golden {json}` line (a repeated case keeps its last). */
 export function readRecords(text: string): GoldenRecord[] {
   const t = text.trim();
   if (t.startsWith("[")) return JSON.parse(t) as GoldenRecord[];
   const byKey = new Map<string, GoldenRecord>();
   for (const line of text.split("\n")) {
-    const m = /PASCALINE_BENCH golden (\{.*\})/.exec(line);
+    const m = /N62_BENCH golden (\{.*\})/.exec(line);
     if (!m) continue;
     const r = JSON.parse(m[1]!) as GoldenRecord;
     if (r.stage && r.id) byKey.set(key(r), r);

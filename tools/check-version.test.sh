@@ -15,7 +15,7 @@ tree() {
   local d="$1"; mkdir -p "$d/app" "$d/android/app" "$d/fdroid"
   cat > "$d/app/package.json" <<JSON
 {
-  "name": "pascaline-app",
+  "name": "n62-app",
   "version": "$2",
   "dependencies": {
     "version": "9.9.9"

@@ -56,8 +56,8 @@ merge_failure_reason() {
 
 # ---- A69: Claude's scratch folders ----
 # Claude Code keeps a scratch folder per working directory in <tmp>/claude-<uid>/<the path, / and . written as ->; a gorge run leaves about
-# 560 MB in it when its worktree is removed. claude_tmp_dir: the user's own root (PASCALINE_CLAUDE_TMP for tests).
-claude_tmp_dir() { echo "${PASCALINE_CLAUDE_TMP:-/tmp/claude-$(id -u)}"; }
+# 560 MB in it when its worktree is removed. claude_tmp_dir: the user's own root (N62_CLAUDE_TMP for tests).
+claude_tmp_dir() { echo "${N62_CLAUDE_TMP:-/tmp/claude-$(id -u)}"; }
 # claude_scratch_name <worktree path>: the folder's name.
 claude_scratch_name() { local p="$1"; echo "${p//[\/.]/-}"; }
 # claude_scratch_remove <worktree path>: removes the one folder named for that path; an empty or root path removes nothing.
@@ -167,7 +167,7 @@ job_port() { echo $((5200 + $1 % 100)); }
 lock_wait() {
   local res="$1" owner="$2" pre="$3" wait="$4" t0=$SECONDS holder locks
   tools/devlock.sh acquire "$res" "$owner" 0 >/dev/null 2>&1 && return 0
-  locks="${coord:-${PASCALINE_COORD:-$(cd "$(git rev-parse --git-common-dir)/.." && pwd)/.coord}}/locks"
+  locks="${coord:-${N62_COORD:-$(cd "$(git rev-parse --git-common-dir)/.." && pwd)/.coord}}/locks"
   holder="$(cat "$locks/$res/owner" 2>/dev/null || echo '?')"
   _lib_log "$pre waiting for $res ($holder)"
   # The wait runs in a session of its own and is waited for as a background job (A54f1): bash runs a trapped TERM, HUP or INT only
@@ -177,10 +177,10 @@ lock_wait() {
   setsid tools/devlock.sh acquire "$res" "$owner" "$wait" >/dev/null 2>&1 </dev/null &
   pid=$!
   owned_sessions+=("$pid")
-  # A58: a wait that passes PASCALINE_LOCK_NOTE seconds (600) logs one line with the holder and how long it has held the lock
+  # A58: a wait that passes N62_LOCK_NOTE seconds (600) logs one line with the holder and how long it has held the lock
   local noted=0 since hs
   while kill -0 "$pid" 2>/dev/null; do
-    if [[ $noted -eq 0 ]] && (( SECONDS - t0 >= ${PASCALINE_LOCK_NOTE:-600} )); then
+    if [[ $noted -eq 0 ]] && (( SECONDS - t0 >= ${N62_LOCK_NOTE:-600} )); then
       noted=1; holder="$(cat "$locks/$res/owner" 2>/dev/null || echo '?')"
       since="$(date -d "$(cat "$locks/$res/since" 2>/dev/null)" +%s 2>/dev/null || true)"
       hs="?"; [[ -z "$since" ]] || hs=$(( $(date +%s) - since ))
@@ -196,14 +196,14 @@ lock_wait() {
   fi
   _lib_log "$pre $res still busy after a wait of $((SECONDS - t0)) s"; return 1
 }
-# host_cpu_acquire <owner> <log prefix>: the host-cpu lock, waiting up to 7200 s (PASCALINE_CPU_WAIT).
-host_cpu_acquire() { lock_wait host-cpu "$1" "$2" "${PASCALINE_CPU_WAIT:-7200}"; }
-# integ_acquire <owner> <log prefix>: the integ lock (the merge queue, A47b), waiting up to 7200 s (PASCALINE_INTEG_WAIT).
+# host_cpu_acquire <owner> <log prefix>: the host-cpu lock, waiting up to 7200 s (N62_CPU_WAIT).
+host_cpu_acquire() { lock_wait host-cpu "$1" "$2" "${N62_CPU_WAIT:-7200}"; }
+# integ_acquire <owner> <log prefix>: the integ lock (the merge queue, A47b), waiting up to 7200 s (N62_INTEG_WAIT).
 # Lock order: integ, then nodemods, then host-cpu; whoever holds a later one never waits for an earlier one.
-integ_acquire() { lock_wait integ "$1" "$2" "${PASCALINE_INTEG_WAIT:-7200}"; }
+integ_acquire() { lock_wait integ "$1" "$2" "${N62_INTEG_WAIT:-7200}"; }
 # nodemods_acquire <owner> <log prefix>: the nodemods lock (the phase-1 worktree's app/node_modules: a copy out of it, an npm ci in
-# it; A47bf1), waiting up to 7200 s (PASCALINE_NODEMODS_WAIT). Lock order: integ, then nodemods, then host-cpu.
-nodemods_acquire() { lock_wait nodemods "$1" "$2" "${PASCALINE_NODEMODS_WAIT:-7200}"; }
+# it; A47bf1), waiting up to 7200 s (N62_NODEMODS_WAIT). Lock order: integ, then nodemods, then host-cpu.
+nodemods_acquire() { lock_wait nodemods "$1" "$2" "${N62_NODEMODS_WAIT:-7200}"; }
 # nodemods_take <owner> <log prefix> / nodemods_drop: the job's nodemods lock, held only around a copy or an npm ci (A47bf1).
 nodemods_held=0; nodemods_owner=""
 nodemods_take() {
@@ -237,9 +237,9 @@ host_cpu_drop() {
 owned_sessions=()
 # session_alive <sid>: succeeds while a process of the session is not a zombie.
 session_alive() { ps -o stat= --sid "$1" 2>/dev/null | grep -qv '^Z'; }
-# session_kill <sid>: TERM to the whole session, KILL after PASCALINE_KILL_GRACE seconds (20), then waits (at most 10 s more) until it is empty.
+# session_kill <sid>: TERM to the whole session, KILL after N62_KILL_GRACE seconds (20), then waits (at most 10 s more) until it is empty.
 session_kill() {
-  local sid="$1" i grace="${PASCALINE_KILL_GRACE:-20}"
+  local sid="$1" i grace="${N62_KILL_GRACE:-20}"
   session_alive "$sid" || return 0
   pkill -TERM -s "$sid" 2>/dev/null || true
   for ((i = 0; i < grace * 5; i++)); do session_alive "$sid" || return 0; sleep 0.2; done
@@ -295,11 +295,11 @@ device_tree() {
 }
 # quiet_wait (A51): before a timing rerun, wait until the 1-minute load average is under half of nproc (a check every 15 s, at most
 # 600 s), then return 0 whatever the load: a rerun under the same load that failed it proves nothing. It prints one line per
-# event (the caller sends them to the run log). Test hooks: PASCALINE_LOADAVG_FILE (read instead of /proc/loadavg), PASCALINE_NPROC,
-# PASCALINE_QUIET_EVERY, PASCALINE_QUIET_MAX.
+# event (the caller sends them to the run log). Test hooks: N62_LOADAVG_FILE (read instead of /proc/loadavg), N62_NPROC,
+# N62_QUIET_EVERY, N62_QUIET_MAX.
 quiet_wait() {
-  local f="${PASCALINE_LOADAVG_FILE:-/proc/loadavg}" every="${PASCALINE_QUIET_EVERY:-15}" max="${PASCALINE_QUIET_MAX:-600}"
-  local cpus="${PASCALINE_NPROC:-$(nproc)}" t0=$SECONDS load="" first=1
+  local f="${N62_LOADAVG_FILE:-/proc/loadavg}" every="${N62_QUIET_EVERY:-15}" max="${N62_QUIET_MAX:-600}"
+  local cpus="${N62_NPROC:-$(nproc)}" t0=$SECONDS load="" first=1
   while :; do
     load="$(cut -d' ' -f1 "$f" 2>/dev/null || true)"
     [[ "$load" =~ ^[0-9]+([.][0-9]+)?$ ]] || { echo "quiet wait: no load average in $f: rerunning at once"; return 0; }
@@ -314,19 +314,19 @@ quiet_wait() {
   done
 }
 _lib_log() { if declare -F log >/dev/null; then log "$*"; fi; }
-# The shell tests (A47a): run by `pipeline.sh selftest` and by the check `shell`. PASCALINE_SELFTEST_TESTS (absolute paths) overrides.
+# The shell tests (A47a): run by `pipeline.sh selftest` and by the check `shell`. N62_SELFTEST_TESTS (absolute paths) overrides.
 SELFTESTS=(scripts/pipeline.test.sh scripts/night.test.sh scripts/gc.test.sh tools/devlock.test.sh tools/manifest-backup.test.sh tools/release-gate.test.sh)
 # selftest_run <repo dir> <log>: runs each test (clean of the pipeline's own environment); prints "PASSED", or
 # "FAILED (<test>: <first failing line>)" and fails.
 selftest_run() {
   local dir="$1" log="$2" t rc line
   local -a tests
-  if [[ -n "${PASCALINE_SELFTEST_TESTS:-}" ]]; then read -ra tests <<<"$PASCALINE_SELFTEST_TESTS"
+  if [[ -n "${N62_SELFTEST_TESTS:-}" ]]; then read -ra tests <<<"$N62_SELFTEST_TESTS"
   else tests=("${SELFTESTS[@]/#/$dir/}"); fi
   : > "$log"
   for t in "${tests[@]}"; do
     echo "== $t" >> "$log"; rc=0
-    own_sh 'cd "$1" && shift && exec env -u PASCALINE_LOCK_PID -u PASCALINE_COORD -u GIAC_OUT -u PW_PORT -u PASCALINE_SELFTEST_TESTS timeout -k 30 1800 "$@"' "$dir" "$t" > "$log.one" 2>&1 < /dev/null || rc=$?
+    own_sh 'cd "$1" && shift && exec env -u N62_LOCK_PID -u N62_COORD -u GIAC_OUT -u PW_PORT -u N62_SELFTEST_TESTS timeout -k 30 1800 "$@"' "$dir" "$t" > "$log.one" 2>&1 < /dev/null || rc=$?
     cat "$log.one" >> "$log"
     if [[ $rc -ne 0 ]]; then
       line="$(grep -m1 -E '^FAIL' "$log.one" || tail -n 1 "$log.one")"; [[ $rc -ne 124 ]] || line="timed out after 1800 s"
@@ -419,8 +419,8 @@ reads_engine() {
 # golden cases the branch adds or changes on phase-1's code (a scratch worktree with those files laid over it). A package that says its
 # tests fail on the stock build (A71) runs the golden cases, and the vitest files that read GIAC_OUT, on phase-1's code with GIAC_OUT
 # set to the stock engine dir (stock_engine_ensure); no other vitest file runs, it would test phase-1's code, not the stock engine. The log's first line names the engine. Succeeds when the
-# stage is skipped (also when the branch adds no vitest file or golden case) or at least one of them fails there; otherwise prints the reason on stdout and fails. PASCALINE_REDFIRST_VITEST
-# (default "npx vitest run") is called with the files, PASCALINE_REDFIRST_GOLDEN (default "node scripts/golden.ts") with ONLY set.
+# stage is skipped (also when the branch adds no vitest file or golden case) or at least one of them fails there; otherwise prints the reason on stdout and fails. N62_REDFIRST_VITEST
+# (default "npx vitest run") is called with the files, N62_REDFIRST_GOLDEN (default "node scripts/golden.ts") with ONLY set.
 red_first() {
   local wt="$1" spec="$2" eng="$3" log="$4" stock="${5:-}" f ids="" stages="" scratch rc red=0 ran=0 err="" stage
   local where="phase-1" label="phase-1" vitest_out=""  # where: the words of the reason; vitest_out: GIAC_OUT of the vitest run ("" = the caller's)
@@ -455,7 +455,7 @@ red_first() {
   [[ ! -d "$wt/app/src/find/_gen" ]] || { mkdir -p "$scratch/app/src/find"; cp -a "$wt/app/src/find/_gen" "$scratch/app/src/find/"; }
   if [[ ${#files[@]} -gt 0 ]]; then
     ran=1; rc=0
-    own_sh 'cd "$1" && { [ -z "$3" ] || export GIAC_OUT="$3"; } && eval "$2"' "$scratch/app" "${PASCALINE_REDFIRST_VITEST:-FORCE_COLOR=0 NO_COLOR=1 timeout 600 npx vitest run} $(printf '%q ' "${files[@]#app/}")" "$vitest_out" >> "$log" 2>&1 < /dev/null || rc=$?
+    own_sh 'cd "$1" && { [ -z "$3" ] || export GIAC_OUT="$3"; } && eval "$2"' "$scratch/app" "${N62_REDFIRST_VITEST:-FORCE_COLOR=0 NO_COLOR=1 timeout 600 npx vitest run} $(printf '%q ' "${files[@]#app/}")" "$vitest_out" >> "$log" 2>&1 < /dev/null || rc=$?
     if [[ $rc -eq 0 ]]; then :
     elif [[ $rc -eq 124 ]]; then err="stage error: vitest timed out on $where"
     elif grep -qE '(Test Files|Tests) +[0-9]+ failed' "$log"; then red=1
@@ -463,7 +463,7 @@ red_first() {
   fi
   if [[ -n "${ids// /}" && $red -eq 0 && -z "$err" ]]; then
     ran=1; rc=0
-    own_sh 'cd "$1" && GIAC_OUT="$2" ONLY="$3" eval "$4"' "$scratch/app" "$eng" "$stages" "${PASCALINE_REDFIRST_GOLDEN:-timeout 900 node scripts/golden.ts}" >> "$log" 2>&1 < /dev/null || rc=$?
+    own_sh 'cd "$1" && GIAC_OUT="$2" ONLY="$3" eval "$4"' "$scratch/app" "$eng" "$stages" "${N62_REDFIRST_GOLDEN:-timeout 900 node scripts/golden.ts}" >> "$log" 2>&1 < /dev/null || rc=$?
     if [[ $rc -eq 0 ]]; then :
     elif [[ $rc -eq 124 ]]; then err="stage error: golden timed out on $where"
     elif ! grep -q 'GOLDEN GATE FAILED' "$log"; then err="stage error: golden exit $rc on $where without GOLDEN GATE FAILED (engine or environment error?)"
@@ -491,13 +491,13 @@ behaviour_selected() { grep -qE '^(engine/|app/src/engine/|app/src/input/|app/sr
 # audit's input: G55's behaviour-diff.ts between the phase-1 worktree and the worker's, once per call, at most 20 minutes, never
 # retried. A53: phase-1's tree runs <phase-1 engine dir>/giac.mjs and the branch's tree <branch engine dir>/giac.mjs (GIAC_MJS_A,
 # GIAC_MJS_B), so a Giac patch's own effect shows; without them both run $GIAC_OUT's. A tool that exits non-zero (more than half
-# the runs of a tree throw) gives "failed to run" with its last lines, never "none". PASCALINE_BEHAVIOUR_TOOL overrides the script.
+# the runs of a tree throw) gives "failed to run" with its last lines, never "none". N62_BEHAVIOUR_TOOL overrides the script.
 behaviour_section() {
-  local integ="$1" wt="$2" out="$3" ea="${4:-}" eb="${5:-}" tool="${PASCALINE_BEHAVIOUR_TOOL:-$1/app/scripts/behaviour-diff.ts}" body rc=0
+  local integ="$1" wt="$2" out="$3" ea="${4:-}" eb="${5:-}" tool="${N62_BEHAVIOUR_TOOL:-$1/app/scripts/behaviour-diff.ts}" body rc=0
   local -a engines=()
   [[ -z "$ea" ]] || engines+=("GIAC_MJS_A=$ea/giac.mjs")
   [[ -z "$eb" ]] || engines+=("GIAC_MJS_B=$eb/giac.mjs")
-  own_sh 'cd "$1" && shift && exec env "$@"' "$wt/app" "${engines[@]}" timeout -k 30 "${PASCALINE_BEHAVIOUR_SECONDS:-1200}" node "$tool" "$integ" "$wt" > "$out.tmp" 2>&1 < /dev/null || rc=$?
+  own_sh 'cd "$1" && shift && exec env "$@"' "$wt/app" "${engines[@]}" timeout -k 30 "${N62_BEHAVIOUR_SECONDS:-1200}" node "$tool" "$integ" "$wt" > "$out.tmp" 2>&1 < /dev/null || rc=$?
   body="$(cat "$out.tmp")"; rm -f "$out.tmp"
   {
     echo "## Behaviour changes (behaviour-diff.ts: phase-1 against $(basename "$wt"))"
@@ -513,9 +513,9 @@ ENGINE_STAGES=(sweep seqsweep casback viewsweep findcensus)
 stage_findings() { grep -E '^ {2}(sweep|seq|casback|viewsweep|findcensus) (NEW|NOW PASSING|CHANGED|GONE)' "$1"; }
 
 # ---- A47c: night lanes ----
-# lane_tag: "[A] " or "[B] " when PASCALINE_LANE (exported by `night.sh --lane`) names a lane, else nothing; every log line of a lane
+# lane_tag: "[A] " or "[B] " when N62_LANE (exported by `night.sh --lane`) names a lane, else nothing; every log line of a lane
 # starts with it after the time.
-lane_tag() { if [[ "${PASCALINE_LANE:-}" =~ ^[AB]$ ]]; then printf '[%s] ' "$PASCALINE_LANE"; fi; }
+lane_tag() { if [[ "${N62_LANE:-}" =~ ^[AB]$ ]]; then printf '[%s] ' "$N62_LANE"; fi; }
 # henri_input <log> <lane> [<n>]: henri's stdin in a lane: the last <n> (80) lines of his lane (its tagged lines with their indented
 # continuation lines, untagged lines and headers) and every MERGED, NOT MERGED or SKIPPED line of the other lane since the newest
 # night header, in log order.

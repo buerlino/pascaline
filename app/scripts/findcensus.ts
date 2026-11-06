@@ -8,7 +8,7 @@
 // timing change, reported and not failed.
 //   node scripts/findcensus.ts             # the gate stage (about 45 s on 4 workers; fails over 5 minutes)
 //   node scripts/findcensus.ts --update    # rewrite the known file's classes from this run (the findings lists are kept; new ones are listed)
-// Environment: GIAC_OUT as for the golden gate; PASCALINE_DL_DIR (Giac's tarball, default the main checkout's cache); the Find index
+// Environment: GIAC_OUT as for the golden gate; N62_DL_DIR (Giac's tarball, default the main checkout's cache); the Find index
 // (`npm run index`); mpmath (tests/golden/.venv). FINDCENSUS_WORKERS (default 4).
 import { spawnSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";

@@ -2,7 +2,7 @@
 // Canaries of our Giac patches (P19, engine/giac/patches/README.md): each checks that the pinned tarball still has the
 // line its patch replaces. A patch whose cause upstream has fixed fails here: then the patch can go at that pin (and
 // `patch --forward` would refuse it anyway). Reads the tarball only; no engine, no network.
-//   node tests/engine/patch-canary.ts        # PASCALINE_DL_DIR: the tarball cache (default engine/giac/_downloads)
+//   node tests/engine/patch-canary.ts        # N62_DL_DIR: the tarball cache (default engine/giac/_downloads)
 import { SOURCES, member, tarball } from "../../tools/find-index/state.mjs";
 
 // [patch, file in the tarball, the wrong text it replaces, the text near it that locates it]

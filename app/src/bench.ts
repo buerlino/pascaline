@@ -3,7 +3,7 @@
 // Every case of tests/golden/bench.yaml goes through the real app path (Session.submit -> engine -> history item
 // -> rendered result). The inputs are Giac text, not LaTeX typed on our keyboard (most of them, e.g. matrices
 // and factor(), have no key yet), so the parser step is skipped; evaluation, tidy-up and drawing are the real ones.
-// Output for tools/device_run.py: PASCALINE_BENCH case|summary lines in logcat, then the mark bench-done.
+// Output for tools/device_run.py: N62_BENCH case|summary lines in logcat, then the mark bench-done.
 import raw from "../../tests/golden/bench.yaml";
 import type { Session, HistoryItem } from "./state/session.svelte.ts";
 import { mark } from "./marks.ts";
@@ -90,7 +90,7 @@ export async function runBench(session: Session): Promise<void> {
     const b = await enter(session, c.input);
     first.push(a.ms);
     if (a.item.status !== "done") errors.push(c.id);
-    console.log(`PASCALINE_BENCH case ${JSON.stringify({ id: c.id, ok: a.item.status === "done", firstMs: r1(a.ms), rtMs: r1(a.ms), warmMs: r1(b.ms) })}`);
+    console.log(`N62_BENCH case ${JSON.stringify({ id: c.id, ok: a.item.status === "done", firstMs: r1(a.ms), rtMs: r1(a.ms), warmMs: r1(b.ms) })}`);
   }
   // Cancel: a long CAS job, cancelled after 300 ms; history and the variable must survive.
   const cancels: number[] = [];
@@ -115,6 +115,6 @@ export async function runBench(session: Session): Promise<void> {
     cancelToReadyMs: r1(pct(cancels, 50)), cancelAll: cancels.map(r1), varAfterReplay: after, historyIntact: histOk,
     errors, mismatches,
   };
-  console.log(`PASCALINE_BENCH summary ${JSON.stringify(summary)}`);
+  console.log(`N62_BENCH summary ${JSON.stringify(summary)}`);
   mark("bench-done");
 }

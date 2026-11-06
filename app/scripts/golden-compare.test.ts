@@ -30,7 +30,7 @@ describe("golden compare (A20)", () => {
     expect(compareGolden(a, b)).toEqual([{ stage: "precision", id: "p", input: "in-p", what: "uses", desktop: "", device: "uses [x], expect []" }]);
   });
   it("reads logcat lines", () => {
-    const line = `10-20 I chromium: [INFO:CONSOLE] "PASCALINE_BENCH golden ${JSON.stringify(base[0])}", source: x`;
+    const line = `10-20 I chromium: [INFO:CONSOLE] "N62_BENCH golden ${JSON.stringify(base[0])}", source: x`;
     expect(readRecords(`noise\n${line}\n`)).toEqual([base[0]]);
   });
 });

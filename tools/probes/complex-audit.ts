@@ -6,7 +6,7 @@
 //   node tools/probes/complex-audit.ts --all      # print every row, not only the gaps
 // Each function × 12 complex arguments goes through EngineHost.home as the app calls it, and its shown text (display)
 // and its copied text (full, every confirmed digit up to P) are compared with mpmath at 100 digits
-// (tests/golden/.venv; PASCALINE_VENV overrides). A row is right when every digit of both texts is the true value
+// (tests/golden/.venv; N62_VENV overrides). A row is right when every digit of both texts is the true value
 // rounded; a gap is any other row (a ⚠ that shows a wrong digit is a gap too). --raw counts the right digits of
 // Giac's evalf: those are Giac's routines, which Home must not trust where they are short or wrong.
 // Engine: $GIAC_MJS, else $GIAC_OUT/giac.mjs, else engine/giac/_out/gsl (app/src/engine/nodeGiac.ts).
@@ -45,7 +45,7 @@ const HOME_DIGITS = [12, 30, 50];
 const RAW_DIGITS = [12, 40, 60];
 
 function python(): string {
-  const env = process.env.PASCALINE_VENV;
+  const env = process.env.N62_VENV;
   const tries = [env && join(env, "bin/python"), join(root, "tests/golden/.venv/bin/python")];
   // In a worktree the venv lives in the main checkout.
   try {
@@ -55,7 +55,7 @@ function python(): string {
     // not a git checkout
   }
   const p = tries.find((t): t is string => !!t && existsSync(t));
-  if (!p) throw new Error("no oracle venv: set it up as in tests/golden/README.md, or set PASCALINE_VENV");
+  if (!p) throw new Error("no oracle venv: set it up as in tests/golden/README.md, or set N62_VENV");
   return p;
 }
 

@@ -41,8 +41,8 @@
 # only the final RESULT line, on every exit (die too: "RESULT #n ID: NOT MERGED (why)", or
 # "RESULT -: NOT STARTED (why)" before a run number exists). Exit 0 merged, 1 not merged, 2 not started
 # or failed early, 75 usage limit (henri stops, night.sh waits).
-# Environment: PASCALINE_DL_DIR and PASCALINE_QALC_DL_DIR (tarball caches, default: the main checkout's
-# engine/giac/_downloads and engine/qalc/_downloads), GIAC_OUT, PASCALINE_LANE (A or B, set by night.sh --lane: each log line
+# Environment: N62_DL_DIR and N62_QALC_DL_DIR (tarball caches, default: the main checkout's
+# engine/giac/_downloads and engine/qalc/_downloads), GIAC_OUT, N62_LANE (A or B, set by night.sh --lane: each log line
 # this script writes starts with [A] or [B] after its time, A47c).
 # Jobs apart (A47a): a run, a pass, a flake census, a device step and a report take their number from .tasks/counter under
 # flock; PW_PORT=$((5200 + number % 100)) for every kind, exported to the worker, the fix rounds and the checks, so jobs alive
@@ -57,7 +57,7 @@
 # every EXIT trap kill those sessions and wait until they are empty (owned_kill) before integ, nodemods and host-cpu are dropped.
 # Starts read the package and the brief from phase-1's commit (git show), so a dirty phase-1 worktree never stops a start.
 set -euo pipefail
-export PASCALINE_LOCK_PID=$$   # A35: locks taken here (and by the agents it starts) record this pid
+export N62_LOCK_PID=$$   # A35: locks taken here (and by the agents it starts) record this pid
 self_dir="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"  # before the cd below: a relative call (night.sh's) resolves here
 # shellcheck source=scripts/pipeline-lib.sh
 source "$self_dir/pipeline-lib.sh"
@@ -65,11 +65,11 @@ own_traps  # A54: TERM, HUP and INT end the child sessions first (owned_kill), t
 
 main="$(cd "$(git rev-parse --git-common-dir)/.." && pwd)"
 cd "$main"
-coord="${PASCALINE_COORD:-$main/.coord}"
+coord="${N62_COORD:-$main/.coord}"
 tasks="$main/.tasks"
 mkdir -p "$tasks/archive" "$coord"
-export PASCALINE_DL_DIR="${PASCALINE_DL_DIR:-$main/engine/giac/_downloads}"
-export PASCALINE_QALC_DL_DIR="${PASCALINE_QALC_DL_DIR:-$main/engine/qalc/_downloads}"
+export N62_DL_DIR="${N62_DL_DIR:-$main/engine/giac/_downloads}"
+export N62_QALC_DL_DIR="${N62_QALC_DL_DIR:-$main/engine/qalc/_downloads}"
 # A28: unless the caller sets GIAC_OUT, the engine is managed: the shared build is $engine_root/gsl, a branch that changes the
 # engine's inputs is built once per key into $engine_root/key-<key>.
 engine_root="$main/engine/giac/_out"; engine_managed=1; [[ -z "${GIAC_OUT:-}" ]] || engine_managed=0
@@ -236,7 +236,7 @@ if [[ "${1:-}" == "device" ]]; then
     integ="$(integ_dir)"; : "${integ:=$main/.claude/worktrees/phase-1}"
     echo "DRY RUN: device step $n on ${dev:-<ANDROID_SERIAL unset: DEVICE SKIPPED>}; output in $run; at most 30 minutes"
     echo "1. under integ, then nodemods, then host-cpu (device-$n, each waits up to 7200 s; the build runs npm ci in the phase-1 worktree, A54): (cd $integ && NO_LOCK=1 tools/device-build.sh --test) = the test APK of phase-1's HEAD, built in a session of its own under the host-cpu lock this step holds (build.sh's own lock is off); the APK copied to $run; host-cpu released; the runner's own tree (A56): git archive <sha> into $run/tree, cp -al $integ/app/node_modules $run/tree/app/node_modules; nodemods and integ released"
-    echo "2. $run/tree/tools/devlock.sh acquire ${dev:-<serial>} device-$n-install 600; adb -s ${dev:-<serial>} install -r $run/pascaline.apk (our app only); release"
+    echo "2. $run/tree/tools/devlock.sh acquire ${dev:-<serial>} device-$n-install 600; adb -s ${dev:-<serial>} install -r $run/n62.apk (our app only); release"
     echo "3. ANDROID_SERIAL=${dev:-<serial>} $run/tree/tools/core-device.sh   (A32's runner from the run's tree, no lock held: npx --no-install; holds the device lock, stay-awake and restore); the tree removed after a CORE DEVICE line, kept on a skip"
     echo "4. log: - HH:MM pipeline device $n: CORE DEVICE <p>/<a> (known <k>, new <ids or none>) on <sha>"
     echo "skipped, never failed (exit 0): integ busy for 7200 s, a dirty phase-1 worktree, no device or unauthorized, battery under 10 %, screen locked (KEYCODE_WAKEUP and wm dismiss-keyguard, then dumpsys window isKeyguardShowing=true; checked before the build and again before the runner), a build failure -> DEVICE SKIPPED (<why>)"
@@ -264,22 +264,22 @@ if [[ "${1:-}" == "device" ]]; then
   nodemods_take "device-$n" "pipeline device $n:" || skip "nodemods lock busy"; sha="$(git -C "$integ" rev-parse --short HEAD)"
   # A54: host-cpu after integ and nodemods, around the build only (build.sh runs npm ci, the index and vite build before its own lock)
   host_cpu_take "device-$n" "pipeline device $n:" || skip "host-cpu lock busy"
-  t0=$SECONDS; rm -f "$run/pascaline.apk"
+  t0=$SECONDS; rm -f "$run/n62.apk"
   rc=0; own_sh 'cd "$1" && NO_LOCK=1 timeout -k 60 1200 tools/device-build.sh --test' "$integ" > "$run/build.log" 2>&1 < /dev/null || rc=$?
   host_cpu_drop
-  [[ $rc -ne 0 || ! -f "$integ/dist/pascaline.apk" ]] || cp "$integ/dist/pascaline.apk" "$run/pascaline.apk" || rc=1
+  [[ $rc -ne 0 || ! -f "$integ/dist/n62.apk" ]] || cp "$integ/dist/n62.apk" "$run/n62.apk" || rc=1
   tree="$run/tree"; tinfo=""; [[ $rc -ne 0 ]] || tinfo="$(device_tree "$integ" "$sha" "$tree" 2> "$run/tree.log")" || tinfo=""
   nodemods_drop; integ_drop
-  [[ $rc -eq 0 && -f "$run/pascaline.apk" ]] || skip "build failed, rc=$rc; see $run/build.log"
+  [[ $rc -eq 0 && -f "$run/n62.apk" ]] || skip "build failed, rc=$rc; see $run/build.log"
   [[ -n "$tinfo" ]] || skip "no runner tree; see $run/tree.log"; runlog "runner tree $tree: $tinfo, node_modules hard-linked"
   "$tree/tools/devlock.sh" acquire "$dev" "device-$n-install" 600 >/dev/null || skip "device lock busy"
-  rc=0; own_sh 'timeout -k 30 300 adb -s "$1" install -r "$2"' "$dev" "$run/pascaline.apk" > "$run/install.log" 2>&1 < /dev/null || rc=$?
+  rc=0; own_sh 'timeout -k 30 300 adb -s "$1" install -r "$2"' "$dev" "$run/n62.apk" > "$run/install.log" 2>&1 < /dev/null || rc=$?
   "$tree/tools/devlock.sh" release "$dev" "device-$n-install" >/dev/null || true
   [[ $rc -eq 0 ]] || skip "install failed, rc=$rc; see $run/install.log"
   before=0; [[ -f "$coord/device-runs.jsonl" ]] && before="$(wc -l < "$coord/device-runs.jsonl")"
   left=$((1800 - (SECONDS - t0))); (( left > 120 )) || skip "no time left after the build"
   locked && skip "screen locked (after the build)"
-  rc=0; own_sh 'ANDROID_SERIAL="$1" PASCALINE_COORD="$2" exec timeout -k 60 "$3" "$4"' "$dev" "$coord" "$left" "$tree/tools/core-device.sh" > "$run/core.log" 2>&1 < /dev/null || rc=$?
+  rc=0; own_sh 'ANDROID_SERIAL="$1" N62_COORD="$2" exec timeout -k 60 "$3" "$4"' "$dev" "$coord" "$left" "$tree/tools/core-device.sh" > "$run/core.log" 2>&1 < /dev/null || rc=$?
   line="$(grep -E '^CORE DEVICE ' "$run/core.log" | tail -n1 || true)"
   [[ -n "$line" ]] || skip "runner gave no CORE DEVICE line, rc=$rc; see $run/core.log"; rm -rf "$tree"  # kept on a skip, for a look
   new="$(tail -n +"$((before + 1))" "$coord/device-runs.jsonl" 2>/dev/null | grep '"kind":"core"' | grep '"ok":false' | grep -o '"case":"c[0-9]*"' | cut -d'"' -f4 | sort -u | paste -sd, - || true)"
@@ -295,7 +295,7 @@ fi
 # a run during which it moved is dropped and the census ends (A54; it holds host-cpu only, so a merge or a pass can move HEAD).
 if [[ "${1:-}" == "flakes" ]]; then
   [[ $# -ge 2 && "$2" =~ ^[0-9]+$ ]] || die "usage: pipeline.sh flakes <n> [--dry-run]"
-  n="$2"; runs="${PASCALINE_FLAKES_RUNS:-5}"; run="$tasks/flakes-$n"; out_md="$tasks/flakes-$(date +%F).md"
+  n="$2"; runs="${N62_FLAKES_RUNS:-5}"; run="$tasks/flakes-$n"; out_md="$tasks/flakes-$(date +%F).md"
   if [[ "${3:-}" == "--dry-run" ]]; then
     export PW_PORT="$(job_port "$(peek_number "$tasks")")"
     integ="$(integ_dir)"; : "${integ:=$main/.claude/worktrees/phase-1}"
@@ -312,8 +312,8 @@ if [[ "${1:-}" == "flakes" ]]; then
   host_cpu_take "flakes-$n" "pipeline flakes $n:" || { log "pipeline flakes $n: FLAKES SKIPPED (host-cpu lock busy)"; echo "RESULT flakes $n: SKIPPED (host-cpu lock busy)"; exit 0; }
   trap 'owned_kill; host_cpu_drop' EXIT
   logs_tool="$integ/app/scripts/pipeline-logs.ts"
-  vcmd="${PASCALINE_FLAKES_VITEST:-FORCE_COLOR=0 NO_COLOR=1 FIND_INDEX=required timeout 1800 npm run -s test}"
-  ecmd="${PASCALINE_FLAKES_E2E:-FORCE_COLOR=0 timeout 2700 npm run -s test:e2e}"
+  vcmd="${N62_FLAKES_VITEST:-FORCE_COLOR=0 NO_COLOR=1 FIND_INDEX=required timeout 1800 npm run -s test}"
+  ecmd="${N62_FLAKES_E2E:-FORCE_COLOR=0 timeout 2700 npm run -s test:e2e}"
   own_sh 'cd "$1" && timeout 1800 npm run -s index' "$integ/app" > "$run/index.log" 2>&1 < /dev/null || true
   clean_v=0; clean_e=0; ran=0; aborted=""; loads=""
   for i in $(seq 1 "$runs"); do
@@ -408,8 +408,8 @@ else
   printf '%s\n' "$task" > "$spec_file"
   id="${id:-task}"
   # A55: a package's own id needs its file on phase-1 (run 312 took A46's task text and merged with no package block); FIX ids and
-  # free ids do not. PASCALINE_ALLOW_UNPACKAGED_IDS is for pipeline.test.sh's sandboxes only.
-  if [[ -z "${PASCALINE_ALLOW_UNPACKAGED_IDS:-}" ]] && package_shaped "$id" && ! p1file "docs/shifts/packages/$id.md"; then no_package="$id"; fi
+  # free ids do not. N62_ALLOW_UNPACKAGED_IDS is for pipeline.test.sh's sandboxes only.
+  if [[ -z "${N62_ALLOW_UNPACKAGED_IDS:-}" ]] && package_shaped "$id" && ! p1file "docs/shifts/packages/$id.md"; then no_package="$id"; fi
 fi
 slug="$(tr -cs 'a-z0-9' '-' <<<"${id,,}" | sed 's/^-//; s/-$//')"
 [[ -n "$branch" ]] || branch="p1/$agent-$slug"
@@ -470,7 +470,7 @@ worker_prompt="You are $agent in pipeline run $n for package $id. The task bundl
 wt="$main/.claude/worktrees/pl-$(printf '%03d' "$n")-$slug"
 if [[ $dry -eq 1 ]]; then
   echo "DRY RUN: pipeline run $n, package $id, agent $agent ($model, $effort), branch $branch"
-  echo "PASCALINE_QALC_DL_DIR=$PASCALINE_QALC_DL_DIR PASCALINE_DL_DIR=$PASCALINE_DL_DIR PW_PORT=$PW_PORT"
+  echo "N62_QALC_DL_DIR=$N62_QALC_DL_DIR N62_DL_DIR=$N62_DL_DIR PW_PORT=$PW_PORT"
   echo "integration worktree: $integ"; echo "worker worktree: $wt"
   echo "setup: cp -al $integ/app/node_modules $wt/app/node_modules   (own copy per worktree, from the phase-1 worktree, under nodemods alone (waits up to 7200 s, logged); when it lacks a package of its lock, npm ci there first, under integ, then nodemods, then host-cpu; a symlink is replaced)"
   echo "machine failure: a check log with 'command not found', a missing node_modules or a missing bare module ends the run as NOT MERGED (machine: ...), no fix round"
@@ -509,7 +509,7 @@ if [[ $dry -eq 1 ]]; then
   echo "audit input: the criteria, the diff, then \"## Behaviour changes\": when the diff touches engine/, app/src/engine/, app/src/input/ or app/src/units/, GIAC_MJS_A=<phase-1 engine>/giac.mjs GIAC_MJS_B=<the branch's engine>/giac.mjs node app/scripts/behaviour-diff.ts <phase-1 worktree> $wt (once per audit round, timeout 20 min, never retried; timeout -> \"timed out after 20 min\"; over half of a tree's runs throwing -> \"failed to run\"), else \"none\"; a change the package does not name is a FIX"
   echo "audited=\$(git -C $wt rev-parse HEAD) at each audit; the merge takes that sha, or stops with NOT MERGED (the branch is not the audited HEAD) when $branch is not at it"
   echo "git -C $integ merge --no-ff --signoff <audited sha>; git worktree remove $wt; git branch -d $branch   (still in the queue; NOT MERGED when phase-1 is not an ancestor of the audited sha)"
-  echo "environment for the worker, the fix rounds and the checks: PASCALINE_QALC_DL_DIR, PASCALINE_DL_DIR, PW_PORT=$PW_PORT"
+  echo "environment for the worker, the fix rounds and the checks: N62_QALC_DL_DIR, N62_DL_DIR, PW_PORT=$PW_PORT"
   rm -rf "$run"; echo "RESULT #$n $id: DRY RUN (nothing started)"; exit 0
 fi
 
@@ -610,7 +610,7 @@ rerun_timing() {  # <check> <log>: only the failing files, output appended to th
   esac
 }
 run_checks() {  # <round>; returns 1 and writes fail-<round>.txt on failure
-  local round="$1" list name rc=0 why redwhy="" p1_engine="${PASCALINE_P1_ENGINE:-$GIAC_OUT}"
+  local round="$1" list name rc=0 why redwhy="" p1_engine="${N62_P1_ENGINE:-$GIAC_OUT}"
   [[ $engine_managed -eq 0 ]] || p1_engine="$engine_root/key-$p1key"
   list="$(want_checks)"; [[ ",$list," == *,stages,* ]] || list="${list//golden/golden,stages}"  # A25: the engine stages follow golden
   [[ -n "$list" ]] || { runlog "checks: none"; return 0; }
@@ -634,10 +634,10 @@ run_checks() {  # <round>; returns 1 and writes fail-<round>.txt on failure
       shell)     # A47a: the shell tests (SELFTESTS); the full output in <log>.full, the FAIL lines here (never a machine failure: tests quote such lines)
                  local sr; selftest_run "$wt" "$out.full" > "$out.sr" || rc=1; sr="$(cat "$out.sr")"
                  { grep -E '^FAIL' "$out.full" | head -n 40 || true; echo "selftest: $sr (full output: $out.full)"; } > "$out";;
-      redfirst)  # A71: "fail on the stock build": the stock engine (built once under host-cpu, reused) first; PASCALINE_STOCK_ENGINE names one instead
+      redfirst)  # A71: "fail on the stock build": the stock engine (built once under host-cpu, reused) first; N62_STOCK_ENGINE names one instead
                  local stock=""
                  if red_first_stock_wanted "$spec_file"; then
-                   if [[ -n "${PASCALINE_STOCK_ENGINE:-}" ]]; then stock="$PASCALINE_STOCK_ENGINE"
+                   if [[ -n "${N62_STOCK_ENGINE:-}" ]]; then stock="$N62_STOCK_ENGINE"
                    elif stock_engine_ensure "$integ" "$engine_root" "$run/engine-stock-build.log"; then stock="$stock_dir"
                    else why="stock engine: $engine_why"; rc=1; echo "red-first: $why" > "$out"; redwhy="$why"; fi
                  fi
@@ -770,7 +770,7 @@ while :; do
     git -C "$wt" diff -U5 "phase-1...$audited" > "$run/audit-$rounds.diff"
     { cat "$run/criteria.md"; echo; echo "## Diff (git diff -U5 phase-1...$audited, the HEAD of $branch, $(wc -l < "$run/audit-$rounds.diff") lines)"; cat "$run/audit-$rounds.diff"; } > "$run/audit-$rounds.in"
     if changed | behaviour_selected; then  # A18: once per audit round, 20-minute cap
-      b_p1="${PASCALINE_P1_ENGINE:-$GIAC_OUT}"; [[ $engine_managed -eq 0 ]] || b_p1="$engine_root/key-$p1key"  # A53: phase-1's engine for A
+      b_p1="${N62_P1_ENGINE:-$GIAC_OUT}"; [[ $engine_managed -eq 0 ]] || b_p1="$engine_root/key-$p1key"  # A53: phase-1's engine for A
       behaviour_section "$integ" "$wt" "$run/behaviour-$rounds.md" "$b_p1" "$GIAC_OUT"; { echo; cat "$run/behaviour-$rounds.md"; } >> "$run/audit-$rounds.in"
     else { echo; echo "## Behaviour changes"; echo "none (the diff touches no engine, input or units code)"; } >> "$run/audit-$rounds.in"; fi
     audit_prompt="AUDIT pipeline run $n, package $id, branch $branch. On stdin: the acceptance criteria, then the diff against phase-1 (the deterministic checks passed). Judge the diff against the criteria and docs/rules-core.md only; read other files only to check a claim in the diff. Look for: a criterion not met; expected values without a trustworthy source; a new parser token without its round-trip case; a fixed bug without a regression test; files outside the task's scope; keys that move; missing SPDX lines; a dependency missing from THIRD_PARTY.md. After the diff, the section Behaviour changes lists inputs whose result differs from phase-1: call each change wanted (named in the criteria Done when) or not; a change not wanted is a FIX finding. Reply with the single word APPROVED on the first line, or FIX on the first line followed by at most five findings, each with file:line, the concrete failure and the fix. Nothing else."

@@ -8,7 +8,7 @@
 //   node tools/probes/find-census.ts                 # every tier-1 function: the class counts, then every finding
 //   node tools/probes/find-census.ts erfc plot sto   # these functions only, every input with its class
 //   ALL=1 node tools/probes/find-census.ts           # every input with its class
-// Needs the Find index (`npm run index` in app/), Giac's tarball (PASCALINE_DL_DIR, default the main checkout's cache), mpmath
+// Needs the Find index (`npm run index` in app/), Giac's tarball (N62_DL_DIR, default the main checkout's cache), mpmath
 // (tests/golden/.venv) and the engine as tools/probes/engine.ts (GIAC_OUT). WORKERS (default 4) engines run side by side.
 import { spawnSync } from "node:child_process";
 import { dirname, resolve } from "node:path";

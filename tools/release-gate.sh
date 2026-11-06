@@ -6,9 +6,9 @@
 # The release engine is rebuilt (engine/giac/build-wasm-release.sh, which takes host-cpu itself) unless _out/release carries a stamp
 # equal to the current key (build-wasm.sh, patches, wasm/, and the release script with its pins). This script holds host-cpu around the
 # heavy stages (golden, core); the build holds it by itself. GIAC_OUT, when set, must be this checkout's _out/release.
-# Env: PASCALINE_DL_DIR (default: the main checkout's engine/giac/_downloads), PW_PORT (default: a free port), logs in app/_out/release-gate/.
+# Env: N62_DL_DIR (default: the main checkout's engine/giac/_downloads), PW_PORT (default: a free port), logs in app/_out/release-gate/.
 set -uo pipefail
-export PASCALINE_LOCK_PID=$$
+export N62_LOCK_PID=$$
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 MAIN="${REPO%%/.claude/worktrees/*}"
 ENGINE="$REPO/engine/giac/_out/release"
@@ -18,7 +18,7 @@ if [[ -n "${GIAC_OUT:-}" && "${GIAC_OUT%/}" != "$ENGINE" ]]; then
   echo "release-gate: GIAC_OUT=$GIAC_OUT is not the release build ($ENGINE)" >&2; exit 2
 fi
 export GIAC_OUT="$ENGINE"
-export PASCALINE_DL_DIR="${PASCALINE_DL_DIR:-$MAIN/engine/giac/_downloads}"
+export N62_DL_DIR="${N62_DL_DIR:-$MAIN/engine/giac/_downloads}"
 
 key() {
   { git -C "$REPO" ls-tree -r HEAD -- engine/giac/build-wasm.sh engine/giac/build-wasm-release.sh engine/giac/patches engine/giac/wasm | grep -v 'patches/README.md'; } | sha256sum | cut -c1-16

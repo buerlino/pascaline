@@ -7,21 +7,21 @@
 #   tools/devlock.sh status
 #   tools/devlock.sh break <resource>     # coordinator only, for a lock whose owner is gone
 #   tools/devlock.sh slice <name> <cmd...> # A58: one piece of a long measurement: host-cpu for <name>, <cmd> under
-#                                         # timeout PASCALINE_SLICE_MAX (600 s), host-cpu released after; exit = cmd's (124 = over the limit,
-#                                         # 1 = host-cpu busy for PASCALINE_SLICE_WAIT, 1800 s). A worker holds host-cpu at most 10 minutes
+#                                         # timeout N62_SLICE_MAX (600 s), host-cpu released after; exit = cmd's (124 = over the limit,
+#                                         # 1 = host-cpu busy for N62_SLICE_WAIT, 1800 s). A worker holds host-cpu at most 10 minutes
 #                                         # at a time: a longer measurement is a loop of slices, so a waiting check gets the lock between them.
 #
 # <resource> is an adb serial, "host-cpu", "integ" (the phase-1 worktree: merges and interactive edits), or "nodemods" (its app/node_modules: a copy out, an npm ci in; A47bf1). Locks are directories (mkdir is atomic).
-# Locks live in the main checkout's .coord (shared by every git worktree); PASCALINE_COORD overrides.
+# Locks live in the main checkout's .coord (shared by every git worktree); N62_COORD overrides.
 set -euo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # Default: the MAIN checkout's .coord, so a lock taken in a git worktree is the shared one (decisions M4-9).
 # `git rev-parse --git-common-dir` is the main checkout's .git from any worktree; its parent is the main checkout.
-# PASCALINE_COORD still overrides it. Outside a git checkout, fall back to this copy's own .coord.
+# N62_COORD still overrides it. Outside a git checkout, fall back to this copy's own .coord.
 COMMON="$(git -C "$REPO" rev-parse --path-format=absolute --git-common-dir 2>/dev/null || true)"
 if [[ -n "$COMMON" ]]; then MAIN_REPO="$(dirname "$COMMON")"; else MAIN_REPO="$REPO"; fi
-LOCKS="${PASCALINE_COORD:-$MAIN_REPO/.coord}/locks"
+LOCKS="${N62_COORD:-$MAIN_REPO/.coord}/locks"
 mkdir -p "$LOCKS"
 cmd="${1:?usage: devlock.sh acquire|release|status|break|slice ...}"
 
@@ -30,7 +30,7 @@ case "$cmd" in
     res="${2:?resource}" owner="${3:?owner}" wait="${4:-0}" start=$SECONDS
     while ! mkdir "$LOCKS/$res" 2>/dev/null; do
       # A35: a lock whose recorded pid is gone on this host is broken; one without a pid (old format, or a caller that did not
-      # opt in with PASCALINE_LOCK_PID) only by hand. Breakers take a guard, re-read the pid inside it and move the lock aside,
+      # opt in with N62_LOCK_PID) only by hand. Breakers take a guard, re-read the pid inside it and move the lock aside,
       # so two waiters that saw the same dead pid never delete a lock another waiter has just taken.
       lpid="$(cat "$LOCKS/$res/pid" 2>/dev/null || true)"; lhost="$(cat "$LOCKS/$res/host" 2>/dev/null || true)"
       if [[ "$lpid" =~ ^[1-9][0-9]*$ && "$lhost" == "$(hostname)" ]] && ! kill -0 "$lpid" 2>/dev/null \
@@ -53,9 +53,9 @@ case "$cmd" in
     [[ -z "${wmark:-}" ]] || { rm -f "$wmark"; wmark=""; }
     printf '%s\n' "$owner" > "$LOCKS/$res/owner"
     date -Iseconds > "$LOCKS/$res/since"
-    # a pid is recorded only when the caller opts in with PASCALINE_LOCK_PID=<its own long-lived pid> (build.sh, pipeline.sh, the
+    # a pid is recorded only when the caller opts in with N62_LOCK_PID=<its own long-lived pid> (build.sh, pipeline.sh, the
     # build-wasm scripts export $$); agents and interactive shells call us from a short-lived shell, so they record none
-    hpid="${PASCALINE_LOCK_PID:-0}"
+    hpid="${N62_LOCK_PID:-0}"
     if [[ "$hpid" =~ ^[1-9][0-9]*$ ]]; then hostname > "$LOCKS/$res/host"; echo "$hpid" > "$LOCKS/$res/pid"; fi
     echo "acquired $res for $owner"
     ;;
@@ -84,8 +84,8 @@ case "$cmd" in
   slice)
     name="${2:?name}"; shift 2
     (( $# )) || { echo "usage: devlock.sh slice <name> <cmd...>" >&2; exit 2; }
-    max="${PASCALINE_SLICE_MAX:-600}"; swait="${PASCALINE_SLICE_WAIT:-1800}"; self="$(readlink -f "${BASH_SOURCE[0]}")"
-    PASCALINE_LOCK_PID=$$ "$self" acquire host-cpu "$name" "$swait" >&2 || exit 1
+    max="${N62_SLICE_MAX:-600}"; swait="${N62_SLICE_WAIT:-1800}"; self="$(readlink -f "${BASH_SOURCE[0]}")"
+    N62_LOCK_PID=$$ "$self" acquire host-cpu "$name" "$swait" >&2 || exit 1
     cp=""; rc=0
     # after the release, a live waiter (marker .waiting-host-cpu.<pid>, A58) gets the lock before this slice returns: waiters poll every 5 s,
     # so a loop of slices would take it back within milliseconds; wait (at most 12 s) until someone holds it

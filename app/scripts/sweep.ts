@@ -13,7 +13,7 @@
 // Known failures: tests/golden/sweep-known.yaml (id = "<angle> <digits> <latex>", check = the judge's check, package = the open backlog id): the gate's exact list.
 // --nightly reads it and tests/golden/sweep-nightly-known.yaml (A44, same fields; the nightly fuzz adds its open findings there; a row whose case passes is
 // listed as "now passing", report only); the gate run never reads the nightly file.
-// Environment: GIAC_OUT as for the golden gate; PASCALINE_DL_DIR is not used. Needs mpmath (tests/golden/.venv).
+// Environment: GIAC_OUT as for the golden gate; N62_DL_DIR is not used. Needs mpmath (tests/golden/.venv).
 import { spawnSync } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";

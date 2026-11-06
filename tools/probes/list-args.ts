@@ -7,7 +7,7 @@
 //   node tools/probes/list-args.ts             # the hits with their reason, the counts
 //   WRITE=1 node tools/probes/list-args.ts     # also writes app/src/engine/listargsTable.ts and tests/engine/listargs-evidence.ts (checked in)
 //   node tools/probes/list-args.ts Psi Zeta     # these names only, every verdict
-// Needs the Find index (`npm run index` in app/), Giac's tarball (PASCALINE_DL_DIR, default the main checkout's cache) and the
+// Needs the Find index (`npm run index` in app/), Giac's tarball (N62_DL_DIR, default the main checkout's cache) and the
 // engine as tools/probes/engine.ts (GIAC_OUT). One engine, the names in order; a name that hangs (DEADLINE_MS, default 5000) or
 // traps the engine is skipped and listed (SKIP in the table), and the pass runs again until none is new, so that the last
 // pass is what listargsTable.test.ts replays in one process. G124: a hit whose one-list form Giac documents (listargs/intended.ts)

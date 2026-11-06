@@ -4,7 +4,7 @@
 import json, os, sys
 
 main = os.path.abspath(os.path.join(os.path.dirname(__file__), "..")).split("/.claude/worktrees/")[0]
-path = os.path.join(os.environ.get("PASCALINE_COORD", os.path.join(main, ".coord")), "device-runs.jsonl")
+path = os.path.join(os.environ.get("N62_COORD", os.path.join(main, ".coord")), "device-runs.jsonl")
 last = int(sys.argv[1]) if len(sys.argv) > 1 else 6
 for line in open(path).read().strip().splitlines()[-last:]:
     d = json.loads(line)

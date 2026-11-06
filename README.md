@@ -58,7 +58,7 @@ Want the details? [The task list](docs/backlog.md).
 ```bash
 engine/giac/build-wasm.sh          # the maths engine → WebAssembly (needs emsdk, about 5 min)
 cd app && npm ci && npm run dev    # open http://localhost:5173
-./build.sh                         # the Android app → dist/pascaline.apk
+./build.sh                         # the Android app → dist/n62.apk
 ```
 
 Every source download is pinned and checked, release builds are reproducible, and the app has no Google services, so it's ready for F-Droid. How it works inside: [docs/04-architecture.md](docs/04-architecture.md).

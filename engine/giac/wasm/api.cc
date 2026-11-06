@@ -71,7 +71,7 @@ void startClock() {
   giac::ctrl_c = giac::interrupted = false;
 #ifdef TIMEOUT
   giac::caseval_begin = time(0);
-#ifndef PASCALINE_STOCK_GIAC  // A71: the stock build (GIAC_PATCHES=none) lacks the members patches 0002 and 0004 add: a whole-second timeout, no step budget
+#ifndef N62_STOCK_GIAC  // A71: the stock build (GIAC_PATCHES=none) lacks the members patches 0002 and 0004 add: a whole-second timeout, no step budget
   giac::caseval_steps = giac::caseval_stepmark = 0;
   giac::caseval_begin_ms = emscripten_get_now();
 #endif

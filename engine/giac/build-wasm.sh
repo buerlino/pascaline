@@ -12,12 +12,12 @@
 #   <key> is `build-wasm.sh stock-key`: a hash of the tarball's SHA-256, of this script and of the files in wasm/, so a stock build is made once and reused.
 #   Use GIAC_BUILD_DIR of its own, so a build with patches is not clobbered.
 # Needs: emsdk (EMSDK_DIR, default ~/emsdk) at $EMSDK_VERSION, or EMSDK_DIR=system for an emcc already on PATH (unpinned; F-Droid tests).
-# PASCALINE_DL_DIR overrides the download cache (e.g. to share one cache between git worktrees).
+# N62_DL_DIR overrides the download cache (e.g. to share one cache between git worktrees).
 # Nothing here touches the user's shell rc files.
 set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-DL="${PASCALINE_DL_DIR:-$HERE/_downloads}"
+DL="${N62_DL_DIR:-$HERE/_downloads}"
 BUILD="${GIAC_BUILD_DIR:-$HERE/_build}"  # GIAC_BUILD_DIR / GIAC_BUILD_OUT: scripts/pipeline.sh builds a branch's engine away from the shared one (A28)
 OUT="${GIAC_BUILD_OUT:-$HERE/_out}"
 PREFIX="$BUILD/prefix"
@@ -245,7 +245,7 @@ stage_link() {
   mkdir -p "$out"
   local f
   local src="$BUILD/giac-$GIAC_VERSION"  # api.cc reads Giac's headers (G85's bridge); config.h comes from the giac stage
-  local extra=(); [[ "$GIAC_PATCHES" != none ]] || extra=(-DPASCALINE_STOCK_GIAC)  # api.cc skips what patches 0002 and 0004 add
+  local extra=(); [[ "$GIAC_PATCHES" != none ]] || extra=(-DN62_STOCK_GIAC)  # api.cc skips what patches 0002 and 0004 add
   for f in api stubs; do em++ -std=c++17 "${GIAC_CXXFLAGS[@]}" "${extra[@]}" -I"$src" -I"$src/src" -I"$PREFIX/include" -c "$HERE/wasm/$f.cc" -o "$obj/$f.o"; done
   local libs=("$PREFIX/lib/libmpfr.a" "$PREFIX/lib/libgmp.a")  # mpfr before gmp
   [[ "$WITH_GSL" == 1 ]] && libs=("$PREFIX/lib/libgsl.a" "$PREFIX/lib/libgslcblas.a" "${libs[@]}")

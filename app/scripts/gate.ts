@@ -7,7 +7,7 @@
 //   npm run gate -- --update-text-baseline # rules stage (G88: text matches and `.eval(` outside engine and units are counted): write app/scripts/text-baseline.json (G88)
 // The vitest stage sets ENGINE=required (G146) unless --quick finds no engine build.
 // Environment: GIAC_OUT (absolute; default engine/giac/_out/gsl of this or the main checkout) for e2e and golden,
-// PASCALINE_DL_DIR and PASCALINE_QALC_DL_DIR for `npm run index` (default: the main checkout's), PW_PORT for e2e's dev server, GATE_BASE (default phase-1) for the changed-files diff.
+// N62_DL_DIR and N62_QALC_DL_DIR for `npm run index` (default: the main checkout's), PW_PORT for e2e's dev server, GATE_BASE (default phase-1) for the changed-files diff.
 import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, isAbsolute, join, resolve } from "node:path";
@@ -109,8 +109,8 @@ const checks: Check[] = [
     run: () => {
       // in a worktree: the main checkout's tarball cache and libqalculate build (rules section 5)
       const r = run("index", "npm", ["run", "index"], {
-        PASCALINE_DL_DIR: process.env["PASCALINE_DL_DIR"] ?? join(mainCheckout, "engine/giac/_downloads"),
-        PASCALINE_QALC_DL_DIR: process.env["PASCALINE_QALC_DL_DIR"] ?? join(mainCheckout, "engine/qalc/_downloads"),
+        N62_DL_DIR: process.env["N62_DL_DIR"] ?? join(mainCheckout, "engine/giac/_downloads"),
+        N62_QALC_DL_DIR: process.env["N62_QALC_DL_DIR"] ?? join(mainCheckout, "engine/qalc/_downloads"),
       });
       return { ok: r.code === 0, detail: r.code === 0 ? "generated" : `exit ${r.code}: ${r.out.trim().split("\n").slice(-1)[0]}` };
     },
@@ -228,7 +228,7 @@ const checks: Check[] = [
     run: () => {
       const engine = giacOut();
       if (!engine) return { ok: false, detail: "no engine build: set GIAC_OUT (absolute)" };
-      const r = run("findcensus", "node", ["scripts/findcensus.ts"], { GIAC_OUT: engine, PASCALINE_DL_DIR: process.env["PASCALINE_DL_DIR"] ?? join(mainCheckout, "engine/giac/_downloads") }, 6 * 60_000);
+      const r = run("findcensus", "node", ["scripts/findcensus.ts"], { GIAC_OUT: engine, N62_DL_DIR: process.env["N62_DL_DIR"] ?? join(mainCheckout, "engine/giac/_downloads") }, 6 * 60_000);
       return summarizeFindCensus(r.out, r.code);
     },
   },
