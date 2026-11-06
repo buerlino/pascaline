@@ -11,11 +11,13 @@ The owner's other open items are in [backlog.md](backlog.md), "Needs the user". 
 
 **R59: the Math key's Find and the user's functions.** An imported function is found in Vars' Find (R4b), not in the Math key's Find. Recommendation: list the user's names there too, as a later small package, so a library function is found where the built-ins are.
 
+**R140: the colour-vision floors in High contrast.** Recommendation: keep Shift and Alpha 0.10 apart and ⚠ 0.06 from Shift there (0.12 and 0.08 elsewhere): at 7:1 N62 Light's Alpha is #265c5a, and Shift reaches 0.12 from it only as the brown #5d2800 (Opus pass 85).
+
 ## Decided proposals
 
 ### Pipeline and process
 - **The name N62 (owner, 2026-11-05):** "Pascaline" is taken. Id `dev.n62.calc`, never changed after the v0.1.0 tag; the web at `https://n62.dev/`, which Pages deploys from a release tag (A45); repo `n62-dev/n62`; every name changes 2026-11-06 (A77-A80, R138, R139, S35); old backups read; no redirect from pascaline-calc.org; spelling: docs/rules-core.md. Would change if: TMview finds N62 in class 9; the domain lapses.
-- **The declutter (owner, 2026-11-05 evening): history lives in git.** Decided notes, reports past a week, merged packages' mockups and one-package probes are deleted, not archived; a link to one becomes its path and commit in a code span; `docs/archive/` keeps the full log and what code or a live doc cites. docs/04 keeps what binds (S34). A re-export no file imports goes in the next package editing it (R136: parse.ts's GREEK, LETTER_NAMES). Rule: rules section 10. Would change if: a deleted file is needed back twice a month.
+- **The declutter (owner, 2026-11-05 evening): history lives in git.** Decided notes, old reports, merged packages' mockups and one-package probes are deleted, not archived. Rule: rules section 10. Full text: archive, "Shortened 2026-11-06 (Opus pass 85)". Would change if: a deleted file is needed back twice a month.
 - **Owner answers of 2026-11-05 (morning).** The weekly fuzz runs in 10-minute slices from Wed 11-11 (G167: `--part i/n` and a separate shrink, Opus pass 69); the red-first check can test the stock engine for a G125 package (A71); sofia's gate script calls `tools/devlock.sh` by its absolute path. Would change if: the fuzz count is cut to fit one slice.
 - **Owner answers of 2026-11-02, evening ([night review](research/night-review-2026-11-02.md) section 6, the full text).** The queue as proposed; red-first counts only added or tightened tests (A67). Would change if: a fix needs a test loosened.
 - **Owner answers of 2026-10-31 (night review 2026-10-30, section 6; evening).** Gated deploys (A52); A53's diff stage; R103 trimmed; R90 dropped; `tests/core/ONE-TIME.md`. Full text: archive.
@@ -112,7 +114,7 @@ The owner's other open items are in [backlog.md](backlog.md), "Needs the user". 
 - **S1 (2026-10-13): the unit slots.** The number is typed before the units key and digits in a slot are only exponents; the live reading under the slot is required (`Mm` and `mm` are the same dimension at 10⁹ off). The letters inside a slot are replaced by the pad (P14).
 - **G15 and G25 (2026-10-18): rpm and rev.** `rev` is a count of cycles and `rpm` is 1/60 Hz, so `1 rpm → Hz` = 1/60; `rpm → rad/s` and `rad/s → Hz` are refused, with "rpm counts turns: write tr/min for an angular speed" (G32). Would change if: a user needs angular speed from rpm in one step.
 - **The units menu (2026-10-13): the G2's flow, our data** ([spec/units-menu.yaml](../spec/units-menu.yaml)): Shift + Units, the tabs and the categories in the G2's order; the grids built from the Find index by dimension, SI 2022 prefixes, CODATA 2022 constants. Would change if: the owner misses a G2 unit in a grid.
-- **S4 (2026-10-18): a library file carries definitions only** (functions and exact values; [R10](archive/r10-connector.md)); settings and key slots go only in the backup ([R11](archive/r11-files.md)). Why: a shared file must not change one's digits or keys. Removal test: < 2 owner imports in 4 weeks. Would change if: keyboard set-ups are shared (a `// key:` line).
+- **S4 (2026-10-18): a library file carries definitions only;** settings and key slots go only in the backup. Full text: archive, "Shortened 2026-11-06 (Opus pass 85)". Would change if: keyboard set-ups are shared (a `// key:` line).
 
 ### Feature analysis 2026-10-18
 - **Nine features approved, six dropped (2026-10-18):** full text in the archive, "Feature analysis: nine features from a read-and-probe pass".
@@ -142,6 +144,7 @@ The defaults that bind code and tests, one line each. A default changes when its
 - **R98, Clear and Delete (Opus pass 50):** rule: docs/05 3.5 (cancelled and note rows too; one Undo copy per view; a backup never holds it). Full text: archive.
 - **R112 (Opus pass 50): a dead key gives three pulses,** the touch's at finger-down, then its double (docs/05 3.7).
 - **R116, the entry's highlights (Opus pass 51):** the caret is --alpha; the bracket box and the selection are --pick with --text on them. Full text: archive. Would change if: the owner wants the text floor in the box.
+- **R144, R146 (Opus pass 85):** keys beside a pick sheet stay dimmed (a tap only closes it); Shift + Help reads "Settings", its face shrunk to fit. Would change if: the owner's look on 11-07.
 
 **Engine, precision and formats**
 - **Honest precision** (G2): rule: docs/04 2.4 rules 2–3; assignments evaluated once. **G44, G23:** the inverse distributions are solved against our MPFR forward functions, every fallback keeps ⚠. Full text: archive, "Shortened 2026-10-21 (P23)". Would change if: a G2 user types Giac's aliases.
