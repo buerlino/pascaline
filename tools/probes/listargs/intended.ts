@@ -3,7 +3,7 @@
 // is not refused when that reading is the meaning Giac documents: a matrix from its rows, the dimensions of a zero or random
 // matrix, a pair of integers or an expression and its equation where f of one element alone is an error (no per-element
 // reading exists). Each entry is checked on the pinned engine and against Giac's help (aide_cas) or source; list-args.ts
-// writes the evidence into app/src/engine/listargsEvidence.ts and the forms into listargsTable.ts. Only erasable TypeScript.
+// writes the evidence into tests/engine/listargs-evidence.ts and the forms into listargsTable.ts. Only erasable TypeScript.
 
 /** Which one-list argument is the documented form: "any" list (f of one element alone is an error), exactly two integers
  *  of at least 1 (dimensions: rows and columns; G124f1), or a non-empty list of lists only (rows). Outside its form the call stays refused. */

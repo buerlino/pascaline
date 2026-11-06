@@ -12,7 +12,7 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { giacAvailable, loadNodeGiac } from "./nodeGiac.ts";
 import { PROBED_LIST_AS_ARGUMENTS, PROBED_LIST_FORMS, PROBED_NAMES } from "./listargsTable.ts";
-import { PROBE_SKIPPED, PROBED_EVIDENCE, PROBED_LIST_FORM_EVIDENCE } from "./listargsEvidence.ts";
+import { PROBE_SKIPPED, PROBED_EVIDENCE, PROBED_LIST_FORM_EVIDENCE } from "../../../tests/engine/listargs-evidence.ts";
 import { LIST_AS_ARGUMENTS } from "./listargs.ts";
 import { aideCas } from "../../../tools/probes/findcensus/run.ts";
 import { listArgNames } from "../../../tools/probes/listargs/names.ts";

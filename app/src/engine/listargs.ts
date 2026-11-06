@@ -20,7 +20,7 @@ import { changesState } from "./novalue.ts";
 import { PROBED_LIST_AS_ARGUMENTS, PROBED_LIST_FORMS } from "./listargsTable.ts";
 
 /** G112 (backlog F103): the functions that read a one-list argument as their arguments, from tools/probes/list-args.ts's
- *  table (listargsTable.ts, generated on the pinned engine; each name's reason is in listargsEvidence.ts, kept out of the
+ *  table (listargsTable.ts, generated on the pinned engine; each name's reason is in listargs-evidence.ts, kept out of the
  *  bundle; listargsTable.test.ts fails when engine and table disagree): every name of Find's index and of the census whose
  *  f(list[a,b]) or f(list[a,b,c]) is not one value per element and equals f(a,b), or is one number. It holds G111's
  *  (LambertW, hermite …, range, randvector) and R80f1's (the distributions, igamma, ugamma). */

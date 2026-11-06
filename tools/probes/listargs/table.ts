@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // G112: the text of the two generated files. listargsTable.ts holds only the names (it is in the start chunk, via
-// listargs.ts); listargsEvidence.ts holds each name's reason and the skipped names, read by listargsTable.test.ts only,
+// listargs.ts); tests/engine/listargs-evidence.ts holds each name's reason and the skipped names, read by listargsTable.test.ts only,
 // so the evidence (25 kB) stays out of the app bundle. G124: the hits with a documented list form (intended.ts) leave the
 // refused names for PROBED_LIST_FORMS, with their evidence in PROBED_LIST_FORM_EVIDENCE.
 import type { ListForm } from "./intended.ts";
@@ -10,7 +10,7 @@ const HEAD = `// SPDX-License-Identifier: GPL-3.0-or-later
 // the engine and this table disagree. G112 (backlog F103): the names of Find's index and of the census whose one list argument
 // Giac reads as their argument list (f(list[a,b]) = f(a,b), or one number)`;
 
-/** The texts of app/src/engine/listargsTable.ts and app/src/engine/listargsEvidence.ts. */
+/** The texts of app/src/engine/listargsTable.ts and tests/engine/listargs-evidence.ts. */
 export function tableFiles(
   hits: readonly (readonly [string, string])[],
   forms: readonly (readonly [string, ListForm, string])[],
@@ -32,7 +32,7 @@ export function tableFiles(
     cur += item;
   }
   if (cur.trim()) lines.push(cur);
-  const table = `${HEAD}; each name's reason is in listargsEvidence.ts
+  const table = `${HEAD}; each name's reason is in tests/engine/listargs-evidence.ts
 // (kept out of the app bundle).
 
 /** The names, in the probe's order, but those of PROBED_LIST_FORMS. */
