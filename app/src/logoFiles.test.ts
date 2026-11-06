@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 import { execFileSync } from "node:child_process";
-import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -35,6 +35,24 @@ describe("A79: the logo files", () => {
       expect.arrayContaining(["logo/android_logo/n62_back.svg", "logo/android_logo/n62_front.svg"]),
     );
     expect(named("README.md").length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("logo/README.md names every file under logo/", () => {
+    const readme = read("logo/README.md");
+    const walk = (d: string): string[] =>
+      readdirSync(join(root, d), { withFileTypes: true }).flatMap((e) =>
+        e.isDirectory() ? walk(`${d}/${e.name}`) : [`${d}/${e.name}`],
+      );
+    for (const f of walk("logo").filter((x) => x !== "logo/README.md" && !x.endsWith(".afdesign"))) {
+      expect(readme, `logo/README.md does not name ${f}`).toContain(f.split("/").pop() as string);
+    }
+  });
+
+  it("the store images are the owner's exports from logo/fdroid/", () => {
+    const img = "fastlane/metadata/android/en-US/images";
+    const same = (a: string, b: string) => readFileSync(join(root, a)).equals(readFileSync(join(root, b)));
+    expect(same(`${img}/icon.png`, "logo/fdroid/n62_fdroid.png")).toBe(true);
+    expect(same(`${img}/featureGraphic.png`, "logo/fdroid/n62_fdroid_banner.png")).toBe(true);
   });
 
   it("the icon layers are a 108×108 pair with a solid background", () => {
