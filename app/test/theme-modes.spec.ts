@@ -76,12 +76,14 @@ test("Plain keys: the ⚠ mark and error text keep their colour; a sheet number 
   expect(n.c).toBe(text);
 });
 
-test("High contrast: a locked Shift keeps a wider outline than a one-shot press", async ({ page }) => {
+test("High contrast: a one-shot Shift fills the key with --shift, a locked one adds a 3 px outline (R140)", async ({ page }) => {
   await open(page);
   await set(page, "colour", "high");
   await tap(page, ["shift"]);
   const press = await style(page, '[data-key="shift"]');
-  expect(parseFloat(press.o)).toBe(2);
+  expect(press.o).toBe("none");
+  expect(await page.locator('[data-key="shift"]').evaluate((el) => getComputedStyle(el).backgroundColor)).toBe(await token(page, "--shift"));
+  expect((await style(page, '[data-key="shift"] .main')).c).toBe(await token(page, "--on-shift"));
   await tap(page, ["shift"]); // off
   const box = (await page.locator('[data-key="shift"]').boundingBox())!;
   const [x, y] = [box.x + box.width / 2, box.y + box.height / 2];
@@ -90,7 +92,7 @@ test("High contrast: a locked Shift keeps a wider outline than a one-shot press"
   await page.mouse.move(x, y - 60, { steps: 6 });
   await page.mouse.up();
   await expect(page.locator('[data-key="shift"]')).toHaveAttribute("data-locked", "true");
-  expect(parseFloat((await style(page, '[data-key="shift"]')).o)).toBeGreaterThan(parseFloat(press.o));
+  expect(parseFloat((await style(page, '[data-key="shift"]')).o)).toBe(3);
 });
 
 test("High contrast draws a 1.5 px outline round every key", async ({ page }) => {
