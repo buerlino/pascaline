@@ -3,7 +3,7 @@
 
 Claude (Opus, the owner's session), by day, in `.claude/worktrees/phase-1` on `phase-1` at **`39befc8`**. No pipeline ran: A16 (run #119) was stopped by the owner at 09:45 before this started; the `scripts/pipeline.sh M3` that `pgrep` also finds is APODroid's (its settings path is under `source99/APODroid/`). Nothing is committed or pushed. The form follows [the audit of 2026-10-12](../cleanup-audit-2026-10-12.md): baseline, one section per area, what waits for the owner.
 
-**Scope, as the owner answered at the start:** the research-note status lines and the move of decided notes are package **S18**, and the notes' status-line and size check is **A22**; both stay open and untouched here. S12 is untouched. Another session edited this worktree during the cleanup (10:02: `docs/backlog.md` owner item 7, `tools/probes/README.md` one row, new `tools/probes/codata-check.py`); those changes are not part of this report and were left alone.
+**Scope, as the owner answered at the start:** the research-note status lines and the move of decided notes are package **S18**, and the notes' status-line and size check is **A22**; both stay open and untouched here. S12 is untouched. Another session edited this worktree during the cleanup (10:02: `docs/backlog.md` owner item 7, `tools/probes/README.md` one row, new `tools/probes/codata-check.py`, at `e20a7b14` when S28 deleted it); those changes are not part of this report and were left alone.
 
 ## (a) Baseline and after
 

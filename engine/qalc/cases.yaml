@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# Units, constants and uncertainty cases for libqalculate (`engine/qalc/check.py` at 8ac1e1e7 ran them, deleted by S28; from the P3 spike).
+# Units, constants and uncertainty cases for libqalculate (`engine/qalc/check.py` at `8ac1e1e7` ran them, deleted by S28; from the P3 spike).
 # value / unc are mpmath expressions (evaluated at 40 digits). A case passes when the unit text
 # matches and every printed number is the correctly rounded true value (|printed - true| <= half a
 # unit in its last printed digit). Unit definitions used: international yard and pound (1959:

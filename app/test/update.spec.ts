@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // A43: an app update keeps the user's data. tests/fixtures/update-from-ef857a6.json is the IndexedDB store that the
 // 0.0.0 build (commit ef857a6, DATA_VERSION 1) wrote after: 5▶A, p(x):=x², 1+2 on Home, the angle mode set to degrees,
-// and h(x):=sin(x), d/dx x³ in CAS (made once by `tools/make-update-snapshot.mjs` at 89859bd1, deleted by S28). Today's app opens it as an update would.
+// and h(x):=sin(x), d/dx x³ in CAS (made once by `tools/make-update-snapshot.mjs` at `89859bd1`, deleted by S28). Today's app opens it as an update would.
 import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
 import { DATA_VERSION } from "../src/state/storage.ts";

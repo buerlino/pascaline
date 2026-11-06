@@ -3,7 +3,7 @@
 
 **Status (2026-10-22): decided.** audit-P1 is G67, audit-P2 G99 and G100, audit-P3 G87, audit-P4 G105, audit-P5 G76 → G86 → R69 (decisions.md "Structure audit closed"). To the archive once a docs commit can fix its links in code comments (`api.cc`, `bridge.ts`) without an engine rebuild.
 
-*sandra, 2026-10-20, read and probe only, on `phase-1` `d6f6093` (worktree `p1/sandra-structure`; the night shift ran from run #135 meanwhile, untouched). Every number comes from a probe in `tools/probes/` or a `git` command named beside it. Labels used here (no ids): **audit-P1 … audit-P5** for the proposals, **text-1 … text-10** for the text readers' confirmed misses (`tools/probes/text-misses.ts`), **audit-…** for the other new findings. Bug rows are bug-patterns.md's ids. The appendix, [structure-audit-inventory.md](../archive/structure-audit-inventory.md), lists all 413 text matches one per line; it is a snapshot, so it lives in the archive.*
+*sandra, 2026-10-20, read and probe only, on `phase-1` `d6f6093` (worktree `p1/sandra-structure`; the night shift ran from run #135 meanwhile, untouched). Every number comes from a probe in `tools/probes/` or a `git` command named beside it. Labels used here (no ids): **audit-P1 … audit-P5** for the proposals, **text-1 … text-10** for the text readers' confirmed misses (`tools/probes/text-misses.ts` at `0dd60864`, deleted by S28), **audit-…** for the other new findings. Bug rows are bug-patterns.md's ids. The appendix, [structure-audit-inventory.md](../archive/structure-audit-inventory.md), lists all 413 text matches one per line; it is a snapshot, so it lives in the archive.*
 
 ## 0. The verdict
 
@@ -33,7 +33,7 @@ Method: I read every row of bug-patterns.md (the 224 outside family 16). A row t
 Of the 16 open bug lines on `d6f6093` (backlog F44–F59), 7 come from the five causes and the carrier label: F52 (cause 1), F53 (carrier), F54, F57 and F58 (cause 2), F55 and F56 (cause 3). The other 9 are maths edges (F44–F51, F59). This audit adds two lines that users can reach today (section 8).
 
 ### 1.2 Hot spots
-`python3 -I tools/probes/churn.py d6f6093 12`: churn is lines added + removed over every non-merge commit; "cited fix commits" are the commits that bug-patterns.md names as fixes.
+`python3 -I tools/probes/churn.py d6f6093 12` (`tools/probes/churn.py` at `9e1c78e0`, deleted by S28): churn is lines added + removed over every non-merge commit; "cited fix commits" are the commits that bug-patterns.md names as fixes.
 
 | File | Lines | Churn | Commits | `fix…` commits | Cited fix commits (lines) | Jobs |
 |---|---|---|---|---|---|---|
@@ -75,7 +75,7 @@ By source: 177 read Giac's printed output, 139 read Giac input text, 46 read LaT
 - 6 `isError` copies.
 - Not one string skip handles Giac's `\"` escape (text-9).
 
-**Confirmed misses** (`GIAC_OUT=<dir> node tools/probes/text-misses.ts`; oracle `tests/golden/.venv`, mpmath):
+**Confirmed misses** (`GIAC_OUT=<dir> node tools/probes/text-misses.ts` with `tools/probes/text-misses.ts` at `0dd60864`, deleted by S28; oracle `tests/golden/.venv`, mpmath):
 
 | Label | Input | Shown | Right | Cause in the text |
 |---|---|---|---|---|
@@ -106,7 +106,7 @@ A result's facts are exactness, confirmed digits, warn, why, inexact input and �
 They are converted by hand at `calc/engine.ts:46` and `:52`, `session.svelte.ts:149`, `:469–472` and `:533–583`, `goldenRun.ts:140–153`, `chipFacts.ts:61` and `host.ts:579–582`. `GIAC_OUT=<dir> node tools/probes/carriers.ts` shows the port dropping `why` on every ⚠ result (`BesselJ(1,2)`: `why={"once":true}`; `romberg(…)`: `why={"unaudited":["romberg"]}`), so R36's why-line cannot work through it. `goldenRun.ts:140–153` still rebuilds the session's chip rule (`session.svelte.ts:533–544`) with its own `cut` expression. G49f2 fixed one difference between the two and left both copies in place.
 
 ### 1.5 Glue added per package
-`node tools/probes/glue-growth.mjs --since 2026-10-06 --rev d6f6093` reads each merge's diff (`app/src`, tests excluded):
+`node tools/probes/glue-growth.mjs --since 2026-10-06 --rev d6f6093` (`tools/probes/glue-growth.mjs` at `d8c0c968`, deleted by S28) reads each merge's diff (`app/src`, tests excluded):
 - 244 merges, 164 of them touching `app/src`.
 - Pattern lines: +649 −140 in all of `app/src`, **+238 −26 in `app/src/engine`**. 36 packages added engine pattern lines; one removed more than it added (G45).
 - Entries in the name lists that steer the engine by name (`STATEFUL`, `DECISION_FUNCTIONS`, `AUDITED_FUNCTIONS`, `COMPLEX_DEFINITIONS`, `STATE_WORDS`, `ANGLE_IN` …): +322.
@@ -123,7 +123,7 @@ They are converted by hand at `calc/engine.ts:46` and `:52`, `session.svelte.ts:
 A shared `Facts` type closes the first mechanism (audit-P5). Only names from Giac's state close the second (G65, audit-P2).
 
 ### 2.2 Hypothesis: one explicit settings context per call closes family 2
-**True, and G67 is nearly all of it.** `GIAC_OUT=<dir> node tools/probes/giac-globals.ts` types 21 flag inputs in CAS on a fresh engine, then reruns 9 Home and 10 CAS inputs, in the same session and after a relaunch:
+**True, and G67 is nearly all of it.** `GIAC_OUT=<dir> node tools/probes/giac-globals.ts` (`tools/probes/giac-globals.ts` at `07612b2b`, deleted by S28) types 21 flag inputs in CAS on a fresh engine, then reruns 9 Home and 10 CAS inputs, in the same session and after a relaunch:
 
 | Flag typed in CAS | Same session | After relaunch | Log entry |
 |---|---|---|---|
@@ -144,7 +144,7 @@ The order matters. The host sets the mode only when the cache key changes (`host
 G67 reads `cas_setup()` after every user input and restores it. That covers the fields of that list, among them `approx_mode`, `complex_mode`, `angle_radian`, `Digits` and `epsilon` (multi-engine-answer.md 3.2). It misses `integer_format`, which sits outside the list. Its step 4 finds the other flags by probing; they should come from Giac's own list of context fields (to verify: gorge reads `global.cc` in the pinned tarball in G67). → **audit-P1.**
 
 ### 2.3 Hypothesis: one parse tree that emits both Giac input and the plot evaluator closes "parser vs plot"
-**Already true.** `compileDefinition` (`apps/function/compile.ts:27`) parses once and serialises the same tree twice: `mathJsonToGiac` and `jsonToJs`. `GIAC_OUT=<dir> node tools/probes/twin-emitters.ts` runs the 595 `parser.yaml` cases that both emitters accept (520 case-and-angle pairs, 7 x each) and compares the plot's value with Home's:
+**Already true.** `compileDefinition` (`apps/function/compile.ts:27`) parses once and serialises the same tree twice: `mathJsonToGiac` and `jsonToJs`. `GIAC_OUT=<dir> node tools/probes/twin-emitters.ts` (`tools/probes/twin-emitters.ts` at `07612b2b`, deleted by S28) runs the 595 `parser.yaml` cases that both emitters accept (520 case-and-angle pairs, 7 x each) and compares the plot's value with Home's:
 - **516 agree.**
 - **The DMS template loses its seconds in the plot:** `30°15′36″` is drawn as 30.25°, against the engine's 30.26°. `emit-js.ts:40` writes `Add` with two terms, and the DMS node has three (new open line, section 8).
 - `√x·√x` at x < 0 is NaN in the plot and −2.7 in the engine. Giac is right; the plot leaves a hole (r16 2.3's kind).
@@ -222,7 +222,7 @@ Rank 5 removes the fewest open bugs, but it changes the most queue: G68, G76, R6
 - **Change:**
   - `emit-js.ts` writes an n-ary `Add`;
   - `emit-js.ts` takes its angle sets from `input/angles.ts`;
-  - `tools/probes/twin-emitters.ts` becomes G63's first stage.
+  - `tools/probes/twin-emitters.ts` at `07612b2b` (deleted by S28) becomes G63's first stage.
 - **Closes:** `audit-dms-plot`. `units/evaluate.ts:89` `withAngles` rewrites only sin, cos and tan (inventory C), but the unit view refuses `sec(30°)` with "A function takes a pure number (sin, cos and tan also an angle)" (checked on `cb445bf`, `tools/probes/unit-result.ts 'sec(30*{deg})'`): no wrong value, so it stays out.
 - **Deletes:** the drawing's own angle lists (`emit-js.ts:23–24`).
 - **Cost:** 2 h. **Risk:** none found.
@@ -317,18 +317,18 @@ Rank 5 removes the fewest open bugs, but it changes the most queue: G68, G76, R6
   - G38f1: 3 commits, 70 list entries, 24 pattern lines;
   - G44 → f1, f2, f2f1;
   - G14 → f1.
-- **Size is not the obstacle.** The structural fixes that landed were package-sized too: G46 (route R: 139 net engine lines, 15 pattern lines added and 8 removed, and a whole family closed), G54 (one name map) and G53 (cost). Each came from research whose text named the cause: S14 for G46, the night check of 2026-10-19 for G54 and G53. I found no worker package that turned structural beyond its package text (a guess from the package texts and `glue-growth.mjs`; I did not read every report).
+- **Size is not the obstacle.** The structural fixes that landed were package-sized too: G46 (route R: 139 net engine lines, 15 pattern lines added and 8 removed, and a whole family closed), G54 (one name map) and G53 (cost). Each came from research whose text named the cause: S14 for G46, the night check of 2026-10-19 for G54 and G53. I found no worker package that turned structural beyond its package text (a guess from the package texts and `tools/probes/glue-growth.mjs` at `d8c0c968`; I did not read every report).
 - **What pushes workers to patch:** a package's "Done when" is "the new case passes, the gate is unchanged". The smallest diff that does that is one more regex alternative, and the audit then checks the diff against the package, not the cause. P20 (2026-10-20) now says "new code adds no bracket loop or name regex"; only review enforces it, and G72's package text still asks for nine regex alternatives.
 
 **Three changes, no new process:**
 1. A package text says "cause" or "symptom". A symptom package in a family with an open cause proposal says why the cause fix does not come first.
-2. The Opus pass runs `node tools/probes/glue-growth.mjs --since <last pass>` and lists every package that added engine pattern lines over Giac text after P20, each with its reason or a FIX line.
+2. The Opus pass runs `node tools/probes/glue-growth.mjs --since <last pass>` (`tools/probes/glue-growth.mjs` at `d8c0c968`, deleted by S28) and lists every package that added engine pattern lines over Giac text after P20, each with its reason or a FIX line.
 3. A structural package's "Done when" names the code it deletes, as G74 already does ("net lines removed").
 
 ## 5. What is fine (leave it alone)
 - **The parser and its tree** (`input/parse.ts`, `emit.ts`): one job; 9 cited fixes of 145 lines in ten days, against 694 lines in `host.ts`; 595 round-trip cases; the two emitters agree on 516 of 520 pairs from one tree (2.3). Its grammar rows (family 7) are decisions the neighbour grids pin.
 - **Route R** (the angle in our text, docs/04 2.12): it closed 12 family-2 rows by removing a global, the model for audit-P1. `angle_radian:=0` bites only through the mode cache, which audit-P1 closes.
-- **The definitions log stores the typed text, not Giac's print.** Giac prints `g(x):=(pZ:=x)+1` as `(x)->pZ:=x+1`, losing the bracket, yet the log keeps `g(x):=(pZ:=x)+1` and a relaunch gives the same `g(2)` = 3, `pZ` = 2 (`tools/probes/text-misses.ts log-1`). Keep it so.
+- **The definitions log stores the typed text, not Giac's print.** Giac prints `g(x):=(pZ:=x)+1` as `(x)->pZ:=x+1`, losing the bracket, yet the log keeps `g(x):=(pZ:=x)+1` and a relaunch gives the same `g(2)` = 3, `pZ` = 2 (`tools/probes/text-misses.ts` at `0dd60864`, case `log-1`). Keep it so.
 - **The mark and the agreement check** (docs/04 2.4): the rules are sound. Their failures were Giac doubles that both precisions shared (family 4), which only the oracle sweep finds.
 - **`format.ts`**: pure and unit-tested; G58 adds the missing size bound.
 - **The MathLive layer** (`entry/`): settled since 2026-10-15 (2.7).
@@ -351,7 +351,7 @@ G67 as amended by audit-P1 is its package file now (owner, 2026-10-20, commit `1
 ### gorge, G72 as amended by audit-P2 step 2: a definition's stores from Giac's tree, branch `p1/gorge-m4-statewords`
 **Lane:** night-safe (Opus worker, Opus audit). **Starts when:** G65 is merged (G69 folded into it); before R59. Replaces G72's package text; G66 waits for its report.
 **Read:** this note 2.4 and audit-P2; G72's package (its F57 test stays); R15; `app/src/engine/numeric.ts` (`definitionStores` near 1097, `callsStateful` near 1112, `decidingStored` near 1127); `app/src/engine/library.ts` (`STATE_WORDS`, `assigns`, `storedNames`); G65's state table in `host.ts`; `app/src/engine/defs.ts` (`DefEntry`).
-- **Probe on `d6f6093`:** the `pasheads` call of 2.4. `cnt++`, `increment(cnt)` and `cnt+=1` all parse to `increment`, and a stored program's body is walked. `tools/probes/text-misses.ts text-5 text-9`.
+- **Probe on `d6f6093`:** the `pasheads` call of 2.4. `cnt++`, `increment(cnt)` and `cnt+=1` all parse to `increment`, and a stored program's body is walked. `tools/probes/text-misses.ts` at `0dd60864`, cases `text-5` and `text-9`.
 1. **Tests first,** each failing on phase-1:
    - F57's library file is refused;
    - a stored function whose body uses `increment`, `+=`, `=<`, `DelVar` or `[a,b]:=` runs once per Enter and is logged;
@@ -360,16 +360,16 @@ G67 as amended by audit-P1 is its package file now (owner, 2026-10-20, commit `1
 3. **Measure:** the walk's cost per definition, and the replay of A12's 200-program library before and after, in Node (in the report). If the replay rises past G83's bound, list it under "Needs the user".
 **Done when:**
 - The cases pass on the branch and fail on phase-1; the golden gate passes with no expected value changed; `calls-baseline.yaml` unchanged per Enter (the walk runs at definition only).
-- The report gives the pattern lines removed against added (`node tools/probes/glue-growth.mjs --since <branch base>`), and says whether a store is left that the tree does not show (G66's question).
+- The report gives the pattern lines removed against added (`node tools/probes/glue-growth.mjs --since <branch base>`, with `tools/probes/glue-growth.mjs` at `d8c0c968`), and says whether a store is left that the tree does not show (G66's question).
 
 ## 8. New findings, and how to rerun
 - **Open, reachable today** (written to backlog "Open bugs"):
-  - **audit-approx (text-1):** `approx(sin(10^30), 2×10)` = `≈ −0.685710242506` with 39 digits confirmed; the right value is −0.0901169019121. Rerun: `GIAC_OUT=<dir> node tools/probes/text-misses.ts text-1`. It overlaps G59 and audit-P4.
-  - **audit-dms-plot:** the Function app draws `x+30°15′36″` without the 36″ (`emit-js.ts:40`); trace and Num values are right. Rerun: `GIAC_OUT=<dir> node tools/probes/twin-emitters.ts`. It overlaps G63 and audit-P3.
+  - **audit-approx (text-1):** `approx(sin(10^30), 2×10)` = `≈ −0.685710242506` with 39 digits confirmed; the right value is −0.0901169019121. Rerun: `GIAC_OUT=<dir> node tools/probes/text-misses.ts text-1` with `tools/probes/text-misses.ts` at `0dd60864`. It overlaps G59 and audit-P4.
+  - **audit-dms-plot:** the Function app draws `x+30°15′36″` without the 36″ (`emit-js.ts:40`); trace and Num values are right. Rerun: `GIAC_OUT=<dir> node tools/probes/twin-emitters.ts` with `tools/probes/twin-emitters.ts` at `07612b2b`. It overlaps G63 and audit-P3.
 - **Latent** (no key reaches them; a door for Giac text will): 2.2's flag rows; text-2 to text-9 except text-1. text-10 is F54, already open.
-- **The probes added**, each with a README row:
-  - `giac-globals.ts`, `twin-emitters.ts`, `carriers.ts` and `text-misses.ts` (need `GIAC_OUT`);
-  - `glue-growth.mjs` and `churn.py` (git only).
+- **The probes added** (S28 deleted all but `carriers.ts`; each named at its last commit):
+  - `tools/probes/giac-globals.ts` at `07612b2b`, `tools/probes/twin-emitters.ts` at `07612b2b`, `tools/probes/carriers.ts` and `tools/probes/text-misses.ts` at `0dd60864` (need `GIAC_OUT`);
+  - `tools/probes/glue-growth.mjs` at `d8c0c968` and `tools/probes/churn.py` at `9e1c78e0` (git only).
 - **The one-liners cited:**
   - `GIAC_OUT=<dir> MODE=cas node tools/probes/engine.ts 'angle_radian:=0' 'evalf(sin(1))'`;
   - `GIAC_OUT=<dir> node tools/probes/engine.ts 'angle_radian:=0' 'sin(1)' 'asin(1)'`;

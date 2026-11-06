@@ -240,4 +240,4 @@ still hold, except that "the Units app" reads "the unit view".
 | The owner's own top units give a median ≤ 4 | the owner names them; add to `UNITS`, rerun |
 | MathLive prompts carry a stacked fraction and our key routing | ron, first step of the milestone 5 unit view |
 | The empty-end-slot rule in qalc (typed units first) | gorge, U2, golden cases |
-| `°R` is Rankine in qalc (docs/04 Appendix C asked) | done here: `--read °R` gives `oR`; `engine/qalc/smoke.mjs … '1 °R to K'` (the script at `8ac1e1e7`, deleted by S28) gives 0.555555555556 K (5/9 K, absolute, like K); a golden case in U2 |
+| `°R` is Rankine in qalc (docs/04 Appendix C asked) | done here: `--read °R` gives `oR`; `engine/qalc/smoke.mjs … '1 °R to K'` (`engine/qalc/smoke.mjs` at `8ac1e1e7`, deleted by S28) gives 0.555555555556 K (5/9 K, absolute, like K); a golden case in U2 |

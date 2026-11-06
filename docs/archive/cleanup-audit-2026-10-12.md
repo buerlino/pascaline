@@ -681,13 +681,13 @@ I re-checked every DELETE candidate (`git ls-files | grep wasmstart`, the script
   - No script calls it. Only `tools/README.md:21` and `docs/research/r2-wasm-start.md:8` cite it. R2 is finished (the research note has the numbers).
   - Risk: none; git history keeps it. Effort S.
   - **DELETE**, and point the README and the R2 note line at `git show 8f95cef^:tools/probe-wasm.py`.
-- **G2. `page-series.py`, `shots.py` and `tap-seq.py` have no caller in code, but they are documented helpers** (`tools/README.md:18-20`) of the device workflow:
-  - `tap-seq.py` is the K0 system-keyboard check that's still open in the backlog;
-  - `page-series.py` gave the m3 series (`docs/shifts/2026-10-11-m3-report.md:50`).
+- **G2. `tools/page-series.py` at `450c3fde`, `tools/shots.py` and `tools/tap-seq.py` at `450c3fde` (S28 deleted both) have no caller in code, but they are documented helpers** (`tools/README.md:18-20`) of the device workflow:
+  - `tools/tap-seq.py` at `450c3fde` is the K0 system-keyboard check that's still open in the backlog;
+  - `tools/page-series.py` at `450c3fde` gave the m3 series (`docs/shifts/2026-10-11-m3-report.md:50`).
 
   **KEEP**, with two **FIX**es (effort S):
-  - (a) the Tab One serial is hard-coded (`page-series.py:14`, `shots.py:7`, `tap-seq.py:7`). `device_run.py:18` reads `ANDROID_SERIAL` with the same default. So `ANDROID_SERIAL=<S8+> page-series.py …` measures on the S8+ through `device_run.py` while it checks the **Tab One's** battery and temperature (`page-series.py:14,19`). That's a real bug for S8+ series.
-  - (b) `page-series.py:25` writes to an absolute `/home/nordmu/…/.coord/device-runs.jsonl`. `device_run.py:24` uses `PASCALINE_COORD` or the repo's `.coord/`.
+  - (a) the Tab One serial is hard-coded (`tools/page-series.py:14` and `tools/tap-seq.py:7` at `450c3fde^`, before that commit fixed them; `shots.py:7`). `device_run.py:18` reads `ANDROID_SERIAL` with the same default. So `ANDROID_SERIAL=<S8+> tools/page-series.py …` (the file at `450c3fde^`) measures on the S8+ through `device_run.py` while it checks the **Tab One's** battery and temperature (`tools/page-series.py:14,19` at `450c3fde^`). That's a real bug for S8+ series.
+  - (b) `tools/page-series.py:25` at `450c3fde^` writes to an absolute `/home/nordmu/…/.coord/device-runs.jsonl`. `device_run.py:24` uses `PASCALINE_COORD` or the repo's `.coord/`.
 - **G3. `device_run.py` has stale text and dead knobs.**
   - Its docstring says "the Pascaline spike shell … on one tablet" (`device_run.py:3`).
   - `tools/README.md` doesn't list its `status` subcommand.
@@ -728,7 +728,7 @@ Edits by Opus (not delegated). One commit per theme:
 | Commit | Items | What changed |
 |---|---|---|
 | `23ea006` `build(android)` | E1, E6 | The `com.google.gms:google-services` classpath (`android/build.gradle`) and the apply block (`android/app/build.gradle`) are gone. So are the two template tests, their junit/espresso dependencies and the `testInstrumentationRunner`. `android/variables.gradle` keeps its versions because Capacitor's own module reads them. |
-| `450c3fd` `fix(tools)` | G1–G3 | `probe-wasm.py` deleted; the R2 note points to `git show 8f95cef^:…`. `page-series.py`, `shots.py` and `tap-seq.py` read `$ANDROID_SERIAL`, and page-series uses `$PASCALINE_COORD` or the repo's `.coord`. `device_run.py`: docstring updated, `APP_APK`/`PAGE_PATH` removed, env vars documented, `start` waits for `engine-ready` by default. `tools/README.md` lists `status`. |
+| `450c3fd` `fix(tools)` | G1–G3 | `probe-wasm.py` deleted; the R2 note points to `git show 8f95cef^:…`. `tools/page-series.py` at `450c3fde`, `shots.py` and `tools/tap-seq.py` at `450c3fde` read `$ANDROID_SERIAL`, and page-series uses `$PASCALINE_COORD` or the repo's `.coord`. `device_run.py`: docstring updated, `APP_APK`/`PAGE_PATH` removed, env vars documented, `start` waits for `engine-ready` by default. `tools/README.md` lists `status`. |
 | `bbc2280` `chore(agents)` | G8, G9 | The four agent files read `docs/shifts/rules.md` and the shift's `brief.md`. `.claude/skills/phase-0-spike/` deleted. |
 | `286cb97` `docs` | E3, G4, G5 | CLAUDE.md "Legal / clean room" and CONTRIBUTING.md name the `hpprime` import-name exception. `build.sh:3` and CLAUDE.md say the F-Droid recipe mirrors `build.sh` (`fdroid/README.md`). THIRD_PARTY.md lists the GMP, MPFR and GSL tarball hashes; each matches `build-wasm.sh` (checked with `grep`). |
 
