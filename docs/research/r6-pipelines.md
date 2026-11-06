@@ -114,7 +114,7 @@ The lists of 2026-10-12 and 2026-10-15 are in [the 2026-10-12 architecture repor
 | What does the parser send? | `node tools/probes/parse.ts '<latex>'` |
 | What is the right value? | the mpmath oracle in `tests/golden/.venv` (`python -I`), never memory |
 | Does a digits change cost time or break a case? | `node tools/probes/digits-cost.ts` |
-| What does qalc do with a unit expression? | `tools/probes/qalc/link.sh` once, then `node tools/probes/qalc/run.mjs …` |
+| What number does libqalculate give for a unit or constant? | `find/factors.yaml` (P22); with a qalc dev build, `node tools/find-index/refresh-factors.mjs` prints any change (the old probe: `tools/probes/qalc/` at `8ac1e1e7`) |
 | How big is a chunk? | `cd app && npx vite build --outDir <scratch dir>` |
 | Who calls what? | `grep -rn` in `app/src` (skip `*.test.ts`); the test files show the intended behaviour |
 | What did the reference do? | `tests/golden/g2.yaml`, `spec/mapping/vc-2026-10-11/keys.yaml` (clean room: nothing else) |
