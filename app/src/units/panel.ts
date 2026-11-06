@@ -18,7 +18,7 @@ function el(tag: string, cls: string, testid?: string, text?: string): HTMLEleme
   return e;
 }
 
-/** The value line, σ's lines, the note and the alternatives row of a result (docs/mockups/unit-result.html). */
+/** The value line, σ's lines, the note and the alternatives row of a result (`docs/mockups/unit-result.html` at `b1c44ee4`). */
 function resultRows(s: UnitShown, v: UnitView, fit: (row: HTMLElement) => void): HTMLElement[] {
   const r = el("div", "result", "unit-result");
   r.dataset["text"] = s.display;

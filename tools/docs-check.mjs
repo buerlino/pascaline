@@ -12,7 +12,7 @@
 //    status line (**Status … open, decided or reference**) in its first lines.
 // 5. Source size (A22): tools/line-baseline.yaml lists every source file over 800 lines at its size; a file past its line,
 //    or a new file past 800, fails. Raising a line is an edit of that file in the same diff, with the reason; a split lowers it.
-// 6. Index (A26): every tracked file under docs/ (not docs/archive, docs/shifts/packages, dated docs/shifts/*-report.md, docs/shifts/reports/,
+// 6. Index (A26): every tracked file under docs/ (not docs/archive, docs/shifts/packages, dated docs/shifts/*-report.md and *-report-2.md, docs/shifts/reports/,
 //    nor docs/README.md) appears in exactly one link of docs/README.md.
 // One line per failure, then one summary line; exit 1 on any failure. `npm run gate` runs it (step "docs").
 import { execFileSync } from "node:child_process";
@@ -162,7 +162,7 @@ if (existsSync(join(repo, "docs/README.md"))) {
     }
   }
   const tracked = execFileSync("git", ["ls-files", "docs"], { cwd: repo, encoding: "utf8" }).split("\n")
-    .filter((f) => f && f !== "docs/README.md" && existsSync(join(repo, f)) && !/^docs\/(archive|shifts\/(packages|reports))\//.test(f) && !/^docs\/shifts\/[^/]*-report\.md$/.test(f));
+    .filter((f) => f && f !== "docs/README.md" && existsSync(join(repo, f)) && !/^docs\/(archive|shifts\/(packages|reports))\//.test(f) && !/^docs\/shifts\/[^/]*-report(-\d+)?\.md$/.test(f));
   for (const f of tracked) {
     const n = indexed.get(f) ?? 0;
     if (n !== 1) failures.push(`index: ${f} is linked ${n} times in docs/README.md (must be exactly once)`);

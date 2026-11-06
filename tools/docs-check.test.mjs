@@ -93,6 +93,11 @@ test("a live doc missing from docs/README.md fails, naming it", () => {
   assert.match(r.out, /index: docs\/extra\.md is linked 0 times/);
 });
 
+test("a dated shift report needs no index link, a second one of the day (-report-2.md) neither (S30)", () => {
+  const r = run({ ...base, "docs/shifts/2026-11-01-night-report.md": "# r\n", "docs/shifts/2026-11-01-night-report-2.md": "# r2\n" });
+  assert.equal(r.code, 0, r.out);
+});
+
 test("a live doc linked twice in docs/README.md fails", () => {
   const r = run({ ...base, "docs/README.md": "[b](backlog.md) [b2](backlog.md) [r](research/r9.md)\n" });
   assert.equal(r.code, 1);

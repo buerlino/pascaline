@@ -155,7 +155,7 @@ function padShots(): Shot[] {
   );
 }
 
-/** R62: the unit view's result states of docs/mockups/unit-result.html on the engine, at both sizes: the typed unit kept with
+/** R62: the unit view's result states of `docs/mockups/unit-result.html` at `b1c44ee4` on the engine, at both sizes: the typed unit kept with
  *  its row, the row entered by keys, σ, σ with ⚠, a note and a refusal. */
 function unitResultShots(): Shot[] {
   const plan = async (p: Page, steps: string): Promise<void> => {

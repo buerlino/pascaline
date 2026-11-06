@@ -141,5 +141,5 @@ The owner went through the key-by-key comparison ([06-keypad-vs-g2.md](06-keypad
 
 | # | Owner's point | Triage |
 |---|---|---|
-| 54 | On `docs/mockups/visual-pass.html` (R12a): "the mockup looks good", but "the entry field is very narrow". | **feel:** R12a merges as is; R12b (tokens and history rows) gives the entry line more height |
+| 54 | On `docs/mockups/visual-pass.html` at `295c4e03` (R12a): "the mockup looks good", but "the entry field is very narrow". | **feel:** R12a merges as is; R12b (tokens and history rows) gives the entry line more height |
 | 55 | On the same mockups: "the colors should be nicer". | **feel:** answered with #53 (decisions.md "R50"); R12b builds on the theme tokens |
