@@ -35,7 +35,7 @@ Yes, there are several excellent ones. The Prime's **Solve app** needs three sol
 
 Without GSL, Giac's wasm build only has Newton and interval bisection; every other `fsolve` method fails with "Not linked with GSL" (measured in the spike). Linking GSL changed none of the 55 benchmark results; numeric eigenvalue/eigenvector/SVD output comes out in a different (still correct) order or sign, and Airy functions gain numeric values.
 
-**An improvement over the Prime:** after every numeric solve, we **plug the root back into the equation** (the residual check) and re-evaluate with **Giac at 30+ digits** (MPFR; mpmath is only available when the optional Python+ pack is installed). If the residual is not tiny, we show a ⚠ next to the answer. The real Prime silently returns wrong roots in some known cases (see 01-feasibility-report.md section 6), so this check directly addresses "how do we avoid wrong answers?".
+**An improvement over the Prime:** after every numeric solve, we **plug the root back into the equation** (the residual check) and re-evaluate with **Giac at 30+ digits** (MPFR; mpmath is only available when the optional Python+ pack is installed). If the residual is not tiny, we show a ⚠ next to the answer. The real Prime silently returns wrong roots in some known cases (see docs/01 section 6, step 4, at `82b261f9`), so this check directly addresses "how do we avoid wrong answers?".
 
 **Solver strategy for a single equation:**
 1. Use Giac to get exact `f(x)` and `f'(x)`. For the many evaluations of the bracket search, compile both to fast JS functions with our LaTeX-subset parser's evaluator (or evaluate in Giac if that's fast enough; measure). Numbers shown to the user always come from Giac.
