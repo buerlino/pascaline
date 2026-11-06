@@ -15,7 +15,7 @@ const repo = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const pw = createRequire(join(repo, "app/package.json"))("@playwright/test") as typeof import("@playwright/test");
 const { installTouchTap } = (await import(join(repo, "app/test-device/touch-tap.ts"))) as typeof import("../app/test-device/touch-tap.ts");
 
-const PKG = "io.github.buerlino.pascaline"; // our app only (docs/shifts/rules.md section 3)
+const PKG = "dev.n62.calc"; // our app only (docs/shifts/rules.md section 3)
 const need = (n: string): string => process.env[n] ?? ((): never => { throw new Error(`${n} is not set`); })();
 const serial = need("ANDROID_SERIAL");
 const oldApk = need("OLD_APK");
