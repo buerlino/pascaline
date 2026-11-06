@@ -145,7 +145,7 @@ The end slot and the dimension check catch the 21; nothing but the reading catch
 from Find's unit list and sends qalc only whitelisted names.
 
 ### 5.3 Result-side pitfalls (for the empty end slot)
-`node engine/qalc/smoke.mjs engine/qalc/_out/dev '1 N*m' '1 nV/sqrt(Hz)' '5 µm' '1 hp'` (qalc's optimal-SI
+`node engine/qalc/smoke.mjs engine/qalc/_out/dev '1 N*m' '1 nV/sqrt(Hz)' '5 µm' '1 hp'` (`engine/qalc/smoke.mjs` at `8ac1e1e7`, deleted by S28; qalc's optimal-SI
 conversion, `glue.cc:94`): a torque `N·m` comes back as `1 J`; a noise density `nV/√Hz` as `Wb/√s`; `5 µm` as
 `0.000005 m` (the glue turns prefixes off, `glue.cc:96`); `1 hp` as 745.699987158 W, wrong from the 7th digit
 (docs/04 2.3 #10). G4 found `mmHg` defined as 1 Torr (find/units.yaml checks). So an empty end slot must not mean
@@ -240,4 +240,4 @@ still hold, except that "the Units app" reads "the unit view".
 | The owner's own top units give a median ≤ 4 | the owner names them; add to `UNITS`, rerun |
 | MathLive prompts carry a stacked fraction and our key routing | ron, first step of the milestone 5 unit view |
 | The empty-end-slot rule in qalc (typed units first) | gorge, U2, golden cases |
-| `°R` is Rankine in qalc (docs/04 Appendix C asked) | done here: `--read °R` gives `oR`; `engine/qalc/smoke.mjs … '1 °R to K'` gives 0.555555555556 K (5/9 K, absolute, like K); a golden case in U2 |
+| `°R` is Rankine in qalc (docs/04 Appendix C asked) | done here: `--read °R` gives `oR`; `engine/qalc/smoke.mjs … '1 °R to K'` (the script at `8ac1e1e7`, deleted by S28) gives 0.555555555556 K (5/9 K, absolute, like K); a golden case in U2 |
