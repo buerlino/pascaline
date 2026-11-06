@@ -36,12 +36,9 @@ const calc = createCalc();
 const session = new Session(calc);
 if (import.meta.env.VITE_MEASURE === "1") {
   void calc.ready().then(() => mark("engine-ready"));
-  if (new URLSearchParams(location.search).get("bench") === "plot")
-    void import("./plotBench.ts").then((m) => m.runPlotBench(shell, new URLSearchParams(location.search).has("manual")));
-  else if (new URLSearchParams(location.search).get("bench") === "defs") void import("./bench.ts").then((m) => m.runDefsBench(session));
+  if (new URLSearchParams(location.search).get("bench") === "defs") void import("./bench.ts").then((m) => m.runDefsBench(session));
   else if (new URLSearchParams(location.search).get("bench") === "library") void import("./bench.ts").then((m) => m.runLibraryBench(session));
   else if (new URLSearchParams(location.search).get("bench") === "keypad") void import("./keypadBench.ts").then((m) => m.runKeypadBench());
-  else if (new URLSearchParams(location.search).get("bench") === "solve") void import("./solveBench.ts").then((m) => m.runSolveBench(calc));
   else if (new URLSearchParams(location.search).get("bench") === "find") void import("./findBench.ts").then((m) => m.runFindBench(shell, entry));
   else if (new URLSearchParams(location.search).get("bench") === "golden") void import("./goldenBench.ts").then((m) => m.runGoldenBench());
   else if (new URLSearchParams(location.search).has("bench")) void import("./bench.ts").then((m) => m.runBench(session));
@@ -103,7 +100,7 @@ declare global {
 }
 // yieldWriter: a kill in the e2e tests (persist.spec.ts) lets go of the store without the pagehide flush (R95)
 window.pascaline = { entry, session, shell, userKeys, calc, plot: plotHook, renderStats, yieldWriter };
-if (import.meta.env.DEV && new URLSearchParams(location.search).has("pad")) void import("./units/padView.svelte.ts").then((m) => { window.pascaline.unitPad = m.unitPad; m.devPad(); }); // R24b: the unit pad alone on the keys (the units key opens it with the unit view, R24c)
+if (import.meta.env.DEV && new URLSearchParams(location.search).has("pad")) void import("./units/padView.svelte.ts").then((m) => { window.pascaline.unitPad = m.unitPad; m.devPad(); }); // the unit pad alone on the keys, dev server only: unitpad-draw.spec.ts and the gallery (gallery.spec.ts) use it; the units key opens it with the unit view (R24c)
 
 // Offline support (web build only): after the engine is up and the browser is idle, so the install's downloads
 // (the whole build, ~10 MB with both wasm files) never compete with the first paint or the engine's own load.

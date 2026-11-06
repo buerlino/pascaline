@@ -55,4 +55,3 @@ export function createLoaders(d: LoaderDeps) {
   };
   return l;
 }
-export type Loaders = ReturnType<typeof createLoaders>;
