@@ -1,6 +1,6 @@
 # Contributing to N62
 
-Thanks for your interest! N62 is at an early stage, so **ideas and feedback are as valuable as code**. You can open an issue to:
+Thanks for your interest! N62 is at an early stage, so **ideas and feedback are as valuable as code**. You can [open an issue](https://github.com/n62-dev/n62/issues/new/choose) to:
 - suggest a feature or tell us which calculator features you use most
 - report a **wrong result** (see [Reporting wrong results](#reporting-wrong-results))
 - point us to an open-source project we should reuse
