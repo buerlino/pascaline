@@ -131,14 +131,19 @@ test("finding 3: a key is dimmed exactly where it does nothing (the shift layer 
   expect(await dead(page, "up")).toBe(false);
 });
 
-test("finding 3: the Enter face stays readable in the Alpha layer (white, not blue on green)", async ({ page }) => {
+test("finding 3: the Enter face stays readable in the Alpha layer (its --on-enter label, not the Alpha colour)", async ({ page }) => {
   await tap(page, ["alpha"]);
   const colours = await page.evaluate(() => {
     const e = document.querySelector('[data-key="enter"]') as HTMLElement;
     const c = (el: Element) => getComputedStyle(el).color;
-    return { face: c(e.querySelector(".main") as Element), key: getComputedStyle(e).backgroundColor };
+    const probe = document.createElement("i");
+    probe.style.color = "var(--on-enter)";
+    document.body.append(probe);
+    const onEnter = c(probe);
+    probe.remove();
+    return { face: c(e.querySelector(".main") as Element), key: getComputedStyle(e).backgroundColor, onEnter };
   });
-  expect(colours.face).toBe("rgb(255, 255, 255)");
+  expect(colours.face).toBe(colours.onEnter);
 });
 
 // ---- finding 8: the Plot hint sits above the axes -----------------------------------------------------------------------

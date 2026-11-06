@@ -14,7 +14,7 @@ const config: CapacitorConfig = {
   webDir: 'dist',
   loggingBehavior: measure ? 'production' : 'none',
   // A72: the WebView's first frame, before the page paints, is the Dark --bg (app/src/style.css), not the default white
-  android: { path: '../android', backgroundColor: '#0b1020', webContentsDebuggingEnabled: webviewDebug }
+  android: { path: '../android', backgroundColor: '#000000', webContentsDebuggingEnabled: webviewDebug }
 };
 
 export default config;

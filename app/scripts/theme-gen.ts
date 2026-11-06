@@ -10,6 +10,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { apart, CVD } from "./cvd.ts";
 import { FAMILIES, type Family, type Palette } from "./theme-families.ts";
 
 export const KEYS = ["key-num", "key-op", "key-fn", "key-ctl", "key-nav"] as const;
@@ -222,6 +223,43 @@ function withOnError(t: Palette, dark: boolean): Palette {
   return { ...t, "on-error": dark ? get(t, "bg") : "#ffffff" };
 }
 
+/** R140: the label on an armed Shift or Alpha key (the key fills with the layer's colour): black or white, whichever reads better (always at least 4.5:1). Set last, from the final colours. */
+function withOnLayer(t: Palette): Palette {
+  const on = (c: string): string => (cr("#000000", c) >= cr("#ffffff", c) ? "#000000" : "#ffffff");
+  return { ...t, "on-shift": on(get(t, "shift")), "on-alpha": on(get(t, "alpha")) };
+}
+
+/**
+ * R140: Shift and Alpha stay this far apart (OKLab, scripts/cvd.ts) for protanopia, deuteranopia and tritanopia, and ⚠
+ * this far from Shift for normal vision. High contrast puts all four at 7:1 on the same keys, which squeezes them into
+ * a narrow band: N62 Light's Shift and Alpha reach 0.105 there at best (a darker Shift needs #5c2800, which then
+ * crowds ⚠), so its floors are lower.
+ */
+export const LAYER_APART = { normal: 0.12, high: 0.1 } as const;
+export const WARN_APART = { normal: 0.08, high: 0.06 } as const;
+/** `fg`'s lightness moved away from the backgrounds (hue and saturation kept, so every floor it meets only improves) until `ok` holds; fg itself when it already does or never does. */
+function moveUntil(fg: string, dark: boolean, ok: (c: string) => boolean): string {
+  if (ok(fg)) return fg;
+  const [h, s, l0] = rgb2hsl(fg);
+  for (let i = 1; i <= 200; i++) {
+    const c = hsl2hex([h, s, dark ? Math.min(1, l0 + i * 0.005) : Math.max(0, l0 - i * 0.005)]);
+    if (ok(c)) return c;
+  }
+  return fg;
+}
+/**
+ * R140: if Shift and Alpha come closer than LAYER_APART for any of the three colour-vision deficiencies, Shift moves away
+ * from the keys until they do not; the same for ⚠ against Shift. Plain keys draws Shift and Alpha in the text colour on
+ * purpose and is left alone.
+ */
+function withLayersApart(t: Palette, dark: boolean, high: boolean): Palette {
+  const k = high ? "high" : "normal";
+  const o: Palette = { ...t };
+  o["shift"] = moveUntil(get(t, "shift"), dark, (c) => Math.min(...Object.values(CVD).map((m) => apart(c, get(t, "alpha"), m))) >= LAYER_APART[k]);
+  o["warn"] = moveUntil(get(t, "warn"), dark, (c) => apart(c, get(o, "shift")) >= WARN_APART[k]);
+  return o;
+}
+
 export interface Combo {
   family: string;
   brightness: Brightness;
@@ -243,7 +281,8 @@ export function theme(c: Combo): { t: Palette; fixes: [string, string, string][]
   let o = t;
   if (c.plain) o = plain(o, dark);
   if (c.high) o = highContrast(o, dark);
-  return { t: withOnError(withPfx(withPick(o, c.high, dark), c.high), dark), fixes };
+  if (!c.plain) o = withLayersApart(o, dark, c.high);
+  return { t: withOnLayer(withOnError(withPfx(withPick(o, c.high, dark), c.high), dark)), fixes };
 }
 
 // --- the audit: every pair the app draws (docs/archive/shifts/2026-10-18-themes-report.md section 2) ---
@@ -284,6 +323,8 @@ export function checks(t: Palette, hc: boolean): Check[] {
   add("Keys", "Enter label", "on-enter", "key-enter", T);
   add("Keys", "label of a key that is on", "on-key-on", "key-on", T);
   add("Screen", "label on an error ground (Cancel)", "on-error", "error", 4.5);
+  add("Keys", "label of the armed Shift key", "on-shift", "shift", 4.5);
+  add("Keys", "label of the armed Alpha key", "on-alpha", "alpha", 4.5);
   for (const b of ["panel", "key-num"]) {
     for (const f of ["text", "shift", "muted"]) add("Sheet", `${f} on ${b}`, f, b, T);
     add("Sheet", `disabled row on ${b}`, "text-dead", b, D);

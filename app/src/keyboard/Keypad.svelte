@@ -523,19 +523,35 @@
   .alphaed .key[data-dead="true"] .main {
     color: var(--text-dead);
   }
-  .key[aria-pressed="true"] {
-    outline: var(--stroke) solid var(--key-on);
+  /* Shift and Alpha wear the other keys' colour (R140); only the label carries the layer colour. Armed, the key fills
+     with it (--on-shift / --on-alpha are black or white at 4.5:1); locked adds the 3 px outline round the fill. */
+  .key[data-key="shift"] .main {
+    color: var(--shift);
   }
-  .alphaed .key[data-key="alpha"][aria-pressed="true"] {
-    outline-color: var(--alpha);
+  .key[data-key="alpha"] .main {
+    color: var(--alpha);
   }
-  .key[data-locked="true"] {
-    outline-width: var(--stroke-thick);
-    background: color-mix(in srgb, var(--alpha) 25%, transparent);
+  .key[data-key="shift"][aria-pressed="true"] {
+    background: var(--shift);
+    outline: none;
+  }
+  .key[data-key="alpha"][aria-pressed="true"] {
+    background: var(--alpha);
+    outline: none;
+  }
+  .key[data-key="shift"][aria-pressed="true"] .main {
+    color: var(--on-shift);
+  }
+  .key[data-key="alpha"][aria-pressed="true"] .main {
+    color: var(--on-alpha);
+  }
+  .key[data-key="shift"][data-locked="true"],
+  .key[data-key="alpha"][data-locked="true"] {
+    outline: var(--stroke-thick) solid var(--alpha);
+    outline-offset: var(--sp-05);
   }
   .key[data-key="shift"][data-locked="true"] {
     outline-color: var(--shift);
-    background: color-mix(in srgb, var(--shift) 25%, transparent);
   }
   /* the flick bubble (P7 point 2): above the key, in the colour of the layer it fires; ✕ dimmed when nothing fires */
   .bubble {

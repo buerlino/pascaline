@@ -10,14 +10,14 @@
   inset: 0;
   width: 100%;
   height: 100%;
-  fill: rgba(8, 12, 24, 0.7);
+  fill: rgba(0, 0, 0, 0.7);
 }
 .tips .ring {
   position: absolute;
   box-sizing: border-box;
-  border: 2px solid #ffc233; /* amber with a dark edge each side: it shows on the light status line and the dark one */
+  border: 2px solid var(--shift); /* the Shift colour with a dark edge each side: it shows on the light status line and the dark one */
   border-radius: 10px;
-  box-shadow: 0 0 0 1px rgba(8, 12, 24, 0.85), inset 0 0 0 1px rgba(8, 12, 24, 0.85);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.85), inset 0 0 0 1px rgba(0, 0, 0, 0.85);
   pointer-events: none;
 }
 .tips .n {
@@ -26,9 +26,9 @@
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background: #ffc233;
-  color: #0b1020;
-  box-shadow: 0 0 0 1px rgba(8, 12, 24, 0.85);
+  background: var(--shift);
+  color: var(--on-shift);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.85);
   font: 700 12px/1 system-ui, sans-serif;
   flex: none;
 }

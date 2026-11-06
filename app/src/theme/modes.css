@@ -57,4 +57,5 @@
   outline-color: var(--line);
   outline-offset: -1.5px;
 }
-/* a pressed or locked Shift/Alpha keeps Keypad's own outline (2px press, 3px lock), so a lock still differs from a press */
+/* an armed Shift/Alpha fills with its colour and has no outline (R140); only a locked one keeps Keypad's own 3px outline,
+   so a lock still differs from a press */

@@ -38,7 +38,7 @@ const KEY_BG = ["key-num", "key-op", "key-fn", "key-ctl", "key-nav", "key-pfx"] 
 for (const [theme, t] of blocks) {
   describe(`keypad contrast, ${theme} theme`, () => {
     it("reads the tokens it needs", () => {
-      for (const k of [...KEY_BG, "key-enter", "text", "text-dead", "shift", "alpha", "on-enter", "on-error", "approx", "warn", "pick", "focus", "key-on", "on-key-on", "error", "bg", "chip-bg"]) expect(t[k], `--${k}`).toBeDefined();
+      for (const k of [...KEY_BG, "key-enter", "text", "text-dead", "shift", "alpha", "on-enter", "on-error", "approx", "warn", "pick", "focus", "key-on", "on-key-on", "on-shift", "on-alpha", "error", "bg", "chip-bg"]) expect(t[k], `--${k}`).toBeDefined();
     });
     for (const bg of KEY_BG)
       it(`${bg}: face (primary, Shift, Alpha layers) and both legends are at least 4.5:1`, () => {
@@ -56,7 +56,7 @@ for (const [theme, t] of blocks) {
       const pairs: [string, string, number][] = [
         ["text", "bg", 4.5], ["muted", "bg", 4.5], ["error", "bg", 4.5], ["approx", "bg", 4.5], ["warn", "bg", 4.5],
         ["text", "pick", 4.5], ["muted", "pick", 4.5], ["text", "panel", 4.5], ["text", "chip-bg", 4.5], ["focus", "bg", 3],
-        ["on-key-on", "key-on", 4.5], ["on-error", "error", 4.5],
+        ["on-key-on", "key-on", 4.5], ["on-error", "error", 4.5], ["on-shift", "shift", 4.5], ["on-alpha", "alpha", 4.5],
       ];
       for (const [f, b, min] of pairs) expect(contrast(t[f] as string, t[b] as string), `--${f} on --${b}`).toBeGreaterThanOrEqual(min);
     });
