@@ -2,9 +2,9 @@
 // A32: the core list (tests/core/core.yaml) on a device's WebView, attached over adb. The same replay and check as
 // test/core.spec.ts (R74); only the page differs. Needs the test build (build.sh --test: WebView debugging on) installed;
 // tools/core-device.sh holds the device lock and keeps the screen awake around it.
-import { _android as android, expect, test, type AndroidDevice, type Page } from "@playwright/test";
+import { _android as android, test, type AndroidDevice, type Page } from "@playwright/test";
 import { check, engineReady, loadCore, replay } from "../test/core-lib.ts";
-import { planDevice } from "./core-plan.ts";
+import { NATIVE_PLUGINS, pluginProblem, planDevice } from "./core-plan.ts";
 import { installTouchTap } from "./touch-tap.ts";
 
 const PKG = "dev.n62.calc"; // our app only (docs/shifts/rules.md section 3)
@@ -20,6 +20,13 @@ async function launch(): Promise<Page> {
   installTouchTap(page);
   await page.waitForFunction(() => customElements.get("math-field") !== undefined && window.n62 !== undefined, undefined, { timeout: 30_000 });
   await engineReady(page);
+  // R139: a plugin name that differs between the JS and the APK is a silent fallback; failing here turns every case red, which the
+  // night's CORE DEVICE count and case list report (a test with a non-case title would not reach them)
+  const problem = pluginProblem(await page.evaluate((names) => {
+    const cap = (window as unknown as { Capacitor?: { isPluginAvailable(n: string): boolean } }).Capacitor;
+    return names.map((n) => [n, cap?.isPluginAvailable(n) ?? false] as const);
+  }, NATIVE_PLUGINS));
+  if (problem !== null) throw new Error(problem);
   return page;
 }
 
@@ -49,17 +56,6 @@ test.beforeAll(async () => {
 test.afterAll(async () => {
   await device?.shell(`am force-stop ${PKG}`).catch(() => undefined);
   await device?.close().catch(() => undefined);
-});
-
-/** R139: the two local plugins are in the APK under the names the JS asks for. A name that differs on one side is a silent
- *  fallback (isPluginAvailable is false, the app takes the web path), so the device run checks it first. */
-test("both native plugins are available (N62Files, N62Haptics)", async () => {
-  const page = await fresh();
-  const seen = await page.evaluate(() => {
-    const cap = (window as unknown as { Capacitor?: { isPluginAvailable(n: string): boolean } }).Capacitor;
-    return ["N62Files", "N62Haptics"].map((n) => [n, cap?.isPluginAvailable(n) ?? false] as const);
-  });
-  expect(seen).toEqual([["N62Files", true], ["N62Haptics", true]]);
 });
 
 const title = (c: { id: string; title: string; known?: string; needs?: string }): string =>
