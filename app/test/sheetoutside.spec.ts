@@ -5,7 +5,7 @@
 // keypad; in Settings › Your keys a free key still goes to its row (R4b); the status line's ☰, place and view tabs
 // keep their jobs. Expected values derived from the rule.
 import { expect, test, type Page } from "@playwright/test";
-import { drag, entryValue, open, sheet, tap } from "./helpers.ts";
+import { drag, entryValue, open, sheet, tap, touch } from "./helpers.ts";
 
 test.beforeEach(async ({ page }) => {
   await open(page);
@@ -82,6 +82,16 @@ test("the rest of a trackpad drag that closed a sheet steps nothing until the fi
   await expect(page.getByTestId("row-actions")).toHaveCount(0);
   await drag(page, '[data-testid="pad-hub"]', 0, -30); // a new drag steps again: ▲ picks the row
   await expect(page.getByTestId("row-actions")).toBeVisible();
+});
+
+test("a held ⌫ that closed a short sheet does not repeat until the finger lifts", async ({ page }) => {
+  await tap(page, ["@place"]); // the Apps sheet: four rows, the ⌫ row stays visible above it
+  await expect(page.getByTestId("apps")).toBeVisible();
+  const f = await touch(page, "bksp");
+  await page.waitForTimeout(800); // past the repeat delay (400 ms) and several repeats
+  await f.end();
+  await expect(page.getByTestId("apps")).toHaveCount(0);
+  expect(await entryValue(page)).toBe("78");
 });
 
 test("Esc on screen goes back one level from a submenu, then closes the root", async ({ page }) => {
