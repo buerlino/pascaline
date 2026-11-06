@@ -21,7 +21,7 @@ For the session that writes the work packages. It replaces the plan "R50b writes
 This answers feedback #53 and #55. The decisions.md entry ("R50: themes", as Choice / Why / Would change if) is still to write. Point 1 above is the Choice. **Why:** one interaction model with no extra keys; the setting R12c planned grows into a single Appearance page. **Would change if:** a family is not used in four weeks (the removal test; the family goes), or the startup-size budget forbids lazy theme files.
 
 ## 2. The source of truth
-- **The mockup:** [../mockups/themes-r50.html](../mockups/themes-r50.html) (published copy: claude.ai/artifact/MZ5N19jZ2ggMn2NiEo5uvw). It draws the real keypad (the R3 cluster, then rows 3–9 of `spec/keyboard.yaml`) with history, a Menu sheet, Shift on, Alpha on, and the **Settings › Appearance** page as the owner will see it: Theme as radio rows with five swatch dots, Brightness as a three-way control, then High contrast and Plain keys as switches with one line of explanation each.
+- **The mockup:** `archive/mockups/themes-r50.html` at `b693c31f` (published copy: claude.ai/artifact/MZ5N19jZ2ggMn2NiEo5uvw). It draws the real keypad (the R3 cluster, then rows 3–9 of `spec/keyboard.yaml`) with history, a Menu sheet, Shift on, Alpha on, and the **Settings › Appearance** page as the owner will see it: Theme as radio rows with five swatch dots, Brightness as a three-way control, then High contrast and Plain keys as switches with one line of explanation each.
 - **The values and the rules:** [../../tools/probes/themes-audit.mjs](../../../tools/probes/themes-audit.mjs) contains the same code as the mockup's script:
   - `FAMILIES`: the base values per role;
   - `base()`: the contrast floor;
@@ -88,6 +88,6 @@ Typecheck, unit and e2e tests; the contrast test over all 40 combinations; `node
 2. **Five families or fewer.** The owner approved all five. The removal test (section 1, Would change if) trims the list later if a family goes unused.
 
 ## Files of this report
-- New: `docs/mockups/themes-r50.html` (the mockup), `tools/probes/themes-audit.mjs` (the probe), one row in `tools/probes/README.md`, this file.
+- New: the mockup (`archive/mockups/themes-r50.html` at `b693c31f`), `tools/probes/themes-audit.mjs` (the probe), one row in `tools/probes/README.md`, this file.
 - Not touched: `docs/decisions.md`, `docs/backlog.md`, `docs/shifts/brief.md`, `docs/feedback.md` and the package files. Another session had uncommitted edits to the first three when this was written. The package session makes the changes of sections 1 and 4 there.
 - Nothing is committed yet.

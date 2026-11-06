@@ -17,7 +17,7 @@ import { EQ_DIFF, EQ_INEXACT_FLAG, isOurStore } from "./ourNames.ts";
 
 const setsOf = (defs: DefChange[]): string[] => defs.flatMap((c) => ("set" in c ? [`${c.set.name}=${c.set.cmds.join(";")}`] : []));
 
-/** N9's library file (docs/archive/bug-hunt-2026-10-19.md N9). */
+/** N9's library file (`archive/bug-hunt-2026-10-19.md` in docs/ at `98e96656`, N9). */
 const N9 = "// pascaline library 1\n// a counter\ncnt:=0\n// bumps the counter\nbump(x):={ increment(cnt); return x; }\n// drops beam\ndrop(x):={ DelVar(cnt); return x; }\n";
 
 describe.skipIf(!giacAvailable())("G100: the stores of an input, from Giac's tree", () => {

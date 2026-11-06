@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 # Phase 0 night shift: defaults and proposals (2026-10-11)
 
-Decided by Henri after one brainstorm round with the four workers (each gave 3–5 ideas, then reacted once to the collected list; nobody objected to D1–D9). Every default below stays inside CLAUDE.md and docs/02. The two **proposals** at the end would change the plan and wait for the user's yes or no. Numbers come from `spike/RESULTS.md` (Lenovo Tab One, release build, WebView 131, unless noted).
+Decided by Henri after one brainstorm round with the four workers (each gave 3–5 ideas, then reacted once to the collected list; nobody objected to D1–D9). Every default below stays inside CLAUDE.md and docs/02. The two **proposals** at the end would change the plan and wait for the user's yes or no. Numbers come from [phase-0-results.md](phase-0-results.md) (Lenovo Tab One, release build, WebView 131, unless noted).
 
 Judged by the two principles in CLAUDE.md: reuse open source, and speed for engineers. (The night-shift brief is in git history: `git show 6f17010:spike/NIGHT-SHIFT.md`.)
 

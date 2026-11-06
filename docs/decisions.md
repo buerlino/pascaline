@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 # Decision log
 
-Phase 0 decisions (D1–D9, P1, P2): [spike/DECISIONS.md](../spike/DECISIONS.md). This file holds what binds from Phase 1 on, as Choice and Would change if; "Rule: <file> <section>" names where a rule is stated in full. Every full text, with its why, evidence, costs and alternatives, is in [archive/decisions-2026-10.md](archive/decisions-2026-10.md) under the same name: read it only when a decision is questioned. A decision changes in place (rules section 9).
+Phase 0 decisions (D1–D9, P1, P2): [the archive](archive/phase-0-decisions.md). This file holds what binds from Phase 1 on, as Choice and Would change if; "Rule: <file> <section>" names where a rule is stated in full. Every full text, with its why, evidence, costs and alternatives, is in [archive/decisions-2026-10.md](archive/decisions-2026-10.md) under the same name: read it only when a decision is questioned. A decision changes in place (rules section 9).
 
 ## Needs the user
 
@@ -17,7 +17,7 @@ The owner's other open items are in [backlog.md](backlog.md), "Needs the user". 
 
 ### Pipeline and process
 - **The name N62 (owner, 2026-11-05):** "Pascaline" is taken. Id `dev.n62.calc`, n62.dev, repo `n62-dev/n62`; what is stored, installed or linked changes before v0.1.0 (A77, R138, A78), internal names after; old backups are read. Would change if: TMview finds N62 in class 9.
-- **The declutter (owner, 2026-11-05 evening): history lives in git.** Decided notes, reports past a week, merged packages' mockups and one-package probes are deleted, not archived; a link to one becomes its path and commit in a code span; `docs/archive/` keeps the full log and what code or a live doc cites. Packages S26–S34, R136, R137, G189, A75, A76; R37 dropped. Rule: rules section 10. Would change if: a deleted file is needed back twice a month.
+- **The declutter (owner, 2026-11-05 evening): history lives in git.** Decided notes, reports past a week, merged packages' mockups and one-package probes are deleted, not archived; a link to one becomes its path and commit in a code span; `docs/archive/` keeps the full log and what code or a live doc cites. docs/04 keeps what binds: 64 of 70 kB (S34, Opus pass 80). Rule: rules section 10. Would change if: a deleted file is needed back twice a month.
 - **Owner answers of 2026-11-05 (morning).** The weekly fuzz runs in 10-minute slices from Wed 11-11 (G167: `--part i/n` and a separate shrink, Opus pass 69); the red-first check can test the stock engine for a G125 package (A71); sofia's gate script calls `tools/devlock.sh` by its absolute path. Would change if: the fuzz count is cut to fit one slice.
 - **Owner answers of 2026-11-02, evening ([night review](research/night-review-2026-11-02.md) section 6, the full text).** The queue as proposed; red-first counts only added or tightened tests (A67). Would change if: a fix needs a test loosened.
 - **Owner answers of 2026-10-31 (night review 2026-10-30, section 6; evening).** Gated deploys (A52); A53's diff stage; R103 trimmed; R90 dropped; `tests/core/ONE-TIME.md`. Full text: archive.
