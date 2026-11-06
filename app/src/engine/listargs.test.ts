@@ -132,7 +132,7 @@ describe("R80f1 a LIST_IN_ARGUMENTS entry for argument 0", () => {
 });
 
 // G124 (backlog F107): for a few names Giac's reading of one list as the argument list is the documented meaning (the probe's
-// second class, listargsEvidence.ts PROBED_LIST_FORM_EVIDENCE): a matrix from its rows, dimensions of zeros or of a random
+// second class, listargs-evidence.ts PROBED_LIST_FORM_EVIDENCE): a matrix from its rows, dimensions of zeros or of a random
 // matrix, the pair of simp2 and iegcd, subst's expression and equation. Expected values are Giac's own (derived: [[1,2],[3,4]]
 // is the rows; 45·2 + 75·(−1) = 15 = gcd(45,75); 12/6 = 2, 18/6 = 3; x+1 at x=2 is 3); the G111, R80f1 and G112 names stay.
 describe.skipIf(!giacAvailable())("G124 a list form Giac documents", () => {

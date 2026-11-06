@@ -5,7 +5,7 @@
 // equals the call with the elements as separate arguments, or is one number. A name whose help signature takes a list (Lst,
 // Vect, Mtrx) or that answers a list and its reverse alike (sum, gcd, mean) reads the list as its data and is never a hit.
 //   node tools/probes/list-args.ts             # the hits with their reason, the counts
-//   WRITE=1 node tools/probes/list-args.ts     # also writes app/src/engine/listargsTable.ts and listargsEvidence.ts (checked in)
+//   WRITE=1 node tools/probes/list-args.ts     # also writes app/src/engine/listargsTable.ts and tests/engine/listargs-evidence.ts (checked in)
 //   node tools/probes/list-args.ts Psi Zeta     # these names only, every verdict
 // Needs the Find index (`npm run index` in app/), Giac's tarball (PASCALINE_DL_DIR, default the main checkout's cache) and the
 // engine as tools/probes/engine.ts (GIAC_OUT). One engine, the names in order; a name that hangs (DEADLINE_MS, default 5000) or
@@ -116,6 +116,6 @@ for (const [n, form, why] of forms) console.log(`form ${n.padEnd(20)} ${form}: $
 if (process.env["WRITE"] === "1" && !only.length) {
   const { table, evidence } = tableFiles(hits.map(([n, v]) => [n, v.why] as const), forms, [...skip], deadline, names.length);
   writeFileSync(resolve(repo, "app/src/engine/listargsTable.ts"), table);
-  writeFileSync(resolve(repo, "app/src/engine/listargsEvidence.ts"), evidence);
-  console.log("wrote app/src/engine/listargsTable.ts and listargsEvidence.ts");
+  writeFileSync(resolve(repo, "tests/engine/listargs-evidence.ts"), evidence);
+  console.log("wrote app/src/engine/listargsTable.ts and tests/engine/listargs-evidence.ts");
 }
