@@ -19,7 +19,7 @@
 set -euo pipefail
 apply=0; [[ "${1:-}" == "--apply" ]] && apply=1
 main="$(cd "$(git rev-parse --git-common-dir)/.." && pwd)"; cd "$main"
-coord="${PASCALINE_COORD:-$main/.coord}"; tasks="$main/.tasks"
+coord="${N62_COORD:-$main/.coord}"; tasks="$main/.tasks"
 today="$(date +%F)"; arch="$tasks/archive/$today"; report="$tasks/gc-$today.md"
 mkdir -p "$tasks"
 [[ $apply -eq 1 ]] || report="$tasks/gc-$today-dry.md"  # a dry run never overwrites the day's applied report

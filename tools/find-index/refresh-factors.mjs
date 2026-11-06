@@ -4,7 +4,7 @@
 // run in Node and prints the difference to the file. Empty on libqalculate 5.13.1. Read-only: it never writes the file.
 //
 //   node tools/find-index/refresh-factors.mjs        # QALC_OUT = the qalc build (default engine/qalc/_out/dev;
-//                                                    #   engine/qalc/build-wasm.sh dev), PASCALINE_QALC_DL_DIR the tarball cache
+//                                                    #   engine/qalc/build-wasm.sh dev), N62_QALC_DL_DIR the tarball cache
 //
 // A change to a row needs a case in find/units.yaml (a checks entry: the exact definition or CODATA) or the owner's OK,
 // and is made by hand in find/factors.yaml with its source and note. A row with a `qalc` field is one where our value

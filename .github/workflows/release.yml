@@ -36,8 +36,8 @@ jobs:
     timeout-minutes: 120
     env:
       TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
-      PASCALINE_DL_DIR: ${{ github.workspace }}/engine/giac/_downloads
-      PASCALINE_QALC_DL_DIR: ${{ github.workspace }}/engine/qalc/_downloads
+      N62_DL_DIR: ${{ github.workspace }}/engine/giac/_downloads
+      N62_QALC_DL_DIR: ${{ github.workspace }}/engine/qalc/_downloads
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -75,14 +75,14 @@ jobs:
       - name: Signed APK (./build.sh --release)
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
-          PASCALINE_KEYSTORE: ${{ runner.temp }}/release.jks
-          PASCALINE_KEYSTORE_PASS: ${{ secrets.KEYSTORE_PASSWORD }}
-          PASCALINE_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-          PASCALINE_KEY_PASS: ${{ secrets.KEY_PASSWORD }}
-          PASCALINE_RELEASE_TAG: ${{ env.TAG }}
+          N62_KEYSTORE: ${{ runner.temp }}/release.jks
+          N62_KEYSTORE_PASS: ${{ secrets.KEYSTORE_PASSWORD }}
+          N62_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          N62_KEY_PASS: ${{ secrets.KEY_PASSWORD }}
+          N62_RELEASE_TAG: ${{ env.TAG }}
         run: |
-          (umask 077 && printf '%s' "$KEYSTORE_BASE64" | base64 -d > "$PASCALINE_KEYSTORE")
-          chmod 600 "$PASCALINE_KEYSTORE"
+          (umask 077 && printf '%s' "$KEYSTORE_BASE64" | base64 -d > "$N62_KEYSTORE")
+          chmod 600 "$N62_KEYSTORE"
           unset KEYSTORE_BASE64
           NO_LOCK=1 ./build.sh --release --engine-dir engine/giac/_out/release
       - name: Delete the keystore

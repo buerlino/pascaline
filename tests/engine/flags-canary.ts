@@ -3,7 +3,7 @@
 // app/src/engine/flags.ts CONTEXT_FIELDS, as read and restored by the host's settings check or with the reason it is
 // not. A Giac update that adds a field fails here until someone decides about it; a listed field the source no longer
 // has fails too (the list stays true). Reads the tarball only; no engine, no network.
-//   node tests/engine/flags-canary.ts        # PASCALINE_DL_DIR: the tarball cache (default engine/giac/_downloads)
+//   node tests/engine/flags-canary.ts        # N62_DL_DIR: the tarball cache (default engine/giac/_downloads)
 import { SOURCES, member, tarball } from "../../tools/find-index/state.mjs";
 import { CONTEXT_FIELDS } from "../../app/src/engine/flags.ts";
 

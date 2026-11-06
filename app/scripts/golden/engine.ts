@@ -67,7 +67,7 @@ export function stageRegress(): void {
   const r = spawnSync(process.execPath, [`${root}tools/giac-regress/run.mjs`], { env: { ...process.env, GIAC_MJS: mjs }, encoding: "utf8", timeout: 600_000 });
   const secs = ((performance.now() - t0) / 1000).toFixed(0);
   const lines = `${r.stdout}${r.stderr}`.trim().split("\n");
-  const counts = lines.filter((l) => /^pascaline-(check|known|patched)\.cas: \d+ passed/.test(l)).map((l) => l.replace(/^pascaline-/, "").replace(/\.cas: /, " ").replace(/, [\d.]+ s.*/, ""));
+  const counts = lines.filter((l) => /^n62-(check|known|patched)\.cas: \d+ passed/.test(l)).map((l) => l.replace(/^n62-/, "").replace(/\.cas: /, " ").replace(/, [\d.]+ s.*/, ""));
   const bad = lines.filter((l) => /^\s+(FAILS|PASSES) |DIFFERS/.test(l));
   for (const l of bad) console.log(`  regress ${l.trim()}`);
   report(

@@ -69,8 +69,8 @@ if (process.argv[1] !== undefined && resolve(process.argv[1]) === fileURLToPath(
   process.exitCode = refreshIndex({
     index: join(appDir, "src/find/_gen/find-index.json"),
     sources: indexSources(repo, [
-      dl("PASCALINE_DL_DIR", "engine/giac/_downloads", "giac_2.1.0-1.tar.gz"),
-      dl("PASCALINE_QALC_DL_DIR", "engine/qalc/_downloads", "libqalculate-5.13.1.tar.gz"),
+      dl("N62_DL_DIR", "engine/giac/_downloads", "giac_2.1.0-1.tar.gz"),
+      dl("N62_QALC_DL_DIR", "engine/qalc/_downloads", "libqalculate-5.13.1.tar.gz"),
     ]),
     generate: () => spawnSync("npm", ["run", "index"], { cwd: appDir, stdio: "inherit" }).status ?? 1,
     log: (l) => console.log(l),

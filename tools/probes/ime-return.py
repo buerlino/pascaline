@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-or-later
-"""R81 (F99): does the system keyboard come up when Pascaline returns from another app? On the device only: desktop
+"""R81 (F99): does the system keyboard come up when N62 returns from another app? On the device only: desktop
 Playwright fakes the lifecycle events, and a synthetic blur leaves document.hasFocus() true, which a real one does not.
 
 usage: ANDROID_SERIAL=<serial> tools/probes/ime-return.py [--n 5] [--ways home,recents,shade] [--tap X:Y] [--pause 1.5]
        ANDROID_SERIAL=<serial> tools/probes/ime-return.py --watch SECONDS
   --tap X:Y   a key of our keypad (a digit), tapped before every round so the entry has the focus when leaving
   --watch S   A46: no gestures of its own. Clears logcat, waits S seconds while you switch away and back by hand
-              (type 5 5, home, swipe along the bar), then prints each Pascaline ImeTracker `onRequestShow ... reason`
+              (type 5 5, home, swipe along the bar), then prints each N62 ImeTracker `onRequestShow ... reason`
               line and each SHOW_/HIDE_ reason with its time; exit 1 if any show for the package was logged
               (SHOW_AUTO_EDITOR_FORWARD_NAV or other). Injected input never reproduced the bug, so use the hand.
   --ways      home: the home key, then the launcher intent (as the icon); recents: the recent-apps key, then a tap on

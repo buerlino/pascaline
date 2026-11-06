@@ -6,14 +6,14 @@
   tools/device_run.py start  [--runs 7] [--mode cold|warm|first]
   tools/device_run.py bench  [--runs 5]            # 55 cases per launch, p50/p95, cancel
   tools/device_run.py page PATH [--wait MARK] [--timeout 60]   # open another page, print its marks
-    (appends the page's PASCALINE_BENCH results, e.g. solve/plot/python, to .coord/device-runs.jsonl as kind "page")
+    (appends the page's N62_BENCH results, e.g. solve/plot/python, to .coord/device-runs.jsonl as kind "page")
 
 Modes for `start`: first = fresh install (no WebView code cache), cold = process killed with
 am force-stop (code cache present), warm = app in background, brought back to front.
 Results are JSON lines on stdout and appended to .coord/device-runs.jsonl. Only the tablet's own
 app is installed or removed; the caller must hold the device lock (devlock.sh acquire <serial> ...).
 
-Env: ANDROID_SERIAL (device), PASCALINE_COORD (default <main checkout>/.coord), READY_MARK (the mark `start`
+Env: ANDROID_SERIAL (device), N62_COORD (default <main checkout>/.coord), READY_MARK (the mark `start`
 waits for; default engine-ready), APK (for --mode first; default the Gradle release APK), BENCH_PATH (default /?bench=1).
 """
 import argparse, json, os, re, statistics, subprocess, sys, time
@@ -24,7 +24,7 @@ ACT = f"{PKG}/.MainActivity"
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.abspath(os.path.join(HERE, ".."))
 MAIN = REPO.split("/.claude/worktrees/")[0]
-COORD = os.environ.get("PASCALINE_COORD", os.path.join(MAIN, ".coord"))
+COORD = os.environ.get("N62_COORD", os.path.join(MAIN, ".coord"))
 
 
 def adb(*args, check=True, timeout=120):
@@ -73,14 +73,14 @@ def logcat_clear():
 
 
 def logcat_dump():
-    return adb("logcat", "-d", "-v", "epoch", "-s", "PASCALINE_T:I", "Capacitor/Console:I", "chromium:I")
+    return adb("logcat", "-d", "-v", "epoch", "-s", "N62_T:I", "Capacitor/Console:I", "chromium:I")
 
 
 def parse_marks(text):
     """name -> dict of fields (first occurrence wins), from both Java and JS marks."""
     marks = {}
     for line in text.splitlines():
-        m = re.search(r"PASCALINE_(?:T|BENCH):? (\S+) (.*)$", line)
+        m = re.search(r"N62_(?:T|BENCH):? (\S+) (.*)$", line)
         if not m:
             continue
         name, rest = m.group(1), m.group(2)
@@ -93,7 +93,7 @@ def wait_for(mark, timeout):
     t0 = time.time()
     while time.time() - t0 < timeout:
         txt = logcat_dump()
-        if re.search(rf"PASCALINE_T {re.escape(mark)} ", txt):
+        if re.search(rf"N62_T {re.escape(mark)} ", txt):
             return txt
         time.sleep(0.5)
     return logcat_dump()
@@ -183,7 +183,7 @@ def cmd_bench(a):
         cases = {}
         summary = None
         for line in txt.splitlines():
-            m = re.search(r"PASCALINE_BENCH (case|summary) (\{.*\})", line)
+            m = re.search(r"N62_BENCH (case|summary) (\{.*\})", line)
             if not m:
                 continue
             d = json.loads(m.group(2))
@@ -215,10 +215,10 @@ def cmd_bench(a):
 
 
 def parse_bench_lines(text):
-    """All `PASCALINE_BENCH <kind> {json}` lines (solve, plot, python, ... pages), in order, plus `kind key=value` marks."""
+    """All `N62_BENCH <kind> {json}` lines (solve, plot, python, ... pages), in order, plus `kind key=value` marks."""
     out = []
     for line in text.splitlines():
-        m = re.search(r"PASCALINE_BENCH (\S+) (\{.*\})\s*$", line)
+        m = re.search(r"N62_BENCH (\S+) (\{.*\})\s*$", line)
         if m:
             try:
                 out.append({"what": m.group(1), **json.loads(m.group(2))})

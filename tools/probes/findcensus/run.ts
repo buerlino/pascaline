@@ -89,9 +89,9 @@ export function censusEntries(repo: string, aide: string): Entry[] {
   return out;
 }
 
-/** Giac's help text from the pinned tarball (tools/find-index/state.mjs; PASCALINE_DL_DIR, default the main checkout's cache). */
+/** Giac's help text from the pinned tarball (tools/find-index/state.mjs; N62_DL_DIR, default the main checkout's cache). */
 export async function aideCas(mainCheckout: string): Promise<string> {
-  process.env["PASCALINE_DL_DIR"] ??= join(mainCheckout, "engine/giac/_downloads");
+  process.env["N62_DL_DIR"] ??= join(mainCheckout, "engine/giac/_downloads");
   // a URL, not a literal specifier: state.mjs is plain JavaScript without types
   const st = (await import(new URL("../../find-index/state.mjs", import.meta.url).href)) as {
     SOURCES: { giac: unknown };

@@ -17,7 +17,7 @@ const sha = (s) => createHash("sha256").update(s).digest("hex");
 const dsc = (hash) => `Format: 1.0\nSource: giac\nVersion: 9.9.9-1\nChecksums-Sha1:\n 0000000000000000000000000000000000000000 4 ${NAME}\nChecksums-Sha256:\n ${hash} 4 ${NAME}\nFiles:\n 00000000000000000000000000000000 4 ${NAME}\n`;
 const GOOD = "good";
 
-const root = mkdtempSync(join(tmpdir(), "pascaline-fetch-"));
+const root = mkdtempSync(join(tmpdir(), "n62-fetch-"));
 /** One fetch: the server holds `served` and a `.dsc` with `line`; the script pins `pin`; `cached` is put in the cache first. */
 function fetch(name, { served, line, pin, cached }) {
   const srv = join(root, name, "srv");
@@ -28,7 +28,7 @@ function fetch(name, { served, line, pin, cached }) {
   writeFileSync(join(srv, NAME.replace(/\.tar\.gz$/, ".dsc")), dsc(line));
   if (cached !== undefined) writeFileSync(join(dl, NAME), cached);
   const sh = `source "$1"; GIAC_TARBALL=${NAME}; GIAC_SHA256=${pin}; GIAC_URLS=("file://${srv}/${NAME}"); GIAC_DSC_URLS=("file://${srv}/${NAME.replace(/\.tar\.gz$/, ".dsc")}"); fetch_giac`;
-  const r = spawnSync("bash", ["-c", sh, "fetch-test", script], { env: { ...process.env, PASCALINE_DL_DIR: dl }, encoding: "utf8", timeout: 60_000 });
+  const r = spawnSync("bash", ["-c", sh, "fetch-test", script], { env: { ...process.env, N62_DL_DIR: dl }, encoding: "utf8", timeout: 60_000 });
   return { ok: r.status === 0, kept: existsSync(join(dl, NAME)), out: `${r.stdout}${r.stderr}`.trim().split("\n").slice(-2).join(" | ") };
 }
 

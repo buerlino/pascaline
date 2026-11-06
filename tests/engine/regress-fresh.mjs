@@ -6,7 +6,7 @@ import { build, loadCases } from "../../tools/giac-regress/export.mjs";
 const r = build(loadCases());
 const bad = [];
 for (const [name, text] of [["check", r.check], ["known", r.known], ["patched", r.patched]]) {
-  if (readFileSync(new URL(`../../tools/giac-regress/pascaline-${name}.cas`, import.meta.url), "utf8") !== text) bad.push(`pascaline-${name}.cas`);
+  if (readFileSync(new URL(`../../tools/giac-regress/n62-${name}.cas`, import.meta.url), "utf8") !== text) bad.push(`n62-${name}.cas`);
 }
 if (bad.length) {
   console.log(`STALE ${bad.join(", ")}: run node tools/giac-regress/export.mjs and commit`);

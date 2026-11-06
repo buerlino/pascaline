@@ -53,7 +53,7 @@ public class PascalineHapticsPlugin extends Plugin {
                 vibrator.vibrate(ms);
             }
             if (BuildConfig.MEASURE) {
-                Log.i("PASCALINE_HAPTICS", "vibrate ms=" + ms + " amplitude=" + amp + " ampControl=" + ctl);
+                Log.i("N62_HAPTICS", "vibrate ms=" + ms + " amplitude=" + amp + " ampControl=" + ctl);
             }
             call.resolve();
         } catch (RuntimeException e) {

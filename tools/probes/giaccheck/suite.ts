@@ -11,11 +11,11 @@ const repo = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 /** The sets with a test<name> and a <name>.out; partfrac and other have no usable pair. */
 export const SETS: readonly string[] = ["cas", "factor", "geo", "integrate", "limit", "normalize", "proba"];
 
-/** The tarball: GIAC_CHECK_TARBALL, else the download cache (PASCALINE_DL_DIR or this checkout's). */
+/** The tarball: GIAC_CHECK_TARBALL, else the download cache (N62_DL_DIR or this checkout's). */
 export function tarballPath(): string {
   const env = process.env["GIAC_CHECK_TARBALL"];
   if (env && existsSync(env)) return env;
-  const dirs = [process.env["PASCALINE_DL_DIR"], resolve(repo, "engine/giac/_downloads")].filter((d): d is string => !!d);
+  const dirs = [process.env["N62_DL_DIR"], resolve(repo, "engine/giac/_downloads")].filter((d): d is string => !!d);
   for (const d of dirs) for (const n of ["giac-2.1.0.tar.gz", "giac_2.1.0-1.tar.gz"]) if (existsSync(resolve(d, n))) return resolve(d, n);
   return process.env["GIAC_CHECK_TARBALL"] ?? "";
 }
@@ -25,7 +25,7 @@ const cache = new Map<string, string>();
 function member(tarball: string, path: string): string {
   if (cache.size === 0) {
     const st = statSync(tarball);
-    const dir = resolve(tmpdir(), `pascaline-giac-check-${st.size}-${Math.floor(st.mtimeMs)}`);
+    const dir = resolve(tmpdir(), `n62-giac-check-${st.size}-${Math.floor(st.mtimeMs)}`);
     if (!existsSync(resolve(dir, "done"))) {
       mkdirSync(dir, { recursive: true });
       const names = SETS.flatMap((s) => [`*/check/test${s}`, `*/check/${s}.out`]);

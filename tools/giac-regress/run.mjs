@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// G89: runs pascaline-check.cas, pascaline-known.cas and pascaline-patched.cas line by line on a Giac build (nodeGiac) and counts.
+// G89: runs n62-check.cas, n62-known.cas and n62-patched.cas line by line on a Giac build (nodeGiac) and counts.
 //   GIAC_OUT=<dir> node tools/giac-regress/run.mjs [file.cas …]     exit 1 when a check line fails, a known line passes, or a patched line fails on the patched build
 // (on a stock build a patched line is expected to fail; one that passes there is reported: patches 0003/0005/0006/0007/0009/0010/0011/0012/0013/0014/0015/0016/0017/0018/0019/0020/0021/0022/0023/0024/0025/0026/0027/0028/0029/0030/0031/0032/0033/0034/0035 may no longer be needed)
 // A line passes when pc() returns 1; a line that errors (or is stopped by the timeout) counts as failed.
@@ -9,7 +9,7 @@ import { loadNodeGiac } from "../../app/src/engine/nodeGiac.ts";
 const { giac } = await loadNodeGiac();
 giac.eval("timeout 120");
 const counts = {}; // file -> [pass, fail] of the line-by-line run
-const files = process.argv.slice(2).length ? process.argv.slice(2) : ["pascaline-check.cas", "pascaline-known.cas", "pascaline-patched.cas"];
+const files = process.argv.slice(2).length ? process.argv.slice(2) : ["n62-check.cas", "n62-known.cas", "n62-patched.cas"];
 let bad = 0;
 let isPatched = true;
 for (const f of files) {

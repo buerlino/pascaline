@@ -2,7 +2,7 @@
 // G89: our golden cases (tests/golden/home.yaml, precision.yaml) as a Giac regression file, in the shape of Giac's own
 // check/intexp.cas: one line per case compares Giac's value with the expected one within half a unit of its last digit;
 // failing lines are printed with a count at the end. Clean room: our cases only, source oracle or derived.
-//   node tools/giac-regress/export.mjs      writes pascaline-check.cas, pascaline-known.cas, pascaline-patched.cas, and prints the counts
+//   node tools/giac-regress/export.mjs      writes n62-check.cas, n62-known.cas, n62-patched.cas, and prints the counts
 // The Giac text of a case is what Home evaluates for its input: the typed decimals as exact rationals
 // (toExactLiterals, app/src/engine/homeEval.ts), at Digits = valuePrecision(digits) = max(40, digits + 10), in radians.
 import { readFileSync, writeFileSync } from "node:fs";
@@ -117,7 +117,7 @@ const PREAMBLE = [
   'pc(id,v,e,tol):={ local d,g,ok; pasn:=pasn+1; ok:=0; try { g:=eval(v); d:=abs(evalf(g-e)); if (d<=tol && string(d)!="undef") { if (d>tol) { ok:=0; } else { ok:=1; } } } catch (err) { ok:=0; } if (ok==0) { pasfail:=pasfail+1; print("FAIL "+id); return 0; } return 1; }:;',
 ];
 
-// Cases Giac gets wrong today, found by running pascaline-check.cas on the pin (giac_2.1.0-1). The first rule that matches an
+// Cases Giac gets wrong today, found by running n62-check.cas on the pin (giac_2.1.0-1). The first rule that matches an
 // id gives the line in the known file its reason: the workaround register row (engine/giac/patches/README.md) and the
 // backlog package. A rule that matches a case Giac gets right is reported by the run (a known line that passes); a failing case no rule
 // matches stays in the check file, and the run reports it. Only the ids of KNOWN_IDS are known lines.
@@ -185,7 +185,7 @@ export const KNOWN_IDS = new Set([
   "g140f2-negbinomial_cdf-2.5-30",
 ]);
 // The ids that pass on our patched build and fail on stock giac_2.1.0-1 (found by matching the cases the tests and canaries of patches
-// 0003 and 0005 name (tanh-test.ts, mpfr-pi-test.ts, patch-canary.ts) and the ids of G75 and G60, G128's g128-* of patch 0005; G111's g111-* of patch 0007; G113's g113-* of patch 0009 (g113-poisson_cdf-2.5 passes on stock, a guard in the check file); G113f1's ties of patch 0010; G115's g115-* of patch 0011; G118's g118-* of patch 0012; G121's g116-* and g121-* and G125's g125-* of patch 0013; G122's g122-* of patch 0014; G126's g126-* and g116-acos-neg-1e20-half-12 of patch 0015; G127's g127-* of patch 0016; G132's g132-* of patch 0018; G129's g129-* (known lines until then), prec-g50-atan(2i) and G135's g135-home-arg-atan-2i of patch 0019; G133's g133-* at 30 digits but g133-acos-tiny-i-30 and g133-acos-tiny-complex-30, and g133-sqrt-evalf-neg1-tiny-neg-i-12, and G142's two g142-* lines, of patch 0020 (the g133-asinh-* lines rest on asinh's exact path, which the patch keeps unevaluated) (the others pass on stock: pc()'s tolerance is the sum of both parts', so a wrong imaginary part of 1E-20 next to a real part of 0.5 passes; they stay in the check file as guards) G134's seven g134-* lines and g133-acosh-half-tiny-i-30 of patches 0021 and 0022 (each fails on a build with 0001–0020 and passes with them); G149's seven g149-* lines (not g149-keep-*), the four g59-*/g59f1-* power lines and G160's five g160-* lines (not g160-keep-*) of patch 0025; G151's seven g151-cbrt-asinh-* lines of patch 0026; G153's three g153-* lines of patch 0027; G157's four lines (g157-subst-trunc-x-neg-1.3, g157-trunc-neg-27/20-1, g157-trunc-neg-complex, g71-trunc-neg-2.567-1) of patch 0028; G152's three g152-acosh-cosh-* lines of patch 0030; G176's g157f1-limit-trunc-neg1-right of patch 0035 and g176-limit-trunc-neg1-left, g176-limit-trunc-neg-half of patch 0028 (the g129 guards pass on stock and stay in the check file; G131's patch 0017 has a written line in build(), its cases are refusals; so has G140's patch 0024, whose cases are Home's double fallback at Digits 14). Each id was run on the stock build (engine/giac/_out/release) and fails there; ln(-pi)-30 passes on stock at these Digits, so it stays in the check file; the g60-f5 and g78-novalue lines seemed to pass on stock until G118 (their difference is an MPFR NaN, printed undef, that pc() took for a pass). g58-acos-5!^(2.5+5!)-30 has budgetMs, so it is left out as a time guard): [id, the patch file the line rests on]. They go to pascaline-patched.cas, not to the check file.
+// 0003 and 0005 name (tanh-test.ts, mpfr-pi-test.ts, patch-canary.ts) and the ids of G75 and G60, G128's g128-* of patch 0005; G111's g111-* of patch 0007; G113's g113-* of patch 0009 (g113-poisson_cdf-2.5 passes on stock, a guard in the check file); G113f1's ties of patch 0010; G115's g115-* of patch 0011; G118's g118-* of patch 0012; G121's g116-* and g121-* and G125's g125-* of patch 0013; G122's g122-* of patch 0014; G126's g126-* and g116-acos-neg-1e20-half-12 of patch 0015; G127's g127-* of patch 0016; G132's g132-* of patch 0018; G129's g129-* (known lines until then), prec-g50-atan(2i) and G135's g135-home-arg-atan-2i of patch 0019; G133's g133-* at 30 digits but g133-acos-tiny-i-30 and g133-acos-tiny-complex-30, and g133-sqrt-evalf-neg1-tiny-neg-i-12, and G142's two g142-* lines, of patch 0020 (the g133-asinh-* lines rest on asinh's exact path, which the patch keeps unevaluated) (the others pass on stock: pc()'s tolerance is the sum of both parts', so a wrong imaginary part of 1E-20 next to a real part of 0.5 passes; they stay in the check file as guards) G134's seven g134-* lines and g133-acosh-half-tiny-i-30 of patches 0021 and 0022 (each fails on a build with 0001–0020 and passes with them); G149's seven g149-* lines (not g149-keep-*), the four g59-*/g59f1-* power lines and G160's five g160-* lines (not g160-keep-*) of patch 0025; G151's seven g151-cbrt-asinh-* lines of patch 0026; G153's three g153-* lines of patch 0027; G157's four lines (g157-subst-trunc-x-neg-1.3, g157-trunc-neg-27/20-1, g157-trunc-neg-complex, g71-trunc-neg-2.567-1) of patch 0028; G152's three g152-acosh-cosh-* lines of patch 0030; G176's g157f1-limit-trunc-neg1-right of patch 0035 and g176-limit-trunc-neg1-left, g176-limit-trunc-neg-half of patch 0028 (the g129 guards pass on stock and stay in the check file; G131's patch 0017 has a written line in build(), its cases are refusals; so has G140's patch 0024, whose cases are Home's double fallback at Digits 14). Each id was run on the stock build (engine/giac/_out/release) and fails there; ln(-pi)-30 passes on stock at these Digits, so it stays in the check file; the g60-f5 and g78-novalue lines seemed to pass on stock until G118 (their difference is an MPFR NaN, printed undef, that pc() took for a pass). g58-acos-5!^(2.5+5!)-30 has budgetMs, so it is left out as a time guard): [id, the patch file the line rests on]. They go to n62-patched.cas, not to the check file.
 export const PATCHED_IDS = new Map([
   ["prec-g50-tanh(i)-12", "0003-complex-tanh-mpfr.patch"],
   ["prec-g50-tanh(i)-30", "0003-complex-tanh-mpfr.patch"],
@@ -554,20 +554,20 @@ function header(title) {
   return [
     "// SPDX-License-Identifier: GPL-3.0-or-later",
     `// ${title}`,
-    "// Generated by tools/giac-regress/export.mjs from tests/golden/home.yaml and precision.yaml (Pascaline, GPL-3.0-or-later).",
+    "// Generated by tools/giac-regress/export.mjs from tests/golden/home.yaml and precision.yaml (N62, GPL-3.0-or-later).",
     "// Each line: Giac's value of the input (typed decimals as exact rationals, Digits 40 or more) against the expected value",
     "// within half a unit of its last digit. Expected values: mpmath (oracle) or by hand (derived); see the comment above a line.",
   ];
 }
 
 export function build(cases) {
-  const check = [...header("Pascaline regression cases that hold on Giac: every line must pass."), ...PREAMBLE];
-  const known = [...header("Pascaline cases Giac gets wrong today: every line must fail (each is a bug report)."), ...PREAMBLE];
+  const check = [...header("N62 regression cases that hold on Giac: every line must pass."), ...PREAMBLE];
+  const known = [...header("N62 cases Giac gets wrong today: every line must fail (each is a bug report)."), ...PREAMBLE];
   const leftOut = {};
   let nCheck = 0;
   let nKnown = 0;
   let nPatched = 0;
-  const patched = [...header("Pascaline cases that fail on stock giac_2.1.0-1 and pass with our patches: every line must pass on our build."), ...PREAMBLE];
+  const patched = [...header("N62 cases that fail on stock giac_2.1.0-1 and pass with our patches: every line must pass on our build."), ...PREAMBLE];
   for (const [file, c] of cases) {
     const r = caseLine(c, file);
     if ("leftOut" in r) {
@@ -649,9 +649,9 @@ export function build(cases) {
     nPatched += 2;
   }
   patched.push("angle_radian:=1:;");
-  check.push('print("pascaline-check: "+pasfail+" of "+pasn+" failed");');
-  known.push('print("pascaline-known: "+pasfail+" of "+pasn+" failed (all must fail)");');
-  patched.push('print("pascaline-patched: "+pasfail+" of "+pasn+" failed (none may fail on our patched build)");');
+  check.push('print("n62-check: "+pasfail+" of "+pasn+" failed");');
+  known.push('print("n62-known: "+pasfail+" of "+pasn+" failed (all must fail)");');
+  patched.push('print("n62-patched: "+pasfail+" of "+pasn+" failed (none may fail on our patched build)");');
   return { check: check.join("\n") + "\n", known: known.join("\n") + "\n", patched: patched.join("\n") + "\n", nCheck, nKnown, nPatched, leftOut };
 }
 
@@ -668,9 +668,9 @@ export function loadCases() {
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const cases = loadCases();
   const r = build(cases);
-  writeFileSync(new URL("pascaline-check.cas", here), r.check);
-  writeFileSync(new URL("pascaline-known.cas", here), r.known);
-  writeFileSync(new URL("pascaline-patched.cas", here), r.patched);
+  writeFileSync(new URL("n62-check.cas", here), r.check);
+  writeFileSync(new URL("n62-known.cas", here), r.known);
+  writeFileSync(new URL("n62-patched.cas", here), r.patched);
   const left = Object.entries(r.leftOut);
   console.log(`cases ${cases.length}: exported ${r.nCheck + r.nKnown} (check ${r.nCheck}, known ${r.nKnown}, patched ${r.nPatched}), left out ${left.reduce((a, [, n]) => a + n, 0)}`);
   for (const [why, n] of left) console.log(`  left out ${n}: ${why}`);

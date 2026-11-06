@@ -4,7 +4,7 @@
 // each key until the list has been drawn. Two figures: workMs (key → DOM updated and laid out: the main-thread cost the
 // gate is about; syncP95 is the part inside type(): the search) and frameMs (key → two animation frames later; it cannot go below two frame intervals, so it only shows
 // dropped frames). Gate: workMs p95 ≤ 16 ms on the Tab One (annabell).
-// Output for tools/device_run.py page --wait bench-done: one PASCALINE_BENCH find {json} line in logcat.
+// Output for tools/device_run.py page --wait bench-done: one N62_BENCH find {json} line in logcat.
 import { tick } from "svelte";
 import doc from "../../tests/tasks/find-queries.yaml";
 import type { AppShell } from "./apps/shell.svelte.ts";
@@ -46,6 +46,6 @@ export async function runFindBench(shell: AppShell, entry: EntryController): Pro
   }
   const frame = pct(ms, 50) / 2; // one frame interval, as the page ran
   const late = ms.filter((x) => x > 2.5 * frame).length; // keys that cost a frame more than the floor
-  console.log(`PASCALINE_BENCH find ${JSON.stringify({ queries: queries.length, keys: work.length, workP50: r1(pct(work, 50)), workP95: r1(pct(work, 95)), workMax: r1(Math.max(...work)), syncP50: r1(pct(sync, 50)), syncP95: r1(pct(sync, 95)), frameMsP50: r1(pct(ms, 50)), frameMsP95: r1(pct(ms, 95)), lateKeys: late, firstOpenMaxMs: r1(open) })}`);
+  console.log(`N62_BENCH find ${JSON.stringify({ queries: queries.length, keys: work.length, workP50: r1(pct(work, 50)), workP95: r1(pct(work, 95)), workMax: r1(Math.max(...work)), syncP50: r1(pct(sync, 50)), syncP95: r1(pct(sync, 95)), frameMsP50: r1(pct(ms, 50)), frameMsP95: r1(pct(ms, 95)), lateKeys: late, firstOpenMaxMs: r1(open) })}`);
   mark("bench-done");
 }

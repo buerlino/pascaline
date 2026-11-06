@@ -19,7 +19,7 @@ SERIAL="${1:?usage: stay-awake.sh <serial> [--restore|--restore-real]}"
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # the main checkout's .coord, from any worktree (as devlock.sh does), so --restore works wherever it runs
 COMMON="$(git -C "$REPO" rev-parse --path-format=absolute --git-common-dir)"
-COORD="${PASCALINE_COORD:-$(dirname "$COMMON")/.coord}"
+COORD="${N62_COORD:-$(dirname "$COMMON")/.coord}"
 DIR="$COORD/devices"
 mkdir -p "$DIR"
 ORIG="$DIR/$SERIAL.orig"

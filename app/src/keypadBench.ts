@@ -3,7 +3,7 @@
 // a Shift tap, the fit pass alone, and a pick sheet rising (A4a, docs/04 8.3, docs/05 3.7 and section 7).
 // Each tap is a pointerdown + pointerup on the key, so the real handlers run. Times are ms from the dispatch to the
 // first frame after it (two animation frames: style, layout and paint of the next frame are done). Output for
-// tools/device_run.py: PASCALINE_BENCH keypad {json}, then the mark keypad-done.
+// tools/device_run.py: N62_BENCH keypad {json}, then the mark keypad-done.
 import { fitLegends } from "./keyboard/fit.ts";
 import { mark } from "./marks.ts";
 
@@ -83,6 +83,6 @@ export async function runKeypadBench(): Promise<void> {
     sheetAppear: ok.length ? stats(ok) : null, sheetFrame: stats(sheetFrame), sheetSeen: ok.length,
     keys: pad.querySelectorAll(".key").length,
   };
-  console.log(`PASCALINE_BENCH keypad ${JSON.stringify(summary)}`);
+  console.log(`N62_BENCH keypad ${JSON.stringify(summary)}`);
   mark("keypad-done");
 }

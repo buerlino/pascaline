@@ -7,7 +7,7 @@ import type { FullResult, Reporter, TestCase, TestResult } from "@playwright/tes
 import { caseRecord, deviceLine } from "./core-plan.ts";
 
 const coord = (): string => {
-  if (process.env["PASCALINE_COORD"]) return process.env["PASCALINE_COORD"];
+  if (process.env["N62_COORD"]) return process.env["N62_COORD"];
   const common = execFileSync("git", ["rev-parse", "--path-format=absolute", "--git-common-dir"], { encoding: "utf8" }).trim();
   return resolve(dirname(common), ".coord");
 };

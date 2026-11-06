@@ -15,7 +15,7 @@ const sets = args.filter((a) => !a.startsWith("--"));
 const knownFile = new URL("../../tests/golden/giaccheck-known.yaml", import.meta.url);
 const tarball = tarballPath();
 if (!tarball) {
-  console.log("GIACCHECK FAILED: no Giac source tarball (PASCALINE_DL_DIR or GIAC_CHECK_TARBALL)");
+  console.log("GIACCHECK FAILED: no Giac source tarball (N62_DL_DIR or GIAC_CHECK_TARBALL)");
   process.exit(1);
 }
 const { giac } = await loadNodeGiac();
