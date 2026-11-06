@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // R95: one writer per browser profile (docs/04 6.2). Every store key is written whole from a tab's memory, so two tabs
 // (or the installed PWA and a tab) would drop each other's rows and definitions. The tab that holds the Web Lock
-// `pascaline-writer` writes; any other tab computes as usual and writes nothing (the store layer asks `guardWrite`,
+// `n62-writer` writes; any other tab computes as usual and writes nothing (the store layer asks `guardWrite`,
 // storage.ts and storageRaw.ts). The note and the hand-over over a BroadcastChannel are a lazy chunk (handOver.ts).
 // Without `navigator.locks` (and in the Android app, one WebView: launchMode singleTask) every tab writes, as before.
 
-export const WRITER_LOCK = "pascaline-writer";
+export const WRITER_LOCK = "n62-writer";
 
 /** May this tab write, as of now? Settles once the lock was asked for; every store write waits for it. Replaced (not
  *  changed) when the tab hands the store over, so a write asked for before the hand-over keeps its answer. */

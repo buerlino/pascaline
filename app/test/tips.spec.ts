@@ -15,7 +15,7 @@ const stored = (page: Page) =>
   page.evaluate(
     () =>
       new Promise<unknown>((resolve) => {
-        const req = indexedDB.open("pascaline", 1);
+        const req = indexedDB.open("n62", 1);
         req.onerror = () => resolve(null);
         req.onsuccess = () => {
           const db = req.result;

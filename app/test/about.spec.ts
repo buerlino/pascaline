@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// R87 (docs/05 3.4, mockups/settings.html frame 7): Settings › Help and about holds About Pascaline (version, licence,
+// R87 (docs/05 3.4, mockups/settings.html frame 7): Settings › Help and about holds About N62 (version, licence,
 // source) and the parts we use with their licences, each licence's full text a level that scrolls. The data is a lazy
 // chunk: nothing is fetched at start. By keys and by touch. The fake engine.
 import { readFileSync } from "node:fs";
@@ -17,7 +17,7 @@ test.beforeEach(async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
 });
 
-test("start fetches no About data; opening Help and about does not either, About Pascaline does", async ({ page }) => {
+test("start fetches no About data; opening Help and about does not either, About N62 does", async ({ page }) => {
   const urls: string[] = [];
   page.on("request", (r) => urls.push(r.url()));
   await open(page);
@@ -35,9 +35,9 @@ test.describe("by keys", () => {
     await tap(page, ["@mode", "d6", "d7"]);
   });
 
-  test("Help and about: About Pascaline and Parts we use; digit 1 shows the name, the version, GPL-3.0-or-later and the source URL", async ({ page }) => {
+  test("Help and about: About N62 and Parts we use; digit 1 shows the name, the version, GPL-3.0-or-later and the source URL", async ({ page }) => {
     await expect(rows(page)).toHaveCount(3);
-    await expect(row(page, "about")).toContainText("About Pascaline");
+    await expect(row(page, "about")).toContainText("About N62");
     await expect(row(page, "parts")).toContainText("Parts we use and their licences");
     await tap(page, ["d2"]);
     await expect(title(page)).toHaveText("Settings › Help and about › About");
@@ -115,7 +115,7 @@ test.describe("by touch", () => {
     await expect(title(page)).toHaveText("Settings › Help and about › Parts");
   });
 
-  test("About Pascaline: Credits opens a text; × closes the sheet", async ({ page }) => {
+  test("About N62: Credits opens a text; × closes the sheet", async ({ page }) => {
     await row(page, "about").tap();
     await row(page, "credits").tap();
     await expect(text(page)).toContainText("Giac");

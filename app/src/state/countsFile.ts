@@ -5,7 +5,7 @@
 import { dataText } from "../i18n/enData.ts";
 import type { TapCounts } from "./taps.svelte.ts";
 
-export const COUNTS_FORMAT = "pascaline-counts/1";
+export const COUNTS_FORMAT = "n62-counts/1";
 
 /** The export's text (format in the header comment of taps.svelte.ts): the keys sorted by count, ties by name. */
 export function countsText({ since, presses, keys }: TapCounts): string {
@@ -13,10 +13,10 @@ export function countsText({ since, presses, keys }: TapCounts): string {
   return JSON.stringify({ format: COUNTS_FORMAT, since, presses, keys: Object.fromEntries(sorted) }, null, 2) + "\n";
 }
 
-/** `pascaline-counts-YYYY-MM-DD.json`, by the local date. */
+/** `n62-counts-YYYY-MM-DD.json`, by the local date. */
 export function countsName(now: Date): string {
   const p = (n: number): string => String(n).padStart(2, "0");
-  return `pascaline-counts-${now.getFullYear()}-${p(now.getMonth() + 1)}-${p(now.getDate())}.json`;
+  return `n62-counts-${now.getFullYear()}-${p(now.getMonth() + 1)}-${p(now.getDate())}.json`;
 }
 
 /** Hands the text to the file port and returns the notice to show. Never throws. */

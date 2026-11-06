@@ -60,7 +60,7 @@ test("a second tab writes nothing: the first tab's definitions and rows survive 
   // B said it would keep nothing: one line, with Use here
   await expect(note(b)).toBeVisible();
   await expect(note(b).getByRole("button")).toBeVisible();
-  await expect(note(b).getByText("Pascaline is open in another tab")).toBeVisible();
+  await expect(note(b).getByText("N62 is open in another tab")).toBeVisible();
   await expect(note(b).getByText("Nothing done in this tab is kept")).toBeVisible(); // R111: said in words, not as a title
   await expect(note(c)).toHaveCount(0); // C took the lock: A is gone, B never had it
 });

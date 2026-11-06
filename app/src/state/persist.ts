@@ -3,7 +3,7 @@
 // the first stored value; the answer is the browser's business (Chrome decides by use, Firefox asks the user), so the
 // question is not repeated: a flag in localStorage keeps it to once per browser profile. The answer is kept for
 // Settings › Data (R96), which also asks `persisted()` once per open of its level.
-const FLAG = "pascaline.persist-asked";
+const FLAG = "n62.persist-asked";
 let asked = false;
 /** Whether the browser keeps the store out of its eviction: the last answer of `persist()` or `persisted()` in this
  *  session; undefined before one came (or without a storage manager). */

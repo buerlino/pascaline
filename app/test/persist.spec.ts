@@ -213,12 +213,12 @@ test("a kept line whose chip entry is missing comes back without that chip, stil
   await page.evaluate(
     () =>
       new Promise<void>((resolve, reject) => {
-        const req = indexedDB.open("pascaline", 1);
+        const req = indexedDB.open("n62", 1);
         req.onerror = () => reject(req.error);
         req.onsuccess = () => {
           const tx = req.result.transaction("kv", "readwrite");
           const value = { view: "home", latex: "\\res{7}{0.5}+\\frac{1}{4}\\times\\res{8}{2}", chips: { "res:8": { value: "2", exact: true } } };
-          tx.objectStore("kv").put({ "@pascaline": 1, value }, "entry");
+          tx.objectStore("kv").put({ "@n62": 1, value }, "entry");
           tx.oncomplete = () => resolve();
           tx.onerror = () => reject(tx.error);
         };
@@ -238,12 +238,12 @@ test("a definitions log stamped 2 is migrated at start, its steps loaded on dema
   await page.evaluate(
     () =>
       new Promise<void>((resolve, reject) => {
-        const req = indexedDB.open("pascaline", 1);
+        const req = indexedDB.open("n62", 1);
         req.onerror = () => reject(req.error);
         req.onsuccess = () => {
           const tx = req.result.transaction("kv", "readwrite");
           const value = [{ name: "A", kind: "var", cmds: ["A:=(pasexp(0))"], angle: "rad", preview: "1", view: "home", time: 0 }];
-          tx.objectStore("kv").put({ "@pascaline": 2, value }, "defs");
+          tx.objectStore("kv").put({ "@n62": 2, value }, "defs");
           tx.oncomplete = () => resolve();
           tx.onerror = () => reject(tx.error);
         };
@@ -260,11 +260,11 @@ test("a definitions log stamped 2 is migrated at start, its steps loaded on dema
       next.evaluate(
         () =>
           new Promise<unknown>((resolve, reject) => {
-            const req = indexedDB.open("pascaline", 1);
+            const req = indexedDB.open("n62", 1);
             req.onerror = () => reject(req.error);
             req.onsuccess = () => {
               const r = req.result.transaction("kv").objectStore("kv").get("defs");
-              r.onsuccess = () => resolve([r.result?.["@pascaline"], r.result?.value?.[0]?.cmds]);
+              r.onsuccess = () => resolve([r.result?.["@n62"], r.result?.value?.[0]?.cmds]);
               r.onerror = () => reject(r.error);
             };
           }),

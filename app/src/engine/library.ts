@@ -119,9 +119,9 @@ function decodeLibrary(input: Uint8Array | string): string {
 export function parseLibrary(input: Uint8Array | string, parse: (text: string) => GiacParse, format: LibraryFormat): LibFile {
   const lines = decodeLibrary(input).split("\n");
   const h = HEADER.exec(lines[0]!.trim());
-  if (!h) throw new LibError(1, `the first line must be \`// pascaline library ${format.version}\``);
+  if (!h) throw new LibError(1, `the first line must be \`// n62 library ${format.version}\``);
   const version = Number(h[1]);
-  if (version > format.version) throw new LibError(1, `made by a newer Pascaline (version ${version}; this one reads up to ${format.version})`);
+  if (version > format.version) throw new LibError(1, `made by a newer N62 (version ${version}; this one reads up to ${format.version})`);
   // The same migration steps as the stored defs (state/storage.ts), on the text below the stamp.
   const body = format.migrate(lines.slice(1).join("\n"), version);
   const rest = body.split("\n");
@@ -177,9 +177,9 @@ export function parseLibrary(input: Uint8Array | string, parse: (text: string) =
     const value = def.kind === "var" ? assignmentIn(block, tree)?.rhs : undefined;
     if (!isName(def.name, true)) throw new LibError(at, "a name is letters, digits and _ (ASCII), starting with a letter");
     if (isFlagName(def.name)) throw new LibError(at, `${def.name} is one of the engine's settings, which a library may not change`);
-    if (def.name in ENGINE_DEFINITIONS || def.name in COMPLEX_DEFINITIONS || WORKER_DEFINITION_NAMES.includes(def.name) || def.name.startsWith("pasc_") || def.name === PASDEG || def.name.endsWith("_")) throw new LibError(at, `${def.name} is one of Pascaline's own names`);
+    if (def.name in ENGINE_DEFINITIONS || def.name in COMPLEX_DEFINITIONS || WORKER_DEFINITION_NAMES.includes(def.name) || def.name.startsWith("pasc_") || def.name === PASDEG || def.name.endsWith("_")) throw new LibError(at, `${def.name} is one of N62's own names`);
     // R64: the degree factor is ours; a body that names it (a `local pasdeg`, say) would change every angle in it
-    if ([...names(block, "typed")].some((n) => n.name === PASDEG)) throw new LibError(at, `${PASDEG} is one of Pascaline's own names`);
+    if ([...names(block, "typed")].some((n) => n.name === PASDEG)) throw new LibError(at, `${PASDEG} is one of N62's own names`);
     if (defs.some((d) => d.name === def.name)) throw new LibError(at, `${def.name} is defined twice in this file`);
     if (!lastComment || lastComment.line !== at - 1) throw new LibError(at, `${def.name} needs its one-line description on the line above`);
     if (lastComment.text.length > DESC_MAX) throw new LibError(lastComment.line, `the description is over ${DESC_MAX} characters`);
@@ -246,7 +246,7 @@ export function asGiac(text: string): string {
   return rewriteAngles(renameOurCalls(text), "typed");
 }
 
-/** One `// pascaline library` import into an engine that holds `log`. Checks the rest against the engine (built-in
+/** One `// n62 library` import into an engine that holds `log`. Checks the rest against the engine (built-in
  *  names, own names, the log's size), defines every definition through cas(), runs the tests, and returns the changes. */
 export function importLibrary(engine: LibraryEngine, lib: LibFile, log: readonly DefEntry[], opts: { replace?: boolean } = {}): ImportResult {
   const t0 = performance.now();
@@ -372,7 +372,7 @@ function describe(e: DefEntry): string {
  *  reason: assumptions and inputs kept as typed (no single name), and values that hold a float (their mark facts have no
  *  place in a library; the backup carries them). Tests are not kept on the phone. */
 export function exportLibrary(log: readonly DefEntry[], format: LibraryFormat): { text: string; skipped: { name: string; why: string }[] } {
-  const out = [`// pascaline library ${format.version}`];
+  const out = [`// n62 library ${format.version}`];
   const skipped: { name: string; why: string }[] = [];
   for (const e of replayOrder(log)) {
     if (e.kind === "assume" || e.kind === "other") {

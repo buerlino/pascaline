@@ -81,7 +81,7 @@ export function writeServiceWorker(root: string, outDir: string): void {
   const version = hash.digest("hex").slice(0, 12);
   // "./" is the app's start URL; index.html is also listed so offline navigations to either find a page.
   const list = ["./", ...files];
-  const sw = template.replace("__CACHE__", `pascaline-${version}`).replace("__PRECACHE__", JSON.stringify(list));
+  const sw = template.replace("__CACHE__", `n62-${version}`).replace("__PRECACHE__", JSON.stringify(list));
   writeFileSync(join(outDir, "sw.js"), sw);
 }
 
@@ -89,7 +89,7 @@ export function pwaLite(): Plugin {
   let outDir = "dist";
   let root = process.cwd();
   return {
-    name: "pascaline-pwa-lite",
+    name: "n62-pwa-lite",
     apply: "build",
     configResolved(c) {
       outDir = buildOutDir(c.root, c.build.outDir);

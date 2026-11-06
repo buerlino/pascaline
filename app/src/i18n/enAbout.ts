@@ -4,7 +4,7 @@
 export const enAbout = {
   "help": "Help and about",
   "tips.row": "Show the first-start tips",
-  "title": "About Pascaline",
+  "title": "About N62",
   "aboutTitle": "About",
   "hint": "Version, source, GPL-3.0",
   "parts": "Parts we use and their licences",
@@ -15,7 +15,7 @@ export const enAbout = {
   "licence": "Licence",
   "source": "Source code",
   "credits": "Credits",
-  "credits.text": "Pascaline is free software under the GNU General Public License, version 3 or later, with no warranty. It stands on the work of others: the Giac computer algebra system by Bernard Parisse and its authors, with GMP, MPFR and GSL under it; MathLive by Arno Gourdol for the entry line and the result display; libqalculate by Hanna Knutsson for the names and titles of units and constants and for their numbers (unit factors, constant values and uncertainties, checked in as find/factors.yaml); JSXGraph for the plots; Svelte, Vite and Capacitor for the app; the colour schemes Solarized, Gruvbox and Nord. Every part, its licence and its full licence text are listed under Parts we use.",
+  "credits.text": "N62 is free software under the GNU General Public License, version 3 or later, with no warranty. It stands on the work of others: the Giac computer algebra system by Bernard Parisse and its authors, with GMP, MPFR and GSL under it; MathLive by Arno Gourdol for the entry line and the result display; libqalculate by Hanna Knutsson for the names and titles of units and constants and for their numbers (unit factors, constant values and uncertainties, checked in as find/factors.yaml); JSXGraph for the plots; Svelte, Vite and Capacitor for the app; the colour schemes Solarized, Gruvbox and Nord. Every part, its licence and its full licence text are listed under Parts we use.",
   "noText": "No licence text in the app",
   "copyright": "No copyright line given",
 } as const;

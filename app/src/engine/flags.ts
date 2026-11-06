@@ -143,7 +143,7 @@ export const CONTEXT_FIELDS: Readonly<Record<string, string>> = {
   _rpn_mode_: "RPN mode of Xcas's command line; the rpn commands are not in Find and our input never reaches them",
   _language_: "set_language: changes the help path only; our build has no message catalogs (probe: same error texts)",
   _format_double_: "TI format(): not in Find; printing of our numbers is ours (format.ts)",
-  // graphics, spreadsheet, turtle and Xcas session state: Pascaline draws its own plots and reads no Giac graphic
+  // graphics, spreadsheet, turtle and Xcas session state: N62 draws its own plots and reads no Giac graphic
   _show_point_: "graphics",
   _io_graph_: "graphics",
   _default_color_: "graphics",

@@ -45,11 +45,11 @@ describe("the format's backup part: its worked example (R126)", () => {
 
   it("is a file with only userKeys, unitPadCells and presets, stamped with this version, and checkBackup accepts it", () => {
     expect(part2).not.toMatch(/\{version\}|R126|<!--/);
-    const file = JSON.parse(example()) as { "pascaline-backup": number; dataVersion: number; parts: Record<string, Record<string, unknown>> };
-    expect(file["pascaline-backup"]).toBe(BACKUP_FORMAT);
+    const file = JSON.parse(example()) as { "n62-backup": number; dataVersion: number; parts: Record<string, Record<string, unknown>> };
+    expect(file["n62-backup"]).toBe(BACKUP_FORMAT);
     expect(file.dataVersion).toBe(DATA_VERSION);
     expect(Object.keys(file.parts)).toEqual(["userKeys", "unitPadCells", "presets"]);
-    for (const rec of Object.values(file.parts)) expect(rec["@pascaline"]).toBe(DATA_VERSION);
+    for (const rec of Object.values(file.parts)) expect(rec["@n62"]).toBe(DATA_VERSION);
     const r = checkBackup(bytes(example())) as CheckedBackup;
     expect(r.ok).toBe(true);
     expect(Object.keys(r.parts)).toEqual(["userKeys", "unitPadCells", "presets"]);
@@ -87,20 +87,20 @@ describe("the format's backup part: its worked example (R126)", () => {
 describe("the format's backup part: every rule it states is the code's (R126)", () => {
   it("names the envelope: the format number, the stamp field, the size, and the three parts of BACKUP_KEYS", () => {
     const env = section("The envelope");
-    expect(env).toContain(`\`"pascaline-backup"\`: the whole number \`${BACKUP_FORMAT}\``);
+    expect(env).toContain(`\`"n62-backup"\`: the whole number \`${BACKUP_FORMAT}\``);
     expect(env).toContain(`${MAX_BACKUP_BYTES / 1024 / 1024} MB`);
-    expect(env).toContain('"@pascaline"');
+    expect(env).toContain('"@n62"');
     expect(env).toContain(`from 0 to ${DATA_VERSION}`);
     expect(ticks(env.split("\n").find((l) => l.startsWith('- `"parts"`')) ?? "")).toEqual(expect.arrayContaining(["userKeys", "unitPadCells", "presets"]));
     for (const part of ["userKeys", "unitPadCells", "presets"]) expect(BACKUP_KEYS, part).toContain(part);
     for (const heading of [...part2.matchAll(/^### Part `([^`]+)`/gm)].map((m) => m[1] as string)) expect(BACKUP_KEYS, heading).toContain(heading);
     // a larger stamp, an unknown part and a larger format number are refused, as the text says
-    const file = (parts: unknown, format = 1): Uint8Array => bytes(JSON.stringify({ "pascaline-backup": format, parts }));
-    const rec = (v: number): unknown => ({ userKeys: { "@pascaline": v, value: {} } });
+    const file = (parts: unknown, format = 1): Uint8Array => bytes(JSON.stringify({ "n62-backup": format, parts }));
+    const rec = (v: number): unknown => ({ userKeys: { "@n62": v, value: {} } });
     expect(checkBackup(file(rec(DATA_VERSION))).ok).toBe(true);
     expect(checkBackup(file(rec(0))).ok).toBe(true);
     expect(checkBackup(file(rec(DATA_VERSION + 1))).ok).toBe(false);
-    expect(checkBackup(file({ nope: { "@pascaline": DATA_VERSION, value: {} } })).ok).toBe(false);
+    expect(checkBackup(file({ nope: { "@n62": DATA_VERSION, value: {} } })).ok).toBe(false);
     expect(checkBackup(file(rec(DATA_VERSION), BACKUP_FORMAT + 1)).ok).toBe(false);
     expect(checkBackup(file({ userKeys: { value: {} } })).ok).toBe(false);
   });
@@ -165,8 +165,8 @@ describe("the format's backup part: every rule it states is the code's (R126)", 
     const groupLines = s.split("\n").filter((l) => /^- `[a-z]+`: /.test(l));
     expect(groupLines.map((l) => /^- `([a-z]+)`/.exec(l)?.[1])).toEqual([...PRESET_GROUPS]);
     // every word any setting takes, so a value the code accepts and the text leaves out shows
-    const words = new Set<string>(["maybe", "", "rad", "deg", "std", "sci", "eng", "pfx", "textbook", "line", "point", "comma", "sigma", "muted", "colour", "reason", "thin", "apos", "system", "light", "dark", "pascaline", "graphite", "solarized", "gruvbox", "nord"]);
-    for (const m of s.matchAll(/"([a-z]+)"/g)) words.add(m[1] as string);
+    const words = new Set<string>(["maybe", "", "rad", "deg", "std", "sci", "eng", "pfx", "textbook", "line", "point", "comma", "sigma", "muted", "colour", "reason", "thin", "apos", "system", "light", "dark", "n62", "graphite", "solarized", "gruvbox", "nord"]);
+    for (const m of s.matchAll(/"([a-z][a-z0-9]*)"/g)) words.add(m[1] as string);
     const ok = (group: string, field: string, v: unknown): boolean => {
       if (group === "look") return SETTING_RULES["look"]?.({ ...defaultLook(), [field]: v }) === true;
       if (group === "vibration") return SETTING_RULES["haptics"]?.({ [field]: v }) === true;
@@ -182,7 +182,7 @@ describe("the format's backup part: every rule it states is the code's (R126)", 
       expect(fields.map((f) => /^`([A-Za-z]+)`/.exec(f)?.[1]), group).toEqual([...GROUP_FIELDS[group]].filter((f) => f !== "fmtCycle"));
       for (const f of fields) {
         const field = /^`([A-Za-z]+)`/.exec(f)?.[1] as string;
-        const listed = [...f.matchAll(/"([a-z]+)"/g)].map((m) => m[1] as string);
+        const listed = [...f.matchAll(/"([a-z][a-z0-9]*)"/g)].map((m) => m[1] as string);
         const range = /from (\d+) to (\d+)/.exec(f);
         if (listed.length > 0) {
           const accepted = [...words].filter((w) => ok(group, field, w));

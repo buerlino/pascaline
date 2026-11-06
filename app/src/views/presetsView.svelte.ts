@@ -89,7 +89,7 @@ export function summary(p: Preset): string {
     parts.push(n === 0 ? pt("keys.0") : n === 1 ? pt("keys.1") : pt("keys.n", { n }));
   }
   const family = str(g.look?.["family"]);
-  if (family && family !== "pascaline") parts.push(familyOf(family as Family).name);
+  if (family && family !== "n62") parts.push(familyOf(family as Family).name);
   return parts.join(" · ");
 }
 

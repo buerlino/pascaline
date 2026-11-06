@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Settings › Help and about (R87, docs/05 3.4 section 7): About Pascaline (version, licence, source, credits) and the
+// Settings › Help and about (R87, docs/05 3.4 section 7): About N62 (version, licence, source, credits) and the
 // parts we use with their licences, each licence's full text a level that scrolls. The data is a lazy chunk
 // (aboutData.svelte.ts); a level reads it when it is drawn and shows "Loading…" until it arrives.
 import type { MenuItem, SubMenu } from "../apps/types.ts";

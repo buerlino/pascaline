@@ -14,7 +14,7 @@ export interface Family {
 }
 
 export const FAMILIES: readonly Family[] = [
-  { id: 'pascaline', name: 'Pascaline', src: 'Ours, from the logo: ink blue and the amber of the P.',
+  { id: 'n62', name: 'N62', src: 'Ours, from the logo: ink blue and the amber of the P.',
     idea: 'Ink blue with one amber accent, the colours of the logo. Shift is the amber of the P; Enter is the logo blue.',
     dark: { bg: '#0b1020', panel: '#121a2e', line: '#2d3a5a', 'key-num': '#1f2a45', 'key-op': '#18233d', 'key-fn': '#172443', 'key-ctl': '#2a2433', 'key-nav': '#141d33', 'key-enter': '#2346d8', 'on-enter': '#ffffff',
       text: '#eef1f8', 'text-dead': '#76819c', muted: '#a3adc6', shift: '#ffc233', alpha: '#86c5ff', error: '#ff8e86', 'chip-bg': '#1d3070', approx: '#86c5ff', warn: '#ffc233', pick: '#1a2442', focus: '#ffc233', 'key-on': '#ffc233', 'on-key-on': '#0b1020' },

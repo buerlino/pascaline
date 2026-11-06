@@ -12,9 +12,9 @@ import { dataSection, resetUndoTime } from "./dataSection.svelte.ts";
 import { offerRestore, offerUndo, partSummary, restoreItems } from "./restoreSheet.svelte.ts";
 import { Sheet } from "./sheet.svelte.ts";
 
-const at = (value: unknown): unknown => ({ "@pascaline": DATA_VERSION, value });
+const at = (value: unknown): unknown => ({ "@n62": DATA_VERSION, value });
 const file = {
-  "pascaline-backup": 1,
+  "n62-backup": 1,
   dataVersion: DATA_VERSION,
   made: "2026-10-20T02:00:00Z",
   parts: {
@@ -77,9 +77,9 @@ describe("the restore sheet", () => {
   it("a refused file is the notice, and no sheet opens", async () => {
     const said: string[] = [];
     const showMenu = vi.fn();
-    const bad = { ...file, parts: { ...file.parts, defs: { "@pascaline": DATA_VERSION + 1, value: [] } } };
+    const bad = { ...file, parts: { ...file.parts, defs: { "@n62": DATA_VERSION + 1, value: [] } } };
     await offerRestore(new File([JSON.stringify(bad)], "b.json"), { showMenu } as unknown as AppShell, (m) => said.push(m));
-    expect(said).toEqual([`Definitions: made by a newer Pascaline (version ${DATA_VERSION + 1}; this one reads up to ${DATA_VERSION})`]);
+    expect(said).toEqual([`Definitions: made by a newer N62 (version ${DATA_VERSION + 1}; this one reads up to ${DATA_VERSION})`]);
     expect(showMenu).not.toHaveBeenCalled();
     await offerRestore(new File([JSON.stringify(file)], "b.json"), { showMenu } as unknown as AppShell, (m) => said.push(m));
     expect(showMenu).toHaveBeenCalledWith(dataText("restore.title"), expect.any(Array), { remember: false });

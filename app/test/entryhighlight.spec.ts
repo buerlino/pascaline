@@ -7,7 +7,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { open, tap } from "./helpers.ts";
 
-const FAMILIES = ["pascaline", "graphite", "solarized", "gruvbox", "nord"] as const;
+const FAMILIES = ["n62", "graphite", "solarized", "gruvbox", "nord"] as const;
 
 /** Put a look on the page as Settings › Appearance does, and wait for its colours (the lazy family file too). */
 async function setLook(page: Page, family: string, brightness: "dark" | "light"): Promise<void> {
@@ -93,7 +93,7 @@ for (const [system, look] of [["light", "dark"], ["dark", "light"], ["dark", "da
 test("the unit view's field (dark look, light system) takes the same mapping", async ({ page }) => {
   await page.emulateMedia({ colorScheme: "light" });
   await open(page);
-  await setLook(page, "pascaline", "dark");
+  await setLook(page, "n62", "dark");
   await tap(page, ["d1", "shift", "tmpl"]);
   await page.getByTestId("unit-field").waitFor();
   const c = await colours(page, "unit-field");

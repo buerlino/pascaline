@@ -190,7 +190,7 @@ function entryMap(): Record<string, string> {
 }
 /** Every block of a theme combination, with whether it is High contrast. */
 function allThemeBlocks(): [string, Record<string, string>, boolean][] {
-  const files = ["./style.css", ...["pascaline", "graphite", "solarized", "gruvbox", "nord"].map((f) => `./theme/${f}.css`)];
+  const files = ["./style.css", ...["n62", "graphite", "solarized", "gruvbox", "nord"].map((f) => `./theme/${f}.css`)];
   return files.flatMap((f) =>
     [...readFileSync(new URL(f, import.meta.url), "utf8").matchAll(/:root(\[data-family="[a-z]+"\]\[data-brightness="(?:dark|light)"\](?:\[data-[a-z]+="[a-z]+"\])*)\s*\{([^}]*)\}/g)].map(
       (m): [string, Record<string, string>, boolean] => [m[1] as string, tokens(m[2] as string), (m[1] as string).includes('data-contrast="high"')],

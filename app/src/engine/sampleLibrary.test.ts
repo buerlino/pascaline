@@ -22,8 +22,8 @@ describe("the sample library file (G164, no engine)", () => {
   const lines = existsSync(SAMPLE) ? readFileSync(SAMPLE, "utf8").split("\n") : [];
   it("starts with the stamp and says it is an example of the format, not a material table", () => {
     // the stamp an export wrote when the file was made: a later DATA_VERSION still reads it (its migration steps)
-    expect(Number(/^\/\/ pascaline library (\d+)$/.exec(lines[0] ?? "")?.[1])).toBeLessThanOrEqual(LIBRARY_FORMAT.version);
-    expect(lines[0]).toMatch(/^\/\/ pascaline library [1-9]\d*$/);
+    expect(Number(/^\/\/ n62 library (\d+)$/.exec(lines[0] ?? "")?.[1])).toBeLessThanOrEqual(LIBRARY_FORMAT.version);
+    expect(lines[0]).toMatch(/^\/\/ n62 library [1-9]\d*$/);
     const head = lines.slice(0, lines.findIndex((l) => l.trim() === "")).join(" ");
     expect(head).toMatch(/example of the library format/);
     expect(head).toMatch(/not a material table/);

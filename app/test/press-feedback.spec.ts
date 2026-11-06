@@ -5,7 +5,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { open, tap } from "./helpers.ts";
 
-const FAMILIES = ["pascaline", "graphite", "solarized", "gruvbox", "nord"] as const;
+const FAMILIES = ["n62", "graphite", "solarized", "gruvbox", "nord"] as const;
 const MODES = [
   { keys: "colour", contrast: "normal" },
   { keys: "plain", contrast: "normal" },
@@ -69,7 +69,7 @@ for (const family of FAMILIES)
 for (const m of MODES)
   test(`a held trackpad zone changes its opacity and draws no layer: ${m.keys}/${m.contrast}`, async ({ page }) => {
     await open(page);
-    await set(page, "pascaline", "dark", m.keys, m.contrast);
+    await set(page, "n62", "dark", m.keys, m.contrast);
     const state = (): Promise<{ opacity: string; after: string; bg: string }> =>
       page.evaluate(() => {
         const el = document.querySelector<HTMLElement>('.pad [data-key="up"]');

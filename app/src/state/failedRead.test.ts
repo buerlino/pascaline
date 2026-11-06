@@ -69,7 +69,7 @@ describe("the store's read tells three outcomes apart", () => {
 
   it("a migration step that throws settles the read as could not read, and writes nothing back", async () => {
     const real = migrations.MIGRATIONS[2]!["defs"];
-    const before = { "@pascaline": 2, value: 42 };
+    const before = { "@n62": 2, value: 42 };
     store().set("defs", before);
     migrations.MIGRATIONS[2]!["defs"] = () => {
       throw new Error("step threw");

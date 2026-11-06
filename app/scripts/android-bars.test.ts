@@ -9,10 +9,10 @@ const repo = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const res = join(repo, "android/app/src/main/res/values");
 const read = (p: string): string => readFileSync(p, "utf8");
 
-/** The Dark --bg of app/src/style.css (family pascaline). */
+/** The Dark --bg of app/src/style.css (family n62). */
 function darkBg(): string {
   const css = read(join(repo, "app/src/style.css"));
-  const m = /\[data-family="pascaline"\]\[data-brightness="dark"\]\s*\{[^}]*?--bg:\s*(#[0-9a-fA-F]{6})\s*;/.exec(css);
+  const m = /\[data-family="n62"\]\[data-brightness="dark"\]\s*\{[^}]*?--bg:\s*(#[0-9a-fA-F]{6})\s*;/.exec(css);
   expect(m).not.toBeNull();
   return (m as RegExpExecArray)[1]!.toLowerCase();
 }

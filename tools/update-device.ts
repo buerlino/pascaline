@@ -116,7 +116,7 @@ page = await launch();
 const stamps = await page.evaluate(
   () =>
     new Promise<Record<string, number>>((resolve, reject) => {
-      const req = indexedDB.open("pascaline", 1);
+      const req = indexedDB.open("n62", 1); // R138: the name N62
       req.onerror = () => reject(req.error);
       req.onsuccess = () => {
         const s = req.result.transaction("kv", "readonly").objectStore("kv");
@@ -124,7 +124,7 @@ const stamps = await page.evaluate(
         const ks = s.getAllKeys();
         const all = s.getAll();
         all.onsuccess = () => { // issued second, so it ends second: the keys are in
-          ks.result.forEach((k, i) => (out[String(k)] = (all.result[i] as Record<string, number>)["@pascaline"] ?? -1));
+          ks.result.forEach((k, i) => (out[String(k)] = (all.result[i] as Record<string, number>)["@n62"] ?? -1));
           resolve(out);
         };
       };

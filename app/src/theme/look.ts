@@ -16,16 +16,24 @@ export interface Look {
 }
 
 export const BRIGHTNESS: readonly BrightnessPref[] = ["system", "light", "dark"];
-export const FAMILY_IDS: readonly Family[] = ["pascaline", "graphite", "solarized", "gruvbox", "nord"];
+export const FAMILY_IDS: readonly Family[] = ["n62", "graphite", "solarized", "gruvbox", "nord"];
+
+/** R138: a look whose family is the house look's id before the name N62 (`pascaline`), with the family `n62`; anything
+ *  else as it is. Where a look is read: the stored settings (validLook), a backup's settings part (state/backup.ts); a
+ *  preset's look (state/presetRecord.ts renamedLooks) and the inline script of index.html repeat it. */
+export function renamedLook(x: unknown): unknown {
+  return x && typeof x === "object" && (x as Record<string, unknown>)["family"] === "pascaline" ? { ...x, family: "n62" } : x;
+}
 
 /** The look of a first start: Dark in the Android app, System in the PWA (docs/05 3.10); High contrast when the system asks. */
 export function defaultLook(native = false, moreContrast = false): Look {
-  return { family: "pascaline", brightness: native ? "dark" : "system", contrast: moreContrast, plain: false };
+  return { family: "n62", brightness: native ? "dark" : "system", contrast: moreContrast, plain: false };
 }
 
 /** A stored look, field by field: a wrong or missing field keeps `fallback`'s. */
 export function validLook(x: unknown, fallback: Look): Look {
-  const o = (x && typeof x === "object" ? x : {}) as Partial<Record<keyof Look, unknown>>;
+  const r = renamedLook(x);
+  const o = (r && typeof r === "object" ? r : {}) as Partial<Record<keyof Look, unknown>>;
   const family = FAMILY_IDS.find((f) => f === o.family) ?? fallback.family;
   const brightness = BRIGHTNESS.find((b) => b === o.brightness) ?? fallback.brightness;
   return {

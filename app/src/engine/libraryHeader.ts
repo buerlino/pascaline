@@ -6,5 +6,6 @@
 /** r10 section 1.2: the most bytes one file may hold. */
 export const LIB_MAX_BYTES = 256 * 1024;
 
-/** The stamp line, `// pascaline library <version>` (trimmed); its group is the version. */
-export const HEADER = /^\/\/ pascaline library (\d+)$/;
+/** The stamp line, `// n62 library <version>` (trimmed); its group is the version. A file whose first line has the name
+ *  before N62, `// pascaline library <version>` (R138), reads the same; the app writes only the new line. */
+export const HEADER = /^\/\/ (?:n62|pascaline) library (\d+)$/;

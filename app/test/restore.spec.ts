@@ -124,12 +124,12 @@ test("a file with a part from a newer version is refused with its message, and n
   await page.getByTestId("menu").locator('[data-id="backup"]').tap();
   const b = JSON.parse(readFileSync((await (await download).path()) as string, "utf8")) as { dataVersion: number; parts: Record<string, { value: unknown }> };
   const v = b.dataVersion;
-  b.parts["settings"] = { "@pascaline": v, value: { ...(b.parts["settings"]?.value as object), digits: 4 } } as { value: unknown };
-  b.parts["defs"] = { "@pascaline": v + 1, value: [] } as { value: unknown };
+  b.parts["settings"] = { "@n62": v, value: { ...(b.parts["settings"]?.value as object), digits: 4 } } as { value: unknown };
+  b.parts["defs"] = { "@n62": v + 1, value: [] } as { value: unknown };
   const before = await state(page);
 
   await pick(page, { name: "newer.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(b)) });
-  await expect(page.getByTestId("notice")).toHaveText(`Definitions: made by a newer Pascaline (version ${v + 1}; this one reads up to ${v})`);
+  await expect(page.getByTestId("notice")).toHaveText(`Definitions: made by a newer N62 (version ${v + 1}; this one reads up to ${v})`);
   await expect(page.getByTestId("sheet-title")).toHaveCount(0); // no restore sheet
   expect(await state(page)).toEqual(before);
   expect(await page.evaluate(() => window.pascaline.session.settings.digits)).toBe(8);

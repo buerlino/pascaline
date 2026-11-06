@@ -8,7 +8,7 @@ const set = (page: Page, keys: "colour" | "plain", contrast: "normal" | "high"):
     async ([keys, contrast]) => {
       const url = "/src/theme/apply.ts";
       const m = (await import(/* @vite-ignore */ url)) as typeof import("../src/theme/apply.ts");
-      await m.applyTheme({ family: "pascaline", brightness: "dark", contrast: contrast as "normal", keys: keys as "plain" }, document.documentElement);
+      await m.applyTheme({ family: "n62", brightness: "dark", contrast: contrast as "normal", keys: keys as "plain" }, document.documentElement);
     },
     [keys, contrast],
   );

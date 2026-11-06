@@ -5,10 +5,10 @@
 import { validDefs } from "../engine/defs.ts";
 import { dataText, enData, type DataKey } from "../i18n/enData.ts";
 import { KeyboardSpecError, keyboard, parseAction } from "../keyboard/keyboard.ts";
-import { defaultLook, validLook } from "../theme/look.ts";
+import { defaultLook, renamedLook, validLook } from "../theme/look.ts";
 import { CELL_KEYS } from "../units/userCells.svelte.ts";
 import { isFmtMode, normalizeCycle } from "./displayMode.ts";
-import { migratePresetKeys, PRESETS_KEY } from "./presetRecord.ts";
+import { migratePresetKeys, PRESETS_KEY, renamedLooks } from "./presetRecord.ts";
 import { DATA_VERSION, kvSet, unstamp, type Migrations } from "./storage.ts";
 import { MIGRATIONS } from "./migrations.ts";
 import { kvGetRaw, type RawRecord } from "./storageRaw.ts";
@@ -42,7 +42,7 @@ export const DROPPED: readonly string[] = ["units.history"];
 export const LEFT_OUT: readonly string[] = ["defsStarts", "backup.undo", "tipsSeen", "backup.last", "backup.offered"];
 
 export interface Backup {
-  "pascaline-backup": 1;
+  "n62-backup": 1;
   dataVersion: number;
   made: string;
   parts: Record<string, RawRecord>;
@@ -58,7 +58,7 @@ export async function makeBackup(read: RawReader, now: Date): Promise<Backup> {
     const rec = await read(key);
     if (rec !== undefined) parts[key] = key === "history" ? withoutUndo(rec) : rec;
   }
-  return { "pascaline-backup": 1, dataVersion: DATA_VERSION, made: now.toISOString(), parts };
+  return { "n62-backup": 1, dataVersion: DATA_VERSION, made: now.toISOString(), parts };
 }
 
 /** The history record without its Undo copy of Clear and Delete (R98): rows the user removed never leave the device in
@@ -71,10 +71,10 @@ function withoutUndo(rec: RawRecord): RawRecord {
   return { ...rec, value: rest };
 }
 
-/** `pascaline-backup-YYYY-MM-DD.json`, by the local date. */
+/** `n62-backup-YYYY-MM-DD.json`, by the local date. */
 export function backupName(now: Date): string {
   const p = (n: number): string => String(n).padStart(2, "0");
-  return `pascaline-backup-${now.getFullYear()}-${p(now.getMonth() + 1)}-${p(now.getDate())}.json`;
+  return `n62-backup-${now.getFullYear()}-${p(now.getMonth() + 1)}-${p(now.getDate())}.json`;
 }
 
 /** Settings › Data › Save a backup: makes the file, hands it to the file port, notes the time of a saved one
@@ -100,8 +100,14 @@ export async function saveBackup(now: Date = new Date()): Promise<string> {
 export const BACKUP_FORMAT = 1;
 /** A restore refuses a larger file: twice the worst case of r11 section 3.3, so a wrong pick (a video) is never read. */
 export const MAX_BACKUP_BYTES = 4 * 1024 * 1024;
-const FORMAT = "pascaline-backup";
-const STAMP = "@pascaline";
+const FORMAT = "n62-backup";
+const STAMP = "@n62";
+/** The envelope's marker and the parts' stamp field before the name N62 (R138): a file that holds them reads the same
+ *  (the format number stays 1); the writer writes only FORMAT and STAMP. */
+const OLD_FORMAT = "pascaline-backup";
+const OLD_STAMP = "@pascaline";
+/** A part's stamp field: the new one, else the old one. */
+const stampField = (rec: Record<string, unknown>): string => (STAMP in rec ? STAMP : OLD_STAMP);
 
 const isObject = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
 /** JSON with sorted keys: two values are the same data whatever order their fields were written in. */
@@ -270,8 +276,8 @@ export function checkBackup(bytes: Uint8Array, validators: Validators = VALIDATO
   } catch {
     return no("refuse.json");
   }
-  if (!isObject(f) || !(FORMAT in f)) return no("refuse.envelope");
-  const format = f[FORMAT];
+  if (!isObject(f) || !(FORMAT in f || OLD_FORMAT in f)) return no("refuse.envelope");
+  const format = f[FORMAT in f ? FORMAT : OLD_FORMAT];
   if (typeof format !== "number" || !Number.isInteger(format) || format < 1) return no("refuse.format");
   if (format > BACKUP_FORMAT) return no("refuse.newerFormat", undefined, { n: format, max: BACKUP_FORMAT });
   const parts = f["parts"];
@@ -279,8 +285,8 @@ export function checkBackup(bytes: Uint8Array, validators: Validators = VALIDATO
   for (const key of DROPPED) delete parts[key]; // an older app's part this one no longer keeps (R122)
   for (const [key, rec] of Object.entries(parts)) {
     if (!BACKUP_KEYS.includes(key)) return no("refuse.unknown", key);
-    if (!isObject(rec) || !(STAMP in rec) || !("value" in rec)) return no("refuse.noStamp", key);
-    const v = rec[STAMP];
+    if (!isObject(rec) || !(STAMP in rec || OLD_STAMP in rec) || !("value" in rec)) return no("refuse.noStamp", key);
+    const v = rec[stampField(rec)];
     if (typeof v !== "number" || !Number.isInteger(v) || v < 0) return no("refuse.stamp", key);
     if (v > DATA_VERSION) return no("refuse.newer", key, { v, max: DATA_VERSION });
   }
@@ -290,8 +296,9 @@ export function checkBackup(bytes: Uint8Array, validators: Validators = VALIDATO
     let value: unknown;
     try {
       value = up(key, rec);
-      const from = (rec as Record<string, unknown>)[STAMP] as number;
-      if (key === PRESETS_KEY) value = migratePresetKeys(value, from, (k, v, at) => up(k, { [STAMP]: at, value: v }));
+      const from = (rec as Record<string, unknown>)[stampField(rec as Record<string, unknown>)] as number;
+      if (key === PRESETS_KEY) value = renamedLooks(migratePresetKeys(value, from, (k, v, at) => up(k, { [STAMP]: at, value: v })));
+      if (key === "settings" && isObject(value) && "look" in value) value = { ...value, look: renamedLook(value["look"]) }; // R138
     } catch {
       return no("refuse.invalid", key); // a migration step that cannot read the value
     }

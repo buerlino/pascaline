@@ -2,14 +2,14 @@
 <!-- R59: the text Settings › Data › Library › Copy the format for your AI copies whole (views/libraryJobs.ts aiFormat):
      `{version}` becomes DATA_VERSION, and these comment lines are left out. views/aiFormat.test.ts imports the worked
      example on the real engine, so the copied text never lies. Rules: engine/library.ts, docs/archive/r10-connector.md 1. -->
-# Pascaline file formats (text 1, for files of version {version})
+# N62 file formats (text 1, for files of version {version})
 
-You are writing a file for Pascaline, a calculator app for engineers whose engine is Giac (the CAS of Xcas). Write only what this text allows. The app checks the whole file before it changes anything, and refuses all of it at the first problem, with the line number.
+You are writing a file for N62, a calculator app for engineers whose engine is Giac (the CAS of Xcas). Write only what this text allows. The app checks the whole file before it changes anything, and refuses all of it at the first problem, with the line number.
 
 ## Part 1: a library of functions and values
 
 ### The lines
-- Line 1 is exactly `// pascaline library {version}`.
+- Line 1 is exactly `// n62 library {version}`.
 - A definition starts at column 0 and is `name(args):=body` (a function) or `name:=value` (a named value).
 - A definition goes on over the next lines while a bracket is still open, or while the next line is indented or starts with a closing bracket. So a program in `{ … }` with `local`, `for`, `if` and `return` works.
 - One definition per block: nothing may follow a top-level `;`.
@@ -18,7 +18,7 @@ You are writing a file for Pascaline, a calculator app for engineers whose engin
 ### Names
 - ASCII letters, digits and `_`, starting with a letter; each name once per file.
 - Not a Giac built-in (`sq`, `Beta`, `median`, …): the app refuses it and says which.
-- Not one of Pascaline's own names: the `pasc_` prefix, a name that ends in `_`, and its helpers such as `pasmod`, `sigfig` and `pasdeg`.
+- Not one of N62's own names: the `pasc_` prefix, a name that ends in `_`, and its helpers such as `pasmod`, `sigfig` and `pasdeg`.
 - A name the user already defined differently is listed, and replaced only once the user agrees.
 
 ### The description
@@ -27,7 +27,7 @@ You are writing a file for Pascaline, a calculator app for engineers whose engin
 ### Test lines
 - `// test: <expression>` after a definition, as many as you like. After the whole file is defined, each must give `true` (or 1), or the file is refused.
 - One expression per test. A test must not assign a name or change a setting.
-- Tests run on plain Giac: in radians, without Pascaline's exact-first evaluation. Write exact values (`2+2+8/3`, `5/2`) and a tolerance where a float is involved (`abs(f(2)-1.234) < 1e-9`). A test is a guard, not a proof.
+- Tests run on plain Giac: in radians, without N62's exact-first evaluation. Write exact values (`2+2+8/3`, `5/2`) and a tolerance where a float is involved (`abs(f(2)-1.234) < 1e-9`). A test is a guard, not a proof.
 - Giac's `==` between symbolic expressions compares their form: write `simplify(a - b) == 0`, not `a == b`.
 
 ### Bodies and values
@@ -42,13 +42,13 @@ You are writing a file for Pascaline, a calculator app for engineers whose engin
 - A line at column 0 that is not a comment, a blank line or a definition (`assume(x>0)`, `1+1`).
 - A second statement after `;`; a bracket never closed; an indented line outside a definition; a test line before any definition.
 - A body or value that changes the engine's state or assigns a name that is not local.
-- A built-in name, one of Pascaline's own names, the same name twice.
+- A built-in name, one of N62's own names, the same name twice.
 - A definition without its description, or a description over 120 characters.
 - A test that does not give `true`.
 
 ### Worked example
 ```text
-// pascaline library {version}
+// n62 library {version}
 // Maximum bending moment of a simply supported beam under a uniform load q over span L: q·L²/8
 beam_M(q,L):=q*L^2/8
 // test: beam_M(2,4) == 4
@@ -78,10 +78,10 @@ The backup is one JSON file. It holds the app's own stored records, so you write
 
 ### The envelope
 - Strict JSON, UTF-8, at most 4 MB.
-- `"pascaline-backup"`: the whole number `1`.
+- `"n62-backup"`: the whole number `1`.
 - `"dataVersion"` (`{version}`) and `"made"` (an ISO date-time) are information; write them.
 - `"parts"`: an object with any of `userKeys`, `unitPadCells`, `presets`. A file with only one of them is a valid backup. Any other part name is accepted only if the app writes it itself; do not write one.
-- Each part is `{ "@pascaline": {version}, "value": … }`. `"@pascaline"` is the version of the record: a whole number from 0 to {version}, and you write {version}. A larger number is refused.
+- Each part is `{ "@n62": {version}, "value": … }`. `"@n62"` is the version of the record: a whole number from 0 to {version}, and you write {version}. A larger number is refused.
 - A ticked part replaces the app's whole part, not a piece of it: slots the file does not hold go back to their defaults. To keep what the user has, work from their own backup file (Settings › Data › Save a backup) and change only these parts; the user unticks the other parts in the restore sheet.
 
 ### Part `userKeys`: the six free keys
@@ -107,13 +107,13 @@ The backup is one JSON file. It holds the app's own stored records, so you write
 - `groups` holds at least one of the groups below, each an object of the fields it sets. Applying a preset sets the fields it holds and leaves every other setting alone. A field with a value the app cannot read is left alone. Write only the fields listed here.
 - `mode`: `angle` = "rad" or "deg"; `format` = "std", "sci", "eng" or "pfx"; `digits` = a whole number from 1 to 30; `entry` = "textbook" or "line".
 - `numbers`: `decimalMark` = "point" or "comma"; `fixDecimals` = a whole number from 0 to 12; `uncertainty` = "sigma" or "muted"; `marks` = "muted", "colour" or "reason"; `groupSep` = "thin", "apos" or "comma".
-- `look`: `family` = "pascaline", "graphite", "solarized", "gruvbox" or "nord"; `brightness` = "system", "light" or "dark"; `contrast` = true or false; `plain` = true or false.
+- `look`: `family` = "n62", "graphite", "solarized", "gruvbox" or "nord"; `brightness` = "system", "light" or "dark"; `contrast` = true or false; `plain` = true or false.
 - `vibration`: `on` = true or false; `strength` = a whole number from 0 to 100; `ms` = a whole number from 5 to 100.
 - `keys`: `userKeys` and `unitPadCells`, each exactly the `value` of the part of that name above. Applying the preset puts those slots and cells on the keys.
 
 ### What refuses a file
-- Not JSON, not UTF-8, over 4 MB, no `"pascaline-backup"`, or a format number above 1.
-- A part name the app does not know, a part without `"@pascaline"` or `"value"`, or a stamp that is not a whole number from 0 to {version}.
+- Not JSON, not UTF-8, over 4 MB, no `"n62-backup"`, or a format number above 1.
+- A part name the app does not know, a part without `"@n62"` or `"value"`, or a stamp that is not a whole number from 0 to {version}.
 - A key id other than `u1` … `u6`, a layer other than `primary`, `shift` and `alpha`, a leg other than `tap`, `up` and `down`.
 - A slot with an empty label or an action the keypad does not know; a leg without a non-empty `unit`; an empty `prefix` or `label`.
 - Presets: an id or name used twice, a missing or empty name, groups that are empty or not objects of objects, `active` naming no preset, `next` not greater than every id.
@@ -121,12 +121,12 @@ The backup is one JSON file. It holds the app's own stored records, so you write
 ### Worked example of a backup
 ```json
 {
-  "pascaline-backup": 1,
+  "n62-backup": 1,
   "dataVersion": {version},
   "made": "2026-11-05T12:00:00.000Z",
   "parts": {
     "userKeys": {
-      "@pascaline": {version},
+      "@n62": {version},
       "value": {
         "u1": {
           "primary": { "label": "sinh", "action": { "insert": "\\sinh\\left(#0\\right)" } },
@@ -137,14 +137,14 @@ The backup is one JSON file. It holds the app's own stored records, so you write
       }
     },
     "unitPadCells": {
-      "@pascaline": {version},
+      "@n62": {version},
       "value": {
         "u1": { "tap": { "unit": "N", "prefix": "k" }, "up": { "unit": "Pa", "prefix": "M" } },
         "u2": { "tap": { "unit": "m", "prefix": "m" }, "down": null }
       }
     },
     "presets": {
-      "@pascaline": {version},
+      "@n62": {version},
       "value": {
         "presets": [
           {

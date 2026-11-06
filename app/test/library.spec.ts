@@ -70,8 +70,8 @@ test("beams.txt through the picker: beam_M is in Find with its description, and 
   await row(page, "export").tap();
   await expect.poll(async () => (await savedText(page))?.text ?? "").toContain("beam_M(q,L):=q*L^2/8");
   const first = (await savedText(page))!;
-  expect(first.name).toMatch(/^pascaline-library-\d{4}-\d{2}-\d{2}\.txt$/);
-  expect(first.text).toMatch(/^\/\/ pascaline library \d+\n/);
+  expect(first.name).toMatch(/^n62-library-\d{4}-\d{2}-\d{2}\.txt$/);
+  expect(first.text).toMatch(/^\/\/ n62 library \d+\n/);
   expect(first.text).toContain("// Maximum bending moment of a simply supported beam under a uniform load q over span L: q·L²/8\nbeam_M(q,L):=q*L^2/8");
   await fromClipboard(page, first.text);
   await expect(notice(page)).toContainText("0 new");
@@ -88,19 +88,19 @@ test("from the clipboard: beams.txt imports; a bad text is refused whole with it
   expect((await names(page))["beam_M"]).toMatch(/^Maximum bending moment/);
 
   // a good definition, then a line that is not one: nothing of it is defined
-  await fromClipboard(page, "// pascaline library 4\n// fine\nokfn(x):=x+1\nassume(x>0)\n");
+  await fromClipboard(page, "// n62 library 4\n// fine\nokfn(x):=x+1\nassume(x>0)\n");
   await expect(notice(page)).toContainText("line 4");
   await expect(notice(page)).toContainText("nothing changed");
   expect(Object.keys(await names(page))).not.toContain("okfn");
   // a failing test: refused, with its line, and the engine is back without the definition
-  await fromClipboard(page, "// pascaline library 4\n// twice\ntw(x):=2*x\n// test: tw(2) == 4\n// test: tw(3) == 7\n");
+  await fromClipboard(page, "// n62 library 4\n// twice\ntw(x):=2*x\n// test: tw(2) == 4\n// test: tw(3) == 7\n");
   await expect(notice(page)).toContainText("line 5");
   expect(Object.keys(await names(page))).not.toContain("tw");
   await page.waitForFunction(() => window.pascaline.session.engineState === "ready");
   expect(await cas(page, "type(tw)")).not.toBe("func");
 
   // G54: a body's median is ours (the median of 1,2,3,4 is 5/2, derived)
-  await fromClipboard(page, "// pascaline library 4\n// The median of a list\nmed(l):=median(l)\n// test: med([1,2,3,4]) == 5/2\n");
+  await fromClipboard(page, "// n62 library 4\n// The median of a list\nmed(l):=median(l)\n// test: med([1,2,3,4]) == 5/2\n");
   await expect(notice(page)).toContainText("1 new");
   expect(await cas(page, "med([1,2,3,4])")).toBe("5/2");
 
@@ -108,7 +108,7 @@ test("from the clipboard: beams.txt imports; a bad text is refused whole with it
   await putClipboard(page, "");
   await library(page);
   await row(page, "format").tap();
-  await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toContain("// pascaline library 4");
+  await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toContain("// n62 library 4");
   const format = await page.evaluate(() => navigator.clipboard.readText());
   expect(format).toContain("// test:");
   expect(format).not.toContain("SPDX");

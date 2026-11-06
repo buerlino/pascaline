@@ -37,7 +37,7 @@ describe("writer", () => {
     const write = vi.fn(async () => "w");
     expect(await w.guardWrite(write, () => "no")).toBe("w");
     expect(answer).toBe(true);
-    expect(free.calls).toEqual(["pascaline-writer:true"]);
+    expect(free.calls).toEqual(["n62-writer:true"]);
 
     vi.resetModules();
     w = await import("./writer.ts");

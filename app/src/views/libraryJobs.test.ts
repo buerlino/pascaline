@@ -20,10 +20,10 @@ function host(replies: LibraryReply[], over: Partial<LibraryHost> = {}) {
   const h: LibraryHost = {
     jobs: () => ({
       importLibrary: async (input, replace) => (calls.push([input, replace]), replies.shift() ?? good),
-      exportLibrary: async () => ({ text: "// pascaline library 4\n\n// d\nf(x):=x\n", skipped: [{ name: "C", why: "a decimal" }] }),
+      exportLibrary: async () => ({ text: "// n62 library 4\n\n// d\nf(x):=x\n", skipped: [{ name: "C", why: "a decimal" }] }),
     }),
     say: (s) => void said.push(s),
-    readText: async () => "// pascaline library 4\n",
+    readText: async () => "// n62 library 4\n",
     writeText: async () => true,
     refresh: async () => void refreshed++,
     showMenu: (title, items) => void sheets.push({ title, items }),
@@ -84,7 +84,7 @@ describe("the jobs", () => {
   it("the clipboard: its text goes through the same import; none or empty says so", async () => {
     const t = host([]);
     await importClipboard(t.h);
-    expect(t.calls).toEqual([["// pascaline library 4\n", false]]);
+    expect(t.calls).toEqual([["// n62 library 4\n", false]]);
     const none = host([], { readText: async () => null });
     await importClipboard(none.h);
     expect(none.said).toEqual(["Could not read the clipboard"]);
@@ -94,14 +94,14 @@ describe("the jobs", () => {
     expect(empty.calls).toEqual([]);
   });
   it("the export saves under the day's name and says what it left out; an empty log saves nothing", async () => {
-    expect(libraryName(new Date(2026, 10, 5))).toBe("pascaline-library-2026-11-05.txt");
+    expect(libraryName(new Date(2026, 10, 5))).toBe("n62-library-2026-11-05.txt");
     const saved: string[] = [];
     const t = host([], { saveFile: async (name, mime, text) => (saved.push(`${name} ${mime} ${text.length}`), "saved") });
     await exportLib(t.h);
     expect(saved).toHaveLength(1);
-    expect(saved[0]).toMatch(/^pascaline-library-\d{4}-\d{2}-\d{2}\.txt text\/plain \d+$/);
+    expect(saved[0]).toMatch(/^n62-library-\d{4}-\d{2}-\d{2}\.txt text\/plain \d+$/);
     expect(t.said).toEqual(["Library saved. 1 left out (assumptions, and decimals in the backup only): C"]);
-    const empty = host([], { jobs: () => ({ importLibrary: async () => good, exportLibrary: async () => ({ text: "// pascaline library 4\n", skipped: [] }) }), saveFile: async () => (saved.push("again"), "saved") });
+    const empty = host([], { jobs: () => ({ importLibrary: async () => good, exportLibrary: async () => ({ text: "// n62 library 4\n", skipped: [] }) }), saveFile: async () => (saved.push("again"), "saved") });
     await exportLib(empty.h);
     expect(empty.said).toEqual(["No definitions to export"]);
     expect(saved).toHaveLength(1);
@@ -111,7 +111,7 @@ describe("the jobs", () => {
     const t = host([], { writeText: async (s) => (put.push(s), true) });
     await copyFormat(t.h);
     expect(put).toEqual([aiFormat()]);
-    expect(put[0]).toContain("// pascaline library 4\n// Maximum bending moment");
+    expect(put[0]).toContain("// n62 library 4\n// Maximum bending moment");
     expect(put[0]).not.toMatch(/SPDX|<!--|R126|\{version\}/);
     expect(t.said).toEqual(["Format copied: paste it into your AI chat"]);
     expect(aiFormat("<!-- a -->\n# T {version}\n<!-- b\n c -->\nx\n", 9)).toBe("# T 9\nx\n");

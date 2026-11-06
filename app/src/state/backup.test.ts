@@ -78,18 +78,18 @@ describe("the backup's keys (R38a)", () => {
   });
   it("makeBackup holds only the keys that are present, with their stamps as stored", async () => {
     const store: Record<string, RawRecord> = {
-      settings: { "@pascaline": DATA_VERSION, value: { digits: 12 } },
-      defs: { "@pascaline": 0, value: [] },
-      defsStarts: { "@pascaline": DATA_VERSION, value: 1 },
-      view: { "@pascaline": DATA_VERSION + 1, value: "cas" },
+      settings: { "@n62": DATA_VERSION, value: { digits: 12 } },
+      defs: { "@n62": 0, value: [] },
+      defsStarts: { "@n62": DATA_VERSION, value: 1 },
+      view: { "@n62": DATA_VERSION + 1, value: "cas" },
     };
     const b = await makeBackup(async (k) => store[k], new Date("2026-10-31T12:00:00Z"));
-    expect(b["pascaline-backup"]).toBe(1);
+    expect(b["n62-backup"]).toBe(1);
     expect(b.dataVersion).toBe(DATA_VERSION);
     expect(b.made).toBe("2026-10-31T12:00:00.000Z");
     expect(Object.keys(b.parts).sort()).toEqual(["defs", "settings", "view"]);
-    expect(b.parts["defs"]?.["@pascaline"]).toBe(0);
-    expect(b.parts["view"]?.["@pascaline"]).toBe(DATA_VERSION + 1);
+    expect(b.parts["defs"]?.["@n62"]).toBe(0);
+    expect(b.parts["view"]?.["@n62"]).toBe(DATA_VERSION + 1);
   });
   it("every key the app writes is in BACKUP_KEYS or on the left-out list (R38af2)", () => {
     const { keys, unresolved } = writtenKeys();
@@ -106,7 +106,7 @@ describe("the backup's keys (R38a)", () => {
   it("leaves the history's Undo copy of Clear and Delete out, and the check refuses a history that holds one (R98)", async () => {
     const row = { id: 1, view: "home", latex: "1", status: "done", resultLatex: "1", text: "1", approximate: false, startedAt: 0 };
     const undo = { view: "home", kind: "clear", rows: [{ at: 0, item: { ...row, latex: "secret" } }] };
-    const store: Record<string, RawRecord> = { history: { "@pascaline": DATA_VERSION, value: { home: [row], cas: [], undo } } };
+    const store: Record<string, RawRecord> = { history: { "@n62": DATA_VERSION, value: { home: [row], cas: [], undo } } };
     const b = await makeBackup(async (k) => store[k], new Date("2026-10-31T12:00:00Z"));
     expect(b.parts["history"]?.value).toEqual({ home: [row], cas: [] });
     expect(JSON.stringify(b)).not.toContain("secret"); // rows the user removed never leave the device
@@ -117,7 +117,7 @@ describe("the backup's keys (R38a)", () => {
     expect(VALIDATORS["history"]?.({ home: [row], undo })).toBe(false);
     expect(VALIDATORS["history"]?.({ home: [row] })).toBe(true);
     const file = (v: unknown): Uint8Array =>
-      new TextEncoder().encode(JSON.stringify({ "pascaline-backup": 1, parts: { history: { "@pascaline": DATA_VERSION, value: v } } }));
+      new TextEncoder().encode(JSON.stringify({ "n62-backup": 1, parts: { history: { "@n62": DATA_VERSION, value: v } } }));
     expect(checkBackup(file(bad)).ok).toBe(false);
     expect(checkBackup(file(b.parts["history"]?.value)).ok).toBe(true); // what makeBackup writes restores
   });
@@ -127,14 +127,14 @@ describe("the backup's keys (R38a)", () => {
       { view: "home", kind: "clear", rows: [{ at: 0, item: { ...row, latex: "secretH" } }] },
       { view: "cas", kind: "delete", rows: [{ at: 0, item: { ...row, view: "cas", latex: "secretC" } }] },
     ];
-    const store: Record<string, RawRecord> = { history: { "@pascaline": DATA_VERSION, value: { home: [row], cas: [], undo } } };
+    const store: Record<string, RawRecord> = { history: { "@n62": DATA_VERSION, value: { home: [row], cas: [], undo } } };
     const b = await makeBackup(async (k) => store[k], new Date("2026-11-03T12:00:00Z"));
     expect(b.parts["history"]?.value).toEqual({ home: [row], cas: [] });
     expect(JSON.stringify(b)).not.toMatch(/secret/);
     expect(VALIDATORS["history"]?.({ home: [row], undo })).toBe(false);
   });
   it("names the file by the date", () => {
-    expect(backupName(new Date(2026, 9, 5))).toBe("pascaline-backup-2026-10-05.json");
+    expect(backupName(new Date(2026, 9, 5))).toBe("n62-backup-2026-10-05.json");
   });
 });
 
@@ -156,7 +156,7 @@ describe("a failed read fails the backup", () => {
 
   it("reads a stored record and a missing key", async () => {
     seed("view", "cas");
-    expect(await kvGetRaw("view")).toEqual({ "@pascaline": DATA_VERSION, value: "cas" });
+    expect(await kvGetRaw("view")).toEqual({ "@n62": DATA_VERSION, value: "cas" });
     expect(await kvGetRaw("history")).toBeUndefined();
   });
   it("kvGetRaw throws when the get fails", async () => {
@@ -223,7 +223,7 @@ describe("storageRaw.ts opens the same store as storage.ts", () => {
   };
   it("the database name, its version, the store and the stamp field are equal", () => {
     const main = facts("storage.ts");
-    expect(main).toEqual({ db: "pascaline", version: "1", store: "kv", stamp: "@pascaline" });
+    expect(main).toEqual({ db: "n62", version: "1", store: "kv", stamp: "@n62" });
     expect(facts("storageRaw.ts")).toEqual(main);
   });
 });

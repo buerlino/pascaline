@@ -21,7 +21,7 @@ async function seed(page: Page): Promise<void> {
   await page.evaluate(
     (records) =>
       new Promise<void>((resolve, reject) => {
-        const req = indexedDB.open("pascaline", 1);
+        const req = indexedDB.open("n62", 1);
         req.onupgradeneeded = () => req.result.createObjectStore("kv");
         req.onerror = () => reject(req.error);
         req.onsuccess = () => {
@@ -41,7 +41,7 @@ const stored = (page: Page, key: string): Promise<unknown> =>
   page.evaluate(
     (key) =>
       new Promise((resolve, reject) => {
-        const req = indexedDB.open("pascaline", 1);
+        const req = indexedDB.open("n62", 1);
         req.onerror = () => reject(req.error);
         req.onsuccess = () => {
           const r = req.result.transaction("kv", "readonly").objectStore("kv").get(key);
@@ -96,7 +96,7 @@ test.describe("an older build's data (ef857a6) in today's app", () => {
   test("every record is written back in today's version", async ({ page }) => {
     await page.waitForTimeout(1000); // kvGet writes an upgraded record back, not awaited
     for (const key of ["defs", "history", "settings", "view"]) {
-      expect((await stored(page, key)) as { "@pascaline": number }, key).toMatchObject({ "@pascaline": DATA_VERSION });
+      expect((await stored(page, key)) as { "@n62": number }, key).toMatchObject({ "@n62": DATA_VERSION });
     }
   });
 });

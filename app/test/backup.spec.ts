@@ -28,12 +28,12 @@ test("Settings › Data › Save a backup saves the envelope with every present 
   await page.getByTestId("menu").locator('[data-id="backup"]').tap();
   await expect(page.getByTestId("notice")).toHaveText("Backup saved");
   const file = await savedText(page);
-  expect(file?.name).toMatch(/^pascaline-backup-\d{4}-\d{2}-\d{2}\.json$/);
+  expect(file?.name).toMatch(/^n62-backup-\d{4}-\d{2}-\d{2}\.json$/);
   const text = file?.text ?? "";
   console.log(`BACKUP SIZE ${Buffer.byteLength(text)} bytes`);
 
-  const b = JSON.parse(text) as { "pascaline-backup": number; dataVersion: number; made: string; parts: Record<string, { "@pascaline": number; value: unknown }> };
-  expect(b["pascaline-backup"]).toBe(1);
+  const b = JSON.parse(text) as { "n62-backup": number; dataVersion: number; made: string; parts: Record<string, { "@n62": number; value: unknown }> };
+  expect(b["n62-backup"]).toBe(1);
   // dataVersion is the app's DATA_VERSION (backup.test.ts compares it with storage.ts); every part carries that stamp
   expect(Number.isInteger(b.dataVersion) && b.dataVersion >= 3).toBe(true);
   expect(Number.isNaN(Date.parse(b.made))).toBe(false);
@@ -42,7 +42,7 @@ test("Settings › Data › Save a backup saves the envelope with every present 
   expect(present).not.toContain("defsStarts");
   expect(present).not.toContain("backup.undo");
   for (const [k, rec] of Object.entries(b.parts)) {
-    expect(rec["@pascaline"], k).toBe(b.dataVersion);
+    expect(rec["@n62"], k).toBe(b.dataVersion);
     expect(rec, k).toHaveProperty("value");
   }
   expect((b.parts["settings"]?.value as { digits: number }).digits).toBe(9);
@@ -70,12 +70,12 @@ test("Save a backup works when the sheet opened before the clipboard code arrive
   await page.getByTestId("menu").locator('[data-id="backup"]').tap();
   release();
   const file = await download;
-  expect(file.suggestedFilename()).toMatch(/^pascaline-backup-\d{4}-\d{2}-\d{2}\.json$/);
-  expect(JSON.parse(readFileSync((await file.path()) as string, "utf8"))).toHaveProperty("pascaline-backup", 1);
+  expect(file.suggestedFilename()).toMatch(/^n62-backup-\d{4}-\d{2}-\d{2}\.json$/);
+  expect(JSON.parse(readFileSync((await file.path()) as string, "utf8"))).toHaveProperty("n62-backup", 1);
   await expect(page.getByTestId("notice")).toHaveText("Backup offered as a download");
 });
 
-test("Settings › Counters › Export the counts saves pascaline-counts/1 with the presses per key and layer (R127)", async ({ page }) => {
+test("Settings › Counters › Export the counts saves n62-counts/1 with the presses per key and layer (R127)", async ({ page }) => {
   await page.setViewportSize({ width: 412, height: 915 });
   await savePicker(page, "fake");
   await open(page, "");
@@ -85,10 +85,10 @@ test("Settings › Counters › Export the counts saves pascaline-counts/1 with 
   await page.getByTestId("menu").locator('[data-id="export"]').tap();
   await expect(page.getByTestId("notice")).toHaveText("Counts saved");
   const file = await savedText(page);
-  expect(file?.name).toMatch(/^pascaline-counts-\d{4}-\d{2}-\d{2}\.json$/);
+  expect(file?.name).toMatch(/^n62-counts-\d{4}-\d{2}-\d{2}\.json$/);
   const o = JSON.parse(file?.text ?? "{}") as { format: string; since: string; presses: number; keys: Record<string, number> };
   expect(Object.keys(o)).toEqual(["format", "since", "presses", "keys"]);
-  expect(o.format).toBe("pascaline-counts/1");
+  expect(o.format).toBe("n62-counts/1");
   expect(o.since).toMatch(/^\d{4}-\d{2}-\d{2}$/);
   expect(o.keys["d7:primary"]).toBe(2);
   expect(o.keys["sin:shift"]).toBe(1);

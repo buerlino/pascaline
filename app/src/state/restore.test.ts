@@ -13,7 +13,7 @@ import { defaultLook } from "../theme/look.ts";
 import { migrateSettings, Session, SETTINGS_SCHEMA } from "./session.svelte.ts";
 import { DATA_VERSION, idbKv } from "./storage.ts";
 
-const at = (value: unknown, v = DATA_VERSION): { "@pascaline": unknown; value: unknown } => ({ "@pascaline": v, value });
+const at = (value: unknown, v = DATA_VERSION): { "@n62": unknown; value: unknown } => ({ "@n62": v, value });
 const row = (latex: string, status = "done"): Record<string, unknown> => ({ id: 1, latex, status, resultLatex: "x" });
 const parts = (): Record<string, unknown> => ({
   settings: at({ schema: SETTINGS_SCHEMA, ...migrateSettings({ digits: 9, angle: "rad" }).settings }),
@@ -29,7 +29,7 @@ const parts = (): Record<string, unknown> => ({
 });
 const good = (): Record<string, unknown> => {
   const p = parts(); // no unitPadCells: a part missing from the file is not a fault
-  return { "pascaline-backup": 1, dataVersion: DATA_VERSION, made: "2026-10-31T12:00:00.000Z", parts: p };
+  return { "n62-backup": 1, dataVersion: DATA_VERSION, made: "2026-10-31T12:00:00.000Z", parts: p };
 };
 const bytes = (f: unknown): Uint8Array => new TextEncoder().encode(typeof f === "string" ? f : JSON.stringify(f));
 const refused = (f: unknown): RefusedBackup => {
@@ -78,17 +78,17 @@ describe("checkBackup (r11 section 3.4)", () => {
     expect(refused(new Uint8Array([0x7b, 0xff, 0x7d])).message).toBe(dataText("refuse.utf8"));
   });
   it("1. not JSON: a library file says where libraries go", () => {
-    const r = refused("// pascaline library 3\nf(x):=x^2");
+    const r = refused("// n62 library 3\nf(x):=x^2");
     expect(r.message).toBe("Not a backup; a library is imported under Settings › Data");
   });
-  it("2. no pascaline-backup field (an object, an array, a number)", () => {
+  it("2. no n62-backup field (an object, an array, a number)", () => {
     for (const f of [{ parts: {} }, [1], 3, null]) expect(refused(f).message).toBe(dataText("refuse.envelope"));
   });
   it("2. a format number that is not an integer ≥ 1", () => {
-    for (const n of ["1", 0, 1.5, -1, null]) expect(refused({ ...good(), "pascaline-backup": n }).message, String(n)).toBe(dataText("refuse.format"));
+    for (const n of ["1", 0, 1.5, -1, null]) expect(refused({ ...good(), "n62-backup": n }).message, String(n)).toBe(dataText("refuse.format"));
   });
   it("2. a newer format", () => {
-    expect(refused({ ...good(), "pascaline-backup": 2 }).message).toBe("Made by a newer Pascaline (backup format 2; this one reads up to 1)");
+    expect(refused({ ...good(), "n62-backup": 2 }).message).toBe("Made by a newer N62 (backup format 2; this one reads up to 1)");
   });
   it("3. parts missing or not an object", () => {
     for (const p of [undefined, [], "x", null]) expect(refused({ ...good(), parts: p }).message).toBe(dataText("refuse.parts"));
@@ -102,7 +102,7 @@ describe("checkBackup (r11 section 3.4)", () => {
   });
   it("4. a part without a stamp or without a value", () => {
     expect(refused(withPart("view", "home"))).toEqual({ ok: false, part: "view", message: "Open view: no version stamp or no value" });
-    expect(refused(withPart("view", { "@pascaline": DATA_VERSION })).part).toBe("view");
+    expect(refused(withPart("view", { "@n62": DATA_VERSION })).part).toBe("view");
     expect(refused(withPart("view", { value: "home" })).part).toBe("view");
   });
   it("4. a broken stamp (text, negative, a fraction)", () => {
@@ -111,10 +111,10 @@ describe("checkBackup (r11 section 3.4)", () => {
   it("4. a part newer than DATA_VERSION, with its message and name, even when another part is also broken", () => {
     const f = withPart("defs", at([], DATA_VERSION + 1));
     (f["parts"] as Record<string, unknown>)["history"] = at({ home: [row("1", "pending")] });
-    expect(refused(f)).toEqual({ ok: false, part: "defs", message: `Definitions: made by a newer Pascaline (version ${DATA_VERSION + 1}; this one reads up to ${DATA_VERSION})` });
+    expect(refused(f)).toEqual({ ok: false, part: "defs", message: `Definitions: made by a newer N62 (version ${DATA_VERSION + 1}; this one reads up to ${DATA_VERSION})` });
   });
   it("2 before 3: a newer format with an unknown part is refused for its format", () => {
-    expect(refused({ ...withPart("defsStarts", at(0)), "pascaline-backup": 2 }).message).toContain("backup format 2");
+    expect(refused({ ...withPart("defsStarts", at(0)), "n62-backup": 2 }).message).toContain("backup format 2");
   });
 
   // 5. the key's validator: a row or field the start would drop is a fault

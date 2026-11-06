@@ -14,7 +14,7 @@ async function seed(page: Page): Promise<void> {
       id: k + 1, view: "home", latex: `${k}+1`, status: "done", resultLatex: String(k + 1), text: String(k + 1), approximate: false, startedAt: 0,
     }));
     await new Promise<void>((resolve, reject) => {
-      const req = indexedDB.open("pascaline", 1);
+      const req = indexedDB.open("n62", 1);
       req.onupgradeneeded = () => req.result.createObjectStore("kv");
       req.onsuccess = () => {
         const tx = req.result.transaction("kv", "readwrite");

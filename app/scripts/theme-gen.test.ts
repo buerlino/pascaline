@@ -19,7 +19,7 @@ describe("generated theme files", () => {
     }
     expect(outOfDate()).toEqual([]);
   });
-  it("style.css keeps everything but Pascaline's two start blocks", () => {
+  it("style.css keeps everything but N62's two start blocks", () => {
     const src = readFileSync(new URL("../src/style.css", import.meta.url), "utf8");
     expect(styleFile(src)).toBe(src);
     expect(expected().size).toBe(6);

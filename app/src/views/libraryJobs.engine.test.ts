@@ -70,17 +70,17 @@ const beams = readFileSync(new URL("../../../tools/probes/library/beams.txt", im
 describe.skipIf(!giacAvailable())("the library through the Calc port (real Giac)", () => {
   it("the format for your AI: its worked example imports, its five tests pass, and it names this version (derived)", { timeout: 30_000 }, async () => {
     const format = aiFormat();
-    expect(format.split("\n")[0]).toBe(`# Pascaline file formats (text 1, for files of version ${DATA_VERSION})`);
+    expect(format.split("\n")[0]).toBe(`# N62 file formats (text 1, for files of version ${DATA_VERSION})`);
     expect(format).not.toMatch(/SPDX|<!--|\{version\}/);
     const example = formatExample(format);
-    expect(example.split("\n")[0]).toBe(`// pascaline library ${DATA_VERSION}`);
+    expect(example.split("\n")[0]).toBe(`// n62 library ${DATA_VERSION}`);
     const { calc } = fresh();
     const r = ok((await calc.importLibrary(example, false)).result);
     expect(r.plan.added).toEqual(["beam_M", "sumpow", "middle", "g0"]);
     expect(r.tests).toBe(5);
     expect((await calc.cas("middle([1,2,3,4])", settings)).text).toBe("5/2"); // G54: the median of 1,2,3,4 (derived)
     // the e2e's one-line library (library.spec.ts): med is no built-in
-    ok((await calc.importLibrary("// pascaline library 4\n// The median of a list\nmed(l):=median(l)\n// test: med([1,2,3,4]) == 5/2\n", false)).result);
+    ok((await calc.importLibrary("// n62 library 4\n// The median of a list\nmed(l):=median(l)\n// test: med([1,2,3,4]) == 5/2\n", false)).result);
   });
 
   it("a version-1 file (beams.txt): the stamp is brought up to date, the lines stay the file's", { timeout: 30_000 }, async () => {
@@ -98,7 +98,7 @@ describe.skipIf(!giacAvailable())("the library through the Calc port (real Giac)
 
   it("a version-2 file is migrated on its way to the worker: pasexp is gone, ph is stored with exp, its test passes (derived: exp(iπ) = −1)", { timeout: 30_000 }, async () => {
     const { calc } = fresh();
-    const reply = await calc.importLibrary("// pascaline library 2\n// phasor\nph(w):=pasexp(i*w)\n// test: simplify(ph(pi)+1)==0\n", false);
+    const reply = await calc.importLibrary("// n62 library 2\n// phasor\nph(w):=pasexp(i*w)\n// test: simplify(ph(pi)+1)==0\n", false);
     const r = ok(reply.result);
     expect(r.plan.added).toEqual(["ph"]);
     expect(r.tests).toBe(1);
@@ -111,7 +111,7 @@ describe.skipIf(!giacAvailable())("the library through the Calc port (real Giac)
 
   it("refuses a bad text whole, with its line, before the engine sees it (not UTF-8 too)", { timeout: 30_000 }, async () => {
     const { calc } = fresh();
-    const r = (await calc.importLibrary("// pascaline library 4\n// fine\nokfn(x):=x+1\nassume(x>0)\n", false)).result;
+    const r = (await calc.importLibrary("// n62 library 4\n// fine\nokfn(x):=x+1\nassume(x>0)\n", false)).result;
     expect(r).toMatchObject({ ok: false, line: 4, dirty: false });
     expect(await calc.names()).toEqual([]);
     const bad = (await calc.importLibrary(new Uint8Array([0x2f, 0x2f, 0xff]), false)).result;
@@ -122,7 +122,7 @@ describe.skipIf(!giacAvailable())("the library through the Calc port (real Giac)
     expect(READ_CAP).toBe(LIB_MAX_BYTES + 1);
     const { calc } = fresh();
     const said: string[] = [];
-    const big = new File([`// pascaline library 4\n${"// x\n".repeat(80_000)}`], "big.txt");
+    const big = new File([`// n62 library 4\n${"// x\n".repeat(80_000)}`], "big.txt");
     const host = { jobs: () => calc, say: (s: string) => void said.push(s), refresh: async () => {}, showMenu: () => {} } as unknown as LibraryHost;
     await importFile(host, big);
     expect(said).toEqual(["Library refused, nothing changed: the file is over 256 kB"]);
@@ -131,7 +131,7 @@ describe.skipIf(!giacAvailable())("the library through the Calc port (real Giac)
   it("a failing test: every failure with its line, and the engine restarts from the unchanged log", { timeout: 30_000 }, async () => {
     const { calc, workers } = fresh();
     await calc.cas("keep:=7", settings);
-    const r = (await calc.importLibrary("// pascaline library 4\n// twice\ntw(x):=2*x\n// test: tw(2) == 4\n// test: tw(3) == 7\n// test: tw(1) == 3\n", false)).result;
+    const r = (await calc.importLibrary("// n62 library 4\n// twice\ntw(x):=2*x\n// test: tw(2) == 4\n// test: tw(3) == 7\n// test: tw(1) == 3\n", false)).result;
     expect(r).toMatchObject({ ok: false, dirty: true });
     expect(!r.ok && r.failures?.map((f) => f.line)).toEqual([5, 6]);
     expect(workers()).toBe(2); // restarted
@@ -167,7 +167,7 @@ describe.skipIf(!giacAvailable())("the library through the Calc port (real Giac)
     const a = fresh();
     ok((await a.calc.importLibrary(new Uint8Array(beams), false)).result);
     const out = await a.calc.exportLibrary();
-    expect(out.text.startsWith(`// pascaline library ${DATA_VERSION}\n`)).toBe(true);
+    expect(out.text.startsWith(`// n62 library ${DATA_VERSION}\n`)).toBe(true);
     expect(out.skipped).toEqual([]);
     const same = ok((await a.calc.importLibrary(out.text, false)).result);
     expect(same.plan).toEqual({ added: [], same: ["beam_M", "beam_w", "sumpow", "g0"], replaced: [] });

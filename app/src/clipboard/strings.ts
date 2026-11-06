@@ -29,7 +29,7 @@ const clip = {
   "clip.unavailable": "The clipboard is not available",
   "clip.shared": "Shared",
   "clip.sharedAsCopy": "This device cannot share: copied instead",
-  "clip.sessionTitle": "Pascaline session",
+  "clip.sessionTitle": "N62 session",
   // R36: the picked row's line (whyLine.ts)
   "why.exact": "exact",
   "why.rounded": "rounded",

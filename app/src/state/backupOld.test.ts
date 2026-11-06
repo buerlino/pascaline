@@ -12,7 +12,7 @@ import { restoreParts } from "./restore.ts";
 import { Session } from "./session.svelte.ts";
 import { DATA_VERSION, idbKv } from "./storage.ts";
 
-type File = { dataVersion: number; parts: Record<string, { "@pascaline": number; value: unknown }> };
+type File = { dataVersion: number; parts: Record<string, { "@n62": number; value: unknown }> };
 const FIXTURES = ["backup-2026-11.json"] as const;
 const fixture = (name: string): File => JSON.parse(readFileSync(new URL(`./fixtures/${name}`, import.meta.url), "utf8")) as File;
 const bytes = (f: unknown): Uint8Array => new TextEncoder().encode(JSON.stringify(f));
@@ -54,7 +54,7 @@ describe("a settings part without a nested field added later (R122, vr-9)", () =
 
   it.each([
     ["look", "plain", false],
-    ["look", "family", "pascaline"],
+    ["look", "family", "n62"],
     ["look", "contrast", false],
     ["haptics", "ms", 15],
     ["haptics", "strength", 50],
@@ -104,14 +104,14 @@ describe("a settings part without a nested field added later (R122, vr-9)", () =
 describe("a part this version no longer keeps (R122, ca-6)", () => {
   it("units.history: skipped, never refused", () => {
     const f = fixture("backup-2026-11.json");
-    f.parts["units.history"] = { "@pascaline": 3, value: { rows: [] } };
+    f.parts["units.history"] = { "@n62": 3, value: { rows: [] } };
     const r = checked(f);
     expect(r.parts).not.toHaveProperty("units.history");
     expect(r.parts["settings"]).toBeDefined();
   });
   it("a part no version kept is still refused", () => {
     const f = fixture("backup-2026-11.json");
-    f.parts["nope"] = { "@pascaline": 3, value: 1 };
+    f.parts["nope"] = { "@n62": 3, value: 1 };
     expect(checkBackup(bytes(f)).ok).toBe(false);
   });
 });

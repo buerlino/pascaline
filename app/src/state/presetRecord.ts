@@ -43,12 +43,25 @@ const isId = (n: unknown): n is number => typeof n === "number" && Number.isInte
 /** The key a name is compared by: two names that differ only in case or outer spaces are the same name. */
 export const nameKey = (name: string): string => name.trim().toLocaleLowerCase();
 
+/** R138: the presets' value with a look group of the house look's id before the name N62 (`pascaline`) read as `n62`,
+ *  as theme/look.ts renamedLook does (repeated here: this module imports nothing). A value of another shape is returned
+ *  as it is, for the check that follows. */
+export function renamedLooks(v: unknown): unknown {
+  if (!isObject(v) || !Array.isArray(v["presets"])) return v;
+  const renamed = (p: unknown): unknown => {
+    if (!isObject(p) || !isObject(p["groups"]) || !isObject(p["groups"]["look"]) || p["groups"]["look"]["family"] !== "pascaline") return p;
+    return { ...p, groups: { ...p["groups"], look: { ...p["groups"]["look"], family: "n62" } } };
+  };
+  return { ...v, presets: (v["presets"] as unknown[]).map(renamed) };
+}
+
 /**
  * The presets from a stored value, entry by entry: a preset without a whole id, a name, or groups as an object is
  * dropped, and so is a later one with an id or a name already taken; `dropped` counts them (the backup's check refuses
  * a part with any). `active` that names no preset is none; `next` is past every id.
  */
-export function readPresets(v: unknown): { record: StoredPresets; dropped: number } {
+export function readPresets(stored: unknown): { record: StoredPresets; dropped: number } {
+  const v = renamedLooks(stored);
   const o = isObject(v) ? v : {};
   const list = Array.isArray(o["presets"]) ? (o["presets"] as unknown[]) : [];
   const presets: Preset[] = [];

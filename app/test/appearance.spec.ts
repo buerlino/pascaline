@@ -16,7 +16,7 @@ const stored = (page: Page) =>
   page.evaluate(
     () =>
       new Promise<unknown>((res) => {
-        const req = indexedDB.open("pascaline");
+        const req = indexedDB.open("n62");
         req.onsuccess = () => {
           const g = req.result.transaction("kv").objectStore("kv").get("settings");
           g.onsuccess = () => res((g.result as { value?: { look?: unknown } } | undefined)?.value?.look);
@@ -46,7 +46,7 @@ test.describe("the level", () => {
     await expect(title(page)).toHaveText("Mode › Settings › Appearance");
     await expect(sheet(page).getByRole("menuitem")).toHaveCount(4);
     await expect(row(page, "theme").getByTestId("row-dots").locator("i")).toHaveCount(5);
-    await expect(row(page, "theme").getByTestId("sheet-value")).toHaveText("Pascaline");
+    await expect(row(page, "theme").getByTestId("sheet-value")).toHaveText("N62");
     await expect(row(page, "brightness").getByTestId("sheet-value")).toHaveText("System");
     await expect(row(page, "contrast").getByTestId("row-hint")).toHaveText("Text at 7:1, outlined keys");
     await expect(row(page, "plain").getByTestId("row-hint")).toHaveText("No colour coding");
@@ -135,20 +135,20 @@ test.describe("survives a reload", () => {
 
   test("switching the switches off again survives too", async ({ page }) => {
     await tap(page, ["@mode", "d6", "d1", "d3", "d4", "d3", "d4"]);
-    await expect.poll(() => attrs(page)).toEqual(["pascaline", "dark", null, null]);
-    await expect.poll(() => stored(page)).toEqual({ family: "pascaline", brightness: "system", contrast: false, plain: false });
+    await expect.poll(() => attrs(page)).toEqual(["n62", "dark", null, null]);
+    await expect.poll(() => stored(page)).toEqual({ family: "n62", brightness: "system", contrast: false, plain: false });
     await reload(page);
-    expect(await attrs(page)).toEqual(["pascaline", "dark", null, null]);
+    expect(await attrs(page)).toEqual(["n62", "dark", null, null]);
   });
 });
 
 test.describe("the first frame", () => {
   test("shows the stored theme before main.ts has run (its file held)", async ({ page }) => {
     await tap(page, ["@mode", "d6", "d1", "left", "d3", "d4"]); // Nord, High contrast, Plain keys
-    await expect.poll(() => page.evaluate(() => localStorage.getItem("pascaline.look"))).toContain('"plain":true');
-    await expect.poll(() => page.evaluate(() => localStorage.getItem("pascaline.look"))).toContain('"bg":"#');
+    await expect.poll(() => page.evaluate(() => localStorage.getItem("n62.look"))).toContain('"plain":true');
+    await expect.poll(() => page.evaluate(() => localStorage.getItem("n62.look"))).toContain('"bg":"#');
     await page.waitForTimeout(300);
-    const mirrorBg = await page.evaluate(() => (JSON.parse(localStorage.getItem("pascaline.look") ?? "{}") as { bg: string }).bg);
+    const mirrorBg = await page.evaluate(() => (JSON.parse(localStorage.getItem("n62.look") ?? "{}") as { bg: string }).bg);
     let release: () => void = () => {};
     const held = new Promise<void>((res) => (release = res));
     await page.route(/\/src\/main\.ts/, async (route) => {
@@ -188,12 +188,12 @@ test.describe("prefers-contrast: more", () => {
   test("pc: turns High contrast on at the first start only", async ({ page }) => {
     await page.emulateMedia({ contrast: "more" });
     await open(page);
-    expect(await attrs(page)).toEqual(["pascaline", "dark", "high", null]);
+    expect(await attrs(page)).toEqual(["n62", "dark", "high", null]);
     expect((await look(page)).contrast).toBe(true);
     await page.emulateMedia({ contrast: "no-preference" });
     await reload(page);
     expect((await look(page)).contrast).toBe(true); // stored: the setting decides now
-    expect(await attrs(page)).toEqual(["pascaline", "dark", "high", null]);
+    expect(await attrs(page)).toEqual(["n62", "dark", "high", null]);
   });
 
   test("pc: a start with the setting off stays off even when the phone asks for more", async ({ page }) => {
@@ -203,6 +203,6 @@ test.describe("prefers-contrast: more", () => {
     await page.emulateMedia({ contrast: "more" });
     await reload(page);
     expect((await look(page)).contrast).toBe(false);
-    expect(await attrs(page)).toEqual(["pascaline", "dark", null, null]);
+    expect(await attrs(page)).toEqual(["n62", "dark", null, null]);
   });
 });

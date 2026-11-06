@@ -35,15 +35,15 @@ describe.skipIf(!giacAvailable())("parseLibrary (Giac's tree, no evaluation)", (
     ["bad-purge.txt", /changes the engine's state \(purge\)/],
     ["bad-read.txt", /changes the engine's state \(read\)/],
     ["bad-global.txt", /assigns a, which is not local/],
-    ["bad-ours.txt", /Pascaline's own names/],
+    ["bad-ours.txt", /N62's own names/],
     ["bad-nodesc.txt", /needs its one-line description/],
     ["bad-header.txt", /first line must be/],
-    ["bad-newer.txt", /newer Pascaline/],
+    ["bad-newer.txt", /newer N62/],
     ["bad-encoding.txt", /not UTF-8/],
   ];
   it("G105: a quote written \\\" inside a string ends nothing (text-9: Giac reads it as one string)", () => {
     // phase-1 (76f0e04) toggled at every quote and read `;1"` as a second statement
-    const lib = parseLibrary('// pascaline library 1\n// d\nk:="a\\";1"\n', parse, LIBRARY_FORMAT);
+    const lib = parseLibrary('// n62 library 1\n// d\nk:="a\\";1"\n', parse, LIBRARY_FORMAT);
     expect(lib.defs.map((d) => d.text)).toEqual(['k:="a\\";1"']);
   });
   for (const [name, why] of refused) {
@@ -52,39 +52,39 @@ describe.skipIf(!giacAvailable())("parseLibrary (Giac's tree, no evaluation)", (
       expect(() => parseLibrary(file(name), parse, LIBRARY_FORMAT)).toThrow(LibError);
     });
   }
-  it("refuses G50's complex helper as Pascaline's own name (derived: the audit's pastanh(z):=0 case; pastanh went with G75, pasasin, pasacos and pasacosh with G60)", () => {
+  it("refuses G50's complex helper as N62's own name (derived: the audit's pastanh(z):=0 case; pastanh went with G75, pasasin, pasacos and pasacosh with G60)", () => {
     for (const name of ["pasatan"]) {
-      expect(() => parseLibrary(`// pascaline library 1\n// d\n${name}(z):=0\n`, parse, LIBRARY_FORMAT), name).toThrow(/pas\w+ is one of Pascaline's own names/);
+      expect(() => parseLibrary(`// n62 library 1\n// d\n${name}(z):=0\n`, parse, LIBRARY_FORMAT), name).toThrow(/pas\w+ is one of N62's own names/);
     }
   });
-  it("refuses paspoly1, G106f1's helper, as Pascaline's own name", () => {
-    expect(() => parseLibrary("// pascaline library 1\n// d\npaspoly1(v):=5\n", parse, LIBRARY_FORMAT)).toThrow(/paspoly1 is one of Pascaline's own names/);
-    expect(() => parseLibrary("// pascaline library 1\n// d\npaspoly1:=5\n", parse, LIBRARY_FORMAT)).toThrow(/paspoly1 is one of Pascaline's own names/);
+  it("refuses paspoly1, G106f1's helper, as N62's own name", () => {
+    expect(() => parseLibrary("// n62 library 1\n// d\npaspoly1(v):=5\n", parse, LIBRARY_FORMAT)).toThrow(/paspoly1 is one of N62's own names/);
+    expect(() => parseLibrary("// n62 library 1\n// d\npaspoly1:=5\n", parse, LIBRARY_FORMAT)).toThrow(/paspoly1 is one of N62's own names/);
   });
-  it("G139: refuses pasesb, eseries's helper, as Pascaline's own name (a library pasesb loaded over ours gave eseries(6,4.6) = 0)", () => {
-    expect(() => parseLibrary("// pascaline library 1\n// d\npasesb(n,x):=[0,0,1,0,-1]\n", parse, LIBRARY_FORMAT)).toThrow(/pasesb is one of Pascaline's own names/);
-    expect(() => parseLibrary("// pascaline library 1\n// d\npasesb:=5\n", parse, LIBRARY_FORMAT)).toThrow(/pasesb is one of Pascaline's own names/);
+  it("G139: refuses pasesb, eseries's helper, as N62's own name (a library pasesb loaded over ours gave eseries(6,4.6) = 0)", () => {
+    expect(() => parseLibrary("// n62 library 1\n// d\npasesb(n,x):=[0,0,1,0,-1]\n", parse, LIBRARY_FORMAT)).toThrow(/pasesb is one of N62's own names/);
+    expect(() => parseLibrary("// n62 library 1\n// d\npasesb:=5\n", parse, LIBRARY_FORMAT)).toThrow(/pasesb is one of N62's own names/);
   });
   it("refuses pasdeg, the degree factor (R64), as a name and in a body", () => {
-    expect(() => parseLibrary("// pascaline library 1\n// d\npasdeg:=5\n", parse, LIBRARY_FORMAT)).toThrow(/pasdeg is one of Pascaline's own names/);
-    expect(() => parseLibrary("// pascaline library 1\n// d\nf(x):={local pasdeg; pasdeg:=2; return sin(x);}\n", parse, LIBRARY_FORMAT)).toThrow(/pasdeg is one of Pascaline's own names/);
-    expect(() => parseLibrary("// pascaline library 1\n// d\nf(x):=x*pasdegree\n", parse, LIBRARY_FORMAT)).not.toThrow();
+    expect(() => parseLibrary("// n62 library 1\n// d\npasdeg:=5\n", parse, LIBRARY_FORMAT)).toThrow(/pasdeg is one of N62's own names/);
+    expect(() => parseLibrary("// n62 library 1\n// d\nf(x):={local pasdeg; pasdeg:=2; return sin(x);}\n", parse, LIBRARY_FORMAT)).toThrow(/pasdeg is one of N62's own names/);
+    expect(() => parseLibrary("// n62 library 1\n// d\nf(x):=x*pasdegree\n", parse, LIBRARY_FORMAT)).not.toThrow();
   });
   it("G93: refuses a body that clears names (rm_a_z, restart, restart_vars, restart_modes, rm_all_vars), as a value too (derived)", () => {
     for (const c of ["rm_a_z(1)", "restart(0)", "restart_vars(0)", "restart_modes()", "rm_all_vars()"]) {
       const head = c.slice(0, c.indexOf("("));
-      expect(() => parseLibrary(`// pascaline library 1\n// d\nf(x):={ ${c}; return x; }\n`, parse, LIBRARY_FORMAT), c).toThrow(new RegExp(`line 3: the body changes the engine's state \\(${head}\\)`));
-      expect(() => parseLibrary(`// pascaline library 1\n// d\ng:=${c}\n`, parse, LIBRARY_FORMAT), c).toThrow(new RegExp(`line 3: the body changes the engine's state \\(${head}\\)`));
+      expect(() => parseLibrary(`// n62 library 1\n// d\nf(x):={ ${c}; return x; }\n`, parse, LIBRARY_FORMAT), c).toThrow(new RegExp(`line 3: the body changes the engine's state \\(${head}\\)`));
+      expect(() => parseLibrary(`// n62 library 1\n// d\ng:=${c}\n`, parse, LIBRARY_FORMAT), c).toThrow(new RegExp(`line 3: the body changes the engine's state \\(${head}\\)`));
     }
   });
   it("refuses a file over 256 kB, a description over 120 characters and more than 200 definitions", () => {
     expect(() => parseLibrary(new Uint8Array(256 * 1024 + 1), parse, LIBRARY_FORMAT)).toThrow(/256 kB/);
-    expect(() => parseLibrary(`// pascaline library 1\n// ${"x".repeat(121)}\nf(x):=x\n`, parse, LIBRARY_FORMAT)).toThrow(/over 120/);
+    expect(() => parseLibrary(`// n62 library 1\n// ${"x".repeat(121)}\nf(x):=x\n`, parse, LIBRARY_FORMAT)).toThrow(/over 120/);
     const many = Array.from({ length: 201 }, (_, i) => `// d\nf${i}(x):=x+${i}\n`).join("\n");
-    expect(() => parseLibrary(`// pascaline library 1\n${many}`, parse, LIBRARY_FORMAT)).toThrow(/more than 200/);
+    expect(() => parseLibrary(`// n62 library 1\n${many}`, parse, LIBRARY_FORMAT)).toThrow(/more than 200/);
   });
   it("refuses a test line that changes state, assigns or has a second statement (derived)", () => {
-    const lib = (t: string): string => `// pascaline library 1\n// d\nf(x):=x\n// test: ${t}\n`;
+    const lib = (t: string): string => `// n62 library 1\n// d\nf(x):=x\n// test: ${t}\n`;
     expect(() => parseLibrary(lib("Digits:=5 ; 1"), parse, LIBRARY_FORMAT)).toThrow(/line 4: the test changes the engine's state \(Digits\)/);
     expect(() => parseLibrary(lib("purge(f)==0"), parse, LIBRARY_FORMAT)).toThrow(/line 4: the test changes the engine's state \(purge\)/);
     expect(() => parseLibrary(lib("a:=3"), parse, LIBRARY_FORMAT)).toThrow(/line 4: a test must not assign/);
@@ -94,20 +94,20 @@ describe.skipIf(!giacAvailable())("parseLibrary (Giac's tree, no evaluation)", (
   it("refuses every form of storing into a global in a body, for fn and arrow definitions (derived)", () => {
     // G100: Giac reads the prefix forms ++a and --a as `undef++; a` (a syntax error, nothing stored into a)
     for (const f of ["++a", "--a"])
-      expect(() => parseLibrary(`// pascaline library 1\n// d\nf(x):={ ${f}; return x; }\n`, parse, LIBRARY_FORMAT), f).toThrow(/line 3: Giac cannot read this definition/);
+      expect(() => parseLibrary(`// n62 library 1\n// d\nf(x):={ ${f}; return x; }\n`, parse, LIBRARY_FORMAT), f).toThrow(/line 3: Giac cannot read this definition/);
     const forms = ["a++", "a--", "a+=1", "a-=1", "a*=2", "a/=2", "a=<5", "a[1]:=x", "a:=1", "a[k[1]]:=x", "a[b[1]]++", "a[f(1)][2]+=1"];
     for (const f of forms) {
       for (const d of [`f(x):={ ${f}; return x; }`, `f:=x->{ ${f}; return x; }`, `f:=(x,y)->{ ${f}; return x; }`]) {
-        expect(() => parseLibrary(`// pascaline library 1\n// d\n${d}\n`, parse, LIBRARY_FORMAT), d).toThrow(/the body assigns a, which is not local/);
+        expect(() => parseLibrary(`// n62 library 1\n// d\n${d}\n`, parse, LIBRARY_FORMAT), d).toThrow(/the body assigns a, which is not local/);
       }
     }
-    expect(() => parseLibrary("// pascaline library 1\n// d\ng(x):={ b[1]:=x; return x; }\n", parse, LIBRARY_FORMAT)).toThrow(/assigns b,/);
-    expect(parseLibrary("// pascaline library 1\n// d\nf(x):={ local a,k; a++; a+=1; for (k:=1;k<3;k++) { a[1]:=k; } return x; }\n", parse, LIBRARY_FORMAT).defs).toHaveLength(1);
-    expect(parseLibrary("// pascaline library 1\n// d\nf(x):={ local a,k; a[k[1]]:=x; return x; }\n", parse, LIBRARY_FORMAT).defs).toHaveLength(1);
-    expect(parseLibrary("// pascaline library 1\n// d\nf(x):={ x++; return \"a++\"; }\n", parse, LIBRARY_FORMAT).defs).toHaveLength(1);
+    expect(() => parseLibrary("// n62 library 1\n// d\ng(x):={ b[1]:=x; return x; }\n", parse, LIBRARY_FORMAT)).toThrow(/assigns b,/);
+    expect(parseLibrary("// n62 library 1\n// d\nf(x):={ local a,k; a++; a+=1; for (k:=1;k<3;k++) { a[1]:=k; } return x; }\n", parse, LIBRARY_FORMAT).defs).toHaveLength(1);
+    expect(parseLibrary("// n62 library 1\n// d\nf(x):={ local a,k; a[k[1]]:=x; return x; }\n", parse, LIBRARY_FORMAT).defs).toHaveLength(1);
+    expect(parseLibrary("// n62 library 1\n// d\nf(x):={ x++; return \"a++\"; }\n", parse, LIBRARY_FORMAT).defs).toHaveLength(1);
   });
   it("refuses a loop variable, an inner function and a storing value; accepts them local (derived)", () => {
-    const p = (d: string): string => `// pascaline library 1\n// d\n${d}\n`;
+    const p = (d: string): string => `// n62 library 1\n// d\n${d}\n`;
     // G100: each loop has a body (Giac reads an empty one as a syntax error, an `undef` body)
     for (const l of ["for k from 1 to n do n; od;", "for k in [1,2] do n; od;", "pour k de 1 jusque n faire n; fpour;", "FOR k FROM 1 TO n DO n; END;", "for k FROM 1 to n do n; od;"])
       expect(() => parseLibrary(p(`f(n):={ ${l} return n; }`), parse, LIBRARY_FORMAT), l).toThrow(/assigns k, which is not local/);
@@ -119,7 +119,7 @@ describe.skipIf(!giacAvailable())("parseLibrary (Giac's tree, no evaluation)", (
     expect(() => parseLibrary(p("v:=(a+=10)"), parse, LIBRARY_FORMAT)).toThrow(/assigns a, which is not local/);
   });
   it("refuses a test line that assigns anywhere, by := ++ -- op= or =< (derived)", () => {
-    const lib = (t: string): string => `// pascaline library 1\n// d\nf(x):=x\n// test: ${t}\n`;
+    const lib = (t: string): string => `// n62 library 1\n// d\nf(x):=x\n// test: ${t}\n`;
     // G100: Giac cannot read f(--a) (a syntax error): refused for that
     expect(() => parseLibrary(lib("f(--a)==1"), parse, LIBRARY_FORMAT)).toThrow(/line 4: Giac cannot read the test/);
     for (const t of ["(a:=5)==5", "f(a++)==1", "f(a+=1)==1", "f(a-=1)==1", "f(a*=2)==1", "f(a/=2)==1", "f(a=<5)==1", "f(a[1]:=2)==1"])
@@ -128,7 +128,7 @@ describe.skipIf(!giacAvailable())("parseLibrary (Giac's tree, no evaluation)", (
     expect(parseLibrary(lib("f(1)<=1 and f(2)>=1"), parse, LIBRARY_FORMAT).defs[0]!.tests).toHaveLength(1);
   });
   it("takes CRLF and a BOM", () => {
-    expect(parseLibrary("﻿// pascaline library 1\r\n// d\r\nf(x):=x\r\n", parse, LIBRARY_FORMAT).defs[0]!.name).toBe("f");
+    expect(parseLibrary("﻿// n62 library 1\r\n// d\r\nf(x):=x\r\n", parse, LIBRARY_FORMAT).defs[0]!.name).toBe("f");
   });
 });
 
@@ -166,7 +166,7 @@ describe.skipIf(!giacAvailable())("importLibrary (real Giac)", () => {
   });
 
   it("reports every failing test, not only the first", async () => {
-    const r = importLibrary(await fresh(), parseLibrary("// pascaline library 1\n// d\nf(x):=x\n// test: f(1) == 2\n// test: f(2) == 2\n// test: f(3) == 4\n", parse, LIBRARY_FORMAT), []);
+    const r = importLibrary(await fresh(), parseLibrary("// n62 library 1\n// d\nf(x):=x\n// test: f(1) == 2\n// test: f(2) == 2\n// test: f(3) == 4\n", parse, LIBRARY_FORMAT), []);
     expect(!r.ok && r.failures?.map((f) => f.line)).toEqual([4, 6]);
   });
 
@@ -195,7 +195,7 @@ describe.skipIf(!giacAvailable())("importLibrary (real Giac)", () => {
   it("refuses an import that would pass 500 definitions, with the numbers", async () => {
     const h = await fresh();
     const full: DefEntry[] = Array.from({ length: 500 }, (_, i) => ({ name: `v${i}`, kind: "var", cmds: [`v${i}:=(1)`], preview: "1", view: "home", time: 0 }));
-    const r = importLibrary(h, parseLibrary("// pascaline library 1\n// d\nzz(x):=x\n", parse, LIBRARY_FORMAT), full);
+    const r = importLibrary(h, parseLibrary("// n62 library 1\n// d\nzz(x):=x\n", parse, LIBRARY_FORMAT), full);
     expect(!r.ok && r.error).toMatch(/now 500, new 1/);
   });
 
@@ -225,7 +225,7 @@ describe.skipIf(!giacAvailable())("importLibrary (real Giac)", () => {
 
   it("200 library programs replay: prints the desktop median and the device estimate (a measurement, no assert)", { timeout: 60000 }, async () => {
     const h = await fresh();
-    let text = "// pascaline library 1\n";
+    let text = "// n62 library 1\n";
     for (let i = 1; i <= 200; i++) text += `\n// program ${i}\nlib${i}(a,b):={\n  local s,k;\n  s:=0;\n  for (k:=1;k<=b;k++) { s:=s+a^k/k; }\n  return s+${i};\n}\n`;
     const r = ok(importLibrary(h, parseLibrary(text, parse, LIBRARY_FORMAT), []));
     expect(r.log).toHaveLength(200);
@@ -247,7 +247,7 @@ describe.skipIf(!giacAvailable())("200 library programs, defined on first use (G
   const median = (xs: number[]): number => [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)]!;
   beforeAll(async () => {
     eagerHost = (await nodeHost());
-    let text = "// pascaline library 1\n";
+    let text = "// n62 library 1\n";
     for (let i = 1; i <= 200; i++) text += `\n// program ${i}\nlib${i}(a,b):={\n  local s,k;\n  s:=0;\n  for (k:=1;k<=b;k++) { s:=s+a^k/k; }\n  return s+${i};\n}\n`;
     const r = importLibrary(eagerHost, parseLibrary(text, parse, LIBRARY_FORMAT), []);
     if (!r.ok) throw new Error(r.error);
@@ -310,7 +310,7 @@ describe.skipIf(!giacAvailable())("the degree factor in library files (G46, real
 
   it("the import puts the factor in: a body's sin follows the mode at call time (derived: sin 30° = 1/2, sin(pi/6) = 1/2)", async () => {
     const h = await fresh();
-    const r = importLibrary(h, parseLibrary("// pascaline library 2\n// sine\nsn(x):=sin(x)\n", parse, LIBRARY_FORMAT), []);
+    const r = importLibrary(h, parseLibrary("// n62 library 2\n// sine\nsn(x):=sin(x)\n", parse, LIBRARY_FORMAT), []);
     expect(r.ok).toBe(true);
     expect(r.ok && r.log[0]!.cmds[0]).toContain("pasdeg");
     expect(h.home("sn(30)", deg).result.display).toBe("0.5");
@@ -330,7 +330,7 @@ describe.skipIf(!giacAvailable())("the degree factor in library files (G46, real
 
   it("a test line runs in radians whatever the mode, and the mode's factor is put back (derived: sin(pi/2) = 1)", async () => {
     const h = await fresh();
-    const lib = parseLibrary("// pascaline library 3\n// sine\nsn(x):=sin(x)\n// test: sn(pi/2) == 1\n", parse, LIBRARY_FORMAT);
+    const lib = parseLibrary("// n62 library 3\n// sine\nsn(x):=sin(x)\n// test: sn(pi/2) == 1\n", parse, LIBRARY_FORMAT);
     const first = importLibrary(h, lib, []);
     expect(first).toMatchObject({ ok: true, tests: 1 });
     // The same file again defines nothing (no cas() resets the mode), so the tests meet DEG's pasdeg and put it back.
@@ -343,7 +343,7 @@ describe.skipIf(!giacAvailable())("the degree factor in library files (G46, real
 
   it("a version-2 file's pasexp reads as exp (derived: exp(i*pi) = -1)", async () => {
     const h = await fresh();
-    const r = importLibrary(h, parseLibrary("// pascaline library 2\n// phasor\nph(w):=pasexp(i*w)\n", parse, LIBRARY_FORMAT), []);
+    const r = importLibrary(h, parseLibrary("// n62 library 2\n// phasor\nph(w):=pasexp(i*w)\n", parse, LIBRARY_FORMAT), []);
     expect(r.ok && r.log[0]!.cmds[0]).toBe("ph(w):=exp(i*w)");
     expect(h.home("ph(pi)", deg).result.display).toBe("-1");
   });
@@ -352,7 +352,7 @@ describe.skipIf(!giacAvailable())("the degree factor in library files (G46, real
 // G54: our names for Giac's functions in library text (ourNames.ts), as the parser renames them.
 describe.skipIf(!giacAvailable())("our function names in library files (G54, real Giac)", () => {
   const fresh = async (): Promise<EngineHost> => (await nodeHost());
-  const text = "// pascaline library 3\n// median of a list\nm(L):=median(L)\n// test: median([1,2,3,4]) == 5/2\n// remainder\nr(a,b):=irem(a,b)\n// test: r(-7,3) == 2\n";
+  const text = "// n62 library 3\n// median of a list\nm(L):=median(L)\n// test: median([1,2,3,4]) == 5/2\n// remainder\nr(a,b):=irem(a,b)\n// test: r(-7,3) == 2\n";
 
   it("a definition's median is ours, and the test line passes (derived: the median of 1,2,3,4 is 5/2)", async () => {
     const h = await fresh();
@@ -363,7 +363,7 @@ describe.skipIf(!giacAvailable())("our function names in library files (G54, rea
 
   it("a name right after a digit is ours too (derived: 2 * 5/2 = 5)", async () => {
     const h = await fresh();
-    const t = "// pascaline library 3\n// twice the median\nm(L):=2median(L)\n";
+    const t = "// n62 library 3\n// twice the median\nm(L):=2median(L)\n";
     expect(importLibrary(h, parseLibrary(t, parse, LIBRARY_FORMAT), [])).toMatchObject({ ok: true });
     expect(h.home("m([1,2,3,4])", defaultHomeSettings).result.display).toBe("5");
   });
@@ -387,7 +387,7 @@ describe.skipIf(!giacAvailable())("our function names in library files (G54, rea
 
   it("G155: sem is ours too: the export writes sem( back, and the file reads back the same (derived: sem of 2,4,4,4,5,5,7,9 is sqrt(4/7))", async () => {
     const h = await fresh();
-    const t = "// pascaline library 3\n// standard error\nm(L):=sem(L)\n";
+    const t = "// n62 library 3\n// standard error\nm(L):=sem(L)\n";
     const r = importLibrary(h, parseLibrary(t, parse, LIBRARY_FORMAT), []);
     expect(r.ok && r.log[0]!.cmds[0]).toBe("m(L):=passem(L)");
     const out = exportLibrary(r.ok ? r.log : [], LIBRARY_FORMAT).text;
@@ -456,7 +456,7 @@ describe("the worker's reader (no engine)", () => {
     },
   };
   it("R59: an older stamp sent straight to importText is refused at line 1, not read as if up to date (principle 3)", () => {
-    const r = importText(noEngine, "// pascaline library 1\n// phasor\nph(w):=pasexp(i*w)\n", LIBRARY_FORMAT.version, [], false);
+    const r = importText(noEngine, "// n62 library 1\n// phasor\nph(w):=pasexp(i*w)\n", LIBRARY_FORMAT.version, [], false);
     expect(r.result).toMatchObject({ ok: false, line: 1, dirty: false });
     expect(!r.result.ok && r.result.error).toMatch(/^line 1: the app did not bring this file up to date \(version 1; /);
     expect(r.lines).toEqual([]);

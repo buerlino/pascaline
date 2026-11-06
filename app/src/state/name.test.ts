@@ -83,7 +83,7 @@ describe("the stamps: written new, read old and new (R138)", () => {
   });
   it("the counts file says n62-counts/1", () => {
     expect(COUNTS_FORMAT).toBe("n62-counts/1");
-    expect(JSON.parse(countsText({ since: "x", presses: 1, keys: {} }))).toMatchObject({ format: "n62-counts/1" });
+    expect(JSON.parse(countsText({ since: "x", presses: 1, keys: {}, shift: 0, alpha: 0, presets: 0 }))).toMatchObject({ format: "n62-counts/1" });
   });
 });
 
