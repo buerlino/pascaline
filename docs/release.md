@@ -1,4 +1,4 @@
-# Releasing Pascaline: the owner's checklist (A8)
+# Releasing N62: the owner's checklist (A8)
 
 A tag `vX.Y.Z` pushed to GitHub runs [`.github/workflows/release.yml`](../.github/workflows/release.yml): the version check, the engine and
 libqalculate in the pinned container (P2), the golden gate on that engine, then the APK signed with your key (`./build.sh --release`, A7,

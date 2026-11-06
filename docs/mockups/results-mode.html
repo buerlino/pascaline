@@ -7,7 +7,7 @@
 <title>Results mode, keys and room</title>
 <style>
 /* R129, from S25 (docs/research/r19-results-and-keys.md and docs/shifts/2026-11-05-sandra-resultskeys-report.md).
-   Nothing here is built and nothing loads from outside this file: system fonts, no network. The phones use the Pascaline
+   Nothing here is built and nothing loads from outside this file: system fonts, no network. The phones use the N62
    theme's colours (app/src/style.css, the dark and light blocks). Every phone is drawn 1:1 in CSS px; "Scale" only
    shrinks the picture. A number on the page names the probe it came from, or says "drawn" (a design value for the
    picture, not measured; R53b measures it in the app) or "derived" (arithmetic on measured numbers). */
@@ -51,7 +51,7 @@ body[data-show="dark"] .col.light, body[data-show="light"] .col.dark { display: 
 body[data-zoom="60"] { --zoom: .6; }
 body[data-zoom="80"] { --zoom: .8; }
 
-/* ---- the phone, 1:1 (the Pascaline theme: app/src/style.css) ---- */
+/* ---- the phone, 1:1 (the N62 theme: app/src/style.css) ---- */
 .phone { --w: 412px; --h: 839px; width: var(--w); height: var(--h); position: relative; overflow: hidden; outline: 1px solid var(--rule); background: var(--bg); color: var(--text); font: 14px/1.25 system-ui, sans-serif; display: flex; flex-direction: column; flex: none; }
 .phone.dark { --bg: #0b1020; --panel: #121a2e; --line: #2d3a5a; --key-num: #1f2a45; --key-op: #18233d; --key-fn: #172443; --key-ctl: #2a2433; --key-nav: #141d33; --key-enter: #2346d8; --text: #eef1f8; --text-dead: #76819c; --muted: #a3adc6; --shift: #ffc233; --alpha: #86c5ff; --error: #ff8e86; --chip-bg: #1d3070; --approx: #86c5ff; --warn: #ffc233; --pick: #1b3246; --focus: #ffc233; --key-pfx: #203374; color-scheme: dark; }
 .phone.light { --bg: #f5f6fa; --panel: #e7eaf3; --line: #b7bfd4; --key-num: #ffffff; --key-op: #e6eaf5; --key-fn: #e1e8fb; --key-ctl: #f8ecd2; --key-nav: #eceef3; --key-enter: #0025b5; --text: #0f172a; --text-dead: #6b7489; --muted: #4a556e; --shift: #8a5300; --alpha: #0b4fc4; --error: #a8241c; --chip-bg: #d8e1fb; --approx: #0b4fc4; --warn: #854800; --pick: #bbcff1; --focus: #0025b5; --key-pfx: #d6dcf3; color-scheme: light; }

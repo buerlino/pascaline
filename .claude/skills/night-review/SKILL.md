@@ -1,6 +1,6 @@
 ---
 name: night-review
-description: Pascaline's night review, run beside the night lanes. Independent hunts (sandra), each checked by its own verifier (sofia); work packages argued by an author and a reviewer until AGREED; everything written uncommitted into a review worktree; a morning summary and the owner's questions. `/night-review --dry-run` prints the computed values and the hunt list and starts nothing.
+description: N62's night review, run beside the night lanes. Independent hunts (sandra), each checked by its own verifier (sofia); work packages argued by an author and a reviewer until AGREED; everything written uncommitted into a review worktree; a morning summary and the owner's questions. `/night-review --dry-run` prints the computed values and the hunt list and starts nothing.
 argument-hint: "[--dry-run] [--until HH:MM]"
 disable-model-invocation: true
 ---
@@ -45,7 +45,7 @@ It reads only (git, the log, the pid files, `devlock.sh status`): no node, no lo
 # >>> step 0a
 # night-review: the run's values. Reads only; WRITE=1 also creates the run directory and writes values.sh.
 MAIN=$(dirname "$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null)")
-[ -f "$MAIN/.coord/log.md" ] || { echo "STOP: start this from the Pascaline checkout (no .coord/log.md under $MAIN)"; exit 1; }
+[ -f "$MAIN/.coord/log.md" ] || { echo "STOP: start this from the N62 checkout (no .coord/log.md under $MAIN)"; exit 1; }
 G="git -C $MAIN"; LOG=$MAIN/.coord/log.md; STOPS=
 SKILL=${SKILL:-$MAIN/.claude/skills/night-review}
 P1=$($G worktree list --porcelain | awk '/^worktree /{w=substr($0,10)} $0=="branch refs/heads/phase-1"{print w}')

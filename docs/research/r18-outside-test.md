@@ -9,7 +9,7 @@
 
 ## 1. Who and when
 
-- **Testers:** three engineers or engineering students per round who have not seen Pascaline's keys, from at least two fields (for example electrical and mechanical, or civil and process). Whether they know the G2 is noted, not a reason to exclude anyone.
+- **Testers:** three engineers or engineering students per round who have not seen N62's keys, from at least two fields (for example electrical and mechanical, or civil and process). Whether they know the G2 is noted, not a reason to exclude anyone.
 - **Round 2 takes three new people** where the owner can find them: someone from round 1 has seen the keys. If one comes back, the sheet says "seen" and their numbers are read apart.
 - **Round 1:** after R4b (Find with Vars and the user keys) is merged and in an APK. It tests the tasks that can be done some way without units, and the Find words.
 - **Round 2:** after R24c (the unit view with the unit pad) and **before R24d sets the user cells**, so the testers' units can still move cells. It adds the unit tasks (t02, t04, t10) and five units on the pad.
@@ -91,10 +91,10 @@ The plan sums to 10 presses with flicks, 13 with taps. A unit the tester cannot 
 
 **Before round 1 the owner prints** the sheet (`docs/mockups/outside-test.html`, opened in a browser and printed on A4, one page): one copy per tester to write on, plus one clean copy the testers read the numbers from (t09's readings, the equations). For round 2 the same, with the round box ticked.
 
-**And installs** the APK of `phase-1` with R4b merged (`./build.sh`, `dist/pascaline.apk`; round 2: with R24c) on one Android phone that is **not the owner's daily copy**, because the reset below wipes it. Nothing else is needed: the time is read from any watch or clock.
+**And installs** the APK of `phase-1` with R4b merged (`./build.sh`, `dist/n62.apk`; round 2: with R24c) on one Android phone that is **not the owner's daily copy**, because the reset below wipes it. Nothing else is needed: the time is read from any watch or clock.
 
 **Before each tester:**
-1. Android Settings › Apps › Pascaline › Storage › **Clear storage**. This empties the history, variables, user keys, settings and the tap counter, so every tester starts from the shipped state.
+1. Android Settings › Apps › N62 › Storage › **Clear storage**. This empties the history, variables, user keys, settings and the tap counter, so every tester starts from the shipped state.
 2. Open the app, wait until the keypad works, put it in Home with an empty line.
 3. Flight mode on (section 5).
 
@@ -105,7 +105,7 @@ The plan sums to 10 presses with flicks, 13 with taps. A unit the tester cannot 
 ## 5. Privacy
 
 - **No names are kept.** The sheet holds a tester code, a field and a calculator; the notes hold what was pressed and said about the app. No photos, no video, no audio.
-- **No data leaves the phone through the app:** the APK asks for no INTERNET permission (`android/app/src/main/AndroidManifest.xml:41` declares only VIBRATE; the merged manifest of the built APK **(to verify)**: annabell, `aapt2 dump permissions dist/pascaline.apk` lists no INTERNET), and the tap counter stays on the device (`taps.svelte.ts:2-3`).
+- **No data leaves the phone through the app:** the APK asks for no INTERNET permission (`android/app/src/main/AndroidManifest.xml:41` declares only VIBRATE; the merged manifest of the built APK **(to verify)**: annabell, `aapt2 dump permissions dist/n62.apk` lists no INTERNET), and the tap counter stays on the device (`taps.svelte.ts:2-3`).
 - **Android's own backup is off:** the manifest sets `android:allowBackup="false"` (`android/app/src/main/AndroidManifest.xml:5`, A23, decisions.md S8), so Android copies none of the app's data to the phone's Google backup; the app's own backup file (S6) is the one way out, and only when the owner saves one.
 - **The owner takes the notes** on paper; what goes into the repo is the summary in section 7, with tester codes only. The paper sheets stay with the owner.
 
@@ -114,7 +114,7 @@ The plan sums to 10 presses with flicks, 13 with taps. A unit the tester cannot 
 Both are decided (decisions.md S8, the owner, 2026-10-20): the counter is R70, the manifest change A23 (merged).
 
 1. **A counter of every press (recommended).** Make the tap counter count every press as docs/04 5.2 defines it (key taps, flicks, screen taps), shown in Settings beside the Shift and Alpha rows, with the same reset; a ron package of about half a day, one concern, on the device only. Why: the press count is the measure the rules judge by (rule 13), and a tally of a 50-press task (t09) is unreliable. Cost: one more number in Settings and a counter call in `press()`. Else: the owner's tally alone (section 4). Would change if: round 1 runs before the package can be built.
-2. **`allowBackup="false"` (recommended).** One attribute in the manifest (annabell). Why: "no data leaves the phone" should hold without flight mode, for the testers and for every user; the app's own backup file (S6, R11) is the way to move data. Cost: Android's phone-to-phone transfer no longer carries Pascaline's history. Else: flight mode and clear storage, as section 5 says. Would change if: annabell shows the WebView data is not in Android's backup at all.
+2. **`allowBackup="false"` (recommended).** One attribute in the manifest (annabell). Why: "no data leaves the phone" should hold without flight mode, for the testers and for every user; the app's own backup file (S6, R11) is the way to move data. Cost: Android's phone-to-phone transfer no longer carries N62's history. Else: flight mode and clear storage, as section 5 says. Would change if: annabell shows the WebView data is not in Android's backup at all.
 
 ## 7. What comes back
 
