@@ -90,8 +90,6 @@ Milestone reviews (section 0): after R50e (with R116's gallery groups "Entry hig
 
 | Step | What | Agent, model | Branch | After |
 |---|---|---|---|---|
-| 527 | [A81](packages/A81.md) GitHub issue forms: a bug report and a feature request (v0.1.0 ships with them) | annabell, Sonnet | `p1/annabell-issueforms` | – |
-| 526 | [G176f1](packages/G176f1.md) the unevaluated limit of patch 0035 drawn with its point and side (pass 83) | gorge, Opus | `p1/gorge-limtrunc-tex` | – |
 | 497 | [G183](packages/G183.md) a crashed engine restarts and says so, never a JS error text (F122, F145, G94) | gorge, Opus | `p1/gorge-trapnet` | – |
 | 498 | [G184](packages/G184.md) a Home step stopped by the time budget says "Stopped: it took too long" (F70) | gorge, Opus | `p1/gorge-floatstop` | – |
 | 499 | [G185](packages/G185.md) a Home Enter that does not return in time is stopped with the time-limit message (F62) | gorge, Opus | `p1/gorge-homewatch` | G183 |
