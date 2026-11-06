@@ -74,8 +74,6 @@ Milestone reviews (section 0): after R50e (with R116's gallery groups "Entry hig
 
 | Step | What | Agent, model | Branch | After |
 |---|---|---|---|---|
-| 491 | [G175](packages/G175.md) √ of exp(z) or of a complex power keeps the principal root (F135, F134; silent) | gorge, Opus | `p1/gorge-sqrtexp` | – |
-| 492 | [G177](packages/G177.md) cos, sin, tan of half a complex atan, asin, acos take the right sign (F137; silent) | gorge, Opus | `p1/gorge-halfatrig` | – |
 | 493 | [G171](packages/G171.md) a non-square power stays refused when the input calls a storing function (F88; silent) | gorge, Opus | `p1/gorge-nonsquarestore` | – |
 | 494 | [G176](packages/G176.md) the limit of trunc at an integer from the right side (F170) | gorge, Opus | `p1/gorge-limtrunc` | – |
 | 495 | [G178](packages/G178.md) a divergent integral inside an expression is refused, not ⚠ 1 (F115) | gorge, Opus | `p1/gorge-intdivexpr` | – |
