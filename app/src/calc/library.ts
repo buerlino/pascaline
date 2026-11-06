@@ -29,12 +29,13 @@ export function jobs(engine: MathEngine): LibraryJobs {
       try {
         r = await send({ type: "library", input: upToDate(input), version: LIBRARY_FORMAT.version, replace });
       } catch (e) {
-        // The worker's import threw partway (a `fatal` reply that is not out of memory, which does not restart it): the
+        // The worker's import threw partway (a `fatal` reply not marked dead, which does not restart it): the
         // definitions it already ran stay in Giac and in no log entry, so restart from the unchanged log, as a dirty
-        // refusal does. Not after the user's own Cancel (already restarted) nor a memory crash (restartAfterCrash).
+        // refusal does. Not after the user's own Cancel (already restarted) nor a dead engine (restartAfterCrash, G24,
+        // G183).
         // By name: a value import of engine/types.ts would move it out of the start chunk (see above).
         const name = e instanceof Error ? e.name : "";
-        if (name !== "EngineCancelled" && name !== "EngineMemoryError") await worker.cancel();
+        if (name !== "EngineCancelled" && name !== "EngineMemoryError" && name !== "EngineCrashError") await worker.cancel();
         throw e;
       }
       if (r.type !== "library") throw new Error(`unexpected ${r.type}`);
