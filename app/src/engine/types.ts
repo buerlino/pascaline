@@ -242,20 +242,16 @@ export interface TableRequest {
   variable?: string;
 }
 
-/** G24: the engine ran out of memory (an allocation failed or the worker crashed); it was restarted. */
+/** G24: the engine ran out of memory (an allocation failed or the worker crashed); it was restarted. The message is
+ *  the engine's own text, never shown. `name` is a field, not set in a constructor: both classes sit in the start chunk
+ *  (R91's pin). */
 export class EngineMemoryError extends Error {
-  constructor(detail = "out of memory") {
-    super(detail);
-    this.name = "EngineMemoryError";
-  }
+  override name = "EngineMemoryError";
 }
 
 /** G183: the engine stopped on the input (a wasm trap, a stack overflow: F122, F145, G94); it was restarted. */
 export class EngineCrashError extends Error {
-  constructor(detail = "engine crashed") {
-    super(detail);
-    this.name = "EngineCrashError";
-  }
+  override name = "EngineCrashError";
 }
 
 export class EngineCancelled extends Error {

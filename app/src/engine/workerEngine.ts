@@ -313,18 +313,17 @@ export class WorkerEngine implements MathEngine {
       if (!p) return;
       this.pending.delete(ev.data.id);
       if (ev.data.type === "fatal") {
-        if (!ev.data.dead) return void p.reject(new Error(ev.data.message));
         // G24: the heap only grows, and an aborted module is dead; G183: so is one a trap unwound: reject the call and
-        // start a clean worker, which replays the log.
-        const { dead: kind, message } = ev.data;
-        const dead = (): Error => (kind === "crash" ? new EngineCrashError(message) : new EngineMemoryError(message));
-        p.reject(dead());
-        if (this.worker === w) this.restartAfterCrash(dead());
+        // start a clean worker, which replays the log. A fatal reply not marked dead keeps the worker.
+        const { dead, message } = ev.data;
+        const Failure = dead === "crash" ? EngineCrashError : dead ? EngineMemoryError : Error;
+        p.reject(new Failure(message));
+        if (dead && this.worker === w) this.restartAfterCrash(new Failure(message));
       } else p.resolve(ev.data);
     };
     // A crash (e.g. out of memory) rejects what is pending and takes the same restart + replay path as Cancel.
     w.onerror = (ev) => {
-      if (this.worker === w) this.restartAfterCrash(new EngineMemoryError(ev.message || "engine crashed"));
+      if (this.worker === w) this.restartAfterCrash(new EngineMemoryError(ev.message));
     };
     this.readyPromise = this.post({ type: "init", baseUrl: this.baseUrl, replay: [...this.log] }).then((r) => {
       if (r.type !== "ready") throw new Error(`unexpected ${r.type}`);
