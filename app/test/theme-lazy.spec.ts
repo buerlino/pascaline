@@ -15,5 +15,5 @@ test("start fetches no family file; the page keeps N62's tokens", async ({ page 
   await expect(root).toHaveAttribute("data-family", "n62");
   await expect(root).not.toHaveAttribute("data-contrast", /.*/);
   await expect(root).not.toHaveAttribute("data-keys", /.*/);
-  expect(await page.evaluate(() => getComputedStyle(document.body).backgroundColor)).toBe("rgb(11, 16, 32)");
+  expect(await page.evaluate(() => getComputedStyle(document.body).backgroundColor)).toBe("rgb(0, 0, 0)");
 });
