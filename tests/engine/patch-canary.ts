@@ -72,6 +72,11 @@ const CANARIES: [string, string, RegExp, string][] = [
   // and no literal i (normal(sqrt(acosh(-1/2)^3)) = abs(z)*sqrt(z), simplify z*sqrt(z))
   ["0033-pow-exp-principal-branch.patch", "giac-2.1.0/src/sym2poly.cc", /if \(keep_abs\)\{\s*tmparg=abs\(tmparg,contextptr\);\s*tmpd=abs\(tmpd,contextptr\);/, "zint2simpldoublpos(cont,simpl,doubl,pos,2,contextptr);"],
   ["0033-pow-exp-principal-branch.patch", "giac-2.1.0/src/sym2poly.cc", /D=D\*pow\(jt->fact,jt->mult\/d\);\s*\}\s*\/\/ Check sign of D/, "const factorization f=rsqff(*num._POLYptr);"],
+  // G177, patch 0034: the half-angle rules of cos, sin and tan sign the root by is_positive of the half angle's evalf, false
+  // for a complex one (cos(atan(1+i)/2) = -0.891+0.0986*i, the negation)
+  ["0034-half-atrig-complex-sign.patch", "giac-2.1.0/src/usual.cc", /f=sqrt\(\(inv\(sqrt\(1\+pow\(f,2\),contextptr\),contextptr\)\+1\)\/2,contextptr\);\s*if \(is_positive\(e_,contextptr\)\) return f; else return -f;/, "int n=is_half_atrig(e,f);"],
+  ["0034-half-atrig-complex-sign.patch", "giac-2.1.0/src/usual.cc", /f=sqrt\(\(1-inv\(sqrt\(1\+pow\(f,2\),contextptr\),contextptr\)\)\/2,contextptr\);\s*if \(is_positive\(e_,contextptr\)\) return f; else return -f;/, "return rdiv(f,sqrt(pow(f,2)+1,contextptr),contextptr);"],
+  ["0034-half-atrig-complex-sign.patch", "giac-2.1.0/src/usual.cc", /f=sqrt\(\(1-f\)\/\(1\+f\),contextptr\);\s*if \(is_positive\(e_,contextptr\)\) return f; else return -f;/, "return rdiv(sqrt(1-pow(f,2),contextptr),f,contextptr);"],
   // G126, patch 0015: the ln forms of asin and asinh cancel for a large x on one side (acos(-10^20+1/2) lost 40 digits)
   ["0015-asin-asinh-ln-cancellation.patch", "giac-2.1.0/src/usual.cc", /^static gen asinasln\(const gen & x,GIAC_CONTEXT\)\{\s*return -cst_i\*ln\(cst_i\*x\+sqrt\(1-x\*x,contextptr\),contextptr\);/, "static gen asinasln(const gen & x,GIAC_CONTEXT){"],
   ["0015-asin-asinh-ln-cancellation.patch", "giac-2.1.0/src/usual.cc", /^static gen asinhasln\(const gen & x,GIAC_CONTEXT\)\{\s*return ln\(x\+sqrt\(x\*x\+1,contextptr\),contextptr\);/, "static gen asinhasln(const gen & x,GIAC_CONTEXT){"],

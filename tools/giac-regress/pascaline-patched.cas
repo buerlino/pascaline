@@ -782,6 +782,30 @@ Digits:=40:; pc("g175-normal-sqrt-acosh-neg-half-cubed-12",'(normal(sqrt(acosh(-
 // patch 0033-pow-exp-principal-branch.patch
 // g175-normal-sqrt-acosh-neg-half-sq-12 (precision.yaml, oracle)
 Digits:=40:; pc("g175-normal-sqrt-acosh-neg-half-sq-12",'(normal(sqrt(acosh(-1/2)^2)))',(209439510239/10^11)*i,5/10^12);
+// patch 0034-half-atrig-complex-sign.patch
+// g177-cos-half-atan-1+i-12 (precision.yaml, oracle)
+Digits:=40:; pc("g177-cos-half-atan-1+i-12",'(cos(atan(1+i)/2))',(891156571011/10^12)-(986295774757/10^13)*i,5/10^13+5/10^14);
+// patch 0034-half-atrig-complex-sign.patch
+// g177-cos-half-atan-1+i-30 (precision.yaml, oracle)
+Digits:=40:; pc("g177-cos-half-atan-1+i-30",'(cos(atan(1+i)/2))',(891156571010916408349788509463/10^30)-(986295774757397276473339711463/10^31)*i,5/10^31+5/10^32);
+// patch 0034-half-atrig-complex-sign.patch
+// g177-cos-half-acos-2i-12 (precision.yaml, oracle)
+Digits:=40:; pc("g177-cos-half-acos-2i-12",'(cos(acos(2*i)/2))',(899453719974/10^12)+(555892970251/10^12)*i,5/10^13+5/10^13);
+// patch 0034-half-atrig-complex-sign.patch
+// g177-sin-half-atan-1+i-12 (precision.yaml, oracle)
+Digits:=40:; pc("g177-sin-half-atan-1+i-12",'(sin(atan(1+i)/2))',(496852329665/10^12)+(176902453336/10^12)*i,5/10^13+5/10^13);
+// patch 0034-half-atrig-complex-sign.patch
+// g177-tan-half-atan-1+i-12 (precision.yaml, oracle)
+Digits:=40:; pc("g177-tan-half-atan-1+i-12",'(tan(atan(1+i)/2))',(529085513636/10^12)+(257065864122/10^12)*i,5/10^13+5/10^13);
+// patch 0034-half-atrig-complex-sign.patch
+// g177-sin-half-acos-2i-12 (precision.yaml, oracle)
+Digits:=40:; pc("g177-sin-half-acos-2i-12",'(sin(acos(2*i)/2))',(899453719974/10^12)-(555892970251/10^12)*i,5/10^13+5/10^13);
+// patch 0034-half-atrig-complex-sign.patch
+// g177-cos-half-atan-1-i-12 (precision.yaml, oracle)
+Digits:=40:; pc("g177-cos-half-atan-1-i-12",'(cos(atan(1-i)/2))',(891156571011/10^12)+(986295774757/10^13)*i,5/10^13+5/10^14);
+// patch 0034-half-atrig-complex-sign.patch
+// g177-sin-half-asin-i-1e-10-12 (precision.yaml, oracle)
+Digits:=40:; pc("g177-sin-half-asin-i-1e-10-12",'(sin(asin(i/10^10)/2))',(5/10^11)*i,5/10^23);
 // patch 0006-reim-root-of-unknown-sign.patch
 // g96-cas-im-2sqrt (bench.yaml, derived)
 Digits:=40:; pc("g96-cas-im-2sqrt",'subst(im(2*sqrt(x)),x,-1)',2,1/10^30);
