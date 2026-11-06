@@ -34,6 +34,12 @@ describe("converge helpers", () => {
     expect(floatBounds("2*integrate(int(x*y,y,0,x),x,-1,(1/2))+int(x,x)")).toBe("2*integrate(int(x*y,y,evalf(0),evalf(x)),x,evalf(-1),evalf((1/2)))+int(x,x)");
     expect(floatBounds('myint(x,x,0,1)+"int(x,x,0,1)"')).toBe('myint(x,x,0,1)+"int(x,x,0,1)"');
   });
+  it("G176: a limit Giac leaves unevaluated (patch 0035: the side of a trunc undecided) stands with ⚠; no Giac call for it", () => {
+    const none = fakeGiac((): string => { throw new Error("no call expected"); });
+    expect(refusalOf(none, "limit(trunc(sin(1/x)/2),x,0)", "limit(trunc(sin(1/x)/2),x,0)")).toBe("unchecked");
+    expect(refusalOf(none, "1+limit(trunc(a*x),x,1,-1)", "limit(trunc(a*x),x,1,-1)+1")).toBe("unchecked");
+    expect(refusalOf(none, "limit(trunc(x),x,-1,1)", "0")).toBeNull();
+  });
   it("G90: Giac's exact answer with an integrate(…) left in it is its numeric integration; no Giac call for it", () => {
     const none = fakeGiac((): string => { throw new Error("no call expected"); });
     expect(integratedNumerically(none, "int(x^x,x,0,1)", "integrate(exp(ln(x)*x+ln(x))/x,x,0,1)")).toBe(true);

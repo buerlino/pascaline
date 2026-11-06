@@ -138,6 +138,10 @@ const CANARIES: [string, string, RegExp, string][] = [
   ["0019-atan-exact-cut.patch", "giac-2.1.0/src/usual.cc", /if \(u==at_atan\)\s*return sqrt\(inv\(pow\(f,2\)\+1,contextptr\),contextptr\);/, "return sqrt(1-pow(f,2),contextptr);\n      if (u==at_atan)"],
   // G96, patch 0006: symb_reim takes a non-integer power of a base of unknown sign as real (r=s, i=0)
   ["0006-reim-root-of-unknown-sign.patch", "giac-2.1.0/src/gen.cc", /is_positive\(-e,contextptr\)\)\{\s*r=pow\(-e,expo,contextptr\)\*cos\(cst_pi\*expo,contextptr\);\s*i=pow\(-e,expo,contextptr\)\*sin\(cst_pi\*expo,contextptr\);\s*\}\s*else \{\s*r=s;\s*i=0;/, "sommei.push_back(signei*(*it)*pow(r,n-j)*pow(i,j));"],
+  // G176, patch 0035: limit has no rule for trunc (not in sign_floor_ceil_round_tab, no taylor), so it substitutes the point
+  // (limit(trunc(x),x,-1,1) = -1, right 0)
+  ["0035-limit-trunc-side.patch", "giac-2.1.0/src/series.cc", /direction=-1;\s*vecteur vsign\(loptab\(e,sign_floor_ceil_round_tab\)\);/, "static gen in_limit(const gen & e0,const identificateur & x,const gen & lim_point,int direction,GIAC_CONTEXT){"],
+  ["0035-limit-trunc-side.patch", "giac-2.1.0/src/usual.cc", /sign_floor_ceil_round_tab_alias\[\]=\{\(alias_type\)&__sign,\(alias_type\)&__floor,\(alias_type\)&__ceil,\(alias_type\)&__round,\(alias_type\)&__sum,0\};/, "const alias_type sign_floor_ceil_round_tab_alias[]="],
 ];
 
 const tar = tarball(SOURCES.giac);

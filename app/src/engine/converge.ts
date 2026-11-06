@@ -248,6 +248,9 @@ function check(giac: Giac, calls: Call[], input: string, output: string, home: b
     if (c) return REFUSAL[c.kind];
   }
   if (callsOf(out, ["bounded_function"], "printed").length && calls.some((c) => c.kind === "limit")) return "noLimit";
+  // G176 (patch 0035): Giac leaves a limit unevaluated where it cannot decide on which side of 0 a trunc's argument
+  // lies (limit(trunc(sin(1/x)/2),x,0)); nothing confirmed a value, so it stands with ⚠, never =.
+  if (calls.some((c) => c.kind === "limit") && callsOf(out, ["limit"], "printed").length) return "unchecked";
   // G78 (Home only; the CAS view keeps Giac's ∞): a definite integral whose value is an infinity does not converge
   // (∫₋₁¹ 1/x² = +∞); a limit keeps its ∞.
   if (home && /^[+-]?infinity$/.test(out)) {

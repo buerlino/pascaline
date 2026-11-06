@@ -795,6 +795,14 @@ Digits:=40:; pc("g157f1-int-trunc-half-5/2",'(int(trunc(x),x,1/2,5/2))',2,5/10^1
 Digits:=40:; pc("g157f1-int-floor-sym-3/2",'(int(floor(x),x,-3/2,3/2))',-(15/10^1),5/10^12);
 // g157f1-int-trunc-x-free-trunc-0 (precision.yaml, derived)
 Digits:=40:; pc("g157f1-int-trunc-x-free-trunc-0",'(subst(int(trunc(x)*trunc(ag157),x,-3/2,-1/2),ag157=0))',0,1/10^30);
+// g176-limit-trunc-1-left (precision.yaml, derived)
+Digits:=40:; pc("g176-limit-trunc-1-left",'(limit(trunc(x),x,1,-1))',0,1/10^30);
+// g176-limit-trunc-half-x-2-left (precision.yaml, derived)
+Digits:=40:; pc("g176-limit-trunc-half-x-2-left",'(limit(trunc(x/2),x,2,-1))',0,1/10^30);
+// g176-limit-trunc-0-right (precision.yaml, derived)
+Digits:=40:; pc("g176-limit-trunc-0-right",'(limit(trunc(x),x,0,1))',0,1/10^30);
+// g176-limit-floor-1-left (precision.yaml, derived)
+Digits:=40:; pc("g176-limit-floor-1-left",'(limit(floor(x),x,1,-1))',0,1/10^30);
 // g166-keep-atan-tan-neg-pi/2-plus-1e-15-12 (precision.yaml, oracle)
 Digits:=40:; pc("g166-keep-atan-tan-neg-pi/2-plus-1e-15-12",'(atan(tan(-pi/2+10^-15)))',-(157079632679/10^11),5/10^12);
 // g166-keep-atan-tan-1e14-12 (precision.yaml, oracle)

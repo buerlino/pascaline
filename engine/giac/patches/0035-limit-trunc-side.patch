@@ -1,0 +1,73 @@
+# Upstream: giac 2.1.0 series.cc in_limit. trunc has no series rule (floor has taylor_floor) and is not in sign_floor_ceil_round_tab, so after patch 0028 left trunc(x) unevaluated the limit substituted the point: limit(trunc(x),x,-1,1) = trunc(-1) = -1 (right 0: trunc(x) = 0 on (-1,0)), limit(trunc(x),x,1,-1) = 1 (right 0), limit(trunc(x/2),x,2,-1) = 1 (right 0), and the two-sided limit(trunc(x),x,-1) = -1 (no limit: -1 from the left, 0 from the right). Now each trunc(u) whose u holds the variable is rewritten by the limit L of u from the same side: floor(u) for L > 0, ceil(u) for L < 0 (u keeps the sign of L near the point), 0 for L = 0 (|u| < 1 near it); trunc(u,n) as trunc(10^n*u)/10^n. floor's and ceil's own limit rules then take the side (two-sided with distinct sides: "Unidirectional limits are distinct", as floor). An infinite L keeps trunc as before, a failed limit of u is the answer, and an L whose sign Giac cannot decide (limit(trunc(a*x),x,1,-1), a free a) leaves the limit unevaluated.
+# Changed by Pascaline contributors, 2026-11-06
+--- a/src/series.cc
++++ b/src/series.cc
+@@ -2548,6 +2548,52 @@ namespace giac {
+     */
+   }
+ 
++  // Pascaline patch 0035 (G176): trunc has no series rule and is not in sign_floor_ceil_round_tab, so the limit took
++  // trunc at the point: limit(trunc(x),x,-1,1) = trunc(-1) = -1 (right 0, trunc(x) = 0 on (-1,0)). trunc(u) equals
++  // floor(u) where u >= 0 and ceil(u) where u < 0, so each trunc(u) (trunc(u,n): trunc(10^n*u)/10^n) whose u holds x is
++  // rewritten by the limit L of u from the same side: L > 0 floor(u), L < 0 ceil(u) (u keeps the sign of L near the
++  // point), L = 0 the value 0 (|u| < 1 near the point). An infinite L keeps trunc (trunc(+infinity) is +infinity), a
++  // failed limit of u is the answer, and an L of undecided sign sets undecided: the limit then stays unevaluated.
++  extern const unary_function_ptr * const at_trunc;
++  static gen limit_trunc(const gen & e,const identificateur & x,const gen & lim_point,int direction,bool & undecided,GIAC_CONTEXT){
++    vecteur v(lop(e,at_trunc)),from,to;
++    for (int i=0;i<int(v.size());++i){
++      bool inner=false; // a trunc inside another one is rewritten by the limit of the outer one's argument
++      for (int j=0;j<int(v.size()) && !inner;++j)
++        inner = j!=i && equalposcomp(lop(v[j]._SYMBptr->feuille,at_trunc),v[i]);
++      if (inner)
++        continue;
++      gen u=v[i]._SYMBptr->feuille,d=1;
++      if (u.type==_VECT){
++        if (u._VECTptr->size()!=2 || u._VECTptr->back().type!=_INT_)
++          continue;
++        d=pow(gen(10),u._VECTptr->back(),contextptr);
++        u=u._VECTptr->front()*d;
++      }
++      if (!contains(u,gen(x)))
++        continue;
++      gen L=in_limit(u,x,lim_point,direction,contextptr);
++      if (is_undef(L))
++        return L;
++      if (is_inf(L))
++        continue;
++      gen r;
++      if (is_zero(L,contextptr) || is_zero(recursive_normal(L,contextptr),contextptr))
++        r=0;
++      else if (is_strictly_positive(L,contextptr))
++        r=symbolic(at_floor,u)/d;
++      else if (is_strictly_positive(-L,contextptr))
++        r=symbolic(at_ceil,u)/d;
++      else {
++        undecided=true;
++        return e;
++      }
++      from.push_back(v[i]);
++      to.push_back(r);
++    }
++    return from.empty()?e:subst(e,from,to,false,contextptr);
++  }
++
+   static gen in_limit(const gen & e0,const identificateur & x,const gen & lim_point,int direction,GIAC_CONTEXT){
+     if (direction==-2)
+       return gensizeerr(contextptr);
+@@ -2590,6 +2636,15 @@ namespace giac {
+       direction=1;
+     if (lim_point==minus_inf)
+       direction=-1;    
++    // Pascaline patch 0035 (G176): trunc(u) as floor(u) or ceil(u) by the side of u near the point (limit_trunc)
++    if (has_op(e,*at_trunc)){
++      bool undecided=false;
++      e=limit_trunc(e,x,lim_point,direction,undecided,contextptr);
++      if (is_undef(e))
++        return e;
++      if (undecided)
++        return direction?symbolic(at_limit,makesequence(e0,x,lim_point,direction)):symbolic(at_limit,makesequence(e0,x,lim_point));
++    }
+     vecteur vsign(loptab(e,sign_floor_ceil_round_tab));
+     // First try substitution
+     if (has_i(lop(e,at_ln))){
