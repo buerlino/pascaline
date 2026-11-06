@@ -94,15 +94,15 @@ jobs:
           GH_REPO: ${{ github.repository }}
         run: |
           v="$(node -p 'require("./app/package.json").version')"
-          apk="dist/pascaline-$v.apk"
-          (cd dist && sha256sum -c "pascaline-$v.apk.sha256")
+          apk="dist/n62-$v.apk"
+          (cd dist && sha256sum -c "n62-$v.apk.sha256")
           pre=()
           if [[ "$v" == 0.* || "$TAG" == *-* ]]; then pre=(--prerelease); fi
           notes="$RUNNER_TEMP/notes.md"
           {
-            echo "Pascaline $TAG, built by the release workflow (run $GITHUB_RUN_ID) from commit $(git rev-parse HEAD)."
+            echo "N62 $TAG, built by the release workflow (run $GITHUB_RUN_ID) from commit $(git rev-parse HEAD)."
             echo
-            echo "APK SHA-256 (\`sha256sum -c pascaline-$v.apk.sha256\`):"
+            echo "APK SHA-256 (\`sha256sum -c n62-$v.apk.sha256\`):"
             echo '```'; cat "$apk.sha256"; echo '```'
             echo "Signing certificate SHA-256 (\`apksigner verify --print-certs\`; android/release-cert.sha256):"
             echo '```'; cat android/release-cert.sha256; echo '```'
@@ -111,4 +111,4 @@ jobs:
             echo "libqalculate (engine/qalc/_out/release/SHA256SUMS):"
             echo '```'; cat engine/qalc/_out/release/SHA256SUMS; echo '```'
           } > "$notes"
-          gh release create "$TAG" "$apk" "$apk.sha256" --verify-tag --title "Pascaline $TAG" --notes-file "$notes" "${pre[@]}"
+          gh release create "$TAG" "$apk" "$apk.sha256" --verify-tag --title "N62 $TAG" --notes-file "$notes" "${pre[@]}"
