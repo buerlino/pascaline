@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 # Decision log
 
-Phase 0 decisions (D1–D9, P1, P2): [spike/DECISIONS.md](../spike/DECISIONS.md). This file holds what binds from Phase 1 on, as Choice and Would change if; "Rule: <file> <section>" names where a rule is stated in full. Every full text, with its why, evidence, costs and alternatives, is in [archive/decisions-2026-10.md](archive/decisions-2026-10.md) under the same name: read it only when a decision is questioned. A decision changes in place (rules section 9).
+Phase 0 decisions (D1–D9, P1, P2): [the archive](archive/phase-0-decisions.md). This file holds what binds from Phase 1 on, as Choice and Would change if; "Rule: <file> <section>" names where a rule is stated in full. Every full text, with its why, evidence, costs and alternatives, is in [archive/decisions-2026-10.md](archive/decisions-2026-10.md) under the same name: read it only when a decision is questioned. A decision changes in place (rules section 9).
 
 ## Needs the user
 

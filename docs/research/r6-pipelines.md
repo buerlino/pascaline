@@ -53,7 +53,7 @@
 
 ## 6. libqalculate behaviour learned by probing (5.13.1, spike libraries)
 
-libqalculate left the app's build (P22); its API, exactness and data-file notes are in [the 2026-10-12 architecture report](../archive/shifts/2026-10-12-sandra-architecture-report.md). What still bites a reader of `find/factors.yaml`:
+libqalculate left the app's build (P22); its API, exactness and data-file notes are in the 2026-10-12 architecture report (`archive/shifts/2026-10-12-sandra-architecture-report.md` at `65321512`). What still bites a reader of `find/factors.yaml`:
 
 - **Silent non-answers:** `1 m + 1 s` returns `1 m + 1 s`; `20 °C * 2` returns 40 °C; `hp` is 745.699987158 W, flagged exact (true 745.69987158227 W).
 - **Names:** `degC` → coulomb·degree, `BTU` → byte·tesla·…, `mu0` → 0 kg, `epsilon0` → 0 J·bit, `NA` → N·A, `R` → röntgen, `h` → hour, `g` → gram, `e` → Euler's number. The real names: `°C`/`oC`, `Btu`, `magnetic_constant`/`μ_0`/`mu_0`, `electric_constant`/`ε_0`/`epsilon_0`, `elementary_charge`, `k_B`, `planck`, `c`.
@@ -102,7 +102,7 @@ libqalculate left the app's build (P22); its API, exactness and data-file notes 
 
 ## 8. Where docs and code disagreed, and the lesson
 
-The lists of 2026-10-12 and 2026-10-15 are in [the 2026-10-12 architecture report](../archive/shifts/2026-10-12-sandra-architecture-report.md) and the git history of this note.
+The lists of 2026-10-12 and 2026-10-15 are in the 2026-10-12 architecture report (`archive/shifts/2026-10-12-sandra-architecture-report.md` at `65321512`) and the git history of this note.
 
 **Lesson:** check claims in the code, the engine and the data, never in the docs alone; cite `file:line` or a probe; mark the rest (to verify) with who checks it and how.
 

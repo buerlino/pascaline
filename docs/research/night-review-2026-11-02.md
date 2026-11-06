@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 # The night review of 2026-11-02
 
-**Status (2026-11-02): open.** What to verify, place or decide; it took over the open items of [the 10-31 note](../archive/night-review-2026-10-31.md).
+**Status (2026-11-02): open.** What to verify, place or decide; it took over the open items of the 10-31 note (`archive/night-review-2026-10-31.md` at `87a8c468`).
 
 *Written 2026-11-02 by Claude (Opus, the coordinator) on `phase-1` `ff37a93f6`; ids minted and docs written on `ff37a93f6`.* A day run (15:57–23:00, no lanes), weighted by the owner's brief of 2026-11-02 (vision, priorities, taste). Eight hunts, each checked by a separate verifier; 31 packages argued by an author and a reviewer until AGREED (three rounds). Run files: `.tasks/night-review-2026-11-02/` (reports, verdicts, `knowledge.md`, `packages/PLAN.md`).
 

@@ -5,7 +5,7 @@
 
 The per-bug rows of section 3 (every bug to 2026-10-19, and F99–F122 since, with their packages and merges) are in git at `742169a8`: `git show 742169a8:docs/research/bug-patterns.md`. Each of those bugs also has its backlog line or its archived decision.
 
-*Written 2026-10-19 by Claude (Opus, the owner's session; read and probe only) on `phase-1` `0bd9631`, from every `fix` commit, the backlog and its archive, feedback.md, docs/04 2.3 with [r12-evidence.md](r12-evidence.md), [r14-angle-mode.md](../archive/r14-angle-mode.md), the check notes and shift reports of 2026-10-18 and 2026-10-19; the rows open on `da7a59c` became F44–F59 ([the consolidation report](../archive/shifts/2026-10-20-sandra-consolidation-report.md) (a)).*
+*Written 2026-10-19 by Claude (Opus, the owner's session; read and probe only) on `phase-1` `0bd9631`, from every `fix` commit, the backlog and its archive, feedback.md, docs/04 2.3 with [r12-evidence.md](r12-evidence.md), [r14-angle-mode.md](../archive/r14-angle-mode.md), the check notes and shift reports of 2026-10-18 and 2026-10-19; the rows open on `da7a59c` became F44–F59 (the consolidation report (`archive/shifts/2026-10-20-sandra-consolidation-report.md` at `98e96656`) (a)).*
 
 **Id notation** (section 1 uses it). F-ids are feedback and backlog bugs. "§2.3 #n" is row n of docs/04 2.3. "chk n" is finding n of [check-2026-10-19.md](../archive/shifts/check-2026-10-19.md). D1–D12 and E1–E12 come from the two deep checks; "n18" and "n19 2.x" are the night checks of 2026-10-18 and 2026-10-19; "r16-F1"–"r16-F7" are the sweep of [r16-verification.md](../archive/r16-verification.md), renamed because F1–F7 are feedback ids.
 

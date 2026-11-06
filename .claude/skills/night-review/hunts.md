@@ -25,7 +25,7 @@ One block per hunt: a heading `## <prefix>: <title>` (the prefix labels the find
 **Runs when:** always.
 - Silent wrong numbers and false marks (=, ≈, ⚠; principle 3, "the mark never lies"): branch cuts, signed zero, tiny and huge arguments, complex results in real mode, angle-mode (DEG/RAD/GRAD) leaks, approx/exact mode leaks, the decimal comma in every number path, units with their conversions and offsets, uncertainty (σ) through functions and constants, integer and rational edges.
 - Look hardest at the number paths the merges added or changed.
-- Leads: the bug families in `docs/research/bug-patterns.md`, the archive's `r16-verification.md` and `bug-hunt-*` notes, and the last review's note. Don't repeat their findings: find new members of the families.
+- Leads: the bug families in `docs/research/bug-patterns.md`, the archive's `r16-verification.md`, the bug hunt (`archive/bug-hunt-2026-10-19.md` in docs/ at `98e96656`), and the last review's note. Don't repeat their findings: find new members of the families.
 - Every expected value comes from the mpmath oracle or is derived and shown. Every finding has its `smoke.mjs` or probe command.
 
 ## bu: bugs in the app (keys, entry, state, views)
