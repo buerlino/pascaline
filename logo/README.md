@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 # logo/
 
-The N62 logo. The wordmark and the banner are set in Comic Neue (SIL OFL-1.1), as outlines, so no font file ships.
+The N62 logo. The wordmark and the banner are set in STIX Two (SIL OFL-1.1), as outlines, so no font file ships.
 
 - `*/n62*.afdesign`: the editable sources (Affinity Designer) of every image here; edit these, then export.
 - `android_logo/n62_back.svg` and `n62_front.svg`: the app icon's two layers (108×108, solid background and mark); `app/scripts/gen-icons.mjs` builds the app icons and splash screens from them.
