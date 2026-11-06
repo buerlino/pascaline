@@ -150,21 +150,25 @@ describe("A78: N62 on the web and in every link", () => {
   });
   it("the criterion's git grep outside docs/archive finds only the dated history lines", () => {
     const r = spawnSync("git", ["grep", "-n", "-i", "-e", "pascaline" + "-calc", "-e", "buer" + "lino/pascaline", "--", ".", ":!docs/archive"], { cwd: repo, encoding: "utf8" });
-    const hits = r.stdout.split("\n").filter(Boolean).map((l) => /^([^:]+):(\d+):/.exec(l)?.slice(1, 3).join(":") ?? l);
-    const history = [
-      "docs/release-0.1.0.md:18",
-      "docs/release-0.1.0.md:20",
-      "docs/02-architecture-plan.md:124",
-      "docs/decisions.md:19",
-      "docs/shifts/packages/A77.md:5",
-      "docs/shifts/packages/A78.md:3",
-      "docs/shifts/packages/A78.md:5",
-      "docs/shifts/packages/A78.md:6",
-      "docs/shifts/packages/A78.md:12",
-      "docs/shifts/packages/A78.md:15",
-    ];
+    // a hit is history when its file is listed and its line carries the fixed text; a moved line still passes, a hit outside docs/ never does
+    const history: Record<string, string[]> = {
+      "docs/release-0.1.0.md": ["`pascaline" + "-calc.org` already points to Pages", "green, pascaline" + "-calc.org serves the app"],
+      "docs/02-architecture-plan.md": ["https://github.com/buer" + "lino/pascaline (GPL-3.0)"],
+      "docs/decisions.md": ["no redirect from pascaline" + "-calc.org"],
+      "docs/shifts/packages/A77.md": ["io/github/buer" + "lino/pascaline/"],
+    };
+    // A78's own package text names the old addresses by definition: any line of it
+    const wholeFile = ["docs/shifts/packages/A78.md"];
+    expect([...Object.keys(history), ...wholeFile].every((f) => f.startsWith("docs/"))).toBe(true);
+    const stray = r.stdout.split("\n").filter(Boolean).filter((l) => {
+      const m = /^([^:]+):\d+:(.*)$/.exec(l);
+      if (!m) return true;
+      const [, file = "", text = ""] = m;
+      if (wholeFile.includes(file)) return false;
+      return !(history[file] ?? []).some((sub) => text.includes(sub));
+    });
     // this file names neither string whole, so it never matches; a hit elsewhere is a link or an instruction that still has the old address
-    expect(hits.filter((h) => !history.includes(h))).toEqual([]);
+    expect(stray).toEqual([]);
   });
   it("README links the website, PRIVACY the repository; the engine tarball mirror is a release asset of n62-dev/n62", () => {
     expect(read("README.md")).toContain('href="https://n62.dev/"');
