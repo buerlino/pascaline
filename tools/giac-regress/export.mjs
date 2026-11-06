@@ -342,6 +342,16 @@ export const PATCHED_IDS = new Map([
   ["g166-atan-tan-1e15-12", "0032-atan-tan-reduction-digits.patch"],
   ["g166-atan-tan-1e17-12", "0032-atan-tan-reduction-digits.patch"],
   ["g166-atan-tan-pi/2-minus-1e-15-typed-12", "0032-atan-tan-reduction-digits.patch"],
+  // G177 (F137): cos, sin and tan of half a complex asin, acos or atan (stock: the negated root); the guards g177-keep-* pass on stock
+  // and stay in the check file
+  ["g177-cos-half-atan-1+i-12", "0034-half-atrig-complex-sign.patch"],
+  ["g177-cos-half-atan-1+i-30", "0034-half-atrig-complex-sign.patch"],
+  ["g177-cos-half-acos-2i-12", "0034-half-atrig-complex-sign.patch"],
+  ["g177-sin-half-atan-1+i-12", "0034-half-atrig-complex-sign.patch"],
+  ["g177-tan-half-atan-1+i-12", "0034-half-atrig-complex-sign.patch"],
+  ["g177-sin-half-acos-2i-12", "0034-half-atrig-complex-sign.patch"],
+  ["g177-cos-half-atan-1-i-12", "0034-half-atrig-complex-sign.patch"],
+  ["g177-sin-half-asin-i-1e-10-12", "0034-half-atrig-complex-sign.patch"],
   // G175 (F135, F134): a root of exp(a) with im(a) past pi (stock: e^(a*b), the other root), and normal and simplify of the root
   // of a complex power (stock: abs(z)*sqrt(z), z*sqrt(z)); g175-cas-* is the CAS view, and the guards g175-keep-* pass on stock
   // and stay in the check file

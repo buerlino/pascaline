@@ -1,0 +1,83 @@
+# Upstream: giac 2.1.0 usual.cc cos, sin, tan. The half-angle rules (is_half_atrig: e = asin(f)/2, acos(f)/2 or atan(f)/2) return the root r of a square, signed by is_positive(e_) with e_ the evalf of e; for a complex e_ that test is false, so the root was always negated: cos(atan(1+i)/2) gave -0.891156571011+0.0986295774757*i (right 0.891156571011-0.0986295774757*i), cos(acos(2*i)/2), sin(atan(1+i)/2), tan(atan(1+i)/2), sin(acos(2*i)/2), cos(atan(1-i)/2) and sin(asin(i/10^10)/2) the negation too (sin(asin(-1+i)/2) was right: there the root with a negative real part is the right one). Now e is taken again at Digits+20; where that value is real the test on e_ is kept (real arguments keep their results); where it is complex the sign is the one for which +-r agrees with cos, sin or tan of that value, r also at Digits+20 (within 1e-10 relative, the other sign farther than |t|); where neither agrees clearly (r near 0, digits lost in r, e at a cut) the call stays unevaluated and its evalf is the value of e itself.
+# Changed by Pascaline contributors, 2026-11-06
+--- a/src/usual.cc
++++ b/src/usual.cc
+@@ -1575,6 +1575,48 @@
+ #endif
+   define_unary_function_ptr5( at_sq ,alias_at_sq,&__sq,0,true);
+ 
++  // Pascaline patch 0034 (G177): the half-angle rules of cos, sin and tan (is_half_atrig: e = asin(f)/2, acos(f)/2 or
++  // atan(f)/2) give the root r of a square, and the sign of the root was is_positive(e_), e_ the evalf of e: for a
++  // complex e_ that is false, so the root was always negated (cos(atan(1+i)/2) gave -0.891+0.0986*i, right 0.891-0.0986*i;
++  // also sin, tan, acos(2*i)/2, asin(i/10^10)/2). The evalf of e is taken again at Digits+20 (at Digits 12 the double of
++  // asin(i/10^30)/2 is 0.0, a real); where it is real (no _CPLX) the test on e_ is kept. Where it is complex the sign
++  // is the one for which +-r agrees with cos(e), sin(e) or tan(e) (fn 0, 1, 2) taken on that evalf, r also at Digits+20:
++  // r within 1e-10*|t| of t (or of -t) and the other sign farther than |t|; otherwise (r near 0, digits lost in r, e at
++  // a cut where its evalf takes another side) 0, and the call stays unevaluated, so evalf gives the value of e itself.
++  static int half_atrig_sign(const gen & e,const gen & e_,const gen & r,int fn,GIAC_CONTEXT){
++    int save_decimal_digits=decimal_digits(contextptr);
++    gen ev,t,rv;
++    set_decimal_digits(save_decimal_digits+20,contextptr);
++    try {
++      ev=evalf(e,1,contextptr);
++      if (ev.type==_CPLX){
++	t=fn==0?cos(ev,contextptr):(fn==1?sin(ev,contextptr):tan(ev,contextptr));
++	rv=evalf(r,1,contextptr);
++      }
++    } catch (...) {
++      set_decimal_digits(save_decimal_digits,contextptr);
++      throw;
++    }
++    set_decimal_digits(save_decimal_digits,contextptr);
++    if (ev.type!=_CPLX && e_.type!=_CPLX)
++      return is_positive(e_,contextptr)?1:-1;
++    if ((t.type!=_CPLX && t.type!=_REAL && t.type!=_DOUBLE_) || (rv.type!=_CPLX && rv.type!=_REAL && rv.type!=_DOUBLE_))
++      return 0;
++    gen at=evalf_double(abs(t,contextptr),1,contextptr);
++    gen dp=evalf_double(abs(rv-t,contextptr),1,contextptr);
++    gen dm=evalf_double(abs(rv+t,contextptr),1,contextptr);
++    if (at.type!=_DOUBLE_ || dp.type!=_DOUBLE_ || dm.type!=_DOUBLE_)
++      return 0;
++    double a=at._DOUBLE_val,p=dp._DOUBLE_val,m=dm._DOUBLE_val;
++    if (!(a>0) || a-a!=0 || !(p==p) || !(m==m))
++      return 0;
++    if (p<=1e-10*a && m>a)
++      return 1;
++    if (m<=1e-10*a && p>a)
++      return -1;
++    return 0;
++  }
++
+   symbolic symb_cos(const gen & e){
+     return symbolic(at_cos,e);
+   }
+@@ -1809,7 +1851,8 @@
+ 	  f=sqrt((sqrt(1-pow(f,2),contextptr)+1)/2,contextptr);
+ 	if (n==3)
+ 	  f=sqrt((inv(sqrt(1+pow(f,2),contextptr),contextptr)+1)/2,contextptr);
+-	if (is_positive(e_,contextptr)) return f; else return -f;
++	int s=half_atrig_sign(e,e_,f,0,contextptr);
++	if (s) return s>0?f:-f;
+       }
+     }
+     if (is_equal(e))
+@@ -2057,7 +2100,8 @@
+ 	  f=sqrt((1-sqrt(1-pow(f,2),contextptr))/2,contextptr);
+ 	if (n==3)
+ 	  f=sqrt((1-inv(sqrt(1+pow(f,2),contextptr),contextptr))/2,contextptr);
+-	if (is_positive(e_,contextptr)) return f; else return -f;
++	int s=half_atrig_sign(e,e_,f,1,contextptr);
++	if (s) return s>0?f:-f;
+       }
+     }
+     if (is_equal(e))
+@@ -2269,7 +2313,8 @@
+ 	if (n==3)
+ 	  f=inv(sqrt(1+pow(f,2),contextptr),contextptr);
+ 	f=sqrt((1-f)/(1+f),contextptr);
+-	if (is_positive(e_,contextptr)) return f; else return -f;
++	int s=half_atrig_sign(e,e_,f,2,contextptr);
++	if (s) return s>0?f:-f;
+       }
+     }
+     if (is_equal(e))
