@@ -11,8 +11,6 @@ The owner's other open items are in [backlog.md](backlog.md), "Needs the user". 
 
 **R59: the Math key's Find and the user's functions.** An imported function is found in Vars' Find (R4b), not in the Math key's Find. Recommendation: list the user's names there too, as a later small package, so a library function is found where the built-ins are.
 
-**R140: lower colour-vision floors in High contrast.** Shift and Alpha stay 0.12 apart (OKLab, three deficiencies) and ⚠ 0.08 from Shift in every combination except High contrast (0.10 and 0.06), and Plain keys has no colour to tell apart. In N62 Light High contrast both sit at 7:1 on the same keys; 0.105 is the best a Shift of #8a3c00 gives, and 0.12 needs #5c2800, which then crowds ⚠. Recommendation: keep the lower High contrast floors.
-
 ## Decided proposals
 
 ### Pipeline and process
