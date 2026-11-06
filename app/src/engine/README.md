@@ -28,6 +28,7 @@ One line per module: what it owns, who calls it. Groups as in docs/04 section 6.
 |---|---|
 | `giac.worker.ts` | the Web Worker: loads `engine/giac.mjs` (copied to `app/public/engine/` by `npm run engine:copy`) and runs `host.ts`; started by `workerEngine.ts` |
 | `host.ts` | engine side, synchronous, UI-free: Home/CAS modes (D3), syntax-error detection, replay log; also runs in Node (golden runner, tests) |
+| `dead.ts` | G183: `deadEngine()`, whether a throw out of a request left the engine dead (`memory` G24, or `crash`: a wasm trap or a stack overflow), so the client restarts it; called by `host.ts` |
 | `homeEval.ts` | exact-first Home (from the Phase 0 spike): results carry a `value` and the precision facts; `sigfig` and our other engine definitions; called by `host.ts`, `solve.ts`, `analysis.ts`, `units/` |
 | `numeric.ts` | honest precision (docs/04 2.4): values, shapes, the agreement check at two precisions, the re-evaluation of floats, the double fallback; called by `homeEval.ts` and most guards |
 | `decisions.ts` | G38: the decisions Giac makes inside an exact evaluation, and their second run at P+20 and P+40; called by `homeEval.ts`, `host.ts` |

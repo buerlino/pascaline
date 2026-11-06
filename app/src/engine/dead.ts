@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Only erasable TypeScript syntax: host.ts imports it and runs in Node.
 
+/** The messages of a stack overflow: V8 (a `RangeError`), Firefox (an `InternalError`). */
+const STACK_OVERFLOW: ReadonlySet<string> = new Set(["Maximum call stack size exceeded", "too much recursion"]);
+
 /**
  * Whether a throw out of a request left the engine dead, and why (the client restarts it, G24, G183).
  * "memory" (G24): a failed allocation reaches us as a C++ exception (`WebAssembly.Exception`, from `new`) or as an abort
@@ -14,6 +17,6 @@ export function deadEngine(e: unknown): "memory" | "crash" | null {
   const text = e instanceof Error ? e.message : String(e);
   if (/\bOOM\b|out of memory|cannot enlarge memory|^Aborted/i.test(text)) return "memory";
   if (wasm.RuntimeError && e instanceof wasm.RuntimeError) return "crash";
-  if (e instanceof Error && /^Maximum call stack size exceeded$|^too much recursion$/.test(e.message)) return "crash";
+  if (e instanceof Error && STACK_OVERFLOW.has(e.message)) return "crash";
   return null;
 }
