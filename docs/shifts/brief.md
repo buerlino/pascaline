@@ -60,8 +60,7 @@ Milestone reviews (section 0): after R50e (with R116's gallery groups "Entry hig
 
 | Step | What | Agent, model | Branch | After |
 |---|---|---|---|---|
-| 522 | [R136](packages/R136.md) the bench hooks and flags no tool uses | ron, Sonnet | `p1/ron-deadhooks` | – |
-| 523 | [R137](packages/R137.md) one fake store and one set of e2e helpers | ron, Sonnet | `p1/ron-testfakes` | R136 |
+| 523 | [R137](packages/R137.md) one fake store and one set of e2e helpers | ron, Sonnet | `p1/ron-testfakes` | – |
 
 ### Lane B queue (the release, then the engine)
 [A57](packages/A57.md) runs by day; the night review's queue goes on in [its note](../research/night-review-2026-11-02.md) section 2.
