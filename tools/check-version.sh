@@ -15,7 +15,7 @@ if (( $# == 1 )); then
   tag="${BASH_REMATCH[1]}" tagname="$1"
 fi
 
-PKG="$ROOT/app/package.json" GRADLE="$ROOT/android/app/build.gradle" RECIPE="$ROOT/fdroid/io.github.buerlino.pascaline.yml"
+PKG="$ROOT/app/package.json" GRADLE="$ROOT/android/app/build.gradle" RECIPE="$ROOT/fdroid/dev.n62.calc.yml"
 errs=0; bad() { echo "check-version: $*" >&2; errs=$((errs + 1)); }
 for f in "$PKG" "$GRADLE" "$RECIPE"; do [[ -f "$f" ]] || { echo "check-version: missing $f" >&2; exit 1; }; done
 
