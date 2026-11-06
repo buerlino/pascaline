@@ -725,6 +725,15 @@ Digits:=40:; pc("g157f1-int-ceil-half-3/2",'(int(ceil(x),x,1/2,3/2))',(15/10^1),
 // patch 0029-int-trunc-split.patch
 // g157f1-int-trunc-x-free-trunc-neg1 (precision.yaml, derived)
 Digits:=40:; pc("g157f1-int-trunc-x-free-trunc-neg1",'(subst(int(trunc(x)*trunc(ag157),x,-3/2,-1/2),ag157=-1))',(5/10^1),5/10^13);
+// patch 0035-limit-trunc-side.patch
+// g157f1-limit-trunc-neg1-right (precision.yaml, derived)
+Digits:=40:; pc("g157f1-limit-trunc-neg1-right",'(limit(trunc(x),x,-1,1))',0,1/10^30);
+// patch 0028-trunc-toward-zero.patch
+// g176-limit-trunc-neg1-left (precision.yaml, derived)
+Digits:=40:; pc("g176-limit-trunc-neg1-left",'(limit(trunc(x),x,-1,-1))',-1,5/10^12);
+// patch 0028-trunc-toward-zero.patch
+// g176-limit-trunc-neg-half (precision.yaml, derived)
+Digits:=40:; pc("g176-limit-trunc-neg-half",'(limit(trunc(x),x,-1/2))',0,1/10^30);
 // patch 0032-atan-tan-reduction-digits.patch
 // g166-atan-tan-1e15-12 (precision.yaml, oracle)
 Digits:=40:; pc("g166-atan-tan-1e15-12",'(atan(tan(10^15)))',-(103189453652/10^11),5/10^12);

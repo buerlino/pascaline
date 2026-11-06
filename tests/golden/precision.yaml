@@ -1085,8 +1085,28 @@ cases:
   - { id: "g157f1-cas-int-trunc-x-free-trunc-0", kind: "cas", input: "subst(int(trunc(x)*trunc(ag157),x,-3/2,-1/2),ag157=0)", expect: "0", source: "derived", note: "round 0 of G157f1 gave -1/4" }
   - { id: "g157f1-int-trunc-x-free-trunc-neg1", input: "subst(int(trunc(x)*trunc(ag157),x,-3/2,-1/2),ag157=-1)", oracle: "F(1,2)", expect: "0.5", mark: "=", source: "derived", note: "-trunc(-1)/2. Round 0 of G157f1 gave 0, phase-1 1" }
   - { id: "g157f1-cas-int-trunc-x-free-trunc-neg1", kind: "cas", input: "subst(int(trunc(x)*trunc(ag157),x,-3/2,-1/2),ag157=-1)", expect: "1/2", source: "derived", note: "round 0 of G157f1 gave 0, phase-1 1" }
-  - { id: "g157f1-limit-trunc-neg1-right", input: "limit(trunc(x),x,-1,1)", oracle: "F(0)", expect: "0", mark: "=", source: "derived", status: "pending", note: "trunc(x) = 0 on (-1,0), so the limit from the right at -1 is 0. Shows = -1: Giac's limit takes trunc(-1), trunc has no series rule (floor has taylor_floor)" }
-  - { id: "g157f1-cas-limit-trunc-neg1-right", kind: "cas", input: "limit(trunc(x),x,-1,1)", expect: "0", source: "derived", status: "pending", note: "shows -1" }
+  - { id: "g157f1-limit-trunc-neg1-right", input: "limit(trunc(x),x,-1,1)", oracle: "F(0)", expect: "0", mark: "=", source: "derived", note: "trunc(x) = 0 on (-1,0), so the limit from the right at -1 is 0. Showed = -1: Giac's limit took trunc(-1), trunc has no series rule (floor has taylor_floor); patch 0035 (G176)" }
+  - { id: "g157f1-cas-limit-trunc-neg1-right", kind: "cas", input: "limit(trunc(x),x,-1,1)", expect: "0", source: "derived", note: "showed -1" }
+  # --- G176 (backlog F170): the limit of trunc at an integer from one side. trunc(u) = floor(u) where u >= 0 and ceil(u)
+  # where u < 0; patch 0035 rewrites it by the side of u near the point. Values by hand: trunc = 0 on (-1,1) ----------------
+  - { id: "g176-limit-trunc-1-left", input: "limit(trunc(x),x,1,-1)", oracle: "F(0)", expect: "0", mark: "=", source: "derived", note: "trunc(x) = 0 on (0,1). Showed = 1" }
+  - { id: "g176-cas-limit-trunc-1-left", kind: "cas", input: "limit(trunc(x),x,1,-1)", expect: "0", source: "derived", note: "showed 1" }
+  - { id: "g176-limit-trunc-half-x-2-left", input: "limit(trunc(x/2),x,2,-1)", oracle: "F(0)", expect: "0", mark: "=", source: "derived", note: "x/2 in (0,1) for x in (0,2). Showed = 1" }
+  - { id: "g176-cas-limit-trunc-half-x-2-left", kind: "cas", input: "limit(trunc(x/2),x,2,-1)", expect: "0", source: "derived", note: "showed 1" }
+  - { id: "g176-limit-trunc-neg1-two-sided", input: "limit(trunc(x),x,-1)", expect: "error: GIAC_ERROR: Unidirectional limits are distinct -1,0 Error: Bad Argument Value", source: "derived", note: "no limit: -1 from the left (trunc = -1 on (-2,-1]), 0 from the right; refused as limit(floor(x),x,-1) is (distinct -2,-1). Showed = -1" }
+  - { id: "g176-cas-limit-trunc-neg1-two-sided", kind: "cas", input: "limit(trunc(x),x,-1)", expect: "error: engine", source: "derived", note: "no limit, as above. Showed -1" }
+  - { id: "g176-cas-limit-trunc-1-digit", kind: "cas", input: "limit(trunc(x,1),x,-1/10,1)", expect: "0", source: "derived", note: "trunc(x,1) = trunc(10*x)/10 and 10*x in (-1,0) for x in (-1/10,0). Showed -0.1" }
+  - { id: "g176-cas-limit-trunc-free-left", kind: "cas", input: "limit(trunc(a176*x),x,1,-1)", expect: "limit(trunc(a176*x),x,1,-1)", source: "derived", note: "the side of a176*x near a176 is not decided (a176 = -1: trunc(-x) = 0 on (-1,0), not trunc(-1) = -1), so the limit stays unevaluated. Showed trunc(a176)" }
+  - { id: "g176-limit-trunc-sin-unevaluated", input: "limit(trunc(sin(1/x)/2),x,0)", expect: "limit(trunc(sin(1/x)/2),x,0)", mark: "⚠", source: "derived", note: "sin(1/x)/2 has no limit at 0, so the side of the trunc is not decided: the limit stays unevaluated and Home marks it ⚠ (converge.ts), never =" }
+  - { id: "g176-limit-trunc-neg1-left", input: "limit(trunc(x),x,-1,-1)", oracle: "F(-1)", expect: "-1", mark: "=", source: "derived", note: "guard: trunc(x) = -1 on (-2,-1]" }
+  - { id: "g176-cas-limit-trunc-neg1-left", kind: "cas", input: "limit(trunc(x),x,-1,-1)", expect: "-1", source: "derived", note: "guard" }
+  - { id: "g176-limit-trunc-neg-half", input: "limit(trunc(x),x,-1/2)", oracle: "F(0)", expect: "0", mark: "=", source: "derived", note: "guard: trunc is 0 around -1/2" }
+  - { id: "g176-cas-limit-trunc-neg-half", kind: "cas", input: "limit(trunc(x),x,-1/2)", expect: "0", source: "derived", note: "guard" }
+  - { id: "g176-limit-trunc-0-right", input: "limit(trunc(x),x,0,1)", oracle: "F(0)", expect: "0", mark: "=", source: "derived", note: "guard: trunc(x) = 0 on (0,1)" }
+  - { id: "g176-cas-limit-trunc-0-right", kind: "cas", input: "limit(trunc(x),x,0,1)", expect: "0", source: "derived", note: "guard" }
+  - { id: "g176-limit-floor-1-left", input: "limit(floor(x),x,1,-1)", oracle: "F(0)", expect: "0", mark: "=", source: "derived", note: "guard: floor(x) = 0 on [0,1)" }
+  - { id: "g176-cas-limit-floor-1-left", kind: "cas", input: "limit(floor(x),x,1,-1)", expect: "0", source: "derived", note: "guard" }
+  - { id: "g176-cas-limit-trunc-inf", kind: "cas", input: "limit(trunc(x),x,inf)", expect: "+infinity", source: "derived", note: "guard: an infinite limit of the argument keeps trunc (limit(floor(x),x,inf) is refused by Giac)" }
   # --- G141 (night review 2026-10-30, be-1): a long exact literal; P and P + 20 both rounded its small term away and agreed
   # on 1 (≈ 1, 38 digits). The agreement check starts at the digit count of the longest exact integer plus 20 -----------
   - { id: "g141-pow-1e-100-1e100", latex: "\\left(1+10^{-100}\\right)^{10^{100}}", oracle: "mp.workdps(500)(lambda: +mp.power(1+mpf(10)**-100, mpf(10)**100))()", expect: "2.71828182846", mark: "≈", source: "oracle", note: "showed ≈ 1: exp(n*ln(1+1/n)) tends to e" }
