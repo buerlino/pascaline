@@ -86,6 +86,10 @@ describe("deadEngine (G24, G183)", () => {
     expect(deadEngine(new WebAssembly.RuntimeError("memory access out of bounds"))).toBe("crash");
     expect(deadEngine(new RangeError("Maximum call stack size exceeded"))).toBe("crash");
     expect(deadEngine(new Error("too much recursion"))).toBe("crash");
+    // JavaScriptCore (Safari) ends its text with a full stop (G183f1); SpiderMonkey throws an InternalError.
+    expect(deadEngine(new RangeError("Maximum call stack size exceeded."))).toBe("crash");
+    const internal = Object.assign(new Error("too much recursion"), { name: "InternalError" });
+    expect(deadEngine(internal)).toBe("crash");
     expect(deadEngine(new Error("Aborted(OOM)"))).toBe("memory");
     expect(deadEngine(new Error("boom"))).toBeNull();
     expect(deadEngine(new RangeError("toFixed() digits argument must be between 0 and 100"))).toBeNull();
