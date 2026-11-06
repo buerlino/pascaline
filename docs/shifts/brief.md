@@ -33,6 +33,7 @@
 | [A76](packages/A76.md) | The release builds only what ships; the update test from the last release | annabell, Sonnet | day | the v0.1.0 tag | ~0.3 d |
 | [A77](packages/A77.md), [R138](packages/R138.md), [A78](packages/A78.md) | The name N62, in this order (TMview clean and the repo moved, 2026-11-06) | annabell, ron, annabell | day, no lane running | – | ~1.3 d |
 | [A79](packages/A79.md) | The N62 logo in the icons, the store images and the README | annabell, Sonnet | day (the Tab One) | A77; the owner's `n62_*` files in `logo/` | ~0.3 d |
+| [A80](packages/A80.md), [R139](packages/R139.md), [S35](packages/S35.md) | The internal sweep: scripts and variables, the app's internals, the docs (owner, 2026-11-06: today, then the folder move) | annabell Opus, ron Sonnet, sandra Opus | day, no lane running (R139 the Tab One) | A79, then in this order | ~1 d |
 
 **Why these models:** Opus where a slip breaks entry, the unit chain or stored data for every later package, or gives a wrong number (P17: the engine, input and units); sandra and sofia run Opus; Sonnet elsewhere (an existing pattern, pinned by tests); the audit model follows P17.
 
