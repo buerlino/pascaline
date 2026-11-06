@@ -30,14 +30,13 @@ The section is **28 blocks of 8 beats** (17.9–97.4 s, 140 → 199 BPM), then t
 | | 8–9 | 0.375 × 0.0625, then a b/c | `3/128` |
 | | 10 | √200 (CAS) | `10√2` |
 | | 11 | e^(iπ) | `= -1` |
-| UNITS (Teal) | 12–13 | 150 kg·m²/s³ → W | `150 W` |
-| | 14 | 5 kg → lb | `≈ 11.0231131092 lb` |
-| | 15 | 50 ± 1 m | `50.0 ± 1.0 m` |
-| | 16–17 | 72.25 kg × g₀ | `708.5304625 N` |
-| CAS (Solarized) | 18 | d/dx x² | `2x` |
-| | 19–20 | solve(x² = 16) from Find | `{-4,4}` |
-| | 21–22 | p(x):=x³ | stored |
-| GRAPHS (N62) | 23–24 | Solve app: x² − 2x = 168 | `x = -12`, `x = 14` |
+| UNITS (Teal) | 12 | 5 kg → lb | `≈ 11.0231131092 lb` |
+| | 13–14 | 500 m in 40 ± 1 s | `12.50 ± 0.31 m/s` |
+| | 15–16 | 72.25 kg × g₀ | `708.5304625 N` |
+| CAS (Solarized) | 17 | d/dx x² | `2x` |
+| | 18–19 | solve(x² = 16) from Find | `{-4,4}` |
+| | 20–21 / 22 | p(x):=x³ / p(2) | stored / `= 8` |
+| GRAPHS (N62) | 23–24 | Solve app: cos x = x from the guess 1 | `x = 0.739085133215` |
 | | 25 / 26 | F1 = x³ − 2 / Plot, Root | `x = 1.25992104989` |
 | | 27–28 | signed area of the same F1 on [0, 1] | `-1.75` |
 | | finale | 3x + 2y = 8, x − 4y = −2 as A⁻¹·b | `[[2],[1]]` |
@@ -45,15 +44,17 @@ The section is **28 blocks of 8 beats** (17.9–97.4 s, 140 → 199 BPM), then t
 Between the beats: each clip's setup (CAS, an app, the theme) is recorded before its first press and cut away, so the
 screen changes on the gap beat. A chapter change is a theme change plus a camera tilt and the chapter word.
 In Blender: short clips straight on with hard cuts; long clips a slow push-in; big moves in the fills; a large
-caption of the result on each eval beat.
+caption of the result on each eval beat. The owner's review (2026-11-06): each chapter harder than the last; p is
+defined and then used; the Solve app solves what CAS cannot in closed form; the uncertainty is carried through a
+division. Not possible: F1 = p(x) − 2 in the Function app (the trace shows `(0)->-2`, Root fails; no backlog line yet).
 
 ## Check
 
 `SHOWCASE=1 PW_PORT=<free port> GIAC_OUT=<abs dir> npx playwright test test/showcase.spec.ts` (from `app/`, under
 `host-cpu`): every clip at its blocks' beat times; fails on a wrong press count, a wrong result, or a press more
 than 80 ms after its beat, or a result not on screen before the cut (the next beat after the eval, 267–441 ms
-later). 2026-11-06 on `a1715b54`: 20/20, presses within 6 ms, results 51–312 ms after their eval. Tight: s8 and s9
-(301 and 312 ms of 348; their eval is a flick up on Enter, slower than a tap).
+later; a flick eval starts `lead` ms before its beat). 2026-11-06 on the owner's reviewed order: 20/20, results
+on screen before every cut (the run's lines give each clip's margin).
 
 ## Next
 
@@ -68,7 +69,8 @@ later). 2026-11-06 on `a1715b54`: 20/20, presses within 6 ms, results 51–312 m
    the screen is on its beat's frame (`OUTPUT SYNC: worst 0`). The result after the eval: CAS and Home about 50 ms
    (the eval pressed 52 / 37 ms early), the unit view (s8) about 170 ms, after a "Working…" line. A pad key (`right`)
    shows no highlight, only the caret's step. The take: `~/.cache/n62/showcase/test-take-2026-11-06/` (`check.mp4`
-   with the beat preview). **The stitch, as Blender needs it:**
+   with the beat preview). The Plot window stays the default: J's ten ▶ must end on x = 1 (the check expects −1.75).
+   **The stitch, as Blender needs it:**
    - frame 0 = song time 17.000 s, constant **60 fps**, 5280 frames (88 s); the Fairphone's 1116×2484;
    - every event on the **nearest** frame: video frame (0-based) = round((t − 17.0) × 60), Blender frame = that + 1;
      for each switch, press and eval (block 1's gap, 20.956 s, is frame 237). Blender cuts on the same frame;
@@ -79,8 +81,8 @@ later). 2026-11-06 on `a1715b54`: 20/20, presses within 6 ms, results 51–312 m
      its `input/` holds copies of this file, the yaml and the timeline: this repo is the source);
    - measured from the recordings: the delay from each beat to the key's highlight and to the result on screen. The
      presses shift earlier by the measured highlight delay; an eval whose result shows more than 2 frames after
-     beat 7 (CAS: 2¹⁰⁰, solve) is pressed that much earlier; a flick eval (s8, s9) starts early enough that its
-     result shows on beat 7. The per-clip delays go in the run's report.
+     beat 7 (CAS: 2¹⁰⁰, solve) is pressed that much earlier; a flick eval (s8, U) starts early enough that its result
+     shows before the cut (the desktop check: `lead` in showcase.yaml; the recorder: its measured `advance.json`). The per-clip delays go in the run's report.
 2. **Final take** Sat 11-14 on the release candidate of v0.1.0 (release Sun 11-15), after the UI rows (R140–R150,
    R53) and the queue have merged; per chapter theme.
 3. **Blender** (owner): the screen plane, the camera keys, the song in the Video Editor from 17 s.

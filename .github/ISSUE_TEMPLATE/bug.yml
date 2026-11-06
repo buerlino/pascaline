@@ -1,0 +1,79 @@
+name: Bug report
+description: N62 showed a wrong result, crashed or behaved oddly.
+title: "Bug: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        One bug per issue, please. Don't put personal data in the report.
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: "About shows it, e.g. 0.1.0."
+      placeholder: "0.1.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: where
+    attributes:
+      label: Where
+      description: Where did you use N62?
+      options:
+        - Android app
+        - Web app (n62.dev)
+        - Other
+    validations:
+      required: true
+  - type: dropdown
+    id: view
+    attributes:
+      label: View
+      description: The view you were in.
+      options:
+        - Home
+        - CAS
+        - Plot
+        - Units
+        - Find
+        - Settings
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: settings
+    attributes:
+      label: Settings that matter
+      description: "Angle mode (DEG/RAD), decimal mark, exact or approximate."
+  - type: textarea
+    id: input
+    attributes:
+      label: What you typed
+      description: "Exactly as entered. Copy as text pastes it."
+    validations:
+      required: true
+  - type: textarea
+    id: result
+    attributes:
+      label: What N62 showed
+      description: "Include the mark (=, ≈, ⚠) if there was one."
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+      description: "And where the right value comes from, if you know: another calculator, a textbook, Wolfram Alpha."
+    validations:
+      required: true
+  - type: textarea
+    id: screenshot
+    attributes:
+      label: Screenshot
+      description: Drag an image here. Optional.
+  - type: input
+    id: device
+    attributes:
+      label: Device
+      description: "Phone model and Android version, or the browser. Optional."
