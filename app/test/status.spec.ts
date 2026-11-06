@@ -2,7 +2,7 @@
 // R8: the status line (docs/05 3.2), the Mode sheet (the chips since R15c2) and Settings (Mode's last row) (3.4). The
 // real engine for the angle test (GIAC_OUT); the fake one for the rest.
 import { expect, test, type Page } from "@playwright/test";
-import { entryValue, open, sheet, tap } from "./helpers.ts";
+import { entryValue, open, sheet, sheetKey, tap } from "./helpers.ts";
 
 const lastText = (page: Page) => page.locator('[data-testid="result"] .result').last();
 const ready = (page: Page) => page.waitForFunction(() => window.n62.session.engineState === "ready", undefined, { timeout: 20_000 });
@@ -199,9 +199,9 @@ test("DEG → RAD by keys: a user key that holds Mode, ▶, Enter; the sheet ope
   await expect(page.getByTestId("sheet-title")).toHaveText("Mode");
   await expect(active(page)).toHaveAttribute("data-id", "angle");
   await expect(active(page).locator('[aria-pressed="true"]')).toHaveText("DEG");
-  await tap(page, ["right"]);
+  await sheetKey(page, ["right"]);
   await expect(active(page).locator('[aria-pressed="true"]')).toHaveText("RAD");
-  await tap(page, ["enter"]);
+  await sheetKey(page, ["enter"]);
   await expect(sheet(page)).toBeHidden();
   expect(await angle(page)).toBe("rad");
   // the pick before this one (Digits) does not move the start
@@ -219,7 +219,8 @@ test("keys typed while the Mode sheet's code loads wait for it, and are not type
   await open(page);
   await modeOnU1(page);
   expect(await angle(page)).toBe("rad");
-  await tap(page, ["d1", "u1", "right", "enter"]);
+  await tap(page, ["d1"]);
+  await sheetKey(page, ["u1", "right", "enter"]);
   expect(await entryValue(page)).toBe("1"); // nothing evaluated yet, nothing typed
   release();
   await expect.poll(() => angle(page)).toBe("deg"); // the sheet opened, ▶ stepped Angle, Enter closed it
@@ -244,17 +245,17 @@ test("the format and digits chips open the Mode sheet on their row; ◀ ▶ chan
   await open(page);
   await page.getByTestId("chip-format").tap();
   await expect(active(page)).toHaveAttribute("data-id", "format");
-  await tap(page, ["right"]);
+  await sheetKey(page, ["right"]);
   await expect(page.getByTestId("chip-format")).toHaveText("SCI");
-  await tap(page, ["left"]);
+  await sheetKey(page, ["left"]);
   await expect(page.getByTestId("chip-format")).toHaveText("STD");
   await expect(sheet(page)).toBeVisible(); // ◀ on a setting steps it, it does not go back
   await tap(page, ["esc"]);
   await page.getByTestId("chip-digits").tap(); // R86: the chip opens the list itself, with Mode under it
   await expect(page.getByTestId("sheet-title")).toHaveText("Mode › Significant digits");
-  await tap(page, ["left"]);
+  await sheetKey(page, ["left"]);
   await expect(active(page)).toHaveAttribute("data-id", "digits");
-  await tap(page, ["right", "right"]);
+  await sheetKey(page, ["right", "right"]);
   await expect(page.getByTestId("chip-digits")).toHaveText("14");
   await sheet(page).locator('[data-id="entry"]').tap(); // a tap steps the row forward and the sheet stays
   expect(await page.evaluate(() => window.n62.session.settings.entry)).toBe("line");
@@ -294,7 +295,8 @@ test("the sheets work inside an app, and the angle unit set there is the one the
   await open(page);
   await tap(page, ["@plot"]);
   await page.waitForFunction(() => window.n62.shell.app === "function" && window.n62.shell.loading === null); // keys pressed while an app loads wait; a place key does not
-  await tap(page, ["@mode", "right", "enter"]);
+  await tap(page, ["@mode"]);
+  await sheetKey(page, ["right", "enter"]);
   expect(await angle(page)).toBe("deg");
   await expect(page.getByTestId("place")).toHaveAttribute("data-view", "plot");
   await expect(page.getByTestId("chip-angle")).toHaveText("DEG");

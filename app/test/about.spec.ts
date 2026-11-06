@@ -4,7 +4,7 @@
 // chunk: nothing is fetched at start. By keys and by touch. The fake engine.
 import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
-import { open, sheet, tap } from "./helpers.ts";
+import { open, sheet, sheetKey, tap } from "./helpers.ts";
 
 const title = (page: Page) => page.getByTestId("sheet-title");
 const row = (page: Page, id: string) => sheet(page).locator(`[role="menuitem"][data-id="${id}"]`);
@@ -50,7 +50,7 @@ test.describe("by keys", () => {
   });
 
   test("About › Licence opens the GPL text as a level that scrolls; ▼ pages down, ◀ goes back onto the same row", async ({ page }) => {
-    await tap(page, ["d2", "d2"]);
+    await sheetKey(page, ["d2", "d2"]);
     // the first licence text loads its lazy chunk; under the full run's load that took more than the default 5 s once (pipeline run 350)
     await expect(text(page)).toContainText("GNU GENERAL PUBLIC LICENSE", { timeout: 20_000 });
     await expect(title(page)).toHaveText("Help and about › About › GPL-3.0-or-later");
@@ -58,11 +58,11 @@ test.describe("by keys", () => {
     const scrolls = await text(page).evaluate((e) => e.scrollHeight > e.clientHeight * 3);
     expect(scrolls).toBe(true);
     expect(await text(page).evaluate((e) => e.scrollTop)).toBe(0);
-    await tap(page, ["down"]);
+    await sheetKey(page, ["down"]);
     await expect.poll(() => text(page).evaluate((e) => e.scrollTop)).toBeGreaterThan(50);
-    await tap(page, ["up"]);
+    await sheetKey(page, ["up"]);
     await expect.poll(() => text(page).evaluate((e) => e.scrollTop)).toBe(0);
-    await tap(page, ["left"]);
+    await sheetKey(page, ["left"]);
     await expect(row(page, "licence")).toHaveAttribute("data-active", "true");
   });
 
@@ -72,7 +72,7 @@ test.describe("by keys", () => {
       await new Promise((done) => setTimeout(done, 800));
       await r.continue();
     });
-    await tap(page, ["d2", "d2"]);
+    await sheetKey(page, ["d2", "d2"]);
     await expect(text(page)).toContainText("GNU GENERAL PUBLIC LICENSE");
     await expect(title(page)).toHaveText("Help and about › About › GPL-3.0-or-later");
   });
