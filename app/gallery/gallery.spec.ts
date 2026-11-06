@@ -21,8 +21,8 @@ function settingsShots(): Shot[] {
     { id: "-vibration", title: "Settings › Key vibration, switched on (strength disabled with its reason), Try it", keys: ["d3", "d1"] },
     { id: "-data", title: "Settings › Data (R38a, R96): Save a backup, Restore from a file, and the last row that says whether the data is kept", keys: ["d5"] },
     { id: "-counters", title: "Settings › Counters: the presses, the Shift and Alpha counts, the presets switched (R89), since when, Reset", keys: ["d6"] },
-    { id: "-help", title: "Settings › Help and about (R87): the first-start tips row, About Pascaline, Parts we use and their licences", keys: ["d7"] },
-    { id: "-about", title: "Help and about › About Pascaline: version, licence, source, credits", keys: ["d7", "d2"] },
+    { id: "-help", title: "Settings › Help and about (R87): the first-start tips row, About N62, Parts we use and their licences", keys: ["d7"] },
+    { id: "-about", title: "Help and about › About N62: version, licence, source, credits", keys: ["d7", "d2"] },
     { id: "-parts", title: "Help and about › Parts: a row per part of THIRD_PARTY.md with its licence, the copyright line under the list", keys: ["d7", "d3"] },
     { id: "-licence", title: "Parts › a licence's full text, a level that scrolls", keys: ["d7", "d2", "d2"] },
   ];
@@ -775,7 +775,7 @@ test.afterAll(() => {
     OUT + "index.html",
     `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Pascaline UI gallery</title>
+<title>N62 UI gallery</title>
 <style>
 body{font:15px/1.4 system-ui,sans-serif;margin:16px;background:#f4f5f7;color:#1a1d22}
 h1{font-size:20px}h2{font-size:17px;margin:28px 0 8px}
@@ -785,7 +785,7 @@ figure{margin:0}figcaption{font-weight:600;margin-bottom:4px}
 img{width:240px;height:auto;border:1px solid #b9c0cc;border-radius:6px;display:block}
 @media (prefers-color-scheme:dark){body{background:#14161a;color:#e8ebef}img{border-color:#3a4250}}
 </style></head><body>
-<h1>Pascaline UI gallery</h1>
+<h1>N62 UI gallery</h1>
 <p>Generated ${new Date().toISOString().slice(0, 16).replace("T", " ")} by <code>npm run gallery</code>. Each state: light (left), dark (right). Click an image for full size.</p>
 ${body}
 </body></html>

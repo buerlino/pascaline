@@ -14,7 +14,7 @@ export interface LookShot {
   readonly element?: string;
 }
 
-const FAMILIES = ["pascaline", "graphite", "solarized", "gruvbox", "nord"] as const;
+const FAMILIES = ["n62", "graphite", "solarized", "gruvbox", "nord"] as const;
 const name = (f: string): string => f[0]!.toUpperCase() + f.slice(1);
 
 /** Put a look on the page as Settings › Appearance does, and wait for its lazy CSS. */
@@ -24,7 +24,7 @@ async function setLook(p: Page, patch: Record<string, unknown>): Promise<void> {
     s.settings.look = { ...s.settings.look, ...o };
     s.onLook?.({ ...s.settings.look });
   }, patch);
-  await p.waitForFunction((f) => document.documentElement.getAttribute("data-family") === f, patch["family"] ?? "pascaline");
+  await p.waitForFunction((f) => document.documentElement.getAttribute("data-family") === f, patch["family"] ?? "n62");
   await p.waitForTimeout(400); // the lazy CSS is in
 }
 
@@ -42,8 +42,8 @@ export function lookShots(someHistory: (p: Page) => Promise<void>): LookShot[] {
       title: name(family),
       setup: set({ family, brightness: "system" }),
     })),
-    { id: "look-contrast", group: "Themes (R50e): the switches", title: "Pascaline, High contrast", setup: set({ contrast: true }) },
-    { id: "look-plain", group: "Themes (R50e): the switches", title: "Pascaline, Plain keys (bold is Shift, italic is Alpha)", setup: set({ plain: true }) },
+    { id: "look-contrast", group: "Themes (R50e): the switches", title: "N62, High contrast", setup: set({ contrast: true }) },
+    { id: "look-plain", group: "Themes (R50e): the switches", title: "N62, Plain keys (bold is Shift, italic is Alpha)", setup: set({ plain: true }) },
     { id: "look-nord-both", group: "Themes (R50e): the switches", title: "Nord, High contrast and Plain keys together", setup: set({ family: "nord", contrast: true, plain: true }) },
   ];
 }

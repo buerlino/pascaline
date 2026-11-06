@@ -67,6 +67,11 @@ describe("the inline script of index.html", () => {
     expect(r.attrs).toEqual({ "data-family": "n62", "data-brightness": "light" });
     expect(r.written).toEqual([]);
   });
+  it("R138: a stored family pascaline (the name before N62) shows as n62 and links n62's file", () => {
+    const r = runInline({ stored: { family: "pascaline", brightness: "dark", contrast: false, plain: true } });
+    expect(r.attrs).toEqual({ "data-family": "n62", "data-brightness": "dark", "data-keys": "plain" });
+    expect(r.written.map((w) => w.match(/href="([^"]+)"/)?.[1])).toEqual(["http://x/a/p.css", "http://x/a/m.css"]);
+  });
   it("prefers-contrast: more counts only when nothing is stored", () => {
     expect(runInline({ more: true }).attrs["data-contrast"]).toBe("high");
     expect(runInline({ more: true, stored: { family: "n62", brightness: "dark", contrast: false, plain: false } }).attrs["data-contrast"]).toBeUndefined();
