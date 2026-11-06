@@ -35,7 +35,7 @@ The one place for the owner's points from using the app (docs/03 section 0, rule
 | 14 | Units after the formula replaces the Units app. But if the formula is already entered you never need + or −; and someone who only wants a quick unit check should not have to type a formula with numbers first. | decided: P11 (a single unit slot on an empty line) |
 | 15 | Find as a fixed G2-style Math menu, typing filters it, no usage ranking. | decided: P11 |
 | 16 | Uses Home daily, CAS sometimes, the other apps hardly (an engineering student). | decided: P11, Function and Solve frozen |
-| 17 | The MCP server could be good. But more important: anyone who wants to change parts of the calculator or add their own scripts needs a real connection point, not a Python terminal nobody uses. | idea (discussion: a plain-text function library, edited on a laptop, imported on the phone, found in Find, assignable to a user key). Shape and why written 2026-10-14: [archive/backlog-2026-10.md](archive/backlog-2026-10.md) "Parked ideas"; done as S4 ([archive/r10-connector.md](archive/r10-connector.md)) |
+| 17 | The MCP server could be good. But more important: anyone who wants to change parts of the calculator or add their own scripts needs a real connection point, not a Python terminal nobody uses. | idea (discussion: a plain-text function library, edited on a laptop, imported on the phone, found in Find, assignable to a user key). Shape and why written 2026-10-14: `archive/backlog-2026-10.md` at `87a8c468` "Parked ideas"; done as S4 ([archive/r10-connector.md](archive/r10-connector.md)) |
 
 ## 2026-10-13 (third round: sign-off of the merged plan)
 
@@ -135,7 +135,7 @@ The owner went through the key-by-key comparison ([06-keypad-vs-g2.md](06-keypad
 | 50 | "Vibration does not work. The settings must be cleaned up so vibration is a submenu or so." | **bug F41** (package A9 on the owner's phone: it was never tried on a phone with a motor, since the Tab One has none). **feel:** Settings as a short list of rows, each with a page of its own (decisions.md "Settings in the Mode sheet, and presets": R49, R85–R89) |
 | 51 | "Pressing ⌫ on a log() used to be stuck at log(, now it is stuck at log, I think." | **bug F39** (package R47). Reproduced in Playwright: a finger tap can put the cursor between `log` and `(`, where ◀ ▶ never stop; ⌫ there deletes only the name, leaving `(100)` with the cursor at the line's start, and every further ⌫ does nothing. Fixed in R47 (the tap case); *the owner's exact key sequence is still to confirm (backlog "Needs the user" item 4)* |
 | 52 | "If you press Shift + Alpha, the letters on the keypad are still upper case; they should switch to show they are now lower case." | **bug F40** (backlog item 37, package R48): the keys type lower case, but the faces still show capitals |
-| 53 | "The colour scheme of the app is not good; I want something nicer, light and dark." | **feel:** decided 2026-10-18 on `docs/archive/mockups/themes-r50.html` (decisions.md "R50"): five families, light and dark, High contrast and Plain keys; packages R50b–R50e, before R12's visual pass |
+| 53 | "The colour scheme of the app is not good; I want something nicer, light and dark." | **feel:** decided 2026-10-18 on `docs/archive/mockups/themes-r50.html` at `b693c31f` (decisions.md "R50"): five families, light and dark, High contrast and Plain keys; packages R50b–R50e, before R12's visual pass |
 
 ## 2026-10-18 (fourteenth round: the R12a mockups)
 
