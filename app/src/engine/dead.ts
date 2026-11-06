@@ -2,11 +2,17 @@
 // Only erasable TypeScript syntax: host.ts imports it and runs in Node.
 
 /**
- * The message of a stack overflow, whole and in any case: V8 (Chrome, Android WebView, Node) and JavaScriptCore (Safari)
- * throw a `RangeError` "Maximum call stack size exceeded", JavaScriptCore with a full stop; SpiderMonkey (Firefox) an
- * `InternalError` "too much recursion". Any other `RangeError` (toFixed's) is no stack overflow.
+ * The message of a stack overflow, whole, in lower case (a set, not a pattern: the G88 ratchet): V8 (Chrome, Android
+ * WebView, Node) and JavaScriptCore (Safari) throw a `RangeError` "Maximum call stack size exceeded", JavaScriptCore with a
+ * full stop; SpiderMonkey (Firefox) an `InternalError` "too much recursion". Any other `RangeError` (toFixed's) is none.
  */
-const STACK_OVERFLOW = /^(?:maximum call stack size exceeded\.?|too much recursion)$/i;
+const STACK_OVERFLOW: ReadonlySet<string> = new Set(["maximum call stack size exceeded", "too much recursion"]);
+
+/** Whether an error's message is a stack overflow's, compared in lower case without one closing full stop. */
+function isStackOverflow(e: Error): boolean {
+  const m = e.message.toLowerCase();
+  return STACK_OVERFLOW.has(m.endsWith(".") ? m.slice(0, -1) : m);
+}
 
 /**
  * Whether a throw out of a request left the engine dead, and why (the client restarts it, G24, G183).
@@ -21,6 +27,6 @@ export function deadEngine(e: unknown): "memory" | "crash" | null {
   const text = e instanceof Error ? e.message : String(e);
   if (/\bOOM\b|out of memory|cannot enlarge memory|^Aborted/i.test(text)) return "memory";
   if (wasm.RuntimeError && e instanceof wasm.RuntimeError) return "crash";
-  if (e instanceof Error && STACK_OVERFLOW.test(e.message)) return "crash";
+  if (e instanceof Error && isStackOverflow(e)) return "crash";
   return null;
 }
