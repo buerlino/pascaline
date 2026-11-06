@@ -23,12 +23,8 @@
   let JXG: JXGModule | undefined;
   let markEls: { remove(): void }[] = [];
 
-  // D7 options (desktop, CPU 4x slower: canvas redraws in 6.4 ms vs 10.2 ms for SVG; plain sampling is
-  // faster than adaptive while moving). Default: canvas, plain sampling while the window moves and adaptive
-  // sampling (clean poles) once it rests. ?renderer=svg and ?sampling=adaptive|plain for device comparisons.
-  const q = new URLSearchParams(location.search);
-  const renderer = q.get("renderer") === "svg" ? "svg" : "canvas";
-  const sampling = q.get("sampling") === "adaptive" || q.get("sampling") === "plain" ? q.get("sampling") : "hybrid";
+  // D7 (desktop, CPU 4x slower): canvas redraws in 6.4 ms vs 10.2 ms for SVG, and plain sampling is faster than
+  // adaptive while moving, so: canvas, plain sampling while the window moves, adaptive (clean poles) once it rests.
   type Curve = { setAttribute(a: Record<string, unknown>): unknown };
   let curves: Curve[] = [];
   let restTimer: ReturnType<typeof setTimeout> | undefined;
@@ -51,7 +47,6 @@
     const [x1, y1, x2, y2] = board.getBoundingBox() as [number, number, number, number];
     clearTimeout(saveTimer);
     saveTimer = setTimeout(() => app.setWindow({ xmin: x1, xmax: x2, ymin: y2, ymax: y1 }), 150);
-    if (sampling !== "hybrid") return;
     if (!moving) {
       moving = true;
       setAdaptive(false);
@@ -75,7 +70,7 @@
         boundingbox: bbox(app.win ?? defaultWindow()),
         axis: true,
         grid: false,
-        renderer,
+        renderer: "canvas",
         showCopyright: false,
         showNavigation: false,
         showInfobox: false,
@@ -97,7 +92,7 @@
           strokeWidth: 2,
           highlight: false,
           fixed: true,
-          doAdvancedPlot: sampling !== "plain",
+          doAdvancedPlot: true,
           numberPointsHigh: 400,
           numberPointsLow: 120,
         });
@@ -124,7 +119,7 @@
       plotHook.curves = curves.length;
       // Measurement builds: time from opening Plot to the first drawn board (JSXGraph loads on first open).
       requestAnimationFrame(() =>
-        mark("plot-ready", { openMs: performance.now() - t0, importMs: t1 - t0, curves: app.active.length, renderer, sampling: sampling ?? "" }),
+        mark("plot-ready", { openMs: performance.now() - t0, importMs: t1 - t0, curves: app.active.length, renderer: "canvas", sampling: "hybrid" }),
       );
     });
     return () => {
