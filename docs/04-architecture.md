@@ -3,12 +3,12 @@
 
 *sandra, 2026-10-12. **This document supersedes [02-architecture-plan.md](02-architecture-plan.md) wherever the two differ.** docs/02 stays the record of the original plan and of the reasoning that still holds (solver choice in section 4, licence and F-Droid in sections 10–11). Binding inputs: [rules-core.md](rules-core.md) (goal, three principles, hard rules), [03-feature-analysis.md](03-feature-analysis.md) (the owner's design rules), [decisions.md](decisions.md) P8. A claim about the code cites the file or a probe (`tools/probes/`, its README; Appendix A); **(to verify)** marks what was not checked, with who checks it and how (Appendix C).*
 
-Each area: **state** (verified), **decision** (with the reason), **alternatives**, **budgets and gates**, **risks**, **what would change it**. (`4d80167f`)
+Each area: **state** (verified), **decision** (with the reason), **alternatives**, **budgets and gates**, **risks**, **what would change it**. Section 8: the component diagram, the interfaces, the budgets.
 
 ## 0. The decisions on one page
 
 1. **One mark on every Home and CAS number:** `=` the decimal shown is the exact value; `≈` rounded, and every digit shown is right; `⚠` fewer reliable digits than asked, or a failed check (2.4).
-2. **No digit is shown that the engine has not confirmed:** non-rational values are evaluated at two precisions and only agreeing digits are shown (2.4, 2.5).
+2. **No digit is shown that the engine has not confirmed:** non-rational values are evaluated at two precisions and only agreeing digits are shown; a float from an unaudited function is `⚠`; inverse functions are substituted back like Solve roots (2.4, 2.5).
 3. **Digits up to 30**, working precision `max(30, digits+10)`, value precision `max(40, digits+10)` (2.5).
 4. **Results are reused as chips that carry the full value** (2.8).
 5. **Copy gives the full value** (all confirmed digits, up to 40); "as shown", "exact" and LaTeX are in the Menu (2.6, 5.1).
@@ -102,7 +102,7 @@ Cost: one `evalf` more (about 1 ms, desktop) per irrational or float result.
 
 **Golden cases:** every numeric case in `home.yaml` carries its mark, checked by the gate (`oracle.py`: `=` exactly when the oracle value equals the expected text); `precision.yaml` holds the cases at 20 and 30 digits (`oracle`) and 2.3's regression list.
 
-**Risk:** both evaluations wrong in the same way is not caught (2.3 #2; section 9 risk 1).
+**Risk:** both evaluations wrong in the same way is not caught (2.3 #2; section 9 risk 1): until a function has passed the tier-0 audit, a float Giac's numeric code returned for it is `⚠`, never a bare `≈`.
 **Would change if:** Tab One timing shows the extra `evalf` costing more than 20 % of Enter p95; then the check runs only above 15 digits and for float-returning inputs.
 
 **Built in G3:** stored floats keep their facts in the defs log; a result using them inherits the weakest, checked by perturbation. `evalf(e,n)`/`approx(e,n)` run at the check's precision and show n digits in Home and CAS; a nameless n (`2*10`) is evaluated once into a literal, else `⚠` without a count. Solve and analysis roots get a second polish at W+20. A value 0 in every evaluation, not exactly rational, shows `⚠` without a count, never `≈ 0` (`exp(10^-70)-1`) (`4d80167f`).
@@ -114,7 +114,7 @@ Cost: one `evalf` more (about 1 ms, desktop) per irrational or float result.
 - `sigfig` and our other Giac definitions load on first use, not at engine start.
 - Exact budget: `budgetSteps` checks, not ms: a result must not depend on the device's speed (`4d80167f`).
 - The agreement check (2.4) makes 20 and 30 digits honest: without it, 2.3 #3–#5 would go out unmarked.
-- **Latency gate (Tab One):** p95 at 30 digits < 150 ms and ≤ 1.3 × the 12-digit p95, else the setting stops at 20. It holds, so 30 stays.
+- **Latency gate (Tab One):** p95 at 30 digits < 150 ms and ≤ 1.3 × the 12-digit p95, else the setting stops at 20. It holds, so 30 stays (`4d80167f`).
 
 **`sigfig(x,n)`** (EN3 d): an engine definition that rounds the exact value to `n` significant digits and returns an exact decimal rational, so `sigfig(1/3,3)` is `= 0.333`. The power of ten is found exactly (BigInt, not `floor(log10(…))`, which can land on the wrong side at 999.95). Golden cases at the boundaries: 999.95 at 4 digits, 0.0012345 at 3, negatives, ties.
 
@@ -182,9 +182,9 @@ Every Giac path therefore sees radians. A typed or library function keeps `pasde
 
 ### 3.3 Decision: the index
 
-**Schema** (one JSON array; ids are stable and become the token IDs; the type is `FindItem` in `app/src/find/types.ts`).
+**Schema** (one JSON array; ids are stable and become the token IDs; the type is `FindItem` in `app/src/find/types.ts`): `id` (`fn:stddev`, `const:c`, `unit:km/h`, `pfx:k`, `tmpl:…`), `kind`, `names` (what a user may type, searched in lower case), `title` (English; other languages in overlay files keyed by id), `desc` (one line: ours for tier 0, else Giac's English help line or qalc's title), `syntax` and `example` (functions), `value` and `unc` (a constant's exact decimal text and its standard uncertainty, absent when exact), `unit` (a constant's), `dim` (the dimension key, 4.3), `si` (a unit's exact factor to SI base as p/q; an offset for °C and °F), `tier` (0: curated, audited, ranked first; 1: documented only) and `insert` (the LaTeX the entry line receives).
 
-In the index file a tier-1 function has no `insert`; `prepare()` fills in `\operatorname{name}\left(#0\right)` at load, so `FindItem.insert` stays required after loading. A unit whose qalc factor is uncertain or approximate keeps `dim` and has no `si`; where qalc's number is wrong, its row in `find/factors.yaml` takes our value and keeps qalc's in `qalc`, with the reason in `note`; `tools/find-index/refresh-factors.mjs` shows when qalc changes.
+In the index file a tier-1 function has no `insert`; `prepare()` fills in `\operatorname{name}\left(#0\right)` at load, so `FindItem.insert` stays required after loading. A unit whose qalc factor is uncertain or approximate keeps `dim` and has no `si`; where qalc's number is wrong, its row in `find/factors.yaml` takes our value and keeps qalc's in `qalc`, with the reason in `note`; `tools/find-index/refresh-factors.mjs` shows when qalc changes (`4d80167f`).
 
 Live items (variables, user functions) have the same shape with `kind: "var" | "userfn"`, built at run time (3.4).
 
@@ -269,37 +269,37 @@ Risks: a wrong factor that G13's audit against CODATA and the exact definitions 
 ## 5. Keyboard and entry
 
 ### 5.1 Decision: every cell P8 touches, and every free cell
-Positions use our rows and columns (`spec/keyboard.yaml`); the reference's id is in brackets (`spec/mapping/vc-2026-10-11/keys.yaml`). "Built" names the package; the rest is planned. Rows 0–2 are R3 (decisions.md "R15c") (`4d80167f`).
+Positions use our rows and columns (`spec/keyboard.yaml`); the reference's id is in brackets (`spec/mapping/vc-2026-10-11/keys.yaml`). "Built" names the package; the rest is planned. Rows 0–2 are R3 (decisions.md "R15c", built in R15c2).
 
-| Key | Decided |
-|---|---|
-| Math (row 3, col 1) [r4c2] | Find, everything (R4a) |
-| Shift + Math | Memory: Find on variables and user functions, with delete and "clear all" (built) |
-| Vars (row 3, col 0) [r4c1] | Find, filtered to variables (built); Shift + Vars unassigned (Find covers named symbols) |
-| Tmpl (row 3, col 2) [r4c3] | the 6 × 3 template palette, picked by arrows, Enter or a tap (built; r8 rule M1) |
-| Shift + Tmpl | the unit view (unit slots) |
-| The letters A–Z, `#`, `:`, `;` (Alpha layer, flick down) | **stay**: Find's keyboard (3.7), names, CAS symbols, hex digits A–F (5.4); not the unit slots (P14) |
-| Alpha key [r8c1] | one-shot Alpha with lock flicks; stays its own key (P7 point 4; reopens if Alpha taps fall near zero) |
-| a b/c (row 3, col 4) [r4c5] | toggles the last result's form: decimal ↔ fraction, polar ↔ rectangular (built) |
-| Exponent key (row 6, col 0) [r7c1] | types the mark `ᴇ` (`\emark`, one token); Shift = Sto ▶ (built) |
-| Rows 0–2 | R3 (built, R15c2): U1–U6 in columns 0–1; the round pad (one drag surface, a dashed hub, no OK) in columns 2–3; View \| Esc, Undo \| Copy, ⇤ \| ⇥ in columns 4–5. Apps, Mode, the views, Menu: the status line (R15c1) |
-| Alpha + 0 (quote); Shift + ◀ ▶ (line jumps) | removed; the jumps came back as ⇤ ⇥ |
-| Shift + 6, Shift + 9 | the G2's palettes: relations and logic; symbols and Greek with `!` and ∞ (built) |
-| View (row 0, col 4) [r2c4] | results mode: the keypad collapses to a slice (P16); Shift = Help (milestone 6); both dead and dimmed until built |
-| Esc (row 0, col 5) [r1c5] | stops a running job, closes Settings, goes back one sheet level, drops a picked row, else clears the line; also the hardware Escape; Shift = Clear (R15c2) |
-| Undo (row 1, col 4) | undo; Shift = Redo; dead without an entry line (R15c2) |
-| ⇤ ⇥ (row 2, cols 4–5) | the start and end of the line; Shift: the start and end of the box the cursor is in; dead without an entry line (R15c2) |
-| Copy (row 1, col 5) | Copy, Shift = Paste (built): the picked row's or the last result's full value |
-| ☰ on the status line (the G2's Menu key [r3c4]) | app menus; Home/CAS: one numbered list of nine on the picked row, else the last result (built; decisions.md S2); R53 makes item 6 Plot |
-| Shift + View (Help) | context help: the Find preview of the function before the cursor; with none there, Find (milestone 6) |
-| User keys | U1–U6, all empty, with tap, Shift and Alpha (built; an empty Alpha slot is the tap; stored slots of U1–U3 and two-layer records stay valid); set in Settings › Your keys from Find, a place or a sheet (built) |
-| Shift + `+` [r10c5] | Ans (`\ans`, built, R2) |
-| Shift + `−` [r9c5] | Base: the last result in HEX, BIN, OCT, DEC; word size (EN6) |
-| Shift + 5 [r8c3]; Shift + 8 [r7c3] | `[ ]` vector or matrix template (EN5); `{ }` list (built) |
-| Shift + 4 [r8c2]; Shift + 7 [r7c2] | the matrix editor (EN5); the list editor, deferred with Statistics |
-| Unit slots | the unit pad (`spec/unit-pad.yaml`, docs/archive/r9-unit-pad.md): prefix and unit cells over the maths rows, S5's arrangement, 18 user slots; Enter to the next slot, `→` the end slot. Until R24c, `spec/keyboard.yaml` `unit_slot:` holds S1's letters |
-| Fmt (row 9, col 0) | a tap cycles the last result's format; Shift (and a flick up) opens Mode on Angle (built) |
-| Unassigned Shift cells (10: Shift + ▲ ▼ ◀ ▶, Vars, a b/c, `( )`, `,`, 1, 0; decided: `,` becomes ± with R71) | they get the functions the task benchmark shows are pressed most, not a list made in advance |
+| Key | Decided | Source and why |
+|---|---|---|
+| Math (row 3, col 1) [r4c2] | Find, everything (R4a) | P8 |
+| Shift + Math | Memory: Find on variables and user functions, with delete and "clear all" (built, R4b) | reference: Mem |
+| Vars (row 3, col 0) [r4c1] | Find, filtered to variables (built, R4b); Shift + Vars unassigned (Find covers named symbols) | P8 |
+| Tmpl (row 3, col 2) [r4c3] | the 6 × 3 template palette, picked by arrows, Enter or a tap (built, R10; r8 rule M1) | P8, P11 |
+| Shift + Tmpl | the unit view (unit slots) | P11; reference: Units |
+| The letters A–Z, `#`, `:`, `;` (Alpha layer, flick down) | **stay**: Find's keyboard (3.7), names, CAS symbols, hex digits A–F (5.4); not the unit slots (P14) | decisions.md "The letters stay" |
+| Alpha key [r8c1] | one-shot Alpha with lock flicks; stays its own key (P7 point 4, owner 2026-10-19; reopens if Alpha taps fall near zero) | P7 |
+| a b/c (row 3, col 4) [r4c5] | toggles the last result's form: decimal ↔ fraction, polar ↔ rectangular (built, R10) | G2 item 29, P12 |
+| Exponent key (row 6, col 0) [r7c1] | types the mark `ᴇ` (`\emark`, one token); Shift = Sto ▶ (built, R14) | P12 |
+| Rows 0–2 | R3 (built, R15c2): U1–U6 in columns 0–1; the round pad (one drag surface, a dashed hub, no OK) in columns 2–3; View \| Esc, Undo \| Copy, ⇤ \| ⇥ in columns 4–5. Apps, Mode, the views, Menu: the status line (R15c1) | P12, S2, R15c |
+| Alpha + 0 (quote); Shift + ◀ ▶ (line jumps) | removed (R13); the jumps came back as ⇤ ⇥ (R15c2) | P12, R15c |
+| Shift + 6, Shift + 9 | the G2's palettes: relations and logic; symbols and Greek with `!` and ∞ (built, R18) | P12 |
+| View (row 0, col 4) [r2c4] | results mode: the keypad collapses to a slice (P16, R53); Shift = Help (milestone 6); both dead and dimmed until built | P7 point 5, P16, R15c |
+| Esc (row 0, col 5) [r1c5] | stops a running job, closes Settings, goes back one sheet level, drops a picked row, else clears the line; also the hardware Escape; Shift = Clear (R15c2) | reference; R15c point 3 |
+| Undo (row 1, col 4) | undo; Shift = Redo; dead without an entry line (R15c2) | P13, R16, R15c |
+| ⇤ ⇥ (row 2, cols 4–5) | the start and end of the line; Shift: the start and end of the box the cursor is in; dead without an entry line (R15c2) | R15c |
+| Copy (row 1, col 5) | Copy, Shift = Paste (built, A3; on its own key since R15c2): the picked row's or the last result's full value | reference; R15c |
+| ☰ on the status line (the G2's Menu key [r3c4]) | app menus; Home/CAS: one numbered list of nine on the picked row, else the last result (built, R11; decisions.md S2); R53 makes item 6 Plot | P8, S2, S9 |
+| Shift + View (Help) | context help: the Find preview of the function before the cursor; with none there, Find (milestone 6) | ours; P8 left Help free |
+| User keys | U1–U6, all empty, with tap, Shift and Alpha (built, R15c2, R15c3; an empty Alpha slot is the tap; stored slots of U1–U3 and two-layer records stay valid); set in Settings › Your keys from Find, a place or a sheet (built, R4b) | R15b, R15c |
+| Shift + `+` [r10c5] | Ans (`\ans`, built, R2) | reference |
+| Shift + `−` [r9c5] | Base: the last result in HEX, BIN, OCT, DEC; word size (EN6) | reference: Base |
+| Shift + 5 [r8c3]; Shift + 8 [r7c3] | `[ ]` vector or matrix template (EN5); `{ }` list (built, R54) | reference |
+| Shift + 4 [r8c2]; Shift + 7 [r7c2] | the matrix editor (EN5); the list editor, deferred with Statistics | reference: Matrix, List |
+| Unit slots | the unit pad (`spec/unit-pad.yaml`, docs/archive/r9-unit-pad.md): prefix and unit cells over the maths rows, S5's arrangement, 18 user slots; Enter to the next slot, `→` the end slot. Until R24c, `spec/keyboard.yaml` `unit_slot:` holds S1's letters | P11, S1, P14 |
+| Fmt (row 9, col 0) | a tap cycles the last result's format; Shift (and a flick up) opens Mode on Angle (built, R85) | ours; decisions.md "Settings in the Mode sheet, and presets" |
+| Unassigned Shift cells (10 since R85: Shift + ▲ ▼ ◀ ▶, Vars, a b/c, `( )`, `,`, 1, 0; decided: `,` becomes ± with R71) | they get the functions the task benchmark shows are pressed most, not a list made in advance | decisions.md "The letters stay" |
 
 
 ### 5.2 Decision: how key presses are counted (EN0)
@@ -335,14 +335,14 @@ One IndexedDB database `pascaline`, store `kv` (`state/storage.ts`). Keys:
 
 | Key | Holds |
 |---|---|
-| `settings` | `schema: 4`: digits ≤ 30, format, decimalMark (missing or invalid: the point); each field checked (`migrateSettings`, `state/session.svelte.ts`). A newer schema is read, never written back; each schema bump raises `DATA_VERSION` (`SETTINGS_SINCE`, `state/storage.ts`) |
+| `settings` | `schema: 4`: digits ≤ 30, format (`std`, `sci`, `eng`, `pfx`), fixDecimals, fmtCycle (with Fixed), entry, decimalMark (missing or invalid: the point), haptics, look; later the base word size; each field checked (`migrateSettings`, `state/session.svelte.ts`). A newer schema is read, never written back; each schema bump raises `DATA_VERSION` (`SETTINGS_SINCE`, `state/storage.ts`) |
 | `view`, `place`, `entry` | the open view and app; the half-typed line |
 | `history` | ≤ 200 items per view, with `full` (≤ 2 kB) and the mark facts |
-| `defs` | the definitions log (`engine/defs.ts`; `:=`, ▶, `purge`): per name its kind, commands, mark facts, preview, view, time; ≤ 500 lines. `restore()` replays values, assumptions and typed inputs; a function (one balanced command) stays pending until `need()` loads it. **Variables are kept as their value**, not their command: `B:=romberg(…)` is stored as `B:=(evalf(<exact>,k))`; functions and `assume` keep their command; symbolic values replay first; a library function keeps its `desc` |
+| `defs` | the definitions log (`engine/defs.ts`; `:=`, ▶, `purge`): per name its kind, commands, mark facts, preview, view, time; ≤ 500 lines. `restore()` replays values, assumptions and typed inputs; a function (one balanced command) stays pending until `need()` loads it: pending names that are words in the input, then, transitively, those in each loaded body or stored value it reads, in one batch; `VARS`, `expr`, `rm_all_vars`, `restart` load all; redefining or purging a pending name drops it. **Variables are kept as their value**, not their command: `B:=romberg(…)` is stored as `B:=(evalf(<exact>,k))`; functions and `assume` keep their command; symbolic values replay first; a library function keeps its `desc` |
 | `defsStarts` | starts that began the replay and never got ready; at 2 the engine starts without the log |
 | `tipsSeen` | tips shown |
 | `userKeys`, `unitPadCells`, `taps`, `app.function`, `app.solve` | the user keys, the unit pad cells; the counters (Shift/Alpha, presses, preset applies); per app (`uses` counters) |
-| `presets` | `state/presetRecord.ts`; AI format: `views/aiFormat.md` part 2 |
+| `presets` | `state/presetRecord.ts`: `{ presets: [{ id, name, groups }], active, next }`; groups `mode`, `numbers`, `look`, `vibration`, `keys` (both key records, migrated too); AI format: `views/aiFormat.md` part 2 |
 | `units.targets` | the last target per dimension |
 | `backup.last`, `backup.offered`, `backup.undo` | not backed up |
 
@@ -390,6 +390,26 @@ The gates per milestone are the backlog's milestone lines.
 
 ### 8.1 Component diagram
 
+```
+Capacitor shell (Android) / PWA (service worker precaches everything after the engine is up)
+└─ Main thread (TypeScript)
+   ├─ Keypad + key layers (spec/keyboard.yaml)       ─┐
+   ├─ Entry line: MathLive + macros (\const \res \ans) │ key → action
+   │                                                   │
+   ├─ Parser P1 (LaTeX → Giac text | unit tokens)     ─┤
+   ├─ Formatter + marks (format.ts, pure)              │
+   ├─ Views: Home, CAS, Function, Solve,               │
+   │  Units (m5), Find palette (lazy), Matrix editor   │
+   ├─ Find: index (lazy asset) + ranking (rank.ts)     │
+   ├─ Clipboard / share port                           │
+   └─ Session state ── Kv (IndexedDB: settings, history, defs, units.*)
+        │ Calc port (views)
+        ▼
+   Worker 1: Giac + GSL + GMP + MPFR
+   (launch; Home, CAS, Solve, analysis, table, units (m5); defs replay)
+Build: build.sh → engines (container) → Find index generator (Node: Giac's help, qalc's XML, `find/factors.yaml`) → Vite (size test) → Capacitor → Gradle
+```
+
 Web build: the service worker precaches the whole build; the engine files carry their content hash in the name and the install checks it (a missing or different file fails the install and leaves the old version); a new version waits behind the old one and the update line's Restart (the only reload) activates it; `pwa/kill/sw.js` served as `sw.js` switches the worker off; the manifest `id` is `/`; `navigator.storage.persist()` is asked once; a lazy chunk missing after a deploy reloads the page once (`4d80167f`).
 
 ### 8.2 Interfaces (every async interface)
@@ -407,14 +427,14 @@ The types live in the code; this is the map. Views see `Calc` (`app/src/calc/por
 | Item | Budget | State | Enforced by |
 |---|---|---|---|
 | Start chunk | ≤ 175 kB raw, ≤ 61 kB gzip; pin `START_PIN_GZIP` | its value and each raise with both sizes: size-check.ts. A package growing the chunk past it raises it to its size after merging phase-1 plus 0.05 kB, with the reason; `LAZY_PARTS` must stay dynamic chunks. `tools/probes/start-chunk.mjs` lists bytes per source | size test (`npm run size`) |
-| Inline scripts of `index.html` (run before the first paint, outside the start chunk) | pin 1.53 kB gzip (`INLINE_PIN_GZIP`; per script, summed) | 1.53 kB | size test |
+| Inline scripts of `index.html` (run before the first paint, outside the start chunk) | pin 1.53 kB gzip (`INLINE_PIN_GZIP`; per script, summed) | 1.53 kB (`4d80167f`) | size test |
 | MathLive chunk (after the keypad) | ≤ 830 kB raw | 807.74 kB (2026-10-18) | size test |
 | Find UI chunk | ≤ 30 kB raw | 8.04 kB raw: the chunk that holds `src/find/finder.ts` (dynamic entry or shared chunk); a build without it fails | size test |
 | Find index asset | ≤ 400 kB raw, ≤ 100 kB gzip | 325.7 / 67.1 kB (2026-10-15) | size test (once Find loads it) |
 | Unit view chunks | ≤ 38 kB raw (entries); pin 66.55 kB with shared ones | 36.63; 66.50 kB | size test |
 | Precache total | ≤ 18 MB | 12.4 MB (2026-10-18) | size test |
-| Keyboard usable / engine ready (Tab One) | < 1 s / < 1.5 s, with the `defs` replay | 722 / 1103 ms cold; 1489 ms engine ready with 200 definitions | device runs |
-| Enter → result p95 (Tab One) | < 150 ms at 12 digits; at 30 digits ≤ 1.3 × the 12-digit p95 | RAD 147.9 ms at 12, 152.6 at 30; DEG 149.1 and 141.4 | device runs |
+| Keyboard usable / engine ready (Tab One) | < 1 s / < 1.5 s, with the `defs` replay | 722 / 1103 ms cold; 1489 ms engine ready with 200 definitions (`4d80167f`) | device runs |
+| Enter → result p95 (Tab One) | < 150 ms at 12 digits; at 30 digits ≤ 1.3 × the 12-digit p95 | RAD 147.9 ms at 12, 152.6 at 30; DEG 149.1 and 141.4 (`4d80167f`) | device runs |
 | Find key → list (Tab One) | p95 ≤ 16 ms | 14.1 ms | `?bench=find` (A4b) |
 | Find open | ≤ 100 ms warm, ≤ 300 ms cold | max of 50: 244 ms | device runs |
 | Units first result (Tab One) | < 1 s | — | device runs |
@@ -431,9 +451,9 @@ The types live in the code; this is the map. Views see `Calc` (`app/src/calc/por
 ## 9. Top risks to the goal
 
 1. **Correlated numeric errors in Giac** (2.3 #2): the agreement check catches most wrong digits, not all. Mitigation: tier-0 audit with domain-edge golden cases, upstream reports, `⚠` rather than silence.
-2. **Find quality** depends on aliases and real queries, not code. Mitigation: the query gate and the owner adding misses.
+2. **Find quality** depends on aliases and real queries, not code. Mitigation: the query gate and the owner adding misses (`4d80167f`).
 3. **A wrong unit factor or a missed unit check** (misread names, mismatched sums, offset-unit arithmetic). Mitigation: chips only, the generator's round-trip check, the evaluator's single-term and temperature checks (P15), `units.yaml`.
-4. **Tab One budgets** for the unit view's first result are desktop estimates until measured (Appendix C).
+4. **Tab One budgets** for the unit view's first result are desktop estimates until measured (Appendix C) (`4d80167f`).
 5. **Pace on parser- and keyboard-heavy work** (03 risk 5). Mitigation: each token lands with its round-trip case.
 6. **The entry's rules drift apart** (5.5). Mitigation: one model in `entry/boxes.ts`, the cursor and ⌫ grids, one key path (`4d80167f`).
 
