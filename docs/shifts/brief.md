@@ -60,9 +60,6 @@ Milestone reviews (section 0): after R50e (with R116's gallery groups "Entry hig
 
 | Step | What | Agent, model | Branch | After |
 |---|---|---|---|---|
-| 519 | [S30](packages/S30.md) the mockups of merged packages, the reports past a week | sandra, Opus | `p1/sandra-mockupcut` | – |
-| 520 | [S31](packages/S31.md) docs/01–03 trimmed to what binds | sandra, Opus | `p1/sandra-plansdiet` | S29 |
-| 521 | [S32](packages/S32.md) docs/05, docs/06, feedback.md and the READMEs say today's app | sandra, Opus | `p1/sandra-uidocsdiet` | S30 |
 | 522 | [R136](packages/R136.md) the bench hooks and flags no tool uses | ron, Sonnet | `p1/ron-deadhooks` | – |
 | 523 | [R137](packages/R137.md) one fake store and one set of e2e helpers | ron, Sonnet | `p1/ron-testfakes` | R136 |
 

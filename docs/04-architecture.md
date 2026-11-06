@@ -20,6 +20,7 @@ Each area: **state** (verified), **decision** (with the reason), **alternatives*
 11. **State:** one IndexedDB store with a schema version; user definitions are persisted (6.2).
 12. **The Find index's constant values and unit factors** are the checked-in numbers of `find/factors.yaml` (P22, 7.1).
 13. **New gates:** 7.3 (`4d80167f`).
+14. **Drawing and stack:** results are drawn in 2D from Giac's `latex()` by MathLive, never as raw engine text (one-line entry is a setting); each keyboard template has a parser rule and a round-trip case in the same commit (`app/src/input/roundtrip.test.ts`); the shell is Svelte 5, the keyboard, parser and engine client plain TypeScript (D1); every engine build that ships passes the golden gate (A42, `tools/release-gate.sh`).
 
 The top risks are in section 9.
 
