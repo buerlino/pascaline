@@ -3,7 +3,8 @@
 # a short clip is 6 presses + eval (one block of the song), a long clip 13 + eval (two blocks), the finale 20 + eval.
 # setup: before the beat (not timed). Steps as core.yaml's keys, plus {cell: <template id>} (a tap on the Tmpl sheet's
 # cell; the Tmpl key is its own step) and {row: <Find row id>} (a tap on a Find row). expect: as core.yaml, plus
-# unit: {text, unit} (the unit view's result). Values derived (the working is in the comment).
+# unit: {text, unit} (the unit view's result). lead: ms the eval starts before its beat (a flick eval is slower than a
+# tap; its result must show before the cut). Values derived (the working is in the comment).
 clips:
   - { id: s1, blocks: [1], title: "stacked fraction (CAS)", setup: ["@cas"],
       presses: [d2, div, d3, right, add, d1], eval: enter, expect: { result: "5/3" } }            # 2/3 + 1
@@ -25,29 +26,28 @@ clips:
   - { id: s6, blocks: [11], title: "Euler: e^(iπ)",
       presses: [shift, ln, shift, d2, shift, d3], eval: enter,
       expect: { result: "-1", mark: "=" } }                                                     # e^(iπ) = −1
-  - { id: D, blocks: [12, 13], title: "unit check kg·m²/s³ → W",
-      presses: [d1, d5, d0, {up: tmpl}, d4, d6, d9, sq, div, d3, pow, enter, paren], eval: enter,
-      expect: { unit: { text: "150", unit: "W" } } }
-  - { id: s8, blocks: [14], title: "5 kg in lb",
-      presses: [d5, {up: tmpl}, d4, d6, enter, {up: d6}], eval: {up: enter},
+  - { id: s8, blocks: [12], title: "5 kg in lb",
+      presses: [d5, {up: tmpl}, d4, d6, enter, {up: d6}], eval: {up: enter}, lead: 150,
       expect: { unit: { text: "11.0231131092", unit: "lb" } } }                                 # 5 / 0.45359237
-  - { id: s9, blocks: [15], title: "50 ± 1 m",
-      presses: [d5, d0, {up: comma}, d1, {up: tmpl}, d9], eval: {up: enter},
-      expect: { unit: { text: "50", unit: "m", has: "± 1" } } }
-  - { id: E, blocks: [16, 17], title: "72.25 kg × g₀",
+  - { id: U, blocks: [13, 14], title: "500 m in 40 ± 1 s",
+      presses: [d5, d0, d0, div, d4, d0, {up: comma}, d1, right, {up: tmpl}, d9, enter, d3], eval: {up: enter}, lead: 150,
+      expect: { unit: { text: "12.5", unit: "m/s", has: "± 0.31" } } }                         # 500/40; σ = 500/40² × 1 = 0.3125
+  - { id: E, blocks: [15, 16], title: "72.25 kg × g₀",
       presses: [d7, d2, dot, d2, d5, {up: tmpl}, d4, d6, math, {row: "ucat:const"}, {row: "uconst:Physics"}, {row: "const:g_0"}, enter],
       eval: enter, expect: { unit: { text: "708.5304625", unit: "N" } } }                       # 72.25 × 9.80665
-  - { id: s7, blocks: [18], title: "d/dx x² (CAS)", setup: ["@cas"],
+  - { id: s7, blocks: [17], title: "d/dx x² (CAS)", setup: ["@cas"],
       presses: [tmpl, {cell: deriv}, x, sq, right, x], eval: enter, expect: { result: "2*x" } }
-  - { id: F, blocks: [19, 20], title: "solve from Find (CAS)", setup: ["@cas"],
+  - { id: F, blocks: [18, 19], title: "solve from Find (CAS)", setup: ["@cas"],
       presses: [math, {down: d9}, comma, sq, {down: d5}, frac, enter, x, sq, shift, dot, d1, d6], eval: enter,
       expect: { result: "{-4,4}" } }
-  - { id: H, blocks: [21, 22], title: "p(x):=x³",
+  - { id: H, blocks: [20, 21], title: "p(x):=x³",
       presses: [shift, alpha, emark, paren, x, right, alpha, sub, shift, dot, x, pow, d3], eval: enter,
       expect: {} }
-  - { id: I, blocks: [23, 24], title: "Solve app: x² − 2x = 168", setup: ["@place", d4, "@symb"],
-      presses: [x, sq, sub, d2, x, shift, dot, d1, d6, d8, enter, "@num", "@menu"], eval: d2,
-      expect: { text: { '[data-testid="solve-roots"] li': ["x = -12", "x = 14"] } } }          # 14² − 28 = (−12)² + 24 = 168
+  - { id: s12, blocks: [22], title: "p(2)", after: H,
+      presses: [shift, alpha, emark, paren, d2, right], eval: enter, expect: { result: "8", mark: "=" } }   # 2³
+  - { id: I, blocks: [23, 24], title: "Solve app: cos x = x from the guess 1", setup: ["@place", d4, "@symb"],
+      presses: [cos, x, right, shift, dot, x, enter, "@num", {tap: '[data-testid="solve-table"] tr[data-name="x"] th button'}, esc, d1, enter, "@menu"],
+      eval: d1, expect: { text: { '[data-testid="solve-table"] tr[data-name="x"] td': "0.739085133215" } } }   # keys as c44; the Dottie number 0.7390851332151…
   - { id: s10, blocks: [25], title: "F1 = x³ − 2", setup: ["@symb"],
       presses: [x, pow, d3, right, sub, d2], eval: enter, expect: {} }
   - { id: s11, blocks: [26], title: "Plot, Root", after: s10,

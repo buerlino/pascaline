@@ -173,6 +173,7 @@ async function prepare(page: Page, s: Step, prev: Step | undefined): Promise<Tar
     }
   } else if ("cell" in s) sel = `[data-testid="menu"] [data-id="${s.cell}"]`;
   else if ("row" in s) sel = `[data-testid="find"] [role="menuitem"][data-id="${s.row}"]`;
+  else if ("tap" in s && s.tap !== "result:last") sel = s.tap; // a screen element by selector (clip I: the Solve table's x)
   else if ("up" in s) [sel, dy] = [`[data-key="${s.up}"]`, -40];
   else if ("down" in s) [sel, dy] = [`[data-key="${s.down}"]`, 40];
   else throw new Error(`${label(s)} is not a timed step`);
