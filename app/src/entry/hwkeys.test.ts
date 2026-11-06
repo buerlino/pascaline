@@ -29,11 +29,11 @@ describe("controlKey", () => {
 describe("undoKey (R119): Ctrl+Z is the Undo key, Ctrl+Y and Ctrl+Shift+Z the Redo key", () => {
   const u = (key: string, m: { ctrl?: boolean; meta?: boolean; alt?: boolean; shift?: boolean } = { ctrl: true }) =>
     undoKey({ key, ctrlKey: m.ctrl ?? false, metaKey: m.meta ?? false, altKey: m.alt ?? false, shiftKey: m.shift ?? false });
-  it("maps the three combinations (and Cmd for Ctrl) to the Undo key's layers", () => {
-    expect(u("z")).toBe("primary");
-    expect(u("Z", { ctrl: true, shift: true })).toBe("shift");
-    expect(u("y")).toBe("shift");
-    expect(u("z", { meta: true })).toBe("primary");
+  it("maps the three combinations (and Cmd for Ctrl) to the Undo and Redo keys (R146: Redo is a key of its own)", () => {
+    expect(u("z")).toBe("undo");
+    expect(u("Z", { ctrl: true, shift: true })).toBe("redo");
+    expect(u("y")).toBe("redo");
+    expect(u("z", { meta: true })).toBe("undo");
   });
   it("leaves every other combination alone", () => {
     expect(u("z", {})).toBeUndefined();
@@ -66,6 +66,12 @@ describe("hardwareKey passes KeyboardEvent.repeat on (R70f1: a held key counts o
     expect(hardwareKey(ev("Backspace", true), t)).toBe(true);
     expect(hardwareKey(ev("7", true), t)).toBe(true);
     expect(keys).toEqual([["bksp", "primary", false], ["bksp", "primary", true], ["d7", "primary", true]]);
+  });
+  it("Ctrl+Z presses Undo, Ctrl+Y and Ctrl+Shift+Z press Redo, both on their tap layer (R146)", () => {
+    const { t, keys } = target();
+    const ctrl = (key: string, shiftKey: boolean) => ({ ...ev(key, false), ctrlKey: true, shiftKey }) as unknown as KeyboardEvent;
+    for (const [key, sh] of [["z", false], ["y", false], ["Z", true]] as const) expect(hardwareKey(ctrl(key, sh), t)).toBe(true);
+    expect(keys).toEqual([["undo", "primary", false], ["redo", "primary", false], ["redo", "primary", false]]);
   });
   it("a letter's repeat flag reaches onLetter", () => {
     const { t } = target();
