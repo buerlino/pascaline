@@ -33,7 +33,7 @@ c="$tmp/coord"; mkdir -p "$c"
   echo "    VERDICT: lane-a-reply ok"
   echo "- 08:50 untagged gc applied"
 } > "$c/log.md"
-out="$(PASCALINE_COORD="$c" PASCALINE_NIGHT_NOW=07:00 "$night" --lane A --dry-run --max-steps 4 2>&1)"; rc=$?
+out="$(N62_COORD="$c" N62_NIGHT_NOW=07:00 "$night" --lane A --dry-run --max-steps 4 2>&1)"; rc=$?
 [[ $rc -eq 0 ]] || fail "--lane A --dry-run: exit $rc: $out"
 grep -qF 'you run lane A: your table is `### Lane A queue`' <<<"$out" || fail "--lane A: the henri prompt does not name lane A's table: $out"
 inp="$(grep '^  | ' <<<"$out" | sed 's/^  | //')"
@@ -43,23 +43,23 @@ grep -q 'lane-a-line 5$' <<<"$inp" && fail "--lane A: henri's input holds more t
 grep -q 'pipeline #401 A48: MERGED b48' <<<"$inp" && grep -q 'RESULT -: SKIPPED' <<<"$inp" || fail "--lane A: henri's input lacks lane B's finished steps: $inp"
 grep -qE 'henri #1: scripts/pipeline.sh annabell|lane-b-reply|G1: MERGED old1|night.sh started \(lane B\)' <<<"$inp" && fail "--lane A: henri's input holds lane B lines that are not finished steps since the night header: $inp"
 grep -q 'night.sh #4 (closing 2 of 2): scripts/pipeline.sh report' <<<"$out" && grep -q 'waits for lane B' <<<"$out" || fail "--lane A: the closing report does not wait for lane B: $out"
-out="$(PASCALINE_COORD="$c" PASCALINE_NIGHT_NOW=07:00 "$night" --lane B --dry-run --max-steps 4 2>&1)"; rc=$?
+out="$(N62_COORD="$c" N62_NIGHT_NOW=07:00 "$night" --lane B --dry-run --max-steps 4 2>&1)"; rc=$?
 [[ $rc -eq 0 ]] || fail "--lane B --dry-run: exit $rc: $out"
 grep -qF 'you run lane B: your table is `### Lane B queue`' <<<"$out" || fail "--lane B: the henri prompt does not name lane B's table: $out"
 inp="$(grep '^  | ' <<<"$out" | sed 's/^  | //')"
 grep -q 'henri #1: scripts/pipeline.sh annabell' <<<"$inp" && ! grep -q 'lane-a-line 90' <<<"$inp" || fail "--lane B: henri's input is not lane B's: $inp"
 grep -q 'closing 2 of 2' <<<"$out" && ! grep -q 'run: scripts/pipeline.sh report\|(closing 2 of 2): scripts/pipeline.sh report' <<<"$out" || fail "--lane B: the closing runs a report: $out"
-out="$(PASCALINE_COORD="$c" PASCALINE_NIGHT_NOW=07:00 "$night" --dry-run --max-steps 4 2>&1)"
+out="$(N62_COORD="$c" N62_NIGHT_NOW=07:00 "$night" --dry-run --max-steps 4 2>&1)"
 grep -qi 'lane' <<<"$out" && fail "no --lane: the dry run talks of lanes: $out"
 "$night" --lane C --dry-run >/dev/null 2>&1 && fail "--lane C is accepted"
 
 # ---- 2. the pipeline starts each log line with the lane ----
 pl="$tmp/pl"; mkdir -p "$pl"; git init -q -b main "$pl"; gc "$pl" init
 printf '#!/bin/sh\necho ok\n' > "$tmp/ok.sh"; chmod +x "$tmp/ok.sh"
-(cd "$pl" && unset PASCALINE_COORD && PASCALINE_LANE=B PASCALINE_SELFTEST_TESTS="$tmp/ok.sh" "$dir/pipeline.sh" selftest >/dev/null 2>&1)
-(cd "$pl" && unset PASCALINE_COORD PASCALINE_LANE && PASCALINE_SELFTEST_TESTS="$tmp/ok.sh" "$dir/pipeline.sh" selftest >/dev/null 2>&1)
+(cd "$pl" && unset N62_COORD && N62_LANE=B N62_SELFTEST_TESTS="$tmp/ok.sh" "$dir/pipeline.sh" selftest >/dev/null 2>&1)
+(cd "$pl" && unset N62_COORD N62_LANE && N62_SELFTEST_TESTS="$tmp/ok.sh" "$dir/pipeline.sh" selftest >/dev/null 2>&1)
 grep -qE '^- [0-9]{2}:[0-9]{2} \[B\] pipeline selftest: PASSED' "$pl/.coord/log.md" && grep -qE '^- [0-9]{2}:[0-9]{2} pipeline selftest: PASSED' "$pl/.coord/log.md" \
-  || fail "pipeline.sh: PASCALINE_LANE=B does not start its log line with [B], or no lane adds a tag: $(cat "$pl/.coord/log.md" 2>&1)"
+  || fail "pipeline.sh: N62_LANE=B does not start its log line with [B], or no lane adds a tag: $(cat "$pl/.coord/log.md" 2>&1)"
 grep -qF 'echo "- $(date +%H:%M) $(lane_tag)Opus pass $n reply:"' "$dir/pipeline.sh" || fail "pipeline.sh: the pass reply line has no lane tag"
 # the report reads the night from its header (both lanes), never less than the last 400 lines
 printf 'old\n## 2026-10-30 night, 07:00 (lane A)\n- 07:00 [A] a\n- 07:01 [B] b\n' > "$tmp/sec.md"
@@ -76,7 +76,7 @@ grep -q 'here="$(cd "$self_dir/.." && pwd)"' "$dir/pipeline.sh" && [[ "$(grep -n
 sb="$tmp/sb"; mkdir -p "$sb/bin" "$sb/scripts"; git init -q -b main "$sb"
 cat > "$sb/scripts/pipeline.sh" <<'STUB'
 #!/bin/sh
-echo "lane=${PASCALINE_LANE:-} $*" >> "$SBN_CALLS"
+echo "lane=${N62_LANE:-} $*" >> "$SBN_CALLS"
 case "$1" in
   pass) echo "OPUS PASS"; echo "RESULT pass $((${2} + 2)): done (exit 0)";;
   device) echo "RESULT device $2: DEVICE SKIPPED (stub)";;
@@ -101,7 +101,7 @@ git -C "$sb" worktree add -q "$sb/.claude/worktrees/phase-1" phase-1
 # sbnight <case> <night.sh args...>: a real (not dry) night.sh in the sandbox; the case's files are $tmp/<case>.*
 sbnight() {
   local k="$1"; shift; : > "$tmp/$k.calls"; : > "$tmp/$k.asked"; [[ -f "$tmp/$k.replies" ]] || : > "$tmp/$k.replies"
-  (cd "$sb" && unset PASCALINE_COORD PASCALINE_LANE && PATH="$sb/bin:$PATH" PASCALINE_NIGHT_INHIBITED=1 PASCALINE_NIGHT_POLL=1 \
+  (cd "$sb" && unset N62_COORD N62_LANE && PATH="$sb/bin:$PATH" N62_NIGHT_INHIBITED=1 N62_NIGHT_POLL=1 \
     SBN_CALLS="$tmp/$k.calls" SBN_ASKED="$tmp/$k.asked" SBN_IN="$tmp/$k.in" SBN_REPLIES="$tmp/$k.replies" SBN_NIGHT="$night" \
     SBN_DF_KB="${SBN_DF_KB:-}" SBN_STOP_ON="${SBN_STOP_ON:-}" SBN_STOP_LANE="${SBN_STOP_LANE:-}" timeout -k 5 60 "$night" "$@")
 }
@@ -141,7 +141,7 @@ grep -q 'finished R1' "$tmp/s1.calls" || fail "--stop A: the running step did no
 grep -q 'R2' "$tmp/s1.calls" && fail "--stop A: lane A started another step after the stop: $(cat "$tmp/s1.calls")"
 [[ "$(wc -l < "$tmp/s1.asked")" -eq 1 ]] || fail "--stop A: henri was asked again after the stop"
 [[ ! -e "$sb/.coord/night-A.pid" && ! -e "$sb/.coord/night-A.stop" ]] || fail "--stop A: the pid or stop file is left"
-grep -q 'lane=A ron R1' "$tmp/s1.calls" || fail "the pipeline does not get PASCALINE_LANE=A: $(cat "$tmp/s1.calls")"
+grep -q 'lane=A ron R1' "$tmp/s1.calls" || fail "the pipeline does not get N62_LANE=A: $(cat "$tmp/s1.calls")"
 
 # A69: under NIGHT_MIN_FREE_GB (default 5) free, the lane stops before asking henri and starts no step; at the limit it runs
 printf '%s\n' 'scripts/pipeline.sh ron "R1" --model sonnet' > "$tmp/d1.replies"

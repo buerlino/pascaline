@@ -4,7 +4,7 @@
 // engine and the table disagree: a name that now reads its one list as its arguments, or no longer does, or another reason.
 // G124: and the second class, the hits whose one-list form Giac documents (PROBED_LIST_FORMS). Refresh with
 // `WRITE=1 node tools/probes/list-args.ts`. Needs the Find index (skipped without one; FIND_INDEX=required fails),
-// Giac's tarball (PASCALINE_DL_DIR, default the main checkout's cache) and the engine.
+// Giac's tarball (N62_DL_DIR, default the main checkout's cache) and the engine.
 import { spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";

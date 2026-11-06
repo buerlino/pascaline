@@ -68,21 +68,21 @@ describe("WebView debugging", () => {
     return ((await import("../capacitor.config.ts")).default.android ?? {}) as { webContentsDebuggingEnabled?: boolean };
   };
   it("is off in the config build.sh uses without --test, whatever the caller's environment holds", async () => {
-    vi.stubEnv("PASCALINE_WEBVIEW_DEBUG", "");
+    vi.stubEnv("N62_WEBVIEW_DEBUG", "");
     expect((await android()).webContentsDebuggingEnabled).toBe(false);
     const sh = root("build.sh");
     // build.sh clears a value from the environment before anything reads the config, and sets it only under --test
-    const unset = sh.indexOf("unset PASCALINE_WEBVIEW_DEBUG");
-    const set = sh.indexOf("export PASCALINE_WEBVIEW_DEBUG=1");
+    const unset = sh.indexOf("unset N62_WEBVIEW_DEBUG");
+    const set = sh.indexOf("export N62_WEBVIEW_DEBUG=1");
     const build = sh.indexOf("npx cap sync");
     expect(unset).toBeGreaterThan(0);
     expect(set).toBeGreaterThan(unset);
     expect(build).toBeGreaterThan(set);
-    expect(sh).toMatch(/\(\( TEST \)\) && export PASCALINE_WEBVIEW_DEBUG=1/);
-    expect(sh.match(/PASCALINE_WEBVIEW_DEBUG=1/g)).toHaveLength(1);
+    expect(sh).toMatch(/\(\( TEST \)\) && export N62_WEBVIEW_DEBUG=1/);
+    expect(sh.match(/N62_WEBVIEW_DEBUG=1/g)).toHaveLength(1);
   });
   it("is on only with the test flag's variable", async () => {
-    vi.stubEnv("PASCALINE_WEBVIEW_DEBUG", "1");
+    vi.stubEnv("N62_WEBVIEW_DEBUG", "1");
     expect((await android()).webContentsDebuggingEnabled).toBe(true);
   });
   it("is not enabled in the Android sources", () => {

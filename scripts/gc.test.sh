@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-3.0-or-later
-# Test for scripts/gc.sh (A27): a scratch git repo with its own .tasks/ and .coord/ (PASCALINE_COORD); nothing real is touched.
+# Test for scripts/gc.sh (A27): a scratch git repo with its own .tasks/ and .coord/ (N62_COORD); nothing real is touched.
 #   scripts/gc.test.sh [path/to/gc.sh]
 set -uo pipefail
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -23,7 +23,7 @@ git branch -q p1/merged; git worktree add -q "$tmp/wt" p1/merged
 kp="$(engine_key "$r" phase-1)"; kx="$(engine_key "$r" p1/x)"
 old() { touch -d '5 days ago' "$@"; }
 T=.tasks; C="$tmp/coord"; mkdir -p "$T" "$C/locks" "$C/devices" "$C/tmpbuild"
-export PASCALINE_COORD="$C"
+export N62_COORD="$C"
 mkdir "$T/pass-7" "$T/report-2026-01-01" "$T/pass-9"; old "$T/pass-7" "$T/report-2026-01-01"
 echo l > "$T/night-1.log"; old "$T/night-1.log"; echo l > "$T/night-2.log"
 echo p > "$C/a.png"; echo p > "$C/new.png"; echo p > "$C/a.apk"; old "$C/a.png" "$C/a.apk"
@@ -46,7 +46,7 @@ old "$T/device-5/tree/app/node_modules/big.bin" "$T/device-5/tree/app/node_modul
 
 # A69: Claude's scratch folders (<tmp>/claude-<uid>/<worktree path, / and . as ->) of runs whose worktree is gone are removed; a live one is kept
 enc() { local p="$1"; echo "${p//[\/.]/-}"; }
-CT="$tmp/ctmp"; export PASCALINE_CLAUDE_TMP="$CT"; mkdir -p "$CT"
+CT="$tmp/ctmp"; export N62_CLAUDE_TMP="$CT"; mkdir -p "$CT"
 git worktree add -q --detach "$r/.claude/worktrees/pl-005-live" phase-1
 sgone="$CT/$(enc "$r/.claude/worktrees/pl-002-gone")"; slive="$CT/$(enc "$r/.claude/worktrees/pl-005-live")"; sother="$CT/-home-other-project"
 mkdir -p "$sgone/x" "$slive/x" "$sother/x"; head -c 100000 /dev/zero > "$sgone/x/big"

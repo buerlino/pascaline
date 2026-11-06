@@ -10,7 +10,7 @@ script="${1:-$here/pipeline.sh}"
 integ="$(git worktree list --porcelain | awk '/^worktree /{w=$2} /^branch refs\/heads\/phase-1$/{print w}')"
 [[ -n "$integ" ]] || { echo "no phase-1 worktree" >&2; exit 1; }
 # A55: the sandbox runs below use made-up ids of a package's shape (T1, Q1, ...) with no package file; only this variable lets them through
-export PASCALINE_ALLOW_UNPACKAGED_IDS=1
+export N62_ALLOW_UNPACKAGED_IDS=1
 fails=0; count=0
 fail() { echo "FAIL: $*" >&2; fails=$((fails + 1)); }
 re='^### (ron|gorge|annabell|sandra), ([A-Z][0-9]+[a-z0-9]*)( \([^)]*\))?:.*branch `([^`]+)`'
@@ -29,8 +29,8 @@ out="$("$script" ron R9999x --dry-run 2>&1)"; rc=$?
 [[ $rc -eq 2 ]] || fail "made-up ID: exit $rc, expected 2"
 grep -q 'R9999x' <<<"$out" || fail "made-up ID: message does not name it: $out"
 
-out="$(env -u PASCALINE_QALC_DL_DIR "$script" ron "$ron_pkg" --dry-run 2>&1)"
-grep -qE 'PASCALINE_QALC_DL_DIR=[^ ]*engine/qalc/_downloads' <<<"$out" || fail "dry run does not print the tarball dir to export"
+out="$(env -u N62_QALC_DL_DIR "$script" ron "$ron_pkg" --dry-run 2>&1)"
+grep -qE 'N62_QALC_DL_DIR=[^ ]*engine/qalc/_downloads' <<<"$out" || fail "dry run does not print the tarball dir to export"
 
 # A15 point 2: a gorge package is audited by Opus even when the line says sonnet; the raise is printed.
 out="$("$script" gorge "$(basename "$(ls "$integ"/docs/shifts/packages/G*.md | head -n1)" .md)" --dry-run --audit-model sonnet 2>&1)"
@@ -84,14 +84,14 @@ grep -q 'from_opus_pass "$run/reply.md" | sed' "$here/pipeline.sh" || fail "pipe
 # point 4: no stray waits in the worker prompt
 grep -q 'no_wait="Never start a background loop that waits on a process: pgrep -f' "$here/pipeline.sh" && grep -q '$no_wait Reply in at most five lines: last commit, done' "$here/pipeline.sh" || fail "the worker prompt does not forbid a background wait loop"
 # point 2: night.sh closes with the last pass and the report, at --until (across midnight) and at the cap - 2
-out="$(PASCALINE_NIGHT_NOW=23:00 "$here/night.sh" --dry-run --until 01:00 2>&1)"; rc=$?
+out="$(N62_NIGHT_NOW=23:00 "$here/night.sh" --dry-run --until 01:00 2>&1)"; rc=$?
 [[ $rc -eq 0 ]] || fail "night.sh --dry-run --until: exit $rc: $out"
 grep -q '^01:00 closing (--until 01:00 reached)' <<<"$out" || fail "night.sh --until 01:00 from 23:00 does not close at 01:00: $out"
 grep -q '^01:00 henri #5 (closing 1 of 2): scripts/pipeline.sh pass ' <<<"$out" || fail "night.sh --until: no last Opus pass as closing step 1: $out"
 grep -q '^01:30 night.sh #6 (closing 2 of 2): scripts/pipeline.sh report$' <<<"$out" || fail "night.sh --until: no report as closing step 2: $out"
 [[ "$(grep -c 'henri #' <<<"$out")" -eq 5 ]] || fail "night.sh --until: henri asked a queue step after the deadline: $out"
 grep -q 'header: ## [0-9-]* night, 23:00$' <<<"$out" || fail "night.sh: the header has no start time: $out"
-out="$(PASCALINE_NIGHT_NOW=22:00 "$here/night.sh" --dry-run --max-steps 5 2>&1)"; rc=$?
+out="$(N62_NIGHT_NOW=22:00 "$here/night.sh" --dry-run --max-steps 5 2>&1)"; rc=$?
 [[ $rc -eq 0 ]] || fail "night.sh --dry-run --max-steps 5: exit $rc: $out"
 grep -q 'henri #3: ' <<<"$out" && grep -q 'henri #4 (closing 1 of 2): scripts/pipeline.sh pass ' <<<"$out" && grep -q 'night.sh #5 (closing 2 of 2): scripts/pipeline.sh report$' <<<"$out" || fail "night.sh --max-steps 5: no closing at step 4 and 5: $out"
 grep -q '#6' <<<"$out" && fail "night.sh --max-steps 5 runs a sixth step: $out"
@@ -100,11 +100,11 @@ grep -q '"^## $(date +%F) night"' "$here/night.sh" && fail "night.sh writes the 
 
 # A41: night.sh runs the device step right after each pass (same number), not after a pass that hit the usage limit
 printf '%s\n' 'scripts/pipeline.sh pass 7 "A1" "none"' '75: scripts/pipeline.sh pass 8 "A2" "none"' 'scripts/pipeline.sh pass 8 "A2" "none"' 'scripts/pipeline.sh ron "R1" --model sonnet' > "$tmp/replies"
-out="$(PASCALINE_NIGHT_REPLIES="$tmp/replies" PASCALINE_NIGHT_NOW=22:00 "$here/night.sh" --dry-run --max-steps 20 2>&1)"
+out="$(N62_NIGHT_REPLIES="$tmp/replies" N62_NIGHT_NOW=22:00 "$here/night.sh" --dry-run --max-steps 20 2>&1)"
 seq="$(grep -E '^[0-9:]+ run: ' <<<"$out" | sed -E 's/^[0-9:]+ run: //')"
 want=$'scripts/pipeline.sh pass 7 "A1" "none"\nscripts/pipeline.sh device 7\nscripts/pipeline.sh pass 8 "A2" "none"\nscripts/pipeline.sh pass 8 "A2" "none"\nscripts/pipeline.sh device 8\nscripts/pipeline.sh ron "R1" --model sonnet --audit-model auto'
 [[ "$seq" == "$want" ]] || fail "A41: the run sequence is not pass, device, (limit: no device), pass, device: $seq"
-out="$(PASCALINE_NIGHT_REPLIES="$tmp/replies" PASCALINE_NIGHT_NOW=22:00 "$here/night.sh" --dry-run --max-steps 6 2>&1)"
+out="$(N62_NIGHT_REPLIES="$tmp/replies" N62_NIGHT_NOW=22:00 "$here/night.sh" --dry-run --max-steps 6 2>&1)"
 grep -q 'closing 1 of 2' <<<"$out" && grep -q 'closing 2 of 2' <<<"$out" || fail "A41: the closing steps are gone: $out"
 
 # A24: each worktree gets its own node_modules (hard-link copy); a machine failure ends the run; a dirty phase-1 is not a conflict
@@ -290,9 +290,36 @@ readlink /proc/self/fd/0 > "$GRADLE_STDIN_OUT"; echo "$*" >> "$GRADLE_STDIN_OUT"
 mkdir -p app/build/outputs/apk/release; touch app/build/outputs/apk/release/app-release-unsigned.apk
 STUB
 chmod +x "$bs/bin/"* "$bs/cache/gradle-8.14.3/bin/gradle"
-echo y | (cd "$bs" && PATH="$bs/bin:$PATH" PASCALINE_CACHE="$bs/cache" NO_LOCK=1 GRADLE_STDIN_OUT="$bs/stdin.txt" ./build.sh --unsigned --engine-dir "$bs/eng" >/dev/null 2>&1) || fail "A35: the build.sh sandbox run failed"
+echo y | (cd "$bs" && PATH="$bs/bin:$PATH" HOME="$bs/home" N62_CACHE="$bs/cache" NO_LOCK=1 GRADLE_STDIN_OUT="$bs/stdin.txt" ./build.sh --unsigned --engine-dir "$bs/eng" >/dev/null 2>&1) || fail "A35: the build.sh sandbox run failed"
 [[ "$(head -n1 "$bs/stdin.txt" 2>/dev/null)" == /dev/null ]] || fail "A35: build.sh's Gradle reads stdin from $(head -n1 "$bs/stdin.txt" 2>/dev/null), not /dev/null"
 grep -q -- '--no-daemon' "$bs/stdin.txt" || fail "A35: build.sh's Gradle runs without --no-daemon"
+# A80: the dev cache moved from ~/.cache/pascaline to ~/.cache/n62; any build copies the old throwaway key there once (byte for byte,
+# the old folder kept), so `install -r` over the last build keeps the app's data; a key already in the new folder is left alone
+bk="$tmp/bk"; mkdir -p "$bk/bin" "$bk/app" "$bk/android" "$bk/eng"; cp "$here/../build.sh" "$bk/"
+cp "$bs/bin/npm" "$bs/bin/npx" "$bk/bin/"
+printf '#!/bin/sh\necho keytool >> "$KEYTOOL_LOG"; exit 1\n' > "$bk/bin/keytool"   # a new key is a failure here
+printf '#!/bin/sh\nexit 22\n' > "$bk/bin/curl"                                      # no Gradle download in the sandbox
+printf '#!/bin/sh\necho "$N62_KEYSTORE" > "$KS_OUT"; mkdir -p app/build/outputs/apk/release; echo apk > app/build/outputs/apk/release/app-release.apk\n' > "$bk/gradle-stub"
+chmod +x "$bk/bin/"* "$bk/gradle-stub"
+bk_home() {  # <name> <new cache: none|gradle|key>: a HOME with the old key (and the old Gradle zip absent) and the new cache as named
+  local h="$bk/$1"; mkdir -p "$h/.cache/pascaline/keys"; head -c 2048 /dev/urandom > "$h/.cache/pascaline/keys/throwaway.jks"
+  case "$2" in
+    gradle|key) mkdir -p "$h/.cache/n62/gradle-8.14.3/bin"; cp "$bk/gradle-stub" "$h/.cache/n62/gradle-8.14.3/bin/gradle" ;;
+  esac
+  [[ "$2" != key ]] || { mkdir -p "$h/.cache/n62/keys"; echo newer > "$h/.cache/n62/keys/throwaway.jks"; }
+  echo "$h"
+}
+bk_build() { (cd "$bk" && PATH="$bk/bin:$PATH" HOME="$1" NO_LOCK=1 KEYTOOL_LOG="$bk/keytool.log" KS_OUT="$bk/ks.txt" ./build.sh "${@:2}" --engine-dir "$bk/eng" 2>/dev/null < /dev/null); }
+h="$(bk_home none none)"; out="$(bk_build "$h" --unsigned)" && fail "A80: build.sh with no Gradle and no network succeeded: $out"
+cmp -s "$h/.cache/pascaline/keys/throwaway.jks" "$h/.cache/n62/keys/throwaway.jks" || fail "A80: an --unsigned build with no ~/.cache/n62 did not copy the old key there"
+[[ -f "$h/.cache/pascaline/keys/throwaway.jks" ]] || fail "A80: the old key's folder is gone"
+h="$(bk_home gradle gradle)"; rm -f "$bk/keytool.log"; out="$(bk_build "$h")" || fail "A80: the signed build with a Gradle-only ~/.cache/n62 failed: $out"
+cmp -s "$h/.cache/pascaline/keys/throwaway.jks" "$h/.cache/n62/keys/throwaway.jks" || fail "A80: a signed build with a Gradle-only ~/.cache/n62 did not copy the old key"
+[[ "$(cat "$bk/ks.txt" 2>/dev/null)" == "$h/.cache/n62/keys/throwaway.jks" ]] || fail "A80: Gradle signs with $(cat "$bk/ks.txt" 2>/dev/null), not the key in ~/.cache/n62/keys"
+[[ ! -f "$bk/keytool.log" ]] || fail "A80: build.sh made a new key though the old one exists"
+[[ "$out" == "$bk/dist/n62.apk" && -f "$bk/dist/n62.apk" ]] || fail "A80: the dev APK is not dist/n62.apk: $out"
+h="$(bk_home key key)"; out="$(bk_build "$h")" || fail "A80: the signed build with a key in ~/.cache/n62 failed: $out"
+[[ "$(cat "$h/.cache/n62/keys/throwaway.jks")" == newer ]] || fail "A80: build.sh replaced the key already in ~/.cache/n62/keys"
 grep -q 'keep its screen on while charging (brief 0c rule 2); never remove its PIN' "$here/../tools/core-device.sh" || fail "A33f2: core-device.sh lock message"
 
 # A25 item 1+2: every script the golden gate runs selects the golden check; a diff of only such a file plans it
@@ -342,7 +369,7 @@ if [ \$k -eq 2 ] || [ \$k -eq 4 ]; then echo " FAIL  src/a.test.ts > suite > cas
 exit 0
 STUB
 printf '#!/bin/sh\nexit 0\n' > "$fk/faked.sh"; chmod +x "$fk/fakev.sh" "$fk/faked.sh"
-fkrun() { (cd "$fk" && PATH="$fk/bin:$PATH" GIAC_OUT="$fk/engine" PASCALINE_FLAKES_VITEST="$1" PASCALINE_FLAKES_E2E="$fk/faked.sh" "$script" flakes 7 2>&1); }
+fkrun() { (cd "$fk" && PATH="$fk/bin:$PATH" GIAC_OUT="$fk/engine" N62_FLAKES_VITEST="$1" N62_FLAKES_E2E="$fk/faked.sh" "$script" flakes 7 2>&1); }
 out="$(fkrun "$fk/fakev.sh")"
 want='FLAKES 7: vitest 3 of 5 runs clean, e2e 5 of 5, flaky: src/a.test.ts: suite > case one (vitest 2/5), src/b.test.ts (vitest 2/5)'
 grep -qF -- "$want" <<<"$out" || fail "A37: the census line is not '$want': $out"
@@ -371,7 +398,7 @@ printf '#!/bin/sh\n[ "$ONLY" = home ] && [ -z "$GOLDEN_PASSES" ] && { [ -n "$GOL
 printf 'X, A1: tests failing on phase-1\n' > "$tmp/spec-red"; printf 'X, T1: a measurement\n' > "$tmp/spec-plain"
 rfwt() { git -C "$rf" worktree add -q "$tmp/rfwt-${1#p1/}" "$1" 2>/dev/null; echo "$tmp/rfwt-${1#p1/}"; }
 noscratch() { [[ "$(git -C "$rf" worktree list | wc -l)" -eq "$(( $(ls -d "$tmp"/rfwt-* 2>/dev/null | wc -l) + 1 ))" ]] || fail "A36: $1: a scratch worktree is left"; }
-export PASCALINE_REDFIRST_VITEST="$tmp/fakevitest.sh" PASCALINE_REDFIRST_GOLDEN="$tmp/fakegolden.sh"
+export N62_REDFIRST_VITEST="$tmp/fakevitest.sh" N62_REDFIRST_GOLDEN="$tmp/fakegolden.sh"
 w="$(rfwt p1/pass)"; out="$(red_first "$w" "$tmp/spec-red" "$tmp/eng" "$tmp/rf.log")" && fail "A36: a test passing on phase-1 passes the stage"
 grep -q 'every new test passes on phase-1' <<<"$out" || fail "A36: no reason for a passing test: $out"; noscratch passing
 red_first "$w" "$tmp/spec-plain" "$tmp/eng" "$tmp/rf.log" >/dev/null || fail "A36: a package without the claim does not skip"; noscratch plain
@@ -388,7 +415,7 @@ grep -q 'every new test passes on phase-1' <<<"$out" || fail "A36: no reason whe
 grep -q 'ONLY=home' "$tmp/golden-ran" || fail "A36: the golden stage run is not ONLY=home"; noscratch golden-green
 rm -f "$tmp/golden-ran"; w="$(rfwt p1/g2)"; red_first "$w" "$tmp/spec-red" "$tmp/eng" "$tmp/rf.log" >/dev/null || fail "A36: a g2.yaml case does not skip"
 [[ ! -e "$tmp/golden-ran" ]] || fail "A36: g2.yaml ran a golden stage"; noscratch g2
-unset PASCALINE_REDFIRST_VITEST PASCALINE_REDFIRST_GOLDEN
+unset N62_REDFIRST_VITEST N62_REDFIRST_GOLDEN
 red_first_wanted "$tmp/spec-red" && ! red_first_wanted "$tmp/spec-plain" || fail "A36: red_first_wanted"
 # want_checks: redfirst only when the spec says so (the real function, extracted)
 eval "$(sed -n '/^want_checks() {/,/^}/p' "$here/pipeline.sh")"
@@ -403,7 +430,7 @@ printf '#!/bin/sh\necho "GIAC_OUT=$GIAC_OUT" > "%s/vitest-ran"\ngrep -q FAILS-ON
 printf '#!/bin/sh\necho "GIAC_OUT=$GIAC_OUT ONLY=$ONLY" > "%s/golden-ran"\ncase "$GIAC_OUT" in *stock*) echo "FAIL home: 12/13 match"; echo "  home newcase: got 1, expect 2"; echo "GOLDEN GATE FAILED"; exit 1;; esac\nexit 0\n' "$tmp" > "$tmp/fakegolden-env.sh"
 chmod +x "$tmp/fakevitest-env.sh" "$tmp/fakegolden-env.sh"
 red_first_wanted "$tmp/spec-stock" && red_first_stock_wanted "$tmp/spec-stock" && ! red_first_stock_wanted "$tmp/spec-red" && ! red_first_stock_wanted "$tmp/spec-plain" || fail "A71: red_first_stock_wanted / red_first_wanted do not know 'fail on the stock build'"
-export PASCALINE_REDFIRST_VITEST="$tmp/fakevitest-env.sh" PASCALINE_REDFIRST_GOLDEN="$tmp/fakegolden-env.sh"
+export N62_REDFIRST_VITEST="$tmp/fakevitest-env.sh" N62_REDFIRST_GOLDEN="$tmp/fakegolden-env.sh"
 mkdir -p "$tmp/stock-eng" "$tmp/patched-eng"
 rm -f "$tmp/golden-ran"; w="$(rfwt p1/home)"
 red_first "$w" "$tmp/spec-stock" "$tmp/patched-eng" "$tmp/rf.log" "$tmp/stock-eng" >/dev/null || fail "A71: a golden case failing on the stock engine is refused"
@@ -426,7 +453,7 @@ grep -q "GIAC_OUT=$tmp/stock-eng" "$tmp/vitest-ran" || fail "A71: vitest ran wit
 # A71f2: a file that imports nodeGiac (the module that reads GIAC_OUT) without naming it also runs, on the stock engine
 rm -f "$tmp/vitest-ran"; w="$(rfwt p1/vnode)"; red_first "$w" "$tmp/spec-stock" "$tmp/patched-eng" "$tmp/rf.log" "$tmp/stock-eng" >/dev/null || fail "A71f2: a vitest file that imports nodeGiac and fails on the stock engine is refused"
 grep -q "GIAC_OUT=$tmp/stock-eng" "$tmp/vitest-ran" 2>/dev/null || fail "A71f2: the nodeGiac file did not run with GIAC_OUT on the stock engine: $(cat "$tmp/vitest-ran" 2>&1)"; noscratch stock-vitest-nodegiac
-unset PASCALINE_REDFIRST_VITEST PASCALINE_REDFIRST_GOLDEN
+unset N62_REDFIRST_VITEST N62_REDFIRST_GOLDEN
 # the stock engine: built once per key by build-wasm.sh with GIAC_PATCHES=none, reused after, stamped
 sk="$tmp/sk"; mkdir -p "$sk/tools" "$sk/engine/giac"; cp "$sb/tools/devlock.sh" "$sk/tools/"
 cat > "$sk/engine/giac/build-wasm.sh" <<STUB
@@ -456,7 +483,7 @@ sb4="$tmp/sb4"; mkdir -p "$sb4/bin" "$sb4/tools" "$sb4/docs/shifts" "$sb4/app/no
 cp "$sb/tools/devlock.sh" "$sb4/tools/"; cp "$sb/bin/npm" "$sb4/bin/"; : > "$sb4/docs/shifts/brief.md"; echo t > "$sb4/app/keep"
 printf '#!/bin/sh\ncase "$*" in *"--agent sofia"*) echo APPROVED;; *) echo PASSES > app/n.test.ts; git add -A; git -c user.name=t -c user.email=t@t commit -qm work; echo done;; esac\n' > "$sb4/bin/claude"; chmod +x "$sb4/bin/claude"
 git -C "$sb4" add -A; gc "$sb4" init; git -C "$sb4" branch phase-1
-out="$(cd "$sb4" && PATH="$sb4/bin:$PATH" GIAC_OUT="$sb4/engine" PASCALINE_REDFIRST_VITEST="$tmp/fakevitest.sh" "$script" ron "package A9: tests fail on phase-1" --id T9 --branch p1/t9 --checks redfirst 2>&1)"
+out="$(cd "$sb4" && PATH="$sb4/bin:$PATH" GIAC_OUT="$sb4/engine" N62_REDFIRST_VITEST="$tmp/fakevitest.sh" "$script" ron "package A9: tests fail on phase-1" --id T9 --branch p1/t9 --checks redfirst 2>&1)"
 grep -q 'NOT MERGED' <<<"$out" || fail "A36: a passing new test does not fail the run: $out"
 grep -qs 'checks failed: red-first (every new test passes on phase-1)' "$sb4"/.tasks/*/fail-1.txt || fail "A36: fail-1.txt lacks the red-first line"
 
@@ -504,11 +531,11 @@ if (process.env.STUB_SLOW) await new Promise((r) => setTimeout(r, 5000));
 const x = readFileSync(a + "/round", "utf8"), y = readFileSync(b + "/round", "utf8");
 console.log(x === y ? "none" : "| where | input | A | B |\n| Home | round(2.5) | 2 | 3 |\n1 difference(s)");
 STUB
-PASCALINE_BEHAVIOUR_TOOL="$bh/tool.mjs" behaviour_section "$bh/a" "$bh/b" "$bh/o1.md"
+N62_BEHAVIOUR_TOOL="$bh/tool.mjs" behaviour_section "$bh/a" "$bh/b" "$bh/o1.md"
 grep -q '^## Behaviour changes' "$bh/o1.md" && grep -q 'round(2.5)' "$bh/o1.md" || fail "A18: a branch that changes round is not listed: $(cat "$bh/o1.md")"
-cp "$bh/a/round" "$bh/b/round"; PASCALINE_BEHAVIOUR_TOOL="$bh/tool.mjs" behaviour_section "$bh/a" "$bh/b" "$bh/o2.md"
+cp "$bh/a/round" "$bh/b/round"; N62_BEHAVIOUR_TOOL="$bh/tool.mjs" behaviour_section "$bh/a" "$bh/b" "$bh/o2.md"
 grep -qx 'none' "$bh/o2.md" || fail "A18: no change does not print none"
-STUB_SLOW=1 PASCALINE_BEHAVIOUR_SECONDS=1 PASCALINE_BEHAVIOUR_TOOL="$bh/tool.mjs" behaviour_section "$bh/a" "$bh/b" "$bh/o3.md"
+STUB_SLOW=1 N62_BEHAVIOUR_SECONDS=1 N62_BEHAVIOUR_TOOL="$bh/tool.mjs" behaviour_section "$bh/a" "$bh/b" "$bh/o3.md"
 grep -q 'timed out after 20 min' "$bh/o3.md" || fail "A18: a timeout is not reported: $(cat "$bh/o3.md")"
 grep -q 'behaviour_section "$integ" "$wt"' "$here/pipeline.sh" || fail "A18: pipeline.sh does not run the stage"
 # A53: the real behaviour-diff.ts on fake trees (no engine). fake_tree <dir> <display JS> [bridge|nobridge]: its loader hands the host a
@@ -523,13 +550,13 @@ fake_tree() {
 }
 bd="$tmp/bd"; realtool="$here/../app/scripts/behaviour-diff.ts"
 fake_tree "$bd/a" "(i) => 'same'"; fake_tree "$bd/b" "(i) => (/sin/.test(i) ? 'other' : 'same')"; fake_tree "$bd/old" "(i) => 'same'" nobridge
-PASCALINE_BEHAVIOUR_TOOL="$realtool" behaviour_section "$bd/a" "$bd/b" "$bd/o1.md" "$bd/p1eng" "$bd/breng"
+N62_BEHAVIOUR_TOOL="$realtool" behaviour_section "$bd/a" "$bd/b" "$bd/o1.md" "$bd/p1eng" "$bd/breng"
 grep -q '^| home 12 rad | [^|]*sin[^|]* | - same | - other |$' "$bd/o1.md" && grep -q 'difference(s)$' "$bd/o1.md" || fail "A53: tree B's changed display is not listed: $(head -n 8 "$bd/o1.md")"
 grep -qx "engine A $bd/p1eng/giac.mjs" "$bd/o1.md" && grep -qx "engine B $bd/breng/giac.mjs" "$bd/o1.md" || fail "A53: the section does not run phase-1's engine for A and the branch's for B: $(head -n 6 "$bd/o1.md")"
 fake_tree "$bd/e" "(i, mjs) => (/sin/.test(i) ? mjs : 'same')"
-PASCALINE_BEHAVIOUR_TOOL="$realtool" behaviour_section "$bd/e" "$bd/e" "$bd/o2.md" "$bd/p1eng" "$bd/breng"
+N62_BEHAVIOUR_TOOL="$realtool" behaviour_section "$bd/e" "$bd/e" "$bd/o2.md" "$bd/p1eng" "$bd/breng"
 grep -q '^| cas 30 deg | [^|]*sin[^|]* | - p1eng/giac.mjs | - breng/giac.mjs |$' "$bd/o2.md" || fail "A53: one tree on two engines does not show each tree its own engine: $(head -n 8 "$bd/o2.md")"
-PASCALINE_BEHAVIOUR_TOOL="$realtool" behaviour_section "$bd/old" "$bd/old" "$bd/o3.md"
+N62_BEHAVIOUR_TOOL="$realtool" behaviour_section "$bd/old" "$bd/old" "$bd/o3.md"
 grep -q 'failed to run (exit 1' "$bd/o3.md" && grep -q "Cannot read properties of undefined (reading 'ctxSet')" "$bd/o3.md" && ! grep -qx none "$bd/o3.md" || fail "A53: trees whose every run throws do not give 'failed to run' with the message: $(cat "$bd/o3.md")"
 grep -q 'behaviour_section "$integ" "$wt" "$run/behaviour-$rounds.md" "$b_p1" "$GIAC_OUT"' "$here/pipeline.sh" || fail "A53: pipeline.sh does not pass phase-1's and the branch's engines"
 grep -q 'b_p1="$engine_root/key-$p1key"' "$here/pipeline.sh" || fail "A53: the managed phase-1 engine is not key-<phase-1 key>"
@@ -551,7 +578,7 @@ esac
 STUB
 chmod +x "$ja/bin/"* "$ja/engine/giac/build-wasm.sh"; git -C "$ja" add -A; gc "$ja" init; git -C "$ja" branch phase-1
 git -C "$ja" worktree add -q "$ja/.claude/worktrees/phase-1" phase-1
-jarun() { (cd "$ja" && unset GIAC_OUT PASCALINE_COORD PW_PORT PASCALINE_LOCK_PID && PATH="$ja/bin:$PATH" "$@"); }
+jarun() { (cd "$ja" && unset GIAC_OUT N62_COORD PW_PORT N62_LOCK_PID && PATH="$ja/bin:$PATH" "$@"); }
 # two runs started at once: different numbers, run dirs and ports; phase-1's engine built once; GIAC_OUT a key-<k> directory
 jarun "$script" ron "sandbox task" --id J1 --branch p1/j1 --checks typecheck --no-merge > "$tmp/j1.out" 2>&1 & j1=$!
 jarun "$script" ron "sandbox task" --id J2 --branch p1/j2 --checks typecheck --no-merge > "$tmp/j2.out" 2>&1 & j2=$!
@@ -584,20 +611,20 @@ grep -q '^RESULT .*branch p1/j3 is in use by another run' <<<"$out" && [[ $dt -l
 [[ "$(git -C "$ja" log --oneline phase-1..p1/j3 | wc -l)" -eq 1 ]] || fail "A47a: two workers committed on one branch"
 grep -q '^RESULT #[0-9]* J3: APPROVED' "$tmp/j3.out" || fail "A47a: the first run on the branch did not finish: $(cat "$tmp/j3.out")"
 # a host-cpu wait is logged once with its holder, and its length; every wait of the pipeline is 7200 s
-(cd "$ja" && unset PASCALINE_COORD PASCALINE_LOCK_PID && mkdir -p .coord/locks/host-cpu && echo holder-x > .coord/locks/host-cpu/owner \
-  && coord="$ja/.coord" && log() { echo "$*" >> "$tmp/ja-cpu.log"; } && PASCALINE_CPU_WAIT=1 host_cpu_acquire me "pre:") && fail "A47a: a busy host-cpu was taken"
+(cd "$ja" && unset N62_COORD N62_LOCK_PID && mkdir -p .coord/locks/host-cpu && echo holder-x > .coord/locks/host-cpu/owner \
+  && coord="$ja/.coord" && log() { echo "$*" >> "$tmp/ja-cpu.log"; } && N62_CPU_WAIT=1 host_cpu_acquire me "pre:") && fail "A47a: a busy host-cpu was taken"
 rm -rf "$ja/.coord/locks/host-cpu"
 [[ "$(grep -c '^pre: waiting for host-cpu (holder-x)$' "$tmp/ja-cpu.log" 2>/dev/null)" -eq 1 ]] && grep -q '^pre: host-cpu still busy after a wait of [0-9]* s$' "$tmp/ja-cpu.log" || fail "A47a: the host-cpu wait is not logged once with its holder and length: $(cat "$tmp/ja-cpu.log" 2>&1)"
-grep -q 'PASCALINE_CPU_WAIT:-7200' "$here/pipeline-lib.sh" || fail "A47a: the host-cpu wait is not 7200 s"
+grep -q 'N62_CPU_WAIT:-7200' "$here/pipeline-lib.sh" || fail "A47a: the host-cpu wait is not 7200 s"
 grep -qE 'acquire host-cpu [^ ]+ 1800' "$here/pipeline.sh" "$here/pipeline-lib.sh" && fail "A47a: a host-cpu wait of 1800 s is left"
 # effort: high for the worker, fix rounds, audit, pass and report; henri stays medium
 grep -q 'effort="high"' "$here/pipeline.sh" && grep -q 'sofia "$(resolve_audit_model)" high' "$here/pipeline.sh" && grep -q 'agent sofia --model opus --effort high' "$here/pipeline.sh" && grep -q 'model sonnet --effort high "${claude_common\[@\]}" -n report' "$here/pipeline.sh" || fail "A47a: an effort is not high"
 grep -q 'agent henri --model sonnet --effort medium' "$here/night.sh" || fail "A47a: henri is not medium"
 # selftest: PASSED on real tests (the pipeline test itself is left out: it would run itself), FAILED with the first failing line
 printf '#!/bin/sh\necho ok\n' > "$tmp/st-ok.sh"; printf '#!/bin/sh\necho noise\necho "FAIL: stub broke"\nexit 1\n' > "$tmp/st-bad.sh"; chmod +x "$tmp/st-ok.sh" "$tmp/st-bad.sh"
-out="$(jarun env PASCALINE_SELFTEST_TESTS="$here/gc.test.sh $here/../tools/devlock.test.sh $tmp/st-ok.sh" "$script" selftest --audit-model auto 2>&1)"; rc=$?
+out="$(jarun env N62_SELFTEST_TESTS="$here/gc.test.sh $here/../tools/devlock.test.sh $tmp/st-ok.sh" "$script" selftest --audit-model auto 2>&1)"; rc=$?
 [[ $rc -eq 0 ]] && grep -qx 'RESULT selftest: PASSED' <<<"$out" || fail "A47a: selftest on passing tests: rc $rc: $out"
-out="$(jarun env PASCALINE_SELFTEST_TESTS="$tmp/st-ok.sh $tmp/st-bad.sh" "$script" selftest --audit-model auto 2>&1)"; rc=$?
+out="$(jarun env N62_SELFTEST_TESTS="$tmp/st-ok.sh $tmp/st-bad.sh" "$script" selftest --audit-model auto 2>&1)"; rc=$?
 [[ $rc -ne 0 ]] && grep -qx 'RESULT selftest: FAILED (st-bad.sh: FAIL: stub broke)' <<<"$out" || fail "A47a: selftest on a failing stub: rc $rc: $out"
 grep -q 'pipeline selftest: FAILED (st-bad.sh: FAIL: stub broke)' "$ja/.coord/log.md" || fail "A47a: selftest is not logged"
 # the check shell joins the auto checks for scripts/ and tools/*.sh
@@ -651,7 +678,7 @@ fs.writeFileSync("node_modules/.package-lock.json", JSON.stringify(lock));
 STUB
 chmod +x "$mq/bin/"*; git -C "$mq" add -A; gc "$mq" init; git -C "$mq" branch phase-1
 git -C "$mq" worktree add -q "$mq/.claude/worktrees/phase-1" phase-1; p1q="$mq/.claude/worktrees/phase-1"
-mqrun() { (cd "$mq" && unset PASCALINE_COORD PW_PORT PASCALINE_LOCK_PID && PATH="$mq/bin:$PATH" GIAC_OUT="$mq/engine" "$@"); }
+mqrun() { (cd "$mq" && unset N62_COORD PW_PORT N62_LOCK_PID && PATH="$mq/bin:$PATH" GIAC_OUT="$mq/engine" "$@"); }
 # the package is read from phase-1's commit: a changed package file in the phase-1 worktree is not what the run reads
 sed -i 's/p1\/z1/p1\/zz/' "$p1q/docs/shifts/packages/Z1.md"
 out="$(mqrun "$script" annabell Z1 --dry-run 2>&1)"; rc=$?
@@ -679,7 +706,7 @@ grep -q '^RESULT #[0-9]* Q3: MERGED' <<<"$out" || fail "A47b: a run with one FIX
 [[ "$(grep -c '^p1-q3 pipeline-' "$mq/audits")" -eq 2 ]] || fail "A47b: the run did not queue again for its second audit: $(cat "$mq/audits")"
 [[ "$(grep -c 'pipeline #[0-9]* Q3: in the queue' "$mq/.coord/log.md")" -eq 2 ]] || fail "A47b: the two queue entries are not logged: $(grep Q3 "$mq/.coord/log.md")"
 # a start with a dirty phase-1 worktree (an interactive session holds integ) waits for integ, then merges
-(cd "$mq" && unset PASCALINE_LOCK_PID && tools/devlock.sh acquire integ owner-x 0 >/dev/null)
+(cd "$mq" && unset N62_LOCK_PID && tools/devlock.sh acquire integ owner-x 0 >/dev/null)
 echo edit >> "$p1q/tracked"
 mqrun "$script" ron "queue task" --id Q4 --branch p1/q4 --checks typecheck > "$tmp/q4.out" 2>&1 & q4=$!
 for _ in $(seq 1 150); do grep -q 'Q4: waiting for integ (owner-x)' "$mq/.coord/log.md" 2>/dev/null && break; sleep 0.2; done
@@ -711,7 +738,7 @@ cat > "$mq/bin/adb" <<'STUB'
 case "$*" in *get-state*) echo device;; *"dumpsys battery"*) echo "  level: 80";; *"dumpsys window"*) echo "  isKeyguardShowing=false";; esac
 exit 0
 STUB
-printf '#!/bin/sh\nowner > "%s/build-owner"; mkdir -p dist; echo apk > dist/pascaline.apk\n' "$mq" > "$p1q/tools/device-build.sh"
+printf '#!/bin/sh\nowner > "%s/build-owner"; mkdir -p dist; echo apk > dist/n62.apk\n' "$mq" > "$p1q/tools/device-build.sh"
 printf '#!/bin/sh\nowner > "%s/core-owner"; echo "CORE DEVICE 3/3 (known 0, needs 0)"\n' "$mq" > "$p1q/tools/core-device.sh"
 chmod +x "$mq/bin/adb" "$p1q/tools/device-build.sh" "$p1q/tools/core-device.sh"
 git -C "$p1q" add tools/core-device.sh; gc "$p1q" "device runner stub"   # A56: the runner comes from the built sha's tree
@@ -720,8 +747,8 @@ out="$(mqrun env ANDROID_SERIAL=TESTSERIAL "$script" device 6 2>&1)"
 # A47bf1: a start copies the phase-1 node_modules under nodemods only; a stale one takes integ, then nodemods, then host-cpu (npm ci);
 # an npm ci of the phase-1 worktree (the queue's, the device build's) and a copy never overlap
 node_modules_stale "$p1q/app" && fail "A47bf1: precondition: the phase-1 node_modules are stale after Q5"
-(cd "$mq" && unset PASCALINE_LOCK_PID && tools/devlock.sh acquire integ owner-y 0 >/dev/null)
-out="$(mqrun env PASCALINE_INTEG_WAIT=2 "$script" ron "queue task" --id N1 --branch p1/n1 --checks typecheck 2>&1)"
+(cd "$mq" && unset N62_LOCK_PID && tools/devlock.sh acquire integ owner-y 0 >/dev/null)
+out="$(mqrun env N62_INTEG_WAIT=2 "$script" ron "queue task" --id N1 --branch p1/n1 --checks typecheck 2>&1)"
 # grep without -q: under pipefail an early-exiting grep -q SIGPIPEs git log (rc 141) and a present commit read as missing
 git -C "$mq" log p1/n1 --format=%s 2>/dev/null | grep '^work p1-n1$' >/dev/null || fail "A47bf1: a start with fresh phase-1 node_modules does not start its worker while integ is held: $out"
 [[ -f "$mq/.claude/worktrees/pl-$(sed -n 's/^RESULT #\([0-9]*\) .*/\1/p' <<<"$out" | xargs printf '%03d')-n1/app/node_modules/newdep/package.json" ]] || fail "A47bf1: the fresh start did not copy phase-1's node_modules: $out"
@@ -729,14 +756,14 @@ grep -q 'N1: waiting for integ (owner-y)' "$mq/.coord/log.md" && ! grep -q 'NOT 
 (cd "$mq" && tools/devlock.sh release integ owner-y >/dev/null)
 grep -q 'N1: waiting for nodemods' "$mq/.coord/log.md" && fail "A47bf1: a free nodemods lock was waited for"
 # nodemods held by another: a fresh start waits for it (logged) and copies nothing meanwhile
-(cd "$mq" && unset PASCALINE_LOCK_PID && tools/devlock.sh acquire nodemods owner-z 0 >/dev/null)
-out="$(mqrun env PASCALINE_NODEMODS_WAIT=2 "$script" ron "queue task" --id N2 --branch p1/n2 --checks typecheck 2>&1)"
+(cd "$mq" && unset N62_LOCK_PID && tools/devlock.sh acquire nodemods owner-z 0 >/dev/null)
+out="$(mqrun env N62_NODEMODS_WAIT=2 "$script" ron "queue task" --id N2 --branch p1/n2 --checks typecheck 2>&1)"
 git -C "$mq" log --all --format=%s | grep "^work p1-n2$" >/dev/null && fail "A47bf1: a start copied node_modules while another held nodemods: $out"
 grep -q 'N2: waiting for nodemods (owner-z)' "$mq/.coord/log.md" && grep -q 'nodemods lock busy' <<<"$out" || fail "A47bf1: the nodemods wait is not logged or not named: $out"
 (cd "$mq" && tools/devlock.sh release nodemods owner-z >/dev/null)
 # the device step's build (build.sh runs npm ci in the phase-1 worktree) and a start's copy: one after the other
 ev="$tmp/nm-events"; : > "$ev"; realcp="$(command -v cp)"
-printf '#!/bin/sh\ncat "%s/.coord/locks/nodemods/owner" > "%s/build-nodemods" 2>/dev/null || echo free > "%s/build-nodemods"\necho ci-start >> "%s"; sleep 3; echo ci-end >> "%s"\nmkdir -p dist; echo apk > dist/pascaline.apk\n' "$mq" "$mq" "$mq" "$ev" "$ev" > "$p1q/tools/device-build.sh"
+printf '#!/bin/sh\ncat "%s/.coord/locks/nodemods/owner" > "%s/build-nodemods" 2>/dev/null || echo free > "%s/build-nodemods"\necho ci-start >> "%s"; sleep 3; echo ci-end >> "%s"\nmkdir -p dist; echo apk > dist/n62.apk\n' "$mq" "$mq" "$mq" "$ev" "$ev" > "$p1q/tools/device-build.sh"
 printf '#!/bin/sh\n[ "$1" = -al ] || exec "%s" "$@"\necho copy-start >> "%s"; "%s" "$@"; rc=$?; echo copy-end >> "%s"; exit $rc\n' "$realcp" "$ev" "$realcp" "$ev" > "$mq/bin/cp"; chmod +x "$mq/bin/cp"
 mqrun env ANDROID_SERIAL=TESTSERIAL "$script" device 7 > "$tmp/d7.out" 2>&1 & d7=$!
 for _ in $(seq 1 150); do grep -q ci-start "$ev" && break; sleep 0.2; done
@@ -748,16 +775,16 @@ wait "$d7"; rm -f "$mq/bin/cp"
 grep -q '^RESULT #[0-9]* N3: MERGED' "$tmp/n3.out" || fail "A47bf1: the start that waited for the device build did not merge: $(cat "$tmp/n3.out")"
 # stale phase-1 node_modules: the start waits for integ (the npm ci path), not just nodemods
 rm -f "$p1q/app/node_modules/.package-lock.json"
-(cd "$mq" && unset PASCALINE_LOCK_PID && tools/devlock.sh acquire integ owner-y 0 >/dev/null)
+(cd "$mq" && unset N62_LOCK_PID && tools/devlock.sh acquire integ owner-y 0 >/dev/null)
 n0="$(wc -l < "$mq/npmci-owner")"
-out="$(mqrun env PASCALINE_INTEG_WAIT=2 "$script" ron "queue task" --id N4 --branch p1/n4 --checks typecheck 2>&1)"
+out="$(mqrun env N62_INTEG_WAIT=2 "$script" ron "queue task" --id N4 --branch p1/n4 --checks typecheck 2>&1)"
 git -C "$mq" log --all --format=%s | grep "^work p1-n4$" >/dev/null && fail "A47bf1: a start with stale phase-1 node_modules started its worker without integ: $out"
 grep -q 'N4: waiting for integ (owner-y)' "$mq/.coord/log.md" && grep -q 'integ lock busy' <<<"$out" || fail "A47bf1: a stale start does not wait for integ: $out"
 (cd "$mq" && tools/devlock.sh release integ owner-y >/dev/null)
 [[ "$(wc -l < "$mq/npmci-owner")" -eq "$n0" ]] || fail "A47bf1: npm ci ran in the phase-1 worktree without integ"
 # stale, integ free, nodemods held by a copy: the npm ci waits for nodemods; it never runs under another's copy
-(cd "$mq" && unset PASCALINE_LOCK_PID && tools/devlock.sh acquire nodemods owner-z 0 >/dev/null)
-out="$(mqrun env PASCALINE_NODEMODS_WAIT=2 "$script" ron "queue task" --id N5 --branch p1/n5 --checks typecheck 2>&1)"
+(cd "$mq" && unset N62_LOCK_PID && tools/devlock.sh acquire nodemods owner-z 0 >/dev/null)
+out="$(mqrun env N62_NODEMODS_WAIT=2 "$script" ron "queue task" --id N5 --branch p1/n5 --checks typecheck 2>&1)"
 [[ "$(wc -l < "$mq/npmci-owner")" -eq "$n0" ]] || fail "A47bf1: npm ci in the phase-1 worktree ran while another held nodemods: $out"
 grep -q 'N5: waiting for nodemods (owner-z)' "$mq/.coord/log.md" && grep -q 'nodemods lock busy' <<<"$out" || fail "A47bf1: the npm ci path does not wait for nodemods: $out"
 (cd "$mq" && tools/devlock.sh release nodemods owner-z >/dev/null)
@@ -775,7 +802,7 @@ echo "A47b serial times: $(sed 's/: integ released after / /; s/ s in the queue/
 declare -F quiet_wait >/dev/null || fail "A51: quiet_wait is not defined in pipeline-lib.sh"
 if declare -F quiet_wait >/dev/null; then
   ql="$tmp/loadavg"; printf '9.50 8.00 7.00 3/900 12345\n' > "$ql"
-  qenv() { PASCALINE_NPROC=16 PASCALINE_LOADAVG_FILE="$ql" PASCALINE_QUIET_EVERY=1 PASCALINE_QUIET_MAX="$1" "${@:2}"; }
+  qenv() { N62_NPROC=16 N62_LOADAVG_FILE="$ql" N62_QUIET_EVERY=1 N62_QUIET_MAX="$1" "${@:2}"; }
   # already quiet: no wait, the load is logged
   printf '3.10 5.00 6.00 1/900 1\n' > "$ql"
   out="$(qenv 600 quiet_wait)"; rc=$?
@@ -793,7 +820,7 @@ if declare -F quiet_wait >/dev/null; then
   t0=$SECONDS; out="$(qenv 3 quiet_wait)"; rc=$?; dt=$((SECONDS - t0))
   [[ $rc -eq 0 && $dt -ge 3 && $dt -lt 15 ]] && grep -q 'rerunning anyway' <<<"$out" || fail "A51: a busy host is not given up after the limit (rc $rc, ${dt} s): $out"
   # an unreadable load file never blocks the rerun
-  out="$(PASCALINE_NPROC=16 PASCALINE_LOADAVG_FILE="$tmp/none" PASCALINE_QUIET_EVERY=1 PASCALINE_QUIET_MAX=3 quiet_wait)"; rc=$?
+  out="$(N62_NPROC=16 N62_LOADAVG_FILE="$tmp/none" N62_QUIET_EVERY=1 N62_QUIET_MAX=3 quiet_wait)"; rc=$?
   [[ $rc -eq 0 ]] || fail "A51: an unreadable load file fails quiet_wait: $out"
 fi
 # rerun_timing waits first (golden, vitest and e2e alike), and the wait goes to the run log
@@ -806,7 +833,7 @@ grep -qF 'cp -al '"$integ"'/app/node_modules ' <<<"$out" && grep -qE '\.tasks/de
 grep -E 'core-device\.sh' <<<"$out" | grep -qE '\.tasks/device-7/tree/tools/core-device\.sh' || fail "A56: the dry run's runner is not the run's own tree: $out"
 sb7="$tmp/sb7"; mkdir -p "$sb7/bin" "$sb7/tools" "$sb7/docs/shifts"; git init -q -b main "$sb7"
 cp "$sb/tools/devlock.sh" "$sb7/tools/"; : > "$sb7/docs/shifts/brief.md"; printf 'node_modules/\ndist/\n' > "$sb7/.gitignore"
-printf '#!/bin/sh\nmkdir -p app/node_modules/x dist && echo apk > dist/pascaline.apk\n' > "$sb7/tools/device-build.sh"
+printf '#!/bin/sh\nmkdir -p app/node_modules/x dist && echo apk > dist/n62.apk\n' > "$sb7/tools/device-build.sh"
 cat > "$sb7/tools/core-device.sh" <<'STUB'
 #!/bin/sh
 d="$(cd "$(dirname "$0")/.." && pwd)"; echo "$d" > "$SB7/runner-dir"
@@ -825,7 +852,7 @@ esac
 exit 0
 STUB
 chmod +x "$sb7/bin/adb" "$sb7/tools/"*; git -C "$sb7" add -A; gc "$sb7" init; git -C "$sb7" branch phase-1
-sb7run() { (cd "$sb7" && env -u PASCALINE_COORD SB7="$sb7" ANDROID_SERIAL=TESTSERIAL PATH="$sb7/bin:$PATH" "$script" device "$@" 2>&1); }
+sb7run() { (cd "$sb7" && env -u N62_COORD SB7="$sb7" ANDROID_SERIAL=TESTSERIAL PATH="$sb7/bin:$PATH" "$script" device "$@" 2>&1); }
 out="$(sb7run 7)"
 grep -q '^RESULT device 7: CORE DEVICE 1/1 ' <<<"$out" || fail "A56: node_modules removed from the phase-1 worktree after the build: the runner did not get its modules: $out"
 [[ "$(cat "$sb7/runner-dir" 2>/dev/null)" == "$sb7/.tasks/device-7/tree" ]] || fail "A56: the runner ran from $(cat "$sb7/runner-dir" 2>/dev/null), not .tasks/device-7/tree"
@@ -936,16 +963,16 @@ waitcase W1 TERM; waitcase W2 timeout
 sb9="$tmp/sb9"; mkdir -p "$sb9/bin" "$sb9/tools" "$sb9/docs/shifts"; git init -q -b main "$sb9"
 cp "$sbk/tools/devlock.sh" "$sb9/tools/"; cp "$sb7/tools/core-device.sh" "$sb9/tools/"; cp "$sb7/bin/adb" "$sb9/bin/"
 : > "$sb9/docs/shifts/brief.md"; printf 'node_modules/\ndist/\n' > "$sb9/.gitignore"
-printf '#!/bin/sh\necho "BUILD NO_LOCK=${NO_LOCK:-}" >> "$SBK/locks.log"\nmkdir -p app/node_modules/x dist && echo apk > dist/pascaline.apk\n' > "$sb9/tools/device-build.sh"
+printf '#!/bin/sh\necho "BUILD NO_LOCK=${NO_LOCK:-}" >> "$SBK/locks.log"\nmkdir -p app/node_modules/x dist && echo apk > dist/n62.apk\n' > "$sb9/tools/device-build.sh"
 sed -i '/install\*/d' "$sb9/bin/adb"; chmod +x "$sb9/bin/adb" "$sb9/tools/"*; git -C "$sb9" add -A; gc "$sb9" init; git -C "$sb9" branch phase-1
 : > "$sbk/locks.log"; rm -f "$sbk/child.pid" "$sbk/child-exited"
-out="$(cd "$sb9" && env -u PASCALINE_COORD SB7="$sb9" SBK="$sbk" ANDROID_SERIAL=TESTSERIAL PATH="$sb9/bin:$PATH" "$script" device 9 2>&1)"
+out="$(cd "$sb9" && env -u N62_COORD SB7="$sb9" SBK="$sbk" ANDROID_SERIAL=TESTSERIAL PATH="$sb9/bin:$PATH" "$script" device 9 2>&1)"
 got="$(grep -E '^(acquire|release) (integ|nodemods|host-cpu) device-9|^BUILD' "$sbk/locks.log" | sed -E 's/ started=.*//; s/ device-9//' | paste -sd, -)"
 want='acquire integ,acquire nodemods,acquire host-cpu,BUILD NO_LOCK=1,release host-cpu,release nodemods,release integ'
 [[ "$got" == "$want" ]] || fail "A54: the device build is not under host-cpu inside integ and nodemods with NO_LOCK=1: got '$got', want '$want'; $out"
 
 # A55: a run with no package file stops before the worker; a worker that questions its own task stops before the audit; the two idle shell tests are run
-nopkg() { env -u PASCALINE_ALLOW_UNPACKAGED_IDS "$script" "$@" 2>&1; }
+nopkg() { env -u N62_ALLOW_UNPACKAGED_IDS "$script" "$@" 2>&1; }
 # (a) A46's call shape: a task text, --id of a package's shape, no docs/shifts/packages/<ID>.md on phase-1
 out="$(nopkg annabell "Annabell, A9998: some task text" --id A9998 --dry-run)"; rc=$?
 grep -qE '^RESULT #[0-9]+ A9998: NOT MERGED \(no package file for A9998\)$' <<<"$out" && [[ $rc -eq 1 ]] || fail "A55: a task text with a package's id and no package file is not stopped (rc $rc): $out"
@@ -978,7 +1005,7 @@ case "$*" in
 esac
 STUB
 chmod +x "$sb10/bin/claude"; git -C "$sb10" add -A; gc "$sb10" init; git -C "$sb10" branch phase-1
-sb10run() { (cd "$sb10" && env -u PASCALINE_ALLOW_UNPACKAGED_IDS PATH="$sb10/bin:$PATH" SB10="$sb10" GIAC_OUT="$sb10/engine" "$script" "$@" 2>&1); }
+sb10run() { (cd "$sb10" && env -u N62_ALLOW_UNPACKAGED_IDS PATH="$sb10/bin:$PATH" SB10="$sb10" GIAC_OUT="$sb10/engine" "$script" "$@" 2>&1); }
 out="$(sb10run annabell "task text" --id A46 --branch p1/annabell-a46 --checks none)"; rc=$?
 grep -qE '^RESULT #1 A46: NOT MERGED \(no package file for A46\)$' <<<"$out" && [[ $rc -eq 1 ]] || fail "A55: the sandbox run with no package file is not stopped (rc $rc): $out"
 [[ ! -e "$sb10/worker-called" ]] || fail "A55: the worker ran although the package file is missing"
@@ -1015,7 +1042,7 @@ done
 # --restore-real puts .orig.real back and leaves .orig (the night setting) untouched
 sa="$tmp/sa"; mkdir -p "$sa/bin" "$sa/devices"; printf 'STAY_ON=7\nSCREEN_OFF=2147483647\n' > "$sa/devices/S1.orig"; printf 'STAY_ON=0\nSCREEN_OFF=60000\n' > "$sa/devices/S1.orig.real"
 printf '#!/bin/sh\ncase "$*" in *get-state*) echo device;; *"settings put"*) echo "$*" >> "%s/puts";; esac\n' "$sa" > "$sa/bin/adb"; chmod +x "$sa/bin/adb"
-PATH="$sa/bin:$PATH" PASCALINE_COORD="$sa" "$here/../tools/stay-awake.sh" S1 --restore-real >/dev/null 2>&1; r1=$?
+PATH="$sa/bin:$PATH" N62_COORD="$sa" "$here/../tools/stay-awake.sh" S1 --restore-real >/dev/null 2>&1; r1=$?
 [[ $r1 -eq 0 ]] && grep -q 'stay_on_while_plugged_in 0' "$sa/puts" && grep -q 'STAY_ON=7' "$sa/devices/S1.orig" && [[ -f "$sa/devices/S1.orig.real" ]] || fail "A55: --restore-real does not put .orig.real back and leave .orig alone"
 grep -qF 'tools/stay-awake.sh <serial> --restore' "$here/../tools/README.md" && grep -q '\.orig\.real' "$here/../tools/README.md" && grep -q '\.orig\.real' "$here/../tools/stay-awake.sh" || fail "A55: stay-awake.sh and tools/README.md do not say what .orig and .orig.real hold"
 

@@ -27,25 +27,25 @@ run() {
   if [[ "$want" -ne 99 ]]; then [[ ! -e "$MARK" ]] || fail "$name: a build step ran before the refusal"
   else [[ -e "$MARK" ]] || fail "$name: the guard passed but no build step ran"; fi
 }
-good=(PASCALINE_KEYSTORE="$tmp/ks.jks" PASCALINE_KEYSTORE_PASS=sp PASCALINE_KEY_ALIAS=pascaline PASCALINE_KEY_PASS=kp)
+good=(N62_KEYSTORE="$tmp/ks.jks" N62_KEYSTORE_PASS=sp N62_KEY_ALIAS=n62 N62_KEY_PASS=kp)
 A=(--release --engine-dir "$tmp/engine")
 
 # 1. a good setup passes the guard and reaches the first build step (the fake npm exits 99)
 run "good setup" 99 "" "${good[@]}" -- "${A[@]}"
-run "good setup, release tag" 99 "" "${good[@]}" PASCALINE_RELEASE_TAG="v$(sed -n 's/^  "version": *"\([^"]*\)".*/\1/p' "$root/app/package.json" | head -n1)" -- "${A[@]}"
+run "good setup, release tag" 99 "" "${good[@]}" N62_RELEASE_TAG="v$(sed -n 's/^  "version": *"\([^"]*\)".*/\1/p' "$root/app/package.json" | head -n1)" -- "${A[@]}"
 
 # 2. each of the four variables missing
-for v in PASCALINE_KEYSTORE PASCALINE_KEYSTORE_PASS PASCALINE_KEY_ALIAS PASCALINE_KEY_PASS; do
+for v in N62_KEYSTORE N62_KEYSTORE_PASS N62_KEY_ALIAS N62_KEY_PASS; do
   env_=(); for kv in "${good[@]}"; do [[ "$kv" == "$v="* ]] || env_+=("$kv"); done
   run "$v missing" 1 "$v" "${env_[@]}" -- "${A[@]}"
   env_=(); for kv in "${good[@]}"; do [[ "$kv" == "$v="* ]] && env_+=("$v=") || env_+=("$kv"); done
   run "$v empty" 1 "$v" "${env_[@]}" -- "${A[@]}"
 done
-run "no variables at all" 1 "PASCALINE_KEYSTORE" -- "${A[@]}"
+run "no variables at all" 1 "N62_KEYSTORE" -- "${A[@]}"
 
 # 3. keystore file missing; alias throwaway (also with the throwaway keystore's usual password)
-run "keystore file missing" 1 "keystore" PASCALINE_KEYSTORE="$tmp/none.jks" PASCALINE_KEYSTORE_PASS=sp PASCALINE_KEY_ALIAS=pascaline PASCALINE_KEY_PASS=kp -- "${A[@]}"
-run "alias throwaway" 1 "throwaway" PASCALINE_KEYSTORE="$tmp/ks.jks" PASCALINE_KEYSTORE_PASS=pascaline-throwaway PASCALINE_KEY_ALIAS=throwaway PASCALINE_KEY_PASS=pascaline-throwaway -- "${A[@]}"
+run "keystore file missing" 1 "keystore" N62_KEYSTORE="$tmp/none.jks" N62_KEYSTORE_PASS=sp N62_KEY_ALIAS=n62 N62_KEY_PASS=kp -- "${A[@]}"
+run "alias throwaway" 1 "throwaway" N62_KEYSTORE="$tmp/ks.jks" N62_KEYSTORE_PASS=pascaline-throwaway N62_KEY_ALIAS=throwaway N62_KEY_PASS=pascaline-throwaway -- "${A[@]}"
 
 # 4. the options that never go with a release
 for o in --dev --measure --unsigned --no-units --test --web; do
@@ -55,8 +55,8 @@ done
 run "--engine-dir allowed" 99 "" "${good[@]}" -- --release --engine-dir "$tmp/engine"
 
 # 5. A48: a tag that is not the version fails before any build step
-run "tag mismatch" 1 "tag" "${good[@]}" PASCALINE_RELEASE_TAG=v9.9.9 -- "${A[@]}"
-run "malformed tag" 2 "" "${good[@]}" PASCALINE_RELEASE_TAG=nonsense -- "${A[@]}"
+run "tag mismatch" 1 "tag" "${good[@]}" N62_RELEASE_TAG=v9.9.9 -- "${A[@]}"
+run "malformed tag" 2 "" "${good[@]}" N62_RELEASE_TAG=nonsense -- "${A[@]}"
 
 # 6. a dev build ignores the release variables (it never signs with the real key)
 run "dev build ignores a real alias" 99 "" "${good[@]}" -- --dev --engine-dir "$tmp/engine"
