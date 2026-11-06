@@ -69,7 +69,7 @@ N62 stands on the shoulders of [Giac](https://xcas.univ-grenoble-alpes.fr/), the
 
 ## Contributing
 
-Bug reports and ideas are very welcome. Open an issue. For code, see [CONTRIBUTING.md](CONTRIBUTING.md). The project is clean-room (no HP code, firmware or artwork), and every commit needs a DCO sign-off (`git commit -s`).
+Bug reports and ideas are very welcome. [Open an issue](https://github.com/n62-dev/n62/issues/new/choose). For code, see [CONTRIBUTING.md](CONTRIBUTING.md). The project is clean-room (no HP code, firmware or artwork), and every commit needs a DCO sign-off (`git commit -s`).
 
 ## License
 
