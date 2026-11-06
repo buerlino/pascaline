@@ -36,8 +36,8 @@ describe("converge helpers", () => {
   });
   it("G176: a limit Giac leaves unevaluated (patch 0035: the side of a trunc undecided) stands with ⚠; no Giac call for it", () => {
     const none = fakeGiac((): string => { throw new Error("no call expected"); });
-    expect(refusalOf(none, "limit(trunc(sin(1/x)/2),x,0)", "limit(trunc(sin(1/x)/2),x,0)")).toBe("unchecked");
-    expect(refusalOf(none, "1+limit(trunc(a*x),x,1,-1)", "limit(trunc(a*x),x,1,-1)+1")).toBe("unchecked");
+    expect(refusalOf(none, "limit(trunc(sin(1/x)/2),x,0)", "limit(trunc(sin(1/x)/2),x=0)")).toBe("unchecked");
+    expect(refusalOf(none, "1+limit(trunc(a*x),x,1,-1)", "limit(trunc(a*x),x=1,-1)+1")).toBe("unchecked");
     expect(refusalOf(none, "limit(trunc(x),x,-1,1)", "0")).toBeNull();
   });
   it("G90: Giac's exact answer with an integrate(…) left in it is its numeric integration; no Giac call for it", () => {
@@ -169,6 +169,21 @@ describe.skipIf(!giacAvailable())("G39 on the real engine", () => {
     expect(d.items).toBeUndefined();
     expect(d.display).toBe("0.785398163397");
     expect(markOf(precisionFacts(d), { format: "STD", digits: 12 })).toMatchObject({ mark: "≈" });
+  });
+
+  it("G176f1: a limit left unevaluated (patch 0035) is drawn with its point and side, in CAS and Home, and keeps ⚠", () => {
+    // Patch 0035 returned limit(e,x,a,side), which Giac's texprintaslimit draws as a bare \lim (it reads limit(e,x=a[,side]))
+    const shown: [string, string, string][] = [
+      ["limit(trunc(g176a*x),x,1,-1)", "limit(trunc(g176a*x),x=1,-1)", "\\lim _{x=1^-}\\mathrm{trunc}\\left(\\mathrm{g176a}\\cdot x\\right)"],
+      ["limit(trunc(x),x,g176y,1)", "limit(trunc(x),x=g176y,1)", "\\lim _{x=\\mathrm{g176y}^+}\\mathrm{trunc}\\left(x\\right)"],
+      ["limit(trunc(sin(1/x)/2),x,0)", "limit(trunc(sin(1/x)/2),x=0)", "\\lim _{x=0}\\mathrm{trunc}\\left(\\frac{\\sin\\left(x^{-1}\\right)}{2}\\right)"],
+    ];
+    for (const [input, text, latex] of shown) {
+      expect(cas(input)).toMatchObject({ ok: true, text, latex, facts: { warn: "unchecked" } });
+      const h = home(input);
+      expect(h).toMatchObject({ ok: true, display: text, latex, facts: { warn: "unchecked" } });
+      expect(markOf(precisionFacts(h), { format: "STD", digits: 12 })?.mark).toBe("⚠");
+    }
   });
 
   it("CAS: Giac's pair is shown as Giac's text, both answers, with ⚠", () => {
