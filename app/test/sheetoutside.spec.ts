@@ -28,6 +28,10 @@ const CLOSERS: Record<string, (page: Page) => Promise<void>> = {
   "a trackpad drag": (page) => drag(page, '[data-testid="pad-hub"]', 0, 90),
   Undo: (page) => page.locator('[data-key="undo"]').tap(),
   Copy: (page) => page.locator('[data-key="copy"]').tap(),
+  "⇤ (Shift, Undo)": async (page) => {
+    await tap(page, ["shift"]);
+    await page.locator('[data-key="undo"]').tap();
+  },
   Help: (page) => page.locator('[data-key="help"]').tap(),
   U1: (page) => page.locator('[data-key="u1"]').tap(),
 };
