@@ -576,17 +576,11 @@ export function homeEval(
   };
   // G184 (F70): Giac's interrupt text (its budget or clock stopped the step) is a time-out, on every path that fails with
   // it (the float path, atDouble, the checks after them): the time-limit message, never Giac's text as an engine error.
-  const failed = (display: string, path: HomePath, exact?: string): HomeResult => {
-    const stopped = isTimeout(display);
-    const r = done({
-      ok: false,
-      display: stopped ? enEngine["error.timeout"] : display,
-      ...(exact !== undefined ? { exact } : {}),
-      path,
-      approximate: true,
-      facts: { exact: false, reliableDigits: null },
-    });
-    return stopped ? { ...r, error: "timeout" } : r;
+  const failed = (text: string, path: HomePath, exact?: string): HomeResult => {
+    const stop = isTimeout(text);
+    const display = stop ? enEngine["error.timeout"] : text;
+    const r = done({ ok: false, display, ...(exact !== undefined ? { exact } : {}), path, approximate: true, facts: { exact: false, reliableDigits: null } });
+    return stop ? { ...r, error: "timeout" } : r;
   };
   const refuse = (code: Refusal, path: HomePath): HomeResult => ({ ...failed(enEngine[`error.${code}`], path), error: code, approximate: false });
 
