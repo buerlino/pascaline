@@ -11,8 +11,6 @@ The owner's other open items are in [backlog.md](backlog.md), "Needs the user". 
 
 **R59: the Math key's Find and the user's functions.** An imported function is found in Vars' Find (R4b), not in the Math key's Find. Recommendation: list the user's names there too, as a later small package, so a library function is found where the built-ins are.
 
-**S25: the six keys, results mode and the room** (pick from R129's mockup; [r19](research/r19-results-and-keys.md)). Recommendation: keys K1, results mode as the worksheet W, the room R2 + R3 with R1 below 760 px; agree t01's budget 14 and t03's 13 (measured).
-
 ## Decided proposals
 
 ### Pipeline and process
@@ -35,22 +33,23 @@ The owner's other open items are in [backlog.md](backlog.md), "Needs the user". 
 - **Small packages (2026-10-14, the owner's rule).** One concern each, about a day or less, with its own reading list; placed by importance, then dependencies.
 
 ### Feel, keys and screen (milestone 4a)
+- **Owner answers of 2026-11-06 (UI, before v0.1.0):** R140–R150 and R53 as written; families N62, Teal, Solarized; ▾ marks a menu key; they rewrite the core cases they change; a colour-blindness test, no picker (R140); the credits roll, the one motion (R149). Mockup: `docs/mockups/ui-2026-11-06.html`. Would change if: the owner's look on 11-07 disagrees.
 - **R41's status line at font scale 2.0 waits for a device (Opus pass 61).** Chromium's emulation puts it 35 px over 360 px at 2.0 (fine at 1.5); annabell's next device run checks it with TalkBack. Would change if: the device clips Mode or ☰ (a ron package).
 - **Owner answers of 2026-11-02 (vision; interview with sandra).** A working engineer, phone first; units and constants first; no AI in the app; marks, σ and digit groups each a setting. Full text: archive. Would change if: an outside round shows another first user.
 - **Owner answers of 2026-10-31 and 2026-11-01 (stored data, the comma, `%`):** built (R95, R100, R94, R110). Full text: archive. Would change if: two tabs side by side are wanted on purpose.
 - **Owner answers of 2026-11-02.** Stored names (R33) get a colour token of their own per theme (the R24d review). Key vibration (A9, R112): the app's switch alone decides, one pulse at finger-down. Android's splash and bars Dark (A59). Full text: archive. Would change if: users want the system switch to mute the keys.
 - **R4b's four defaults, as built (Opus pass 18):** Memory deletes a name without asking (Clear all asks once); a Find pick for a slot closes the sheets; a key's constant keeps its value and σ; Vars is dead without an entry line. Full text: archive.
 - **Settings in the Mode sheet, and presets (owner, 2026-10-27; built by R49, R85–R89).** Settings is a level of the pick sheet; a preset snapshots any user settings. Rule: docs/05 3.4. Full text: archive. Would change if: presets are switched under 5 times in 4 weeks (they go).
-- **R15c1 menus (the owner, 2026-10-20): the Home menu (10 rows) and the Plot menu (9) scroll** over the keypad (docs/05 3.1). Full text: archive. Would change if: the scroll feels slow on the APK.
+- **R15c1 menus (the owner, 2026-10-20): a long menu scrolls** over the keypad (docs/05 3.1); the ⚙ in its title opens Settings (R145). Would change if: the scroll feels slow on the APK.
 - **M4-2 (decided 2026-10-20, the owner):** the task budgets (t02 9 presses, t04 12, t10 25, t05 4), t09's two deviations, ± on Shift + `,` (R71), the unit result as its mockup (R62). Full text: archive. Your hand timing stays the gate.
 - **S8 (decided 2026-10-20, the owner): before outside round 1,** every press is counted (R70) and Android's backup is off (A23; the phone-to-phone transfer no longer carries Pascaline's data).
 - **S6 (decided 2026-10-20, the owner; built by A11, R38a, R38b): the backup** goes out by Android's "Save to" screen and comes in by a file picker; restore checks the whole file. Full text: archive. Would change if: the Save-to screen is missing on a supported WebView.
-- **R50 (2026-10-18): themes.** Rule: docs/05 3.10 "Appearance" and packages R50c–R50e; R50e takes R12c's theme setting. Would change if: a family goes unused for four weeks (it goes), or the start chunk cannot hold lazy theme files.
+- **R50 (2026-10-18; 2026-11-06): themes N62, Teal, Solarized** (R140, R150). Rule: docs/05 3.10 "Appearance". Would change if: a family goes unused for four weeks (it goes), or the start chunk cannot hold lazy theme files.
 - **Redo after ⌫ (Opus pass 44, 2026-10-20; R15c2):** Redo does not delete again (MathLive keeps no snapshot after a deletion, [#3125](https://github.com/arnog/mathlive/issues/3125)); no workaround of ours. Full text: archive.
 - **R15c Store (decided 2026-10-19, the owner; G2 item 58, device):** Shift + ᴇ (Store ▶) on an empty line after a result starts `Ans ▶`, as + − × ÷ do; built in R15c2.
-- **R15c (2026-10-17): the top cluster becomes R3; Apps, Menu and the views move to the status line.** Rule: docs/04 5.1, docs/05 3.2; built by R15c1, R15c2; R15c3, R15c4 wait behind Find. Full text: archive.
-- **R15b (2026-10-17): cluster rows 36 px; the place target (the glyph tile and ▾) at least 48 × 28 px** (R82f2, 2026-10-27; was 96 × 28). Why: 48 px rows would drop the viewport share to 0.311, below the 0.35 floor. Would change if: 36 px keys are mis-tapped on the phone.
-- **P16 (2026-10-18): the View key's tap is results mode; S9 fixed its shape** (a 44 px slice; Home and CAS only); move and merge not built. Would change if: under 14 collapses or 10 actions while collapsed in 14 days. Full text: archive.
+- **R15c (2026-10-17): the top cluster becomes R3; Apps, Menu and the views move to the status line.** Rule: docs/04 5.1, docs/05 3.2; built by R15c1–R15c4. Full text: archive.
+- **R15b (2026-10-17): cluster rows 36 px; the place target (the glyph tile and ▾) at least 48 × 28 px** (R82f2, 2026-10-27). Why: 48 px rows would drop the viewport share to 0.311, below the 0.35 floor. Would change if: 36 px keys are mis-tapped on the phone.
+- **P16 (2026-10-18, 2026-11-06): results mode folds the keypad** by its handle or a swipe down on the line (R53; Home and CAS). Would change if: under 14 folds or 10 actions while folded in 14 days. Full text: archive.
 - **R21 (2026-10-14): pick sheets rise over the keypad's rows 3–9, Settings too since 2026-10-27;** 36 px rows, 44 px cells, then scroll. Full text: archive.
 - **S2: one menu system (2026-10-13).** Rule: [archive/r8-menus.md](archive/r8-menus.md) sections 5–6 (M1–M7); the Home/CAS Menu is one list of nine on the picked row, else the last result (R11). Would change if: a G2 answer contradicts a rule.
 - **Engine defaults, not G2 copies (owner, 2026-10-19).** Choice: the default is what the engine does as built; a G2 special case stays only for a silent wrong number (principle 3) or a keystroke saving (principle 2), never for the match alone; of two equal readings, less code wins; the G2's layout and flow stay the backbone (P11). Would change if: a removal costs muscle memory (docs/03 rule 8).
@@ -59,7 +58,7 @@ The owner's other open items are in [backlog.md](backlog.md), "Needs the user". 
 - **P11 (2026-10-13): back to the G2's flow; milestone 4a before the rest of milestone 4.** Departures sit on top of the G2 way, never instead of it (docs/03 rules 5–13). Built; full text: archive.
 - **P7 (2026-10-12, revised by P11): keypad gestures.** The arrow keys are one trackpad; flicks up (Shift) and down (letter) on every key. Thresholds: Defaults "Flicks". Full text: archive. Would change if: the owner finds a threshold wrong on the phone.
 - **The letters stay on the keys (2026-10-14).** Rule: docs/04 5.1 (the letters; the unassigned Shift cells). Would change if: Alpha taps near zero (P7 point 4); a function in the benchmark needs a key and no cell is free.
-- **The application id is `dev.n62.calc` (owner, 2026-11-05); the web version lives at `https://n62.dev/` (owner, 2026-11-05).** The id never changes after the v0.1.0 tag; Pages deploys the PWA from a release tag (A45). Full text: archive. Would change if: the domain lapses.
+- **The application id is `dev.n62.calc`; the web version lives at `https://n62.dev/` (owner, 2026-11-05).** The id never changes after the v0.1.0 tag; Pages deploys the PWA from a release tag (A45). Full text: archive. Would change if: the domain lapses.
 - **Stored data carries a version; one signing key (2026-10-14).** Rule: docs/04 6.2 (the stamp); the throwaway key lives in `~/.cache/n62/keys/` for every worktree, so an install over the last keeps its data.
 - **Start chunk: 175 kB raw, 61 kB gzip (owner, 2026-10-27, kept 2026-10-31), pinned** (size-check.ts; the inline scripts 1.53 kB gzip). Rule: docs/04 8.3. Full text: archive. Would change if: the Tab One's keyboard-usable time passes 738 ms.
 - **Owner answers of 2026-10-19 (feel).** R34: one shared entry line, as on the G2 (an unentered line follows you between views; after Enter it clears); R43, R7's defaults and A4a points 3 and 4 as built. Full text: archive.
