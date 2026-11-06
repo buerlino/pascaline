@@ -14,18 +14,18 @@ const readers = ["app/scripts/gen-icons.mjs", "README.md", "logo/README.md"];
 /** Every logo file a reader names: logo/… paths, and gen-icons.mjs's layer("x.svg") names under logo/android_logo. */
 function named(file: string): string[] {
   const text = read(file);
-  const paths = [...text.matchAll(/logo\/[A-Za-z0-9_./-]+\.(?:svg|png|afdesign)/g)].map((m) => m[0]);
+  const paths = [...text.matchAll(/(?<![A-Za-z0-9_])logo\/[A-Za-z0-9_./-]+\.(?:svg|png|afdesign)/g)].map((m) => m[0]);
   const layers = [...text.matchAll(/layer\("([^"]+\.svg)"\)/g)].map((m) => `logo/android_logo/${m[1]}`);
   return [...paths, ...layers];
 }
 
 describe("A79: the logo files", () => {
   for (const file of readers) {
-    it(`${file} names only existing logo files, none of the old pascaline_ set`, () => {
+    it(`${file} names only existing logo files, none of the old set`, () => {
       const files = named(file);
       for (const f of files) {
         expect(existsSync(join(root, f)), `${file} names ${f}`).toBe(true);
-        expect(f, `${file} names the old file ${f}`).not.toMatch(/pascaline_/);
+        expect(f, `${file} names the old file ${f}`).not.toMatch(/pascaline[_]/);
       }
     });
   }
