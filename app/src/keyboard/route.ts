@@ -353,7 +353,7 @@ function rowsLoading(c: RouteCtx, key: Key): boolean {
 
 /** A key fires. `layer` overrides the Shift/Alpha state for this key only: a trackpad step ("primary"), a flick up
  *  ("shift") or down ("alpha"). `screen`: a press of the on-screen keypad (R144: it closes an open pick sheet). */
-export function press(c: RouteCtx, key: Key, layer?: Layer, screen = false): void {
+export function press(c: RouteCtx, key: Key, layer?: Layer, screen?: boolean): void {
   const p = key.actions.primary;
   if (p?.kind === "special" && (p.name === "shift" || p.name === "alpha")) return modifier(c, p.name, layer);
   // (F42: a tap on a sheet that is open but not drawn yet keeps its flag and closes it once drawn; a key pressed before a
