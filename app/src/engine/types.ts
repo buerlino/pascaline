@@ -250,6 +250,14 @@ export class EngineMemoryError extends Error {
   }
 }
 
+/** G183: the engine stopped on the input (a wasm trap, a stack overflow: F122, F145, G94); it was restarted. */
+export class EngineCrashError extends Error {
+  constructor(detail = "engine crashed") {
+    super(detail);
+    this.name = "EngineCrashError";
+  }
+}
+
 export class EngineCancelled extends Error {
   constructor() {
     super("cancelled");

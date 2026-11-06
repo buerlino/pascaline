@@ -3,6 +3,7 @@
 import { describe, expect, it } from "vitest";
 import type { Request, Response } from "./protocol.ts";
 import { createRequestHandler, type GiacLoader } from "./host.ts";
+import { deadEngine } from "./dead.ts";
 import { defaultHomeSettings } from "./homeEval.ts";
 import { giacAvailable, loadNodeGiac } from "./nodeGiac.ts";
 import { defaultCasSettings } from "./types.ts";
@@ -77,4 +78,17 @@ describe.skipIf(!giacAvailable())("the request handler's reply to a trap (G183, 
     const out = await run(() => loadNodeGiac(), [init, { id: 2, type: "home", input: "(atan(ln(-pi)+9007199254740993))^(sin(10^-300)-10^300)", settings: defaultHomeSettings }]);
     expect(out.at(-1)).toMatchObject({ id: 2, type: "fatal", dead: "crash" });
   }, 60_000);
+});
+
+describe("deadEngine (G24, G183)", () => {
+  it("knows the traps, the stack overflow and the memory failures; a plain error is no dead engine", () => {
+    expect(deadEngine(new WebAssembly.RuntimeError("unreachable"))).toBe("crash");
+    expect(deadEngine(new WebAssembly.RuntimeError("memory access out of bounds"))).toBe("crash");
+    expect(deadEngine(new RangeError("Maximum call stack size exceeded"))).toBe("crash");
+    expect(deadEngine(new Error("too much recursion"))).toBe("crash");
+    expect(deadEngine(new Error("Aborted(OOM)"))).toBe("memory");
+    expect(deadEngine(new Error("boom"))).toBeNull();
+    expect(deadEngine(new RangeError("toFixed() digits argument must be between 0 and 100"))).toBeNull();
+    expect(deadEngine("syntax error")).toBeNull();
+  });
 });

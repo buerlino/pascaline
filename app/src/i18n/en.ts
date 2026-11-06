@@ -116,6 +116,8 @@ export const en = {
   "error.syntax": "Syntax error",
   "error.engine": "The calculation failed",
   "error.memory": "Out of memory: the engine was restarted",
+  /** G183: a wasm trap or a stack overflow stopped the engine (F122); the stored names are back. */
+  "error.crashed": "The engine stopped on this input and was restarted",
   "error.ansTooLong": "Ans: the last result is too long to reuse (over 2 kB)",
   "engine.starting": "Starting the engine…",
   "engine.error": "The engine failed to start.",
