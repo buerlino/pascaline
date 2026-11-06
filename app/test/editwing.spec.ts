@@ -3,7 +3,7 @@
 // Redo, ⇤□ □⇥ on Shift + Copy and Paste), Store from the last result and the round pad's hub (decisions.md "R15c"
 // points 1–5, "R15c Store"). Expected values are derived (what the keys must type).
 import { expect, test } from "@playwright/test";
-import { drag, entryValue, open, recordVibrations, tap, touch, vibrations } from "./helpers.ts";
+import { drag, entryValue, open, recordVibrations, sheetKey, tap, touch, vibrations } from "./helpers.ts";
 
 test("⇤ and ⇥ (Shift + Undo, Shift + Redo) go to the line's ends", async ({ page }) => {
   await open(page);
@@ -77,7 +77,7 @@ test("Esc: stops a running job, goes back a sheet level, drops a pick, closes Se
   await page.evaluate(() =>
     window.n62.shell.showMenu("Test", [{ id: "more", label: "more", submenu: { title: "More", items: [{ id: "x", label: "x", run: () => {} }] } }]),
   );
-  await tap(page, ["d1"]);
+  await sheetKey(page, ["d1"]);
   await expect(page.getByTestId("sheet-title")).toHaveText("Test › More");
   await tap(page, ["esc"]);
   await expect(page.getByTestId("sheet-title")).toHaveText("Test");

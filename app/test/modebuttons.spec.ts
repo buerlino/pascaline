@@ -3,7 +3,7 @@
 // that saves a press: a tap on a button sets the value and closes the sheet. The digits chip opens the digits list
 // itself. By keys nothing changes: ◀ ▶ move the mark with the sheet open, a digit steps the row, Enter closes. Fake engine.
 import { expect, test, type Page } from "@playwright/test";
-import { open, sheet, tap } from "./helpers.ts";
+import { open, sheet, sheetKey, tap } from "./helpers.ts";
 
 const title = (page: Page) => page.getByTestId("sheet-title");
 const opt = (page: Page, row: string, id: string) => sheet(page).locator(`[data-id="${row}"] [data-option="${id}"]`);
@@ -63,7 +63,7 @@ test.describe("by touch", () => {
     await page.getByTestId("chip-digits").tap();
     await expect(title(page)).toHaveText("Mode › Significant digits");
     await expect(sheet(page).locator('[data-id="12"]')).toHaveAttribute("data-selected", "true");
-    await tap(page, ["left"]);
+    await sheetKey(page, ["left"]);
     await expect(title(page)).toHaveText("Mode");
     await tap(page, ["esc"]);
     await expect(sheet(page)).toHaveCount(0);
@@ -87,20 +87,21 @@ test.describe("by touch", () => {
 test.describe("by keys", () => {
   test("◀ ▶ move the mark with the sheet open, a digit steps the row forward, Enter closes", async ({ page }) => {
     await page.getByTestId("chip-format").tap();
-    await tap(page, ["right"]);
+    await sheetKey(page, ["right"]);
     await expect(opt(page, "format", "sci")).toHaveAttribute("aria-pressed", "true");
     await expect(sheet(page)).toBeVisible();
-    await tap(page, ["left", "left"]);
+    await sheetKey(page, ["left", "left"]);
     await expect(opt(page, "format", "pfx")).toHaveAttribute("aria-pressed", "true"); // round the end
-    await tap(page, ["up", "d1"]); // Angle row: the digit steps it
+    await sheetKey(page, ["up", "d1"]); // Angle row: the digit steps it
     expect(await setting(page, "angle")).toBe("deg");
     await expect(sheet(page)).toBeVisible();
     await tap(page, ["enter"]);
     await expect(sheet(page)).toHaveCount(0);
   });
 
-  test("@mode, right, enter gives what it gave: the angle unit switches", async ({ page }) => {
-    await tap(page, ["@mode", "right", "enter"]);
+  test("@mode, then a hardware ▶ and Enter: the angle unit switches (an on-screen ▶ closes the sheet, R144)", async ({ page }) => {
+    await tap(page, ["@mode"]);
+    await sheetKey(page, ["right", "enter"]);
     expect(await setting(page, "angle")).toBe("deg");
     await expect(sheet(page)).toHaveCount(0);
   });

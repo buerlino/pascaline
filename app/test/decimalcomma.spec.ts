@@ -4,7 +4,7 @@
 // are drawn and copied with the comma, and a pasted 1,5e-3 is a number. Key sequences on the real engine. Expected values
 // are derived: 3,5 × 2 = 7, 1,5 ÷ 2 = 0,75, 1,5ᴇ-3 = 0,0015, 3,ᴇ3 = 3.ᴇ3 = 3000.
 import { expect, test, type Page } from "@playwright/test";
-import { entryValue, lastResult, open, setClipboard, tap, useClipboardLock } from "./helpers.ts";
+import { entryValue, lastResult, open, setClipboard, sheetKey, tap, useClipboardLock } from "./helpers.ts";
 
 test.use({ permissions: ["clipboard-read", "clipboard-write"] });
 // The system clipboard is one for the whole browser: these tests run one after another.
@@ -139,9 +139,9 @@ test("max(1,5) in point mode gives 5; after Settings › Numbers › Decimal mar
   const mark = page.getByTestId("menu").locator('[role="menuitem"][data-id="mark"]');
   await expect(mark.getByTestId("sheet-value")).toHaveText("Point");
   const active = page.getByTestId("menu").locator('[data-active="true"]');
-  for (let n = 0; n < 8 && (await active.getAttribute("data-id")) !== "mark"; n++) await tap(page, ["up"]);
+  for (let n = 0; n < 8 && (await active.getAttribute("data-id")) !== "mark"; n++) await sheetKey(page, ["up"]);
   await expect(active).toHaveAttribute("data-id", "mark");
-  await tap(page, ["right"]);
+  await sheetKey(page, ["right"]);
   await expect(mark.getByTestId("sheet-value")).toHaveText("Comma");
   await tap(page, ["esc", "esc", "esc"]);
   await expect(page.getByTestId("menu")).toHaveCount(0);

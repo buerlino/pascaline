@@ -6,7 +6,7 @@
 // Enter saves, Esc cancels, an empty or taken name is refused with a notice. A switch shows the notice naming what it
 // set; the free keys' faces follow; a later change to a held setting puts a dot after the name. The fake engine.
 import { expect, test, type Page } from "@playwright/test";
-import { entryValue, open, sheet, tap } from "./helpers.ts";
+import { entryValue, open, sheet, sheetKey, tap } from "./helpers.ts";
 
 const title = (page: Page) => page.getByTestId("sheet-title");
 const row = (page: Page, id: string) => sheet(page).locator(`[role="menuitem"][data-id="${id}"]`);
@@ -62,7 +62,8 @@ test.describe("by keys", () => {
     await expect(label(page)).toHaveCount(0);
     expect(await entryValue(page)).toBe("12"); // the line as it was before the name
     expect(await historyRows(page)).toBe(0);
-    await tap(page, ["@mode", "down", "down", "down", "down"]);
+    await tap(page, ["@mode"]);
+    await sheetKey(page, ["down", "down", "down", "down"]);
     await expect(active(page)).toHaveAttribute("data-id", "preset");
     await expect(row(page, "preset").getByTestId("sheet-value")).toHaveText("AB");
     await expect(row(page, "preset").getByTestId("row-hint")).toHaveText("RAD · STD 12 · point · no keys");
@@ -110,18 +111,19 @@ test.describe("by keys", () => {
     await setKey(page, "u2", "pH");
     await saveAs(page, "Chemistry");
     await expect(face(page, "u1")).toHaveText("mol");
-    await tap(page, ["@mode", "down", "down", "down", "down", "left"]);
+    await tap(page, ["@mode"]);
+    await sheetKey(page, ["down", "down", "down", "down", "left"]);
     await expect(notice(page)).toHaveText("Lab: DEG · STD 12 · point · 1 key");
     await expect(title(page)).toHaveText("Mode"); // the sheet stays open
     await expect(row(page, "preset").getByTestId("sheet-value")).toHaveText("Lab");
     await expect(row(page, "preset").getByTestId("row-hint")).toHaveText("DEG · STD 12 · point · 1 key");
     expect(await angle(page)).toBe("deg");
     await expect(face(page, "u1")).toHaveText("sinh");
-    await tap(page, ["right"]);
+    await sheetKey(page, ["right"]);
     await expect(notice(page)).toHaveText("Chemistry: RAD · SCI 4 · point · 2 keys");
     await expect(face(page, "u1")).toHaveText("mol");
     await expect(face(page, "u2")).toHaveText("pH");
-    await tap(page, ["right"]); // round the end
+    await sheetKey(page, ["right"]); // round the end
     await expect(row(page, "preset").getByTestId("sheet-value")).toHaveText("Lab");
     await tap(page, ["d6", "d6"]);
     await expect(title(page)).toHaveText("Mode › Settings › Counters");

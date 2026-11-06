@@ -3,7 +3,7 @@
 // bottom edge, and fit their rows without a scroll; no key moves, and the top cluster stays uncovered and live.
 // Shift + 6 draws each cell over the key that picks it. The fake engine, except for the Tmpl flow.
 import { expect, test, type Page } from "@playwright/test";
-import { entryValue, open, tap } from "./helpers.ts";
+import { entryValue, open, sheetKey, tap } from "./helpers.ts";
 
 // Not helpers.sheet: this one is every element with role menu, not the `menu` test id.
 const sheet = (page: Page) => page.locator('[role="menu"]');
@@ -165,7 +165,7 @@ test.describe("at 412 × 915", () => {
     }
   });
 
-  test("a short sheet leaves the maths keys above it visible, dimmed, with their sheet job; nothing types into the line", async ({ page }) => {
+  test("a short sheet leaves the maths keys above it visible and dimmed; a tap on one closes it (R144), a typed key keeps its sheet job; nothing types into the line", async ({ page }) => {
     await openSheet(page, "apps");
     const hits = await page.evaluate((ids) =>
       ids.map((id) => {
@@ -174,13 +174,18 @@ test.describe("at 412 × 915", () => {
       }), ["sq", "sin", "tmpl"]);
     expect(hits).toEqual(["sq", "sin", "tmpl"]); // the Apps sheet is four rows high (Home, CAS, the two apps; R15b)
     await expect(page.getByTestId("sheet-dim")).toBeVisible();
-    await tap(page, ["sq", "sin"]); // neither has a job in a short list
+    await sheetKey(page, ["sq", "sin"]); // neither has a job in a short list
     await expect(sheet(page)).toBeVisible();
     expect(await entryValue(page)).toBe("");
-    await tap(page, ["tmpl"]); // Tmpl keeps its job: it opens its palette in place of Apps
+    await sheetKey(page, ["tmpl"]); // Tmpl keeps its job: it opens its palette in place of Apps
     await expect(page.getByTestId("sheet-hint")).toHaveText("Fraction");
-    await tap(page, ["tmpl"]);
+    await tap(page, ["tmpl"]); // a tap outside the sheet closes it and does nothing else (R144)
     await expect(sheet(page)).toHaveCount(0);
+    expect(await entryValue(page)).toBe("");
+    await openSheet(page, "apps");
+    await tap(page, ["sq"]);
+    await expect(sheet(page)).toHaveCount(0);
+    expect(await entryValue(page)).toBe("");
   });
 
   test("a digit key under the sheet still picks its row (by a hardware key)", async ({ page }) => {
