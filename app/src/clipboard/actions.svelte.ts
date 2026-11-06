@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copy, paste and share as the keys and menus use them (docs/04 section 2.6): the Copy key and Shift + Copy, the Home/CAS
+// Copy, paste and share as the keys and menus use them (docs/04 section 2.6): the Copy and Paste keys, the Home/CAS
 // ☰ menu, a long press on a history row, and the Num table. The texts come from text.ts and paste.ts; the delivery is the
 // ClipboardPort. Every action ends in a short notice, so a refusal is never silent.
 import type { EntryController } from "../entry/controller.ts";
@@ -166,7 +166,7 @@ export class ClipActions {
     });
   }
 
-  /** Shift + Copy, ☰ → Paste: the clipboard as one number, onto the entry line. `text`: a system paste's own text
+  /** The Paste key, ☰ → Paste: the clipboard as one number, onto the entry line. `text`: a system paste's own text
    *  (Ctrl+V, Shift+Insert, the context menu; R114), which takes the same path without reading the clipboard. */
   paste(text?: string): Promise<boolean> {
     return this.serial(() => this.pasteNow(text));

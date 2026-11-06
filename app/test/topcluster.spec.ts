@@ -3,7 +3,7 @@
 // table, by touch and by keys; the place name and its hit area; the free keys U1–U6. The editing wing's own jobs are in
 // editwing.spec.ts. Fake engine.
 import { expect, test, type Page } from "@playwright/test";
-import { entryValue, flick, open, recordVibrations, sheet, tap, touch, vibrations } from "./helpers.ts";
+import { entryValue, flick, open, recordVibrations, setClipboard, sheet, tap, touch, useClipboardLock, vibrations } from "./helpers.ts";
 
 const place = (page: Page) => page.getByTestId("place");
 const view = (page: Page) => page.evaluate(() => window.n62.session.view);
@@ -17,8 +17,8 @@ test.beforeEach(async ({ page }) => {
   await open(page);
 });
 
-test("the cluster is R3: U1-U6 empty in columns 1-2, the round pad, View | Esc, Undo | Copy, ⇤ | ⇥; View dimmed", async ({ page }) => {
-  const ids = ["u1", "u2", "up", "view", "esc", "u3", "u4", "left", "right", "undo", "copy", "u5", "u6", "down", "lstart", "lend"];
+test("the cluster is R3: U1-U6 empty in columns 1-2, the round pad, Help | Esc, Undo | Redo, Copy | Paste; Help dimmed (R146)", async ({ page }) => {
+  const ids = ["u1", "u2", "up", "help", "esc", "u3", "u4", "left", "right", "undo", "redo", "u5", "u6", "down", "copy", "paste"];
   const boxes = await page.evaluate(
     (ids) =>
       Object.fromEntries(
@@ -31,20 +31,46 @@ test("the cluster is R3: U1-U6 empty in columns 1-2, the round pad, View | Esc, 
   );
   const rowOf = (ids: string[]) => new Set(ids.map((id) => boxes[id]?.y)).size;
   const colOf = (ids: string[]) => new Set(ids.map((id) => boxes[id]?.x)).size;
-  expect(rowOf(["u1", "u2", "up", "view", "esc"])).toBe(1);
-  expect(rowOf(["u3", "u4", "left", "right", "undo", "copy"])).toBe(1);
-  expect(rowOf(["u5", "u6", "down", "lstart", "lend"])).toBe(1);
+  expect(rowOf(["u1", "u2", "up", "help", "esc"])).toBe(1);
+  expect(rowOf(["u3", "u4", "left", "right", "undo", "redo"])).toBe(1);
+  expect(rowOf(["u5", "u6", "down", "copy", "paste"])).toBe(1);
   expect(colOf(["u1", "u3", "u5"])).toBe(1);
   expect(colOf(["u2", "u4", "u6"])).toBe(1);
-  expect(colOf(["view", "undo", "lstart"])).toBe(1);
-  expect(colOf(["esc", "copy", "lend"])).toBe(1);
+  expect(colOf(["help", "undo", "copy"])).toBe(1);
+  expect(colOf(["esc", "redo", "paste"])).toBe(1);
   for (const u of ["u1", "u2", "u3", "u4", "u5", "u6"]) await expect(page.locator(`[data-key="${u}"]`)).toHaveAttribute("data-user", "empty");
-  await expect(page.locator('[data-key="view"]')).toHaveAttribute("data-dead", "true");
-  const legends = { view: "Help", esc: "Clear", undo: "Redo", copy: "Paste", lstart: "⇤□", lend: "□⇥" };
+  await expect(page.locator('[data-key="help"]')).toHaveAttribute("data-dead", "true");
+  const faces = { help: "Help", esc: "Esc", undo: "Undo", redo: "Redo", copy: "Copy", paste: "Paste" };
+  for (const [id, l] of Object.entries(faces)) await expect(page.locator(`[data-key="${id}"] .main`), id).toHaveText(l);
+  const legends = { help: "Settings", esc: "Clear", undo: "⇤", redo: "⇥", copy: "⇤□", paste: "□⇥" };
   for (const [id, l] of Object.entries(legends)) await expect(page.locator(`[data-key="${id}"] .shiftlegend`), id).toHaveText(l);
   // no letter line in the cluster (vertical space)
   await expect(page.locator('[data-key="esc"] .alphalegend, [data-key="u1"] .alphalegend')).toHaveCount(0);
-  await expect(page.locator(["apps", "symb", "plot", "num", "help", "menu", "cancel", "app", "cas"].map((id) => `[data-key="${id}"]`).join(", "))).toHaveCount(0);
+  const gone = ["apps", "symb", "plot", "num", "menu", "cancel", "app", "cas", "view", "lstart", "lend"];
+  await expect(page.locator(gone.map((id) => `[data-key="${id}"]`).join(", "))).toHaveCount(0);
+});
+
+test("R146: one press for Redo; Shift + Help opens Settings, and so does a flick up on Help", async ({ page }) => {
+  await tap(page, ["d7", "mul", "d8", "undo"]);
+  expect(await entryValue(page)).toBe("7\\times");
+  await tap(page, ["redo"]);
+  expect(await entryValue(page)).toBe("7\\times8");
+  await tap(page, ["shift", "help"]);
+  await expect(page.getByTestId("sheet-title")).toHaveText("Mode › Settings");
+  await tap(page, ["esc", "esc"]); // back to Mode, then closed (R49)
+  await expect(sheet(page)).toBeHidden();
+  await flick(page, "help", "up");
+  await expect(page.getByTestId("sheet-title")).toHaveText("Mode › Settings");
+});
+
+test.describe("R146: Paste is one press", () => {
+  test.use({ permissions: ["clipboard-read", "clipboard-write"] });
+  useClipboardLock();
+  test("Paste puts the clipboard's number on the line", async ({ page }) => {
+    await setClipboard(page, "42");
+    await tap(page, ["paste"]);
+    await expect.poll(() => entryValue(page)).toBe("42");
+  });
 });
 
 test("Home ↔ CAS: the place name and its sheet, by touch and by keys (the sheet's rows 1 and 2)", async ({ page }) => {
@@ -192,15 +218,14 @@ test("a free key's Alpha slot: a flick down and Alpha + tap fire it, the face an
   expect(await entryValue(page)).toBe(wanted);
 });
 
-test("an empty free key and View give the dead-key haptic and type nothing", async ({ page }) => {
+test("an empty free key and Help give the dead-key haptic and type nothing", async ({ page }) => {
   await page.evaluate(() => window.n62.session.setHaptics({ on: true, ms: 10 }));
-  for (const id of ["u1", "u6", "view"]) {
+  for (const id of ["u1", "u6", "help"]) {
     const before = (await vibrations(page)).length;
     await tap(page, [id]);
     await expect.poll(async () => (await vibrations(page)).length - before, id).toBe(3); // key down + the double
   }
   await flick(page, "u2", "up"); // U2's Shift slot ships empty
-  await flick(page, "view", "up"); // Help: not built yet
   expect(await entryValue(page)).toBe("");
   expect(await view(page)).toBe("home");
 });

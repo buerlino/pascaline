@@ -433,16 +433,16 @@ cases:
 
   - id: c49
     area: entry
-    title: "Copy the last result, Paste it (Shift Copy) into the line"
-    keys: [d7, enter, copy, shift, copy, add, d1, enter]
+    title: "Copy the last result, Paste it into the line (the Paste key, owner 2026-11-06)"
+    keys: [d7, enter, copy, paste, add, d1, enter]
     expect: { result: "8", mark: "=" }
     value: "8"
     source: derived
 
   - id: c50
     area: entry
-    title: "▲ picks an earlier row; Copy and Paste take that row"
-    keys: [d2, enter, d3, enter, up, up, copy, shift, copy, add, d1, enter]
+    title: "▲ picks an earlier row; Copy takes that row, the Paste key puts it on the line (owner 2026-11-06)"
+    keys: [d2, enter, d3, enter, up, up, copy, paste, add, d1, enter]
     expect: { result: "3", mark: "=" }
     value: "3"
     source: derived
