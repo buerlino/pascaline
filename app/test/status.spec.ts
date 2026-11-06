@@ -5,8 +5,8 @@ import { expect, test, type Page } from "@playwright/test";
 import { entryValue, open, sheet, tap } from "./helpers.ts";
 
 const lastText = (page: Page) => page.locator('[data-testid="result"] .result').last();
-const ready = (page: Page) => page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
-const angle = (page: Page) => page.evaluate(() => window.pascaline.session.settings.angle);
+const ready = (page: Page) => page.waitForFunction(() => window.n62.session.engineState === "ready", undefined, { timeout: 20_000 });
+const angle = (page: Page) => page.evaluate(() => window.n62.session.settings.angle);
 const active = (page: Page) => sheet(page).locator('[role="menuitem"][data-active="true"]');
 
 /** The share of the window the calculation viewport (history or view, and the entry line) gets, docs/03 rule 9. */
@@ -73,7 +73,7 @@ test("the tabs switch the views of Function and Solve, the current one marked; H
   await expect(page.getByTestId("place")).toHaveAttribute("data-view", "num");
   await page.getByTestId("place").tap();
   await tap(page, ["d4"]);
-  await page.waitForFunction(() => window.pascaline.shell.app === "solve" && window.pascaline.shell.loading === null);
+  await page.waitForFunction(() => window.n62.shell.app === "solve" && window.n62.shell.loading === null);
   await expect(page.getByTestId("tab-plot")).toHaveCount(0); // Solve has Symb and Num only
   await expect(page.getByRole("tab")).toHaveCount(2);
   await tab("symb").tap();
@@ -93,7 +93,7 @@ test("☰ opens the view's menu and Settings is its last row, key 0 in Home (R15
   await expect(page.getByTestId("sheet-title")).toHaveText("Home menu › Settings");
   await tap(page, ["esc", "esc"]);
   await tap(page, ["@plot"]);
-  await page.waitForFunction(() => window.pascaline.shell.app === "function" && window.pascaline.shell.loading === null);
+  await page.waitForFunction(() => window.n62.shell.app === "function" && window.n62.shell.loading === null);
   await page.getByTestId("menu-button").tap();
   await expect(rows.last()).toContainText("Settings");
   await rows.last().tap();
@@ -114,7 +114,7 @@ test("the status line fits at 360 px in an app with the chips and ☰, and the t
   await page.setViewportSize({ width: 360, height: 740 });
   await open(page);
   await tap(page, ["@plot"]);
-  await page.waitForFunction(() => window.pascaline.shell.app === "function" && window.pascaline.shell.loading === null);
+  await page.waitForFunction(() => window.n62.shell.app === "function" && window.n62.shell.loading === null);
   const m = await page.evaluate(() => {
     const h = document.querySelector("header") as HTMLElement;
     const r = (id: string) => document.querySelector(`[data-testid="${id}"]`)?.getBoundingClientRect();
@@ -189,7 +189,7 @@ test("tap RAD → DEG changes the next result; sin 90 is 1 in degrees", async ({
 });
 
 /** R15c: Mode has no key of its own; a user key may hold it (the keys-only path, decisions.md "R15c" costs). */
-const modeOnU1 = (page: Page) => page.evaluate(() => window.pascaline.userKeys.set("u1", "primary", { label: "Mode", action: { special: "mode" } }));
+const modeOnU1 = (page: Page) => page.evaluate(() => window.n62.userKeys.set("u1", "primary", { label: "Mode", action: { special: "mode" } }));
 
 test("DEG → RAD by keys: a user key that holds Mode, ▶, Enter; the sheet opens on Angle every time", async ({ page }) => {
   await open(page);
@@ -237,7 +237,7 @@ test("digits to 20: Mode, 3, 7", async ({ page }) => {
   await tap(page, ["d7"]);
   await expect(sheet(page)).toBeHidden();
   await expect(page.getByTestId("chip-digits")).toHaveText("20");
-  expect(await page.evaluate(() => window.pascaline.session.settings.digits)).toBe(20);
+  expect(await page.evaluate(() => window.n62.session.settings.digits)).toBe(20);
 });
 
 test("the format and digits chips open the Mode sheet on their row; ◀ ▶ change a value in place, a tap on a row steps it", async ({ page }) => {
@@ -257,10 +257,10 @@ test("the format and digits chips open the Mode sheet on their row; ◀ ▶ chan
   await tap(page, ["right", "right"]);
   await expect(page.getByTestId("chip-digits")).toHaveText("14");
   await sheet(page).locator('[data-id="entry"]').tap(); // a tap steps the row forward and the sheet stays
-  expect(await page.evaluate(() => window.pascaline.session.settings.entry)).toBe("line");
+  expect(await page.evaluate(() => window.n62.session.settings.entry)).toBe("line");
   await expect(sheet(page)).toBeVisible();
   await sheet(page).locator('[data-id="entry"]').tap();
-  expect(await page.evaluate(() => window.pascaline.session.settings.entry)).toBe("textbook");
+  expect(await page.evaluate(() => window.n62.session.settings.entry)).toBe("textbook");
 });
 
 test("Shift and Alpha do nothing while the Mode sheet is open, and Esc goes back one level, then closes", async ({ page }) => {
@@ -293,7 +293,7 @@ test("the last row of the Mode sheet opens Settings as its next level, on its fi
 test("the sheets work inside an app, and the angle unit set there is the one the app uses", async ({ page }) => {
   await open(page);
   await tap(page, ["@plot"]);
-  await page.waitForFunction(() => window.pascaline.shell.app === "function" && window.pascaline.shell.loading === null); // keys pressed while an app loads wait; a place key does not
+  await page.waitForFunction(() => window.n62.shell.app === "function" && window.n62.shell.loading === null); // keys pressed while an app loads wait; a place key does not
   await tap(page, ["@mode", "right", "enter"]);
   expect(await angle(page)).toBe("deg");
   await expect(page.getByTestId("place")).toHaveAttribute("data-view", "plot");

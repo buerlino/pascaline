@@ -119,7 +119,7 @@ test("Del mirror: 5 ( ) 2 Del gives 52; log log Del Del empties the line", async
   expect(await del(page)).toBe("52");
   await tap(page, ["d7"]);
   expect(await entryValue(page)).toBe("527");
-  await page.evaluate(() => window.pascaline.entry.clear());
+  await page.evaluate(() => window.n62.entry.clear());
   await tap(page, ["log", "log"]);
   expect(await del(page)).toBe(EMPTY_LOG);
   expect(await del(page)).toBe("");
@@ -135,7 +135,7 @@ test("no half pair after any ⌫ from the keys (the evaluate-at bar owns its \\l
     ["sin", "paren", "d2"],
   ];
   for (const s of seqs) {
-    await page.evaluate(() => window.pascaline.entry.clear());
+    await page.evaluate(() => window.n62.entry.clear());
     await tap(page, s);
     const lines: string[] = [];
     for (let i = 0; i < 5; i++) lines.push(await bksp(page));
@@ -155,14 +155,14 @@ test("evaluate-at: ⌫ at the start of its body removes the template and keeps t
 test("⌫ still removes one character, one ᴇ and one chip", async ({ page }) => {
   await tap(page, ["d1", "d2"]);
   expect(await bksp(page)).toBe("1");
-  await page.evaluate(() => window.pascaline.entry.clear());
+  await page.evaluate(() => window.n62.entry.clear());
   await tap(page, ["emark", "d5"]);
   expect(await entryValue(page)).toBe("1\\emark5");
   expect(await bksp(page)).toBe("1\\emark");
   expect(await bksp(page)).toBe("1");
-  await page.evaluate(() => window.pascaline.entry.clear());
+  await page.evaluate(() => window.n62.entry.clear());
   await tap(page, ["d2", "add"]);
-  await page.evaluate(() => window.pascaline.entry.insertResult("7", { value: "7", exact: true }));
+  await page.evaluate(() => window.n62.entry.insertResult("7", { value: "7", exact: true }));
   expect(await entryValue(page)).toBe("2+\\res{1}{7}");
   expect(await bksp(page)).toBe("2+");
 });
@@ -177,7 +177,7 @@ test("Undo brings the removed template back whole", async ({ page }) => {
 /** The selected LaTeX, or "" when the selection is collapsed. */
 const selected = (page: Page): Promise<string> =>
   page.evaluate(() => {
-    const mf = window.pascaline.entry.field;
+    const mf = window.n62.entry.field;
     return !mf || mf.selectionIsCollapsed ? "" : mf.getValue(mf.selection, "latex");
   });
 
@@ -198,7 +198,7 @@ test("an exponent on a bracket stays on it: ⌫ at the start of (1+2)² selects 
   await tap(page, ["paren", "d1", "add", "d2", "right", "sq"]);
   expect(await entryValue(page)).toBe("\\left(1+2\\right)^2");
   await page.evaluate(() => {
-    const mf = window.pascaline.entry.field;
+    const mf = window.n62.entry.field;
     if (mf) mf.position = 1; // the start of the body
   });
   expect(await bksp(page)).toBe("\\left(1+2\\right)^2");
@@ -210,7 +210,7 @@ test("an exponent on a bracket stays on it: ⌫ at the start of (1+2)² selects 
 // 3; at the start of the first bound, with only the body typed, the body stays, point 4)
 test("lim with empty bounds: ⌫ at the start of its body steps back through the bounds, then keeps the body", async ({ page }) => {
   await tmpl(page, "limit");
-  await page.evaluate(() => window.pascaline.entry.field?.executeCommand("moveToMathfieldEnd"));
+  await page.evaluate(() => window.n62.entry.field?.executeCommand("moveToMathfieldEnd"));
   await tap(page, ["left", "d7", "left"]);
   const line = "\\lim_{\\placeholder{}\\to\\placeholder{}}\\left(7\\right)";
   expect(await entryValue(page)).toBe(line);
@@ -220,9 +220,9 @@ test("lim with empty bounds: ⌫ at the start of its body steps back through the
 });
 
 test("EQ: ⌫ at the start of its first value with the second one filled selects the whole template", async ({ page }) => {
-  await page.evaluate(() => window.pascaline.entry.set("\\operatorname{EQ}\\left(2,3\\right)"));
+  await page.evaluate(() => window.n62.entry.set("\\operatorname{EQ}\\left(2,3\\right)"));
   await page.evaluate(() => {
-    const mf = window.pascaline.entry.field;
+    const mf = window.n62.entry.field;
     if (mf) mf.position = 5; // the start of the body (after the name's letters)
   });
   expect(await bksp(page)).toBe("\\operatorname{EQ}\\left(2,3\\right)");
@@ -245,7 +245,7 @@ test("hardware Delete is the mirror: sin 2 3 then Delete keeps 23; log log Delet
   await tap(page, ["sin", "d2", "d3"]);
   await page.keyboard.press("Delete");
   expect(await entryValue(page)).toBe("23");
-  await page.evaluate(() => window.pascaline.entry.clear());
+  await page.evaluate(() => window.n62.entry.clear());
   await tap(page, ["log", "log"]);
   await page.keyboard.press("Delete");
   expect(await entryValue(page)).toBe(EMPTY_LOG);
@@ -295,7 +295,7 @@ test("sin 2 ▶ ⌫ ⌫ 3 gives sin(3), not sin(3 with the bracket gone", async 
 test("5 |2| ▶ ⌫ keeps both bars; a function inside a sum keeps its pair", async ({ page }) => {
   await tap(page, ["d5", "shift", "neg", "d2", "right"]);
   expect(await bksp(page)).toBe("5\\left|2\\right|");
-  await page.evaluate(() => window.pascaline.entry.clear());
+  await page.evaluate(() => window.n62.entry.clear());
   await tap(page, ["d1", "add", "log", "d2", "right"]);
   expect(await bksp(page)).toBe("1+\\log\\left(2\\right)");
   await tap(page, ["d5"]);
@@ -322,7 +322,7 @@ test("from the end of 5 sin 2, ⌫ reaches the empty line with no half pair", as
 });
 
 test("the one-line √: √ 2 ▶ ⌫ steps into the body; the name goes with its pair", async ({ page }) => {
-  await page.evaluate(() => window.pascaline.session.setEntry("line"));
+  await page.evaluate(() => window.n62.session.setEntry("line"));
   await tap(page, ["shift", "sq", "d2", "right"]);
   const open = "\\operatorname{\\mathrm{sqrt}}\\left(";
   expect(await entryValue(page)).toBe(`${open}2\\right)`);
@@ -333,7 +333,7 @@ test("the one-line √: √ 2 ▶ ⌫ steps into the body; the name goes with it
 
 /** Put the cursor at the start of the line. */
 const toStart = (page: Page): Promise<void> =>
-  page.evaluate(() => window.pascaline.entry.field?.executeCommand("moveToMathfieldStart")).then(() => undefined);
+  page.evaluate(() => window.n62.entry.field?.executeCommand("moveToMathfieldStart")).then(() => undefined);
 
 test("Del mirror: Del right before a function name steps to the start of its body and deletes nothing", async ({ page }) => {
   await tap(page, ["sin", "d2"]);
@@ -355,7 +355,7 @@ test("Del mirror: before an opening bracket, and from the start of 5 sin 2 to th
   expect(await del(page)).toBe("\\left|2\\right|");
   await tap(page, ["d7"]);
   expect(await entryValue(page)).toBe("\\left|72\\right|");
-  await page.evaluate(() => window.pascaline.entry.clear());
+  await page.evaluate(() => window.n62.entry.clear());
   await tap(page, ["d5", "sin", "d2"]);
   await toStart(page);
   const lines: string[] = [];

@@ -10,7 +10,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { entryValue, flick, open, tap, useClipboardLock } from "./helpers.ts";
 
 const up = (page: Page): Promise<unknown> =>
-  page.waitForFunction(() => window.pascaline.unitView !== undefined && document.activeElement === window.pascaline.unitView.element && document.querySelector('[data-pad="unit"]') !== null);
+  page.waitForFunction(() => window.n62.unitView !== undefined && document.activeElement === window.n62.unitView.element && document.querySelector('[data-pad="unit"]') !== null);
 const unitsKey = async (page: Page): Promise<void> => {
   await flick(page, "tmpl", "up");
   await up(page);
@@ -21,19 +21,19 @@ const lastRow = (page: Page) => page.locator("article.item").last();
 /** The view's slot as text: `m`, `m:m`, `m^2`, `` (empty). */
 const slotText = (page: Page, id: string): Promise<string> =>
   page.evaluate((id) => {
-    const s = window.pascaline.unitView?.view.model(id)?.slot;
+    const s = window.n62.unitView?.view.model(id)?.slot;
     return (s?.tokens ?? []).map((t, i) => `${i === s?.per ? "/ " : ""}${t.prefix ? `${t.prefix}:` : ""}${t.unit}${t.power ? `^${t.power}` : ""}`).join(" ");
   }, id);
 /** The chip table of the entry line, and the one result chip on it. */
 const lineChip = (page: Page) =>
   page.evaluate(() => {
-    const table = window.pascaline.entry.chips;
+    const table = window.n62.entry.chips;
     const keys = Object.keys(table).filter((k) => k.startsWith("res:"));
     return keys.length === 1 ? table[keys[0] as string] : undefined;
   });
 const leaveView = async (page: Page): Promise<void> => {
   await tap(page, ["esc"]);
-  await page.waitForFunction(() => window.pascaline.unitView === undefined);
+  await page.waitForFunction(() => window.n62.unitView === undefined);
 };
 
 /** 2 × π × 2 5 in mm, evaluated, then the m alternative (t04 with the view). */
@@ -65,7 +65,7 @@ async function t10(page: Page): Promise<void> {
 
 /** Pick the last history row with ▲ on an empty line and put its result on the line (Enter). */
 async function pickLast(page: Page): Promise<void> {
-  await page.evaluate(() => window.pascaline.entry.clear());
+  await page.evaluate(() => window.n62.entry.clear());
   await tap(page, ["up", "enter"]);
   await expect.poll(() => entryValue(page)).toMatch(/^\\res\{\d+\}/);
 }
@@ -73,14 +73,14 @@ async function pickLast(page: Page): Promise<void> {
 test.describe("the way back from the unit view (R63)", () => {
   test.beforeEach(async ({ page }) => {
     await open(page, "");
-    await page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
+    await page.waitForFunction(() => window.n62.session.engineState === "ready", undefined, { timeout: 20_000 });
   });
 
   test("2π·25 mm, tap m, pick the row: the row reads 0.157079632679 m, the chip 0.157079632679 with m set apart, and chip × 2 in Home is ≈ 0.314159265359, unit dropped", async ({ page }) => {
     await t04(page);
     // one row for this visit of the view, holding its last result (the m alternative), its line, slots and summary
     const row = await page.evaluate(() => {
-      const r = window.pascaline.session.home.at(-1);
+      const r = window.n62.session.home.at(-1);
       return r && { latex: r.latex, status: r.status, unit: r.units?.unit, dim: r.units?.dim, slots: Object.keys(r.units?.slots ?? {}).sort() };
     });
     expect(row).toEqual({ latex: "2\\times\\pi\\times25", status: "done", unit: "m", dim: "m1", slots: ["end", "u2"] });
@@ -101,21 +101,21 @@ test.describe("the way back from the unit view (R63)", () => {
     await expect(lastRow(page).getByTestId("mark")).toHaveText("≈");
     await expect(lastRow(page).getByTestId("unit-dropped")).toHaveText("unit dropped: Home has no units");
     // Ans after a unit result is the same chip
-    await page.evaluate(() => window.pascaline.session.home.splice(-1, 1));
-    const ans = await page.evaluate(() => window.pascaline.session.lastChip("home"));
+    await page.evaluate(() => window.n62.session.home.splice(-1, 1));
+    const ans = await page.evaluate(() => window.n62.session.lastChip("home"));
     expect(ans).toEqual({ value: "1/20*pi", exact: true, unit: { text: "m", dim: "m1", slot: { tokens: [{ unit: "m" }] } } });
   });
 
   test("after a unit result, a line without its chip or Ans gets no unit-dropped note; Ans × 2 does", async ({ page }) => {
     await t04(page);
     await leaveView(page);
-    await page.evaluate(() => window.pascaline.entry.clear());
+    await page.evaluate(() => window.n62.entry.clear());
     await tap(page, ["d1", "add", "d1", "enter"]);
     await expect(page.locator('[data-status="done"]')).toHaveCount(2);
     await expect(lastRow(page).locator(".result")).toHaveAttribute("data-text", "2");
     await expect(lastRow(page).getByTestId("unit-dropped")).toHaveCount(0);
     // the unit row is the last result again: × on an empty line starts with Ans (docs/04 2.8), which is its chip
-    await page.evaluate(() => window.pascaline.session.home.splice(-1, 1));
+    await page.evaluate(() => window.n62.session.home.splice(-1, 1));
     await tap(page, ["mul", "d2", "enter"]);
     await expect(page.locator('[data-status="done"]')).toHaveCount(2);
     await expect(lastRow(page).locator(".result")).toHaveAttribute("data-text", "0.314159265359");
@@ -125,7 +125,7 @@ test.describe("the way back from the unit view (R63)", () => {
   test("R121: 4700 ▶ R, then R × 2 with A shows = 9400 A with the note R has no unit, in the view and in its Home row (derived)", async ({ page }) => {
     await tap(page, ["d4", "d7", "d0", "d0", "shift", "emark", "alpha", "d8", "enter"]);
     await expect(page.locator('[data-status="done"]')).toHaveCount(1);
-    await page.evaluate(() => window.pascaline.entry.clear());
+    await page.evaluate(() => window.n62.entry.clear());
     await tap(page, ["alpha", "d8", "mul", "d2"]);
     await unitsKey(page);
     await tap(page, ["sin"]);
@@ -139,7 +139,7 @@ test.describe("the way back from the unit view (R63)", () => {
     await expect(lastRow(page).locator(".result")).toHaveAttribute("data-text", "9400 A");
     await expect(lastRow(page).getByTestId("unit-names")).toHaveText("R has no unit: a Home value");
     // the stored row of a line without a name (t04) has none
-    await page.evaluate(() => window.pascaline.entry.clear());
+    await page.evaluate(() => window.n62.entry.clear());
     await t04(page);
     await leaveView(page);
     await expect(lastRow(page).getByTestId("unit-names")).toHaveCount(0);
@@ -164,11 +164,11 @@ test.describe("the way back from the unit view (R63)", () => {
     await t10(page);
     await leaveView(page);
     await page.evaluate(() => {
-      const u = window.pascaline.session.home.at(-1)?.units;
+      const u = window.n62.session.home.at(-1)?.units;
       if (u) delete u.chip;
     });
-    expect(await page.evaluate(() => window.pascaline.session.chipFor(window.pascaline.session.home.at(-1)!))).toBeUndefined();
-    await page.evaluate(() => window.pascaline.entry.clear());
+    expect(await page.evaluate(() => window.n62.session.chipFor(window.n62.session.home.at(-1)!))).toBeUndefined();
+    await page.evaluate(() => window.n62.entry.clear());
     await tap(page, ["up", "enter"]);
     await expect.poll(() => entryValue(page)).toBe("39.488");
   });
@@ -189,7 +189,7 @@ test.describe("the way back from the unit view (R63)", () => {
     await expect(page.locator('[data-status="done"]')).toHaveCount(2);
     await expect(lastRow(page).locator(".result")).toHaveAttribute("data-text", "78.976");
     await expect(lastRow(page).getByTestId("mark")).not.toHaveText("=");
-    const facts = await page.evaluate(() => window.pascaline.session.home.at(-1)?.facts);
+    const facts = await page.evaluate(() => window.n62.session.home.at(-1)?.facts);
     expect(facts?.exact).toBe(false);
     // σ = 2·1.244339583875… = 2.48867916775…, its first digit at 10⁰: one digit of 78.976 lies before it (constUnc.ts
     // uncDigitsOf, derived: exp 1 − exp 0)
@@ -199,16 +199,16 @@ test.describe("the way back from the unit view (R63)", () => {
   test("a relaunch keeps the row, its slots and its chip's facts; the units key on the picked row shows its slots again", async ({ page }) => {
     await t04(page);
     await leaveView(page);
-    const before = await page.evaluate(() => window.pascaline.session.chipFor(window.pascaline.session.home.at(-1)!));
+    const before = await page.evaluate(() => window.n62.session.chipFor(window.n62.session.home.at(-1)!));
     await page.waitForTimeout(800); // the store write is debounced (400 ms) and asynchronous
     await page.reload();
-    await page.waitForFunction(() => window.pascaline?.session.engineState === "ready", undefined, { timeout: 20_000 });
+    await page.waitForFunction(() => window.n62?.session.engineState === "ready", undefined, { timeout: 20_000 });
     await expect(page.locator('[data-status="done"]')).toHaveCount(1);
     await expect(lastRow(page).locator(".result")).toHaveAttribute("data-text", "0.157079632679 m");
     expect(await lastRow(page).locator(".out .math").getAttribute("data-latex")).toContain("\\text{m}");
-    expect(await page.evaluate(() => window.pascaline.session.chipFor(window.pascaline.session.home.at(-1)!))).toEqual(before);
-    await page.evaluate(() => window.pascaline.entry.ready);
-    await page.evaluate(() => window.pascaline.entry.clear());
+    expect(await page.evaluate(() => window.n62.session.chipFor(window.n62.session.home.at(-1)!))).toEqual(before);
+    await page.evaluate(() => window.n62.entry.ready);
+    await page.evaluate(() => window.n62.entry.clear());
     await tap(page, ["up"]);
     await unitsKey(page);
     expect(await slotText(page, "u1")).toBe("");
@@ -234,10 +234,10 @@ test.describe("the way back from the unit view (R63)", () => {
     await leaveView(page);
     await page.waitForTimeout(800); // the store write is debounced (400 ms) and asynchronous
     await page.reload();
-    await page.waitForFunction(() => window.pascaline?.session.engineState === "ready", undefined, { timeout: 20_000 });
+    await page.waitForFunction(() => window.n62?.session.engineState === "ready", undefined, { timeout: 20_000 });
     await expect(page.locator('[data-status="done"]')).toHaveCount(1); // the stored unit row is back before the key
-    await page.evaluate(() => window.pascaline.entry.ready);
-    await page.evaluate(() => window.pascaline.entry.clear());
+    await page.evaluate(() => window.n62.entry.ready);
+    await page.evaluate(() => window.n62.entry.clear());
     await tap(page, ["d7", "d2"]);
     await unitsKey(page);
     expect(await slotText(page, "u1")).toBe("");
@@ -257,7 +257,7 @@ test.describe("Copy as shown on a unit row (R63f1)", () => {
   useClipboardLock(); // first hook, so the lock is held before the page opens
   test.beforeEach(async ({ page }) => {
     await open(page, "");
-    await page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
+    await page.waitForFunction(() => window.n62.session.engineState === "ready", undefined, { timeout: 20_000 });
   });
 
   test("t10's row reads 39.488 ± 1.2 m², and Menu → Copy as › As shown copies that", async ({ page }) => {

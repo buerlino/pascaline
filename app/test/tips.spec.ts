@@ -96,8 +96,8 @@ test("a key press only closes the tips; so does a tap on the keypad, and Android
   await page.keyboard.press("5");
   await expect(tips(page)).toHaveCount(0);
   expect(await entryValue(page)).toBe("");
-  expect(await page.evaluate(() => window.pascaline.session.taps.counts.presses)).toBe(0);
-  await page.evaluate(() => window.pascaline.entry.ready);
+  expect(await page.evaluate(() => window.n62.session.taps.counts.presses)).toBe(0);
+  await page.evaluate(() => window.n62.entry.ready);
   // the Settings row shows them again (below); a tap on a key under the overlay closes it and presses nothing
   await tap(page, ["@mode", "d6", "d7"]);
   await page.getByTestId("menu").locator('[data-id="tips"]').tap();

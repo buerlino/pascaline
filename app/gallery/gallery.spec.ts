@@ -49,7 +49,7 @@ function settingsShots(): Shot[] {
  *  keys) and Chemistry (RAD · SCI 4 · point, three keys, Graphite), Lab active. */
 async function twoPresets(p: Page): Promise<void> {
   await p.evaluate(async (path) => {
-    const { session, userKeys } = window.pascaline;
+    const { session, userKeys } = window.n62;
     const m = (await import(/* @vite-ignore */ path)) as typeof import("../src/views/modeSheet.ts");
     const presets = await m.presetsFor(session, userKeys);
     const set = (id: string, label: string): void => userKeys.set(id, "primary", { label, action: { type: label } });
@@ -79,7 +79,7 @@ function presetShots(): Shot[] {
       title: "Mode (R86): buttons for Angle, Format and Entry with DEG, PFX 30 and One line; Digits with its list; Preset; Settings ›",
       setup: async (p) => {
         await p.evaluate(() => {
-          const s = window.pascaline.session;
+          const s = window.n62.session;
           s.setAngle("deg");
           s.setFormat("pfx");
           s.setDigits(30);
@@ -147,7 +147,7 @@ function padShots(): Shot[] {
       viewport: z.viewport,
       setup: async (p: Page) => {
         await p.goto("/?pad=1&tips=off"); // R15c4: no first-start tips over the keys, as helpers.ts open()
-        await p.waitForFunction(() => (window.pascaline?.unitPad?.model ?? null) !== null);
+        await p.waitForFunction(() => (window.n62?.unitPad?.model ?? null) !== null);
         await ready(p);
         await tap(p, keys as string[]);
       },
@@ -167,7 +167,7 @@ function unitResultShots(): Shot[] {
   const units = async (p: Page, line: string[], steps: string): Promise<void> => {
     await plan(p, line.join(" "));
     await flick(p, "tmpl", "up");
-    await p.waitForFunction(() => window.pascaline.unitView !== undefined && document.querySelector('[data-pad="unit"]') !== null);
+    await p.waitForFunction(() => window.n62.unitView !== undefined && document.querySelector('[data-pad="unit"]') !== null);
     await plan(p, steps);
     await p.waitForFunction(() => document.querySelector('[data-testid="unit-result"], [data-testid="unit-message"]') !== null);
   };
@@ -182,7 +182,7 @@ function unitResultShots(): Shot[] {
     { id: "t02-tap", title: "After a tap on m/s: = 20 m/s with the end slot filled", setup: async (p) => { await units(p, ["d7", "d2"], "d4 d9 div ↑d3 ↑enter"); await p.getByTestId("unit-alt").filter({ hasText: /^m\/s$/ }).tap(); await p.waitForFunction(() => document.querySelector('[data-testid="unit-result"]')?.getAttribute("data-unit") === "m/s"); } },
     { id: "t04", title: "t04: 2π·25 mm, mm kept (≈), the coherent m first in the row", setup: (p) => units(p, ["d2", "mul", "↑d3", "mul", "d2", "d5"], "enter d1 d9 ↑enter") },
     { id: "t10", title: "t10: σ belongs to the value line, the value and σ muted under it", setup: (p) => units(p, ["d1", "d2", "dot", "d3", "d4", ...pm, "d0", "dot", "d0", "d5", "mul", "d3", "dot", "d2", ...pm, "d0", "dot", "d1"], "d9 enter d9 ↑enter") },
-    { id: "t10-comma", title: "t10 with the decimal comma (R120): 39,5 ± 1,2 m² and the sub line with the comma, as Home's row", setup: async (p) => { await p.evaluate(() => window.pascaline.session.setDecimalMark("comma")); await units(p, ["d1", "d2", "dot", "d3", "d4", ...pm, "d0", "dot", "d0", "d5", "mul", "d3", "dot", "d2", ...pm, "d0", "dot", "d1"], "d9 enter d9 ↑enter"); } },
+    { id: "t10-comma", title: "t10 with the decimal comma (R120): 39,5 ± 1,2 m² and the sub line with the comma, as Home's row", setup: async (p) => { await p.evaluate(() => window.n62.session.setDecimalMark("comma")); await units(p, ["d1", "d2", "dot", "d3", "d4", ...pm, "d0", "dot", "d0", "d5", "mul", "d3", "dot", "d2", ...pm, "d0", "dot", "d1"], "d9 enter d9 ↑enter"); } },
     { id: "warn", title: "σ with ⚠ (G41): the ⚠ sits before σ, the why-line under it in the warn colour", setup: (p) => units(p, ["cos", "d0", ...pm, "d0", "dot", "d1"], "↑enter") },
     { id: "note", title: "A note (G40): one line under the value, which stays", setup: (p) => units(p, ["d3", "d0", "d0", "d0", "mul", "d0", "dot", "d1"], "↑x enter d9 enter d9 div d3 ↑enter") },
     { id: "refusal", title: "A refusal: the message in the value's place, no row, no chip, the slots as typed", setup: (p) => units(p, ["d1", "add", "d1"], "d9 enter d3 ↑enter") },
@@ -201,7 +201,7 @@ function unitFindShots(): Shot[] {
   const type = (q: string): string[] => [...q].map((c) => letters.get(c) as string);
   const inSlot = async (p: Page, keys: string[]): Promise<void> => {
     await tap(p, ["d7", "d2", "shift", "tmpl"]); // 72, then the units key
-    await p.waitForFunction(() => window.pascaline.unitView !== undefined && document.querySelector('[data-pad="unit"]') !== null);
+    await p.waitForFunction(() => window.n62.unitView !== undefined && document.querySelector('[data-pad="unit"]') !== null);
     await tap(p, keys);
   };
   const sizes = [
@@ -220,7 +220,7 @@ function unitFindShots(): Shot[] {
       await p.locator('[data-id="unitcells"]').tap();
       await p.locator('[data-id="u1:primary"]').tap();
       await p.locator('[data-id="empty"]').tap();
-      await p.evaluate(() => window.pascaline.shell.closeSheet());
+      await p.evaluate(() => window.n62.shell.closeSheet());
       await inSlot(p, ["u1"]);
     } },
     { id: "settings", title: "Settings › Your keys › Unit pad cells: U1–U6 with a tap, a flick up (⇧) and a flick down (α)", setup: async (p) => {
@@ -248,7 +248,7 @@ interface Shot {
 }
 
 const ready = async (page: Page): Promise<void> => {
-  await page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 30_000 });
+  await page.waitForFunction(() => window.n62.session.engineState === "ready", undefined, { timeout: 30_000 });
 };
 const settle = (page: Page): Promise<void> => page.waitForTimeout(250);
 const doneCount = (page: Page, n: number) => page.waitForFunction((k) => document.querySelectorAll('[data-status="done"]').length >= k, n);
@@ -277,7 +277,7 @@ async function defineTwo(page: Page): Promise<void> {
 async function longList(page: Page): Promise<void> {
   await page.evaluate(() => {
     const units = ["hour", "hertz", "henry", "gauss", "coulomb", "candela", "kelvin", "kilogram", "joule", "lux", "lumen", "newton", "ohm", "pascal"];
-    window.pascaline.shell.showMenu("Units (sample)", units.map((u) => ({ id: u, label: u, run: () => {} })));
+    window.n62.shell.showMenu("Units (sample)", units.map((u) => ({ id: u, label: u, run: () => {} })));
   });
   await settle(page);
 }
@@ -298,7 +298,7 @@ const shots: Shot[] = [
     group: "Home",
     title: "Home with the decimal comma (R57): the . key shows , and the , key shows ;, the result 1,5 ÷ 2 = 0,75 drawn with the comma",
     setup: async (p) => {
-      await p.evaluate(() => window.pascaline.session.setDecimalMark("comma"));
+      await p.evaluate(() => window.n62.session.setDecimalMark("comma"));
       await tap(p, ["d1", "dot", "d5", "div", "d2", "enter"]);
       await p.locator('[data-status="done"]').first().waitFor();
       await tap(p, ["d3", "dot", "d2", "mul", "d4"]);
@@ -316,7 +316,7 @@ const shots: Shot[] = [
   },
   // R98: the note row after Clear history and after ☰ Delete of a row (Undo or a tap on it brings the rows back)
   { id: "home-cleared", group: "Home", title: "Home after Clear history (R98): the note row", setup: async (p) => { await someHistory(p); await tap(p, ["shift", "esc"]); await p.getByTestId("undo-note").waitFor(); } },
-  { id: "home-deleted", group: "Home", title: "Home after Delete of a row (R98): the note under the rows that stay", setup: async (p) => { await someHistory(p); await p.evaluate(() => window.pascaline.session.removeItem(window.pascaline.session.items[0]!)); await p.getByTestId("undo-note").waitFor(); } },
+  { id: "home-deleted", group: "Home", title: "Home after Delete of a row (R98): the note under the rows that stay", setup: async (p) => { await someHistory(p); await p.evaluate(() => window.n62.session.removeItem(window.n62.session.items[0]!)); await p.getByTestId("undo-note").waitFor(); } },
   {
     id: "home-picked",
     group: "Home",
@@ -494,7 +494,7 @@ const shots: Shot[] = [
     setup: async (p) => {
       await defineTwo(p);
       await tap(p, ["@plot"]);
-      await p.waitForFunction(() => window.pascaline.plot.board !== undefined);
+      await p.waitForFunction(() => window.n62.plot.board !== undefined);
       await settle(p);
     },
   },
@@ -504,7 +504,7 @@ const shots: Shot[] = [
     title: "Function, Plot with no function",
     setup: async (p) => {
       await tap(p, ["@symb", "@plot"]);
-      await p.waitForFunction(() => window.pascaline.plot.board !== undefined);
+      await p.waitForFunction(() => window.n62.plot.board !== undefined);
       await settle(p);
     },
   },
@@ -534,7 +534,7 @@ const shots: Shot[] = [
     title: "Function, Plot menu with no function (disabled rows say why)",
     setup: async (p) => {
       await tap(p, ["@symb", "@plot"]);
-      await p.waitForFunction(() => window.pascaline.plot.board !== undefined);
+      await p.waitForFunction(() => window.n62.plot.board !== undefined);
       await tap(p, ["@menu"]);
       await settle(p);
     },
@@ -626,7 +626,7 @@ const BAR_CASES: readonly [string, string, BarState][] = [
 async function barState(page: Page, place: string, st: BarState): Promise<void> {
   await page.evaluate(
     async ([p, st]) => {
-      const { session: s, shell } = window.pascaline;
+      const { session: s, shell } = window.n62;
       if (p === "home" || p === "cas") s.view = p;
       else {
         const [app, view] = p.split(":") as ["function" | "solve", "symb" | "plot" | "num"];
@@ -681,7 +681,7 @@ const commaShot = (id: string, title: string, setup: (p: Page) => Promise<void>)
     group: "Decimal comma in apps (R108)",
     title,
     setup: async (p) => {
-      await p.evaluate(() => window.pascaline.session.setDecimalMark("comma"));
+      await p.evaluate(() => window.n62.session.setDecimalMark("comma"));
       await setup(p);
     },
   });

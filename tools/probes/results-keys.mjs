@@ -102,8 +102,8 @@ const browser = await chromium.launch();
 try {
   const page = await (await browser.newContext({ ...devices['Pixel 7'] })).newPage();
   await page.goto(url);
-  await page.waitForFunction(() => customElements.get('math-field') !== undefined && window.pascaline !== undefined);
-  await page.evaluate(() => window.pascaline.entry.ready);
+  await page.waitForFunction(() => customElements.get('math-field') !== undefined && window.n62 !== undefined);
+  await page.evaluate(() => window.n62.entry.ready);
   const keys = async (ids) => { for (const id of ids) await page.locator(`[data-key="${id}"]`).tap(); };
   const caret = () => page.evaluate(() => { const mf = document.querySelector('math-field'); return { pos: mf.position, last: mf.lastOffset }; });
   // a line with a fraction in the middle: 12 + 3/4 + 56

@@ -6,7 +6,7 @@
 // fixes a case removes it from KNOWN_FAIL. The checks are derived from the rule, not from today's output.
 //
 // How: one page for the whole file; a scenario is one page.evaluate that runs its steps through
-// `window.pascaline.entry.run` (the same path as a key) and returns the line, the cursor and the selection after
+// `window.n62.entry.run` (the same path as a key) and returns the line, the cursor and the selection after
 // each step. The checks run in Node. The parser (loadParser) reads every line for the failure message.
 import { appendFileSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -90,7 +90,7 @@ interface Run { setup: Snap; steps: Snap[] }
 async function runScenario(page: Page, tmpl: Tmpl, ops: Op[], del: string): Promise<Run> {
   return page.evaluate(
     async ([mode, opsIn, delName, max]) => {
-      const p = window.pascaline;
+      const p = window.n62;
       const mf = p.entry.field;
       if (!mf) throw new Error("no field");
       p.session.setEntry(mode as "textbook" | "line");
@@ -279,7 +279,7 @@ for (const tmpl of TEMPLATES) {
         // the marks of the template alone, read before any delete
         baseOf.set(key, marksOf(r.setup.value));
         await page.evaluate(() => {
-          if (window.pascaline.entry.field) window.pascaline.entry.field.value = "";
+          if (window.n62.entry.field) window.n62.entry.field.value = "";
         });
       }
       const { ops, del } = setup(s, tmpl.latex);

@@ -6,12 +6,12 @@ import { expect, test, type Page } from "@playwright/test";
 import { open, tap } from "./helpers.ts";
 
 const engineReady = (page: Page) =>
-  page.waitForFunction(() => window.pascaline?.session.engineState === "ready", undefined, { timeout: 20_000 });
+  page.waitForFunction(() => window.n62?.session.engineState === "ready", undefined, { timeout: 20_000 });
 
 /** A line typed and entered; the row is done before this returns. */
 async function enter(page: Page, latex: string): Promise<void> {
   const done = await page.locator('[data-status="done"]').count();
-  await page.evaluate((l) => window.pascaline.entry.set(l), latex);
+  await page.evaluate((l) => window.n62.entry.set(l), latex);
   await tap(page, ["enter"]);
   await expect(page.locator('[data-status="done"]')).toHaveCount(done + 1);
 }
@@ -32,8 +32,8 @@ async function readStore(page: Page): Promise<{ names: string[]; rows: string[] 
   await engineReady(page);
   await page.waitForTimeout(500); // the history is read after the keypad is up
   return page.evaluate(() => ({
-    names: window.pascaline.session.userNames.map((u) => u.name).sort(),
-    rows: window.pascaline.session.home.map((i) => i.latex),
+    names: window.n62.session.userNames.map((u) => u.name).sort(),
+    rows: window.n62.session.home.map((i) => i.latex),
   }));
 }
 
@@ -76,13 +76,13 @@ test("Use here hands the store over: the new tab's definitions are kept, the old
   await note(b).getByRole("button").click();
   // B reloads as the writer: it reads every key again (A flushed before it let go), and its note is gone
   await b.waitForFunction(
-    () => window.pascaline?.session.engineState === "ready" && document.querySelector('[data-testid="writer-note"]') === null,
+    () => window.n62?.session.engineState === "ready" && document.querySelector('[data-testid="writer-note"]') === null,
     undefined,
     { timeout: 20_000 },
   );
   await expect(note(a)).toBeVisible(); // A is read-only now and says so
   await b.waitForTimeout(300);
-  expect(await b.evaluate(() => window.pascaline.session.userNames.map((u) => u.name))).toEqual(["V"]);
+  expect(await b.evaluate(() => window.n62.session.userNames.map((u) => u.name))).toEqual(["V"]);
   await enter(b, "Z:=2");
   await enter(a, "W:=3"); // after the hand-over: computed, never stored
   await a.close();

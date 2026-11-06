@@ -20,7 +20,7 @@ const name = (f: string): string => f[0]!.toUpperCase() + f.slice(1);
 /** Put a look on the page as Settings › Appearance does, and wait for its lazy CSS. */
 async function setLook(p: Page, patch: Record<string, unknown>): Promise<void> {
   await p.evaluate((o) => {
-    const s = window.pascaline.session;
+    const s = window.n62.session;
     s.settings.look = { ...s.settings.look, ...o };
     s.onLook?.({ ...s.settings.look });
   }, patch);
@@ -57,7 +57,7 @@ export function entryShots(): LookShot[] {
     ["selection", "a selection: 12+34 with 34 selected", async (p) => {
       await tap(p, ["d1", "d2", "add", "d3", "d4"]);
       await p.evaluate(() => {
-        const mf = window.pascaline.entry.field;
+        const mf = window.n62.entry.field;
         mf?.executeCommand("extendSelectionBackward");
         mf?.executeCommand("extendSelectionBackward");
       });
@@ -95,9 +95,9 @@ export function markShots(): LookShot[] {
     group: "Mark style (R124)",
     title: titles[m],
     setup: async (p) => {
-      await p.evaluate((style) => (window.pascaline.session.settings.marks = style), m);
+      await p.evaluate((style) => (window.n62.session.settings.marks = style), m);
       for (const [i, l] of rows.entries()) {
-        await p.evaluate((x) => window.pascaline.session.submit(x), l);
+        await p.evaluate((x) => window.n62.session.submit(x), l);
         await p.waitForFunction((k) => document.querySelectorAll('[data-status="done"]').length >= k, i + 1);
       }
     },
@@ -120,11 +120,11 @@ export function groupShots(): LookShot[] {
     title: g.title,
     setup: async (p) => {
       await p.evaluate(([sep, comma]) => {
-        window.pascaline.session.settings.groupSep = sep;
-        if (comma) window.pascaline.session.setDecimalMark("comma");
+        window.n62.session.settings.groupSep = sep;
+        if (comma) window.n62.session.setDecimalMark("comma");
       }, [g.sep, g.comma] as const);
       for (const [i, l] of rows.entries()) {
-        await p.evaluate((x) => window.pascaline.session.submit(x), l);
+        await p.evaluate((x) => window.n62.session.submit(x), l);
         await p.waitForFunction((k) => document.querySelectorAll('[data-status="done"]').length >= k, i + 1);
       }
     },

@@ -21,7 +21,7 @@ interface Pt { x: number; y: number }
 async function setLine(page: Page, latex: string, atEnd: boolean): Promise<void> {
   await page.evaluate(
     ([l, end]) => {
-      const mf = window.pascaline.entry.field;
+      const mf = window.n62.entry.field;
       if (!mf) throw new Error("no field");
       mf.value = l as string;
       mf.focus();
@@ -32,12 +32,12 @@ async function setLine(page: Page, latex: string, atEnd: boolean): Promise<void>
   await page.waitForTimeout(550); // MathLive reads a second tap within 500 ms as a double tap
 }
 
-const caret = (page: Page): Promise<number> => page.evaluate(() => window.pascaline.entry.field?.position ?? -1);
+const caret = (page: Page): Promise<number> => page.evaluate(() => window.n62.entry.field?.position ?? -1);
 
 /** 1.5 px inside the right edge of every atom, at its height. */
 async function edges(page: Page): Promise<Pt[]> {
   return page.evaluate(() => {
-    const root = window.pascaline.entry.field?.shadowRoot;
+    const root = window.n62.entry.field?.shadowRoot;
     const pts = new Map<string, Pt>();
     for (const el of root?.querySelectorAll("[data-atom-id]") ?? []) {
       const r = el.getBoundingClientRect();
@@ -76,7 +76,7 @@ test("a tap right of the inner fraction types at the end of the outer numerator"
   await open(page);
   await setLine(page, "\\frac{\\frac12}{\\placeholder{}}", true);
   const p = await page.evaluate(() => {
-    const fr = [...(window.pascaline.entry.field?.shadowRoot?.querySelectorAll(".ML__mfrac") ?? [])];
+    const fr = [...(window.n62.entry.field?.shadowRoot?.querySelectorAll(".ML__mfrac") ?? [])];
     const inner = fr.find((e) => e.parentElement?.closest(".ML__mfrac"));
     if (!inner) throw new Error("no inner fraction");
     const r = inner.getBoundingClientRect();

@@ -25,14 +25,14 @@ async function del(page: Page): Promise<string> {
 }
 /** A Tmpl palette cell, by the key path (`run`), as the palette inserts it. */
 const insert = (page: Page, latex: string): Promise<void> =>
-  page.evaluate((l) => window.pascaline.entry.run({ kind: "insert", latex: l }), latex);
+  page.evaluate((l) => window.n62.entry.run({ kind: "insert", latex: l }), latex);
 /** The selected LaTeX, or "" when the selection is collapsed. */
 const selected = (page: Page): Promise<string> =>
   page.evaluate(() => {
-    const mf = window.pascaline.entry.field;
+    const mf = window.n62.entry.field;
     return !mf || mf.selectionIsCollapsed ? "" : mf.getValue(mf.selection, "latex");
   });
-const position = (page: Page): Promise<number> => page.evaluate(() => window.pascaline.entry.field?.position ?? -1);
+const position = (page: Page): Promise<number> => page.evaluate(() => window.n62.entry.field?.position ?? -1);
 
 // ---- ⁿ√ -------------------------------------------------------------------------------------------------------------
 test("ⁿ√ on an empty line, then ⌫ in the empty index empties the line", async ({ page }) => {
@@ -214,7 +214,7 @@ test("5 ∂ 2 3 ◀ ◀ ⌫ never deletes a ∂ alone: only the expression holds
 test("∂ 2 ▶ x, then ⌫ to the empty line: the two ∂ marks go together", async ({ page }) => {
   await insert(page, DERIV);
   await tap(page, ["d2", "right"]);
-  await page.evaluate(() => window.pascaline.entry.run({ kind: "type", text: "x" }));
+  await page.evaluate(() => window.n62.entry.run({ kind: "type", text: "x" }));
   expect(await entryValue(page)).toBe("\\frac{\\partial2}{\\partial x}");
   const seen: string[] = [];
   for (let i = 0; i < 8 && (await entryValue(page)) !== ""; i++) seen.push(await bksp(page));

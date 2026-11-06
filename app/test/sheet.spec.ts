@@ -17,7 +17,7 @@ async function list(page: Page, title: string, items: (string | Spec)[]): Promis
       const w = window as unknown as { ran: string[] };
       w.ran = [];
       const leaf = (label: string) => ({ id: label, label, run: () => void w.ran.push(label) });
-      window.pascaline.shell.showMenu(
+      window.n62.shell.showMenu(
         title,
         items.map((x) =>
           typeof x === "string" ? leaf(x) : { id: x.label, label: x.label, submenu: x.sub ? { title: x.sub.title, items: x.sub.items.map(leaf) } : undefined },
@@ -58,7 +58,7 @@ test("digits pick rows 1…9 and 0 the tenth, with Shift or Alpha on (ignored, a
   await tap(page, ["shift", "d0"]);
   expect(await ran(page)).toEqual(["item 10"]);
   await expect(page.locator('[data-key="shift"]')).toHaveAttribute("aria-pressed", "true");
-  await page.evaluate(() => window.pascaline.session.clearModifiers());
+  await page.evaluate(() => window.n62.session.clearModifiers());
   await list(page, "Test", TWELVE);
   await tap(page, ["alpha", "d3"]);
   expect(await ran(page)).toEqual(["item 3"]);
@@ -147,7 +147,7 @@ test("the last pick is remembered per sheet: Apps + Enter opens the app picked l
   await tap(page, ["@place", "d4"]);
   await expect(page.locator('[data-app="solve"]')).toBeVisible();
   // back to Home without the Apps sheet (a user key that holds Home), so its last pick stays Solve
-  await page.evaluate(() => window.pascaline.userKeys.set("u2", "primary", { label: "Home", action: { special: "home" } }));
+  await page.evaluate(() => window.n62.userKeys.set("u2", "primary", { label: "Home", action: { special: "home" } }));
   await tap(page, ["u2", "@place"]);
   await expect(page.getByTestId("apps").locator('[data-active="true"]')).toHaveAttribute("data-id", "solve");
   await tap(page, ["enter"]);

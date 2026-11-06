@@ -6,10 +6,10 @@ import { expect, test, type Page } from "@playwright/test";
 import { entryValue, flick, open, recordVibrations, sheet, tap, touch, vibrations } from "./helpers.ts";
 
 const place = (page: Page) => page.getByTestId("place");
-const view = (page: Page) => page.evaluate(() => window.pascaline.session.view);
-const app = (page: Page) => page.evaluate(() => window.pascaline.shell.app);
+const view = (page: Page) => page.evaluate(() => window.n62.session.view);
+const app = (page: Page) => page.evaluate(() => window.n62.shell.app);
 const appsSheet = (page: Page) => page.getByTestId("apps");
-const angle = (page: Page) => page.evaluate(() => window.pascaline.session.settings.angle);
+const angle = (page: Page) => page.evaluate(() => window.n62.session.settings.angle);
 const sinh = { label: "sinh", action: { insert: "\\sinh\\left(#0\\right)" } };
 
 test.beforeEach(async ({ page }) => {
@@ -121,27 +121,27 @@ test("Esc closes ☰'s menu, and clears the line; Undo brings it back", async ({
 
 test("your own function: one press on a free key, one flick for its Shift slot; it survives a reload", async ({ page }) => {
   await page.evaluate((b) => {
-    window.pascaline.userKeys.set("u1", "primary", b);
-    window.pascaline.userKeys.set("u1", "shift", { label: "π", action: { insert: "\\pi" } });
+    window.n62.userKeys.set("u1", "primary", b);
+    window.n62.userKeys.set("u1", "shift", { label: "π", action: { insert: "\\pi" } });
   }, sinh);
   await expect(page.locator('[data-key="u1"] .main')).toHaveText("sinh");
   await expect(page.locator('[data-key="u1"]')).toHaveAttribute("data-user", "set");
   await expect(page.locator('[data-key="u1"] .shiftlegend')).toHaveText("π");
   await tap(page, ["u1", "d2"]);
   expect(await entryValue(page)).toBe("\\sinh\\left(2\\right)");
-  await page.evaluate(() => window.pascaline.entry.clear());
+  await page.evaluate(() => window.n62.entry.clear());
   await flick(page, "u1", "up");
   expect(await entryValue(page)).toBe("\\pi");
   // stored with the stamp: back after a relaunch
   await page.waitForTimeout(300);
   await page.reload();
-  await page.waitForFunction(() => window.pascaline !== undefined && customElements.get("math-field") !== undefined);
-  await page.evaluate(() => window.pascaline.entry.ready);
+  await page.waitForFunction(() => window.n62 !== undefined && customElements.get("math-field") !== undefined);
+  await page.evaluate(() => window.n62.entry.ready);
   await expect(page.locator('[data-key="u1"] .main')).toHaveText("sinh");
   await tap(page, ["u1"]);
   expect(await entryValue(page)).toBe("\\sinh\\left(\\placeholder{}\\right)");
   // reset gives every slot its default back: empty
-  await page.evaluate(() => window.pascaline.userKeys.reset());
+  await page.evaluate(() => window.n62.userKeys.reset());
   await expect(page.locator('[data-key="u1"]')).toHaveAttribute("data-user", "empty");
 });
 
@@ -151,9 +151,9 @@ test("a free key's Alpha slot: a flick down and Alpha + tap fire it, the face an
   const cosh = { label: "cosh", action: { insert: "\\cosh\\left(#0\\right)" } };
   const wanted = "\\cosh\\left(\\placeholder{}\\right)";
   await page.evaluate(([a, b]) => {
-    window.pascaline.userKeys.set("u1", "primary", a!);
-    window.pascaline.userKeys.set("u1", "alpha", b!);
-    window.pascaline.userKeys.set("u2", "primary", a!); // no Alpha slot: its Alpha is the tap
+    window.n62.userKeys.set("u1", "primary", a!);
+    window.n62.userKeys.set("u1", "alpha", b!);
+    window.n62.userKeys.set("u2", "primary", a!); // no Alpha slot: its Alpha is the tap
   }, [sinh, cosh] as const);
   const main = page.locator('[data-key="u1"] .main');
   await expect(main).toHaveText("sinh");
@@ -165,35 +165,35 @@ test("a free key's Alpha slot: a flick down and Alpha + tap fire it, the face an
   await tap(page, ["u1"]);
   expect(await entryValue(page)).toBe(wanted);
   await expect(main).toHaveText("sinh");
-  await page.evaluate(() => window.pascaline.entry.clear());
+  await page.evaluate(() => window.n62.entry.clear());
   // a flick down: the bubble names the binding while armed, the lift fires it
   const f = await touch(page, "u1");
   await f.move(0, 35);
   await expect(page.getByTestId("flick-bubble")).toHaveText("cosh");
   await f.end();
   expect(await entryValue(page)).toBe(wanted);
-  await page.evaluate(() => window.pascaline.entry.clear());
+  await page.evaluate(() => window.n62.entry.clear());
   // the empty slot falls back to the tap, by Alpha and by flick
   await tap(page, ["alpha", "u2"]);
   expect(await entryValue(page)).toBe("\\sinh\\left(\\placeholder{}\\right)");
-  await page.evaluate(() => window.pascaline.entry.clear());
+  await page.evaluate(() => window.n62.entry.clear());
   await flick(page, "u2", "down");
   expect(await entryValue(page)).toBe("\\sinh\\left(\\placeholder{}\\right)");
-  await page.evaluate(() => window.pascaline.entry.clear());
+  await page.evaluate(() => window.n62.entry.clear());
   // stored with the stamp: back after a relaunch
   await page.waitForTimeout(300);
   await page.reload();
-  await page.waitForFunction(() => window.pascaline !== undefined && customElements.get("math-field") !== undefined);
-  await page.evaluate(() => window.pascaline.entry.ready);
+  await page.waitForFunction(() => window.n62 !== undefined && customElements.get("math-field") !== undefined);
+  await page.evaluate(() => window.n62.entry.ready);
   await flick(page, "u1", "down");
   expect(await entryValue(page)).toBe(wanted);
-  await page.evaluate(() => window.pascaline.entry.clear());
+  await page.evaluate(() => window.n62.entry.clear());
   await tap(page, ["alpha", "u1"]);
   expect(await entryValue(page)).toBe(wanted);
 });
 
 test("an empty free key and View give the dead-key haptic and type nothing", async ({ page }) => {
-  await page.evaluate(() => window.pascaline.session.setHaptics({ on: true, ms: 10 }));
+  await page.evaluate(() => window.n62.session.setHaptics({ on: true, ms: 10 }));
   for (const id of ["u1", "u6", "view"]) {
     const before = (await vibrations(page)).length;
     await tap(page, [id]);
@@ -233,7 +233,7 @@ test("a status tap while an app's code loads runs at once (decisions.md R8)", as
   });
   await place(page).tap();
   await appsSheet(page).locator('[data-id="function"]').tap();
-  expect(await page.evaluate(() => window.pascaline.shell.loading)).toBe("function");
+  expect(await page.evaluate(() => window.n62.shell.loading)).toBe("function");
   await place(page).tap(); // the Apps sheet opens at once, and Home is its first row
   await appsSheet(page).getByRole("menuitem").first().tap();
   expect(await app(page)).toBeNull();
@@ -248,8 +248,8 @@ test("a status tap while an app's code loads runs at once (decisions.md R8)", as
 
 test("over an open sheet: the place name, and a free key that holds CAS or Home, close it and go there; a free key that holds no place does nothing", async ({ page }) => {
   await page.evaluate(() => {
-    window.pascaline.userKeys.set("u3", "primary", { label: "CAS", action: { special: "cas" } });
-    window.pascaline.userKeys.set("u2", "primary", { label: "Home", action: { special: "home" } });
+    window.n62.userKeys.set("u3", "primary", { label: "CAS", action: { special: "cas" } });
+    window.n62.userKeys.set("u2", "primary", { label: "Home", action: { special: "home" } });
   });
   await tap(page, ["tmpl"]);
   await expect(sheet(page)).toBeVisible();
@@ -259,7 +259,7 @@ test("over an open sheet: the place name, and a free key that holds CAS or Home,
   await tap(page, ["esc", "tmpl", "u3", "tmpl", "u2"]);
   await expect(sheet(page)).toBeHidden();
   expect(await view(page)).toBe("home");
-  await page.evaluate((b) => window.pascaline.userKeys.set("u1", "primary", b), sinh);
+  await page.evaluate((b) => window.n62.userKeys.set("u1", "primary", b), sinh);
   await tap(page, ["tmpl", "u1"]);
   await expect(sheet(page)).toBeVisible();
   await expect(page.locator('[data-key="u1"]')).toHaveAttribute("data-dead", "true");

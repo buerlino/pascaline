@@ -95,12 +95,12 @@ mount(App, { target: document.getElementById("app") as HTMLElement, props: { ses
 // Test hook (desktop Playwright): read the entry line and the session without reaching into the DOM.
 declare global {
   interface Window {
-    pascaline: { entry: EntryController; session: Session; shell: AppShell; userKeys: UserKeys; calc: Calc; plot: typeof plotHook; renderStats: { count: number }; unitPad?: typeof unitPad; unitView?: OpenUnitView | undefined; yieldWriter: typeof yieldWriter };
+    n62: { entry: EntryController; session: Session; shell: AppShell; userKeys: UserKeys; calc: Calc; plot: typeof plotHook; renderStats: { count: number }; unitPad?: typeof unitPad; unitView?: OpenUnitView | undefined; yieldWriter: typeof yieldWriter };
   }
 }
 // yieldWriter: a kill in the e2e tests (persist.spec.ts) lets go of the store without the pagehide flush (R95)
-window.pascaline = { entry, session, shell, userKeys, calc, plot: plotHook, renderStats, yieldWriter };
-if (import.meta.env.DEV && new URLSearchParams(location.search).has("pad")) void import("./units/padView.svelte.ts").then((m) => { window.pascaline.unitPad = m.unitPad; m.devPad(); }); // the unit pad alone on the keys, dev server only: unitpad-draw.spec.ts and the gallery (gallery.spec.ts) use it; the units key opens it with the unit view (R24c)
+window.n62 = { entry, session, shell, userKeys, calc, plot: plotHook, renderStats, yieldWriter };
+if (import.meta.env.DEV && new URLSearchParams(location.search).has("pad")) void import("./units/padView.svelte.ts").then((m) => { window.n62.unitPad = m.unitPad; m.devPad(); }); // the unit pad alone on the keys, dev server only: unitpad-draw.spec.ts and the gallery (gallery.spec.ts) use it; the units key opens it with the unit view (R24c)
 
 // Offline support (web build only): after the engine is up and the browser is idle, so the install's downloads
 // (the whole build, ~10 MB with both wasm files) never compete with the first paint or the engine's own load.

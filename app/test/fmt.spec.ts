@@ -4,7 +4,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { open, sheet, tap } from "./helpers.ts";
 
 const lastText = (page: Page) => page.locator('[data-testid="result"] .result').last();
-const ready = (page: Page) => page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
+const ready = (page: Page) => page.waitForFunction(() => window.n62.session.engineState === "ready", undefined, { timeout: 20_000 });
 
 /** The Mode sheet (format chip, ▲), 5, then a section of Settings (R49, R50e: 2 Numbers, 3 Key vibration). */
 async function openSettings(page: Page, section: "d2" | "d3"): Promise<void> {
@@ -57,7 +57,7 @@ test("fmt shows 1/3 in Standard, Scientific, Engineering and back, for that resu
   await expect(lastText(page)).toHaveAttribute("data-text", "0.333333333333");
   // the earlier result and the global setting did not move
   await expect(page.locator('[data-testid="result"] .result').first()).toHaveAttribute("data-text", "12");
-  expect(await page.evaluate(() => window.pascaline.session.settings.format)).toBe("std");
+  expect(await page.evaluate(() => window.n62.session.settings.format)).toBe("std");
 });
 
 test("a b/c (R10): 7/3 shows as 7/3, then the decimal again; never a mixed number, needs no setting", async ({ page }) => {
@@ -83,8 +83,8 @@ test("the Format key cycle and the vibration settings persist across a reload", 
   await closeSettings(page);
   await page.waitForTimeout(500);
   await page.reload();
-  await page.waitForFunction(() => window.pascaline !== undefined);
-  await page.waitForFunction(() => window.pascaline.session.settings.haptics.on === true);
+  await page.waitForFunction(() => window.n62 !== undefined);
+  await page.waitForFunction(() => window.n62.session.settings.haptics.on === true);
   await openSettings(page, "d3");
   await expect(row(page, "haptics")).toHaveAttribute("data-selected", "true");
   await expect(row(page, "ms").getByTestId("sheet-value")).toHaveText("40 ms");
@@ -95,7 +95,7 @@ test("the Format key cycle and the vibration settings persist across a reload", 
   await openCycle(page);
   const marked = await sheet(page).locator('[data-selected="true"]').evaluateAll((els) => els.map((e) => e.getAttribute("data-id")));
   expect(marked).toEqual(["std", "sci", "fix"]);
-  expect(await page.evaluate(() => window.pascaline.session.settings.haptics)).toEqual({ on: true, strength: 50, ms: 40 });
+  expect(await page.evaluate(() => window.n62.session.settings.haptics)).toEqual({ on: true, strength: 50, ms: 40 });
 });
 
 test("key vibration: off by default, and on it calls navigator.vibrate on key-down", async ({ page }) => {
@@ -146,7 +146,7 @@ test("30 digits: the setting takes 30, Home draws 30 digits and 1/3 stays ≈", 
   await open(page, "");
   await ready(page);
   await pickDigits(page, "d9"); // 4 6 8 10 12 15 20 25 30
-  expect(await page.evaluate(() => window.pascaline.session.settings.digits)).toBe(30);
+  expect(await page.evaluate(() => window.n62.session.settings.digits)).toBe(30);
   await tap(page, ["d1", "div", "d3", "enter"]);
   await expect(lastText(page)).toHaveAttribute("data-text", `0.${"3".repeat(30)}`);
   await expect(markOfLast(page)).toHaveText("≈");
@@ -156,7 +156,7 @@ test("PFX: 2500 draws as 2.500 k with a thin space and an accented prefix, from 
   await open(page, "");
   await ready(page);
   await pickDigits(page, "d1");
-  expect(await page.evaluate(() => window.pascaline.session.settings.digits)).toBe(4);
+  expect(await page.evaluate(() => window.n62.session.settings.digits)).toBe(4);
   await toggleCycle(page, ["pfx"]);
   await tap(page, ["d2", "d5", "d0", "d0", "enter"]);
   await expect(lastText(page)).toHaveAttribute("data-text", "2500");
@@ -169,21 +169,21 @@ test("PFX: 2500 draws as 2.500 k with a thin space and an accented prefix, from 
   // as the global format too
   await page.getByTestId("chip-format").tap(); // the Mode sheet on its Format row; ▶ ×3: Standard → … → Prefixes
   await tap(page, ["right", "right", "right", "enter"]);
-  expect(await page.evaluate(() => window.pascaline.session.settings.format)).toBe("pfx");
+  expect(await page.evaluate(() => window.n62.session.settings.format)).toBe("pfx");
   await tap(page, ["d1", "d2", "d0", "d0", "d0", "d0", "enter"]);
   await expect(lastText(page)).toHaveAttribute("data-text", "120.0 k");
   // tapping the result puts a chip with the full value on the line, never the prefix text
   await lastText(page).click();
-  const chips = await page.evaluate(() => Object.values(window.pascaline.entry.chips).map((c) => c.value));
+  const chips = await page.evaluate(() => Object.values(window.n62.entry.chips).map((c) => c.value));
   expect(chips).toEqual(["120000"]);
 });
 
 test("marks: an un-audited float is ⚠ with no count and shows only the confirmed digits (M4-5)", async ({ page }) => {
   await open(page, "");
   await ready(page);
-  await page.evaluate(() => window.pascaline.session.setDigits(30));
+  await page.evaluate(() => window.n62.session.setDigits(30));
   // oracle: besselj(1,2) = 0.576724807756873387202448242269…; the engine falls back to a double here
-  await page.evaluate(() => window.pascaline.session.submit("\\operatorname{BesselJ}\\left(1,2\\right)"));
+  await page.evaluate(() => window.n62.session.submit("\\operatorname{BesselJ}\\left(1,2\\right)"));
   await expect(lastText(page)).toHaveAttribute("data-text", "0.57672480775687");
   await expect(markOfLast(page)).toHaveText("⚠");
 });

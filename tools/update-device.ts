@@ -34,9 +34,9 @@ async function launch(): Promise<Page> {
   await device.shell(`am start -n ${PKG}/.MainActivity`);
   const page = await (await device.webView({ pkg: PKG }, { timeout: 30_000 })).page();
   installTouchTap(page);
-  await page.waitForFunction(() => customElements.get("math-field") !== undefined && window.pascaline !== undefined, undefined, { timeout: 30_000 });
-  await page.evaluate(() => window.pascaline.entry.ready);
-  await page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 60_000 });
+  await page.waitForFunction(() => customElements.get("math-field") !== undefined && window.n62 !== undefined, undefined, { timeout: 30_000 });
+  await page.evaluate(() => window.n62.entry.ready);
+  await page.waitForFunction(() => window.n62.session.engineState === "ready", undefined, { timeout: 60_000 });
   return page;
 }
 const shot = (name: string): Promise<unknown> => device.screenshot({ path: join(shots, `${name}.png`) });
@@ -48,7 +48,7 @@ const keys = async (page: Page, ids: string[]): Promise<void> => {
   for (const id of ids) await page.locator(`[data-key="${id}"]`).tap();
 };
 const enter = async (page: Page, latex: string, n: number): Promise<void> => {
-  await page.evaluate((l) => window.pascaline.entry.field?.setValue(l), latex);
+  await page.evaluate((l) => window.n62.entry.field?.setValue(l), latex);
   await keys(page, ["enter"]);
   await done(page, n);
 };
@@ -72,7 +72,7 @@ await keys(page, ["d5", "shift", "emark", "alpha", "vars", "enter"]); // 5▶A
 await done(page, 1);
 await enter(page, "p\\left(x\\right):=x^2", 2);
 await enter(page, "1+2", 3);
-await page.evaluate(() => window.pascaline.session.setAngle("deg"));
+await page.evaluate(() => window.n62.session.setAngle("deg"));
 await keys(page, ["app"]); // CAS
 await enter(page, "h\\left(x\\right):=\\sin\\left(x\\right)", 1);
 await enter(page, "\\frac{d}{dx}x^3", 2);
@@ -84,11 +84,11 @@ adb("shell", "am", "force-stop", PKG);
 console.log(`ITEM install new over old (adb install -r): ${adb("install", "-r", newApk).split("\n").pop()}; version ${version()}`);
 page = await launch();
 await shot("2-new-build-first-start");
-item("view (CAS) restored", await page.evaluate(() => window.pascaline.session.view), "cas");
-item("angle mode restored", await page.evaluate(() => window.pascaline.session.settings.angle), "deg");
+item("view (CAS) restored", await page.evaluate(() => window.n62.session.view), "cas");
+item("angle mode restored", await page.evaluate(() => window.n62.session.settings.angle), "deg");
 item("CAS history: 2 entries", await page.locator('[data-status="done"]').count(), 2);
 item("CAS history: d/dx x³ result", (await results(page)).at(-1), "3*x^2");
-item("names: stored value, function, CAS definition", await page.evaluate(() => window.pascaline.session.userNames.map((u) => `${u.name}:${u.kind}`).sort()), ["A:var", "h:fn", "p:fn"]);
+item("names: stored value, function, CAS definition", await page.evaluate(() => window.n62.session.userNames.map((u) => `${u.name}:${u.kind}`).sort()), ["A:var", "h:fn", "p:fn"]);
 // Home
 await page.getByTestId("place").tap();
 await page.getByTestId("apps").locator('[role="menuitem"][data-id="home"]').tap();
@@ -102,7 +102,7 @@ item("stored value: A×2", await attr(page), "10");
 await keys(page, ["shift", "alpha", "emark", "paren", "d3", "enter"]); // p(3)
 await done(page, 5);
 item("function: p(3)", await attr(page), "9");
-await page.evaluate(() => window.pascaline.entry.field?.setValue("h\\left(30\\right)"));
+await page.evaluate(() => window.n62.entry.field?.setValue("h\\left(30\\right)"));
 await keys(page, ["enter"]);
 await done(page, 6);
 item("CAS definition under the stored degrees: h(30)", await attr(page), "0.5");
@@ -132,8 +132,8 @@ const stamps = await page.evaluate(
 );
 const want = await page.evaluate(() => 3); // DATA_VERSION as of this branch (app/src/state/storage.ts)
 for (const k of ["defs", "history", "settings", "view"]) item(`second start: ${k} stored as version ${want}`, stamps[k], want);
-item("second start: angle mode", await page.evaluate(() => window.pascaline.session.settings.angle), "deg");
-item("second start: user names", await page.evaluate(() => window.pascaline.session.userNames.map((u) => `${u.name}:${u.kind}`).sort()), ["A:var", "h:fn", "p:fn"]);
+item("second start: angle mode", await page.evaluate(() => window.n62.session.settings.angle), "deg");
+item("second start: user names", await page.evaluate(() => window.n62.session.userNames.map((u) => `${u.name}:${u.kind}`).sort()), ["A:var", "h:fn", "p:fn"]);
 await shot("5-second-start");
 adb("shell", "am", "force-stop", PKG);
 await device.close();

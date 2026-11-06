@@ -20,8 +20,8 @@ import java.nio.charset.StandardCharsets;
  * screen (ACTION_CREATE_DOCUMENT) and writes the UTF-8 text where the user picked. Resolves {result: "saved" |
  * "cancelled"}, rejects on an I/O error. No permission and no manifest entry.
  */
-@CapacitorPlugin(name = "PascalineFiles")
-public class PascalineFilesPlugin extends Plugin {
+@CapacitorPlugin(name = "N62Files")
+public class N62FilesPlugin extends Plugin {
     @PluginMethod
     public void save(PluginCall call) {
         String name = call.getString("name");

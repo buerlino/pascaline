@@ -13,7 +13,7 @@ useClipboardLock(); // R74f1: first hook, so the lock is held before the page op
 
 test.beforeEach(async ({ page }) => {
   await open(page, "");
-  await page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
+  await page.waitForFunction(() => window.n62.session.engineState === "ready", undefined, { timeout: 20_000 });
 });
 
 const clipboard = (page: Page): Promise<string> => page.evaluate(() => navigator.clipboard.readText());
@@ -74,7 +74,7 @@ test("Solve: the full root survives a reload; an edit drops it", async ({ page }
   await solved(page);
   await page.waitForTimeout(800); // the store write is debounced
   await page.reload();
-  await page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
+  await page.waitForFunction(() => window.n62.session.engineState === "ready", undefined, { timeout: 20_000 });
   await tap(page, ["@place", "d4", "@num"]);
   await expect(page.locator('[data-testid="solve-table"] tr[data-name="x"] td')).toHaveText("1.32672466524");
   await tap(page, ["copy"]);
@@ -88,7 +88,7 @@ async function root(page: Page): Promise<void> {
   await tap(page, ["@symb"]);
   await expect(page.getByTestId("entry-label")).toHaveText("F1(x)=");
   await tap(page, ["x", "pow", "d2", "right", "sub", "d2", "enter", "@plot"]);
-  await page.waitForFunction(() => window.pascaline.plot.board !== undefined);
+  await page.waitForFunction(() => window.n62.plot.board !== undefined);
   await tap(page, Array<string>(10).fill("right")); // x = 1
   await expect(page.getByTestId("trace-x")).toHaveText("1");
   await tap(page, ["@menu", "d1"]); // Root

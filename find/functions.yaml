@@ -59,7 +59,7 @@ functions:
   - { id: "fn:eseries", title: "Preferred value (E series)", desc: "The IEC 60063 value of E6, E12, E24, E48, E96 or E192 nearest to x, in x's decade: eseries(24, 3870) = 3900.", names: ["e24", "e12", "e96", "preferred value", "standard resistor"], giac: "eseries", syntax: "eseries(n, x)", golden: "fn-eseries" }
 
 # Giac commands left out of the index: they need Xcas's windows, turtle, files, folders, sound or command
-# history, none of which exists in Pascaline (Giac's own ans() is not our Ans). Entries whose English line says
+# history, none of which exists in N62 (Giac's own ans() is not our Ans). Entries whose English line says
 # they are options, pseudo-variables, program instructions or reserved words are left out by the generator.
 exclude:
   turtle: [efface, dessine_tortue, avance, recule, saute, pas_de_cote, tourne_droite, tourne_gauche, leve_crayon, baisse_crayon, crayon, position, cap, vers, rond, disque, disque_centre, rectangle_plein, triangle_plein, polygone_rempli, repete, debut_enregistrement, fin_enregistrement, cache_tortue, montre_tortue]

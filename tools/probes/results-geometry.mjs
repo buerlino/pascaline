@@ -59,8 +59,8 @@ try {
   for (const [label, size] of SIZES) {
     const page = await (await browser.newContext({ ...devices['Pixel 7'], ...(size ? { viewport: size } : {}) })).newPage();
     await page.goto(url);
-    await page.waitForFunction(() => customElements.get('math-field') !== undefined && window.pascaline !== undefined);
-    await page.evaluate(() => window.pascaline.entry.ready);
+    await page.waitForFunction(() => customElements.get('math-field') !== undefined && window.n62 !== undefined);
+    await page.evaluate(() => window.n62.entry.ready);
     const box = (sel) => page.evaluate((s) => { const r = document.querySelector(s)?.getBoundingClientRect(); return r ? { top: r.top, h: r.height } : null; }, sel);
     const rows = await page.evaluate(() => {
       const out = {};

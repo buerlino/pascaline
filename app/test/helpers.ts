@@ -23,8 +23,8 @@ async function statusTap(page: Page, id: string): Promise<void> {
   }
   const view = id.slice(1);
   if (!["symb", "plot", "num"].includes(view)) throw new Error(`no status-line control ${id}`);
-  const inApp = await page.evaluate(() => window.pascaline.shell.app !== null);
-  if (!inApp) await fromApps(await page.evaluate(() => window.pascaline.shell.lastApp ?? "function"));
+  const inApp = await page.evaluate(() => window.n62.shell.app !== null);
+  if (!inApp) await fromApps(await page.evaluate(() => window.n62.shell.lastApp ?? "function"));
   await page.getByTestId(`tab-${view}`).tap();
 }
 
@@ -44,7 +44,7 @@ export async function tap(page: Page, ids: string[]): Promise<void> {
       const el = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
       return el !== null && !k.contains(el) && el.closest('[role="menu"]') !== null;
     }, id);
-  const press = (id: string): Promise<void> => page.evaluate((id) => window.pascaline.entry.onKey(id, undefined as never, false), id);
+  const press = (id: string): Promise<void> => page.evaluate((id) => window.n62.entry.onKey(id, undefined as never, false), id);
   for (const id of ids) {
     if (id.startsWith("@")) {
       await statusTap(page, id);
@@ -64,7 +64,7 @@ export async function tap(page: Page, ids: string[]): Promise<void> {
   }
 }
 
-export const entryValue = (page: Page): Promise<string> => page.evaluate(() => window.pascaline.entry.value);
+export const entryValue = (page: Page): Promise<string> => page.evaluate(() => window.n62.entry.value);
 
 // R137: the helpers most specs had a copy of.
 /** The newest result row's result (its `.result` part, not the row). */
@@ -82,8 +82,8 @@ export async function bksp(page: Page): Promise<string> {
 export async function open(page: Page, query = "engine=fake"): Promise<void> {
   // R15c4: a fresh profile shows the first-start tips over the app; every other test runs without them (`tips=on` keeps them)
   await page.goto(`/?${query}${query.includes("tips=") ? "" : "&tips=off"}`);
-  await page.waitForFunction(() => customElements.get("math-field") !== undefined && window.pascaline !== undefined);
-  await page.evaluate(() => window.pascaline.entry.ready);
+  await page.waitForFunction(() => customElements.get("math-field") !== undefined && window.n62 !== undefined);
+  await page.evaluate(() => window.n62.entry.ready);
   await page.waitForTimeout(150);
 }
 
@@ -302,6 +302,6 @@ export async function setFontScale(page: Page, scale: number): Promise<void> {
     }
   }, scale);
   await tap(page, ["shift"]);
-  await page.evaluate(() => window.pascaline.session.clearModifiers());
+  await page.evaluate(() => window.n62.session.clearModifiers());
   await page.waitForTimeout(100);
 }

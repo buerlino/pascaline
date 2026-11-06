@@ -62,7 +62,7 @@ test.describe("by keys", () => {
     await expect(row(page, "pfx")).toHaveAttribute("data-selected", "false");
     await tap(page, ["d4"]); // a tick toggles and the sheet stays
     await expect(row(page, "pfx")).toHaveAttribute("data-selected", "true");
-    expect(await page.evaluate(() => window.pascaline.session.settings.fmtCycle)).toContain("pfx");
+    expect(await page.evaluate(() => window.n62.session.settings.fmtCycle)).toContain("pfx");
     await tap(page, ["enter"]); // Enter on a tick toggles it too, and stays
     await expect(row(page, "pfx")).toHaveAttribute("data-selected", "false");
     await tap(page, ["esc"]); // back one level, onto the same row
@@ -74,12 +74,12 @@ test.describe("by keys", () => {
     await expect(row(page, "mark").getByTestId("sheet-value")).toHaveText("Point");
     await tap(page, ["right"]);
     await expect(row(page, "mark").getByTestId("sheet-value")).toHaveText("Comma");
-    expect(await page.evaluate(() => window.pascaline.session.settings.decimalMark)).toBe("comma");
+    expect(await page.evaluate(() => window.n62.session.settings.decimalMark)).toBe("comma");
     await tap(page, ["left", "down", "down"]);
-    expect(await page.evaluate(() => window.pascaline.session.settings.decimalMark)).toBe("point");
+    expect(await page.evaluate(() => window.n62.session.settings.decimalMark)).toBe("point");
     await expect(active(page)).toHaveAttribute("data-id", "decimals");
     await tap(page, ["right", "right", "left"]);
-    expect(await page.evaluate(() => window.pascaline.session.settings.fixDecimals)).toBe(5);
+    expect(await page.evaluate(() => window.n62.session.settings.fixDecimals)).toBe(5);
     await expect(row(page, "decimals").getByTestId("sheet-value")).toHaveText("5");
     await tap(page, ["down"]);
     await expect(row(page, "uncertainty").getByTestId("sheet-value")).toHaveText("Muted digits, σ on tap");
@@ -126,7 +126,7 @@ test.describe("by touch", () => {
     await expect(active(page)).toHaveAttribute("data-id", "settings");
     await tap(page, ["esc"]);
     await tap(page, ["@plot"]);
-    await page.waitForFunction(() => window.pascaline.shell.app === "function" && window.pascaline.shell.loading === null);
+    await page.waitForFunction(() => window.n62.shell.app === "function" && window.n62.shell.loading === null);
     await tap(page, ["@menu"]);
     await sheet(page).getByRole("menuitem").last().tap();
     await expect(title(page)).toHaveText("Plot menu › Settings");
@@ -140,11 +140,11 @@ test.describe("by touch", () => {
     await expect(row(page, "try")).toHaveAttribute("aria-disabled", "true"); // off: nothing to try
     await row(page, "haptics").tap();
     await expect(row(page, "haptics")).toHaveAttribute("data-selected", "true");
-    expect(await page.evaluate(() => window.pascaline.session.settings.haptics.on)).toBe(true);
+    expect(await page.evaluate(() => window.n62.session.settings.haptics.on)).toBe(true);
     await expect(row(page, "strength")).toHaveAttribute("aria-disabled", "true"); // the web build cannot set it, and says why
     await expect(row(page, "strength").locator(".reason")).toHaveText("The Android app only");
     await row(page, "ms").getByTestId("step-up").tap();
-    expect(await page.evaluate(() => window.pascaline.session.settings.haptics.ms)).toBe(20);
+    expect(await page.evaluate(() => window.n62.session.settings.haptics.ms)).toBe(20);
     const before = (await vibrations(page)).length;
     await row(page, "try").tap();
     await expect.poll(async () => (await vibrations(page)).slice(before)).toEqual([20]);

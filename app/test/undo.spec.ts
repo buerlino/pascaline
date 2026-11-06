@@ -6,8 +6,8 @@ import { entryValue, flick, open, tap, touch } from "./helpers.ts";
 
 const results = (page: Page) => page.locator('[data-testid="result"] .result');
 const ready = (page: Page) =>
-  page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
-const undo = (page: Page) => page.evaluate(() => window.pascaline.entry.field?.executeCommand("undo"));
+  page.waitForFunction(() => window.n62.session.engineState === "ready", undefined, { timeout: 20_000 });
+const undo = (page: Page) => page.evaluate(() => window.n62.entry.field?.executeCommand("undo"));
 
 /** 1/3 = 0.333…, then `1 + <chip of that result>` on the line. */
 async function lineWithChip(page: Page): Promise<void> {
@@ -22,7 +22,7 @@ async function lineWithChip(page: Page): Promise<void> {
 
 test("Esc then undo brings the chip back with its own value", async ({ page }) => {
   await lineWithChip(page);
-  await page.evaluate(() => window.pascaline.entry.clear());
+  await page.evaluate(() => window.n62.entry.clear());
   await undo(page);
   expect(await entryValue(page)).toBe("\\res{1}{0.333333333333}\\times3");
   await tap(page, ["enter"]);
@@ -50,10 +50,10 @@ test("a recalled entry whose chip key is taken keeps both values apart, also aft
   await results(page).last().tap(); // chip res:1 = 1/3
   await tap(page, ["mul", "d3"]);
   // recall an entry that carries res:1 with ANOTHER value, then undo back to the first line
-  await page.evaluate(() => window.pascaline.entry.set("\\res{1}{7}+1", { "res:1": { value: "7", exact: true } }));
+  await page.evaluate(() => window.n62.entry.set("\\res{1}{7}+1", { "res:1": { value: "7", exact: true } }));
   await undo(page);
   const v = await entryValue(page);
-  const chips = await page.evaluate(() => window.pascaline.entry.chips);
+  const chips = await page.evaluate(() => window.n62.entry.chips);
   // whatever key the 1/3 chip has now, its value must still be 1/3
   const m = /\\res\{(\d+)\}\{0\.333333333333\}/.exec(v);
   expect(m).not.toBeNull();
@@ -68,7 +68,7 @@ test("select part of the line, delete it, Undo brings it back", async ({ page })
   await open(page);
   await tap(page, ["d1", "add", "d2", "mul", "d3"]);
   await page.evaluate(() => {
-    const mf = window.pascaline.entry.field;
+    const mf = window.n62.entry.field;
     if (mf) mf.selection = { ranges: [[1, 3]] }; // "+2"
   });
   await tap(page, ["bksp"]);
@@ -80,7 +80,7 @@ test("select part of the line, delete it, Undo brings it back", async ({ page })
 test("select all, delete, undo", async ({ page }) => {
   await open(page);
   await tap(page, ["d4", "d5", "d6"]);
-  await page.evaluate(() => window.pascaline.entry.field?.executeCommand("selectAll"));
+  await page.evaluate(() => window.n62.entry.field?.executeCommand("selectAll"));
   await tap(page, ["bksp"]);
   expect(await entryValue(page)).toBe("");
   await undoKey(page);
@@ -147,7 +147,7 @@ test("a second a/b and then undo leaves a sound line", async ({ page }) => {
 
 test("one-line entry mode: undo works as well", async ({ page }) => {
   await open(page);
-  await page.evaluate(() => window.pascaline.session.setEntry("line"));
+  await page.evaluate(() => window.n62.session.setEntry("line"));
   await tap(page, ["d1", "d2", "esc"]);
   await undoKey(page);
   expect(await entryValue(page)).toBe("12");

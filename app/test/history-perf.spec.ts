@@ -8,7 +8,7 @@ const N = 200;
 
 test("200 stored entries: only the newest are drawn, Enter renders just the new one, earlier ones load on scroll", async ({ page }) => {
   await page.goto("/?engine=fake&tips=off");
-  await page.waitForFunction(() => window.pascaline !== undefined);
+  await page.waitForFunction(() => window.n62 !== undefined);
   // Seed the store directly (the same shape Session writes), then reload so the app restores it.
   await page.evaluate(async (n) => {
     const items = Array.from({ length: n }, (_, k) => ({
@@ -35,8 +35,8 @@ test("200 stored entries: only the newest are drawn, Enter renders just the new 
     });
   }, N);
   await page.reload();
-  await page.waitForFunction(() => window.pascaline?.entry.field !== undefined);
-  await page.waitForFunction((n) => window.pascaline.session.home.length === n, N);
+  await page.waitForFunction(() => window.n62?.entry.field !== undefined);
+  await page.waitForFunction((n) => window.n62.session.home.length === n, N);
   await expect(page.locator(".item").last()).toContainText(String(N));
   await page.waitForTimeout(300);
 
@@ -44,11 +44,11 @@ test("200 stored entries: only the newest are drawn, Enter renders just the new 
   expect(drawn).toBeLessThanOrEqual(21);
   expect(drawn).toBeGreaterThanOrEqual(20);
 
-  const before = await page.evaluate(() => window.pascaline.renderStats.count);
+  const before = await page.evaluate(() => window.n62.renderStats.count);
   await tap(page, ["d7", "enter"]);
   await expect(page.locator('[data-status="done"]').last()).toContainText("7");
   await page.waitForTimeout(300);
-  const after = await page.evaluate(() => window.pascaline.renderStats.count);
+  const after = await page.evaluate(() => window.n62.renderStats.count);
   // the new entry: its input and its result; nothing else is re-rendered
   expect(after - before).toBe(2);
 

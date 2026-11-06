@@ -45,7 +45,7 @@ const cap = vi.hoisted(() => ({
 }));
 vi.mock("@capacitor/core", () => ({
   Capacitor: { isNativePlatform: () => cap.native, isPluginAvailable: (n: string) => cap.available.has(n) },
-  registerPlugin: (n: string) => (n === "PascalineFiles" ? cap.files : {}),
+  registerPlugin: (n: string) => (n === "N62Files" ? cap.files : {}),
 }));
 vi.mock("@capacitor/clipboard", () => ({ Clipboard: cap.clip }));
 vi.mock("@capacitor/share", () => ({ Share: cap.share }));
@@ -88,7 +88,7 @@ describe("saveFile", () => {
   it("maps the plugin's three outcomes", async () => {
     const { saveFile } = await import("./files.ts");
     cap.native = true;
-    cap.available = new Set(["PascalineFiles"]);
+    cap.available = new Set(["N62Files"]);
     cap.files.save.mockResolvedValue({ result: "saved" });
     expect(await saveFile("a.json", "application/json", "{}")).toBe("saved");
     expect(cap.files.save).toHaveBeenCalledWith({ name: "a.json", mime: "application/json", text: "{}" });

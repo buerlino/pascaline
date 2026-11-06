@@ -23,7 +23,7 @@ test.describe("± on Shift + ,", () => {
     await tap(page, ["d2"]);
     await flick(page, "comma", "up");
     expect(await entryValue(page)).toBe("2\\pm");
-    await page.evaluate(() => (window.pascaline.session.view = "cas"));
+    await page.evaluate(() => (window.n62.session.view = "cas"));
     await tap(page, ["esc"]);
     await tap(page, ["d3"]);
     await flick(page, "comma", "up");
@@ -36,28 +36,28 @@ test.describe("± on Shift + ,", () => {
     await tap(page, ["shift"]);
     await expect(key(page, "comma")).not.toHaveAttribute("data-dead", "true"); // Home: live
     await tap(page, ["shift"]);
-    await page.evaluate(async () => window.pascaline.shell.open("solve", "symb"));
-    await page.waitForFunction(() => window.pascaline.shell.loading === null);
+    await page.evaluate(async () => window.n62.shell.open("solve", "symb"));
+    await page.waitForFunction(() => window.n62.shell.loading === null);
     await tap(page, ["shift"]);
     await expect(key(page, "comma")).toHaveAttribute("data-dead", "true");
     await tap(page, ["comma"]);
     expect(await entryValue(page)).toBe("");
-    await page.evaluate(() => window.pascaline.shell.close());
+    await page.evaluate(() => window.n62.shell.close());
     await tap(page, ["d2"]);
     await flick(page, "tmpl", "up");
-    await page.waitForFunction(() => window.pascaline.unitView !== undefined && document.querySelector('[data-pad="unit"]') !== null);
+    await page.waitForFunction(() => window.n62.unitView !== undefined && document.querySelector('[data-pad="unit"]') !== null);
     await flick(page, "comma", "up"); // no pad cell: dead in the unit view, the line is not touched
-    await page.evaluate(() => window.pascaline.unitView?.close());
+    await page.evaluate(() => window.n62.unitView?.close());
     expect(await entryValue(page)).toBe("2");
   });
 
   test("2.5 ± 0.1 m, then the units key: the value with σ 0.1 (G18)", async ({ page }) => {
     await open(page, "");
-    await page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
+    await page.waitForFunction(() => window.n62.session.engineState === "ready", undefined, { timeout: 20_000 });
     await tap(page, ["d2", "dot", "d5", "shift", "comma", "d0", "dot", "d1"]);
     expect(await entryValue(page)).toBe("2.5\\pm0.1");
     await flick(page, "tmpl", "up");
-    await page.waitForFunction(() => window.pascaline.unitView !== undefined && document.querySelector('[data-pad="unit"]') !== null);
+    await page.waitForFunction(() => window.n62.unitView !== undefined && document.querySelector('[data-pad="unit"]') !== null);
     await tap(page, ["d9"]); // m
     await flick(page, "enter", "up");
     const result = page.getByTestId("unit-result");

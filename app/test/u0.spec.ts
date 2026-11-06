@@ -43,7 +43,7 @@ for (const width of [412, 360, 320]) {
       ["shift+alpha", ["shift", "alpha"]],
     ];
     for (const [layer, keys] of layers) {
-      await page.evaluate(() => window.pascaline.session.clearModifiers());
+      await page.evaluate(() => window.n62.session.clearModifiers());
       await tap(page, keys);
       const problems = await page.evaluate(() => {
         const out: string[] = [];
@@ -110,7 +110,7 @@ test("finding 3: Vars opens Find on the names (R4b), Math Find (R4a), Tmpl its p
   for (const id of ["vars", "math", "tmpl"]) expect(await dead(page, id), `${id} alpha`).toBe(false);
   await tap(page, ["vars"]); // the A
   expect(await entryValue(page)).toBe("A");
-  await page.evaluate(() => window.pascaline.entry.clear());
+  await page.evaluate(() => window.n62.entry.clear());
   await tap(page, ["shift"]);
   expect(await dead(page, "math"), "math shift").toBe(false); // Memory
   expect(await dead(page, "tmpl"), "tmpl shift").toBe(false); // the units key (R24c)
@@ -127,7 +127,7 @@ test("finding 3: a key is dimmed exactly where it does nothing (the shift layer 
   expect(await dead(page, "shift")).toBe(false); // the modifiers work in every layer
   expect(await dead(page, "alpha")).toBe(false);
   await tap(page, ["esc", "esc"]);
-  await page.evaluate(() => window.pascaline.session.clearModifiers());
+  await page.evaluate(() => window.n62.session.clearModifiers());
   expect(await dead(page, "up")).toBe(false);
 });
 
@@ -144,17 +144,17 @@ test("finding 3: the Enter face stays readable in the Alpha layer (white, not bl
 // ---- finding 8: the Plot hint sits above the axes -----------------------------------------------------------------------
 test("finding 8: with no function the Plot hint is a box above the x axis, on its own background", async ({ page }) => {
   await open(page, "");
-  await page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
+  await page.waitForFunction(() => window.n62.session.engineState === "ready", undefined, { timeout: 20_000 });
   await tap(page, ["@symb", "@plot"]);
   const note = page.locator(".plot .note");
   await expect(note).toBeVisible();
-  await page.waitForFunction(() => window.pascaline.plot.board !== undefined);
+  await page.waitForFunction(() => window.n62.plot.board !== undefined);
   const r = await page.evaluate(() => {
     const board = document.querySelector(".plot .board") as HTMLElement;
     const note = document.querySelector(".plot .note") as HTMLElement;
     const b = board.getBoundingClientRect();
     const n = note.getBoundingClientRect();
-    const origin = (window.pascaline.plot.board as unknown as { origin: { scrCoords: number[] } }).origin.scrCoords;
+    const origin = (window.n62.plot.board as unknown as { origin: { scrCoords: number[] } }).origin.scrCoords;
     return { noteBottom: n.bottom - b.top, axisY: origin[2] ?? 0, bg: getComputedStyle(note).backgroundColor, left: n.left - b.left, right: b.right - n.right };
   });
   expect(r.noteBottom).toBeLessThan(r.axisY - 2);

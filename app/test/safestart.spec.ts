@@ -7,9 +7,9 @@ const bar = (page: Page) => page.getByTestId("row-actions");
 
 test.beforeEach(async ({ page }) => {
   await open(page, "");
-  await page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
+  await page.waitForFunction(() => window.n62.session.engineState === "ready", undefined, { timeout: 20_000 });
   // what a safe start adds: the note, in both views
-  await page.evaluate(() => (window.pascaline.session as unknown as { note(text: string): void }).note("safe start"));
+  await page.evaluate(() => (window.n62.session as unknown as { note(text: string): void }).note("safe start"));
   await expect(page.getByTestId("safe-start")).toHaveCount(1);
 });
 
@@ -27,5 +27,5 @@ test("Up picks the last real row and stays on it; the note is never picked", asy
   await expect(bar(page).getByRole("button")).toHaveCount(5);
   await tap(page, ["enter"]); // Enter puts the picked result on the line
   await expect(bar(page)).toHaveCount(0);
-  expect(await page.evaluate(() => window.pascaline.entry.value)).toContain("\\res");
+  expect(await page.evaluate(() => window.n62.entry.value)).toContain("\\res");
 });

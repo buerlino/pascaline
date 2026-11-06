@@ -12,13 +12,13 @@ interface Cell { key: string; kind: string; tap?: { emit: Emit }; up?: { emit: E
 test.use({ viewport: { width: 360, height: 740 } });
 test.beforeEach(async ({ page }) => {
   await open(page, "engine=fake&pad=1");
-  await page.waitForFunction(() => (window.pascaline.unitPad?.model ?? null) !== null);
+  await page.waitForFunction(() => (window.n62.unitPad?.model ?? null) !== null);
 });
 
-const cells = (page: Page): Promise<Cell[]> => page.evaluate(() => JSON.parse(JSON.stringify(window.pascaline.unitPad?.model?.cells ?? [])) as Cell[]);
-const log = (page: Page): Promise<Emit[]> => page.evaluate(() => JSON.parse(JSON.stringify(window.pascaline.unitPad?.log ?? [])) as Emit[]);
-const clear = (page: Page): Promise<void> => page.evaluate(() => void window.pascaline.unitPad?.log?.splice(0));
-const onKey = (page: Page, id: string, layer?: "shift" | "alpha"): Promise<void> => page.evaluate(([i, l]) => window.pascaline.entry.onKey(i as string, l as never, false), [id, layer]);
+const cells = (page: Page): Promise<Cell[]> => page.evaluate(() => JSON.parse(JSON.stringify(window.n62.unitPad?.model?.cells ?? [])) as Cell[]);
+const log = (page: Page): Promise<Emit[]> => page.evaluate(() => JSON.parse(JSON.stringify(window.n62.unitPad?.log ?? [])) as Emit[]);
+const clear = (page: Page): Promise<void> => page.evaluate(() => void window.n62.unitPad?.log?.splice(0));
+const onKey = (page: Page, id: string, layer?: "shift" | "alpha"): Promise<void> => page.evaluate(([i, l]) => window.n62.entry.onKey(i as string, l as never, false), [id, layer]);
 const LAYERS = [["primary", "tap"], ["shift", "up"], ["alpha", "down"]] as const;
 
 /** One press of `id` in `layer`, however the test reaches it. */
@@ -53,7 +53,7 @@ for (const [name, reach] of Object.entries(ways))
       }
     // the pad typed nothing, and the one-shot Shift or Alpha was used up by each cell
     expect(await entryValue(page)).toBe("");
-    expect(await page.evaluate(() => [window.pascaline.session.shift, window.pascaline.session.alpha])).toEqual([false, false]);
+    expect(await page.evaluate(() => [window.n62.session.shift, window.n62.session.alpha])).toEqual([false, false]);
   });
 
 test("a user cell emits its unit; an empty one shows a dim + and is dead", async ({ page }) => {
@@ -66,7 +66,7 @@ test("a user cell emits its unit; an empty one shows a dim + and is dead", async
   await expect(page.locator('[data-key="u3"] .shiftlegend')).toHaveText("l ton");
   await expect(page.locator('[data-key="u3"]')).toHaveAttribute("data-pad", "user");
   await page.evaluate(() => {
-    const u = window.pascaline.unitPad;
+    const u = window.n62.unitPad;
     const m = u?.model;
     if (u && m) u.model = new (m.constructor as new (u: object) => NonNullable<typeof m>)({});
   });
@@ -81,7 +81,7 @@ test("a user cell shows its flick down as a legend, and the flick emits it", asy
   const height = (): Promise<number | undefined> => page.locator(".pad").boundingBox().then((b) => b?.height);
   const before = await height();
   await page.evaluate(() => {
-    const u = window.pascaline.unitPad;
+    const u = window.n62.unitPad;
     const m = u?.model;
     if (u && m) u.model = new (m.constructor as new (u: object) => NonNullable<typeof m>)({ u2: { tap: "H", down: "mH" } });
   });

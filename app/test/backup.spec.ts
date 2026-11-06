@@ -10,16 +10,16 @@ test("Settings › Data › Save a backup saves the envelope with every present 
   await page.setViewportSize({ width: 412, height: 915 });
   await savePicker(page, "fake");
   await open(page, "");
-  await page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
+  await page.waitForFunction(() => window.n62.session.engineState === "ready", undefined, { timeout: 20_000 });
   // history (two rows), a definition (5▶A), a setting and a user key
   await tap(page, ["d1", "div", "d3", "enter"]);
   await expect(page.locator('[data-status="done"]')).toHaveCount(1); // Enter is ignored while a row runs
   await tap(page, ["d5", "shift", "emark", "alpha", "vars", "enter"]);
   await expect(page.locator('[data-status="done"]')).toHaveCount(2);
-  await page.evaluate(() => (window.pascaline.session.settings.marks = "muted")); // R124: written with the digits
-  await page.evaluate(() => (window.pascaline.session.settings.groupSep = "apos")); // R125: written with the digits
-  await page.evaluate(() => window.pascaline.session.setDigits(9));
-  await page.evaluate(() => window.pascaline.userKeys.set("u1", "primary", { label: "Home", action: { special: "home" } }));
+  await page.evaluate(() => (window.n62.session.settings.marks = "muted")); // R124: written with the digits
+  await page.evaluate(() => (window.n62.session.settings.groupSep = "apos")); // R125: written with the digits
+  await page.evaluate(() => window.n62.session.setDigits(9));
+  await page.evaluate(() => window.n62.userKeys.set("u1", "primary", { label: "Home", action: { special: "home" } }));
   await page.waitForTimeout(900); // the writes are debounced and asynchronous
 
   await tap(page, ["@mode", "d6"]);

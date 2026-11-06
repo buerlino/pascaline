@@ -21,10 +21,10 @@ async function del(page: Page): Promise<string> {
 /** The selected LaTeX, or "" when the selection is collapsed. */
 const selected = (page: Page): Promise<string> =>
   page.evaluate(() => {
-    const mf = window.pascaline.entry.field;
+    const mf = window.n62.entry.field;
     return !mf || mf.selectionIsCollapsed ? "" : mf.getValue(mf.selection, "latex");
   });
-const position = (page: Page): Promise<number> => page.evaluate(() => window.pascaline.entry.field?.position ?? -1);
+const position = (page: Page): Promise<number> => page.evaluate(() => window.n62.entry.field?.position ?? -1);
 
 test("2 + x² ⌫ ⌫ gives 2: the exponent never lands on the 2", async ({ page }) => {
   await tap(page, ["d2", "add", "sq"]);
@@ -128,7 +128,7 @@ test("an exponent stays on a letter: 2 L x², ⌫ after the L leaves 2□², not
   await tap(page, ["d2", "alpha", "sq", "sq"]);
   expect(await entryValue(page)).toBe("2L^2");
   await page.evaluate(() => {
-    const mf = window.pascaline.entry.field;
+    const mf = window.n62.entry.field;
     if (mf) mf.position = 2; // right after the L
   });
   expect(await bksp(page)).toBe(`2${PH}^2`);
@@ -138,7 +138,7 @@ test("a number base shrinks digit by digit: 1 2 xʸ 3, ⌫ after the 2 gives 1^{
   await tap(page, ["d1", "d2", "pow", "d3"]);
   expect(await entryValue(page)).toBe("12^3");
   await page.evaluate(() => {
-    const mf = window.pascaline.entry.field;
+    const mf = window.n62.entry.field;
     if (mf) mf.position = 2; // right after the 2
   });
   expect(await bksp(page)).toBe("1^3");
@@ -162,7 +162,7 @@ test("Del at the end of a typed exponent selects the power, the next Del deletes
 test("Del right before a base of one digit leaves □ and keeps the exponent", async ({ page }) => {
   await tap(page, ["d5", "pow", "d2", "d3"]);
   await page.evaluate(() => {
-    const mf = window.pascaline.entry.field;
+    const mf = window.n62.entry.field;
     if (mf) mf.position = 0;
   });
   expect(await del(page)).toBe(`${PH}^{23}`);

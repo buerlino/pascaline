@@ -11,8 +11,8 @@ useClipboardLock();
 
 test.beforeEach(async ({ page }) => {
   await open(page, "");
-  await page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
-  await page.evaluate(() => window.pascaline.session.setDecimalMark("comma"));
+  await page.waitForFunction(() => window.n62.session.engineState === "ready", undefined, { timeout: 20_000 });
+  await page.evaluate(() => window.n62.session.setDecimalMark("comma"));
 });
 
 const clipboard = (page: Page): Promise<string> => page.evaluate(() => navigator.clipboard.readText());
@@ -36,7 +36,7 @@ test("Solve: Num shows x·eˣ=5 as 1,32672466524, Copy gives the comma, point mo
   await expect(row(page, "x").locator("td")).toHaveAttribute("data-value", /^1\.3267246652/); // the stored value keeps the point
   await tap(page, ["copy"]);
   await expect.poll(() => clipboard(page)).toMatch(/^1,3267246652\d{10,}$/);
-  await page.evaluate(() => window.pascaline.session.setDecimalMark("point"));
+  await page.evaluate(() => window.n62.session.setDecimalMark("point"));
   await expect(row(page, "x").locator("td")).toHaveText("1.32672466524");
 });
 
@@ -49,6 +49,6 @@ test("Function: a Num row shows sin(0,1) and sin(1) with the comma; the CSV is ;
   await expect(cell("1").nth(1)).toHaveAttribute("data-text", "0,841470984808"); // oracle sin(1)
   await tap(page, ["copy"]);
   await expect.poll(() => clipboard(page)).toMatch(/^x;F1\r\n0;0\r\n1;0,84147098480\d*\r\n/);
-  await page.evaluate(() => window.pascaline.session.setDecimalMark("point"));
+  await page.evaluate(() => window.n62.session.setDecimalMark("point"));
   await expect(cell("1").nth(1)).toHaveAttribute("data-text", "0.841470984808");
 });

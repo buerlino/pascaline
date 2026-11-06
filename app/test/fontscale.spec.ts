@@ -22,7 +22,7 @@ for (const scale of [1.5, 2.0])
       const faceSize = await page.evaluate(() => parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--fs-key")));
       expect(faceSize).toBeGreaterThan(20 * scale - 0.5); // the scale is on
       for (const [layer, keys] of LAYERS) {
-        await page.evaluate(() => window.pascaline.session.clearModifiers());
+        await page.evaluate(() => window.n62.session.clearModifiers());
         await tap(page, keys);
         const problems = await page.evaluate(() => {
           const out: string[] = [];

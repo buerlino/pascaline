@@ -27,7 +27,7 @@ describe("native plugin names", () => {
   }
   it("MainActivity registers both before super.onCreate", () => {
     const main = java("MainActivity");
-    const sup = main.indexOf("super.onCreate");
+    const sup = main.indexOf("super.onCreate(savedInstanceState)");
     for (const p of PLUGINS) {
       const at = main.indexOf(`registerPlugin(${p.cls}.class)`);
       expect(at, p.cls).toBeGreaterThan(0);

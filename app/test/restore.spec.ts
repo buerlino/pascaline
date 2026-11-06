@@ -14,10 +14,10 @@ interface State {
 }
 const state = (page: Page): Promise<State> =>
   page.evaluate(() => {
-    const p = window.pascaline;
+    const p = window.n62;
     return { home: p.session.home.map((i) => i.latex), settings: JSON.stringify(p.session.settings), u1: p.userKeys.labelOf("u1", "primary") };
   });
-const ready = (page: Page): Promise<unknown> => page.waitForFunction(() => window.pascaline?.session.engineState === "ready", undefined, { timeout: 30_000 });
+const ready = (page: Page): Promise<unknown> => page.waitForFunction(() => window.n62?.session.engineState === "ready", undefined, { timeout: 30_000 });
 
 async function dataSection(page: Page): Promise<void> {
   await tap(page, ["@mode", "d6"]);
@@ -36,7 +36,7 @@ async function reloadingTap(page: Page, id: string): Promise<void> {
   const load = page.waitForEvent("load");
   await page.getByTestId("menu").locator(`[data-id="${id}"]`).tap();
   await load;
-  await page.waitForFunction(() => window.pascaline !== undefined);
+  await page.waitForFunction(() => window.n62 !== undefined);
   await ready(page);
 }
 
@@ -50,8 +50,8 @@ test("a backup restores into an empty store as the same state, and Undo gives ba
   await expect(page.locator('[data-status="done"]')).toHaveCount(1); // Enter is ignored while a row runs
   await tap(page, ["d5", "shift", "emark", "alpha", "vars", "enter"]); // 5▶A
   await expect(page.locator('[data-status="done"]')).toHaveCount(2);
-  await page.evaluate(() => window.pascaline.session.setDigits(9));
-  await page.evaluate(() => window.pascaline.userKeys.set("u1", "primary", { label: "Home", action: { special: "home" } }));
+  await page.evaluate(() => window.n62.session.setDigits(9));
+  await page.evaluate(() => window.n62.userKeys.set("u1", "primary", { label: "Home", action: { special: "home" } }));
   await page.waitForTimeout(900); // the writes are debounced and asynchronous
   const saved = await state(page);
   await dataSection(page);
@@ -66,7 +66,7 @@ test("a backup restores into an empty store as the same state, and Undo gives ba
   await ready(other);
   await tap(other, ["d2", "add", "d2", "enter"]);
   await expect(other.locator('[data-status="done"]')).toHaveCount(1);
-  await other.evaluate(() => window.pascaline.session.setDigits(7));
+  await other.evaluate(() => window.n62.session.setDigits(7));
   await other.waitForTimeout(900);
   const before = await state(other);
   expect(before.u1).toBeUndefined();
@@ -100,7 +100,7 @@ test("a backup restores into an empty store as the same state, and Undo gives ba
   expect(await state(other)).toEqual(saved);
   await tap(other, ["alpha", "vars", "enter"]); // A after the replay of the restored log
   await expect(other.locator('[data-status="done"]')).toHaveCount(3);
-  expect(await other.evaluate(() => window.pascaline.session.home.at(-1)?.resultLatex)).toBe("5");
+  expect(await other.evaluate(() => window.n62.session.home.at(-1)?.resultLatex)).toBe("5");
 
   await other.waitForTimeout(900);
   await dataSection(other);
@@ -117,7 +117,7 @@ test("a file with a part from a newer version is refused with its message, and n
   await page.setViewportSize({ width: 412, height: 915 });
   await savePicker(page, "none");
   await open(page, "engine=fake");
-  await page.evaluate(() => window.pascaline.session.setDigits(8));
+  await page.evaluate(() => window.n62.session.setDigits(8));
   await page.waitForTimeout(900);
   await dataSection(page);
   const download = page.waitForEvent("download");
@@ -132,11 +132,11 @@ test("a file with a part from a newer version is refused with its message, and n
   await expect(page.getByTestId("notice")).toHaveText(`Definitions: made by a newer N62 (version ${v + 1}; this one reads up to ${v})`);
   await expect(page.getByTestId("sheet-title")).toHaveCount(0); // no restore sheet
   expect(await state(page)).toEqual(before);
-  expect(await page.evaluate(() => window.pascaline.session.settings.digits)).toBe(8);
+  expect(await page.evaluate(() => window.n62.session.settings.digits)).toBe(8);
   await page.reload();
-  await page.waitForFunction(() => window.pascaline !== undefined);
+  await page.waitForFunction(() => window.n62 !== undefined);
   await page.waitForTimeout(300);
-  expect(await page.evaluate(() => window.pascaline.session.settings.digits)).toBe(8); // nothing was written
+  expect(await page.evaluate(() => window.n62.session.settings.digits)).toBe(8); // nothing was written
   await dataSection(page);
   await expect(page.getByTestId("menu").locator('[data-id="undo"]')).toHaveCount(0);
 });

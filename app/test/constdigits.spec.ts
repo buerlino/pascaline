@@ -15,7 +15,7 @@ const done = (page: Page, n: number) => expect(page.locator('[data-status="done"
 const lastMark = (page: Page) => page.getByTestId("mark").last();
 const muted = (page: Page) => lastResult(page).locator(".unc");
 const digitsOf = (s: string | null): string => (s ?? "").replace(/[^0-9]/g, "");
-const ready = (page: Page) => page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
+const ready = (page: Page) => page.waitForFunction(() => window.n62.session.engineState === "ready", undefined, { timeout: 20_000 });
 
 /** The Find index's constant `id` on the entry line, as a pick puts it (its value, σ, basis and leaves). */
 async function putConst(page: Page, id: string): Promise<void> {
@@ -24,7 +24,7 @@ async function putConst(page: Page, id: string): Promise<void> {
     const f = (await import(/* @vite-ignore */ url)) as typeof Finder;
     const it = (await f.loadIndex(true)).byId.get(`const:${cid}`);
     if (!it) throw new Error(`no constant ${cid} in the index`);
-    f.putOnLine(window.pascaline.entry, it);
+    f.putOnLine(window.n62.entry, it);
   }, id);
 }
 
@@ -59,7 +59,7 @@ test("G × 5.972ᴇ24: the digits past uncDigits are muted, the mark is ≈, Cop
   await tap(page, ["copy"]);
   await expect(page.getByTestId("notice")).toHaveText("Copied");
   await expect.poll(async () => digitsOf(await page.evaluate(() => navigator.clipboard.readText()))).toMatch(/^398589196/);
-  await page.evaluate(() => window.pascaline.session.setDigits(30));
+  await page.evaluate(() => window.n62.session.setDigits(30));
   await gTimesEarth(page, 2);
   await expect(lastMark(page)).toHaveAttribute("data-mark", "≈");
   expect(digitsOf(await muted(page).textContent())).toBe("9196000000"); // 398589196000000: the same five digits hold
@@ -83,11 +83,11 @@ test("only exact constants (c): no muted digit; μ₀ × ε₀ × c² from chips
     await expect(lastResult(page)).toHaveAttribute("data-text", "1");
     await expect(lastMark(page)).toHaveAttribute("data-mark", "≈");
     await expect(muted(page)).toHaveCount(0);
-    expect(await page.evaluate(() => window.pascaline.session.home.at(-1)?.facts?.uncDigits)).toBeUndefined();
+    expect(await page.evaluate(() => window.n62.session.home.at(-1)?.facts?.uncDigits)).toBeUndefined();
   };
   await muEpsC2();
   // our leaf names are ours (family 9): a user's variable of the same name changes neither the value nor σ
-  await page.evaluate(() => window.pascaline.session.submit("x", "pasl_fine_structure:=5"));
+  await page.evaluate(() => window.n62.session.submit("x", "pasl_fine_structure:=5"));
   await expect(page.locator('[data-testid="result"]')).toHaveCount(3);
   await muEpsC2();
 });
@@ -115,15 +115,15 @@ test("a tap on the row shows its σ line, a second hides it; with Muted digits a
   await expect(page.getByTestId("entry-label")).toHaveText("Preset name");
   await tap(page, ["alpha", "emark", "enter"]); // the name "P" (Alpha on the ᴇ key)
   await expect(page.getByTestId("notice")).toHaveText("Saved P");
-  await page.evaluate(() => (window.pascaline.session.settings.uncertainty = "sigma"));
+  await page.evaluate(() => (window.n62.session.settings.uncertainty = "sigma"));
   await tap(page, ["@mode", "d5"]);
   await page.getByTestId("menu").locator('[role="menuitem"][data-id="p1"]').tap();
-  await expect.poll(() => page.evaluate(() => window.pascaline.session.settings.uncertainty)).toBe("muted");
+  await expect.poll(() => page.evaluate(() => window.n62.session.settings.uncertainty)).toBe("muted");
   await page.waitForTimeout(800); // the store write is debounced
   await page.reload();
-  await page.waitForFunction(() => window.pascaline !== undefined);
+  await page.waitForFunction(() => window.n62 !== undefined);
   await ready(page);
-  expect(await page.evaluate(() => window.pascaline.session.settings.uncertainty)).toBe("muted");
+  expect(await page.evaluate(() => window.n62.session.settings.uncertainty)).toBe("muted");
 });
 
 test("R40f1: on keys alone the picked row's why-line holds the σ line after a dot; with Muted digits it holds none", async ({ page }) => {
@@ -134,7 +134,7 @@ test("R40f1: on keys alone the picked row's why-line holds the σ line after a d
   await expect(why).toContainText(" · σ = 9.0ᴇ9 · U = 2σ = 1.8ᴇ10 (k = 2)");
   await expect(page.getByTestId("sigma")).toHaveCount(0); // the row's own σ line stays a tap's
   await tap(page, ["esc"]);
-  await page.evaluate(() => (window.pascaline.session.settings.uncertainty = "muted"));
+  await page.evaluate(() => (window.n62.session.settings.uncertainty = "muted"));
   await tap(page, ["up"]);
   await expect(why).toContainText("G (± 1.5·10⁻¹⁵)");
   await expect(why).not.toContainText("σ");

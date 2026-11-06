@@ -30,7 +30,7 @@ test("the label follows the layer: Shift on, sin is arc sine", async ({ page }) 
   await tap(page, ["shift"]);
   await expect(key(page, "sin")).toHaveAttribute("aria-label", "arc sine");
   await expect(key(page, "sin")).toHaveAttribute("aria-description", "Alpha: G");
-  await page.evaluate(() => window.pascaline.session.clearModifiers());
+  await page.evaluate(() => window.n62.session.clearModifiers());
   await expect(key(page, "sin")).toHaveAttribute("aria-label", "sine");
 });
 

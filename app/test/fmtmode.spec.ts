@@ -4,7 +4,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { flick, open, tap } from "./helpers.ts";
 
 const title = (page: Page) => page.getByTestId("sheet-title");
-const angle = (page: Page) => page.evaluate(() => window.pascaline.session.settings.angle);
+const angle = (page: Page) => page.evaluate(() => window.n62.session.settings.angle);
 
 test("Shift, Fmt opens Mode (on Angle: the next test steps its value)", async ({ page }) => {
   await open(page);

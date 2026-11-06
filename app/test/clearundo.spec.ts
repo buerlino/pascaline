@@ -161,7 +161,7 @@ test("Clear while a job runs: its row stays, Esc stops it, and the rows come bac
 // R119 (night review 2026-11-02, vr-6 = bu-1): a hardware keyboard's Ctrl+Z is the Undo key and Ctrl+Y or
 // Ctrl+Shift+Z the Redo key (keyboard/route.ts), so Ctrl+Z on an empty line brings the cleared rows back too. Before,
 // MathLive took every Ctrl combination for its own undo of the line.
-const focusLine = (page: Page): Promise<void> => page.evaluate(() => window.pascaline.entry.focus());
+const focusLine = (page: Page): Promise<void> => page.evaluate(() => window.n62.entry.focus());
 const rowBar = (page: Page) => page.getByTestId("row-actions");
 
 test("Ctrl+Z on an empty Home line after a Clear brings the rows back, as the Undo key does", async ({ page }) => {
@@ -216,10 +216,10 @@ test("each view keeps its own copy: Clear in Home, an Enter in CAS, back in Home
   await three(page);
   await tap(page, ["shift", "esc"]);
   await expect(rows(page)).toHaveCount(0);
-  await page.evaluate(() => window.pascaline.session.setView("cas"));
+  await page.evaluate(() => window.n62.session.setView("cas"));
   await tap(page, ["d9", "enter"]);
   await expect(page.locator('[data-status="done"]')).toHaveCount(1);
-  await page.evaluate(() => window.pascaline.session.setView("home"));
+  await page.evaluate(() => window.n62.session.setView("home"));
   await expect(note(page)).toHaveText("History cleared · Undo");
   await tap(page, ["undo"]);
   expect(await texts(page)).toEqual(["1", "2", "3"]);

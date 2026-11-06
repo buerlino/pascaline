@@ -6,7 +6,7 @@ import { entryValue, open, tap } from "./helpers.ts";
 
 test.beforeEach(async ({ page }) => {
   await open(page, "");
-  await page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
+  await page.waitForFunction(() => window.n62.session.engineState === "ready", undefined, { timeout: 20_000 });
 });
 
 // Not helpers.lastResult: this one is the whole result row, not its `.result` part.
@@ -56,23 +56,23 @@ test("CAS: π × x is drawn as πx, never as an unknown command like \\pix", asy
 });
 
 test("one-line mode shows the entry on one line", async ({ page }) => {
-  await page.evaluate(() => window.pascaline.session.setEntry("line"));
+  await page.evaluate(() => window.n62.session.setEntry("line"));
   await tap(page, ["d1", "div", "d3"]);
   expect(await entryValue(page)).toBe("1\\div3");
-  await page.evaluate(() => window.pascaline.entry.clear());
+  await page.evaluate(() => window.n62.entry.clear());
   await tap(page, ["shift", "sq", "d8"]);
   expect(await entryValue(page)).not.toContain("\\sqrt{");
-  await page.evaluate(() => window.pascaline.session.setEntry("textbook"));
+  await page.evaluate(() => window.n62.session.setEntry("textbook"));
 });
 
 test("Esc stops a long CAS job; history and variables survive", async ({ page }) => {
   // a:=7 in Home (no store key on the keyboard yet), then a long CAS job (factoring a 65-digit semiprime takes ~16 s), then Esc
-  await page.evaluate(() => window.pascaline.entry.set("a:=7"));
+  await page.evaluate(() => window.n62.entry.set("a:=7"));
   await tap(page, ["enter"]);
   await expect(lastResult(page).locator(".result")).toBeVisible();
   await tap(page, ["@cas"]);
   await page.evaluate(() =>
-    window.pascaline.entry.set(
+    window.n62.entry.set(
       "\\operatorname{ifactor}\\left(\\operatorname{nextprime}\\left(10^{32}\\right)\\times\\operatorname{nextprime}\\left(10^{33}\\right)\\right)",
     ),
   );
@@ -83,7 +83,7 @@ test("Esc stops a long CAS job; history and variables survive", async ({ page })
   await expect(page.locator('[data-status="cancelled"]')).toHaveCount(1);
   // the engine is back and the variable is still there
   await tap(page, ["@home"]);
-  await page.evaluate(() => window.pascaline.entry.set("a+1"));
+  await page.evaluate(() => window.n62.entry.set("a+1"));
   await tap(page, ["enter"]);
   await expect(page.locator('[data-status="done"]').last()).toBeVisible({ timeout: 20_000 });
   expect(await lastText(page)).toBe("8");
@@ -92,11 +92,11 @@ test("Esc stops a long CAS job; history and variables survive", async ({ page })
 });
 
 test("SCI and ENG formats work in Home", async ({ page }) => {
-  await page.evaluate(() => window.pascaline.session.setFormat("sci"));
+  await page.evaluate(() => window.n62.session.setFormat("sci"));
   await tap(page, ["d1", "d2", "d3", "d4", "d5", "enter"]);
   await expect(lastResult(page).locator(".result")).toBeVisible();
   expect(await lastText(page)).toMatch(/^1\.2345\d*E\+?4$|^1\.2345\d*×10\^4$/);
-  await page.evaluate(() => window.pascaline.session.setFormat("eng"));
+  await page.evaluate(() => window.n62.session.setFormat("eng"));
   // engineering notation: exponent a multiple of 3 (12345 = 12.345E3), the same history entry re-formatted
   await expect(lastResult(page).locator(".result")).toHaveAttribute("data-text", /^12\.345\d*E3$/);
 });
@@ -117,7 +117,7 @@ test("the system keyboard never appears", async ({ page }) => {
   const st = await page.evaluate(() => ({
     active: document.activeElement?.tagName.toLowerCase(),
     vk: window.mathVirtualKeyboard?.visible,
-    inputmode: [...(window.pascaline.entry.field?.shadowRoot?.querySelectorAll("[inputmode]") ?? [])].map((e) => e.getAttribute("inputmode")),
+    inputmode: [...(window.n62.entry.field?.shadowRoot?.querySelectorAll("[inputmode]") ?? [])].map((e) => e.getAttribute("inputmode")),
   }));
   expect(st).toEqual({ active: "math-field", vk: false, inputmode: ["none"] });
 });

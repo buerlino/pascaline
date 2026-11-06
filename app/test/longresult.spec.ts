@@ -12,10 +12,10 @@ useClipboardLock();
 test("CAS Σ cos(k)/k to 2000: a drawn note, no LaTeX source, and Copy still holds the whole text", async ({ page }) => {
   test.setTimeout(120_000);
   await open(page, "");
-  await page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
+  await page.waitForFunction(() => window.n62.session.engineState === "ready", undefined, { timeout: 20_000 });
   await tap(page, ["@cas"]);
   await expect(page.getByTestId("place")).toHaveAttribute("data-view", "cas");
-  await page.evaluate(() => window.pascaline.entry.run({ kind: "insert", latex: "\\sum_{k=1}^{2000}\\frac{\\cos\\left(k\\right)}{k}" }));
+  await page.evaluate(() => window.n62.entry.run({ kind: "insert", latex: "\\sum_{k=1}^{2000}\\frac{\\cos\\left(k\\right)}{k}" }));
   await tap(page, ["enter"]);
   const row = page.locator('[data-testid="result"]').last();
   await expect(row.locator(".math")).toContainText("Too long to draw", { timeout: 60_000 });
@@ -31,7 +31,7 @@ test("CAS Σ cos(k)/k to 2000: a drawn note, no LaTeX source, and Copy still hol
   expect(text.length).toBeGreaterThan(1_700_000); // what Copy copies on phase-1: the full text (1,749,440 characters)
   expect(text.length).toBeLessThan(1_800_000);
   // R135f2: the tap on the result puts nothing on the line (its 1.77 MB of LaTeX overflowed MathLive's stack)
-  const line = (): Promise<string> => page.evaluate(() => window.pascaline.entry.value);
+  const line = (): Promise<string> => page.evaluate(() => window.n62.entry.value);
   await row.locator("button.result").click();
   await expect(page.getByTestId("notice")).toHaveText("Too long to insert: Copy holds it");
   const after = await line();

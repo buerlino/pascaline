@@ -8,14 +8,14 @@ const lastResult = (page: import("@playwright/test").Page) => page.locator('[dat
 
 test("history survives a reload and is drawn without calling the engine", async ({ page }) => {
   await open(page, "");
-  await page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
+  await page.waitForFunction(() => window.n62.session.engineState === "ready", undefined, { timeout: 20_000 });
   await tap(page, ["d1", "div", "d3", "enter"]);
   await expect(lastResult(page).locator(".result")).toBeVisible();
   await tap(page, ["@cas", "shift", "sq", "d8", "enter"]);
   await expect(page.locator('[data-status="done"]')).toHaveCount(1);
   await page.waitForTimeout(800); // the store write is debounced (400 ms) and asynchronous
   await page.reload();
-  await page.waitForFunction(() => window.pascaline !== undefined);
+  await page.waitForFunction(() => window.n62 !== undefined);
   // the view that was open (CAS) comes back with its entry and its 2D result
   await expect(page.locator('[data-status="done"]')).toHaveCount(1);
   expect(await lastResult(page).locator(".math").getAttribute("data-latex")).toBe("2\\sqrt{2}");
@@ -28,36 +28,36 @@ test("keys pressed before MathLive has loaded are queued and replayed", async ({
   await page.goto("/?engine=fake&tips=off");
   await page.locator('[data-key="d1"]').waitFor();
   await tap(page, ["d1", "div", "d3"]);
-  await page.waitForFunction(() => window.pascaline.entry.field !== undefined, undefined, { timeout: 20_000 });
+  await page.waitForFunction(() => window.n62.entry.field !== undefined, undefined, { timeout: 20_000 });
   expect(await entryValue(page)).toBe("\\frac13");
 });
 
 test("a definition survives a reload (docs/04 6.2: the defs log is stored and replayed at engine start)", async ({ page }) => {
   await open(page, "");
-  await page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
+  await page.waitForFunction(() => window.n62.session.engineState === "ready", undefined, { timeout: 20_000 });
   await tap(page, ["d5", "shift", "emark", "alpha", "vars", "enter"]); // 5▶A
   await expect(page.locator('[data-status="done"]')).toHaveCount(1);
   await page.waitForTimeout(800); // the history and the defs log are written asynchronously
   await page.reload();
-  await page.waitForFunction(() => window.pascaline?.session.engineState === "ready", undefined, { timeout: 20_000 });
-  await page.evaluate(() => window.pascaline.entry.ready);
+  await page.waitForFunction(() => window.n62?.session.engineState === "ready", undefined, { timeout: 20_000 });
+  await page.evaluate(() => window.n62.entry.ready);
   await tap(page, ["alpha", "vars", "mul", "d2", "enter"]); // A×2
   await expect(page.locator('[data-status="done"]')).toHaveCount(2);
   await expect(lastResult(page).locator(".result")).toHaveAttribute("data-text", "10"); // derived: 5·2
   // Vars and Find read the user's names from the session (docs/04 3.4)
-  expect(await page.evaluate(() => window.pascaline.session.userNames.map((u) => `${u.name}:${u.kind}`))).toEqual(["A:var"]);
+  expect(await page.evaluate(() => window.n62.session.userNames.map((u) => `${u.name}:${u.kind}`))).toEqual(["A:var"]);
 });
 
 test("a single-letter function survives a reload (R56: the parser reads the stored names, not this session's parses)", async ({ page }) => {
   await open(page, "");
-  await page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
+  await page.waitForFunction(() => window.n62.session.engineState === "ready", undefined, { timeout: 20_000 });
   // p(x):=x²: shift alpha P is a lower-case p, alpha − is ":", shift . is "="
   await tap(page, ["shift", "alpha", "emark", "paren", "x", "right", "alpha", "sub", "shift", "dot", "x", "sq", "enter"]);
   await expect(page.locator('[data-status="done"]')).toHaveCount(1);
   await page.waitForTimeout(800); // the history and the defs log are written asynchronously
   await page.reload();
-  await page.waitForFunction(() => window.pascaline?.session.engineState === "ready", undefined, { timeout: 20_000 });
-  await page.evaluate(() => window.pascaline.entry.ready);
+  await page.waitForFunction(() => window.n62?.session.engineState === "ready", undefined, { timeout: 20_000 });
+  await page.evaluate(() => window.n62.entry.ready);
   await tap(page, ["shift", "alpha", "emark", "paren", "d2", "enter"]); // p(2)
   await expect(page.locator('[data-status="done"]')).toHaveCount(2);
   await expect(lastResult(page).locator(".result")).toHaveAttribute("data-text", "4"); // derived: 2²
@@ -79,18 +79,18 @@ async function hide(page: Page): Promise<void> {
 /** A fresh start of the app on the same IndexedDB, as after a kill. A killed page also lets go of the store's writer
  *  lock (R95): the old page does that here, without a flush, so the new one is the writer. */
 async function relaunch(page: Page, query: string): Promise<Page> {
-  await page.evaluate(() => window.pascaline.yieldWriter());
+  await page.evaluate(() => window.n62.yieldWriter());
   const next = await page.context().newPage();
   await open(next, query);
   return next;
 }
 const cursorAtEnd = (page: Page): Promise<boolean> =>
   page.evaluate(() => {
-    const mf = window.pascaline.entry.field;
+    const mf = window.n62.entry.field;
     return mf !== undefined && mf.selectionIsCollapsed && mf.position === mf.lastOffset;
   });
 const engineReady = (page: Page) =>
-  page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
+  page.waitForFunction(() => window.n62.session.engineState === "ready", undefined, { timeout: 20_000 });
 
 test("a half-typed line with a fraction and a result chip survives a kill (F30)", async ({ page }) => {
   await open(page, "");
@@ -101,11 +101,11 @@ test("a half-typed line with a fraction and a result chip survives a kill (F30)"
   await tap(page, ["add", "d1", "div", "d2"]);
   const line = await entryValue(page);
   expect(line).toBe("\\res{1}{0.333333333333}+\\frac12");
-  const chips = await page.evaluate(() => window.pascaline.entry.chips);
+  const chips = await page.evaluate(() => window.n62.entry.chips);
   await hide(page);
   const next = await relaunch(page, "");
   expect(await entryValue(next)).toBe(line);
-  expect(await next.evaluate(() => window.pascaline.entry.chips)).toEqual(chips);
+  expect(await next.evaluate(() => window.n62.entry.chips)).toEqual(chips);
   expect(await cursorAtEnd(next)).toBe(true);
   await engineReady(next);
   await tap(next, ["enter"]);
@@ -121,7 +121,7 @@ test("Home and CAS share one line, kept with the view it was typed in; an empty 
   await tap(page, ["d2", "add", "d3"]);
   await hide(page);
   const home = await relaunch(page, "engine=fake");
-  expect(await home.evaluate(() => window.pascaline.session.view)).toBe("home");
+  expect(await home.evaluate(() => window.n62.session.view)).toBe("home");
   expect(await entryValue(home)).toBe("2+3");
   // Esc empties the line; the kill after it must not bring the old line back
   await tap(home, ["esc"]);
@@ -130,16 +130,16 @@ test("Home and CAS share one line, kept with the view it was typed in; an empty 
   expect(await entryValue(empty)).toBe("");
   // a CAS line comes back in CAS
   await tap(empty, ["@cas", "d7", "mul", "d8"]);
-  expect(await empty.evaluate(() => window.pascaline.session.view)).toBe("cas");
+  expect(await empty.evaluate(() => window.n62.session.view)).toBe("cas");
   await hide(empty);
   const cas = await relaunch(empty, "engine=fake");
-  expect(await cas.evaluate(() => window.pascaline.session.view)).toBe("cas");
+  expect(await cas.evaluate(() => window.n62.session.view)).toBe("cas");
   expect(await entryValue(cas)).toBe("7\\times8");
   // a line kept from CAS never comes back into Home (Home computes it the numeric way)
-  await cas.evaluate(() => window.pascaline.session.setView("home"));
+  await cas.evaluate(() => window.n62.session.setView("home"));
   await cas.waitForTimeout(300);
   const other = await relaunch(cas, "engine=fake");
-  expect(await other.evaluate(() => window.pascaline.session.view)).toBe("home");
+  expect(await other.evaluate(() => window.n62.session.view)).toBe("home");
   expect(await entryValue(other)).toBe("");
 });
 
@@ -151,8 +151,8 @@ test("keys typed while the kept line loads go after it", async ({ page }) => {
   await next.goto("/?engine=fake&tips=off");
   await next.locator('[data-key="d3"]').waitFor();
   await tap(next, ["d3", "d4"]);
-  await next.waitForFunction(() => window.pascaline?.entry.field !== undefined, undefined, { timeout: 20_000 });
-  await next.evaluate(() => window.pascaline.entry.ready);
+  await next.waitForFunction(() => window.n62?.entry.field !== undefined, undefined, { timeout: 20_000 });
+  await next.evaluate(() => window.n62.entry.ready);
   expect(await entryValue(next)).toBe("234");
 });
 
@@ -171,7 +171,7 @@ test("a hide while the field still loads after a kill keeps the stored line", as
   await slow.goto("/?engine=fake&tips=off");
   await slow.locator('[data-key="d3"]').waitFor();
   await slow.waitForTimeout(800);
-  expect(await slow.evaluate(() => window.pascaline.entry.field)).toBeUndefined();
+  expect(await slow.evaluate(() => window.n62.entry.field)).toBeUndefined();
   await hide(slow);
   // killed while hidden: a third start on the same store
   const third = await relaunch(slow, "engine=fake");
@@ -251,7 +251,7 @@ test("a definitions log stamped 2 is migrated at start, its steps loaded on dema
   );
   const next = await relaunch(page, "");
   await engineReady(next);
-  await next.evaluate(() => window.pascaline.entry.ready);
+  await next.evaluate(() => window.n62.entry.ready);
   await tap(next, ["alpha", "vars", "enter"]); // A
   await expect(lastResult(next).locator(".result")).toHaveAttribute("data-text", "1"); // derived: exp(0)
   // written back under today's stamp, migrated

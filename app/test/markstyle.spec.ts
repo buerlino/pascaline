@@ -14,7 +14,7 @@ const DIFFER_WHY = "⚠ no digit confirmed · the exact and numeric answers diff
 const UNAUDITED = "\\operatorname{normald\\_icdf}\\left(2,-1,0.3\\right)";
 const UNAUDITED_WHY = "⚠ normald_icdf is not checked";
 
-const ready = (page: Page) => page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
+const ready = (page: Page) => page.waitForFunction(() => window.n62.session.engineState === "ready", undefined, { timeout: 20_000 });
 const done = (page: Page, n: number) => expect(page.locator('[data-status="done"]')).toHaveCount(n);
 const reasons = (page: Page) => page.getByTestId("mark-reason");
 const lastRow = (page: Page) => page.locator("article.item").last();
@@ -22,13 +22,13 @@ const lastRow = (page: Page) => page.locator("article.item").last();
 /** Set the mark style as the Settings row does (and store it). */
 const setMarks = (page: Page, m: MarkStyle): Promise<void> =>
   page.evaluate((m) => {
-    window.pascaline.session.settings.marks = m;
-    window.pascaline.session.save();
+    window.n62.session.settings.marks = m;
+    window.n62.session.save();
   }, m);
 
 /** Enter `latex` in the current view and wait for `rows` finished rows. */
 async function run(page: Page, latex: string, rows: number): Promise<void> {
-  await page.evaluate((l) => window.pascaline.session.submit(l), latex);
+  await page.evaluate((l) => window.n62.session.submit(l), latex);
   await done(page, rows);
 }
 
@@ -77,8 +77,8 @@ test.beforeEach(async ({ page }) => {
 
 for (const view of ["home", "cas"] as const)
   test(`${view}: a ⚠ row shows its reason under it in the warn colour, drawn with the row; ≈ and = rows show none`, async ({ page }) => {
-    await page.evaluate((v) => window.pascaline.session.setView(v), view);
-    expect(await page.evaluate(() => window.pascaline.session.settings.marks)).toBe("reason"); // the default
+    await page.evaluate((v) => window.n62.session.setView(v), view);
+    expect(await page.evaluate(() => window.n62.session.settings.marks)).toBe("reason"); // the default
     await watchFirstDraw(page);
     await run(page, DIFFER, 1);
     await expect(page.getByTestId("mark").last()).toHaveAttribute("data-mark", "⚠");
@@ -109,7 +109,7 @@ test("a tap on the reason line shows its full text; the row is not recalled", as
   await line.tap();
   await expect(line).toHaveAttribute("data-open", "true");
   expect(await line.evaluate((e) => getComputedStyle(e).whiteSpace)).not.toBe("nowrap");
-  expect(await page.evaluate(() => window.pascaline.entry.value)).toBe("");
+  expect(await page.evaluate(() => window.n62.entry.value)).toBe("");
 });
 
 test("⚠ coloured: the row as before (the mark in --warn, no line); Muted: the mark in --muted", async ({ page }) => {
@@ -133,22 +133,22 @@ test("the setting survives a relaunch, and a stored ⚠ row draws its line with 
   await setMarks(page, "colour");
   await page.waitForTimeout(900); // the writes are debounced and asynchronous
   await page.reload();
-  await page.waitForFunction(() => window.pascaline !== undefined);
-  await page.evaluate(() => window.pascaline.entry.ready);
+  await page.waitForFunction(() => window.n62 !== undefined);
+  await page.evaluate(() => window.n62.entry.ready);
   await done(page, 1);
-  expect(await page.evaluate(() => window.pascaline.session.settings.marks)).toBe("colour");
+  expect(await page.evaluate(() => window.n62.session.settings.marks)).toBe("colour");
   await expect(reasons(page)).toHaveCount(0);
   await setMarks(page, "reason");
   await page.waitForTimeout(900);
   await page.reload();
-  await page.waitForFunction(() => window.pascaline !== undefined);
+  await page.waitForFunction(() => window.n62 !== undefined);
   await done(page, 1);
   await expect(reasons(page)).toHaveText(UNAUDITED_WHY);
 });
 
 test("a preset's Numbers group holds the mark style", async ({ page }) => {
   const after = await page.evaluate(async (path) => {
-    const { session, userKeys } = window.pascaline;
+    const { session, userKeys } = window.n62;
     const presets = await ((await import(/* @vite-ignore */ path)) as typeof import("../src/views/modeSheet.ts")).presetsFor(session, userKeys);
     session.settings.marks = "muted";
     const id = presets.capture("Quiet", ["numbers"]);
@@ -166,13 +166,13 @@ test("Settings › Numbers › Marks: three buttons, ⚠ + reason marked; a tap 
   await expect(row.locator(".opt")).toHaveText(["Muted", "⚠ coloured", "⚠ + reason"]);
   await expect(row.locator('[data-option="reason"]')).toHaveAttribute("aria-pressed", "true");
   await row.locator('[data-option="muted"]').tap();
-  expect(await page.evaluate(() => window.pascaline.session.settings.marks)).toBe("muted");
+  expect(await page.evaluate(() => window.n62.session.settings.marks)).toBe("muted");
 });
 
 test("the unit view's result follows the style: its σ why-line with the reason only, its marks muted with Muted", async ({ page }) => {
   const unitView = async (): Promise<void> => {
     await flick(page, "tmpl", "up");
-    await page.waitForFunction(() => window.pascaline.unitView !== undefined && document.querySelector('[data-pad="unit"]') !== null);
+    await page.waitForFunction(() => window.n62.unitView !== undefined && document.querySelector('[data-pad="unit"]') !== null);
     await flick(page, "enter", "up");
     await expect(page.getByTestId("unit-result")).toBeVisible();
   };

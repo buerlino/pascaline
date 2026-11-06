@@ -10,7 +10,7 @@ test.use({ channel: "chromium" });
 
 test.beforeEach(async ({ page }) => {
   await open(page, "");
-  await page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
+  await page.waitForFunction(() => window.n62.session.engineState === "ready", undefined, { timeout: 20_000 });
 });
 
 /** The focused element, looking into shadow roots, and whether it could summon the system keyboard. */
@@ -166,7 +166,7 @@ test("a key pressed just before leaving does not focus the entry while away", as
   await page.waitForTimeout(150);
   expect(await editableFocused(page), "blurred after the first leave").toBe(false);
   await page.evaluate(() => {
-    void window.pascaline.entry.run({ kind: "type", text: "2" });
+    void window.n62.entry.run({ kind: "type", text: "2" });
     window.dispatchEvent(new Event("blur"));
     Object.defineProperty(document, "hidden", { value: true, configurable: true });
     Object.defineProperty(document, "visibilityState", { value: "hidden", configurable: true });
@@ -242,7 +242,7 @@ async function wayBack(page: Page, way: Way, awayMs = 0): Promise<void> {
 
 /** The entry has the focus (the state a typed or template cell must leave from), in the view it names. */
 async function typing(page: Page, view: "home" | "cas"): Promise<void> {
-  await expect.poll(() => page.evaluate(() => window.pascaline.session.view)).toBe(view);
+  await expect.poll(() => page.evaluate(() => window.n62.session.view)).toBe(view);
   await expect.poll(() => editableFocused(page), `the ${view} entry is focused before leaving`).toBe(true);
 }
 // Not helpers.sheet: this one asserts the sheet title.
@@ -315,7 +315,7 @@ const screens: Record<string, (page: Page) => Promise<void>> = {
   "Function Plot": async (page) => {
     await tap(page, ["@symb", "x", "sq", "enter", "@plot"]);
     await expect(page.locator(".board canvas")).toBeVisible();
-    await page.waitForFunction(() => window.pascaline.plot.board !== undefined);
+    await page.waitForFunction(() => window.n62.plot.board !== undefined);
   },
 };
 
@@ -357,7 +357,7 @@ for (const way of ["visibility", "shade", "pagehide", "frozen"] as const) {
     await tap(page, ["d1"]);
     await wayBack(page, "visibility");
     await page.waitForTimeout(150);
-    await page.evaluate(() => window.pascaline.entry.run({ kind: "type", text: "2" }));
+    await page.evaluate(() => window.n62.entry.run({ kind: "type", text: "2" }));
     await wayBack(page, way, 200); // away longer than MathLive's 60 ms (a frozen page runs its timer only on return)
     await page.waitForTimeout(200);
     const f = await focused(page);
@@ -380,7 +380,7 @@ for (const hide of [false, true]) {
         document.dispatchEvent(new Event("visibilitychange"));
       }, h);
     if (hide) await setHidden(true);
-    await page.evaluate(() => window.pascaline.entry.insert("2"));
+    await page.evaluate(() => window.n62.entry.insert("2"));
     await page.waitForTimeout(150);
     if (hide) await setHidden(false);
     await windowFocus(page, true);

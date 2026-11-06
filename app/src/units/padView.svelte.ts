@@ -37,7 +37,7 @@ export async function showUnitPad(): Promise<void> {
   unitPad.model = new m.UnitPad();
 }
 
-/** The dev switch (`?pad=1`): the pad is up and every press is logged (window.pascaline.unitPad.log). */
+/** The dev switch (`?pad=1`): the pad is up and every press is logged (window.n62.unitPad.log). */
 export function devPad(): void {
   unitPad.log = [];
   unitPad.on = (e) => void unitPad.log?.push(e);

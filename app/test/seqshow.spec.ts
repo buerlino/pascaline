@@ -11,7 +11,7 @@ const active = (page: Page) => find(page).locator('[role="menuitem"][data-active
 
 test.beforeEach(async ({ page }) => {
   await open(page, "");
-  await page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
+  await page.waitForFunction(() => window.n62.session.engineState === "ready", undefined, { timeout: 20_000 });
 });
 
 test("fMin(x²−x, x) by keys shows = 0.5, and Ans·2 = 1", async ({ page }) => {

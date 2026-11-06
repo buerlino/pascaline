@@ -6,7 +6,7 @@ import { entryValue, open, tap } from "./helpers.ts";
 
 test.beforeEach(async ({ page }) => {
   await open(page, "");
-  await page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
+  await page.waitForFunction(() => window.n62.session.engineState === "ready", undefined, { timeout: 20_000 });
 });
 
 /** Apps → Solve → Symb. */
@@ -22,7 +22,7 @@ const value = (page: Page, name: string) => page.locator(`[data-testid="solve-ta
 /** Flush the shell, then wait until IndexedDB holds the Solve record that `ok` accepts. `kv.set` is fire-and-forget, so a
  *  reload right after `flush()` can come before the write on a busy host (B13). */
 async function flushStored(page: Page, ok: (rec: { values?: Record<string, string>; warned?: Record<string, boolean> }) => boolean): Promise<void> {
-  await page.evaluate(() => window.pascaline.shell.flush());
+  await page.evaluate(() => window.n62.shell.flush());
   await expect
     .poll(
       async () => {
@@ -120,7 +120,7 @@ test("Solve: Esc stops a long solve; equations and values survive and the engine
   await openSolve(page);
   // A slow equation with no root (|Σ cos(kx)/k| stays far below 100; about 2.5 s on desktop).
   await page.evaluate(() => {
-    const app = window.pascaline.shell.loaded.solve!.instance as unknown as { define(i: number, l: string): void };
+    const app = window.n62.shell.loaded.solve!.instance as unknown as { define(i: number, l: string): void };
     app.define(0, "\\sum_{k=1}^{2000}\\frac{\\cos\\left(kx\\right)}{k}=100");
   });
   await tap(page, ["@num"]);
@@ -146,7 +146,7 @@ test("Solve: equations and values are stored", async ({ page }) => {
   await setValue(page, "x", ["sub", "d3"]);
   await flushStored(page, (r) => r.values?.["x"] === "-3");
   await page.reload();
-  await page.waitForFunction(() => window.pascaline !== undefined && window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
+  await page.waitForFunction(() => window.n62 !== undefined && window.n62.session.engineState === "ready", undefined, { timeout: 20_000 });
   await tap(page, ["@place", "d4"]);
   await tap(page, ["@num"]);
   await expect(value(page, "x")).toHaveAttribute("data-value", "-3");
@@ -164,13 +164,13 @@ test("Solve: the ⚠ of an answer is kept across a reload (M4-10)", async ({ pag
   await expect(page.locator('[data-testid="solve-table"] [data-testid="mark"]')).toHaveCount(0);
   // an answer with fewer confirmed digits than shown carries the flag (set as solve() sets it from isWarned)
   await page.evaluate(() => {
-    const app = window.pascaline.shell.loaded.solve!.instance as unknown as { warned: Record<string, boolean>; save(): void };
+    const app = window.n62.shell.loaded.solve!.instance as unknown as { warned: Record<string, boolean>; save(): void };
     app.warned = { x: true };
     app.save();
   });
   await flushStored(page, (r) => r.warned?.["x"] === true);
   await page.reload();
-  await page.waitForFunction(() => window.pascaline !== undefined && window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
+  await page.waitForFunction(() => window.n62 !== undefined && window.n62.session.engineState === "ready", undefined, { timeout: 20_000 });
   await tap(page, ["@place", "d4"]);
   await tap(page, ["@num"]);
   await expect(value(page, "x")).toContainText("1.41421356237");
@@ -178,13 +178,13 @@ test("Solve: the ⚠ of an answer is kept across a reload (M4-10)", async ({ pag
 });
 
 test("Solve: E1 p(x)=4 after p(x):=x² in Home gives x = 2, p stays the function, also after a reload (R56b)", async ({ page }) => {
-  await page.evaluate(() => window.pascaline.entry.set("p\\left(x\\right):=x^{2}"));
+  await page.evaluate(() => window.n62.entry.set("p\\left(x\\right):=x^{2}"));
   await tap(page, ["enter"]);
   await expect(page.locator('[data-status="done"]')).toHaveCount(1);
-  await page.evaluate(() => window.pascaline.entry.set("")); // the next line starts empty
+  await page.evaluate(() => window.n62.entry.set("")); // the next line starts empty
   const solveIt = async (): Promise<void> => {
     await page.evaluate(() => {
-      const app = window.pascaline.shell.loaded.solve!.instance as unknown as { define(i: number, l: string): void };
+      const app = window.n62.shell.loaded.solve!.instance as unknown as { define(i: number, l: string): void };
       app.define(0, "p\\left(x\\right)=4");
     });
     await tap(page, ["@num"]);
@@ -197,13 +197,13 @@ test("Solve: E1 p(x)=4 after p(x):=x² in Home gives x = 2, p stays the function
   await openSolve(page);
   await solveIt();
   await tap(page, ["@place", "d1"]);
-  await page.evaluate(() => window.pascaline.entry.set("p\\left(3\\right)"));
+  await page.evaluate(() => window.n62.entry.set("p\\left(3\\right)"));
   await tap(page, ["enter"]);
   await expect(page.locator('[data-status="done"]').last().locator(".result")).toHaveAttribute("data-text", "9");
   await page.waitForTimeout(800);
-  await page.evaluate(() => window.pascaline.shell.flush());
+  await page.evaluate(() => window.n62.shell.flush());
   await page.reload();
-  await page.waitForFunction(() => window.pascaline?.session.engineState === "ready", undefined, { timeout: 20_000 });
+  await page.waitForFunction(() => window.n62?.session.engineState === "ready", undefined, { timeout: 20_000 });
   await openSolve(page);
   await solveIt();
 });
@@ -231,12 +231,12 @@ test("Enter in Num empties the line and never rounds a root (R76f1)", async ({ p
   await tap(page, ["x", "sq", "shift", "dot", "d2", "enter", "@num"]);
   await tap(page, ["@menu", "d1"]);
   await expect(value(page, "x")).toHaveText("-1.41421356237");
-  const full = await page.evaluate(() => (window.pascaline.shell.loaded.solve!.instance as unknown as { fullOf(n: string): Promise<string> }).fullOf("x"));
+  const full = await page.evaluate(() => (window.n62.shell.loaded.solve!.instance as unknown as { fullOf(n: string): Promise<string> }).fullOf("x"));
   expect(full.length).toBeGreaterThan(14);
   await page.locator('[data-testid="solve-table"] tr[data-name="x"] th button').tap();
   await tap(page, ["enter"]);
   expect(await entryValue(page)).toBe("");
-  expect(await page.evaluate(() => (window.pascaline.shell.loaded.solve!.instance as unknown as { fullOf(n: string): Promise<string> }).fullOf("x"))).toBe(full);
+  expect(await page.evaluate(() => (window.n62.shell.loaded.solve!.instance as unknown as { fullOf(n: string): Promise<string> }).fullOf("x"))).toBe(full);
   await tap(page, ["d1", "enter"]);
   expect(await entryValue(page)).toBe("");
   await expect(value(page, "x")).toHaveText("1");

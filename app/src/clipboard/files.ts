@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// A file leaves the app (R11 section 1): on Android our local plugin PascalineFiles opens the system "Save to" screen
+// A file leaves the app (R11 section 1): on Android our local plugin N62Files opens the system "Save to" screen
 // (ACTION_CREATE_DOCUMENT; no permission). In the PWA the browser's save picker (`showSaveFilePicker`) writes it where
 // the browser has one; else the text is downloaded as a Blob, which is only "offered": the page cannot know whether a
 // file was written (R122). Never throws.
@@ -7,7 +7,7 @@
 /** `offered`: a web download started; the browser does not say whether it saved the file. */
 export type SaveResult = "saved" | "offered" | "cancelled" | "failed";
 
-interface PascalineFilesPlugin {
+interface N62FilesPlugin {
   save(options: { name: string; mime: string; text: string }): Promise<{ result: "saved" | "cancelled" }>;
 }
 
@@ -59,9 +59,9 @@ async function pick(name: string, mime: string, text: string): Promise<SaveResul
 export async function saveFile(name: string, mime: string, text: string): Promise<SaveResult> {
   try {
     const { Capacitor, registerPlugin } = await import("@capacitor/core");
-    if (Capacitor.isNativePlatform() && Capacitor.isPluginAvailable("PascalineFiles")) {
+    if (Capacitor.isNativePlatform() && Capacitor.isPluginAvailable("N62Files")) {
       try {
-        const r = await registerPlugin<PascalineFilesPlugin>("PascalineFiles").save({ name, mime, text });
+        const r = await registerPlugin<N62FilesPlugin>("N62Files").save({ name, mime, text });
         return r.result === "saved" ? "saved" : "cancelled";
       } catch {
         return "failed";

@@ -22,8 +22,8 @@ import com.getcapacitor.annotation.CapacitorPlugin;
  * owner's Fairphone 6 (Android 16) UNKNOWN and TOUCH were OFF, and dumpsys listed every pulse as ignored_for_settings.
  * The app's own Key vibration switch is the user's choice here, so the system's touch-feedback switch does not mute it.
  */
-@CapacitorPlugin(name = "PascalineHaptics")
-public class PascalineHapticsPlugin extends Plugin {
+@CapacitorPlugin(name = "N62Haptics")
+public class N62HapticsPlugin extends Plugin {
     private Vibrator vibrator;
 
     @Override

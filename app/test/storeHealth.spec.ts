@@ -16,7 +16,7 @@ test("Settings › Data says the data is kept, and the date of the last backup o
   await page.setViewportSize({ width: 412, height: 915 });
   await savePicker(page, "fake"); // a confirmed save (R122)
   await open(page);
-  await page.evaluate(() => window.pascaline.session.setDigits(9)); // a write
+  await page.evaluate(() => window.n62.session.setDigits(9)); // a write
   await page.waitForTimeout(900); // the writes are debounced and asynchronous
   const persisted = await page.evaluate(() => navigator.storage.persisted());
   await dataLevel(page);
@@ -58,7 +58,7 @@ test("Settings › Data says nothing is saved when the store cannot be opened", 
     Object.defineProperty(window, "indexedDB", { value: blocked, configurable: true });
   });
   await open(page);
-  await page.evaluate(() => window.pascaline.session.setDigits(9));
+  await page.evaluate(() => window.n62.session.setDigits(9));
   await page.waitForTimeout(900);
   await dataLevel(page);
   await expect(line(page)).toHaveText("Not saved: changes are lost when the app closes");

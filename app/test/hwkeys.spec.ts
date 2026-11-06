@@ -53,7 +53,7 @@ type Mode = "textbook" | "line";
 
 async function reset(page: Page, mode: Mode): Promise<void> {
   await page.evaluate((m) => {
-    const p = window.pascaline;
+    const p = window.n62;
     p.shell.closeSheet();
     p.session.clearModifiers();
     p.session.setEntry(m);
@@ -65,7 +65,7 @@ async function reset(page: Page, mode: Mode): Promise<void> {
 /** The line and what our parser makes of it (or its error). */
 async function line(page: Page): Promise<{ value: string; parsed: string }> {
   return page.evaluate(async () => {
-    const mf = window.pascaline.entry.field;
+    const mf = window.n62.entry.field;
     if (!mf) throw new Error("no field");
     const parser = (await (0, eval)('import("/src/input/parser.ts")')) as {
       loadParser: () => Promise<{ latexToGiac: (l: string) => string }>;
@@ -85,7 +85,7 @@ async function onKeypad(page: Page, steps: Step[]): Promise<void> {
   for (const s of steps) {
     if ("tap" in s) await tap(page, [s.tap]);
     else if ("item" in s) await page.getByTestId("menu").locator(`[data-id="${s.item}"]`).tap();
-    else await page.evaluate((c) => window.pascaline.entry.run({ kind: "type", text: c }), s.letter);
+    else await page.evaluate((c) => window.n62.entry.run({ kind: "type", text: c }), s.letter);
   }
 }
 
@@ -136,8 +136,8 @@ test.describe("the grid", () => {
 test.describe("on the engine", () => {
   test.beforeEach(async ({ page }) => {
     await open(page, "");
-    await page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
-    await page.evaluate(() => window.pascaline.entry.focus());
+    await page.waitForFunction(() => window.n62.session.engineState === "ready", undefined, { timeout: 20_000 });
+    await page.evaluate(() => window.n62.entry.focus());
   });
   const resultIs = async (page: Page, text: string, count: number): Promise<void> => {
     await expect(page.locator('[data-status="done"]')).toHaveCount(count);
@@ -203,7 +203,7 @@ test.describe("on the engine", () => {
   test("letters stay letters: pi is p·i, and e at the start is a name letter", async ({ page }) => {
     await page.keyboard.type("pi");
     expect(await entryValue(page)).toBe("pi");
-    await page.evaluate(() => window.pascaline.entry.clear());
+    await page.evaluate(() => window.n62.entry.clear());
     await page.keyboard.type("e");
     expect(await entryValue(page)).toBe("e");
   });
@@ -220,11 +220,11 @@ test.describe("on the engine", () => {
 test.describe("R45: the path of a hardware key", () => {
   test.beforeEach(async ({ page }) => {
     await open(page);
-    await page.evaluate(() => window.pascaline.entry.focus());
+    await page.evaluate(() => window.n62.entry.focus());
   });
   const positions = async (page: Page, latex: string, how: (key: "left" | "right") => Promise<void>, key: "left" | "right"): Promise<number[]> => {
     await page.evaluate(([l, k]) => {
-      const mf = window.pascaline.entry.field;
+      const mf = window.n62.entry.field;
       if (!mf) throw new Error("no field");
       mf.value = l as string;
       mf.position = k === "right" ? 0 : mf.lastOffset;
@@ -232,7 +232,7 @@ test.describe("R45: the path of a hardware key", () => {
     }, [latex, key]);
     const seen: number[] = [];
     for (let i = 0; i < 14; i++) {
-      seen.push(await page.evaluate(() => window.pascaline.entry.field?.position ?? -1));
+      seen.push(await page.evaluate(() => window.n62.entry.field?.position ?? -1));
       await how(key);
     }
     return seen;
@@ -258,10 +258,10 @@ test.describe("R45: the path of a hardware key", () => {
 
   test("with Tmpl open: a hardware letter and Backspace leave the line and the sheet as the keypad's keys do", async ({ page }) => {
     const state = async (): Promise<[string, boolean]> => [await entryValue(page), await page.getByTestId("menu").isVisible()];
-    await page.evaluate(() => window.pascaline.entry.focus());
+    await page.evaluate(() => window.n62.entry.focus());
     await tap(page, ["tmpl"]);
     await expect(page.getByTestId("menu")).toBeVisible();
-    await page.evaluate(() => window.pascaline.entry.focus()); // the field keeps focus while a sheet is open
+    await page.evaluate(() => window.n62.entry.focus()); // the field keeps focus while a sheet is open
     await page.keyboard.type("h");
     expect(await state()).toEqual(["", true]);
     await page.keyboard.press("Backspace");
@@ -276,8 +276,8 @@ test.describe("R45: the path of a hardware key", () => {
       const w = window as unknown as { ran: string[] };
       w.ran = [];
       const names = ["hour", "hertz", "henry", "gauss", "coulomb", "candela", "kelvin", "kilogram", "joule", "lux", "lumen", "newton", "ohm", "pascal"];
-      window.pascaline.shell.showMenu("Test", names.map((n) => ({ id: n, label: n, run: () => void w.ran.push(n) })));
-      window.pascaline.entry.focus();
+      window.n62.shell.showMenu("Test", names.map((n) => ({ id: n, label: n, run: () => void w.ran.push(n) })));
+      window.n62.entry.focus();
     });
     const items = page.getByTestId("menu").getByRole("menuitem");
     await page.keyboard.type("h");
@@ -293,23 +293,23 @@ test.describe("R45: the path of a hardware key", () => {
   });
 
   test("2x typed fast while Function first opens waits for the load, as keypad keys do", async ({ page }) => {
-    await page.evaluate(() => window.pascaline.entry.focus());
+    await page.evaluate(() => window.n62.entry.focus());
     await tap(page, ["@symb"]); // the app's code loads on its first open
     await page.keyboard.type("2x");
-    await page.waitForFunction(() => window.pascaline.shell.app === "function" && window.pascaline.shell.loading === null);
+    await page.waitForFunction(() => window.n62.shell.app === "function" && window.n62.shell.loading === null);
     await expect.poll(() => entryValue(page)).toBe("2x");
   });
 
   test("2x typed at once while Function opens with its code cached (second visit) reaches the entry", async ({ page }) => {
     await tap(page, ["@symb"]); // first visit: the browser caches the app's code
-    await page.waitForFunction(() => window.pascaline.shell.app === "function" && window.pascaline.shell.loading === null);
-    await page.evaluate(() => window.pascaline.shell.close()); // the place is stored: a reload would reopen Function
+    await page.waitForFunction(() => window.n62.shell.app === "function" && window.n62.shell.loading === null);
+    await page.evaluate(() => window.n62.shell.close()); // the place is stored: a reload would reopen Function
     await page.waitForTimeout(200);
     await open(page); // a new page load: the code is cached and the shell is cold
-    await page.evaluate(() => window.pascaline.entry.focus());
+    await page.evaluate(() => window.n62.entry.focus());
     await tap(page, ["@symb"]);
     await page.keyboard.type("2x");
-    await page.waitForFunction(() => window.pascaline.shell.app === "function" && window.pascaline.shell.loading === null);
+    await page.waitForFunction(() => window.n62.shell.app === "function" && window.n62.shell.loading === null);
     await expect.poll(() => entryValue(page)).toBe("2x");
   });
 });
@@ -319,14 +319,14 @@ test.describe("R45: the path of a hardware key", () => {
 test.describe("R73: a warm app opens", () => {
   test("2x typed at once after Symb, with Function already loaded this session, reads 2x", async ({ page }) => {
     await open(page);
-    await page.evaluate(() => window.pascaline.entry.focus());
+    await page.evaluate(() => window.n62.entry.focus());
     await tap(page, ["@symb"]);
-    await page.waitForFunction(() => window.pascaline.shell.app === "function" && window.pascaline.shell.loading === null);
-    await page.evaluate(() => window.pascaline.shell.close());
-    await page.evaluate(() => window.pascaline.entry.focus());
+    await page.waitForFunction(() => window.n62.shell.app === "function" && window.n62.shell.loading === null);
+    await page.evaluate(() => window.n62.shell.close());
+    await page.evaluate(() => window.n62.entry.focus());
     await tap(page, ["@symb"]);
     await page.keyboard.type("2x");
-    await page.waitForFunction(() => window.pascaline.shell.app === "function" && window.pascaline.shell.loading === null);
+    await page.waitForFunction(() => window.n62.shell.app === "function" && window.n62.shell.loading === null);
     await expect.poll(() => entryValue(page)).toBe("2x");
   });
 });

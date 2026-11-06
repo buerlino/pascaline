@@ -15,30 +15,30 @@ useClipboardLock();
 
 test.beforeEach(async ({ page }) => {
   await open(page, "");
-  await page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
-  await page.evaluate(() => window.pascaline.entry.focus());
+  await page.waitForFunction(() => window.n62.session.engineState === "ready", undefined, { timeout: 20_000 });
+  await page.evaluate(() => window.n62.entry.focus());
 });
 
-const comma = (page: Page): Promise<void> => page.evaluate(() => window.pascaline.session.setDecimalMark("comma"));
+const comma = (page: Page): Promise<void> => page.evaluate(() => window.n62.session.setDecimalMark("comma"));
 const resultIs = async (page: Page, text: string): Promise<void> => {
   await expect(page.locator('[data-status="done"]')).toHaveCount(1, { timeout: 15_000 });
   await expect(lastResult(page)).toHaveAttribute("data-text", text);
 };
 /** max( ) as Find puts it on the line; the cursor is inside the brackets. */
 const maxCall = (page: Page): Promise<void> =>
-  page.evaluate(() => window.pascaline.entry.run({ kind: "insert", latex: "\\operatorname{max}\\left(#0\\right)" }));
+  page.evaluate(() => window.n62.entry.run({ kind: "insert", latex: "\\operatorname{max}\\left(#0\\right)" }));
 
 /** The two ways a paste reaches the field: the keys (Ctrl+V), or a `paste` event on the field's focused element, as
  *  Shift+Insert and the context menu's Paste deliver it (with the text in clipboardData, no clipboard read). */
 const WAYS = {
   "Ctrl+V": async (page: Page, text: string): Promise<void> => {
     await setClipboard(page, text);
-    await page.evaluate(() => window.pascaline.entry.focus());
+    await page.evaluate(() => window.n62.entry.focus());
     await page.keyboard.press("ControlOrMeta+V");
   },
   "a paste event": async (page: Page, text: string): Promise<void> => {
     await page.evaluate((s) => {
-      const mf = window.pascaline.entry.field;
+      const mf = window.n62.entry.field;
       if (!mf) throw new Error("no field");
       mf.focus();
       const target = mf.shadowRoot?.activeElement ?? mf.shadowRoot?.querySelector("textarea") ?? mf;

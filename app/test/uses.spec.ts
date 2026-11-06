@@ -9,11 +9,11 @@ test.describe.configure({ mode: "serial" });
 const done = (page: Page, n: number) => expect(page.locator('[data-status="done"]')).toHaveCount(n);
 const uses = (page: Page) => page.getByTestId("uses");
 const submit = (page: Page, latex: string): Promise<void> =>
-  page.evaluate((l) => window.pascaline.session.submit(l), latex);
+  page.evaluate((l) => window.n62.session.submit(l), latex);
 
 test.beforeEach(async ({ page }) => {
   await open(page, "");
-  await page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
+  await page.waitForFunction(() => window.n62.session.engineState === "ready", undefined, { timeout: 20_000 });
 });
 
 /** Home 3 ▶ x, then the CAS view. */
@@ -46,7 +46,7 @@ test("the line comes back after a reload", async ({ page }) => {
   await expect(uses(page)).toHaveText("x = 3 · stored in Home");
   await page.waitForTimeout(800); // the store write is debounced (400 ms) and asynchronous
   await page.reload();
-  await page.waitForFunction(() => window.pascaline !== undefined);
+  await page.waitForFunction(() => window.n62 !== undefined);
   await done(page, 1);
   await expect(uses(page)).toHaveText("x = 3 · stored in Home");
 });

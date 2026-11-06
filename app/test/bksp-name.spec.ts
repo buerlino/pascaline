@@ -53,7 +53,7 @@ interface State { value: string; position: number; collapsed: boolean }
  */
 async function atName(page: Page, latex: string): Promise<number> {
   return page.evaluate((l) => {
-    const mf = window.pascaline.entry.field;
+    const mf = window.n62.entry.field;
     if (!mf) throw new Error("no field");
     mf.value = l;
     mf.focus();
@@ -77,7 +77,7 @@ async function atName(page: Page, latex: string): Promise<number> {
 /** Run ⌫ (dir −1) or Del (dir +1) through the key path and return the state after it. */
 async function press(page: Page, dir: -1 | 1): Promise<State> {
   return page.evaluate((d) => {
-    const { entry } = window.pascaline;
+    const { entry } = window.n62;
     entry.run({ kind: "cmd", name: d < 0 ? "deleteBackward" : "deleteForward" });
     const mf = entry.field;
     if (!mf) throw new Error("no field");
@@ -116,7 +116,7 @@ test.describe("⌫ between a name and its bracket, every named function key", ()
           const s = await press(page, -1);
           expect(s.value).toBe(line);
           const inBase = await page.evaluate(() => {
-            const mf = window.pascaline.entry.field;
+            const mf = window.n62.entry.field;
             if (!mf) throw new Error("no field");
             const [a, b] = mf.selection.ranges[0] ?? [mf.position, mf.position];
             return { from: Math.min(a, b), to: Math.max(a, b), depth: mf.getElementInfo(Math.max(a, b))?.depth ?? 0 };
@@ -170,7 +170,7 @@ test.describe("a finger tap at a name's right edge", () => {
   /** Put `latex` on the line, then tap 1 px inside the right edge of the name's glyphs (where F39 put the cursor). */
   async function tapNameEdge(page: Page, latex: string, mouse = false): Promise<void> {
     await page.evaluate((l) => {
-      const mf = window.pascaline.entry.field;
+      const mf = window.n62.entry.field;
       if (!mf) throw new Error("no field");
       mf.value = l;
       mf.focus();
@@ -178,7 +178,7 @@ test.describe("a finger tap at a name's right edge", () => {
     }, latex);
     await page.waitForTimeout(550); // MathLive reads a second tap within 500 ms as a double tap
     const p = await page.evaluate(() => {
-      const root = window.pascaline.entry.field?.shadowRoot;
+      const root = window.n62.entry.field?.shadowRoot;
       const el = [...(root?.querySelectorAll("[data-atom-id]") ?? [])].find((e) => e.textContent === "log");
       if (!el) throw new Error("no log atom");
       const r = el.getBoundingClientRect();
@@ -191,7 +191,7 @@ test.describe("a finger tap at a name's right edge", () => {
 
   const caret = (page: Page): Promise<{ position: number; collapsed: boolean }> =>
     page.evaluate(() => {
-      const mf = window.pascaline.entry.field;
+      const mf = window.n62.entry.field;
       return { position: mf?.position ?? -1, collapsed: mf?.selectionIsCollapsed ?? false };
     });
 
@@ -214,7 +214,7 @@ test.describe("a finger tap at a name's right edge", () => {
     expect((await caret(page)).position).toBe(0);
     // the rest from the line's end: a tap there, then ⌫ per character
     const end = await page.evaluate(() => {
-      const atoms = [...(window.pascaline.entry.field?.shadowRoot?.querySelectorAll("[data-atom-id]") ?? [])];
+      const atoms = [...(window.n62.entry.field?.shadowRoot?.querySelectorAll("[data-atom-id]") ?? [])];
       const r = atoms.map((e) => e.getBoundingClientRect()).filter((b) => b.width > 0).sort((a, b) => b.right - a.right)[0];
       if (!r) throw new Error("no atoms");
       return { x: r.right + 3, y: r.top + r.height / 2 };
@@ -250,7 +250,7 @@ test.describe("AND, OR and XOR own no bracket", () => {
 
   const caretAt = (page: Page): Promise<{ position: number; collapsed: boolean }> =>
     page.evaluate(() => {
-      const mf = window.pascaline.entry.field;
+      const mf = window.n62.entry.field;
       return { position: mf?.position ?? -1, collapsed: mf?.selectionIsCollapsed ?? false };
     });
 
@@ -324,7 +324,7 @@ test.describe("AND, OR and XOR own no bracket", () => {
 // (derived from p(x) := x²).
 test("a one-letter Vars function owns its pair: p(‸3) ⌫ gives 3, and p(3) Enter calls p", async ({ page }) => {
   await open(page, "");
-  await page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
+  await page.waitForFunction(() => window.n62.session.engineState === "ready", undefined, { timeout: 20_000 });
   await tap(page, ["shift", "alpha", "emark", "paren", "x", "right", "alpha", "sub", "shift", "dot", "x", "sq", "enter"]); // p(x):=x²
   await expect(page.locator('[data-status="done"]')).toHaveCount(1);
   await tap(page, ["vars", "d1", "d3"]);

@@ -6,7 +6,7 @@ import { entryValue, open, tap } from "./helpers.ts";
 
 test.beforeEach(async ({ page }) => {
   await open(page, "");
-  await page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
+  await page.waitForFunction(() => window.n62.session.engineState === "ready", undefined, { timeout: 20_000 });
 });
 
 /** Enter sin(x) in F1 and x^3-2x in F2 from Home, by keys. */
@@ -25,14 +25,14 @@ async function defineTwo(page: Page): Promise<void> {
 }
 
 const engineHome = (page: Page, giac: string): Promise<string> =>
-  page.evaluate(async (g) => (await window.pascaline.calc.home(g, { digits: 12, angle: "rad", format: "std" })).display, giac);
+  page.evaluate(async (g) => (await window.n62.calc.home(g, { digits: 12, angle: "rad", format: "std" })).display, giac);
 
 test("Function: sin(x) and x^3-2x are drawn; the trace y comes from the engine", async ({ page }) => {
   await defineTwo(page);
   await tap(page, ["@plot"]);
   await expect(page.locator(".board canvas")).toBeVisible();
-  await page.waitForFunction(() => window.pascaline.plot.board !== undefined);
-  expect(await page.evaluate(() => window.pascaline.plot.curves)).toBe(2);
+  await page.waitForFunction(() => window.n62.plot.board !== undefined);
+  expect(await page.evaluate(() => window.n62.plot.curves)).toBe(2);
   await expect(page.getByTestId("trace-y")).toHaveAttribute("data-text", "0");
   // one trace step is 0.1 at the default window (virtual-calc, G2 item 24)
   await tap(page, ["right", "right", "right", "right", "right", "right"]);
@@ -68,7 +68,7 @@ test("Function: Num shows a table whose values match the engine", async ({ page 
 test("Function: root, extremum and intersection from the Plot menu (oracle)", async ({ page }) => {
   await defineTwo(page);
   await tap(page, ["@plot"]);
-  await page.waitForFunction(() => window.pascaline.plot.board !== undefined);
+  await page.waitForFunction(() => window.n62.plot.board !== undefined);
   await tap(page, ["down"]); // trace F2
   await tap(page, Array<string>(10).fill("right")); // x = 1
   await expect(page.getByTestId("trace-x")).toHaveText("1");
@@ -93,11 +93,11 @@ test("Function: root, extremum and intersection from the Plot menu (oracle)", as
 test("Function: definitions, window and view survive a reload", async ({ page }) => {
   await defineTwo(page);
   await tap(page, ["@plot"]);
-  await page.waitForFunction(() => window.pascaline.plot.board !== undefined);
-  await page.evaluate(() => window.pascaline.shell.flush());
+  await page.waitForFunction(() => window.n62.plot.board !== undefined);
+  await page.evaluate(() => window.n62.shell.flush());
   await page.waitForTimeout(300);
   await page.reload();
-  await page.waitForFunction(() => window.pascaline?.shell?.current !== undefined, undefined, { timeout: 20_000 });
+  await page.waitForFunction(() => window.n62?.shell?.current !== undefined, undefined, { timeout: 20_000 });
   await expect(page.locator('[data-app="function"]')).toBeVisible();
   await expect(page.getByTestId("place")).toHaveAttribute("data-view", "plot");
   await tap(page, ["@symb"]);
@@ -108,7 +108,7 @@ test("Function: a sign change at the pole of 1/x is not a root: ⚠ and no x", a
   await tap(page, ["@symb"]);
   await expect(page.getByTestId("entry-label")).toHaveText("F1(x)=");
   await tap(page, ["d1", "div", "x", "enter", "@plot"]);
-  await page.waitForFunction(() => window.pascaline.plot.board !== undefined);
+  await page.waitForFunction(() => window.n62.plot.board !== undefined);
   await tap(page, ["right", "right"]); // x = 0.2
   await expect(page.getByTestId("trace-y")).toHaveAttribute("data-text", "5"); // derived
   await tap(page, ["@menu", "d1"]);
@@ -120,7 +120,7 @@ test("Function: signed area of x^2 from 0 to 1 is 1/3 (derived)", async ({ page 
   await tap(page, ["@symb"]);
   await expect(page.getByTestId("entry-label")).toHaveText("F1(x)=");
   await tap(page, ["x", "sq", "enter", "@plot"]);
-  await page.waitForFunction(() => window.pascaline.plot.board !== undefined);
+  await page.waitForFunction(() => window.n62.plot.board !== undefined);
   await tap(page, ["@menu", "d5"]); // start at x = 0
   await tap(page, Array<string>(10).fill("right")); // x = 1
   await expect(page.getByTestId("trace-x")).toHaveText("1");
@@ -131,7 +131,7 @@ test("Function: signed area of x^2 from 0 to 1 is 1/3 (derived)", async ({ page 
 test("Function: Intersection with the x-axis is a root; Esc steps back out of the list", async ({ page }) => {
   await defineTwo(page);
   await tap(page, ["@plot"]);
-  await page.waitForFunction(() => window.pascaline.plot.board !== undefined);
+  await page.waitForFunction(() => window.n62.plot.board !== undefined);
   await tap(page, ["down", ...Array<string>(10).fill("right")]); // F2 at x = 1
   await tap(page, ["@menu", "d3"]);
   await expect(page.getByTestId("menu").getByRole("menu")).toHaveAttribute("aria-label", "Intersection of F2(x) and");
@@ -163,9 +163,9 @@ test("Esc stops a running Num job; the definitions survive", async ({ page }) =>
   await tap(page, ["@symb"]);
   await expect(page.getByTestId("entry-label")).toHaveText("F1(x)=");
   await tap(page, ["sin", "x", "enter", "@num"]);
-  await page.waitForFunction(() => window.pascaline.shell.busy);
+  await page.waitForFunction(() => window.n62.shell.busy);
   await tap(page, ["esc"]);
-  await page.waitForFunction(() => !window.pascaline.shell.busy, undefined, { timeout: 1000 });
+  await page.waitForFunction(() => !window.n62.shell.busy, undefined, { timeout: 1000 });
   await tap(page, ["@symb"]);
   await expect(page.locator('[data-name="F1"] .math')).toHaveAttribute("data-latex", "\\sin\\left(x\\right)");
 });
@@ -190,7 +190,7 @@ test("Apps key lists Home, CAS and the apps; U2 (Home by default) goes back to H
 test("Function: a warned root puts ⚠ on its readout lines, a clean one does not (M4-10)", async ({ page }) => {
   await defineTwo(page);
   await tap(page, ["@plot"]);
-  await page.waitForFunction(() => window.pascaline.plot.board !== undefined);
+  await page.waitForFunction(() => window.n62.plot.board !== undefined);
   await tap(page, ["down"]);
   await tap(page, Array<string>(10).fill("right"));
   await tap(page, ["@menu", "d1"]); // Root
@@ -198,7 +198,7 @@ test("Function: a warned root puts ⚠ on its readout lines, a clean one does no
   await expect(page.getByTestId("readout").getByTestId("mark")).toHaveCount(0);
   // the same root with fewer confirmed digits than shown: the x line gets the mark, the digits stay
   await page.evaluate(() => {
-    const app = window.pascaline.shell.loaded.function!.instance as unknown as {
+    const app = window.n62.shell.loaded.function!.instance as unknown as {
       fc: { analyze(...a: unknown[]): Promise<{ x?: Record<string, unknown>; y?: Record<string, unknown> }> };
     };
     const orig = app.fc.analyze.bind(app.fc);
@@ -214,14 +214,14 @@ test("Function: a warned root puts ⚠ on its readout lines, a clean one does no
 
 test("Function in DEG: sin(x) is drawn in degrees; the curve is 0 at 180 and 1 at 90 (R64a)", async ({ page }) => {
   await page.getByTestId("chip-angle").tap();
-  expect(await page.evaluate(() => window.pascaline.session.settings.angle)).toBe("deg");
+  expect(await page.evaluate(() => window.n62.session.settings.angle)).toBe("deg");
   await tap(page, ["@symb"]);
   await tap(page, ["sin", "x", "enter"]);
   await tap(page, ["@plot"]);
-  await page.waitForFunction(() => window.pascaline.plot.board !== undefined);
+  await page.waitForFunction(() => window.n62.plot.board !== undefined);
   const y = (x: number): Promise<number> =>
     page.evaluate((xv) => {
-      const b = window.pascaline.plot.board as unknown as { objectsList: { elType: string; Y(x: number): number }[] };
+      const b = window.n62.plot.board as unknown as { objectsList: { elType: string; Y(x: number): number }[] };
       return (b.objectsList.find((o) => o.elType === "curve") as { Y(x: number): number }).Y(xv);
     }, x);
   expect(Math.abs(await y(180))).toBeLessThan(1e-12); // radians would give -0.801
@@ -229,22 +229,22 @@ test("Function in DEG: sin(x) is drawn in degrees; the curve is 0 at 180 and 1 a
   // a window around 180, the trace at 180 reads 0 (the engine's value, in DEG)
   // move the board itself (it reports the window back to the app, as a pan would)
   await page.evaluate(() => {
-    const b = window.pascaline.plot.board as unknown as { setBoundingBox(bb: number[], keep: boolean): void };
+    const b = window.n62.plot.board as unknown as { setBoundingBox(bb: number[], keep: boolean): void };
     b.setBoundingBox([0, 2, 360, -2], false);
   });
   await page.waitForFunction(() => {
-    const f = window.pascaline.shell.loaded.function!.instance as unknown as { win: { xmax: number } | null };
+    const f = window.n62.shell.loaded.function!.instance as unknown as { win: { xmax: number } | null };
     return f.win !== null && f.win.xmax > 300;
   });
   await page.evaluate(() => {
-    const f = window.pascaline.shell.loaded.function!.instance as unknown as { traceTo(x: number): void };
+    const f = window.n62.shell.loaded.function!.instance as unknown as { traceTo(x: number): void };
     f.traceTo(180);
   });
   await expect(page.getByTestId("trace-x")).toHaveText("180");
   await expect(page.getByTestId("trace-y")).toHaveAttribute("data-text", "0");
   // Root from the trace at about 175 gives 180 (the drawn curve crosses there too)
   await page.evaluate(() => {
-    const f = window.pascaline.shell.loaded.function!.instance as unknown as { traceTo(x: number): void };
+    const f = window.n62.shell.loaded.function!.instance as unknown as { traceTo(x: number): void };
     f.traceTo(175);
   });
   await tap(page, ["@menu", "d1"]);
