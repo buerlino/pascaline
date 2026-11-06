@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// R62: the unit view's result drawn (docs/04 4.3 "Result", docs/archive/r17-unit-result.md 0.3, docs/mockups/
-// unit-result.html), on the engine: the value line (mark, value, unit, dimension), σ with its ⚠ before σ and the why-line,
-// a note under a value that stays, a refusal with no row, and the alternatives row picked by touch (a tap on a chip) and by
-// keys (▼ ◀ ▶ Enter, Esc leaves). A pick writes the unit into the end slot and evaluates again.
+// R62: the unit view's result drawn (docs/04 4.3 "Result", docs/archive/r17-unit-result.md 0.3, the mockup
+// `docs/mockups/unit-result.html` at `b1c44ee4`), on the engine: the value line (mark, value, unit, dimension), σ with
+// its ⚠ before σ and the why-line, a note under a value that stays, a refusal with no row, and the alternatives row
+// picked by touch (a tap on a chip) and by keys (▼ ◀ ▶ Enter, Esc leaves). A pick writes the unit into the end slot and
+// evaluates again.
 import { expect, test, type Page } from "@playwright/test";
 import { flick, open, tap, useClipboardLock } from "./helpers.ts";
 
