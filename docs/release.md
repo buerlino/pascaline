@@ -20,7 +20,7 @@ The four secrets (Settings → Secrets and variables → Actions, set once; A7):
 ## 2. Push phase-1 and master, then the tag
 ```bash
 git push origin phase-1 phase-1:master        # master follows phase-1 (2026-11-03): a fast-forward, refused otherwise
-git tag -s vX.Y.Z -m "N62 vX.Y.Z"       # on the bump commit; -a instead of -s for an unsigned tag
+git tag -s vX.Y.Z -m "N62 vX.Y.Z"             # on the bump commit; -a instead of -s for an unsigned tag
 git push origin vX.Y.Z
 ```
 
@@ -32,8 +32,8 @@ release. A release tag also starts **pages**, which deploys pascaline-calc.org a
 ## 4. Check what was published
 From the release page download `n62-X.Y.Z.apk` and `n62-X.Y.Z.apk.sha256` into one folder, then:
 ```bash
-sha256sum -c n62-X.Y.Z.apk.sha256                      # n62-X.Y.Z.apk: OK
-apksigner verify --print-certs n62-X.Y.Z.apk           # one signer; its SHA-256 digest is android/release-cert.sha256
+sha256sum -c n62-X.Y.Z.apk.sha256            # n62-X.Y.Z.apk: OK
+apksigner verify --print-certs n62-X.Y.Z.apk  # one signer; its SHA-256 digest is android/release-cert.sha256
 cp n62-X.Y.Z.apk /tmp/check.apk && tools/release-verify.sh /tmp/check.apk   # the same comparison (it deletes the file on a mismatch)
 ```
 `apksigner` prints the digest in lower case without colons (`Signer #1 certificate SHA-256 digest:` up to build-tools 36, `V2 Signer:
