@@ -1,20 +1,20 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# DRAFT F-Droid recipe for fdroiddata (metadata/io.github.buerlino.pascaline.yml). Never submitted; the application id is final (owner, 2026-10-14).
+# DRAFT F-Droid recipe for fdroiddata (metadata/dev.n62.calc.yml). Never submitted; the application id dev.n62.calc is final (owner, 2026-11-05, decisions.md "The name N62").
 # Modelled on net.alexbarry.alexgames (Debian emscripten in the build VM) and com.graphhopper.maps (Capacitor).
 # Status: untested in fdroidserver (see fdroid/README.md). commit: v0.1.0 is the tag the owner pushes (tools/check-version.sh checks it against the versions).
 # Privacy statement: PRIVACY.md in the repository root.
 Categories:
   - Science & Education
 License: GPL-3.0-or-later
-AuthorName: Pascaline contributors
-WebSite: https://pascaline-calc.org/
-SourceCode: https://github.com/buerlino/pascaline
-IssueTracker: https://github.com/buerlino/pascaline/issues
+AuthorName: N62 contributors
+WebSite: https://n62.dev/
+SourceCode: https://github.com/n62-dev/n62
+IssueTracker: https://github.com/n62-dev/n62/issues
 
-AutoName: Pascaline
+AutoName: N62
 
 RepoType: git
-Repo: https://github.com/buerlino/pascaline.git
+Repo: https://github.com/n62-dev/n62.git
 
 Builds:
   - versionName: 0.1.0

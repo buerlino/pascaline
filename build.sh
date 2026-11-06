@@ -19,9 +19,9 @@
 #                    the test tag vX.Y.Z-<suffix>, only X.Y.Z compared with the version files; .github/workflows/release.yml sets it, A8), and
 #                    after Gradle unless the APK's certificate equals android/release-cert.sha256 (tools/release-verify.sh deletes it then). Never
 #                    creates or falls back to the throwaway key; refuses --dev, --measure, --test, --unsigned, --no-units and --web. Also writes
-#                    dist/pascaline-<versionName>.apk and .apk.sha256
-#   --install [S]    adb install -r on device S (default $ANDROID_SERIAL or the only device); installs io.github.buerlino.pascaline only
-# Output: dist/pascaline.apk (last line printed; --release also dist/pascaline-<versionName>.apk and .apk.sha256); with --web, app/dist. Env: PASCALINE_DL_DIR (Giac/GMP/MPFR/GSL tarball cache), PASCALINE_QALC_DL_DIR (libqalculate tarball cache: names and titles for the Find index), ANDROID_HOME (default ~/Android/Sdk),
+#                    dist/n62-<versionName>.apk and .apk.sha256
+#   --install [S]    adb install -r on device S (default $ANDROID_SERIAL or the only device); installs dev.n62.calc only
+# Output: dist/pascaline.apk (last line printed; --release also dist/n62-<versionName>.apk and .apk.sha256); with --web, app/dist. Env: PASCALINE_DL_DIR (Giac/GMP/MPFR/GSL tarball cache), PASCALINE_QALC_DL_DIR (libqalculate tarball cache: names and titles for the Find index), ANDROID_HOME (default ~/Android/Sdk),
 # PASCALINE_KEYS (the throwaway signing key's folder, default ~/.cache/pascaline/keys), NO_LOCK=1 (the caller holds the host-cpu lock).
 set -euo pipefail
 export PASCALINE_LOCK_PID=$$   # A35: tools/devlock.sh records this pid; a lock whose pid is gone is broken by the next acquire
@@ -92,7 +92,7 @@ INDEX_ARGS=(); (( WITH_UNITS )) || INDEX_ARGS=(--no-units)
 
 # 4. Gradle
 if (( RELEASE )); then
-  rm -f dist/pascaline.apk dist/pascaline-*.apk dist/pascaline-*.apk.sha256   # a failed release leaves no APK behind
+  rm -f dist/pascaline.apk dist/n62-*.apk dist/n62-*.apk.sha256   # a failed release leaves no APK behind
 elif (( SIGN )); then
   # One key for every checkout and worktree (outside git), so an install over the last one keeps the app's data;
   # android/_keys/ of the main checkout is where it lived until 2026-10-14 and is moved here once.
@@ -135,15 +135,15 @@ mkdir -p dist
 if (( RELEASE )); then
   tools/release-verify.sh "$SRC" >&2 || { rm -f dist/pascaline.apk; exit 1; }   # deletes the APK on a mismatch
   VNAME="$(sed -n 's/^  "version": *"\([^"]*\)".*/\1/p' app/package.json | head -n1)"
-  cp "$SRC" "dist/pascaline-$VNAME.apk"
-  (cd dist && sha256sum "pascaline-$VNAME.apk" > "pascaline-$VNAME.apk.sha256")
+  cp "$SRC" "dist/n62-$VNAME.apk"
+  (cd dist && sha256sum "n62-$VNAME.apk" > "n62-$VNAME.apk.sha256")
 fi
 cp "$SRC" dist/pascaline.apk
 
 if (( INSTALL )); then
   ADB=(adb); [[ -n "$SERIAL" ]] && ADB=(adb -s "$SERIAL")
   if ! "${ADB[@]}" install -r dist/pascaline.apk >&2; then
-    "${ADB[@]}" uninstall io.github.buerlino.pascaline >&2   # signature clash: remove our own app only
+    "${ADB[@]}" uninstall dev.n62.calc >&2   # signature clash: remove our own app only
     "${ADB[@]}" install dist/pascaline.apk >&2
   fi
 fi

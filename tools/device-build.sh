@@ -6,7 +6,7 @@
 #
 # Engine: --engine-dir, else $GIAC_OUT, else the main checkout's engine/giac/_out/gsl (works from a worktree).
 # Signed with the one throwaway key in ~/.cache/pascaline/keys/ (build.sh). --install runs `adb install -r` for
-# io.github.buerlino.pascaline only (never other apps); annabell only. --measure adds the timing marks (never for release).
+# dev.n62.calc only (never other apps); annabell only. --measure adds the timing marks (never for release).
 # --test: WebView debugging on, for the core list on the device (app/playwright.device.config.ts); never for release.
 # Output: prints the APK path on the last line (dist/pascaline.apk). build.sh takes the host-cpu lock.
 set -euo pipefail

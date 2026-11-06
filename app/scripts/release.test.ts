@@ -115,7 +115,7 @@ describe(".github/workflows/release.yml", () => {
     const s = steps[at(/gh release create/)] as Step;
     expect(s.env?.["GH_TOKEN"]).toBe("${{ github.token }}");
     expect(s.run).toMatch(/gh release create "\$TAG" "\$apk" "\$apk\.sha256"/);
-    expect(s.run).toMatch(/apk="dist\/pascaline-\$v\.apk"/);
+    expect(s.run).toMatch(/apk="dist\/n62-\$v\.apk"/);
     expect(s.run).toMatch(/"\$v" == 0\.\* \|\| "\$TAG" == \*-\*/);
     expect(s.run).toMatch(/--prerelease/);
     // the notes: commit, both SHA256SUMS, the certificate

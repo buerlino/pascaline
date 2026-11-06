@@ -27,7 +27,7 @@ They use `$ANDROID_SERIAL`: `core-device.sh` requires it, the Python tools defau
 
 Kept though no script calls them:
 - `update-device.sh` and `update-device.ts`: A76 points the update check at the release APKs. The fixture `tests/fixtures/update-from-ef857a6.json` was made once by `tools/make-update-snapshot.mjs` at `89859bd1`.
-- `shots.py`: A77 (the rename) edits it.
+- `shots.py`: for a page whose numbers only show on screen (the screenshots of a cold start).
 - The WebView golden run (A20), run once per Giac bump (`engine/giac/README.md`, "Bumping Giac"): a measure build opened with `?bench=golden` (`app/src/goldenBench.ts`, `golden.worker.ts`), its log compared with `app/scripts/golden-dump.ts` by `golden-compare.ts`.
 Night-shift coordinators (docs/shifts/rules.md section 4). Run them from the phase-1 worktree (`cd .claude/worktrees/phase-1`): the main checkout may be on another branch, without `scripts/`.
 ```bash

@@ -7,7 +7,7 @@ import { check, engineReady, loadCore, replay } from "../test/core-lib.ts";
 import { planDevice } from "./core-plan.ts";
 import { installTouchTap } from "./touch-tap.ts";
 
-const PKG = "io.github.buerlino.pascaline"; // our app only (docs/shifts/rules.md section 3)
+const PKG = "dev.n62.calc"; // our app only (docs/shifts/rules.md section 3)
 const plan = planDevice(loadCore());
 
 let device: AndroidDevice;

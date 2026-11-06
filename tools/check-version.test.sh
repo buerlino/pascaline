@@ -31,7 +31,7 @@ android {
     }
 }
 GRADLE
-  cat > "$d/fdroid/io.github.buerlino.pascaline.yml" <<YML
+  cat > "$d/fdroid/dev.n62.calc.yml" <<YML
 Builds:
   - versionName: 0.0.1
     versionCode: 0
@@ -92,11 +92,11 @@ sed -i "s|^        versionName .*|        versionName = '0.1.0'|; s|^        ver
 expect "literal with = and single quotes" 0 "$tmp/l1" v0.1.0
 
 # a missing file is an error
-rm "$tmp/ok/fdroid/io.github.buerlino.pascaline.yml"; expect "no recipe" 1 "$tmp/ok"
+rm "$tmp/ok/fdroid/dev.n62.calc.yml"; expect "no recipe" 1 "$tmp/ok"
 
 # the newest build entry counts, wherever it stands in the list
 tree "$tmp/n1" 0.1.0 0.1.0 1 0.1.0 1 v0.1.0 0.1.0 1
-sed -i 's|^  - versionName: 0.0.1|  - versionName: 0.5.0|; s|^    versionCode: 0$|    versionCode: 5|; s|commit: v0.0.1|commit: v0.5.0|' "$tmp/n1/fdroid/io.github.buerlino.pascaline.yml"
+sed -i 's|^  - versionName: 0.0.1|  - versionName: 0.5.0|; s|^    versionCode: 0$|    versionCode: 5|; s|commit: v0.0.1|commit: v0.5.0|' "$tmp/n1/fdroid/dev.n62.calc.yml"
 expect "an older entry listed first, a newer one (code 5) elsewhere" 1 "$tmp/n1"
 
 [[ $fails -eq 0 ]] || { echo "check-version.test.sh: $fails failure(s)" >&2; exit 1; }

@@ -17,7 +17,7 @@ the system keyboard never showed, 1 when it did. Holds the device lock; touches 
 import argparse, os, re, subprocess, sys, time
 
 REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-PKG = "io.github.buerlino.pascaline"
+PKG = "dev.n62.calc"
 S = os.environ.get("ANDROID_SERIAL") or sys.exit("set ANDROID_SERIAL to the device")
 
 

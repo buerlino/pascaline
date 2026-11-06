@@ -138,6 +138,6 @@ describe("PRIVACY.md", () => {
   });
   it("README and the F-Droid recipe link it", () => {
     expect(read("README.md")).toContain("PRIVACY.md");
-    expect(read("fdroid/io.github.buerlino.pascaline.yml")).toContain("PRIVACY.md");
+    expect(read("fdroid/dev.n62.calc.yml")).toContain("PRIVACY.md");
   });
 });

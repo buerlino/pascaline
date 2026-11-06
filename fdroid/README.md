@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 # F-Droid draft
 
-`io.github.buerlino.pascaline.yml` is a draft of the fdroiddata recipe. It is **never submitted**; the application id is final (owner, 2026-10-14).
+`dev.n62.calc.yml` is a draft of the fdroiddata recipe. It is **never submitted**; the application id `dev.n62.calc` is final (owner, 2026-11-05, decisions.md "The name N62").
 
 How it builds, and how it differs from `./build.sh`:
 - `build.sh` builds the engine in a podman container (P2). The F-Droid build VM cannot nest that, so the recipe installs the **same Debian `emscripten` package** (3.1.69+dfsg-3 in trixie) and runs the same scripts with `EMSDK_DIR=system`. F-Droid then builds the APK with its own Gradle (`gradle: yes`) and signs it itself.
@@ -10,6 +10,6 @@ How it builds, and how it differs from `./build.sh`:
 - **The recipe keeps its libxml2 and libqalculate builds** (owner, 2026-11-02, decisions.md P22): F-Droid is not asked to accept checked-in derived data. Its `prebuild` runs `engine/qalc/build-wasm.sh dev`, then `refresh-factors.mjs`, which fails on any difference to `find/factors.yaml` (A60), so F-Droid's own build proves the file. Our other builds read the file and build no qalc.
 - The container builds of the engine and of libqalculate are byte-reproducible between runs. The system-emscripten build on the VM should match; verify before claiming reproducible builds.
 - **Drift from `build.sh` (check of 2026-10-26; fix before C4):** (1) the recipe installs `emscripten` without its version (`=3.1.69+dfsg-3`, as `build-wasm-release.sh` pins it), and `build-wasm.sh` with `EMSDK_DIR=system` only prints the system emcc's version: it should fail when that differs from `EMSCRIPTEN_PKG_VERSION`; (2) `scandelete` removes `app/node_modules/`, but `capacitor.settings.gradle` builds Capacitor's Android modules from there: probably a failed build, to confirm with a real `fdroid build`.
-- Open items before a real submission: the release tag v0.1.0 (the owner pushes it; `tools/check-version.sh v0.1.0` checks the files), the real application id, an app icon and screenshots in `fastlane/metadata/android/en-US/`.
+- Open items before a real submission: the release tag v0.1.0 (the owner pushes it; `tools/check-version.sh v0.1.0` checks the files), an app icon and screenshots in `fastlane/metadata/android/en-US/`.
 
 - Checked 2026-10-11 with fdroidserver 2.4.5 (pip, venv): `fdroid readmeta` parses the recipe. `fdroid lint` only complains that the category is unknown, because a scratch repo has no `config/categories.yml`; the real fdroiddata uses "Science & Education" in 534 recipes. A real `fdroid build` needs the build-server VM (vagrant/KVM image), which is not set up here, so the recipe is untested end to end.
