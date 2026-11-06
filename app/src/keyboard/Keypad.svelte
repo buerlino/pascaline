@@ -365,7 +365,7 @@
     padding: 0 var(--key-pad) var(--sp-05);
     border: 0;
     border-radius: var(--radius);
-    color: var(--text);
+    color: var(--key-text);
     font: inherit;
     font-size: var(--fs-key);
     background: var(--key-num);
@@ -395,7 +395,7 @@
     position: absolute;
     inset: 0;
     border-radius: inherit;
-    background: color-mix(in srgb, var(--text) 32%, transparent);
+    background: color-mix(in srgb, var(--key-text) 32%, transparent);
     pointer-events: none;
   }
   .key.enter:active::after {
@@ -423,7 +423,7 @@
     box-shadow: inset 0 0 0 var(--stroke-thin) var(--line);
   }
   .key[data-user="set"] {
-    box-shadow: inset 0 0 0 var(--stroke-thin) var(--muted);
+    box-shadow: inset 0 0 0 var(--stroke-thin) var(--key-muted);
   }
   /* the unit pad's prefix cells (R24b): their own colour, so the prefix m and the metre m never look alike */
   .key[data-pad="prefix"] {
@@ -434,7 +434,7 @@
     box-shadow: inset 0 0 0 var(--stroke-thin) var(--line);
   }
   .key[data-pad="user"] {
-    box-shadow: inset 0 0 0 var(--stroke-thin) var(--muted);
+    box-shadow: inset 0 0 0 var(--stroke-thin) var(--key-muted);
   }
   /* a user cell with a flick down has the letter line in the cluster too: the face's track may shrink to what is left of
      the key's 36 px less its 2 px padding (a fixed track, the face overflows it evenly), so the keys below do not move (docs/03 rule 8) */
@@ -477,7 +477,7 @@
     width: 28%;
     height: 30%;
     box-sizing: border-box;
-    border: var(--stroke-mid) dashed var(--muted);
+    border: var(--stroke-mid) dashed var(--key-muted);
     border-radius: 50%;
   }
   .key[data-zone="true"] {
@@ -494,7 +494,7 @@
   }
   /* a key that does nothing in this layer (and only in this layer) is dimmed, still readable */
   .key[data-dead="true"] .main {
-    color: var(--text-dead);
+    color: var(--key-text-dead);
   }
   .key.enter {
     background: var(--key-enter);
@@ -502,16 +502,16 @@
     font-size: var(--fs-body);
   }
   .shiftlegend {
-    color: var(--shift);
+    color: var(--key-shift);
   }
   .alphalegend {
-    color: var(--alpha);
+    color: var(--key-alpha);
   }
   .shifted .main {
-    color: var(--shift);
+    color: var(--key-shift);
   }
   .alphaed .main {
-    color: var(--alpha);
+    color: var(--key-alpha);
   }
   /* Enter keeps one colour in every layer: the coloured text would not read on its green */
   .key.enter .main,
@@ -521,29 +521,29 @@
   }
   .shifted .key[data-dead="true"] .main,
   .alphaed .key[data-dead="true"] .main {
-    color: var(--text-dead);
+    color: var(--key-text-dead);
   }
   /* Shift and Alpha wear the other keys' colour (R140); only the label carries the layer colour. Armed, the key fills
      with it (--on-shift / --on-alpha are black or white at 4.5:1); locked adds the 3 px outline round the fill. */
   .key[data-key="shift"] .main {
-    color: var(--shift);
+    color: var(--key-shift);
   }
   .key[data-key="alpha"] .main {
-    color: var(--alpha);
+    color: var(--key-alpha);
   }
   .key[data-key="shift"][aria-pressed="true"] {
-    background: var(--shift);
+    background: var(--key-shift);
     outline: none;
   }
   .key[data-key="alpha"][aria-pressed="true"] {
-    background: var(--alpha);
+    background: var(--key-alpha);
     outline: none;
   }
   .key[data-key="shift"][aria-pressed="true"] .main {
-    color: var(--on-shift);
+    color: var(--on-key-shift);
   }
   .key[data-key="alpha"][aria-pressed="true"] .main {
-    color: var(--on-alpha);
+    color: var(--on-key-alpha);
   }
   .key[data-key="shift"][data-locked="true"],
   .key[data-key="alpha"][data-locked="true"] {

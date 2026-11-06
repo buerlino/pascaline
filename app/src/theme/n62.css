@@ -24,10 +24,17 @@
   --focus: #eef2f2;
   --key-on: #eef2f2;
   --on-key-on: #000000;
+  --key-text: #eef2f2;
+  --key-muted: #a7b4b4;
+  --key-text-dead: #6f7d7e;
+  --key-shift: #eef2f2;
+  --key-alpha: #eef2f2;
   --key-pfx: #2e3031;
   --on-error: #000000;
   --on-shift: #000000;
   --on-alpha: #000000;
+  --on-key-shift: #000000;
+  --on-key-alpha: #000000;
   color-scheme: dark;
 }
 :root[data-family="n62"][data-brightness="dark"][data-contrast="high"] {
@@ -54,10 +61,17 @@
   --focus: #529997;
   --key-on: #57a3a1;
   --on-key-on: #000000;
+  --key-text: #fcfcfc;
+  --key-muted: #a7b4b4;
+  --key-text-dead: #718081;
+  --key-shift: #ff9a33;
+  --key-alpha: #62aba9;
   --key-pfx: #08090a;
   --on-error: #000000;
   --on-shift: #000000;
   --on-alpha: #000000;
+  --on-key-shift: #000000;
+  --on-key-alpha: #000000;
   color-scheme: dark;
 }
 :root[data-family="n62"][data-brightness="dark"][data-contrast="high"][data-keys="plain"] {
@@ -84,10 +98,17 @@
   --focus: #eef2f2;
   --key-on: #eef2f2;
   --on-key-on: #000000;
+  --key-text: #fcfcfc;
+  --key-muted: #a7b4b4;
+  --key-text-dead: #718081;
+  --key-shift: #eef2f2;
+  --key-alpha: #eef2f2;
   --key-pfx: #080909;
   --on-error: #000000;
   --on-shift: #000000;
   --on-alpha: #000000;
+  --on-key-shift: #000000;
+  --on-key-alpha: #000000;
   color-scheme: dark;
 }
 :root[data-family="n62"][data-brightness="light"][data-keys="plain"] {
@@ -114,10 +135,17 @@
   --focus: #0b1213;
   --key-on: #0b1213;
   --on-key-on: #f4f6f6;
+  --key-text: #0b1213;
+  --key-muted: #44504f;
+  --key-text-dead: #687474;
+  --key-shift: #0b1213;
+  --key-alpha: #0b1213;
   --key-pfx: #ced0d0;
   --on-error: #ffffff;
   --on-shift: #ffffff;
   --on-alpha: #ffffff;
+  --on-key-shift: #ffffff;
+  --on-key-alpha: #ffffff;
   color-scheme: light;
 }
 :root[data-family="n62"][data-brightness="light"][data-contrast="high"] {
@@ -144,10 +172,17 @@
   --focus: #2e706e;
   --key-on: #27605e;
   --on-key-on: #ffffff;
+  --key-text: #020404;
+  --key-muted: #3a4443;
+  --key-text-dead: #677373;
+  --key-shift: #8a3c00;
+  --key-alpha: #265c5a;
   --key-pfx: #f2f8f7;
   --on-error: #ffffff;
   --on-shift: #ffffff;
   --on-alpha: #ffffff;
+  --on-key-shift: #ffffff;
+  --on-key-alpha: #ffffff;
   color-scheme: light;
 }
 :root[data-family="n62"][data-brightness="light"][data-contrast="high"][data-keys="plain"] {
@@ -174,9 +209,16 @@
   --focus: #0b1213;
   --key-on: #0b1213;
   --on-key-on: #f4f6f6;
+  --key-text: #020404;
+  --key-muted: #3a4343;
+  --key-text-dead: #677373;
+  --key-shift: #0b1213;
+  --key-alpha: #0b1213;
   --key-pfx: #fdfefe;
   --on-error: #ffffff;
   --on-shift: #ffffff;
   --on-alpha: #ffffff;
+  --on-key-shift: #ffffff;
+  --on-key-alpha: #ffffff;
   color-scheme: light;
 }

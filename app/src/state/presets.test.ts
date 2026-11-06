@@ -105,7 +105,7 @@ describe("presets (R88)", () => {
     session.setAngle("deg");
     session.setFixDecimals(7);
     session.setFmtMode("pfx", true);
-    session.settings.look = { family: "nord", brightness: "light", contrast: true, plain: true };
+    session.settings.look = { family: "solarized", brightness: "light", contrast: true, plain: true };
     userKeys.set(U2, "shift", mol);
     cells.set(C1, "up", { unit: "mol" });
     const id = presets.capture("Chemistry", PRESET_GROUPS);
@@ -343,17 +343,17 @@ describe("presets (R88)", () => {
       // the first load is the slow one: it ends after the second apply began
       return new Promise<void>((r) => setTimeout(() => (shown.push(look.family), r()), loads === 1 ? 30 : 1));
     };
-    session.settings.look = { ...session.settings.look, family: "nord" };
+    session.settings.look = { ...session.settings.look, family: "solarized" };
     session.setAngle("deg");
     const a = presets.capture("A", PRESET_GROUPS);
-    session.settings.look = { ...session.settings.look, family: "gruvbox" };
+    session.settings.look = { ...session.settings.look, family: "teal" };
     session.setAngle("rad");
     const b = presets.capture("B", PRESET_GROUPS);
     const first = presets.apply(a);
     const second = presets.apply(b);
     await Promise.all([first, second]);
-    expect(shown).toEqual(["nord", "gruvbox"]);
-    expect(session.settings.look.family).toBe("gruvbox");
+    expect(shown).toEqual(["solarized", "teal"]);
+    expect(session.settings.look.family).toBe("teal");
     expect(session.settings.angle).toBe("rad");
     expect(presets.active).toBe(b);
   });

@@ -3,7 +3,7 @@
 // family without its tokens. N62's two start blocks are in style.css; its transforms are in n62.css.
 // Settings › Appearance calls it (R50e, via theme/look.ts). A later call wins over an earlier one that is still loading.
 
-export type Family = "n62" | "graphite" | "solarized" | "gruvbox" | "nord";
+export type Family = "n62" | "teal" | "solarized";
 export interface Theme {
   family: Family;
   brightness: "dark" | "light";
@@ -16,10 +16,8 @@ export type Loader = (family: Family) => Promise<unknown>;
 
 const FILES: Record<Family, () => Promise<unknown>> = {
   n62: () => import("./n62.css"),
-  graphite: () => import("./graphite.css"),
+  teal: () => import("./teal.css"),
   solarized: () => import("./solarized.css"),
-  gruvbox: () => import("./gruvbox.css"),
-  nord: () => import("./nord.css"),
 };
 const defaultLoader: Loader = (family) => FILES[family]();
 

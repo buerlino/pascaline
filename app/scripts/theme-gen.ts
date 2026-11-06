@@ -85,25 +85,63 @@ const get = (t: Palette, role: string): string => {
 };
 const getAll = (t: Palette, roles: readonly string[]): string[] => roles.map((r) => get(t, r));
 
+// --- the roles with a key twin (R150) ----------------------------------------------------------
+/**
+ * Legends on the keys and legends on the screen can need different colours (Teal: near-black on the teal screen, light on
+ * its near-black keys). These five roles may have a twin `key-<role>` for the keys; a family that gives none has the twin
+ * equal to the role, and then the role is checked against the keys and the screen together, as before R150.
+ */
+export const TWINS = ["text", "muted", "text-dead", "shift", "alpha"] as const;
+const keyOf = (r: string): string => `key-${r}`;
+/** Does role `r` have its own colour on the keys? */
+const isSplit = (t: Palette, r: string): boolean => t[keyOf(r)] !== undefined && t[keyOf(r)] !== t[r];
+/** Is the text on the screen lighter than the screen (a dark theme)? Decides which way the screen's colours move. */
+const lightInk = (t: Palette): boolean => lum(get(t, "text")) > lum(get(t, "bg"));
+/** The same for the legends on the keys. */
+const lightKeyInk = (t: Palette): boolean => lum(get(t, "key-text")) > lum(get(t, "key-num"));
+/**
+ * Sets role `r` and its key twin in `o` from `from`: the role against the screen's grounds `scr` (and the keys' `keys` too
+ * when it has no twin of its own), the twin against `keys`; `sd` and `kd` say which way each moves (true: lighter).
+ */
+function legend(o: Palette, from: Palette, r: string, scr: readonly string[], keys: readonly string[], min: number, sd: boolean, kd: boolean): void {
+  const split = isSplit(from, r);
+  o[r] = ensure(get(from, r), getAll(o, split ? scr : [...scr, ...keys]), min, sd);
+  o[keyOf(r)] = split ? ensure(get(from, keyOf(r)), getAll(o, keys), min, kd) : get(o, r);
+}
+const SCREEN = ["bg", "panel", "pick", "chip-bg"];
+
 // --- the base palette after the contrast floor ------------------------------------------------
 /** A family's own value is kept when it passes; otherwise only its lightness moves until it does. `fixes` lists what moved. */
 export function base(fam: Family, brightness: Brightness): { t: Palette; fixes: [string, string, string][] } {
-  const dark = brightness === "dark";
   const t: Palette = { ...fam[brightness] };
   const fixes: [string, string, string][] = [];
-  const fix = (role: string, bgs: string[], min: number): void => {
-    const v = ensure(get(t, role), getAll(t, bgs), min, dark);
+  const sd = lightInk(t);
+  const split = new Set<string>(TWINS.filter((r) => isSplit(t, r)));
+  const has = (r: string): boolean => split.has(r);
+  const kd = t["key-text"] === undefined ? sd : lightKeyInk(t);
+  const set = (role: string, v: string): void => {
     if (v !== t[role]) {
       fixes.push([role, get(t, role), v]);
       t[role] = v;
     }
   };
-  fix("text", [...KEYS, "bg", "panel", "pick", "chip-bg"], 4.5);
-  fix("muted", ["bg", "panel", "key-num", "pick"], 4.5);
-  for (const r of ["shift", "alpha"]) fix(r, [...KEYS, "panel"], 4.5);
-  for (const r of ["approx", "warn", "error"]) fix(r, ["bg", "pick"], 4.5);
-  fix("focus", ["bg", "panel"], 3);
-  fix("text-dead", [...KEYS, "panel"], 3);
+  const fix = (role: string, bgs: readonly string[], min: number, up: boolean): void => set(role, ensure(get(t, role), getAll(t, bgs), min, up));
+  // the picked row's ground moves away from the text rather than the text (black cannot go further)
+  set("pick", ensure(get(t, "pick"), [get(t, "text")], 4.5, lum(get(t, "text")) < 0.5));
+  fix("text", [...(has("text") ? [] : KEYS), ...SCREEN], 4.5, sd);
+  if (has("text")) fix(keyOf("text"), KEYS, 4.5, kd);
+  fix("muted", ["bg", "panel", "pick", ...(has("muted") ? [] : ["key-num"])], 4.5, sd);
+  if (has("muted")) fix(keyOf("muted"), ["key-num"], 4.5, kd);
+  for (const r of ["shift", "alpha"]) {
+    fix(r, ["panel", ...(has(r) ? [] : KEYS)], 4.5, sd);
+    if (has(r)) fix(keyOf(r), KEYS, 4.5, kd);
+  }
+  fix("alpha", ["pick"], 3, sd); // the caret in the bracket's box (non-text)
+  for (const r of ["approx", "warn", "error"]) fix(r, ["bg", "pick"], 4.5, sd);
+  fix("focus", ["bg", "panel"], 3, sd);
+  fix("text-dead", ["panel", ...(has("text-dead") ? [] : KEYS)], 3, sd);
+  if (has("text-dead")) fix(keyOf("text-dead"), KEYS, 3, kd);
+  for (const r of TWINS) if (!has(r)) t[keyOf(r)] = get(t, r);
   // on-enter: the key moves rather than the label, so the label keeps the family's colour
   if (cr(get(t, "on-enter"), get(t, "key-enter")) < 4.5) {
     const v = ensure(get(t, "key-enter"), [get(t, "on-enter")], 4.5, lum(get(t, "on-enter")) < 0.5);
@@ -118,49 +156,73 @@ export function base(fam: Family, brightness: Brightness): { t: Palette; fixes: 
   return { t, fixes };
 }
 
-// --- High contrast: darker (or lighter) grounds, text at 7:1, legends at 7:1, a strong key outline ---
-export function highContrast(t: Palette, dark: boolean): Palette {
+/** A key's fill moves away from its label until `min`; when the fill cannot (black under a teal label), the label moves instead. */
+function apartPair(fill: string, label: string, min: number): [string, string] {
+  const up = lum(label) < lum(fill);
+  const f = ensure(fill, [label], min, up);
+  return cr(f, label) >= min ? [f, label] : [f, ensure(label, [f], min, !up)];
+}
+
+// --- High contrast: grounds pushed away from the ink (a mid-tone screen is lightened along its hue instead), text at 7:1, legends at 7:1, a strong key outline ---
+export function highContrast(t: Palette): Palette {
   const o: Palette = { ...t };
-  const ext = dark ? "#000000" : "#ffffff";
-  const ink = dark ? "#ffffff" : "#000000";
-  o["bg"] = mix(get(t, "bg"), ext, 0.65);
-  o["panel"] = mix(get(t, "panel"), ext, 0.5);
-  o["pick"] = mix(get(t, "pick"), ext, 0.3);
-  for (const k of KEYS) o[k] = mix(get(t, k), ext, dark ? 0.45 : 0.6);
-  o["chip-bg"] = mix(get(t, "chip-bg"), ext, 0.35);
-  o["text"] = mix(get(t, "text"), ink, 0.8);
-  o["text"] = ensure(get(o, "text"), getAll(o, [...KEYS, "bg", "panel", "pick", "chip-bg"]), 7, dark);
-  o["muted"] = ensure(get(t, "muted"), getAll(o, ["bg", "panel", "key-num", "pick"]), 7, dark);
-  for (const r of ["shift", "alpha"]) o[r] = ensure(get(t, r), getAll(o, [...KEYS, "panel"]), 7, dark);
-  for (const r of ["approx", "warn", "error"]) o[r] = ensure(get(t, r), getAll(o, ["bg", "pick"]), 7, dark);
-  o["text-dead"] = ensure(get(t, "text-dead"), getAll(o, [...KEYS, "panel"]), 4.5, dark);
-  o["line"] = ensure(mix(get(t, "line"), ink, 0.25), getAll(o, ["bg", ...KEYS]), 3, dark);
-  o["focus"] = ensure(get(t, "focus"), getAll(o, ["bg", "panel"]), 4.5, dark);
-  o["key-enter"] = ensure(get(t, "key-enter"), [get(t, "on-enter")], 7, lum(get(t, "on-enter")) < 0.5);
-  o["key-on"] = ensure(get(t, "key-on"), [get(t, "on-key-on")], 7, lum(get(t, "on-key-on")) < 0.5);
+  const sd = lightInk(t);
+  const kd = lightKeyInk(t);
+  const [extS, inkS] = sd ? ["#000000", "#ffffff"] : ["#ffffff", "#000000"];
+  const [extK, inkK] = kd ? ["#000000", "#ffffff"] : ["#ffffff", "#000000"];
+  const textHC = mix(get(t, "text"), inkS, 0.8);
+  // a screen whose own ink cannot reach 7:1 on it (Teal: black on #529997 is 6.4:1) is lightened along its hue until it does
+  o["bg"] = !sd && cr(textHC, get(t, "bg")) < 7 ? moveUntil(get(t, "bg"), true, (c) => cr(textHC, c) >= 7) : mix(get(t, "bg"), extS, 0.65);
+  o["panel"] = mix(get(t, "panel"), extS, 0.5);
+  o["pick"] = mix(get(t, "pick"), extS, 0.3);
+  for (const k of KEYS) o[k] = mix(get(t, k), extK, kd ? 0.45 : 0.6);
+  o["chip-bg"] = mix(get(t, "chip-bg"), extS, 0.35);
+  const split = isSplit(t, "text");
+  const from: Palette = { ...t, text: textHC, "key-text": split ? mix(get(t, "key-text"), inkK, 0.8) : textHC };
+  legend(o, from, "text", SCREEN, KEYS, 7, sd, kd);
+  legend(o, t, "muted", ["bg", "panel", "pick"], ["key-num"], 7, sd, kd);
+  for (const r of ["shift", "alpha"]) legend(o, t, r, ["panel"], KEYS, 7, sd, kd);
+  for (const r of ["approx", "warn", "error"]) o[r] = ensure(get(t, r), getAll(o, ["bg", "pick"]), 7, sd);
+  legend(o, t, "text-dead", ["panel"], KEYS, 4.5, sd, kd);
+  o["line"] = ensure(mix(get(t, "line"), inkS, 0.25), getAll(o, ["bg", ...KEYS]), 3, sd);
+  o["focus"] = ensure(get(t, "focus"), getAll(o, ["bg", "panel"]), 4.5, sd);
+  [o["key-enter"], o["on-enter"]] = apartPair(get(t, "key-enter"), get(t, "on-enter"), 7);
+  [o["key-on"], o["on-key-on"]] = apartPair(get(t, "key-on"), get(t, "on-key-on"), 7);
   return o;
 }
 
 // --- Plain keys: no colour coding. One neutral tone for every key, the digit block one step brighter,
 // legends in the text colour (Shift bold, Alpha italic), Enter inverted. ⚠ and errors keep their colour.
-export function plain(t: Palette, dark: boolean): Palette {
+// The key legends use `key-text`, the screen's marks `text`.
+export function plain(t: Palette): Palette {
   const o: Palette = { ...t };
+  const sd = lightInk(t);
+  const kd = lightKeyInk(t);
+  const split = isSplit(t, "text");
   const k1 = desat(get(t, "key-num"), 0.35);
   const k2 = desat(mix(get(t, "key-num"), get(t, "bg"), 0.5), 0.35);
   o["key-num"] = k1;
   for (const k of ["key-op", "key-fn", "key-ctl", "key-nav"]) o[k] = k2;
   o["shift"] = get(t, "text");
   o["alpha"] = get(t, "text");
+  o["key-shift"] = get(t, "key-text");
+  o["key-alpha"] = get(t, "key-text");
   o["approx"] = get(t, "text");
-  o["key-enter"] = get(t, "text");
-  o["on-enter"] = get(t, "bg");
-  o["key-on"] = get(t, "text");
-  o["on-key-on"] = get(t, "bg");
+  o["key-enter"] = get(t, "key-text");
+  o["on-enter"] = split ? k1 : get(t, "bg");
+  o["key-on"] = get(t, "key-text");
+  o["on-key-on"] = split ? k1 : get(t, "bg");
   o["focus"] = get(t, "text");
-  o["chip-bg"] = k2;
+  o["chip-bg"] = split ? get(t, "chip-bg") : k2;
   o["pick"] = mix(get(t, "bg"), get(t, "text"), 0.1);
   // text-dead must stay dimmer than live text but readable on both tones
-  o["text-dead"] = ensure(get(t, "text-dead"), [k1, k2, get(o, "panel")], 3, dark);
+  if (isSplit(t, "text-dead")) {
+    o["text-dead"] = ensure(get(t, "text-dead"), [get(o, "panel")], 3, sd);
+    o["key-text-dead"] = ensure(get(t, "key-text-dead"), [k1, k2], 3, kd);
+  } else {
+    o["text-dead"] = ensure(get(t, "text-dead"), [k1, k2, get(o, "panel")], 3, sd);
+    o["key-text-dead"] = get(o, "text-dead");
+  }
   return o;
 }
 
@@ -173,7 +235,7 @@ export function plain(t: Palette, dark: boolean): Palette {
 function withPfx(t: Palette, hc: boolean): Palette {
   const [floor, dead] = hc ? [7, 4.5] : [4.5, 3];
   const ok = (c: string): boolean =>
-    ["text", "shift", "alpha"].every((f) => cr(get(t, f), c) >= floor) && cr(get(t, "text-dead"), c) >= dead && cr(get(t, "text-dead"), c) <= cr(get(t, "text"), c) - 1;
+    ["text", "shift", "alpha"].every((f) => cr(get(t, keyOf(f)), c) >= floor) && cr(get(t, "key-text-dead"), c) >= dead && cr(get(t, "key-text-dead"), c) <= cr(get(t, "key-text"), c) - 1;
   for (const to of ["key-enter", "bg"])
     for (let share = to === "bg" ? 0.5 : 0.34; share > 0.05; share -= 0.02) {
       const c = mix(get(t, "key-num"), get(t, to), share);
@@ -194,8 +256,10 @@ export const HUE_NEAR = 40;
  * It takes --alpha's hue (the caret's), then its lightness moves away from --panel (hue and saturation kept) until the box stands PICK_APART from it; the roles
  * drawn on a picked row then move as their own floors need (text, muted, the marks: R50b's pairs, unchanged).
  */
-function withPick(t: Palette, hc: boolean, dark: boolean): Palette {
+function withPick(t: Palette, hc: boolean): Palette {
   const o: Palette = { ...t };
+  const sd = lightInk(t);
+  const kd = lightKeyInk(t);
   const T = hc ? 7 : 4.5;
   // the box takes the caret's (--alpha's) hue, saturation and lightness kept: caret, box and selection one hue family
   // (Gruvbox Light drew a teal caret in a yellow box, the "blue and yellow" moved to another family; audit of run 519)
@@ -207,14 +271,16 @@ function withPick(t: Palette, hc: boolean, dark: boolean): Palette {
   if (cr(get(o, "pick"), get(o, "panel")) < PICK_APART) {
     const [h, s, l0] = rgb2hsl(get(o, "pick"));
     for (let i = 1; i <= 200; i++) {
-      const c = hsl2hex([h, s, dark ? Math.min(1, l0 + i * 0.005) : Math.max(0, l0 - i * 0.005)]);
+      const c = hsl2hex([h, s, sd ? Math.min(1, l0 + i * 0.005) : Math.max(0, l0 - i * 0.005)]);
       o["pick"] = c;
       if (cr(c, get(o, "panel")) >= PICK_APART) break;
     }
   }
-  o["text"] = ensure(get(o, "text"), getAll(o, [...KEYS, "bg", "panel", "pick", "chip-bg"]), T, dark);
-  o["muted"] = ensure(get(o, "muted"), getAll(o, ["bg", "panel", "key-num", "pick"]), T, dark);
-  for (const r of ["approx", "warn", "error"]) o[r] = ensure(get(o, r), getAll(o, ["bg", "pick"]), T, dark);
+  legend(o, o, "text", SCREEN, KEYS, T, sd, kd);
+  legend(o, o, "muted", ["bg", "panel", "pick"], ["key-num"], T, sd, kd);
+  for (const r of ["approx", "warn", "error"]) o[r] = ensure(get(o, r), getAll(o, ["bg", "pick"]), T, sd);
+  // R150: a picked row's ground moves away from the text when the text cannot (black on Teal)
+  o["pick"] = ensure(get(o, "pick"), [get(o, "text")], T, lum(get(o, "text")) < 0.5);
   return o;
 }
 
@@ -226,7 +292,7 @@ function withOnError(t: Palette, dark: boolean): Palette {
 /** R140: the label on an armed Shift or Alpha key (the key fills with the layer's colour): black or white, whichever reads better (always at least 4.5:1). Set last, from the final colours. */
 function withOnLayer(t: Palette): Palette {
   const on = (c: string): string => (cr("#000000", c) >= cr("#ffffff", c) ? "#000000" : "#ffffff");
-  return { ...t, "on-shift": on(get(t, "shift")), "on-alpha": on(get(t, "alpha")) };
+  return { ...t, "on-shift": on(get(t, "shift")), "on-alpha": on(get(t, "alpha")), "on-key-shift": on(get(t, "key-shift")), "on-key-alpha": on(get(t, "key-alpha")) };
 }
 
 /**
@@ -252,11 +318,17 @@ function moveUntil(fg: string, dark: boolean, ok: (c: string) => boolean): strin
  * from the keys until they do not; the same for ⚠ against Shift. Plain keys draws Shift and Alpha in the text colour on
  * purpose and is left alone.
  */
-function withLayersApart(t: Palette, dark: boolean, high: boolean): Palette {
+function withLayersApart(t: Palette, high: boolean): Palette {
   const k = high ? "high" : "normal";
+  const sd = lightInk(t);
+  const kd = lightKeyInk(t);
   const o: Palette = { ...t };
-  o["shift"] = moveUntil(get(t, "shift"), dark, (c) => Math.min(...Object.values(CVD).map((m) => apart(c, get(t, "alpha"), m))) >= LAYER_APART[k]);
-  o["warn"] = moveUntil(get(t, "warn"), dark, (c) => apart(c, get(o, "shift")) >= WARN_APART[k]);
+  const away = (alpha: string, up: boolean, from: string): string =>
+    moveUntil(from, up, (c) => Math.min(...Object.values(CVD).map((m) => apart(c, alpha, m))) >= LAYER_APART[k]);
+  o["shift"] = away(get(t, "alpha"), sd, get(t, "shift"));
+  // R150: the keys' own Shift and Alpha (Teal) are held apart the same way; without a twin they follow the screen's
+  o["key-shift"] = isSplit(t, "shift") || isSplit(t, "alpha") ? away(get(t, "key-alpha"), kd, get(t, "key-shift")) : get(o, "shift");
+  o["warn"] = moveUntil(get(t, "warn"), sd, (c) => apart(c, get(o, "shift")) >= WARN_APART[k]);
   return o;
 }
 
@@ -269,7 +341,7 @@ export interface Combo {
 export function selector(c: Combo): string {
   return `:root[data-family="${c.family}"][data-brightness="${c.brightness}"]${c.high ? '[data-contrast="high"]' : ""}${c.plain ? '[data-keys="plain"]' : ""}`;
 }
-/** The 40 combinations: 5 families × dark/light × High contrast × Plain keys. */
+/** The 24 combinations: 3 families × dark/light × High contrast × Plain keys. */
 export function combos(): Combo[] {
   return FAMILIES.flatMap((f) => (["dark", "light"] as const).flatMap((brightness) => [false, true].flatMap((high) => [false, true].map((pl) => ({ family: f.id, brightness, high, plain: pl })))));
 }
@@ -279,10 +351,10 @@ export function theme(c: Combo): { t: Palette; fixes: [string, string, string][]
   const dark = c.brightness === "dark";
   const { t, fixes } = base(fam, c.brightness);
   let o = t;
-  if (c.plain) o = plain(o, dark);
-  if (c.high) o = highContrast(o, dark);
-  if (!c.plain) o = withLayersApart(o, dark, c.high);
-  return { t: withOnLayer(withOnError(withPfx(withPick(o, c.high, dark), c.high), dark)), fixes };
+  if (c.plain) o = plain(o);
+  if (c.high) o = highContrast(o);
+  if (!c.plain) o = withLayersApart(o, c.high);
+  return { t: withOnLayer(withOnError(withPfx(withPick(o, c.high), c.high), dark)), fixes };
 }
 
 // --- the audit: every pair the app draws (docs/archive/shifts/2026-10-18-themes-report.md section 2) ---
@@ -317,24 +389,26 @@ export function checks(t: Palette, hc: boolean): Check[] {
   add("Entry", "caret in the bracket's box (non-text)", "alpha", "pick", 3);
   add("Entry", "the bracket's box apart from the entry line", "pick", "panel", PICK_APART);
   for (const k of [...KEYS, "key-pfx"]) {
-    for (const f of ["text", "shift", "alpha"]) add("Keys", `${f} on ${k}`, f, k, T);
-    add("Keys", `dead face on ${k}`, "text-dead", k, D);
+    for (const f of ["text", "shift", "alpha"]) add("Keys", `${f} on ${k}`, keyOf(f), k, T);
+    add("Keys", `dead face on ${k}`, "key-text-dead", k, D);
   }
   add("Keys", "Enter label", "on-enter", "key-enter", T);
   add("Keys", "label of a key that is on", "on-key-on", "key-on", T);
   add("Screen", "label on an error ground (Cancel)", "on-error", "error", 4.5);
   add("Keys", "label of the armed Shift key", "on-shift", "shift", 4.5);
   add("Keys", "label of the armed Alpha key", "on-alpha", "alpha", 4.5);
-  for (const b of ["panel", "key-num"]) {
-    for (const f of ["text", "shift", "muted"]) add("Sheet", `${f} on ${b}`, f, b, T);
-    add("Sheet", `disabled row on ${b}`, "text-dead", b, D);
+  add("Keys", "label of the armed Shift key (the key's own Shift)", "on-key-shift", "key-shift", 4.5);
+  add("Keys", "label of the armed Alpha key (the key's own Alpha)", "on-key-alpha", "key-alpha", 4.5);
+  for (const [b, key] of [["panel", false], ["key-num", true]] as const) {
+    for (const f of ["text", "shift", "muted"]) add("Sheet", `${f} on ${b}`, key ? keyOf(f) : f, b, T);
+    add("Sheet", `disabled row on ${b}`, key ? "key-text-dead" : "text-dead", b, D);
   }
   if (hc) for (const k of KEYS) add("Keys", `key outline on screen around ${k} (non-text)`, "line", "bg", 3);
   return out;
 }
 /** A dimmed face is at least 1 below a live one on every key. */
 export function dimmedOk(t: Palette): boolean {
-  return [...KEYS, "key-pfx"].every((k) => cr(get(t, "text-dead"), get(t, k)) <= cr(get(t, "text"), get(t, k)) - 1);
+  return [...KEYS, "key-pfx"].every((k) => cr(get(t, "key-text-dead"), get(t, k)) <= cr(get(t, "key-text"), get(t, k)) - 1);
 }
 
 // --- the files ---------------------------------------------------------------------------------
