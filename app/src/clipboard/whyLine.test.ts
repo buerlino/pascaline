@@ -66,6 +66,7 @@ describe("whyLine", () => {
     expect(line(item({ facts: facts({ warn: "unchecked", why: { decided: true } }) }), { mark: "⚠", warn: "unchecked" })).toBe("⚠ decided at limited precision");
     expect(line(item({ facts: facts({ reliableDigits: 0, why: { differ: true } }) }), { mark: "⚠", n: 0 })).toBe("⚠ no digit confirmed · the exact and numeric answers differ");
     expect(line(item({ facts: facts({ warn: "unchecked", why: { once: true } }) }), { mark: "⚠", warn: "unchecked" })).toBe("⚠ evaluated once, nothing to compare");
+    expect(line(item({ facts: facts({ warn: "unchecked", why: { once: true, squareUnchecked: true } }) }), { mark: "⚠", warn: "unchecked" })).toBe("⚠ evaluated once, nothing to compare · a matrix power or inverse not checked"); // G171
     expect(line(item({ facts: facts({ reliableDigits: 5, why: { inherited: ["B"] } }) }), { mark: "⚠", n: 5 })).toBe("⚠ 5 of 12 digits confirmed · uses B, itself uncertain");
     expect(line(item({}), { mark: "⚠", warn: "unchecked" })).toBe("⚠ not checked");
     expect(line(item({}), { mark: "⚠" })).toBe("⚠ fewer digits confirmed than shown");

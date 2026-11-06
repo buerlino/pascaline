@@ -612,9 +612,9 @@ export function homeEval(
   if (listRefused) return refuse(listRefused, "exact");
   // G97 (F69): a power, inverse or division of a non-square matrix is Giac's elementwise answer, no matrix power.
   // G171: an input that runs once too (its parts that read nothing the run wrote); a definition holds no power to check
-  const square = form.noValue || isTimeout(exactOut) ? false : nonSquarePower(giac, exactBody, exactOut, ambiguous, late, exactMs, userFn, fnBody, once);
+  const square = form.noValue || isTimeout(exactOut) ? false : nonSquarePower(giac, exactBody, exactOut, ambiguous, late, exactMs, userFn, fnBody, once, ans);
   if (square === true) return refuse("notSquare", "exact");
-  if (square === "unchecked") unsquared = once ? { once: true } : {};
+  if (square === "unchecked") unsquared = { ...(once ? { once: true } : {}), squareUnchecked: true };
   if (isTimeout(exactOut)) return viaFloat("float-timeout");
   if (isError(exactOut)) return viaFloat("float-error");
   // G106 (F78): Giac's polynomial of a list plus a number (`[1,4]+1` = poly1[1,5]), which the input did not ask for.

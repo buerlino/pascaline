@@ -252,17 +252,38 @@ describe.skipIf(!giacAvailable())("G171 a non-square power next to a call of a p
   it("g(A)^2 is ⚠, never = (Giac's 14 is a dot product; the warning cannot tell a flat vector)", () => {
     setup();
     const r = home("g(A)^2");
-    expect(r).toMatchObject({ ok: true, display: "14", approximate: true, facts: { exact: false, warn: "unchecked", why: { once: true } } });
+    expect(r).toMatchObject({ ok: true, display: "14", approximate: true, facts: { exact: false, warn: "unchecked", why: { once: true, squareUnchecked: true } } });
     expect(cnt()).toBe(1);
-    expect(cas("g(A)^2")).toMatchObject({ ok: true, text: "14", approximate: true, facts: { warn: "unchecked", why: { once: true } } });
+    expect(cas("g(A)^2")).toMatchObject({ ok: true, text: "14", approximate: true, facts: { warn: "unchecked", why: { once: true, squareUnchecked: true } } });
     expect(cnt()).toBe(2);
   });
 
-  it("a refused store in CAS keeps no value: B:=inv(g(A))", () => {
+  // fix round 1: a refused store keeps the name's earlier value in CAS as in Home (which stores only on success)
+  it("a refused store keeps the earlier value: B:=5 then B:=inv(g(A)), and A:=inv(g(A))", () => {
     setup();
     expect(cas("B:=inv(g(A))")).toMatchObject({ ok: false, error: "notSquare" });
     expect(cnt()).toBe(1);
     expect(cas("B")).toMatchObject({ ok: true, text: "B" });
+    expect(cas("B:=5")).toMatchObject({ ok: true, text: "5" });
+    expect(cas("B:=inv(g(A))")).toMatchObject({ ok: false, error: "notSquare" });
+    expect(cas("B")).toMatchObject({ ok: true, text: "5" });
+    expect(home("B:=inv(g(A))")).toMatchObject({ ok: false, error: "notSquare" });
+    expect(home("B")).toMatchObject({ ok: true, display: "5" });
+    expect(cas("A:=inv(g(A))")).toMatchObject({ ok: false, error: "notSquare" });
+    expect(cas("A")).toMatchObject({ ok: true, text: "[[1,2,3]]" });
+    expect(home("A^2")).toMatchObject({ ok: false, error: "notSquare" });
+    expect(cnt()).toBe(4);
+  });
+
+  // fix round 1: the answer's shape is read in Giac, not from its print; Giac's matrix type (tran gives one) prints
+  // `matrix[[1,8,27]]` in CAS before G130's plain rows. Derived: T = tran([[1],[2],[3]]) = [[1,2,3]] is 1x3, so T^3 has
+  // no value (G97).
+  it("refuses g(T)^3 for T of Giac's matrix type, in Home and CAS", () => {
+    setup();
+    expect(cas("T:=tran([[1],[2],[3]])")).toMatchObject({ ok: true });
+    expect(cas("g(T)^3")).toMatchObject({ ok: false, error: "notSquare" });
+    expect(home("g(T)^3")).toMatchObject({ ok: false, error: "notSquare" });
+    expect(cnt()).toBe(2);
   });
 });
 
@@ -278,10 +299,13 @@ describe.skipIf(!giacAvailable())("G171 F88 the candidate filter", () => {
     try {
       expect(nonSquarePower(giac, "pasg(pasA)^2", "14", true, () => false, 0, (n) => n === "pasg", NO_BODIES)).toBe("unchecked");
       expect(giac.eval("pask").trim()).toBe("0");
-      expect(nonSquarePower(giac, "inv(pasg(pasA))", "[[1,1/2,1/3]]", undefined, () => false, 0, (n) => n === "pasg", NO_BODIES)).toBe(true);
+      // the answer's shape decides only with the answer's name, read in Giac
+      giac.eval("pasZ:=[[1,1/2,1/3]]");
+      expect(nonSquarePower(giac, "inv(pasg(pasA))", "[[1,1/2,1/3]]", undefined, () => false, 0, (n) => n === "pasg", NO_BODIES)).toBe("unchecked");
+      expect(nonSquarePower(giac, "inv(pasg(pasA))", "[[1,1/2,1/3]]", undefined, () => false, 0, (n) => n === "pasg", NO_BODIES, false, "pasZ")).toBe(true);
       expect(giac.eval("pask").trim()).toBe("0");
     } finally {
-      giac.eval("purge(pask,pasg,pasA)");
+      giac.eval("purge(pask,pasg,pasA,pasZ)");
     }
   });
 
@@ -292,8 +316,8 @@ describe.skipIf(!giacAvailable())("G171 F88 the candidate filter", () => {
     const host = new EngineHost(giac, bridge);
     expect(host.cas("A:=[[1,2,3]]", defaultCasSettings).result).toMatchObject({ ok: true });
     expect(host.cas("p(M):={local t; t:=M; return t;}", defaultCasSettings).result).toMatchObject({ ok: true });
-    expect(host.home("p(A)^2", defaultHomeSettings).result).toMatchObject({ ok: true, display: "14", approximate: true, facts: { warn: "unchecked" } });
-    expect(host.cas("p(A)^2", defaultCasSettings).result).toMatchObject({ ok: true, text: "14", approximate: true });
+    expect(host.home("p(A)^2", defaultHomeSettings).result).toMatchObject({ ok: true, display: "14", approximate: true, facts: { warn: "unchecked", why: { squareUnchecked: true } } });
+    expect(host.cas("p(A)^2", defaultCasSettings).result).toMatchObject({ ok: true, text: "14", approximate: true, facts: { why: { squareUnchecked: true } } });
     expect(host.home("inv(p(A))", defaultHomeSettings).result).toMatchObject({ ok: false, error: "notSquare" });
   });
 });

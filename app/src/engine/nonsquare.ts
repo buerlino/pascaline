@@ -8,7 +8,7 @@
 // vector ([1,2]^2 = v·v, [5,1]^-1 elementwise) keeps Giac's meaning: it is no matrix.
 // Runs synchronously next to the engine; only erasable TypeScript syntax.
 import { type Giac } from "./numeric.ts";
-import { callsOf, functionsIn, LIST_TYPE, names, splitList, withoutStrings } from "./giacPrint.ts";
+import { callsOf, functionsIn, names, withoutStrings } from "./giacPrint.ts";
 import { changesState } from "./novalue.ts";
 import { MAX_NODES, treeOf, UNEVALUATED, type TreeNode } from "./tree.ts";
 import type { ParseNode } from "./bridge.ts";
@@ -69,16 +69,6 @@ function bodiesRead(bodies: Bodies): { known: Map<string, KnownBody>; unknown: b
   return { known, unknown };
 }
 
-/** G171: `text` (Giac's print, a list) is a matrix that is not square: rows of one length that is not their count. */
-function nonSquareRows(text: string): boolean {
-  const t = text.trim();
-  const rows = t.startsWith(LIST_TYPE) ? null : splitList(t);
-  if (!rows?.length) return false;
-  const cells = rows.map((r) => (r.startsWith(LIST_TYPE) ? null : splitList(r)));
-  const n = cells[0]?.length ?? 0;
-  return n > 0 && n !== rows.length && cells.every((c) => c?.length === n);
-}
-
 /** Cheap text test: could `input` hold a power, inverse or division of a matrix? */
 export function mayPowerMatrix(input: string): boolean {
   const t = withoutStrings(input, "", "typed");
@@ -102,8 +92,9 @@ export function mayPowerMatrix(input: string): boolean {
  * ran once: it stores, or calls a program that does) also leaves out a candidate that reads a name the run may have
  * written (`bodies.writes`). Any other candidate is not evaluated, so the answer is "unchecked" (⚠, never `=`), unless
  * the output's shape proves it: the candidate is the whole input, an inverse (`inv(X)`, a number over X) or a power with
- * a number exponent other than 1, and the output a matrix that is not square (Giac's elementwise answer keeps X's
- * shape, a square X gives a square answer, a scalar or flat vector X none). True: refused; false: nothing found.
+ * a number exponent other than 1, and the answer (the value Giac stored in `ans`, read in Giac, not from its print) a
+ * matrix that is not square (Giac's elementwise answer keeps X's shape, a square X gives a square answer, a scalar or
+ * flat vector X none). True: refused; false: nothing found.
  */
 export function nonSquarePower(
   giac: Giac,
@@ -115,6 +106,7 @@ export function nonSquarePower(
   userFn: (name: string) => boolean,
   bodies: Bodies = NO_BODIES,
   once = false,
+  ans?: string,
 ): boolean | "unchecked" {
   const mayPower = ambiguous !== false;
   const mayInverse = output.includes("[");
@@ -235,9 +227,11 @@ export function nonSquarePower(
       if (hit === "1") return true;
     }
     if (!unchecked.length) return false;
-    // G171: the output's shape decides a candidate that is the whole input (a number exponent other than 1)
+    // G171: the answer's shape, in one Giac call on the value it holds, decides a candidate that is the whole input
+    // (a number exponent other than 1)
     const whole = unchecked.find((c) => c.part === "pasq" && c.proof);
-    if (whole && nonSquareRows(output) && !(whole.power && giac.eval(`[op(pasq)][1]`).trim() === "1")) return true;
+    const exponent = whole?.power ? " and [op(pasq)][1]!=1" : "";
+    if (whole && ans && giac.eval(`when(is_matrix(${ans}) and rowdim(${ans})!=coldim(${ans})${exponent},1,0)`).trim() === "1") return true;
     return "unchecked";
   } finally {
     giac.eval(`purge(${temps.join(",")})`);
