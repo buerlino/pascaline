@@ -20,7 +20,7 @@ import type { AnalysisOutcome, AnalysisRequest, Cell } from "./engineApi.ts";
 import { brightness } from "../../theme.svelte.ts";
 
 /** Curve colours (our own palette), one list per brightness: each at least 3:1 on its --bg (src/style.test.ts). */
-export const CURVE_COLORS_DARK = ["#e8743b", "#3fa7d6", "#59c36a", "#d65db1", "#f2c14e", "#8f7ee6", "#e05d5d", "#4fc1b5", "#b0b8c4", "#c4884f"];
+export const CURVE_COLORS_DARK = ["#e8743b", "#3fa7d6", "#59c36a", "#d65db1", "#f2c14e", "#8f7ee6", "#e46262", "#4fc1b5", "#b0b8c4", "#c4884f"];
 export const CURVE_COLORS_LIGHT = ["#e56120", "#2a93c3", "#389c48", "#d65db1", "#b1800d", "#8b7ae5", "#e05d5d", "#36988e", "#7d8a9e", "#bb7b3f"];
 /** The list for the brightness the page is in (reactive). */
 export const curveColors = (): readonly string[] => (brightness() === "light" ? CURVE_COLORS_LIGHT : CURVE_COLORS_DARK);

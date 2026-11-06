@@ -7,7 +7,7 @@
   --key-num: #3c3836;
   --key-op: #32302f;
   --key-fn: #2f3433;
-  --key-ctl: #3a322a;
+  --key-ctl: #2f3433;
   --key-nav: #2a2827;
   --key-enter: #417957;
   --on-enter: #fbf1c7;
@@ -26,6 +26,8 @@
   --on-key-on: #1d2021;
   --key-pfx: #2d2c2c;
   --on-error: #1d2021;
+  --on-shift: #000000;
+  --on-alpha: #000000;
   color-scheme: dark;
 }
 :root[data-family="gruvbox"][data-brightness="dark"][data-keys="plain"] {
@@ -54,6 +56,8 @@
   --on-key-on: #1d2021;
   --key-pfx: #2c2d2d;
   --on-error: #1d2021;
+  --on-shift: #000000;
+  --on-alpha: #000000;
   color-scheme: dark;
 }
 :root[data-family="gruvbox"][data-brightness="dark"][data-contrast="high"] {
@@ -63,7 +67,7 @@
   --key-num: #211f1e;
   --key-op: #1c1a1a;
   --key-fn: #1a1d1c;
-  --key-ctl: #201c17;
+  --key-ctl: #1a1d1c;
   --key-nav: #171615;
   --key-enter: #305940;
   --on-enter: #fbf1c7;
@@ -82,6 +86,8 @@
   --on-key-on: #1d2021;
   --key-pfx: #161515;
   --on-error: #0a0b0c;
+  --on-shift: #000000;
+  --on-alpha: #000000;
   color-scheme: dark;
 }
 :root[data-family="gruvbox"][data-brightness="dark"][data-contrast="high"][data-keys="plain"] {
@@ -110,6 +116,8 @@
   --on-key-on: #1d2021;
   --key-pfx: #151516;
   --on-error: #0a0b0c;
+  --on-shift: #000000;
+  --on-alpha: #000000;
   color-scheme: dark;
 }
 :root[data-family="gruvbox"][data-brightness="light"] {
@@ -119,7 +127,7 @@
   --key-num: #fffaeb;
   --key-op: #ebdbb2;
   --key-fn: #e8e3c4;
-  --key-ctl: #f3dfae;
+  --key-ctl: #e8e3c4;
   --key-nav: #f5ebc4;
   --key-enter: #417957;
   --on-enter: #fbf1c7;
@@ -138,6 +146,8 @@
   --on-key-on: #fbf1c7;
   --key-pfx: #d9e0cd;
   --on-error: #ffffff;
+  --on-shift: #ffffff;
+  --on-alpha: #ffffff;
   color-scheme: light;
 }
 :root[data-family="gruvbox"][data-brightness="light"][data-keys="plain"] {
@@ -166,6 +176,8 @@
   --on-key-on: #fbf1c7;
   --key-pfx: #cececa;
   --on-error: #ffffff;
+  --on-shift: #ffffff;
+  --on-alpha: #ffffff;
   color-scheme: light;
 }
 :root[data-family="gruvbox"][data-brightness="light"][data-contrast="high"] {
@@ -175,7 +187,7 @@
   --key-num: #fffdf7;
   --key-op: #f7f1e0;
   --key-fn: #f6f4e7;
-  --key-ctl: #faf2df;
+  --key-ctl: #f6f4e7;
   --key-nav: #fbf7e7;
   --key-enter: #305940;
   --on-enter: #fbf1c7;
@@ -194,6 +206,8 @@
   --on-key-on: #fbf1c7;
   --key-pfx: #f3f3ec;
   --on-error: #ffffff;
+  --on-shift: #ffffff;
+  --on-alpha: #ffffff;
   color-scheme: light;
 }
 :root[data-family="gruvbox"][data-brightness="light"][data-contrast="high"][data-keys="plain"] {
@@ -222,5 +236,7 @@
   --on-key-on: #fbf1c7;
   --key-pfx: #fdfbf3;
   --on-error: #ffffff;
+  --on-shift: #ffffff;
+  --on-alpha: #ffffff;
   color-scheme: light;
 }

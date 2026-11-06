@@ -2,5 +2,5 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 <resources>
     <!-- A59: the default Dark's background (the bg role in app/src/style.css, family n62); app/scripts/android-bars.test.ts keeps the two equal. -->
-    <color name="n62_dark_bg">#0b1020</color>
+    <color name="n62_dark_bg">#000000</color>
 </resources>
