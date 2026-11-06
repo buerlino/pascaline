@@ -72,6 +72,18 @@ for (const [name, openSheet] of Object.entries(OPENERS)) {
   });
 }
 
+test("the rest of a trackpad drag that closed a sheet steps nothing until the finger lifts", async ({ page }) => {
+  await tap(page, ["esc"]); // an empty line: a further ▲ step would pick the history row (P4)
+  expect(await entryValue(page)).toBe("");
+  await tap(page, ["tmpl"]);
+  await drag(page, '[data-testid="pad-hub"]', 0, -90); // seven steps up: the first closes the sheet
+  await expect(sheet(page)).toHaveCount(0);
+  await page.waitForTimeout(150);
+  await expect(page.getByTestId("row-actions")).toHaveCount(0);
+  await drag(page, '[data-testid="pad-hub"]', 0, -30); // a new drag steps again: ▲ picks the row
+  await expect(page.getByTestId("row-actions")).toBeVisible();
+});
+
 test("Esc on screen goes back one level from a submenu, then closes the root", async ({ page }) => {
   await tap(page, ["@mode", "d6"]); // Mode › Settings
   await expect(page.getByTestId("sheet-title")).toHaveText("Mode › Settings");

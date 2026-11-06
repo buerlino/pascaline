@@ -11,7 +11,7 @@ The `hand: true` cases of [core.yaml](core.yaml), in plain keys, plus what a scr
 | c07 | 2 × 3 ◀ ◀ 1 Enter | `= 63` |
 | c09 | 1 2 3 Esc, then Undo | the line shows 123 again |
 | c14 | 1 ÷ 3 ▶ Enter | `≈ 0.333333333333` |
-| c25 | the format chip in the status line, ▲ (Angle), ▶ (DEG), Enter; sin 3 0 ▶ Enter | `= 0.5` (set RAD back the same way) |
+| c25 | the format chip in the status line, DEG on the Angle row; sin 3 0 ▶ Enter | `= 0.5` (set RAD back the same way) |
 | c28 | 7 Shift ᴇ (Store) Alpha A Enter; Alpha A + 1 Enter | `= 8` |
 | c29 | 5 ▶ A as above; swipe the app away, open it; Alpha A × 2 Enter | `= 10` |
 | c30 | Shift Alpha ᴇ (p) ( x ▶ Alpha − (:) Shift . (=) x² Enter, that is p(x):=x²; then Shift Alpha ᴇ ( 3 ▶ Enter | `= 9` |
