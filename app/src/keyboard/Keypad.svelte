@@ -40,7 +40,8 @@
      *  `filter`: the open list takes letters. */
     sheet?: { filter: boolean } | undefined;
     /** A key fires; `layer` overrides the Shift/Alpha state: "primary" for a trackpad step, "shift" for a flick up,
-     *  "alpha" for a flick down (on Shift and Alpha themselves: the lock flicks). */
+     *  "alpha" for a flick down (on Shift and Alpha themselves: the lock flicks). A press that closes an open sheet
+     *  (R144) is the gesture's last: a drag steps nothing more and a held ⌫ does not repeat until the finger lifts. */
     onpress: (key: Key, layer?: Layer) => void;
     /** One press was made, as docs/04 5.2 counts them (R70): a tap, a flick, a drag, a held ⌫ once. `key`: which one,
      *  "<key id>:<layer>" (R127, state/pressCount.ts). */
@@ -63,9 +64,6 @@
    *  cluster has no letters, and no line for them (vertical space, docs/03 rule 9). */
   const letterRows = new Set(keyboard.keys.filter((k) => k.label.alpha).map((k) => k.row));
   const locked = (k: Key): boolean => (k.id === "alpha" && alphaLock) || (k.id === "shift" && shiftLock);
-  const pressed = (k: Key): boolean =>
-    (k.actions.primary?.kind === "special" && k.actions.primary.name === "shift" && shift) ||
-    (k.actions.primary?.kind === "special" && k.actions.primary.name === "alpha" && alpha);
 
   /** A key that does nothing in the current layer (a key we don't have yet, or a layer it has no function in). */
   const dead = (k: Key): boolean => {
@@ -122,7 +120,7 @@
   // letter layer (FlickTracker: distance only, no hold time), a flick slid back to the middle nothing. A sideways slip
   // or a long hold is still a tap. ⌫ fires on touch and repeats while held instead; the trackpad has no flicks.
   type Gesture =
-    | { kind: "pad"; key: Key | undefined; x0: number; y0: number; steps: Stepper }
+    | { kind: "pad"; key: Key | undefined; x0: number; y0: number; steps: Stepper; open: unknown }
     | { kind: "key"; key: Key | undefined; el: HTMLElement | undefined; x0: number; y0: number; flick: FlickTracker }
     | { kind: "repeat"; repeat: Repeat };
 
@@ -211,14 +209,16 @@
     if (target && target !== "pad" && REPEAT_KEYS.includes(target.id)) {
       // the repeats keep the layer of the first press (Shift ⌫ = Del), which used up a one-shot Shift
       oncount(`${target.id}:${alpha ? "alpha" : shift ? "shift" : "primary"}`);
+      const open = sheet;
       onpress(target);
+      if (open && !sheet) return; // (R144: the tap closed a sheet; nothing repeats)
       const layer: Layer = alpha ? "alpha" : shift ? "shift" : "primary";
       gestures.set(ev.pointerId, { kind: "repeat", repeat: new Repeat(() => onpress(target, layer)) });
       return;
     }
     const [x0, y0] = [ev.clientX, ev.clientY];
     if (target === "pad" || (target && isPadKey(target)))
-      gestures.set(ev.pointerId, { kind: "pad", key: target === "pad" ? undefined : target, x0, y0, steps: new Stepper() });
+      gestures.set(ev.pointerId, { kind: "pad", key: target === "pad" ? undefined : target, x0, y0, steps: new Stepper(), open: sheet });
     else {
       const el = target && padEl ? (padEl.querySelector<HTMLElement>(`[data-key="${target.id}"]`) ?? undefined) : undefined;
       gestures.set(ev.pointerId, { kind: "key", key: target, el, x0, y0, flick: new FlickTracker() });
@@ -229,7 +229,8 @@
     const g = gestures.get(ev.pointerId);
     if (!g) return;
     if (g.kind === "pad") {
-      for (const dir of g.steps.move(ev.clientX - g.x0, ev.clientY - g.y0)) step(dir);
+      // (R144: a drag that began over a sheet steps nothing more once a step has closed it)
+      for (const dir of g.steps.move(ev.clientX - g.x0, ev.clientY - g.y0)) if (!g.open || sheet) step(dir);
     } else if (g.kind === "key" && g.key) {
       const before = g.flick.state;
       g.flick.move(ev.clientX - g.x0, ev.clientY - g.y0);
@@ -310,7 +311,7 @@
       class={`key ${key.cls}`}
       data-key={key.id}
       tabindex="-1"
-      aria-pressed={key.cls === "ctl" && (key.id === "shift" || key.id === "alpha") ? pressed(key) : undefined}
+      aria-pressed={key.id === "shift" ? shift : key.id === "alpha" ? alpha : undefined}
       data-locked={locked(key) ? "true" : undefined}
       style:grid-row={key.row + 1}
       style:grid-column={`${gridPlace(keyboard, key).start} / span ${gridPlace(keyboard, key).span}`}

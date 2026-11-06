@@ -3,7 +3,7 @@
 // table, by touch and by keys; the place name and its hit area; the free keys U1–U6. The editing wing's own jobs are in
 // editwing.spec.ts. Fake engine.
 import { expect, test, type Page } from "@playwright/test";
-import { entryValue, flick, open, recordVibrations, setClipboard, sheet, tap, touch, useClipboardLock, vibrations } from "./helpers.ts";
+import { entryValue, flick, open, recordVibrations, setClipboard, sheet, sheetKey, tap, touch, useClipboardLock, vibrations } from "./helpers.ts";
 
 const place = (page: Page) => page.getByTestId("place");
 const view = (page: Page) => page.evaluate(() => window.n62.session.view);
@@ -116,12 +116,12 @@ test("Symb, Plot and Num: one tab each inside the app", async ({ page }) => {
   }
 });
 
-test("the angle: one tap on its chip; Mode from the format chip, ▲ to Angle, ▶, Enter", async ({ page }) => {
+test("the angle: one tap on its chip; Mode from the format chip, then the hardware ▲ to Angle, ▶, Enter (R144)", async ({ page }) => {
   await page.getByTestId("chip-angle").tap();
   expect(await angle(page)).toBe("deg");
   await page.getByTestId("chip-format").tap();
   await expect(page.getByTestId("sheet-title")).toHaveText("Mode");
-  await tap(page, ["up", "right", "enter"]);
+  await sheetKey(page, ["up", "right", "enter"]);
   expect(await angle(page)).toBe("rad");
   await expect(sheet(page)).toBeHidden();
 });
@@ -281,11 +281,16 @@ test("over an open sheet: the place name, and a free key that holds CAS or Home,
   await place(page).tap();
   await expect(sheet(page)).toBeHidden();
   await expect(appsSheet(page)).toBeVisible();
-  await tap(page, ["esc", "tmpl", "u3", "tmpl", "u2"]);
+  // (the key path: an on-screen free key closes the sheet and does nothing else, R144)
+  await tap(page, ["esc", "tmpl"]);
+  await sheetKey(page, ["u3"]);
+  await tap(page, ["tmpl"]);
+  await sheetKey(page, ["u2"]);
   await expect(sheet(page)).toBeHidden();
   expect(await view(page)).toBe("home");
   await page.evaluate((b) => window.n62.userKeys.set("u1", "primary", b), sinh);
-  await tap(page, ["tmpl", "u1"]);
+  await tap(page, ["tmpl"]);
+  await sheetKey(page, ["u1"]);
   await expect(sheet(page)).toBeVisible();
   await expect(page.locator('[data-key="u1"]')).toHaveAttribute("data-dead", "true");
   expect(await entryValue(page)).toBe("");

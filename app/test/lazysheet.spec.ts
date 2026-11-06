@@ -2,7 +2,7 @@
 // R46: the sheet's view is its own chunk, fetched when idle. A key that opens a sheet before the chunk is in waits in the
 // queue (decisions.md R8), so none is lost or run twice. The chunk's request is held back here until `release()`.
 import { expect, test, type Page } from "@playwright/test";
-import { entryValue, open, sheet, tap } from "./helpers.ts";
+import { entryValue, open, sheet, sheetKey, tap } from "./helpers.ts";
 
 /** Hold the Sheet chunk's requests back (or those of `what`); returns the function that lets them through. */
 async function hold(page: Page, what: RegExp = /\/src\/views\/(Sheet\.svelte|sheetFit\.ts)/): Promise<() => void> {
@@ -98,7 +98,7 @@ test("F42: a long press on a row before the chunk is in, then 5, picks nothing o
   await twoRows(page);
   await tap(page, ["d3"]); // a line to keep
   await longPressFirstRow(page);
-  await tap(page, ["d5"]);
+  await sheetKey(page, ["d5"]); // (typed: a tap on the open but undrawn sheet would close it once drawn, R144)
   await expect(sheet(page)).toHaveCount(0); // nothing is drawn yet
   expect(await texts(page)).toEqual(["1", "2"]); // Delete did not run on the hidden list
   expect(await entryValue(page)).toBe("3"); // and the 5 was not typed into the line
@@ -169,7 +169,7 @@ test("Settings opened again after the sheet chunk failed once answers Down and E
   await expect(page.getByTestId("sheet-title")).toHaveText("Mode › Settings");
   const active = settings.locator('[data-active="true"]');
   await expect(active).toHaveAttribute("data-id", "appearance");
-  await tap(page, ["down"]); // the keypad's keys go through sheetPress, which reads them with the sheet chunk's keys
+  await sheetKey(page, ["down"]); // the keys go through sheetPress, which reads them with the sheet chunk's keys
   await expect(active).toHaveAttribute("data-id", "numbers");
   await tap(page, ["esc", "esc"]);
   await expect(settings).toBeHidden();

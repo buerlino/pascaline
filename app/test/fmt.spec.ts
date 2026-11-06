@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // The Format key (fmt) and the key vibration settings. Uses the real engine (GIAC_OUT).
 import { expect, test, type Page } from "@playwright/test";
-import { open, sheet, tap } from "./helpers.ts";
+import { open, sheet, sheetKey, tap } from "./helpers.ts";
 
 const lastText = (page: Page) => page.locator('[data-testid="result"] .result').last();
 const ready = (page: Page) => page.waitForFunction(() => window.n62.session.engineState === "ready", undefined, { timeout: 20_000 });
@@ -168,7 +168,7 @@ test("PFX: 2500 draws as 2.500 k with a thin space and an accented prefix, from 
   await expect(markOfLast(page)).toHaveText("=");
   // as the global format too
   await page.getByTestId("chip-format").tap(); // the Mode sheet on its Format row; ▶ ×3: Standard → … → Prefixes
-  await tap(page, ["right", "right", "right", "enter"]);
+  await sheetKey(page, ["right", "right", "right", "enter"]);
   expect(await page.evaluate(() => window.n62.session.settings.format)).toBe("pfx");
   await tap(page, ["d1", "d2", "d0", "d0", "d0", "d0", "enter"]);
   await expect(lastText(page)).toHaveAttribute("data-text", "120.0 k");

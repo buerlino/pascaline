@@ -10,7 +10,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { devices, expect, test, type Page } from "@playwright/test";
 import { parse } from "yaml";
-import { entryValue, lastResult, open, tap } from "./helpers.ts";
+import { entryValue, lastResult, open, sheetKey, tap } from "./helpers.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -266,7 +266,7 @@ test.describe("R45: the path of a hardware key", () => {
     expect(await state()).toEqual(["", true]);
     await page.keyboard.press("Backspace");
     const hw = await state();
-    await tap(page, ["bksp"]);
+    await sheetKey(page, ["bksp"]); // (the key path: an on-screen ⌫ closes the sheet, R144)
     expect(hw).toEqual(await state());
     expect(hw).toEqual(["", true]);
   });

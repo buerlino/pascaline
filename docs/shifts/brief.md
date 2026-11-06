@@ -63,16 +63,14 @@ Milestone reviews (section 0): after R50e (with R116's gallery groups "Entry hig
 |---|---|---|---|---|
 | 528 | [R140](packages/R140.md) N62 and Solarized palettes; control keys like the rest | ron, Sonnet | `p1/ron-palettes` | – |
 | 539 | [R150](packages/R150.md) Teal in; Graphite, Gruvbox and Nord out | ron, Sonnet | `p1/ron-tealfamily` | R140 |
-| 529 | [R146](packages/R146.md) the six keys: Help·Esc, Undo·Redo, Copy·Paste; no View key | ron, Opus | `p1/ron-sixkeys` | – |
 | 530 | [R141](packages/R141.md) the round pad a circle, no hub, no zone outlines | ron, Sonnet | `p1/ron-roundpad` | R140 |
 | 531 | [R142](packages/R142.md) variable letters italic in every mode, no bold | ron, Sonnet | `p1/ron-italicletters` | R141 |
-| 532 | [R143](packages/R143.md) ▾ on every legend that opens a menu | ron, Sonnet | `p1/ron-menumark` | R142, R146 |
-| 533 | [R144](packages/R144.md) a tap outside an open menu closes it | ron, Opus | `p1/ron-sheetoutside` | – |
+| 532 | [R143](packages/R143.md) ▾ on every legend that opens a menu | ron, Sonnet | `p1/ron-menumark` | R142 |
 | 534 | [R145](packages/R145.md) ⚙ Settings in every ☰ menu's title row | ron, Sonnet | `p1/ron-menugear` | – |
 | 535 | [R147](packages/R147.md) a tap picks a history row, a second tap inserts | ron, Opus | `p1/ron-tappick` | – |
-| 536 | [R53](packages/R53.md) results mode: the keypad folds by a handle or swipe | ron, Opus | `p1/ron-results-fold` | R146, R147 |
+| 536 | [R53](packages/R53.md) results mode: the keypad folds by a handle or swipe | ron, Opus | `p1/ron-results-fold` | R147 |
 | 537 | [R148](packages/R148.md) more room: 4 px gaps, short rows below 760 px | ron, Sonnet | `p1/ron-room` | R53, R147 |
-| 538 | [R149](packages/R149.md) N62 + Enter rolls the credits | ron, Sonnet | `p1/ron-credits` | R144 |
+| 538 | [R149](packages/R149.md) N62 + Enter rolls the credits | ron, Sonnet | `p1/ron-credits` | – |
 | 495 | [G178](packages/G178.md) a divergent integral inside an expression is refused, not ⚠ 1 (F115) | gorge, Opus | `p1/gorge-intdivexpr` | – |
 | 496 | [G168](packages/G168.md) no value is a plain refusal: `undef`, empty calls, `DelAVars()`, the budget message (F93, F109) | gorge, Opus | `p1/gorge-novalue` | – |
 | 500 | [G169](packages/G169.md) a list as a distribution's x gives one value per element (F105, F93) | gorge, Opus | `p1/gorge-listlast` | – |
@@ -90,8 +88,6 @@ Milestone reviews (section 0): after R50e (with R116's gallery groups "Entry hig
 
 | Step | What | Agent, model | Branch | After |
 |---|---|---|---|---|
-| 527 | [A81](packages/A81.md) GitHub issue forms: a bug report and a feature request (v0.1.0 ships with them) | annabell, Sonnet | `p1/annabell-issueforms` | – |
-| 526 | [G176f1](packages/G176f1.md) the unevaluated limit of patch 0035 drawn with its point and side (pass 83) | gorge, Opus | `p1/gorge-limtrunc-tex` | – |
 | 497 | [G183](packages/G183.md) a crashed engine restarts and says so, never a JS error text (F122, F145, G94) | gorge, Opus | `p1/gorge-trapnet` | – |
 | 498 | [G184](packages/G184.md) a Home step stopped by the time budget says "Stopped: it took too long" (F70) | gorge, Opus | `p1/gorge-floatstop` | – |
 | 499 | [G185](packages/G185.md) a Home Enter that does not return in time is stopped with the time-limit message (F62) | gorge, Opus | `p1/gorge-homewatch` | G183 |
