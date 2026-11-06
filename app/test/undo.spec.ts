@@ -105,22 +105,26 @@ test("Enter, then undo: the line is back and the history keeps its row", async (
   await expect(page.locator('[data-testid="result"]')).toHaveCount(1);
 });
 
-test("a real touch on Undo undoes; a flick up on it is Redo, and the bubble says so", async ({ page }) => {
+test("a real touch on Undo undoes and one on Redo redoes; a flick up on Undo is ⇤ (R146), and the bubble says so", async ({ page }) => {
   await open(page);
   await tap(page, ["d7", "esc"]);
   const t = await touch(page, "undo");
   await t.end();
   expect(await entryValue(page)).toBe("7");
+  const r = await touch(page, "redo");
+  await r.end();
+  expect(await entryValue(page)).toBe("");
+  await tap(page, ["undo", "add", "d8"]); // 7+8, the cursor at the end
   const f = await touch(page, "undo");
   await f.move(0, -40);
-  await expect(page.getByTestId("flick-bubble")).toHaveText("Redo");
+  await expect(page.getByTestId("flick-bubble")).toHaveText("⇤");
   await f.end();
-  expect(await entryValue(page)).toBe("");
-  // the plain flick helper does the same
-  await tap(page, ["undo"]);
-  expect(await entryValue(page)).toBe("7");
-  await flick(page, "undo", "up");
-  expect(await entryValue(page)).toBe("");
+  await tap(page, ["d1"]);
+  expect(await entryValue(page)).toBe("17+8");
+  // the plain flick helper does the same on Redo: ⇥
+  await flick(page, "redo", "up");
+  await tap(page, ["d2"]);
+  expect(await entryValue(page)).toBe("17+82");
 });
 
 test("undo with nothing to undo does nothing and raises no error", async ({ page }) => {

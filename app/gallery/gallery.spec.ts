@@ -291,6 +291,11 @@ const shots: Shot[] = [
   { id: "layer-lower-lock", group: "Keypad layers", title: "Lower-case lock", setup: (p) => tap(p, ["shift", "alpha", "alpha"]) },
   { id: "layer-alpha-cas", group: "Keypad layers", title: "Alpha layer in CAS (lower case)", setup: (p) => tap(p, ["@cas", "alpha"]) },
   { id: "layer-shift-alpha", group: "Keypad layers", title: "Shift then Alpha (lower case)", setup: (p) => tap(p, ["shift", "alpha"]) },
+  // ---- R146: rows 0–2, Help | Esc, Undo | Redo, Copy | Paste; Settings | Clear, ⇤ | ⇥, ⇤□ | □⇥ on Shift (N62 Light and Dark: the two systems)
+  ...([[360, 740], [412, 915]] as const).flatMap(([width, height]) => [
+    { id: `sixkeys-${width}`, group: "The six keys (R146)", title: `Rows 0–2 at ${width} × ${height}, Shift off`, viewport: { width, height }, element: ".pad", setup: async () => {} },
+    { id: `sixkeys-${width}-shift`, group: "The six keys (R146)", title: `Rows 0–2 at ${width} × ${height}, Shift on`, viewport: { width, height }, element: ".pad", setup: (p: Page) => tap(p, ["shift"]) },
+  ]),
   // ---- Home
   { id: "home-history", group: "Home", title: "Home with history", setup: someHistory },
   {

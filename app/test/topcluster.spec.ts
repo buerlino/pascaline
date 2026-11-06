@@ -51,10 +51,10 @@ test("the cluster is R3: U1-U6 empty in columns 1-2, the round pad, Help | Esc, 
 });
 
 test("R146: one press for Redo; Shift + Help opens Settings, and so does a flick up on Help", async ({ page }) => {
-  await tap(page, ["d7", "d8", "undo"]);
-  expect(await entryValue(page)).toBe("7");
+  await tap(page, ["d7", "mul", "d8", "undo"]);
+  expect(await entryValue(page)).toBe("7\\times");
   await tap(page, ["redo"]);
-  expect(await entryValue(page)).toBe("78");
+  expect(await entryValue(page)).toBe("7\\times8");
   await tap(page, ["shift", "help"]);
   await expect(page.getByTestId("sheet-title")).toHaveText("Mode › Settings");
   await tap(page, ["esc", "esc"]); // back to Mode, then closed (R49)
