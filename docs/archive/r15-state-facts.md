@@ -3,7 +3,7 @@
 
 **Status (2026-10-21): decided.** decisions.md S13, G57 (the owner, 2026-10-20): names from Giac's state; G65 merged, G66 in its package.
 
-2026-10-20, sandra (run 106), `phase-1` at `fbad08c` (G48, G51, G55 merged). Probe: `tools/probes/state-facts.ts`. **Verified** = I ran it; **(to verify)** names who checks it and how.
+2026-10-20, sandra (run 106), `phase-1` at `fbad08c` (G48, G51, G55 merged). Probe: `tools/probes/state-facts.ts` at `1f2fa44f` (deleted by S28). **Verified** = I ran it; **(to verify)** names who checks it and how.
 
 ## The question
 G48 and G49 needed five packages (G49, f1, f3, f4, G48), and each one covered one more way to write a definition (night check 2026-10-19, 2.2). Today the host decides from the input's text which names an input stored and which stored names it read: `storeTargets`, `definedBy`, `namesIn`, `functionsIn`, `maskBound`, `bodyFacts`, `callFacts`. Can Giac tell us instead?
@@ -37,7 +37,7 @@ Giac facts the design rests on (verified in raw mode):
 - `quote(...)` parses every one of these forms to a `sto` node: `=>` and `sto(v,a)` print back as `a:=v`, and the list forms as `[a,b]:=copy(…)`.
 - `lname` of a program lists its parameters, its locals and its free names: `lname(h)` is `[x,t,pA]` for `h(x):={local t; t:=pA; …}`.
 
-## Results (verified, `node tools/probes/state-facts.ts`)
+## Results (verified, `node tools/probes/state-facts.ts`; the probe `tools/probes/state-facts.ts` at `1f2fa44f`)
 F = `floor(sin(10^100)*10^12)`: Giac gives 899450126402; the oracle (mpmath at 250 digits) gives −372376123662.
 
 | Set | Cases | Same mark | Expected mark: text / state | Where they differ |
@@ -99,5 +99,5 @@ The extras where the text rules miss:
 - **Restore and replay, units and Solve** also change Giac's state. They must refresh the table, which G65 tests.
 
 ## How to rerun
-- Table: `node tools/probes/state-facts.ts` (`SHOW=1`: every step). Cost: its `--cost` and `engine-calls.ts`, under the host-cpu lock.
+- Table: `node tools/probes/state-facts.ts` (`tools/probes/state-facts.ts` at `1f2fa44f`, deleted by S28; `SHOW=1`: every step). Cost: its `--cost` and `engine-calls.ts`, under the host-cpu lock.
 - The oracle: `tests/golden/.venv/bin/python -I -c "import mpmath as m; m.mp.dps=250; print(m.floor(m.sin(m.mpf(10)**100)*10**12))"`.

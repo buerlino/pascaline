@@ -5,7 +5,7 @@
 
 sandra, 2026-10-13, package S2. Read and probe only; the code is `phase-1` at `04e0c0b` (R10 merged). Every claim is
 a `file:line` in that tree, an e2e test that presses the sequence, the G2 record in `spec/mapping/vc-2026-10-11/`, or
-the probe `tools/probes/menu-presses.mjs` (run `node tools/probes/menu-presses.mjs --cells`). Press counts use the
+the probe `tools/probes/menu-presses.mjs` at `b1c44ee4` (deleted by S28; run `node tools/probes/menu-presses.mjs --cells`). Press counts use the
 counting rule of docs/04 5.2: every press counts 1, **Shift included**, and a tap or a flick counts 1.
 
 ## 0. In one paragraph
@@ -72,7 +72,7 @@ Today = `04e0c0b`. After = R15 built as P12 says, plus the set in section 5. G2 
 | Solve | 1 (Solve soft key) | 2 (Menu, 1) | 2 (Function and Solve are frozen, P11) | solve.yaml:4; `solve.spec.ts:29` |
 | Repeat the last menu action | — | 2 (Menu, Enter) | 2 | `sheet.spec.ts:155` |
 
-Probe output (`node tools/probes/menu-presses.mjs`, reproduced 2026-10-13): Tmpl by keys median 4, mean 4.11, max 6;
+Probe output (`node tools/probes/menu-presses.mjs` with `tools/probes/menu-presses.mjs` at `b1c44ee4`, reproduced 2026-10-13): Tmpl by keys median 4, mean 4.11, max 6;
 Shift + 6 by arrows median 5, by the key at its place 3 for every cell (2 with a flick); Shift + 9 by keys median 6,
 mean 5.63, max 8 (δ), by touch 3 (2 with a flick). The brief's "∞ costs one press more" holds for touch only; by keys
 ∞ goes from 2 to 5.

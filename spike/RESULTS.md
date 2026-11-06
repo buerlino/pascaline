@@ -135,7 +135,7 @@ Cost against benefit:
 
 S8+ / Tab One recipe (annabell): copy `spike/qalc/page/*` (at `bb97f736`) and `qalc.{mjs,wasm}` into `app/public/qalc/` of a measurement build only (never committed), `tools/device-build.sh --measure --install`, then 5× `tools/device_run.py page /qalc/index.html`, with a `--wait` that matches its log line; the page logs `PASCALINE_BENCH qalc {ready_ms, first_result_ms, …}`.
 
-Reproduce (moved to `engine/qalc/` in milestone 4, A2): `engine/qalc/build-wasm.sh dev`; `node engine/qalc/smoke.mjs engine/qalc/_out/dev`; `APP_DIR=<checkout>/app node spike/qalc/bench-chromium.mjs $QALC_WORK/out 7` (the script at `bb97f736`); `tests/golden/.venv/bin/python engine/qalc/check.py engine/qalc/_out/dev`.
+Reproduce (moved to `engine/qalc/` in milestone 4, A2): `engine/qalc/build-wasm.sh dev`; `node engine/qalc/smoke.mjs engine/qalc/_out/dev` (`engine/qalc/smoke.mjs` at `8ac1e1e7`, deleted by S28); `APP_DIR=<checkout>/app node spike/qalc/bench-chromium.mjs $QALC_WORK/out 7` (the script at `bb97f736`); `tests/golden/.venv/bin/python engine/qalc/check.py engine/qalc/_out/dev` (`engine/qalc/check.py` at `8ac1e1e7` and the `engine/qalc/run-cases.mjs` at `8ac1e1e7` it calls, both deleted by S28; restore them with `git checkout 8ac1e1e7 -- engine/qalc/smoke.mjs engine/qalc/check.py engine/qalc/run-cases.mjs`).
 
 ## Components used (name, version, licence, URL, prebuilt?)
 | Component | Version | Licence | URL | Prebuilt? | Used for |

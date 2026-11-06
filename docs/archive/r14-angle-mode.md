@@ -3,7 +3,7 @@
 
 **Status (2026-10-21): decided.** decisions.md S14, route R (the owner, 2026-10-19): Giac in radians, the degree factor in our parser; built by R64 (R64a, R64f1, R64f2) and G46 (G46f1), merged; rule in docs/04 2.12.
 
-sandra, 2026-10-19, package S14, branch `p1/sandra-radspike` from `phase-1` `83474da`, engine `engine/giac/_out/gsl` (dev build). From [deep-check-2026-10-19-angle-marks.md](../archive/shifts/deep-check-2026-10-19-angle-marks.md) (D4–D8, D12, Part 2 point 2) and [check-2026-10-19.md](../archive/shifts/check-2026-10-19.md) (findings 1–4). Everything here reruns with `tools/probes/angle-matrix.ts` (its README row); right values come from `tools/probes/angle-matrix-oracle.py` (mpmath, `oracle`) or from the definitions (`derived`).
+sandra, 2026-10-19, package S14, branch `p1/sandra-radspike` from `phase-1` `83474da`, engine `engine/giac/_out/gsl` (dev build). From [deep-check-2026-10-19-angle-marks.md](../archive/shifts/deep-check-2026-10-19-angle-marks.md) (D4–D8, D12, Part 2 point 2) and [check-2026-10-19.md](../archive/shifts/check-2026-10-19.md) (findings 1–4). Everything here reruns with `tools/probes/angle-matrix.ts` at `1f2fa44f`; right values come from `tools/probes/angle-matrix-oracle.py` at `f6275a6a` (mpmath, `oracle`) or from the definitions (`derived`). S28 deleted both probes; `git show <commit>:<path>` gives them back.
 
 ## 1. Answer
 
@@ -15,7 +15,7 @@ Route P would need a separate Giac patch for each of nine paths, and each patch 
 
 ## 2. The matrix (52 rows)
 
-`node tools/probes/angle-matrix.ts`. Route a is today's code: the engine host as the app calls it, with Giac's flag following the mode and pasexp. Route b is the prototype: the same host with the angle setting fixed at RAD, `pasdeg` set when the mode changes, and `rewriteAngles` applied to the text our parser emits. Home results are checked at the shown digits (a part that is exactly 0 must show as 0). A CAS result is checked by the value the same engine reads from it afterwards, for example F(1)−F(0) for an antiderivative.
+`node tools/probes/angle-matrix.ts` (`tools/probes/angle-matrix.ts` at `1f2fa44f`, deleted by S28). Route a is today's code: the engine host as the app calls it, with Giac's flag following the mode and pasexp. Route b is the prototype: the same host with the angle setting fixed at RAD, `pasdeg` set when the mode changes, and `rewriteAngles` applied to the text our parser emits. Home results are checked at the shown digits (a part that is exactly 0 must show as 0). A CAS result is checked by the value the same engine reads from it afterwards, for example F(1)−F(0) for an antiderivative.
 
 | Group | Rows | Today: right / wrong / error | Route R |
 |---|---|---|---|

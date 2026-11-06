@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Probe (G15, decides P15): can the unit view compute on Giac, with the exact factors of the Find index, instead of a
 // qalc worker? Every case runs both ways: Giac with the index's factors (this file's builder), and qalc's own answer
-// from the dev build (as engine/qalc/run-cases.mjs runs it). Differences are settled by an oracle value (mpmath) or a
+// from the dev build (as `engine/qalc/run-cases.mjs` at `8ac1e1e7` ran it). Differences are settled by an oracle value (mpmath) or a
 // derivation. Also: the mismatch and temperature checks, first-order uncertainty with Giac's diff, desktop timing, and
 // the units of the index without an exact factor, each with what it needs.
 //

@@ -18,7 +18,7 @@
 | vg | this week's gorge, annabell, sandra merges | 15 | 15 | 0 | 0 |
 | lo | leftovers of earlier sessions | 21 | 21 (+1 new) | 0 | 0 |
 
-105 found, 97 confirmed, 6 refuted, 2 unsure, 3 new from the verifiers. Nine S1 root causes after de-duplication, each with a package and a backlog line (F146–F154). The lanes held `host-cpu` most of the night, so several checks were read-only; each package's Tests first settle them. The probes the findings cite: `tools/probes/review-1030/` (README row). Its vitest at `0fc50d2` (2026-10-31 05:50): 3 tests, 3 red: bu-1 (stored history 0 after an early hide, expected 4), bu-2 (Clear while a CAS job runs), bu-3/6/7 (bare commas). `failed-read.mts` at 06:05: ca-1 reproduces (after one failed read, one save replaces the three stored definitions with one; a migration step that throws leaves `kvGet` unsettled).
+105 found, 97 confirmed, 6 refuted, 2 unsure, 3 new from the verifiers. Nine S1 root causes after de-duplication, each with a package and a backlog line (F146–F154). The lanes held `host-cpu` most of the night, so several checks were read-only; each package's Tests first settle them. The probes the findings cite: `tools/probes/review-1030/` at `5fd9440e` (its last commit with all three files; S28 deleted the last one). Its vitest at `0fc50d2` (2026-10-31 05:50): 3 tests, 3 red: bu-1 (stored history 0 after an early hide, expected 4), bu-2 (Clear while a CAS job runs), bu-3/6/7 (bare commas). `failed-read.mts` at 06:05: ca-1 reproduces (after one failed read, one save replaces the three stored definitions with one; a migration step that throws leaves `kvGet` unsettled).
 
 ## 2. The queue the review proposes (after tonight's queues)
 

@@ -120,7 +120,7 @@ The engine's 256 text matches would drop by roughly the SHAPE, NAMES, STATE and 
 - `engine/giac/wasm/api.cc` and `build-wasm.sh` (the exports near line 184);
 - in the pinned tarball: `gen.cc` (`caseval` near line 16851, its interrupt handling), `dispatch.h` (the type tags), `global.h` (the settings accessors);
 - `app/src/engine/nodeGiac.ts` (how the exports are wrapped);
-- `tools/probes/call-trace.ts` and `tools/probes/text-misses.ts`.
+- `tools/probes/call-trace.ts` and `tools/probes/text-misses.ts` at `0dd60864` (deleted by S28).
 
 1. **Tests first:** `tools/probes/bridge.ts` (tracked, README row) runs every `home.yaml` and `precision.yaml` input and every text-1 … text-10 input both ways. It fails on phase-1, which has no bridge:
    - today's host;
@@ -163,7 +163,7 @@ The engine's 256 text matches would drop by roughly the SHAPE, NAMES, STATE and 
 
 ### hind-3: a ratchet on text matches, in the gate
 - **Why:** 1.5. P20 forbids new bracket loops and name regexes, and only review enforces it; 36 packages added engine pattern lines.
-- **Change:** `app/scripts/gate.ts` gets a `rules` stage. It counts pattern lines over text per file in `app/src/engine` (`glue-growth.mjs`'s pattern) against a checked-in baseline. A count that rises fails the stage unless the package's report names the line and its reason; a count that falls lowers the baseline. The same stage checks `giac.eval` outside `app/src/engine/`.
+- **Change:** `app/scripts/gate.ts` gets a `rules` stage. It counts pattern lines over text per file in `app/src/engine` (the pattern of `tools/probes/glue-growth.mjs` at `d8c0c968`, deleted by S28) against a checked-in baseline. A count that rises fails the stage unless the package's report names the line and its reason; a count that falls lowers the baseline. The same stage checks `giac.eval` outside `app/src/engine/`.
 - **Cost:** 2 h. It makes the audit's numbers go only one way.
 
 ### hind-4: golden cases through the keys
@@ -175,7 +175,7 @@ The engine's 256 text matches would drop by roughly the SHAPE, NAMES, STATE and 
 ### hind-5: a deletion budget in the process
 - **Why:** 1.5. 6 refactor commits in 1,044; fix packages repeat one pattern.
 - **Changes:**
-  - every eighth night step is a consolidation package, whose "Done when" is net lines removed in `app/src/engine` (`glue-growth.mjs`), with the golden gate unchanged;
+  - every eighth night step is a consolidation package, whose "Done when" is net lines removed in `app/src/engine` (`tools/probes/glue-growth.mjs` at `d8c0c968`), with the golden gate unchanged;
   - a package text says "cause" or "symptom" (audit section 4);
   - the backlog's "Open bugs" and the queue table are generated from the package files and the known-failures lists. Fewer hand-kept lines then sit at the docs budgets, and the docs stop growing faster than the code.
 - **Cost:** the first two are rule lines in `docs/shifts/rules.md`; the generator is half a day (A-lane).
@@ -199,7 +199,7 @@ The engine's 256 text matches would drop by roughly the SHAPE, NAMES, STATE and 
 
 ## 6. How to rerun
 - `GIAC_OUT=<dir> STORED=1 [SHOW=1] node tools/probes/call-trace.ts`: the calls per Enter.
-- The audit's probes: `text-misses.ts`, `giac-globals.ts`, `glue-growth.mjs`, `churn.py`.
+- The audit's probes (all deleted by S28): `tools/probes/text-misses.ts` at `0dd60864`, `tools/probes/giac-globals.ts` at `07612b2b`, `tools/probes/glue-growth.mjs` at `d8c0c968`, `tools/probes/churn.py` at `9e1c78e0`.
 - Counts:
   - `grep -c 'latex:' tests/golden/*.yaml`;
   - the commit types with the `git log` line of 1.5;
