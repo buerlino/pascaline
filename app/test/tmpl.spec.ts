@@ -3,7 +3,7 @@
 // filled from the keys and must give exactly its `sample` (so the parser cases are what MathLive really writes),
 // then its value. Expected values derived by hand (parser.yaml `tmpl-*`); 2.5 ↔ 5/2 is G2 item 29 (device).
 import { expect, test, type Page } from "@playwright/test";
-import { entryValue, lastResult, open, sheet, tap } from "./helpers.ts";
+import { entryValue, lastResult, open, sheet, sheetKey, tap } from "./helpers.ts";
 
 test.beforeEach(async ({ page }) => {
   await open(page, "");
@@ -24,18 +24,19 @@ test("Tmpl opens the 6 × 3 grid on the fraction; arrows move in two dimensions;
   await expect(sheet(page).locator('[role="menuitem"]')).toHaveCount(18);
   await expect(active(page)).toHaveAttribute("data-id", "frac");
   await expect(page.getByTestId("sheet-hint")).toHaveText("Fraction");
-  await tap(page, ["down"]);
+  await sheetKey(page, ["down"]);
   await expect(active(page)).toHaveAttribute("data-id", "sqrt");
-  await tap(page, ["right"]);
+  await sheetKey(page, ["right"]);
   await expect(active(page)).toHaveAttribute("data-id", "nthroot");
-  await tap(page, ["up", "up"]); // round the column: power, then mixed
+  await sheetKey(page, ["up", "up"]); // round the column: power, then mixed
   await expect(active(page)).toHaveAttribute("data-id", "mixed");
-  await tap(page, ["left"]);
+  await sheetKey(page, ["left"]);
   await expect(active(page)).toHaveAttribute("data-id", "abs");
-  await tap(page, ["d1", "sin"]); // digits and letters do nothing in the grid, nothing goes through
+  await sheetKey(page, ["d1", "sin"]); // digits and letters do nothing in the grid, nothing goes through
   await expect(active(page)).toHaveAttribute("data-id", "abs");
   expect(await entryValue(page)).toBe("");
-  await tap(page, ["enter", "neg", "d3"]);
+  await sheetKey(page, ["enter"]);
+  await tap(page, ["neg", "d3"]);
   expect(await entryValue(page)).toBe("\\left|-3\\right|");
   // the last pick is remembered: Tmpl, Enter repeats it
   await tap(page, ["esc", "tmpl"]);

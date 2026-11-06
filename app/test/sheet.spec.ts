@@ -2,7 +2,7 @@
 // One sheet for every list (R7, docs/05 3.1 with section 7): one test per key of the 3.1 table, plus last pick, the
 // scroll cue, disabled rows with their reason, touch, and no key going through the sheet.
 import { expect, test, type Page } from "@playwright/test";
-import { drag, entryValue, open, sheet, tap } from "./helpers.ts";
+import { drag, entryValue, open, sheet, sheetKey, tap } from "./helpers.ts";
 
 test.beforeEach(async ({ page }) => {
   await open(page);
@@ -37,9 +37,9 @@ const TWELVE = Array.from({ length: 12 }, (_, i) => `item ${i + 1}`);
 test("▲ ▼ move the highlight round the ends; Enter picks the highlighted row and closes the sheet", async ({ page }) => {
   await list(page, "Test", FIVE);
   await expect(active(page)).toHaveAttribute("data-id", "one");
-  await tap(page, ["down", "down"]);
+  await sheetKey(page, ["down", "down"]); // (R144: the hardware arrows; an on-screen tap closes the sheet)
   await expect(active(page)).toHaveAttribute("data-id", "three");
-  await tap(page, ["up", "up", "up"]);
+  await sheetKey(page, ["up", "up", "up"]);
   await expect(active(page)).toHaveAttribute("data-id", "five");
   await tap(page, ["enter"]);
   expect(await ran(page)).toEqual(["five"]);
@@ -47,10 +47,11 @@ test("▲ ▼ move the highlight round the ends; Enter picks the highlighted row
   expect(await entryValue(page)).toBe("");
 });
 
-test("the arrow trackpad moves the highlight too (one row per step)", async ({ page }) => {
+test("the arrow trackpad closes the sheet and picks nothing (R144: the hardware arrows move the highlight)", async ({ page }) => {
   await list(page, "Test", FIVE);
-  await drag(page, "down", 0, 30); // two 12 px steps
-  await expect(active(page)).toHaveAttribute("data-id", "three");
+  await drag(page, "down", 0, 30); // two 12 px steps: the first closes the sheet, the second steps nothing
+  await expect(sheet(page)).toHaveCount(0);
+  expect(await ran(page)).toEqual([]);
 });
 
 test("digits pick rows 1…9 and 0 the tenth, with Shift or Alpha on (ignored, and left as they are)", async ({ page }) => {
@@ -67,16 +68,16 @@ test("digits pick rows 1…9 and 0 the tenth, with Shift or Alpha on (ignored, a
 
 test("▶ opens a submenu (path in the title), ◀ and Esc go back a level, Esc at the top closes", async ({ page }) => {
   await list(page, "Test", ["plain", { label: "more", sub: { title: "More", items: ["x", "y"] } }]);
-  await tap(page, ["right"]); // "plain" has no submenu: nothing happens
+  await sheetKey(page, ["right"]); // "plain" has no submenu: nothing happens
   await expect(title(page)).toHaveText("Test");
   await expect(sheet(page).getByRole("menuitem", { name: "2 more" })).toContainText("›");
-  await tap(page, ["down", "right"]);
+  await sheetKey(page, ["down", "right"]);
   await expect(title(page)).toHaveText("Test › More");
   await expect(sheet(page).getByRole("menu")).toHaveAttribute("aria-label", "More");
-  await tap(page, ["left"]);
+  await sheetKey(page, ["left"]);
   await expect(title(page)).toHaveText("Test");
   await expect(active(page)).toHaveAttribute("data-id", "more");
-  await tap(page, ["enter"]); // Enter opens a submenu too
+  await sheetKey(page, ["enter"]); // Enter opens a submenu too
   await expect(title(page)).toHaveText("Test › More");
   await tap(page, ["esc"]);
   await expect(title(page)).toHaveText("Test");
@@ -115,7 +116,7 @@ test("in a short list a letter key does nothing and looks dead; nothing reaches 
   await list(page, "Test", FIVE);
   await expect(page.locator('[data-key="sin"]')).toHaveAttribute("data-dead", "true");
   await expect(page.locator('[data-key="d1"]')).not.toHaveAttribute("data-dead", "true");
-  await tap(page, ["sin", "d7", "add", "x", "dot"]); // d7: no seventh row
+  await sheetKey(page, ["sin", "d7", "add", "x", "dot"]); // d7: no seventh row (the key path; an on-screen tap closes the sheet, R144)
   await expect(sheet(page)).toBeVisible();
   expect(await entryValue(page)).toBe("");
   expect(await ran(page)).toEqual([]);
@@ -144,13 +145,14 @@ test("a key that changes place closes the sheet and goes there (CAS)", async ({ 
 });
 
 test("the last pick is remembered per sheet: Apps + Enter opens the app picked last", async ({ page }) => {
-  await tap(page, ["@place", "d4"]);
+  await tap(page, ["@place"]);
+  await sheetKey(page, ["d4"]); // (a hardware 4: an on-screen key queued for the sheet's code closes it, R144)
   await expect(page.locator('[data-app="solve"]')).toBeVisible();
   // back to Home without the Apps sheet (a user key that holds Home), so its last pick stays Solve
   await page.evaluate(() => window.n62.userKeys.set("u2", "primary", { label: "Home", action: { special: "home" } }));
   await tap(page, ["u2", "@place"]);
   await expect(page.getByTestId("apps").locator('[data-active="true"]')).toHaveAttribute("data-id", "solve");
-  await tap(page, ["enter"]);
+  await sheetKey(page, ["enter"]);
   await expect(page.locator('[data-app="solve"]')).toBeVisible();
 });
 
@@ -160,7 +162,7 @@ test("a list that does not fit shows its item count and a fade at the cut edge, 
   const box = sheet(page).locator(".list");
   await expect(box).toHaveClass(/cut-bottom/);
   await expect(box).not.toHaveClass(/cut-top/);
-  await tap(page, ["up"]); // round to the last row
+  await sheetKey(page, ["up"]); // round to the last row
   await expect(active(page)).toHaveAttribute("data-id", "pascal");
   await expect(box).toHaveClass(/cut-top/);
   const [b, r] = await Promise.all([box.boundingBox(), active(page).boundingBox()]);

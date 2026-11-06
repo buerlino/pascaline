@@ -2,7 +2,7 @@
 // R46: the sheet's view is its own chunk, fetched when idle. A key that opens a sheet before the chunk is in waits in the
 // queue (decisions.md R8), so none is lost or run twice. The chunk's request is held back here until `release()`.
 import { expect, test, type Page } from "@playwright/test";
-import { entryValue, open, sheet, tap } from "./helpers.ts";
+import { entryValue, open, sheet, sheetKey, tap } from "./helpers.ts";
 
 /** Hold the Sheet chunk's requests back (or those of `what`); returns the function that lets them through. */
 async function hold(page: Page, what: RegExp = /\/src\/views\/(Sheet\.svelte|sheetFit\.ts)/): Promise<() => void> {
@@ -19,7 +19,8 @@ async function hold(page: Page, what: RegExp = /\/src\/views\/(Sheet\.svelte|she
 test("Apps, then 2, typed before the sheet's chunk is in, opens the second app once it is", async ({ page }) => {
   const release = await hold(page);
   await open(page);
-  await tap(page, ["d1", "@place", "d4"]);
+  await tap(page, ["d1", "@place"]);
+  await sheetKey(page, ["d4"]); // (typed: an on-screen key queued for the sheet closes it when it lands, R144)
   await expect(page.locator('[data-app="solve"]')).toHaveCount(0);
   expect(await entryValue(page)).toBe("1"); // the 2 was not typed into the line
   release();
@@ -30,7 +31,8 @@ test("Apps, then 2, typed before the sheet's chunk is in, opens the second app o
 test("Tmpl, then Enter, typed before the chunk is in, inserts the fraction once it is", async ({ page }) => {
   const release = await hold(page);
   await open(page);
-  await tap(page, ["tmpl", "enter"]);
+  await tap(page, ["tmpl"]);
+  await sheetKey(page, ["enter"]);
   expect(await entryValue(page)).toBe("");
   release();
   await expect.poll(() => entryValue(page)).toContain("frac");
@@ -43,7 +45,8 @@ test("Menu, then 9, typed before the chunk is in, picks the ninth row (Clear his
   await page.waitForFunction(() => window.n62.session.engineState === "ready", undefined, { timeout: 20_000 });
   await tap(page, ["d1", "enter"]);
   await expect(page.locator('[data-testid="result"]')).toHaveCount(1);
-  await tap(page, ["@menu", "d9"]);
+  await tap(page, ["@menu"]);
+  await sheetKey(page, ["d9"]);
   expect(await entryValue(page)).toBe(""); // the 9 was not typed into the line
   await expect(page.locator('[data-testid="result"]')).toHaveCount(1);
   release();
@@ -55,7 +58,8 @@ test("Menu, then 9, typed before the chunk is in, picks the ninth row (Clear his
 test("Shift + 6, then a cell's key, typed before the chunk is in, picks that cell once it is: 2 ≤ 3", async ({ page }) => {
   const release = await hold(page);
   await open(page);
-  await tap(page, ["d2", "shift", "d6", "d8", "d3"]);
+  await tap(page, ["d2", "shift", "d6"]);
+  await sheetKey(page, ["d8", "d3"]);
   expect(await entryValue(page)).toBe("2");
   release();
   await expect.poll(() => entryValue(page)).toBe("2\\le3");
@@ -98,7 +102,7 @@ test("F42: a long press on a row before the chunk is in, then 5, picks nothing o
   await twoRows(page);
   await tap(page, ["d3"]); // a line to keep
   await longPressFirstRow(page);
-  await tap(page, ["d5"]);
+  await sheetKey(page, ["d5"]);
   await expect(sheet(page)).toHaveCount(0); // nothing is drawn yet
   expect(await texts(page)).toEqual(["1", "2"]); // Delete did not run on the hidden list
   expect(await entryValue(page)).toBe("3"); // and the 5 was not typed into the line
@@ -124,7 +128,8 @@ test("F42: a long press on a row before the chunk is in shows the menu once it i
 test("Tmpl, then Enter, typed before the palette cells' and the sheet keys' code is in, inserts the fraction once it is", async ({ page }) => {
   const release = await hold(page, /\/src\/views\/(tmplSheet|sheetKeys)\.ts/);
   await open(page);
-  await tap(page, ["tmpl", "enter"]);
+  await tap(page, ["tmpl"]);
+  await sheetKey(page, ["enter"]);
   expect(await entryValue(page)).toBe("");
   release();
   await expect.poll(() => entryValue(page)).toContain("frac");
@@ -134,7 +139,8 @@ test("Tmpl, then Enter, typed before the palette cells' and the sheet keys' code
 test("Tmpl, then Enter, typed before the palettes' chunk is in, inserts the fraction once it is", async ({ page }) => {
   const release = await hold(page, /\/src\/keyboard\/shiftPalettes\.ts/);
   await open(page);
-  await tap(page, ["tmpl", "enter"]);
+  await tap(page, ["tmpl"]);
+  await sheetKey(page, ["enter"]);
   expect(await entryValue(page)).toBe("");
   release();
   await expect.poll(() => entryValue(page)).toContain("frac");
@@ -169,7 +175,7 @@ test("Settings opened again after the sheet chunk failed once answers Down and E
   await expect(page.getByTestId("sheet-title")).toHaveText("Mode › Settings");
   const active = settings.locator('[data-active="true"]');
   await expect(active).toHaveAttribute("data-id", "appearance");
-  await tap(page, ["down"]); // the keypad's keys go through sheetPress, which reads them with the sheet chunk's keys
+  await sheetKey(page, ["down"]); // the keys go through sheetPress, which reads them with the sheet chunk's keys
   await expect(active).toHaveAttribute("data-id", "numbers");
   await tap(page, ["esc", "esc"]);
   await expect(settings).toBeHidden();
