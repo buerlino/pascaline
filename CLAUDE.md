@@ -23,7 +23,7 @@ tests/golden/.venv/bin/python tests/golden/oracle.py [--write|--g2]   # mpmath o
 scripts/night.sh --lane A|B --until HH:MM [--dry-run]           # the night, one lane per table of brief 0c (A47c); no --lane: one queue
 scripts/night.sh --stop A|B|all                                 # the owner's stop: logs STOPPED; the lane ends after its running step
 /night-review [--dry-run] [--until HH:MM]                       # typed in claude, main checkout at phase-1: the night review beside the lanes
-N62_DL_DIR=<main checkout>/engine/giac/_downloads   # in a worktree: reuse the tarball cache; GIAC_OUT=<main>/engine/giac/_out/gsl
+N62_DL_DIR=<main checkout>/engine/giac/_downloads N62_QALC_DL_DIR=<main checkout>/engine/qalc/_downloads   # in a worktree: reuse the tarball caches (the qalc one for the Find index); GIAC_OUT=<main>/engine/giac/_out/gsl
 ```
 Devices, locks and timings: `tools/README.md` (`tools/devlock.sh acquire host-cpu <name> 1800` around heavy work).
 

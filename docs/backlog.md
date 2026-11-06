@@ -45,6 +45,7 @@ Work continues on `phase-1`; `master` follows it from 2026-11-03 (decisions.md, 
 - **F171, fixed by R134 (R40f1's Not done).** The why line named a Greek constant by its LaTeX (`\alpha`) and left out a symbol with braces (μ₀); constantsUsed reads the chip brace-aware and names it by `entryText(symbol)`. Tests: whyLine.test.ts. Family 9.
 - **F170, fixed by G176 (patch 0035).** trunc's limit at an integer took the point.
 - **F182, no package (G176).** Home shows `limit(floor(x),x,-1)`, `limit(sign(x),x,0)`, `limit(trunc(x),x,-1)` as an error ("Unidirectional limits are distinct"); right: No limit (converge.ts `noLimit`). Golden `g176-limit-trunc-neg1-two-sided`.
+- **F184, no package (owner, 2026-11-06).** `iⁱ` cannot be typed: xʸ (`#@^{#?}`, spec/keyboard.yaml:147) right after Shift+2's `\imaginaryI` does not give i a power. Cause not checked.
 - **F172, A73 measured (report).** Stored history costs nothing (200 stored, Home last: 1274 ms against 1299 empty); the rows drawn at start do, by content: 20 program-definition rows 1821 ms, 20 plain rows 1469, 5 program rows 1345 (bar 1.5 s). A CAS-view start with nothing stored is also 1499 (worker's wasm instantiate slower), cause open. R133 merged (c9be0a7c): History draws 5 rows until engine ready; Tab One rerun pending. A73f1 (lane B).
 - **Night review 2026-11-02:** the rest in [research/night-review-2026-11-02.md](research/night-review-2026-11-02.md).
 
