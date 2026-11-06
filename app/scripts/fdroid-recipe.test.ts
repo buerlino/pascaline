@@ -9,7 +9,7 @@ const repo = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 
 /** The `prebuild` lines of the recipe's first build, comments and indentation stripped. */
 function prebuild(): string[] {
-  const lines = readFileSync(join(repo, "fdroid/io.github.buerlino.pascaline.yml"), "utf8").split("\n");
+  const lines = readFileSync(join(repo, "fdroid/dev.n62.calc.yml"), "utf8").split("\n");
   const start = lines.findIndex((l) => /^\s+prebuild:\s*$/.test(l));
   expect(start).toBeGreaterThan(-1);
   const out: string[] = [];

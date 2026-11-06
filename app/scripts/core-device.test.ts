@@ -86,7 +86,7 @@ describe("WebView debugging", () => {
     expect((await android()).webContentsDebuggingEnabled).toBe(true);
   });
   it("is not enabled in the Android sources", () => {
-    expect(root("android/app/src/main/java/io/github/buerlino/pascaline/MainActivity.java")).not.toMatch(/setWebContentsDebuggingEnabled\(\s*true/);
+    expect(root("android/app/src/main/java/dev/n62/calc/MainActivity.java")).not.toMatch(/setWebContentsDebuggingEnabled\(\s*true/);
     expect(root("fdroid/README.md")).not.toMatch(/--test|WEBVIEW_DEBUG/);
   });
 });
