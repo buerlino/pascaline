@@ -23,8 +23,7 @@
   let JXG: JXGModule | undefined;
   let markEls: { remove(): void }[] = [];
 
-  // D7 (desktop, CPU 4x slower): canvas redraws in 6.4 ms vs 10.2 ms for SVG, and plain sampling is faster than
-  // adaptive while moving, so: canvas, plain sampling while the window moves, adaptive (clean poles) once it rests.
+  // D7 (desktop, CPU 4x slower): canvas 6.4 ms vs SVG 10.2 ms; plain sampling while moving, adaptive (clean poles) at rest.
   type Curve = { setAttribute(a: Record<string, unknown>): unknown };
   let curves: Curve[] = [];
   let restTimer: ReturnType<typeof setTimeout> | undefined;

@@ -100,7 +100,7 @@ declare global {
 }
 // yieldWriter: a kill in the e2e tests (persist.spec.ts) lets go of the store without the pagehide flush (R95)
 window.pascaline = { entry, session, shell, userKeys, calc, plot: plotHook, renderStats, yieldWriter };
-if (import.meta.env.DEV && new URLSearchParams(location.search).has("pad")) void import("./units/padView.svelte.ts").then((m) => { window.pascaline.unitPad = m.unitPad; m.devPad(); }); // the unit pad alone on the keys, dev server only: unitpad-draw.spec.ts uses it (the units key opens it with the unit view, R24c)
+if (import.meta.env.DEV && new URLSearchParams(location.search).has("pad")) void import("./units/padView.svelte.ts").then((m) => { window.pascaline.unitPad = m.unitPad; m.devPad(); }); // the unit pad alone on the keys, dev server only: unitpad-draw.spec.ts and the gallery (gallery.spec.ts) use it; the units key opens it with the unit view (R24c)
 
 // Offline support (web build only): after the engine is up and the browser is idle, so the install's downloads
 // (the whole build, ~10 MB with both wasm files) never compete with the first paint or the engine's own load.
