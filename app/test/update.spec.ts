@@ -33,9 +33,12 @@ async function seed(page: Page): Promise<void> {
           };
         };
       }),
-    snapshot.records,
+    // R138: the store under N62 starts empty, so the old records are seeded as N62 stamps them: the same version under
+    // the field `@n62` (the steps from version 1 up are what this test is about)
+    Object.fromEntries(Object.entries(snapshot.records).map(([k, v]) => [k, isStamped(v) ? { "@n62": v["@pascaline"], value: v.value } : v])),
   );
 }
+const isStamped = (v: unknown): v is { "@pascaline": number; value: unknown } => typeof v === "object" && v !== null && "@pascaline" in v;
 
 const stored = (page: Page, key: string): Promise<unknown> =>
   page.evaluate(
