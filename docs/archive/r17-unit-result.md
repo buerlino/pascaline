@@ -75,7 +75,7 @@ A tap on an alternative is one touch press. By keys the row is reached with ▼ 
 | R62 | The result view drawn: value line, σ and ⚠, note, refusal, the alternatives row | ron, Sonnet | day (gallery) | R60, owner on the mockup |
 | R63 | The way back: the unit row in Home's history, the chip, the units key again, t02, t04 and t10 active | ron, Opus | day | R61, R62 |
 
-The mockup: [docs/mockups/unit-result.html](../mockups/unit-result.html).
+The mockup: `mockups/unit-result.html` at `b1c44ee4`.
 
 ## 6. To verify
 

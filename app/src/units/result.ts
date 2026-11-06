@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // R62: what the unit view shows under the reading, as data (docs/04 4.3 "Result", docs/archive/r17-unit-result.md 0.3,
-// docs/mockups/unit-result.html): a refusal, Working…, or a result with its value line (the mark as Home draws it, the
-// value at the digits setting, the unit, the dimension), σ with its ⚠ and why-line, a note and the alternatives row.
+// the mockup `docs/mockups/unit-result.html` at `b1c44ee4`): a refusal, Working…, or a result with its value line (the
+// mark as Home draws it, the value at the digits setting, the unit, the dimension), σ with its ⚠ and why-line, a note and
+// the alternatives row.
 // Plain TS; units/panel.ts draws it. Loaded with the unit view.
 import { confirmedOptions, formatComplex, markOf, type FormatOptions, type Mark } from "../engine/format.ts";
 import { precisionFacts } from "../engine/precisionFacts.ts";
