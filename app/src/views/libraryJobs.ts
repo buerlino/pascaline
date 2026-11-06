@@ -156,10 +156,10 @@ export async function importClipboard(host: LibraryHost): Promise<void> {
   await importInput(host, text);
 }
 
-/** The file's name: `pascaline-library-YYYY-MM-DD.txt`, the local date. */
+/** The file's name: `n62-library-YYYY-MM-DD.txt`, the local date. */
 export function libraryName(now: Date = new Date()): string {
   const p = (n: number): string => String(n).padStart(2, "0");
-  return `pascaline-library-${now.getFullYear()}-${p(now.getMonth() + 1)}-${p(now.getDate())}.txt`;
+  return `n62-library-${now.getFullYear()}-${p(now.getMonth() + 1)}-${p(now.getDate())}.txt`;
 }
 
 const SAVED: Record<"saved" | "offered" | "cancelled" | "failed", DataKey> = {

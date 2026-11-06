@@ -31,5 +31,5 @@ export function upToDate(input: Uint8Array | string): Uint8Array | string {
   const m = HEADER.exec((nl < 0 ? text : text.slice(0, nl)).trim());
   const from = m ? Number(m[1]) : DATA_VERSION;
   if (from >= DATA_VERSION) return input;
-  return `// pascaline library ${DATA_VERSION}\n${migratedText("library", nl < 0 ? "" : text.slice(nl + 1), from)}`;
+  return `// n62 library ${DATA_VERSION}\n${migratedText("library", nl < 0 ? "" : text.slice(nl + 1), from)}`;
 }

@@ -33,7 +33,7 @@ test("Shift, Fmt, 6 opens Settings (row 6 since R89)", async ({ page }) => {
 
 test("the Fmt key's Shift legend reads Mode and fits its face in every theme family", async ({ page }) => {
   await open(page);
-  for (const family of ["pascaline", "graphite", "solarized", "gruvbox", "nord"]) {
+  for (const family of ["n62", "graphite", "solarized", "gruvbox", "nord"]) {
     await page.evaluate(
       async (family) => {
         const url = "/src/theme/apply.ts";

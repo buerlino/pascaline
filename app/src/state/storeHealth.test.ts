@@ -11,7 +11,7 @@ let storage: typeof import("./storage.ts");
 
 /** localStorage, as persist.ts uses it. */
 const local = (asked: boolean): Storage => {
-  const m = new Map<string, string>(asked ? [["pascaline.persist-asked", "1"]] : []);
+  const m = new Map<string, string>(asked ? [["n62.persist-asked", "1"]] : []);
   return { getItem: (k: string) => m.get(k) ?? null, setItem: (k: string, v: string) => void m.set(k, v) } as unknown as Storage;
 };
 
@@ -60,7 +60,7 @@ describe("the store records its health (R96)", () => {
   });
   it("failed when a newer record keeps this build from writing (A50)", async () => {
     await storage.kvSet("seed", 0);
-    idb.stores.get("kv")?.set("settings", { "@pascaline": storage.DATA_VERSION + 1, value: {} });
+    idb.stores.get("kv")?.set("settings", { "@n62": storage.DATA_VERSION + 1, value: {} });
     await storage.kvSet("settings", { digits: 9 });
     expect(storage.storeHealth()).toBe("failed");
   });
@@ -204,7 +204,7 @@ describe("Settings › Data's last row (R96)", () => {
     const writer = await import("./writer.ts"); // the instance storage.ts uses (same module registry)
     const held = {
       request: (_n: string, _o: { ifAvailable?: boolean }, cb: (lock: unknown) => Promise<void> | void) => Promise.resolve(cb(null)),
-    }; // writer.test.ts fakeLocks(true): another tab holds `pascaline-writer`
+    }; // writer.test.ts fakeLocks(true): another tab holds `n62-writer`
     writer.claimWriter(() => {}, held);
     await storage.kvSet("view", "cas");
     expect(idb.stores.get("kv")?.has("view") ?? false).toBe(false);

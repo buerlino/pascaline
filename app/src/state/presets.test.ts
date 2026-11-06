@@ -26,7 +26,7 @@ function memoryStore(rec?: RawRecord): PresetStore & { rec: RawRecord | undefine
     read: () => Promise.resolve(s.rec === undefined ? undefined : structuredClone(s.rec)),
     write: (value: StoredPresets) => {
       s.writes++;
-      s.rec = { "@pascaline": DATA_VERSION, value: structuredClone(value) };
+      s.rec = { "@n62": DATA_VERSION, value: structuredClone(value) };
       return Promise.resolve();
     },
   };
@@ -121,7 +121,7 @@ describe("presets (R88)", () => {
   it("a preset saved before a later setting existed applies without touching it", async () => {
     // A numbers group stored before R57 has no decimal mark; a vibration group without a length.
     const old: StoredPresets = { presets: [{ id: 1, name: "Old", groups: { numbers: { fmtCycle: ["std", "sci"], fixDecimals: 2 }, vibration: { on: true, strength: 80 } } }], active: null, next: 2 };
-    const { session, presets } = await setup({ "@pascaline": DATA_VERSION, value: old });
+    const { session, presets } = await setup({ "@n62": DATA_VERSION, value: old });
     session.setDecimalMark("comma");
     session.setHaptics({ ms: 40 });
     await presets.apply(1);
@@ -134,7 +134,7 @@ describe("presets (R88)", () => {
 
   it("a held field the app cannot read is skipped, and the other fields still apply", async () => {
     const bad: StoredPresets = { presets: [{ id: 1, name: "Bad", groups: { mode: { angle: "grad", digits: 8, format: "hex" } } }], active: null, next: 2 };
-    const { session, presets } = await setup({ "@pascaline": DATA_VERSION, value: bad });
+    const { session, presets } = await setup({ "@n62": DATA_VERSION, value: bad });
     session.setAngle("deg");
     session.setFormat("sci");
     await presets.apply(1);
@@ -163,7 +163,7 @@ describe("presets (R88)", () => {
     // a record that names a fixed key: the key stays as spec/keyboard.yaml has it
     const v = store.rec?.value as StoredPresets;
     const hacked = { ...v, presets: v.presets.map((p) => (p.id === a ? { ...p, groups: { keys: { userKeys: { [fixed.id]: { primary: sinh }, [U1]: { primary: sinh } }, unitPadCells: {} } } } : p)) };
-    const { userKeys: k2, presets: p2 } = await setup({ "@pascaline": DATA_VERSION, value: hacked });
+    const { userKeys: k2, presets: p2 } = await setup({ "@n62": DATA_VERSION, value: hacked });
     await p2.apply(a);
     expect(k2.resolve(fixed)).toBe(fixed);
     expect(k2.labelOf(U1, "primary")).toBe("sinh");
@@ -173,12 +173,12 @@ describe("presets (R88)", () => {
 
   it("a record stamped newer than DATA_VERSION is refused, and never written over", async () => {
     const newer: StoredPresets = { presets: [{ id: 1, name: "Future", groups: { mode: { angle: "deg" } } }], active: 1, next: 2 };
-    const { presets, store } = await setup({ "@pascaline": DATA_VERSION + 1, value: newer });
+    const { presets, store } = await setup({ "@n62": DATA_VERSION + 1, value: newer });
     expect(presets.refused).toBe("newer");
     expect(presets.list).toEqual([]);
     expect(() => presets.capture("Mine", PRESET_GROUPS)).toThrow(new PresetError("newer"));
     expect(store.writes).toBe(0);
-    expect(store.rec?.["@pascaline"]).toBe(DATA_VERSION + 1);
+    expect(store.rec?.["@n62"]).toBe(DATA_VERSION + 1);
   });
 
   it("a read that failed is refused as unreadable (not newer), never written over, and told to the store (R123)", async () => {
@@ -198,7 +198,7 @@ describe("presets (R88)", () => {
     const kv = fakeKv();
     const session = new Session(new FakeCalc(), kv);
     const userKeys = new UserKeys(kv);
-    const store = memoryStore({ "@pascaline": DATA_VERSION - 1, value: older });
+    const store = memoryStore({ "@n62": DATA_VERSION - 1, value: older });
     const steps = {
       [DATA_VERSION - 1]: {
         [PRESETS_KEY]: (v: unknown) => ({ ...(v as StoredPresets), next: 9 }),
@@ -211,10 +211,10 @@ describe("presets (R88)", () => {
     await presets.apply(3);
     expect(userKeys.labelOf(U1, "primary")).toBe("x");
     expect(userKeys.labelOf(U2, "primary")).toBe("mol");
-    expect(store.rec?.["@pascaline"]).toBe(DATA_VERSION);
+    expect(store.rec?.["@n62"]).toBe(DATA_VERSION);
     expect((store.rec?.value as StoredPresets).next).toBe(9);
     // a record from before versions (no stamp) reads too
-    const { presets: p0 } = await setup({ "@pascaline": 0, value: older });
+    const { presets: p0 } = await setup({ "@n62": 0, value: older });
     expect(p0.list.map((p) => p.name)).toEqual(["Old"]);
   });
 
@@ -234,29 +234,29 @@ describe("presets (R88)", () => {
     next: 6,
   };
   const backupOf = (rec: RawRecord): Uint8Array =>
-    new TextEncoder().encode(JSON.stringify({ "pascaline-backup": 1, dataVersion: DATA_VERSION, made: "", parts: { [PRESETS_KEY]: rec } }));
+    new TextEncoder().encode(JSON.stringify({ "n62-backup": 1, dataVersion: DATA_VERSION, made: "", parts: { [PRESETS_KEY]: rec } }));
   async function openWith(rec: RawRecord): Promise<Presets> {
     const kv = fakeKv();
     return Presets.open({ session: new Session(new FakeCalc(), kv), userKeys: new UserKeys(kv), cells: new UnitCells(kv), store: memoryStore(rec), steps: keysStep });
   }
 
   it("the backup's check runs the steps of the keys a preset holds, from the part's own stamp", () => {
-    const checked = checkBackup(backupOf({ "@pascaline": DATA_VERSION - 1, value: olderKeys }), VALIDATORS, keysStep) as CheckedBackup;
+    const checked = checkBackup(backupOf({ "@n62": DATA_VERSION - 1, value: olderKeys }), VALIDATORS, keysStep) as CheckedBackup;
     expect(checked.ok).toBe(true);
     const [keys, mode] = (checked.parts[PRESETS_KEY] as StoredPresets).presets;
     expect(keys?.groups.keys).toEqual({ userKeys: { [U1]: { primary: sinh }, [U2]: { primary: mol } }, unitPadCells: { [C1]: { tap: { unit: "mol" } } } });
     expect(mode?.groups).toEqual({ mode: { angle: "deg" } });
     // a current part runs none
-    const current = checkBackup(backupOf({ "@pascaline": DATA_VERSION, value: olderKeys }), VALIDATORS, keysStep) as CheckedBackup;
+    const current = checkBackup(backupOf({ "@n62": DATA_VERSION, value: olderKeys }), VALIDATORS, keysStep) as CheckedBackup;
     expect(current.parts[PRESETS_KEY]).toEqual(olderKeys);
   });
 
   it("an older record gives the same presets read by the model and restored from a backup", async () => {
-    const older: RawRecord = { "@pascaline": DATA_VERSION - 1, value: olderKeys };
+    const older: RawRecord = { "@n62": DATA_VERSION - 1, value: olderKeys };
     const read = await openWith(older);
     const checked = checkBackup(backupOf(older), VALIDATORS, keysStep) as CheckedBackup;
     // restoreParts writes the checked part stamped DATA_VERSION; the model then reads it as current
-    const restored = await openWith({ "@pascaline": DATA_VERSION, value: checked.parts[PRESETS_KEY] });
+    const restored = await openWith({ "@n62": DATA_VERSION, value: checked.parts[PRESETS_KEY] });
     expect(restored.list).toEqual(read.list);
     expect([restored.active, read.active]).toEqual([2, 2]);
     expect(read.list[0]?.groups.keys?.["userKeys"]).toEqual({ [U1]: { primary: sinh }, [U2]: { primary: mol } });
@@ -264,7 +264,7 @@ describe("presets (R88)", () => {
 
   it("a damaged record holds no presets and breaks nothing", async () => {
     for (const value of [null, 7, "x", { presets: "no" }, { presets: [{ id: "a", name: 3 }, { id: 2, name: "Ok", groups: { mode: { angle: "deg" } } }] }]) {
-      const { presets } = await setup({ "@pascaline": DATA_VERSION, value });
+      const { presets } = await setup({ "@n62": DATA_VERSION, value });
       expect(presets.refused).toBeNull();
       expect(presets.list.every((p) => typeof p.id === "number" && typeof p.name === "string")).toBe(true);
       presets.capture("New", PRESET_GROUPS); // and a new one gets a fresh id

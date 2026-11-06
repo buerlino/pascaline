@@ -1,6 +1,6 @@
-// pascaline library 4
+// n62 library 4
 // SPDX-License-Identifier: GPL-3.0-or-later
-// An example of the library format (a few materials, two functions), not a material table: Pascaline keeps none.
+// An example of the library format (a few materials, two functions), not a material table: N62 keeps none.
 // Copy its shape: each value exact and in SI, its unit in words in its one-line description, and above that
 // its source as standard, edition and clause or table. "(to verify: owner)" marks a source not yet checked
 // against the standard's text. Check every value against your own edition and grade before you rely on it.

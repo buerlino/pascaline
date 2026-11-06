@@ -18,7 +18,7 @@ import { groupValue, nameFrom, presetRow, setPresetsModel, summary } from "./pre
 import { fakeKv } from "../state/fakeKv.ts";
 
 function store(rec?: RawRecord): PresetStore {
-  const s = { rec, read: () => Promise.resolve(s.rec), write: (value: StoredPresets) => ((s.rec = { "@pascaline": DATA_VERSION, value }), Promise.resolve()) };
+  const s = { rec, read: () => Promise.resolve(s.rec), write: (value: StoredPresets) => ((s.rec = { "@n62": DATA_VERSION, value }), Promise.resolve()) };
   return s;
 }
 async function setup(rec?: RawRecord | "unreadable") {
@@ -48,7 +48,7 @@ describe("what a preset says", () => {
     };
     expect(summary(p)).toBe("RAD · SCI 4 · point · 3 keys · Graphite");
     expect(summary({ id: 2, name: "Teaching", groups: { mode: { angle: "deg", format: "std", digits: 10, entry: "line" } } })).toBe("DEG · STD 10 · one line");
-    expect(summary({ id: 3, name: "Default", groups: { keys: { userKeys: {} }, look: { family: "pascaline" } } })).toBe("no keys");
+    expect(summary({ id: 3, name: "Default", groups: { keys: { userKeys: {} }, look: { family: "n62" } } })).toBe("no keys");
   });
   it("a group's values on its tick, read as stored (a field stored before it existed is left out)", () => {
     expect(groupValue("mode", { angle: "deg", format: "eng", digits: 4, entry: "textbook" })).toBe("DEG · ENG 4 · textbook");
@@ -90,13 +90,13 @@ describe("Mode's Preset row", () => {
     expect(row.value).toBe("Survey •");
   });
   it("a record from a newer version: no Save and no Edit, the reason on the row", async () => {
-    const { session } = await setup({ "@pascaline": DATA_VERSION + 1, value: { presets: [], active: null, next: 1 } });
+    const { session } = await setup({ "@n62": DATA_VERSION + 1, value: { presets: [], active: null, next: 1 } });
     const rows = items(presetRow(session, {}));
     expect(rows.map((r) => [r.id, r.disabled])).toEqual([
       ["save", true],
       ["edit", true],
     ]);
-    expect(rows[0]?.reason).toBe("Saved by a newer Pascaline: kept as it is");
+    expect(rows[0]?.reason).toBe("Saved by a newer N62: kept as it is");
   });
   it("a record that could not be read (R123): no Save and no Edit, and the reason says so, not \"newer\"", async () => {
     const { session } = await setup("unreadable");

@@ -211,7 +211,7 @@ test.describe("Android back (history.back())", () => {
       await close();
       await expect(sheet(page)).toHaveCount(0);
     }
-    await expect.poll(() => page.evaluate(() => history.state?.pascalineLayer)).toBeUndefined();
+    await expect.poll(() => page.evaluate(() => history.state?.n62Layer)).toBeUndefined();
     await page.waitForTimeout(100);
     expect(await historyLength(page)).toBeLessThanOrEqual(before + 1);
     expect(await page.evaluate(() => history.state)).toBeNull();

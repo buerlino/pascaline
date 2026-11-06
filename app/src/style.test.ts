@@ -16,7 +16,7 @@ function tokens(block: string): Record<string, string> {
 }
 /** Every `[data-family][data-brightness]` block (no contrast or keys transform): its selector and tokens. */
 export function themeBlocks(source: string): [string, Record<string, string>][] {
-  return [...source.matchAll(/:root(\[data-family="([a-z]+)"\]\[data-brightness="(dark|light)"\])\s*\{([^}]*)\}/g)].map((m) => [`${m[2]} ${m[3]}`, tokens(m[4] as string)]);
+  return [...source.matchAll(/:root(\[data-family="([a-z0-9]+)"\]\[data-brightness="(dark|light)"\])\s*\{([^}]*)\}/g)].map((m) => [`${m[2]} ${m[3]}`, tokens(m[4] as string)]);
 }
 const blocks = themeBlocks(css);
 
@@ -190,9 +190,9 @@ function entryMap(): Record<string, string> {
 }
 /** Every block of a theme combination, with whether it is High contrast. */
 function allThemeBlocks(): [string, Record<string, string>, boolean][] {
-  const files = ["./style.css", ...["pascaline", "graphite", "solarized", "gruvbox", "nord"].map((f) => `./theme/${f}.css`)];
+  const files = ["./style.css", ...["n62", "graphite", "solarized", "gruvbox", "nord"].map((f) => `./theme/${f}.css`)];
   return files.flatMap((f) =>
-    [...readFileSync(new URL(f, import.meta.url), "utf8").matchAll(/:root(\[data-family="[a-z]+"\]\[data-brightness="(?:dark|light)"\](?:\[data-[a-z]+="[a-z]+"\])*)\s*\{([^}]*)\}/g)].map(
+    [...readFileSync(new URL(f, import.meta.url), "utf8").matchAll(/:root(\[data-family="[a-z0-9]+"\]\[data-brightness="(?:dark|light)"\](?:\[data-[a-z]+="[a-z]+"\])*)\s*\{([^}]*)\}/g)].map(
       (m): [string, Record<string, string>, boolean] => [m[1] as string, tokens(m[2] as string), (m[1] as string).includes('data-contrast="high"')],
     ),
   );

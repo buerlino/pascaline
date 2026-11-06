@@ -27,7 +27,7 @@ let listening = false;
 
 function push(layer: Layer): void {
   try {
-    history.pushState({ pascalineLayer: stack.length }, "");
+    history.pushState({ n62Layer: stack.length }, "");
   } catch {
     // no history here (a sandboxed frame): the layer works, back just leaves
   }

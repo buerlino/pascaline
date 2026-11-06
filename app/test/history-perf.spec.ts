@@ -22,7 +22,7 @@ test("200 stored entries: only the newest are drawn, Enter renders just the new 
       startedAt: 0,
     }));
     await new Promise<void>((resolve, reject) => {
-      const req = indexedDB.open("pascaline", 1);
+      const req = indexedDB.open("n62", 1);
       req.onupgradeneeded = () => req.result.createObjectStore("kv");
       req.onsuccess = () => {
         const tx = req.result.transaction("kv", "readwrite");

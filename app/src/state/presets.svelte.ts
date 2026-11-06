@@ -132,11 +132,11 @@ export class Presets {
       return p.unreadable(); // a failed read is not "nothing stored" (R93): writing now could lose the user's presets
     }
     if (rec === undefined) return p;
-    if (rec["@pascaline"] > DATA_VERSION) {
+    if (rec["@n62"] > DATA_VERSION) {
       p.refused = "newer";
       return p;
     }
-    const from = rec["@pascaline"];
+    const from = rec["@n62"];
     let steps = env.steps;
     if (steps === undefined && from < DATA_VERSION) {
       try {
@@ -147,7 +147,7 @@ export class Presets {
     }
     const up = (key: string, stored: unknown): unknown => unstamp(key, stored, steps ?? {}).value;
     // the keys a preset holds are the records of USER_KEYS and UNIT_PAD_CELLS: their own steps run on them too
-    const { record } = readPresets(migratePresetKeys(up(PRESETS_KEY, rec), from, (key, value, v) => up(key, { "@pascaline": v, value })));
+    const { record } = readPresets(migratePresetKeys(up(PRESETS_KEY, rec), from, (key, value, v) => up(key, { "@n62": v, value })));
     p.list = record.presets;
     p.active = record.active;
     p.next = record.next;

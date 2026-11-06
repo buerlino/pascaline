@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Sets the theme (R50c): loads the family's lazy CSS file first, then the root's attributes, so no frame shows a
-// family without its tokens. Pascaline's two start blocks are in style.css; its transforms are in pascaline.css.
+// family without its tokens. N62's two start blocks are in style.css; its transforms are in n62.css.
 // Settings › Appearance calls it (R50e, via theme/look.ts). A later call wins over an earlier one that is still loading.
 
-export type Family = "pascaline" | "graphite" | "solarized" | "gruvbox" | "nord";
+export type Family = "n62" | "graphite" | "solarized" | "gruvbox" | "nord";
 export interface Theme {
   family: Family;
   brightness: "dark" | "light";
@@ -15,7 +15,7 @@ export interface Theme {
 export type Loader = (family: Family) => Promise<unknown>;
 
 const FILES: Record<Family, () => Promise<unknown>> = {
-  pascaline: () => import("./pascaline.css"),
+  n62: () => import("./n62.css"),
   graphite: () => import("./graphite.css"),
   solarized: () => import("./solarized.css"),
   gruvbox: () => import("./gruvbox.css"),
@@ -26,8 +26,8 @@ const defaultLoader: Loader = (family) => FILES[family]();
 /** The rules of the two switches (R50d), in one file, loaded with either switch (the injected family loader is separate). */
 const loadModes = (): Promise<unknown> => import("./modes.css");
 
-/** Does the theme need its family's file? Pascaline's plain look is in style.css already. */
-export const needsFile = (t: Theme): boolean => t.family !== "pascaline" || t.contrast === "high" || t.keys === "plain";
+/** Does the theme need its family's file? N62's plain look is in style.css already. */
+export const needsFile = (t: Theme): boolean => t.family !== "n62" || t.contrast === "high" || t.keys === "plain";
 
 /** The newest call per root: a call whose loads finish after a newer one began sets nothing (Opus pass 39). */
 const newest = new WeakMap<object, number>();

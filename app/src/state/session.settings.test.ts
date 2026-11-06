@@ -78,7 +78,7 @@ describe("migrateSettings", () => {
 });
 
 describe("the look (R50e, schema 3)", () => {
-  const first = { family: "pascaline", brightness: "dark", contrast: true, plain: false } as const;
+  const first = { family: "n62", brightness: "dark", contrast: true, plain: false } as const;
   it("every schema before 3 gets the first-start look and is marked as migrated", () => {
     for (const old of [{ digits: 9 }, { schema: 2, digits: 9 }]) {
       const { settings, migrated } = migrateSettings(old, first);
@@ -103,8 +103,8 @@ describe("the look (R50e, schema 3)", () => {
       expect(settings).toMatchObject({ digits: 9, look, decimalMark: "point" });
     }
   });
-  it("the defaults are Pascaline, System, both switches off", () => {
-    expect(defaultSettings.look).toEqual({ family: "pascaline", brightness: "system", contrast: false, plain: false });
+  it("the defaults are N62, System, both switches off", () => {
+    expect(defaultSettings.look).toEqual({ family: "n62", brightness: "system", contrast: false, plain: false });
   });
   it("restoring tells the page the look it read", async () => {
     const kv = fakeKv();

@@ -121,7 +121,7 @@ describe("the press counter per key and layer (R127)", () => {
     expect(text.endsWith("\n")).toBe(true);
     const o = JSON.parse(text) as { format: string; since: string; presses: number; keys: Record<string, number> };
     expect(o.format).toBe(COUNTS_FORMAT);
-    expect(COUNTS_FORMAT).toBe("pascaline-counts/1");
+    expect(COUNTS_FORMAT).toBe("n62-counts/1");
     expect(Object.keys(o)).toEqual(["format", "since", "presses", "keys"]);
     expect(o.since).toBe("2026-11-05");
     expect(o.presses).toBe(7);

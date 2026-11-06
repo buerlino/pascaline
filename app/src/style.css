@@ -83,7 +83,7 @@
   --icon-h: 14px;
   --dot: 10px;
 }
-:root[data-family="pascaline"][data-brightness="dark"] {
+:root[data-family="n62"][data-brightness="dark"] {
   --bg: #0b1020;
   --panel: #121a2e;
   --line: #2d3a5a;
@@ -111,7 +111,7 @@
   --on-error: #0b1020;
   color-scheme: dark;
 }
-:root[data-family="pascaline"][data-brightness="light"] {
+:root[data-family="n62"][data-brightness="light"] {
   --bg: #f5f6fa;
   --panel: #e7eaf3;
   --line: #b7bfd4;

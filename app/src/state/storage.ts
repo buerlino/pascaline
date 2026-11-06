@@ -16,7 +16,7 @@ export interface Kv {
 /** What a read found (R93): the value, nothing stored under the key, or a store that could not be read. */
 export type KvRead<T> = { kind: "value"; value: T } | { kind: "none" } | { kind: "failed" };
 
-const DB = "pascaline";
+const DB = "n62";
 const STORE = "kv";
 
 /** The free keys U1–U3 (R15b): per key id and layer (`primary`, `shift`), the user's `{ label, action }` or null for a
@@ -37,8 +37,9 @@ export const DATA_VERSION = 4;
  * written before this pairing; schema 4 was first stamped 3 and is guarded from 4 on.
  */
 export const SETTINGS_SINCE: Readonly<Record<number, number>> = { 4: 4 };
-/** The stamp's field; no value stored before versions has it. */
-const STAMP = "@pascaline";
+/** The stamp's field; no value stored before versions has it. The store under the name N62 starts empty (R138): the
+ *  field before it, `@pascaline`, comes only in an old backup file, whose check (state/backup.ts) reads it. */
+const STAMP = "@n62";
 
 /** Steps from version n to n+1, by key; a key without a step keeps its value. The table is MIGRATIONS in
  *  state/migrations.ts, a lazy chunk (R103). */

@@ -29,7 +29,7 @@ async function flushStored(page: Page, ok: (rec: { values?: Record<string, strin
         const rec = await page.evaluate(
           () =>
             new Promise<{ value?: unknown } | undefined>((resolve, reject) => {
-              const req = indexedDB.open("pascaline", 1);
+              const req = indexedDB.open("n62", 1);
               req.onerror = () => reject(req.error);
               req.onsuccess = () => {
                 const get = req.result.transaction("kv", "readonly").objectStore("kv").get("app.solve");

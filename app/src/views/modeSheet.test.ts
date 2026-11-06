@@ -119,7 +119,7 @@ describe("Settings › Appearance (R50e)", () => {
     expect(s.path).toBe("Mode › Settings › Appearance");
     expect(s.level.items.map((x) => x.id)).toEqual(["theme", "brightness", "contrast", "plain"]);
     expect(byId(s, "theme")?.dots).toHaveLength(5);
-    expect(byId(s, "theme")?.value).toBe("Pascaline");
+    expect(byId(s, "theme")?.value).toBe("N62");
     expect(s.level.items.filter((x) => x.hint).map((x) => x.id)).toEqual(["contrast", "plain"]);
   });
   it("▶ ◀ step the theme in place, round the ends; the sheet stays", () => {
@@ -137,7 +137,7 @@ describe("Settings › Appearance (R50e)", () => {
     const s = settings(1);
     expect(s.enter()).toEqual({ kind: "stay" });
     expect(s.path).toBe("Settings › Appearance › Theme");
-    expect(s.level.items.map((x) => x.label)).toEqual(["Pascaline", "Graphite", "Solarized", "Gruvbox", "Nord"]);
+    expect(s.level.items.map((x) => x.label)).toEqual(["N62", "Graphite", "Solarized", "Gruvbox", "Nord"]);
     expect(s.level.items.every((x) => x.dots?.length === 5)).toBe(true);
     expect(s.pickNumber(4)).toEqual({ kind: "stay" });
     expect(session.settings.look.family).toBe("gruvbox");
@@ -174,7 +174,7 @@ describe("Settings, a level of the sheet (R49)", () => {
     const s = settings();
     expect(s.level.items.map((x) => x.id)).toEqual(["appearance", "numbers", "vibration", "counters", "help"]);
     expect(s.level.items.every((x) => x.submenu)).toBe(true);
-    expect(s.level.items.map((x) => x.value)).toEqual(["Pascaline · System", "STD SCI ENG", "Off", "0 presses", undefined]);
+    expect(s.level.items.map((x) => x.value)).toEqual(["N62 · System", "STD SCI ENG", "Off", "0 presses", undefined]);
     s.pickNumber(4);
     s.back();
     s.back();

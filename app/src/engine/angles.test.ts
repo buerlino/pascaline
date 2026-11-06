@@ -67,7 +67,7 @@ describe("R64: every angle the user types carries pasdeg", () => {
 
   it("pasdeg is a reserved name: the parser refuses it", () => {
     // a bare multi-letter name is refused already (letters typed one by one multiply); the call form is the one way in
-    expect(() => latexToGiac("\\operatorname{pasdeg}\\left(2\\right)")).toThrow(/pasdeg is one of Pascaline's own names/);
+    expect(() => latexToGiac("\\operatorname{pasdeg}\\left(2\\right)")).toThrow(/pasdeg is one of N62's own names/);
     expect(() => latexToGiac("\\operatorname{pasdeg}\\left(x\\right):=x")).toThrow(/own names/);
     expect(() => latexToGiac("2\\sin\\left(\\operatorname{pasdeg}\\left(1\\right)\\right)")).toThrow(/own names/);
   });

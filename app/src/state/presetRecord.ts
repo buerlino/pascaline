@@ -43,12 +43,27 @@ const isId = (n: unknown): n is number => typeof n === "number" && Number.isInte
 /** The key a name is compared by: two names that differ only in case or outer spaces are the same name. */
 export const nameKey = (name: string): string => name.trim().toLocaleLowerCase();
 
+/** R138: a look (a settings `look`, a preset's look group) whose family is the house look's id before the name N62,
+ *  `pascaline`, with the family `n62`; anything else as it is. The store starts empty under N62 and a restore writes
+ *  what the backup's check gave, so a look is renamed where one comes from outside: a backup file (state/backup.ts) and
+ *  a stored preset (readPresets). index.html's inline script needs no alias: an unknown family shows as `n62`. */
+export const renamedLook = (x: unknown): unknown => (isObject(x) && x["family"] === "pascaline" ? { ...x, family: "n62" } : x);
+
+/** The presets' value with each preset's look group through renamedLook (R138). A value of another shape is returned
+ *  as it is, for the check that follows. */
+export function renamedLooks(v: unknown): unknown {
+  if (!isObject(v) || !Array.isArray(v["presets"])) return v;
+  const renamed = (p: unknown): unknown => (isObject(p) && isObject(p["groups"]) && "look" in p["groups"] ? { ...p, groups: { ...p["groups"], look: renamedLook(p["groups"]["look"]) } } : p);
+  return { ...v, presets: (v["presets"] as unknown[]).map(renamed) };
+}
+
 /**
  * The presets from a stored value, entry by entry: a preset without a whole id, a name, or groups as an object is
  * dropped, and so is a later one with an id or a name already taken; `dropped` counts them (the backup's check refuses
  * a part with any). `active` that names no preset is none; `next` is past every id.
  */
-export function readPresets(v: unknown): { record: StoredPresets; dropped: number } {
+export function readPresets(stored: unknown): { record: StoredPresets; dropped: number } {
+  const v = renamedLooks(stored);
   const o = isObject(v) ? v : {};
   const list = Array.isArray(o["presets"]) ? (o["presets"] as unknown[]) : [];
   const presets: Preset[] = [];

@@ -7,7 +7,7 @@ import type { Look } from "./look.ts";
 
 /** The localStorage key of the mirror the inline script reads: `{ family, brightness, contrast, plain, bg }` (bg: the
  *  screen colour, for `<meta name="theme-color">`). IndexedDB stays the source. */
-export const LOOK_KEY = "pascaline.look";
+export const LOOK_KEY = "n62.look";
 
 /** What applyTheme gets: System follows the phone (`systemLight`). */
 export function themeOf(look: Look, systemLight: boolean): Theme {

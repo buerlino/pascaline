@@ -14,7 +14,7 @@ import { LibError, parseLibrary } from "./library.ts";
 import { LIBRARY_FORMAT } from "../state/libraryFormat.ts";
 import { gated } from "./ctxGate.ts";
 
-const HEAD = "// pascaline library 1\n";
+const HEAD = "// n62 library 1\n";
 
 describe("flag words (no engine)", () => {
   it("finds a setting outside strings and words, not inside a longer name", () => {

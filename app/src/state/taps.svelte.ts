@@ -8,7 +8,7 @@
 // "hw:<kind>" (a hardware key that is no keypad key: letter, symbol, dead, other), or "screen:<kind>"
 // (a tap outside the keypad: row, button, or a row's own kind such as units-const) to its count; the total is the
 // sum. A stored record without `keys` loads with an empty map. The export (state/countsFile.ts: Settings › Counters ›
-// Export the counts, and R128's sync folder as counters.json) is one JSON object, `{ "format": "pascaline-counts/1",
+// Export the counts, and R128's sync folder as counters.json) is one JSON object, `{ "format": "n62-counts/1",
 // "since", "presses", "keys" }`, with the keys sorted by count, largest first, ties by name: counts only, no times, no content.
 import type { Kv } from "./storage.ts";
 

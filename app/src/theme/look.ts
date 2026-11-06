@@ -16,11 +16,11 @@ export interface Look {
 }
 
 export const BRIGHTNESS: readonly BrightnessPref[] = ["system", "light", "dark"];
-export const FAMILY_IDS: readonly Family[] = ["pascaline", "graphite", "solarized", "gruvbox", "nord"];
+export const FAMILY_IDS: readonly Family[] = ["n62", "graphite", "solarized", "gruvbox", "nord"];
 
 /** The look of a first start: Dark in the Android app, System in the PWA (docs/05 3.10); High contrast when the system asks. */
 export function defaultLook(native = false, moreContrast = false): Look {
-  return { family: "pascaline", brightness: native ? "dark" : "system", contrast: moreContrast, plain: false };
+  return { family: "n62", brightness: native ? "dark" : "system", contrast: moreContrast, plain: false };
 }
 
 /** A stored look, field by field: a wrong or missing field keeps `fallback`'s. */

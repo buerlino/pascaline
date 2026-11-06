@@ -24,9 +24,9 @@ describe("applyTheme", () => {
   });
   it("a failed load leaves the root as it was", async () => {
     const root = fakeRoot();
-    root.setAttribute("data-family", "pascaline");
+    root.setAttribute("data-family", "n62");
     await expect(applyTheme(nord, root, () => Promise.reject(new Error("offline")))).rejects.toThrow("offline");
-    expect([...root.attrs]).toEqual([["data-family", "pascaline"]]);
+    expect([...root.attrs]).toEqual([["data-family", "n62"]]);
   });
   it("removes the contrast and keys attributes when they are off", async () => {
     const root = fakeRoot();
@@ -35,13 +35,13 @@ describe("applyTheme", () => {
     await applyTheme({ family: "graphite", brightness: "dark", contrast: "normal", keys: "colour" }, root, async () => {});
     expect([...root.attrs.keys()]).toEqual(["data-family", "data-brightness"]);
   });
-  it("Pascaline without transforms loads nothing; with one, its file", async () => {
+  it("N62 without transforms loads nothing; with one, its file", async () => {
     const loaded: Family[] = [];
     const load = async (f: Family): Promise<void> => void loaded.push(f);
-    await applyTheme({ family: "pascaline", brightness: "dark", contrast: "normal", keys: "colour" }, fakeRoot(), load);
+    await applyTheme({ family: "n62", brightness: "dark", contrast: "normal", keys: "colour" }, fakeRoot(), load);
     expect(loaded).toEqual([]);
-    await applyTheme({ family: "pascaline", brightness: "dark", contrast: "high", keys: "colour" }, fakeRoot(), load);
-    expect(loaded).toEqual(["pascaline"]);
+    await applyTheme({ family: "n62", brightness: "dark", contrast: "high", keys: "colour" }, fakeRoot(), load);
+    expect(loaded).toEqual(["n62"]);
     expect(needsFile({ family: "gruvbox", brightness: "dark", contrast: "normal", keys: "colour" })).toBe(true);
   });
 });
@@ -82,7 +82,7 @@ describe("modes.css", () => {
   it("is loaded only with Plain keys or High contrast", async () => {
     let n = 0;
     const modes = async (): Promise<void> => void n++;
-    const t = (o: Partial<Theme>): Theme => ({ family: "pascaline", brightness: "dark", contrast: "normal", keys: "colour", ...o });
+    const t = (o: Partial<Theme>): Theme => ({ family: "n62", brightness: "dark", contrast: "normal", keys: "colour", ...o });
     await applyTheme(t({}), fakeRoot(), async () => {}, modes);
     await applyTheme(t({ family: "nord" }), fakeRoot(), async () => {}, modes);
     expect(n).toBe(0);

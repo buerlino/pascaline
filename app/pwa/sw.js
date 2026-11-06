@@ -54,7 +54,7 @@ self.addEventListener("message", (event) => {
 });
 
 self.addEventListener("activate", (event) => {
-  event.waitUntil(caches.keys().then((keys) => Promise.all(keys.filter((k) => k !== CACHE && k.startsWith("pascaline-")).map((k) => caches.delete(k)))));
+  event.waitUntil(caches.keys().then((keys) => Promise.all(keys.filter((k) => k !== CACHE && k.startsWith("n62-")).map((k) => caches.delete(k)))));
 });
 
 self.addEventListener("fetch", (event) => {
