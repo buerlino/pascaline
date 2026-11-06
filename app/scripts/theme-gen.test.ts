@@ -62,8 +62,10 @@ describe("R140: Shift, Alpha and ⚠ stay apart", () => {
       const { t } = theme(c);
       for (const [name, m] of Object.entries(CVD)) expect(apart(t["shift"] as string, t["alpha"] as string, m), name).toBeGreaterThanOrEqual(LAYER_APART[c.high ? "high" : "normal"]);
     });
-  // Graphite, Gruvbox and Nord leave with R150 and keep their colours (owner, 2026-11-06): their ⚠ is checked only as far as the generator can move it.
-  for (const c of combos().filter((x) => !x.plain && ["n62", "solarized"].includes(x.family)))
+  // Every family but Graphite, Gruvbox and Nord, which leave with R150 and keep their colours (owner, 2026-11-06; Nord Dark
+  // measures 0.0796 because the generator cannot lift its ⚠ any further), so R150's Teal is checked without editing this test.
+  // moveUntil (theme-gen.ts) returns the colour unchanged when no step meets the floor; this test is what catches that.
+  for (const c of combos().filter((x) => !x.plain && !["graphite", "gruvbox", "nord"].includes(x.family)))
     it(`${selector(c)}: ⚠ and Shift at least ${WARN_APART[c.high ? "high" : "normal"]} apart (normal vision)`, () => {
       const { t } = theme(c);
       expect(apart(t["warn"] as string, t["shift"] as string)).toBeGreaterThanOrEqual(WARN_APART[c.high ? "high" : "normal"]);
