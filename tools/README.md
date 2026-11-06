@@ -12,8 +12,7 @@ tools/devlock.sh acquire <serial|host-cpu|integ> <owner> [wait_s]   # release / 
 tools/device-build.sh [--measure] [--install] [--engine-dir DIR] # build our APK (wraps ./build.sh), prints its path
 tools/device-build.sh --test --install                             # the test build: WebView debugging on (never release), installed on $ANDROID_SERIAL
 tools/core-device.sh [--only c05,c07]                             # the core list on the device's WebView over adb (A32): lock, stay-awake, pm clear per case; CORE DEVICE line, .coord/device-runs.jsonl
-ANDROID_SERIAL=<s> tools/update-device.sh <old.apk> <new.apk> [shots]   # A43: the old build, today's APK installed over it (adb install -r), each item checked; old APK: ef857a6 built with build.sh --engine-dir D --no-units and webContentsDebuggingEnabled true in its capacitor.config.ts; new: device-build.sh --test
-GIAC_OUT=<abs dir> node tools/make-update-snapshot.mjs           # A43: tests/fixtures/update-from-ef857a6.json from the old build (run once)
+ANDROID_SERIAL=<s> tools/update-device.sh <old.apk> <new.apk> [shots]   # A43: the old build, today's APK installed over it (adb install -r), each item checked (update-device.ts does the checks); old APK: ef857a6 built with build.sh --engine-dir D --no-units and webContentsDebuggingEnabled true in its capacitor.config.ts; new: device-build.sh --test
 tools/device_run.py status                                        # battery, temperature, WebView, app version
 tools/device_run.py start --mode first|cold|warm --runs 7         # launch timings from logcat marks (waits for engine-ready)
 tools/device_run.py bench --runs 5                                 # the benchmark cases of tests/golden/bench.yaml on the device
@@ -24,10 +23,12 @@ tools/manifest-backup.test.sh                                     # A23, in SELF
 tools/release-gate.test.sh                                        # A42, in SELFTESTS (A55): release-gate.sh --dry-run lists its stages on _out/release
 ```
 
-They use `$ANDROID_SERIAL`: `core-device.sh` requires it, the Python tools default to the Tab One. Smaller helpers (usage in each file's header):
-- `page-series.py`: open a page N times and log the series.
-- `shots.py`: cold-start a page N times and keep a screenshot of each.
-- `tap-seq.py`: tap a sequence and report whether the system keyboard is shown after each tap.
+They use `$ANDROID_SERIAL`: `core-device.sh` requires it, the Python tools default to the Tab One. `shots.py` (usage in its header) cold-starts a page N times and keeps a screenshot of each.
+
+Kept though no script calls them:
+- `update-device.sh` and `update-device.ts`: A76 points the update check at the release APKs. The fixture `tests/fixtures/update-from-ef857a6.json` was made once by `tools/make-update-snapshot.mjs` at `89859bd1`.
+- `shots.py`: A77 (the rename) edits it.
+- The WebView golden run (A20), run once per Giac bump (`engine/giac/README.md`, "Bumping Giac"): a measure build opened with `?bench=golden` (`app/src/goldenBench.ts`, `golden.worker.ts`), its log compared with `app/scripts/golden-dump.ts` by `golden-compare.ts`.
 Night-shift coordinators (docs/shifts/rules.md section 4). Run them from the phase-1 worktree (`cd .claude/worktrees/phase-1`): the main checkout may be on another branch, without `scripts/`.
 ```bash
 scripts/night.sh --until 07:30   # start it as brief section 0c says (phase-1 worktree, ANDROID_SERIAL, setsid); the night shift: a fresh Read-only henri per decision, scripts/pipeline.sh per package (docs/shifts/rules.md section 4)
@@ -37,6 +38,14 @@ scripts/night.sh --until 07:30 --dry-run   # prints each step's kind on a simula
 
 Desktop probes (no device): `tools/probes/` checks what the engine, the parser and the qalc and Find data do today; see its README.
 
-Docs check (no device): `node tools/docs-check.mjs` checks every Markdown link and the docs' size budgets; `npm run gate` runs it (S7).
+Docs check (no device): `node tools/docs-check.mjs` checks every Markdown link and the docs' size budgets; `npm run gate` runs it (S7). `docs-check.test.mjs` tests it on fixture repos (the pipeline's `docs` check runs both). `line-baseline.yaml` lists the source files over 800 lines at their allowed size (A22; the docs check reads it).
+
+Build-time tools (no device):
+- `find-index/`: `generate.mjs` builds the Find index from the pinned tarballs and `find/factors.yaml` (`npm run index`); `units-items.mjs`, `basis.mjs` and `state.mjs` are its parts; `refresh-factors.mjs` (developers, a qalc dev build) recomputes `find/factors.yaml` and prints the difference (P22).
+- `giac-regress/`: our golden cases as Giac regression files (G89): `export.mjs` writes `pascaline-check.cas`, `pascaline-known.cas` and `pascaline-patched.cas`; `run.mjs` runs them on a build (the golden gate's flags stage, G108).
+- `third-party/parse.mts`: `THIRD_PARTY.md`'s tables as data for the About screen (R87; `app/vite-plugin-about.ts`).
+- `library.ts`: the laptop's library check, the app's own check and import on the engine in Node (`node tools/library.ts check <file>`); kept for whoever writes a library file by hand or with an AI (G164's sample).
+
+Release (A7): `release-guard.sh` is what `./build.sh --release` checks before any step (keys, keystore, alias, version files); `release-verify.sh <apk>` checks the signed APK's certificate against `android/release-cert.sha256`; `test-release-guard.sh` tests both without Gradle or an engine.
 
 Release gate (A42): `tools/release-gate.sh` runs the golden gate, the canaries and the core list on `_out/release` (the engine the APK carries), rebuilding it first unless its `.release-key` stamp matches; one line per stage, last line `RELEASE GATE PASSED` or `RELEASE GATE FAILED: <stages>`. Test: `tools/release-gate.test.sh` (A55: run by `pipeline.sh selftest` and the `shell` check with the others, as is `tools/manifest-backup.test.sh`, A23's guard that `android:allowBackup="false"` stays in the manifest, decisions S8). Needs `npm run index` done in the checkout; run it when the host is quiet (under load, `invariants` and core c46/c47 time out).
