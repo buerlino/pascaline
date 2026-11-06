@@ -18,7 +18,7 @@ import { actionFor, type ActionBody, type Key, type Layer, type Special } from "
 /** Shift and Alpha as one key would see them: the session's state, or the layer a gesture chose. */
 export type Mods = { shift: boolean; alpha: boolean };
 /** A key (or a hardware letter, R45) waiting for an app's or a sheet's code. */
-export type Waiting = { key: Key; mods: Mods; layer?: Layer } | { letter: string };
+export type Waiting = { key: Key; mods: Mods; layer?: Layer; screen?: boolean } | { letter: string };
 
 /** What the routing reads and calls: the models, the App-owned state (as accessors) and the App-owned actions. */
 export interface RouteCtx {
@@ -312,6 +312,7 @@ function replay(c: RouteCtx): void {
   for (const w of keys)
     if (c.shell.loading !== null || c.sheetLoad !== null) wait(c, w); // another app started loading meanwhile
     else if ("letter" in w) typeLetter(c, w.letter);
+    else if (w.screen && screenClose(c, w.key, w.layer)) continue; // a tap queued for a sheet's code closes the sheet it lands on (R144)
     else if (!(c.shell.sheet && sheetPress(c, w.key, w.layer)) && !sheetChunk.pad?.route(c, w.key, w.mods)) run(c, w.key, w.mods); // a sheet or the unit pad opened meanwhile takes its keys
 }
 
@@ -345,12 +346,27 @@ function rowsLoading(c: RouteCtx, key: Key): boolean {
   return true;
 }
 
+/** R144 (owner, 2026-11-06): a tap on the on-screen keypad outside an open pick sheet closes it and does nothing else;
+ *  the press is used up. Esc keeps its job (back one level, the root closes), a free key goes to its own row in
+ *  Settings › Your keys (R4b), and a sheet that takes letters (Find, Vars) keeps its keys. A hardware key and the
+ *  status line's controls never come here. True: the sheet took the press. */
+function screenClose(c: RouteCtx, key: Key, layer: Layer | undefined): boolean {
+  const sheet = c.shell.sheet;
+  if (!sheet || sheet.letters || sheetChunk.C === null) return false; // (an undrawn sheet: the key waits, flag and all)
+  const p = key.actions.primary;
+  if (p?.kind === "special" && p.name === "esc") return false;
+  if (key.user && sheet.goKey(key.id, layerOf(modsFor(c, layer)))) return true;
+  c.shell.closeSheet();
+  return true;
+}
+
 /** A key fires. `layer` overrides the Shift/Alpha state for this key only: a trackpad step ("primary"), a flick up
- *  ("shift") or down ("alpha"). */
-export function press(c: RouteCtx, key: Key, layer?: Layer): void {
+ *  ("shift") or down ("alpha"). `screen`: a press of the on-screen keypad (R144: it closes an open pick sheet). */
+export function press(c: RouteCtx, key: Key, layer?: Layer, screen = false): void {
+  if (screen && screenClose(c, key, layer)) return;
   const p = key.actions.primary;
   if (p?.kind === "special" && (p.name === "shift" || p.name === "alpha")) return modifier(c, p.name, layer);
-  if (sheetUndrawn(c) || rowsLoading(c, key)) return wait(c, { key, mods: modsFor(c, layer), layer });
+  if (sheetUndrawn(c) || rowsLoading(c, key)) return wait(c, { key, mods: modsFor(c, layer), layer, screen });
   if (c.shell.sheet && sheetPress(c, key, layer)) return;
   const mods = modsFor(c, layer);
   if (sheetChunk.pad?.route(c, key, mods)) return; // the unit pad's cell (R24b)
@@ -360,10 +376,10 @@ export function press(c: RouteCtx, key: Key, layer?: Layer): void {
       .catch(() => {})
       .finally(() => (c.sheetLoad = null)); // if it fails, the queued keys run without a sheet
   }
-  if (c.sheetLoad !== null) return wait(c, { key, mods, layer });
+  if (c.sheetLoad !== null) return wait(c, { key, mods, layer, screen });
   if (c.shell.loading !== null) {
     const a = actionFor(key, mods.shift, mods.alpha);
-    if (!(a?.kind === "special" && AT_ONCE.includes(a.name))) return wait(c, { key, mods, layer });
+    if (!(a?.kind === "special" && AT_ONCE.includes(a.name))) return wait(c, { key, mods, layer, screen });
   }
   run(c, key, mods);
 }

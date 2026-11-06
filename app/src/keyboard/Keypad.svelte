@@ -40,7 +40,8 @@
      *  `filter`: the open list takes letters. */
     sheet?: { filter: boolean } | undefined;
     /** A key fires; `layer` overrides the Shift/Alpha state: "primary" for a trackpad step, "shift" for a flick up,
-     *  "alpha" for a flick down (on Shift and Alpha themselves: the lock flicks). */
+     *  "alpha" for a flick down (on Shift and Alpha themselves: the lock flicks). A press that closes an open sheet
+     *  (R144) is the gesture's last: a drag steps nothing more and a held ⌫ does not repeat until the finger lifts. */
     onpress: (key: Key, layer?: Layer) => void;
     /** One press was made, as docs/04 5.2 counts them (R70): a tap, a flick, a drag, a held ⌫ once. `key`: which one,
      *  "<key id>:<layer>" (R127, state/pressCount.ts). */
@@ -122,7 +123,7 @@
   // letter layer (FlickTracker: distance only, no hold time), a flick slid back to the middle nothing. A sideways slip
   // or a long hold is still a tap. ⌫ fires on touch and repeats while held instead; the trackpad has no flicks.
   type Gesture =
-    | { kind: "pad"; key: Key | undefined; x0: number; y0: number; steps: Stepper }
+    | { kind: "pad"; key: Key | undefined; x0: number; y0: number; steps: Stepper; closed?: boolean }
     | { kind: "key"; key: Key | undefined; el: HTMLElement | undefined; x0: number; y0: number; flick: FlickTracker }
     | { kind: "repeat"; repeat: Repeat };
 
@@ -211,7 +212,7 @@
     if (target && target !== "pad" && REPEAT_KEYS.includes(target.id)) {
       // the repeats keep the layer of the first press (Shift ⌫ = Del), which used up a one-shot Shift
       oncount(`${target.id}:${alpha ? "alpha" : shift ? "shift" : "primary"}`);
-      onpress(target);
+      if (closes(() => onpress(target))) return; // (R144: the tap closed a sheet; nothing repeats)
       const layer: Layer = alpha ? "alpha" : shift ? "shift" : "primary";
       gestures.set(ev.pointerId, { kind: "repeat", repeat: new Repeat(() => onpress(target, layer)) });
       return;
@@ -229,12 +230,19 @@
     const g = gestures.get(ev.pointerId);
     if (!g) return;
     if (g.kind === "pad") {
-      for (const dir of g.steps.move(ev.clientX - g.x0, ev.clientY - g.y0)) step(dir);
+      for (const dir of g.steps.move(ev.clientX - g.x0, ev.clientY - g.y0)) if (!g.closed && closes(() => step(dir))) g.closed = true;
     } else if (g.kind === "key" && g.key) {
       const before = g.flick.state;
       g.flick.move(ev.clientX - g.x0, ev.clientY - g.y0);
       if (g.flick.state !== before) showBubble(ev.pointerId, g);
     }
+  }
+
+  /** Run a press; true when it closed the open sheet (R144: the rest of the gesture does nothing). */
+  function closes(run: () => void): boolean {
+    const open = sheet !== undefined;
+    run();
+    return open && sheet === undefined;
   }
 
   function step(dir: PadDir): void {
