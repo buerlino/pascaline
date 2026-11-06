@@ -13,7 +13,7 @@
 1. **Find:** built; A4b and A74 merged (E3 met on the Tab One); R91's before/after is in [ONE-TIME.md](../../tests/core/ONE-TIME.md).
 2. **The Settings base** (owner, 2026-10-27; decisions.md "Settings in the Mode sheet, and presets"; [mockups/settings.html](../mockups/settings.html)): merged up to R89 → R59 and R12b → R12c → R41; R53; R36, R33 → R40.
 3. **The units** (owner, 2026-10-29: right after R86, R57, R50e): R24b–R24d, G81, R60–R63, R71 and R92 (the units menu's Constants and Tools) merged.
-4. **Lane B, to v0.1.0** (the APK and the website from one tag): A7, A9, A43, A45 and A48–A50 merged; A8 and A70 merged (the release test, 11-05); then wrong numbers by reach, C4. The bar and the days: [release-0.1.0.md](../release-0.1.0.md); the release is on Sat 11-07 (owner, 2026-11-06), after one test night on the renamed code.
+4. **Lane B, to v0.1.0** (the APK and the website from one tag): the release path tested 11-05 (A8, A70); then wrong numbers by reach, C4. The bar and the days: [release-0.1.0.md](../release-0.1.0.md); the release is on Sun 11-08 (owner, 2026-11-06): the UI rows first, then a test night on final code.
 5. **Every morning:** the owner's check (MORNING.md, on the night's device when the night had one, about 10 minutes). The day session writes each failed step as a backlog bug line on phase-1 and logs one line in `.coord/log.md`: `- HH:MM morning <date>: clean` or `- HH:MM morning <date>: fails <ids>`.
 
 **The weekly extreme night** (owner, 2026-10-29; replaces the nightly fuzz of 2026-10-27): once a week lane B runs the extreme-input packages (none open) and the fuzz, in 10-minute slices (G167: from `app/`, each command as `../tools/devlock.sh slice <name> node scripts/sweep.ts …`; n = 4 for the 5,000 `--edges` trees: a part of 1,250 takes about 2 min at G138's 90 s per 1,000 trees, never more than 5,000 trees a part (8 min): `--nightly --edges --seed <clock> --count 5000 --part i/4` for i = 1..4, then `--shrink <seed>`; a missing part is named and exit 1; a long shrink: `--shrink <seed> --part i/m` for each i, then `--shrink <seed> --join`), with its triage (each week the text of G138, its package file at d1278849, with a new ID); the Opus pass files the backlog lines. Wrong numbers of everyday or medium reach run any time, by reach.
@@ -31,8 +31,7 @@
 | [A61](packages/A61.md) | What the WebView answers to `persisted()` | annabell, Sonnet | day (the Fairphone) | R96f1 | ~0.2 d |
 | [S33](packages/S33.md) | One place per pipeline rule: brief 0c against rules section 4 | sandra, Opus | day, no lane running | A75 | ~0.5 d |
 | [A76](packages/A76.md) | The release builds only what ships; the update test from the last release | annabell, Sonnet | day | the v0.1.0 tag | ~0.3 d |
-| [A77](packages/A77.md), [R138](packages/R138.md), [A78](packages/A78.md) | The name N62, in this order (TMview clean and the repo moved, 2026-11-06) | annabell, ron, annabell | day, no lane running | – | ~1.3 d |
-| [A79](packages/A79.md), [A79f1](packages/A79f1.md) | The N62 logo in the icons, the store images and the README (A79f1: the owner's reworked logo, STIX Two) | annabell, Sonnet | day (the Tab One) | A77; the owner's `n62_*` files in `logo/` | ~0.3 d |
+| [A82](packages/A82.md) | Store and README screenshots in the final look | annabell, Sonnet | day Sat 11-07 (the Fairphone) | R140, R146, R147, R53 | ~0.2 d |
 | [A80](packages/A80.md), [R139](packages/R139.md), [S35](packages/S35.md) | The internal sweep: scripts and variables, the app's internals, the docs (owner, 2026-11-06: today, then the folder move) | annabell Opus, ron Sonnet, sandra Opus | day, no lane running (R139 the Tab One) | A79, then in this order | ~1 d |
 
 **Why these models:** Opus where a slip breaks entry, the unit chain or stored data for every later package, or gives a wrong number (P17: the engine, input and units); sandra and sofia run Opus; Sonnet elsewhere (an existing pattern, pinned by tests); the audit model follows P17.
@@ -55,13 +54,25 @@ With the lanes, start both from the phase-1 worktree: `cd .claude/worktrees/phas
 12. **No lanes in the morning** (a selftest failed): the owner starts `scripts/night.sh` without `--lane`, and henri runs lane B's rows, then lane A's, as one queue.
 
 ### Night 2026-11-06 to 11-07, to 09:00, both lanes on the Tab One (owner, 2026-11-06)
-`ANDROID_SERIAL=HA24BZ2Y` for both lanes, `--until 09:00`, started from the moved checkout `~/Documents/source99/n62` after S35 and the folder move (if the day chain stops before S35 or the move: from `~/Documents/source99/pascaline`, with the names on phase-1 then); before the start the owner plugs in and unlocks the Tab One, and `tools/stay-awake.sh HA24BZ2Y --restore` runs (STAY_ON=7). CORE DEVICE after each pass. Lane A has no UI rows left: it runs lane B's engine rows with no After (owner, 2026-11-06), lane B runs A81 first (owner, 2026-11-06: the release on Sat 11-07 ships with it), then G176f1, the rest of its engine rows, then A64 to A75. Two engine packages can run at once: a new Giac patch takes the next free number after phase-1 is merged into its branch; a clash is a fix round. Every "After" was checked against the merges on 2026-11-06 ("–" is merged); a step whose "After" is not merged is skipped. Follow each Opus pass as written (rule 3).
+`ANDROID_SERIAL=HA24BZ2Y` for both lanes, `--until 09:00`, started from the moved checkout `~/Documents/source99/n62` after S35 and the folder move (if the day chain stops before S35 or the move: from `~/Documents/source99/pascaline`, with the names on phase-1 then); before the start the owner plugs in and unlocks the Tab One, and `tools/stay-awake.sh HA24BZ2Y --restore` runs (STAY_ON=7). CORE DEVICE after each pass. Lane A runs the UI rows 528–538 first (owner, 2026-11-06: before v0.1.0, now Sun 11-08), then the engine rows below them; lane B runs A81 first (v0.1.0 ships with it), then G176f1, the rest of its engine rows, then A64 to A75. Two engine packages can run at once: a new Giac patch takes the next free number after phase-1 is merged into its branch; a clash is a fix round. Every "After" was checked against the merges on 2026-11-06 ("–" is merged); a step whose "After" is not merged is skipped. Follow each Opus pass as written (rule 3).
 
-### Lane A queue (ron's UI; tonight lane B's engine rows)
+### Lane A queue (ron's UI, then engine rows)
 Milestone reviews (section 0): after R50e (with R116's gallery groups "Entry highlights (R116)" and the lifted --pick on the History picked row; R113's rings, gallery home-tips-small); after R24d (with R92's Constants and Tools; R108's gallery group "Decimal comma in apps"; R89 on the Fairphone: save two presets with different free keys and switch; R111's note at 360 px; R33's stored-name colour in each theme, decisions.md "Owner answers of 2026-11-02"; R120's gallery unitresult-t10-comma; R124's gallery group "Mark style (R124)" and R125's "Digit groups (R125)", ’ and , grouping only before the point since R125f1; G164's sample sources, decisions.md "Needs the user"; R59 on the Tab One: import a .txt library from Downloads and from Drive, paste a long one from the clipboard, read the 9 s notice; R135's note on CAS Σ cos(k)/k to 2000).
 
 | Step | What | Agent, model | Branch | After |
 |---|---|---|---|---|
+| 528 | [R140](packages/R140.md) N62 and Solarized palettes; control keys like the rest | ron, Sonnet | `p1/ron-palettes` | – |
+| 539 | [R150](packages/R150.md) Teal in; Graphite, Gruvbox and Nord out | ron, Sonnet | `p1/ron-tealfamily` | R140 |
+| 529 | [R146](packages/R146.md) the six keys: Help·Esc, Undo·Redo, Copy·Paste; no View key | ron, Opus | `p1/ron-sixkeys` | – |
+| 530 | [R141](packages/R141.md) the round pad a circle, no hub, no zone outlines | ron, Sonnet | `p1/ron-roundpad` | R140 |
+| 531 | [R142](packages/R142.md) variable letters italic in every mode, no bold | ron, Sonnet | `p1/ron-italicletters` | R141 |
+| 532 | [R143](packages/R143.md) ▾ on every legend that opens a menu | ron, Sonnet | `p1/ron-menumark` | R142, R146 |
+| 533 | [R144](packages/R144.md) a tap outside an open menu closes it | ron, Opus | `p1/ron-sheetoutside` | – |
+| 534 | [R145](packages/R145.md) ⚙ Settings in every ☰ menu's title row | ron, Sonnet | `p1/ron-menugear` | – |
+| 535 | [R147](packages/R147.md) a tap picks a history row, a second tap inserts | ron, Opus | `p1/ron-tappick` | – |
+| 536 | [R53](packages/R53.md) results mode: the keypad folds by a handle or swipe | ron, Opus | `p1/ron-results-fold` | R146, R147 |
+| 537 | [R148](packages/R148.md) more room: 4 px gaps, short rows below 760 px | ron, Sonnet | `p1/ron-room` | R53, R147 |
+| 538 | [R149](packages/R149.md) N62 + Enter rolls the credits | ron, Sonnet | `p1/ron-credits` | R144 |
 | 495 | [G178](packages/G178.md) a divergent integral inside an expression is refused, not ⚠ 1 (F115) | gorge, Opus | `p1/gorge-intdivexpr` | – |
 | 496 | [G168](packages/G168.md) no value is a plain refusal: `undef`, empty calls, `DelAVars()`, the budget message (F93, F109) | gorge, Opus | `p1/gorge-novalue` | – |
 | 500 | [G169](packages/G169.md) a list as a distribution's x gives one value per element (F105, F93) | gorge, Opus | `p1/gorge-listlast` | – |
