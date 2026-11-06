@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 # Shift rules (every shift)
 
-The standing rules for every agent of Pascaline: the workers gorge, ron and annabell, the advisor sandra, the auditor sofia, the coordinator henri and the overseer percy (`.claude/agents/`). They bind together with `docs/rules-core.md`. The shift's own goal, tasks, definition of done and the night queue are in [brief.md](brief.md); where the two differ, the brief wins for that shift. Section numbers are stable, so the agent files' references keep working: workers read sections 3 and 5; section 4 is how a package runs through the pipeline, day and night.
+The standing rules for every agent of N62: the workers gorge, ron and annabell, the advisor sandra, the auditor sofia, the coordinator henri and the overseer percy (`.claude/agents/`). They bind together with `docs/rules-core.md`. The shift's own goal, tasks, definition of done and the night queue are in [brief.md](brief.md); where the two differ, the brief wins for that shift. Section numbers are stable, so the agent files' references keep working: workers read sections 3 and 5; section 4 is how a package runs through the pipeline, day and night.
 
 ## 1. Principles
 The three principles in `docs/rules-core.md` decide every default:
@@ -50,7 +50,8 @@ Every package runs through `scripts/pipeline.sh <ron|gorge|annabell|sandra> "<ID
 - The pipeline made your worktree and branch (`p1/<name>-<slug>` from `phase-1`). **Commit small and often**, at least every 30–45 minutes of work.
 - Shared paths (the pipeline sets them; keep its `GIAC_OUT`: `_out/key-<key>` of your branch's engine inputs, A28, A47a; the block below is for work outside the pipeline):
   ```bash
-  export MAIN=/home/nordmu/Documents/source99/pascaline
+  export MAIN=$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")   # the main checkout, from any worktree
+  [ -f "$MAIN/.coord/log.md" ] || echo "STOP: not the N62 checkout ($MAIN)"
   export N62_DL_DIR=$MAIN/engine/giac/_downloads   # never re-download Giac
   export GIAC_OUT=$MAIN/engine/giac/_out/gsl             # the dev engine of phase-1
   export N62_QALC_DL_DIR=$MAIN/engine/qalc/_downloads   # the Find index generator's libqalculate tarball (npm run index)

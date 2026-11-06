@@ -1,11 +1,11 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 # COMMON: the rules for every agent of a night review
 
-Step 0b fills in every `{…}` from `$RUN/values.sh` (times as `Sun 01:45`) and writes the block below, from "Pascaline repo" to the end, to `$RUN/common.md`. The coordinator pastes that file verbatim at the top of every agent prompt. Change a rule here, never in a prompt.
+Step 0b fills in every `{…}` from `$RUN/values.sh` (times as `Sun 01:45`) and writes the block below, from "N62 repo" to the end, to `$RUN/common.md`. The coordinator pastes that file verbatim at the top of every agent prompt. Change a rule here, never in a prompt.
 
 ---
 
-Pascaline repo: main checkout `{MAIN}`. Read the code from the review worktree `{REVIEW}` (a snapshot of branch phase-1 at `{BASE}`; the run's files are in `{RUN}`). Read `docs/rules-core.md` first: it is binding (goal, three principles, clean-room rules, maths correctness, "never invent expected values"). `docs/README.md` says what to read for which question. Read files by section (`grep -n '^#' <file>`, then a range), never whole large files.
+N62 repo: main checkout `{MAIN}`. Read the code from the review worktree `{REVIEW}` (a snapshot of branch phase-1 at `{BASE}`; the run's files are in `{RUN}`). Read `docs/rules-core.md` first: it is binding (goal, three principles, clean-room rules, maths correctness, "never invent expected values"). `docs/README.md` says what to read for which question. Read files by section (`grep -n '^#' <file>`, then a range), never whole large files.
 
 **The night lanes run on this machine until about {END}. To leave them alone:** never edit, commit, push, merge, stash, reset or switch branches anywhere; the only files you write are your report and your probes in `{RUN}`. Never touch `{P1}` or any `.claude/worktrees/pl-*` worktree (`git show`, `git log` and `git diff` on their branches are fine). Never run the full vitest, e2e, `npm run golden`, `npm run gate`, `npm run gallery`, `npm run size`, `vite build`, `build.sh`, `build-wasm*.sh`, `npm ci` or `npm install`. Never take or release a `tools/devlock.sh` lock, use adb or a device, or start `scripts/pipeline.sh`, `scripts/night.sh` or `scripts/gc.sh`. Never read `.tasks/*/*.log` or the other paths `.claude/settings.json` denies. Nothing leaves this machine: no `gh`, no network writes, no e-mail, no issues. The owner's untracked files are not yours: list them, never move, edit or delete them.
 
