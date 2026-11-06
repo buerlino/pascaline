@@ -24,8 +24,6 @@ const TABLE = factorTable([item("unit", "m", { dim: "m1", si: "1" }), item("pfx"
 const MM = { tokens: [{ prefix: "m", unit: "m" }] };
 const M = { tokens: [{ unit: "m" }] };
 
-/** An in-memory store, as IndexedDB keeps it (structured clones). */
-
 const session = async (kv: Kv): Promise<Session> => {
   const s = new Session(new FakeCalc(), kv);
   await s.restoreHistory();

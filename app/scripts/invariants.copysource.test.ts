@@ -8,17 +8,9 @@ import { defaultHomeSettings } from "../src/engine/homeEval.ts";
 import { EngineHost } from "../src/engine/host.ts";
 import { giacAvailable, loadNodeGiac, nodeHost } from "../src/engine/nodeGiac.ts";
 import { pasdegCommand } from "../src/engine/homeEval.ts";
-import type { Kv } from "../src/state/storage.ts";
+import { fakeKv } from "../src/state/fakeKv.ts";
 import { Session } from "../src/state/session.svelte.ts";
 import { copySourceOf } from "./invariants.ts";
-
-function memoryKv(): Kv {
-  const data = new Map<string, unknown>();
-  return {
-    get: <T>(k: string) => Promise.resolve(data.get(k) as T | undefined),
-    set: (k, v) => (data.set(k, structuredClone(v)), Promise.resolve()),
-  };
-}
 
 describe.skipIf(!giacAvailable())("copySourceOf equals the Session item's copy source (real Giac)", () => {
   for (const input of ["1/3", "2/3", "0.5", "sqrt(2)", "1.5e300*2e300", "evalf(1/3)"]) {
@@ -34,7 +26,7 @@ describe.skipIf(!giacAvailable())("copySourceOf equals the Session item's copy s
           return Promise.resolve({ ok: r.ok, display: r.display, approximate: r.approximate, facts: r.facts, full: r.full, ...(r.exact !== undefined ? { exact: r.exact } : {}), ...(r.value ? { value: r.value } : {}) });
         },
       });
-      const s = new Session(calc, memoryKv());
+      const s = new Session(calc, fakeKv());
       s.setView("home");
       await s.submit(input, input);
       const item = s.home.at(-1)!;
