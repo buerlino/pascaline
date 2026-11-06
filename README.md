@@ -40,10 +40,10 @@ If you know the HP Prime, the keys will feel familiar: the functions sit where y
 
 ## Coming next
 
-- **Units:** convert, and check that units match as you calculate (`3 m + 20 cm`).
-- **Physical constants** and **uncertainty** that travels with the number (`9.81 ± 0.02`).
-- **Matrices, vectors and number bases.**
-- **Engineering helpers:** parallel resistance, E-series, dB and interpolation.
+- **Matrices and vectors on their own keys**, with an editor.
+- **Number bases:** hex, binary and octal.
+- **Help** for the function at the cursor.
+- **Results mode:** fold the keypad away and work with your results.
 - **Later:** statistics, a spreadsheet, more plot types, 3D, iOS and desktop.
 
 Want the details? [The task list](docs/backlog.md).

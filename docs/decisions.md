@@ -126,7 +126,7 @@ The defaults that bind code and tests, one line each. A default changes when its
 **Entry and keys**
 - **⌫ and Del keep a template whole** (R23–R26h, R47): never half a template or a lost box. Full text: archive. Would change if: G2 items 44, 46, 49 or 51 differ (the G2 way wins unless it leaves half a template).
 - **The cursor stops only at a box** (R27b): ◀ ▶ ▲ ▼ skip names, a function's name-bracket gap and template marks; the parser refuses `sin 7(2)`. **The cursor goes where the user aims** (R42, R43): a finger tap places once; ▶ leaving a template stops at the end of its box. Would change if: G2 items 50 or 57 differ.
-- **R71 (Opus pass 30):** ± types on the Home and CAS line for the units key to read, and is dimmed in an app; rule: docs/06 row 15.
+- **R71 (Opus pass 30):** ± types on the Home and CAS line for the units key to read, and is dimmed in an app; rule: docs/06 section 2.
 - **Hardware keys** (R31, R45): docs/04 5.5 point 1; `e` after digits is ᴇ; characters no key types do nothing.
 - **Nothing takes focus while the app is away** (R25a–c) and **Focus on return:** MathLive's own restore is off (R22). Would change if: a desktop browser loses the caret after switching windows (the owner's check, backlog).
 - **Flicks** (R9): arm at 20 px, cancel within 12 px, a cancelled touch stays cancelled; one lock at a time. **⌫ auto-repeat:** fires on touch, repeats after 400 ms, then every 60 ms. **Alpha lock:** Alpha twice locks capitals, Shift Alpha Alpha lower case. Would change if: the owner's hands say otherwise.

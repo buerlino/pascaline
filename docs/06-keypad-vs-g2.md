@@ -10,12 +10,6 @@ The legend is missing on the keytop only because the feature is not built; the k
 |---|---|---|
 | Shift + View (Help) | context help from the Find index (milestone 6); the owner may veto | docs/04 5.1, R15c |
 | View | results mode: the keypad collapses to a slice (R53) | P16, S9 |
-| Math | Find, everything (a G2-style Math menu) | P8, P11 |
-| Vars | Find filtered to variables | P8 |
-| Shift + `,` | ± on the Home and CAS line, for the units key to read; dimmed in an app (R71) | decisions.md "M4-2" |
-| Shift + Fmt | Mode (R85) | decisions.md "Settings in the Mode sheet, and presets" |
-| Shift + Math | Memory (Find on variables and functions, with delete) | docs/04 5.1 |
-| Shift + Tmpl | the unit view (milestone 5) | P11, S1 |
 | Shift + 4, 5 | matrix editor, `[ ]` (EN5, milestone 6) | docs/04 5.1 |
 | Shift + 7 (List) | deferred with Statistics | docs/04 5.1 |
 | Shift + − (Base) | Base menu (EN6, milestone 6) | docs/04 5.4 |
@@ -26,6 +20,9 @@ The legend is missing on the keytop only because the feature is not built; the k
 | Esc stops a running job, then closes Settings, goes back one sheet level, drops a picked row, else clears the line; no Cancel key | Fmt took the On slot, which is where the G2 interrupts a job; every engine call must be cancellable (CLAUDE.md maths rules), and one key for "stop or back" saves a cell (R15c point 3). A hardware Escape is this key |
 | No Apps, Symb, Plot, Num or Menu key: the place name, the view tabs and ☰ on the status line | the G2's view keys sit where R3 puts six user keys; every view stays one tap away (R15c points 6 and 7, R15c1) |
 | No Mode key (Shift + Apps on the G2's Info); Mode is a tap on a status chip (Shift + Fmt since R85), Settings Mode's last row and the last row of every ☰ menu, as a level of the same sheet | the G2's Info page is blank (rule 4); the chips show what Mode sets (R15c point 7); Fmt's Shift cell was free, so Mode gets a keys-only path (owner, 2026-10-27; decisions.md "Settings in the Mode sheet, and presets") |
+| Math opens Find (R4a): one search over functions, constants and units; with an empty query it is a G2-style Math menu, fixed categories in a fixed order | one search where the G2 keeps the Math menu, Catalog and Units apart (P8); the empty query keeps the G2's menu, so the same keys reach the same function, with no usage ranking (P11, docs/03 rule 8) |
+| Vars opens Find on the user's variables and functions (R4b); Shift + Math (Memory) is the same sheet with delete and "clear all" | the user's names are searched like everything else (P8); Memory keeps the G2's cell and needs no list of its own (docs/04 3.7, 5.1) |
+| Shift + Tmpl opens the unit view: the line read-only with a unit slot after every number, and the unit pad (R24a–R24d) | the G2 keeps Units there (G2 item 30); a conversion table is not a unit check, so the units go into the calculation itself (P11, P14, S1; docs/04 section 4) |
 | The round pad has a dashed hub and no OK key; a drag from anywhere on it, the hub too, steps the cursor | Enter is the OK; the hub is where a drag starts (R15c point 1) |
 | Undo, Shift + Redo on their own key (the G2: Shift + Esc is Clear, no Redo) | the entry line's history (P13, R16) deserves a key; Redo is new (R15c point 2) |
 | Copy, Shift + Paste on their own key (the G2: Shift + View and Shift + Menu) | Menu left the keypad, so Paste needs a new place; the pair stays on one key (R15c point 2) |
@@ -34,7 +31,7 @@ The legend is missing on the keytop only because the feature is not built; the k
 | Shift + Symb, Plot, Num (Setup) omitted | the same settings sit in the Mode sheet and in the Plot and Num menus (Window, Start, Step); nothing is lost |
 | Shift + Vars (Chars) omitted | Find covers named symbols (docs/04 5.1) |
 | Shift + 1 (Program) omitted | no PPL and no Python (P11); programs are Giac definitions |
-| Shift + `,` (Eval) and Shift + `( )` (tick marks) omitted | Shift + `,` becomes ± (R71, section 1): no free key nearer the digits, and Shift + − is EN6's Base; "evaluate at" comes with the Tmpl palette; quoting is not used for engineering work |
+| Shift + `,` (Eval) and Shift + `( )` (tick marks) omitted; Shift + `,` is ± on the Home and CAS line, for the units key to read, dimmed in an app (R71) | the owner put ± there (decisions.md "M4-2"): no free key is nearer the digits, and Shift + − is EN6's Base; "evaluate at" comes with the Tmpl palette; quoting is not used for engineering work |
 | Shift + 0 (Notes) and Shift + Help (User) omitted | no notes feature; the User keyboard is a parked idea (feedback #17) |
 | `(−)` where the G2 prints `+/−` | behaviour is identical: the G2 key inserts a minus sign and does not toggle (keys.yaml r6c2). The label is the honest one |
 | Shift + x = y, where the G2 has Define | kept for now (owner, 2026-10-13). Revisit when typing `f(x):=…` shows up as a friction |
@@ -57,29 +54,19 @@ The legend is missing on the keytop only because the feature is not built; the k
 3. **Same for the other view keys, and a cleaner top section.** Symb, Plot and Num are folded into the status line the same way if R15a confirms it (every view stays one action away); the arrow pad moves one line down; the top cluster (menu keys, Esc, Cancel, View, Help) is tidied so it takes fewer rows. Built as R3 (R15c, R15c2): Symb, Plot and Num are tabs, Menu is ☰, Esc took Cancel's job, Help is Shift + View; the rows 0–2 hold U1–U6, the round pad, and View | Esc, Undo | Copy, ⇤ | ⇥. Rules 6 and 8 allow this only as the owner's one-off decision for the top cluster, before the layout is learned; the maths keys below do not move, and after R15c the cluster is fixed too.
 4. **The exponent key types an E mark instead of the `×10^` template.** The template needs space, hurts the formula's readability and caused the silent wrong exponent of M4-2 (`2.2E-9 × 4.7E3`). The key becomes `ᴇ` (the mark the G2 also draws), is no longer called EEX or ×10ⁿ, and its legend is `ᴇ`. Results keep the E notation of the Sci and Eng formats (`1.5E-9`). Built in R14: the key (id `emark`) inserts `\emark`, drawn ᴇ as one token; on an empty line or after an operator it types 1ᴇ as the G2 does; ÷ and the power keys take the whole number.
 5. **Shift + x = y stays** (section 2).
-6. **Menus are revamped in the step that adds the next menus** (the Tmpl palette and the form toggle of R10): see open point A.
+6. **Menus are revamped in the step that adds the next menus** (the Tmpl palette and the form toggle of R10): done as S2's seven rules ([archive/r8-menus.md](archive/r8-menus.md), decisions.md "S2: one menu system"); Mode is on the status chips, R10's Tmpl palette stays as built.
 7. **Alpha + 0 (the quote mark) is removed.** Python is gone, strings have no use in Home or CAS, and an unmatched `"` is an error waiting to happen. A key that does nothing in a layer is dimmed (R6). Removal test: it comes back (as a pair) when a feature needs text. Built in R13.
 8. **Shift + ◀ and Shift + ▶ (line start and end) were removed** in R13 and came back by their removal test as the ⇤ ⇥ key pair (R15c, built in R15c2), with the box's start and end on Shift; ◀ ▶ keep no Shift layer.
 9. **Info, Notes and User stay omitted** (section 2).
 10. **The G2's Shift palettes come back** (owner's answers to R10): Shift + 6 relations and logic, Shift + 9 symbols and Greek with `!`. Package R18.
 
-## 3a. Decided by the owner on 2026-10-17 (R15c; R15c1, R15c2 built, R15c3, R15c4 after Find)
-The top cluster becomes R3 (decisions.md "R15c"); R15c2 built the key rows, whose differences are in section 2. In short:
-- **The arrows keep the G2's round pad.** Its centre is the drag hub, with no OK key.
-- **Apps, Mode, Symb, Plot, Num, Menu, Cancel and the Help key leave the keypad.**
-  - Apps is the place name on the status line; Menu is ☰ there; Symb, Plot and Num are tabs in an app; Mode is on the chips.
-  - Esc takes Cancel's job.
-  - Copy, Paste and Undo get keys of their own.
-  - Help moves to Shift + View; View (the keypad toggle) keeps a key, in R3's wing.
-- **New keys:** Redo, and ⇤ ⇥ with the box ends on Shift. This reverses section 3 point 8 by its removal test.
-- **The user keys:** U1–U6, each with tap, Shift and Alpha.
+## 3a. Decided by the owner on 2026-10-17 (R15c)
+Built (R15c1–R15c4): the top cluster became R3 (decisions.md "R15c"); its differences are rows of section 2. Text in git at `6550cc93`.
 
 ## 4. Open points
-- **A. Menu audit. Done** (S2, [archive/r8-menus.md](archive/r8-menus.md)); its seven rules were accepted by the owner on 2026-10-13 (decisions.md "S2: one menu system"). Key-level results: Mode is on the status chips (R15c); R10's Tmpl palette stays as built.
 - **B. The status-line switch.** Built (R15b, R15c1): the place (the glyph tile and ▾) is a target of at least 48 × 28 px at the left edge (R82f2); since R15c1 it opens Apps, so Home ↔ CAS is 2 taps (name, row), or 1 user key that holds one. Judge on the APK; if 2 taps prove slow, a flick on the name takes the switch (decisions.md R15c).
-- **C. `!` (factorial). Settled** (owner, 2026-10-13): it goes in the Shift + 9 palette, as on the G2 (R18).
 
 ## 5. About the comparison file this was built from
 An outside review produced a YAML list of differences (`gemini-code-1791904688276.yaml`, not kept in the repo). Read it with two caveats:
-1. **It lists planned keys as removed or omitted.** Help, the Math and Tmpl keys and the shifted Memory, Units, Matrix, `[ ]` and Base layers are planned (section 1, `{ }` is built: R54), not dropped. Two small errors: it says the clone's `(−)` replaced a `+/−` toggle (the G2 key does not toggle), and that Alpha + 0 inserts a single quote mark (it types one double-quote character; now removed).
+1. **It lists planned keys as removed or omitted.** Help, Matrix, `[ ]` and Base are planned (section 1); the Math and Tmpl keys, Memory, Units and `{ }` (R54) are built; none was dropped. Two small errors: it says the clone's `(−)` replaced a `+/−` toggle (the G2 key does not toggle), and that Alpha + 0 inserts a single quote mark (it types one double-quote character; now removed).
 2. **It misses differences that are already documented:** ☰'s contents (Home/CAS actions: copy, paste, share, clear history, P8), Shift + Copy = Paste (a number from the clipboard, where the G2 lists past entries; docs/04 2.6), and the unit-slot overrides (µ on `(−)`, Ω on the comma, ° on a b/c, flick letters; `unit_slot:` in `spec/keyboard.yaml`).
