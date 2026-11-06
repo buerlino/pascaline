@@ -2,26 +2,16 @@
 // R24d: the user cells of the unit pad: defaults from spec/unit-pad.yaml `user:`, the user's units over them in the
 // stamped store, a restart, a reset, a pair (MPa), an emptied leg, and a damaged record.
 import { describe, expect, it } from "vitest";
-import { stamp, unstamp, type Kv } from "../state/storage.ts";
+import { stamp, unstamp } from "../state/storage.ts";
 import { MIGRATIONS } from "../state/migrations.ts";
 import { UnitPad } from "./pad.ts";
 import { CELL_KEYS, UNIT_PAD_CELLS, UnitCells } from "./userCells.svelte.ts";
+import { fakeKv } from "../state/fakeKv.ts";
 
-function memKv(): Kv & { data: Map<string, unknown> } {
-  const data = new Map<string, unknown>();
-  return {
-    data,
-    get: <T>(k: string) => Promise.resolve(data.get(k) as T | undefined),
-    set: (k: string, v: unknown) => {
-      data.set(k, structuredClone(v));
-      return Promise.resolve();
-    },
-  };
-}
 
 describe("the user cells (R24d)", () => {
   it("are U1–U6 and, before anything is set, the defaults of spec/unit-pad.yaml", async () => {
-    const c = new UnitCells(memKv());
+    const c = new UnitCells(fakeKv());
     await c.restore();
     expect(CELL_KEYS).toEqual(["u1", "u2", "u3", "u4", "u5", "u6"]);
     expect(c.get("u1", "tap")).toEqual({ unit: "dB" });
@@ -34,7 +24,7 @@ describe("the user cells (R24d)", () => {
   });
 
   it("a unit with a prefix is one leg (MPa, mm of water), drawn as the pad draws it and emitted as a pair", () => {
-    const c = new UnitCells(memKv());
+    const c = new UnitCells(fakeKv());
     c.set("u1", "tap", { unit: "Pa", prefix: "M" });
     c.set("u1", "up", { unit: "m", prefix: "u" });
     expect(c.textOf("u1", "tap")).toBe("MPa");
@@ -46,7 +36,7 @@ describe("the user cells (R24d)", () => {
   });
 
   it("is stored stamped under unitPadCells, survives a restart, and a reset gives the default back", async () => {
-    const kv = memKv();
+    const kv = fakeKv();
     const c = new UnitCells(kv);
     c.set("u5", "tap", { unit: "h" });
     c.set("u5", "down", { unit: "min", label: "min" });
@@ -76,7 +66,7 @@ describe("the user cells (R24d)", () => {
   });
 
   it("an emptied leg is empty (the pad opens Find on it); a damaged record never breaks the pad", async () => {
-    const kv = memKv();
+    const kv = fakeKv();
     kv.data.set(UNIT_PAD_CELLS, { u1: { tap: null, up: { unit: 5 }, down: "x" }, u2: "bad", u3: { tap: { unit: "" } } });
     const c = new UnitCells(kv);
     await c.restore();
@@ -89,13 +79,13 @@ describe("the user cells (R24d)", () => {
   });
 
   it("refuses a key that is not a user cell, and a leg without a unit", () => {
-    const c = new UnitCells(memKv());
+    const c = new UnitCells(fakeKv());
     expect(() => c.set("d1", "tap", { unit: "m" })).toThrow();
     expect(() => c.set("u1", "tap", { unit: "" })).toThrow();
   });
 
   it("restore reads once: the unit view and Settings share one read", async () => {
-    const c = new UnitCells(memKv());
+    const c = new UnitCells(fakeKv());
     expect(c.restore()).toBe(c.restore());
   });
 });

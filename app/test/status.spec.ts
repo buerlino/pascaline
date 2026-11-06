@@ -2,11 +2,10 @@
 // R8: the status line (docs/05 3.2), the Mode sheet (the chips since R15c2) and Settings (Mode's last row) (3.4). The
 // real engine for the angle test (GIAC_OUT); the fake one for the rest.
 import { expect, test, type Page } from "@playwright/test";
-import { entryValue, open, tap } from "./helpers.ts";
+import { entryValue, open, sheet, tap } from "./helpers.ts";
 
 const lastText = (page: Page) => page.locator('[data-testid="result"] .result').last();
 const ready = (page: Page) => page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
-const sheet = (page: Page) => page.getByTestId("menu");
 const angle = (page: Page) => page.evaluate(() => window.pascaline.session.settings.angle);
 const active = (page: Page) => sheet(page).locator('[role="menuitem"][data-active="true"]');
 

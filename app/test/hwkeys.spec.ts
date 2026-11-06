@@ -10,7 +10,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { devices, expect, test, type Page } from "@playwright/test";
 import { parse } from "yaml";
-import { entryValue, open, tap } from "./helpers.ts";
+import { entryValue, lastResult, open, tap } from "./helpers.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -139,7 +139,6 @@ test.describe("on the engine", () => {
     await page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
     await page.evaluate(() => window.pascaline.entry.focus());
   });
-  const lastResult = (page: Page) => page.locator('[data-testid="result"]').last().locator(".result");
   const resultIs = async (page: Page, text: string, count: number): Promise<void> => {
     await expect(page.locator('[data-status="done"]')).toHaveCount(count);
     await expect(lastResult(page)).toHaveAttribute("data-text", text);

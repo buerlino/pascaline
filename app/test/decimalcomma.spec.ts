@@ -4,7 +4,7 @@
 // are drawn and copied with the comma, and a pasted 1,5e-3 is a number. Key sequences on the real engine. Expected values
 // are derived: 3,5 × 2 = 7, 1,5 ÷ 2 = 0,75, 1,5ᴇ-3 = 0,0015, 3,ᴇ3 = 3.ᴇ3 = 3000.
 import { expect, test, type Page } from "@playwright/test";
-import { entryValue, open, tap, useClipboardLock } from "./helpers.ts";
+import { entryValue, lastResult, open, setClipboard, tap, useClipboardLock } from "./helpers.ts";
 
 test.use({ permissions: ["clipboard-read", "clipboard-write"] });
 // The system clipboard is one for the whole browser: these tests run one after another.
@@ -20,8 +20,6 @@ test.beforeEach(async ({ page }) => {
 });
 
 const clipboard = (page: Page): Promise<string> => page.evaluate(() => navigator.clipboard.readText());
-const setClipboard = (page: Page, text: string): Promise<void> => page.evaluate((s) => navigator.clipboard.writeText(s), text);
-const lastResult = (page: Page) => page.locator('[data-testid="result"]').last().locator(".result");
 const resultIs = async (page: Page, text: string, count: number): Promise<void> => {
   // 15 s: a result waits for the engine, which a full e2e run on a loaded machine starts slowly (run 340: 5 s was not enough)
   await expect(page.locator('[data-status="done"]')).toHaveCount(count, { timeout: 15_000 });

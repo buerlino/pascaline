@@ -3,7 +3,7 @@
 // copy is the full value (every confirmed digit), the Menu has "as shown", and what was copied pastes back as the same
 // value. From keys (Copy) and from touch (a long press). Expected values: oracle = mpmath 1.3.0 at 40 digits.
 import { expect, test, type Locator, type Page } from "@playwright/test";
-import { entryValue, open, tap, useClipboardLock } from "./helpers.ts";
+import { entryValue, open, setClipboard, tap, useClipboardLock } from "./helpers.ts";
 
 test.use({ permissions: ["clipboard-read", "clipboard-write"] });
 // The system clipboard is one for the whole browser: these tests run one after another.
@@ -17,7 +17,6 @@ test.beforeEach(async ({ page }) => {
 });
 
 const clipboard = (page: Page): Promise<string> => page.evaluate(() => navigator.clipboard.readText());
-const setClipboard = (page: Page, text: string): Promise<void> => page.evaluate((s) => navigator.clipboard.writeText(s), text);
 
 // oracle: lambertw(5) and sqrt(2); the copy holds at least 25 of these digits (a root is polished again at work precision + 20)
 const LAMBERT5 = "1.326724665242200223635099297758079660129";

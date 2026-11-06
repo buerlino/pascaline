@@ -5,7 +5,7 @@
 import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
 import { DATA_VERSION } from "../src/state/storage.ts";
-import { tap } from "./helpers.ts";
+import { lastResult, tap } from "./helpers.ts";
 
 interface Snapshot {
   build: string;
@@ -53,7 +53,6 @@ const stored = (page: Page, key: string): Promise<unknown> =>
 
 const results = (page: Page): Promise<string[]> =>
   page.locator('[data-testid="result"] .result').evaluateAll((els) => els.map((e) => e.getAttribute("data-text") ?? ""));
-const lastResult = (page: Page) => page.locator('[data-testid="result"]').last().locator(".result");
 
 test.describe("an older build's data (ef857a6) in today's app", () => {
   test.beforeEach(async ({ page }) => {

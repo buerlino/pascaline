@@ -10,7 +10,7 @@
 // default). By keys; the palette cells by the key path (`run`), as the Tmpl palette inserts them. Expected lines
 // derived from the rule.
 import { expect, test, type Page } from "@playwright/test";
-import { entryValue, open, tap } from "./helpers.ts";
+import { bksp, entryValue, open, tap } from "./helpers.ts";
 
 test.beforeEach(async ({ page }) => {
   await open(page);
@@ -26,10 +26,6 @@ const m22 = (a: string, b: string, c: string, d: string): string => `\\begin{pma
 const cases = (a: string, b: string, c: string, d: string): string =>
   `\\begin{cases}${a} & ${IF}${b}\\\\ ${c} & ${IF}${d}\\end{cases}`;
 
-async function bksp(page: Page): Promise<string> {
-  await tap(page, ["bksp"]);
-  return entryValue(page);
-}
 async function del(page: Page): Promise<string> {
   await tap(page, ["shift", "bksp"]);
   return entryValue(page);

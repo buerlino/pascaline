@@ -4,21 +4,15 @@
 // Shift + ⌫ (Del) right before a closing bracket is the mirror (decisions.md "⌫ at a bracket"). MathLive alone sets
 // the opening bracket to `\left.` and is stuck there (backlog F10). By keys; expected lines derived from the rule.
 import { expect, test, type Page } from "@playwright/test";
-import { entryValue, open, tap } from "./helpers.ts";
+import { bksp, entryValue, open, tap } from "./helpers.ts";
 
 test.beforeEach(async ({ page }) => {
   await open(page);
 });
 
-const BK = "bksp";
 const DEL = ["shift", "bksp"];
 const EMPTY_LOG = "\\log\\left(\\placeholder{}\\right)";
 
-/** Press ⌫ once and return the line. */
-async function bksp(page: Page): Promise<string> {
-  await tap(page, [BK]);
-  return entryValue(page);
-}
 async function del(page: Page): Promise<string> {
   await tap(page, DEL);
   return entryValue(page);

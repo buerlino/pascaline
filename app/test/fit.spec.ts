@@ -5,6 +5,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { entryValue, open, tap } from "./helpers.ts";
 
+// Not helpers.sheet: this one is every element with role menu, not the `menu` test id.
 const sheet = (page: Page) => page.locator('[role="menu"]');
 
 type Box = { x: number; y: number; width: number; height: number };

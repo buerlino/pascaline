@@ -9,7 +9,7 @@
 // By keys; the palette cells by the key path (`run`), as the Tmpl palette inserts them. Expected lines derived from
 // the rule.
 import { expect, test, type Page } from "@playwright/test";
-import { entryValue, open, tap } from "./helpers.ts";
+import { bksp, entryValue, open, tap } from "./helpers.ts";
 
 test.beforeEach(async ({ page }) => {
   await open(page);
@@ -21,10 +21,6 @@ const SUM = "\\sum_{#?=#?}^{#?}\\left(#0\\right)";
 const PROD = "\\prod_{#?=#?}^{#?}\\left(#0\\right)";
 const INT = "\\int_{#?}^{#?}#0\\,\\mathrm{d}#?";
 
-async function bksp(page: Page): Promise<string> {
-  await tap(page, ["bksp"]);
-  return entryValue(page);
-}
 async function del(page: Page): Promise<string> {
   await tap(page, ["shift", "bksp"]);
   return entryValue(page);

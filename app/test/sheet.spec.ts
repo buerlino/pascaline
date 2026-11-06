@@ -2,7 +2,7 @@
 // One sheet for every list (R7, docs/05 3.1 with section 7): one test per key of the 3.1 table, plus last pick, the
 // scroll cue, disabled rows with their reason, touch, and no key going through the sheet.
 import { expect, test, type Page } from "@playwright/test";
-import { drag, entryValue, open, tap } from "./helpers.ts";
+import { drag, entryValue, open, sheet, tap } from "./helpers.ts";
 
 test.beforeEach(async ({ page }) => {
   await open(page);
@@ -29,7 +29,6 @@ async function list(page: Page, title: string, items: (string | Spec)[]): Promis
   await expect(sheet(page)).toBeVisible();
 }
 const ran = (page: Page): Promise<string[]> => page.evaluate(() => (window as unknown as { ran: string[] }).ran);
-const sheet = (page: Page) => page.getByTestId("menu");
 const active = (page: Page) => sheet(page).locator('[role="menuitem"][data-active="true"]');
 const title = (page: Page) => page.getByTestId("sheet-title");
 const FIVE = ["one", "two", "three", "four", "five"];

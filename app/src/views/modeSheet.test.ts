@@ -5,18 +5,14 @@ import { resetUndoTime } from "./dataSection.svelte.ts";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { FakeCalc } from "../calc/fake.ts";
 import { Session } from "../state/session.svelte.ts";
-import type { Kv } from "../state/storage.ts";
 import { UserKeys } from "../keyboard/userKeys.svelte.ts";
 import { unitCells } from "../units/userCells.svelte.ts";
 import { modeItems } from "./modeSheet.ts";
 import { lastPicks } from "./picks.ts";
 import { Sheet } from "./sheet.svelte.ts";
 import type { MenuItem } from "../apps/types.ts";
+import { fakeKv } from "../state/fakeKv.ts";
 
-const memoryKv = (): Kv => {
-  const data = new Map<string, unknown>();
-  return { get: <T>(k: string) => Promise.resolve(data.get(k) as T | undefined), set: (k, v) => (data.set(k, structuredClone(v)), Promise.resolve()) };
-};
 let session: Session;
 const mode = (at?: string) => new Sheet("mode", "Mode", () => modeItems(session), { remember: false, at });
 /** Mode, 6, then the section numbered `n` (none: the Settings level). */
@@ -33,7 +29,7 @@ const byId = (s: Sheet, id: string) => s.level.items.find((r) => r.id === id);
 
 beforeEach(() => {
   lastPicks.clear();
-  session = new Session(new FakeCalc(), memoryKv());
+  session = new Session(new FakeCalc(), fakeKv());
 });
 
 describe("Mode sheet", () => {
@@ -313,7 +309,7 @@ describe("Settings, a level of the sheet (R49)", () => {
   // Your keys (R4b) lists the 18 key slots and the unit pad as the mockup draws them, and each slot its 8 actions: a
   // list that scrolls, left out here (R40's report asks whether the rule covers it)
   it("every Settings level has at most seven rows (docs/05 3.4), with every section the app can give, Your keys' lists aside", () => {
-    const userKeys = new UserKeys(memoryKv());
+    const userKeys = new UserKeys(fakeKv());
     const clip = { saveBackup: async () => {} } as unknown as ClipActions;
     const s = new Sheet("mode", "Mode", () => modeItems(session, { userKeys, data: (run) => void run(clip) }), { remember: false });
     s.pickNumber(6);
@@ -437,7 +433,7 @@ describe("Help and about (R87)", () => {
 
 describe("Settings › Your keys (R4b)", () => {
   const withKeys = () => {
-    const userKeys = new UserKeys(memoryKv());
+    const userKeys = new UserKeys(fakeKv());
     const chosen: string[] = [];
     const s = new Sheet("mode", "Mode", () => modeItems(session, { userKeys, chooseFor: (id, layer) => void chosen.push(`${id}:${layer}`) }), { remember: false });
     s.pickNumber(6);
@@ -538,7 +534,7 @@ describe("Settings › Your keys (R4b)", () => {
 describe("Settings › Data (R38a)", () => {
   it("is the fifth section, between Your keys and Counters, only where the app gives the backup; its row saves and closes", () => {
     const saved: string[] = [];
-    const userKeys = new UserKeys(memoryKv());
+    const userKeys = new UserKeys(fakeKv());
     resetUndoTime(null); // no kept copy of a restore (R38b)
     const clip = { saveBackup: async () => void saved.push("save") } as unknown as ClipActions;
     const s = new Sheet("mode", "Mode", () => modeItems(session, { userKeys, data: (run) => void run(clip) }), { remember: false });
@@ -558,7 +554,7 @@ describe("Settings › Counters › Export the counts (R127)", () => {
   it("is a row before Reset only where the app gives the file port; it saves the counts as they stand", () => {
     expect(settings(4).level.items.map((x) => x.id)).toEqual(["presses", "shift", "alpha", "presets", "since", "reset"]);
     const saved: string[] = [];
-    const userKeys = new UserKeys(memoryKv());
+    const userKeys = new UserKeys(fakeKv());
     const clip = { saveCounts: async (counts: unknown) => void saved.push(JSON.stringify(counts)) } as unknown as ClipActions;
     const s = new Sheet("mode", "Mode", () => modeItems(session, { userKeys, data: (run) => void run(clip) }), { remember: false });
     s.pickNumber(6);

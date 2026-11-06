@@ -245,6 +245,7 @@ async function typing(page: Page, view: "home" | "cas"): Promise<void> {
   await expect.poll(() => page.evaluate(() => window.pascaline.session.view)).toBe(view);
   await expect.poll(() => editableFocused(page), `the ${view} entry is focused before leaving`).toBe(true);
 }
+// Not helpers.sheet: this one asserts the sheet title.
 const sheet = (page: Page, title: string | RegExp) => expect(page.getByTestId("sheet-title")).toHaveText(title);
 
 // Each cell ends on the state it names (a visible sheet, page or view, or the focused entry), so that a key sequence

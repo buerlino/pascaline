@@ -5,17 +5,15 @@
 // Every cell is picked here by key or by tap and evaluated; the entry strings are what MathLive writes (the parser
 // cases of tests/golden/parser.yaml group "palettes" use them). Expected values derived by hand.
 import { expect, test, type Page } from "@playwright/test";
-import { entryValue, flick, open, tap } from "./helpers.ts";
+import { entryValue, flick, lastResult, open, sheet, tap } from "./helpers.ts";
 
 test.beforeEach(async ({ page }) => {
   await open(page, "");
   await page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
 });
 
-const sheet = (page: Page) => page.getByTestId("menu");
 const active = (page: Page) => sheet(page).locator('[data-active="true"]');
 const lastRow = (page: Page) => page.locator('[data-testid="result"]').last();
-const lastResult = (page: Page) => lastRow(page).locator(".result");
 
 /** Shift + the key, then a tap on the cell. */
 async function tapCell(page: Page, opener: "d6" | "d9", id: string): Promise<void> {

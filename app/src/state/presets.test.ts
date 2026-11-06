@@ -11,22 +11,12 @@ import { BACKUP_KEYS, checkBackup, VALIDATORS, type CheckedBackup } from "./back
 import { GROUP_FIELDS, readPresets } from "./presetRecord.ts";
 import { PRESET_GROUPS, PRESETS_KEY, PresetError, Presets, START_COPIES, type PresetStore, type StoredPresets } from "./presets.svelte.ts";
 import { Session } from "./session.svelte.ts";
-import { DATA_VERSION, USER_KEYS, type Kv } from "./storage.ts";
+import { DATA_VERSION, USER_KEYS } from "./storage.ts";
 import type { RawRecord } from "./storageRaw.ts";
+import { fakeKv } from "./fakeKv.ts";
 
 const isObject = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
 
-function memoryKv(): Kv & { data: Map<string, unknown> } {
-  const data = new Map<string, unknown>();
-  return {
-    data,
-    get: <T>(k: string) => Promise.resolve(data.get(k) as T | undefined),
-    set: (k, v) => {
-      data.set(k, structuredClone(v));
-      return Promise.resolve();
-    },
-  };
-}
 
 /** The presets' record as stored, stamped as kvSet stamps it. */
 function memoryStore(rec?: RawRecord): PresetStore & { rec: RawRecord | undefined; writes: number } {
@@ -49,7 +39,7 @@ const sinh = { label: "sinh", action: { insert: "\\sinh\\left(#0\\right)" } };
 const mol = { label: "mol", action: { type: "mol" } };
 
 async function setup(rec?: RawRecord) {
-  const kv = memoryKv();
+  const kv = fakeKv();
   const session = new Session(new FakeCalc(), kv);
   const looks: Look[] = [];
   const env = { showLook: (look: Look): Promise<void> => (looks.push(look), Promise.resolve()) };
@@ -192,7 +182,7 @@ describe("presets (R88)", () => {
   });
 
   it("a read that failed is refused as unreadable (not newer), never written over, and told to the store (R123)", async () => {
-    const kv = memoryKv();
+    const kv = fakeKv();
     const session = new Session(new FakeCalc(), kv);
     let told = 0;
     const store = Object.assign(memoryStore(), { read: () => Promise.reject(new Error("indexedDB get failed")), unreadable: () => void told++ });
@@ -205,7 +195,7 @@ describe("presets (R88)", () => {
 
   it("an older record migrates: through the steps of presets and of the keys it holds, then written back", async () => {
     const older: StoredPresets = { presets: [{ id: 3, name: "Old", groups: { keys: { userKeys: { [U1]: { primary: { label: "x", action: { type: "x" } } } }, unitPadCells: {} } } }], active: 3, next: 4 };
-    const kv = memoryKv();
+    const kv = fakeKv();
     const session = new Session(new FakeCalc(), kv);
     const userKeys = new UserKeys(kv);
     const store = memoryStore({ "@pascaline": DATA_VERSION - 1, value: older });
@@ -246,7 +236,7 @@ describe("presets (R88)", () => {
   const backupOf = (rec: RawRecord): Uint8Array =>
     new TextEncoder().encode(JSON.stringify({ "pascaline-backup": 1, dataVersion: DATA_VERSION, made: "", parts: { [PRESETS_KEY]: rec } }));
   async function openWith(rec: RawRecord): Promise<Presets> {
-    const kv = memoryKv();
+    const kv = fakeKv();
     return Presets.open({ session: new Session(new FakeCalc(), kv), userKeys: new UserKeys(kv), cells: new UnitCells(kv), store: memoryStore(rec), steps: keysStep });
   }
 

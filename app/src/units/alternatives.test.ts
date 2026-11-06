@@ -16,7 +16,7 @@ import { factorTable } from "./factors.ts";
 import { padUnitCells, userUnitCells } from "./padCells.ts";
 import { defaultUser } from "./pad.ts";
 import { isUnitError, type Quantity, type UnitSlot } from "./types.ts";
-import type { Kv } from "../state/storage.ts";
+import { fakeKv } from "../state/fakeKv.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const indexFile = join(here, "../find/_gen/find-index.json");
@@ -175,12 +175,8 @@ describe("the unit result's alternatives (R60)", () => {
 });
 
 describe("units.targets (R60)", () => {
-  function memKv(): Kv & { data: Map<string, unknown> } {
-    const data = new Map<string, unknown>();
-    return { data, get: async <T>(k: string) => data.get(k) as T | undefined, set: async (k, v) => void data.set(k, v) };
-  }
   it("a tap writes the slot for its dimension; reading gives it back; a bad record reads as none", async () => {
-    const kv = memKv();
+    const kv = fakeKv();
     expect(await readTargets(kv)).toEqual({});
     const ms: UnitSlot = { tokens: [{ prefix: "m", unit: "s" }] };
     await writeTarget(kv, "s1", ms);

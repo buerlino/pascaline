@@ -3,9 +3,8 @@
 // over the keypad's maths rows, opened by Mode's last row and by every ☰ menu's last row, with its path in the title.
 // By touch, by keys and by Android back (`history.back()`); the history never grows. The fake engine.
 import { expect, test, type Page } from "@playwright/test";
-import { entryValue, open, recordVibrations, tap, vibrations } from "./helpers.ts";
+import { entryValue, open, recordVibrations, sheet, tap, vibrations } from "./helpers.ts";
 
-const sheet = (page: Page) => page.getByTestId("menu");
 const title = (page: Page) => page.getByTestId("sheet-title");
 const row = (page: Page, id: string) => sheet(page).locator(`[role="menuitem"][data-id="${id}"]`);
 const active = (page: Page) => sheet(page).locator('[data-active="true"]');

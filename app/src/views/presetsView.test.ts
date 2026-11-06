@@ -11,21 +11,18 @@ import { FakeCalc } from "../calc/fake.ts";
 import { UserKeys } from "../keyboard/userKeys.svelte.ts";
 import { Presets, type PresetStore, type StoredPresets } from "../state/presets.svelte.ts";
 import { Session } from "../state/session.svelte.ts";
-import { DATA_VERSION, type Kv } from "../state/storage.ts";
+import { DATA_VERSION } from "../state/storage.ts";
 import type { RawRecord } from "../state/storageRaw.ts";
 import { UnitCells } from "../units/userCells.svelte.ts";
 import { groupValue, nameFrom, presetRow, setPresetsModel, summary } from "./presetsView.svelte.ts";
+import { fakeKv } from "../state/fakeKv.ts";
 
-function memoryKv(): Kv {
-  const data = new Map<string, unknown>();
-  return { get: <T>(k: string) => Promise.resolve(data.get(k) as T | undefined), set: (k, v) => (data.set(k, structuredClone(v)), Promise.resolve()) };
-}
 function store(rec?: RawRecord): PresetStore {
   const s = { rec, read: () => Promise.resolve(s.rec), write: (value: StoredPresets) => ((s.rec = { "@pascaline": DATA_VERSION, value }), Promise.resolve()) };
   return s;
 }
 async function setup(rec?: RawRecord | "unreadable") {
-  const kv = memoryKv();
+  const kv = fakeKv();
   const session = new Session(new FakeCalc(), kv);
   const userKeys = new UserKeys(kv);
   const from = rec === "unreadable" ? { ...store(), read: () => Promise.reject(new Error("indexedDB get failed")) } : store(rec);

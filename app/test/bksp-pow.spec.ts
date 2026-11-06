@@ -6,7 +6,7 @@
 // exponent is empty or the key's own (x², x⁻¹), and selects it first when the exponent holds typed content. The bases
 // of eˣ and 10ˣ are the key's own: they go with their exponent. By keys; expected lines derived from the rule.
 import { expect, test, type Page } from "@playwright/test";
-import { entryValue, open, tap } from "./helpers.ts";
+import { bksp, entryValue, open, tap } from "./helpers.ts";
 
 test.beforeEach(async ({ page }) => {
   await open(page);
@@ -14,10 +14,6 @@ test.beforeEach(async ({ page }) => {
 
 const PH = "\\placeholder{}";
 
-async function bksp(page: Page): Promise<string> {
-  await tap(page, ["bksp"]);
-  return entryValue(page);
-}
 async function del(page: Page): Promise<string> {
   await tap(page, ["shift", "bksp"]);
   return entryValue(page);

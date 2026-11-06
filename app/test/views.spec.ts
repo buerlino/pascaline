@@ -9,6 +9,7 @@ test.beforeEach(async ({ page }) => {
   await page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
 });
 
+// Not helpers.lastResult: this one is the whole result row, not its `.result` part.
 const lastResult = (page: Page) => page.locator('[data-testid="result"]').last();
 const lastText = (page: Page) => lastResult(page).locator(".result").getAttribute("data-text");
 

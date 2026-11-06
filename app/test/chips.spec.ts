@@ -3,9 +3,7 @@
 // macro, the chip looks unlike a variable; a screenshot is attached to the report), and chips that keep their value
 // through recall and relaunch. Expected values are derived.
 import { expect, test, type Page } from "@playwright/test";
-import { entryValue, open, tap } from "./helpers.ts";
-
-const lastResult = (page: Page) => page.locator('[data-testid="result"]').last().locator(".result");
+import { entryValue, lastResult, open, tap } from "./helpers.ts";
 const ready = (page: Page) =>
   page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
 

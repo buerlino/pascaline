@@ -6,24 +6,11 @@ import { describe, expect, it } from "vitest";
 import { FakeCalc } from "../calc/fake.ts";
 import { loadRemoved, Session } from "./session.svelte.ts";
 import type { Kv } from "./storage.ts";
+import { fakeKv } from "./fakeKv.ts";
 
-function memoryKv(): Kv & { data: Map<string, unknown>; writes: string[] } {
-  const data = new Map<string, unknown>();
-  const writes: string[] = [];
-  return {
-    data,
-    writes,
-    get: <T>(k: string) => Promise.resolve(structuredClone(data.get(k)) as T | undefined),
-    set: (k, v) => {
-      writes.push(k);
-      data.set(k, structuredClone(v));
-      return Promise.resolve();
-    },
-  };
-}
 
 /** A session on a FakeCalc (echo) whose jobs take `delay` ms, with the stored history read. */
-async function session(delay = 0, kv: Kv = memoryKv()): Promise<Session> {
+async function session(delay = 0, kv: Kv = fakeKv([], { cloneReads: true })): Promise<Session> {
   const s = new Session(new FakeCalc(delay), kv);
   await s.restoreHistory();
   await loadRemoved(); // main.ts fetches it when idle; once in, Clear and Delete act at once
@@ -89,7 +76,7 @@ describe("Undo for Clear and Delete (R98, fh-1)", () => {
   });
 
   it("the next Enter drops the copy, in memory and in the store", async () => {
-    const kv = memoryKv();
+    const kv = fakeKv([], { cloneReads: true });
     const s = await session(0, kv);
     await s.submit("1");
     s.clearHistory();
@@ -101,7 +88,7 @@ describe("Undo for Clear and Delete (R98, fh-1)", () => {
   });
 
   it("the next Enter drops the stored copy at once, while its job still runs", async () => {
-    const kv = memoryKv();
+    const kv = fakeKv([], { cloneReads: true });
     const s = await session(300, kv);
     await s.submit("1");
     await s.clearHistory();
@@ -134,7 +121,7 @@ describe("Undo for Clear and Delete (R98, fh-1)", () => {
   });
 
   it("the copy is stored in the same write as the history, so a relaunch keeps the Undo", async () => {
-    const kv = memoryKv();
+    const kv = fakeKv([], { cloneReads: true });
     const a = await session(0, kv);
     for (const x of ["1", "2", "3"]) await a.submit(x);
     kv.writes.length = 0;
@@ -153,7 +140,7 @@ describe("Undo for Clear and Delete (R98, fh-1)", () => {
   });
 
   it("a Delete survives a relaunch in its place", async () => {
-    const kv = memoryKv();
+    const kv = fakeKv([], { cloneReads: true });
     const a = await session(0, kv);
     for (const x of ["1", "2", "3"]) await a.submit(x);
     void a.removeItem(a.items[0]!);
@@ -164,7 +151,7 @@ describe("Undo for Clear and Delete (R98, fh-1)", () => {
   });
 
   it("a stored copy that is not well formed is dropped, the history kept", async () => {
-    const kv = memoryKv();
+    const kv = fakeKv([], { cloneReads: true });
     const a = await session(0, kv);
     await a.submit("1");
     const h = kv.data.get("history") as Record<string, unknown>;
@@ -234,7 +221,7 @@ describe("each view keeps its own Undo copy (R119)", () => {
   });
 
   it("a relaunch keeps Home's copy after an Enter in CAS", async () => {
-    const kv = memoryKv();
+    const kv = fakeKv([], { cloneReads: true });
     const a = await session(0, kv);
     for (const x of ["1", "2"]) await a.submit(x);
     await a.clearHistory();
@@ -248,7 +235,7 @@ describe("each view keeps its own Undo copy (R119)", () => {
   });
 
   it("both copies survive a relaunch, each in its own view", async () => {
-    const kv = memoryKv();
+    const kv = fakeKv([], { cloneReads: true });
     const a = await session(0, kv);
     await a.submit("h");
     await a.clearHistory();
@@ -265,7 +252,7 @@ describe("each view keeps its own Undo copy (R119)", () => {
   });
 
   it("an old record with one copy reads into the view it belongs to", async () => {
-    const kv = memoryKv();
+    const kv = fakeKv([], { cloneReads: true });
     const row = { id: 9, view: "cas", latex: "c", status: "done", resultLatex: "c", text: "c", approximate: false, startedAt: 0 };
     kv.data.set("history", { home: [], cas: [], undo: { view: "cas", kind: "delete", rows: [{ at: 0, item: row }] } });
     const s = await session(0, kv);

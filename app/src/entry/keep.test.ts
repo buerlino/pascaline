@@ -3,9 +3,9 @@
 // that writes it (only when something changed) and clears it.
 import { describe, expect, it } from "vitest";
 import { latexToGiac } from "../input/latex-to-giac.ts";
-import type { Kv } from "../state/storage.ts";
 import { LINE_KEY, lineKeeper, lineRecord } from "./keep.ts";
 import { keptLine } from "./kept.ts";
+import { fakeKv } from "../state/fakeKv.ts";
 
 const half = { value: "1/2", exact: true };
 
@@ -42,38 +42,23 @@ describe("keptLine", () => {
   });
 });
 
-/** An in-memory store that counts its writes. */
-function memKv(): Kv & { data: Map<string, unknown>; writes: number } {
-  const data = new Map<string, unknown>();
-  return {
-    data,
-    writes: 0,
-    get: <T>(k: string) => Promise.resolve(data.get(k) as T | undefined),
-    set(k: string, v: unknown) {
-      this.writes++;
-      data.set(k, v);
-      return Promise.resolve();
-    },
-  };
-}
-
 describe("lineKeeper", () => {
   it("stores a line, clears it, and writes nothing when there is nothing to clear", async () => {
-    const kv = memKv();
+    const kv = fakeKv();
     const keeper = lineKeeper(kv);
     expect(await keeper.read("home")).toBeUndefined();
     keeper.save(null); // an empty line at the first hide: no write
     keeper.save(null);
-    expect(kv.writes).toBe(0);
+    expect(kv.writes.length).toBe(0);
     keeper.save(lineRecord("home", "1+", {}));
     expect(await lineKeeper(kv).read("home")).toEqual({ view: "home", latex: "1+", chips: {} });
     keeper.save(null); // Enter
     expect(kv.data.get(LINE_KEY)).toBeNull();
     keeper.save(null);
-    expect(kv.writes).toBe(2);
+    expect(kv.writes.length).toBe(2);
   });
   it("clears a line read at start once the line is empty", async () => {
-    const kv = memKv();
+    const kv = fakeKv();
     kv.data.set(LINE_KEY, lineRecord("cas", "x", {}));
     const keeper = lineKeeper(kv);
     expect(await keeper.read("home")).toBeUndefined(); // a CAS line, not for Home

@@ -4,9 +4,8 @@
 // chunk: nothing is fetched at start. By keys and by touch. The fake engine.
 import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
-import { open, tap } from "./helpers.ts";
+import { open, sheet, tap } from "./helpers.ts";
 
-const sheet = (page: Page) => page.getByTestId("menu");
 const title = (page: Page) => page.getByTestId("sheet-title");
 const row = (page: Page, id: string) => sheet(page).locator(`[role="menuitem"][data-id="${id}"]`);
 const rows = (page: Page) => sheet(page).getByRole("menuitem");

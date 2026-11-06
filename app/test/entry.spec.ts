@@ -1,14 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Entry leftovers L2–L5 (docs/backlog.md), key-sequence tests on the real engine. Expected values are derived.
 import { expect, test, type Page } from "@playwright/test";
-import { entryValue, open, tap } from "./helpers.ts";
+import { entryValue, lastResult, open, sheet, tap } from "./helpers.ts";
 
 test.beforeEach(async ({ page }) => {
   await open(page, "");
   await page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
 });
-
-const lastResult = (page: Page) => page.locator('[data-testid="result"]').last().locator(".result");
 
 test("a b/c while typing is the stacked fraction; pressed twice it is two fractions, no mixed number (R10)", async ({ page }) => {
   await tap(page, ["d1", "frac", "d4", "enter"]);
@@ -76,7 +74,6 @@ test("L5: tapping a result puts it on the entry line, in Home and CAS", async ({
 // while the cursor went to the degrees' end, so `5 DMS 2` was 52°. The owner's pick (2026-10-15): after a digit or a
 // decimal point 10ˣ inserts ×10^□ (5·10²); DMS takes the number before it as its degrees (a key's argument, as the
 // mixed number's whole part) and the cursor goes to the minutes. Expected values derived.
-const sheet = (page: Page) => page.getByTestId("menu");
 /** Tmpl, then a tap on the cell. */
 async function cell(page: Page, id: string): Promise<void> {
   await tap(page, ["tmpl"]);

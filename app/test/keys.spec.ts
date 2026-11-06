@@ -2,7 +2,7 @@
 // P4 (docs/decisions.md): the reference's logical key layout. One test per moved or new key, key sequences on the real
 // engine. Expected values are derived (mathematically provable) unless noted.
 import { expect, test, type Page } from "@playwright/test";
-import { entryValue, open, tap } from "./helpers.ts";
+import { entryValue, lastResult, open, tap } from "./helpers.ts";
 
 test.beforeEach(async ({ page }) => {
   await open(page, "");
@@ -14,7 +14,6 @@ const mixed = async (page: Page): Promise<void> => {
   await tap(page, ["tmpl"]);
   await page.getByTestId("menu").locator('[data-id="mixed"]').tap();
 };
-const lastResult = (page: Page) => page.locator('[data-testid="result"]').last().locator(".result");
 const resultIs = async (page: Page, text: string | RegExp, count: number) => {
   await expect(page.locator('[data-status="done"]')).toHaveCount(count);
   await expect(lastResult(page)).toHaveAttribute("data-text", text);
