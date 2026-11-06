@@ -13,7 +13,7 @@
 1. **Find:** built; A4b and A74 merged (E3 met on the Tab One); R91's before/after is in [ONE-TIME.md](../../tests/core/ONE-TIME.md).
 2. **The Settings base** (owner, 2026-10-27; decisions.md "Settings in the Mode sheet, and presets"; [mockups/settings.html](../mockups/settings.html)): merged up to R89 → R59 and R12b → R12c → R41; R53; R36, R33 → R40.
 3. **The units** (owner, 2026-10-29: right after R86, R57, R50e): R24b–R24d, G81, R60–R63, R71 and R92 (the units menu's Constants and Tools) merged.
-4. **Lane B, to v0.1.0** (the APK and the website from one tag): A7, A9, A43, A45 and A48–A50 merged; A8 and A70 merged (the release test, 11-05); then wrong numbers by reach, C4. The bar and the days: [release-0.1.0.md](../release-0.1.0.md); from its freeze (Thu 11-12) both lanes run only its fixes.
+4. **Lane B, to v0.1.0** (the APK and the website from one tag): A7, A9, A43, A45 and A48–A50 merged; A8 and A70 merged (the release test, 11-05); then wrong numbers by reach, C4. The bar and the days: [release-0.1.0.md](../release-0.1.0.md); the release is on Sat 11-07 (owner, 2026-11-06), after one test night on the renamed code.
 5. **Every morning:** the owner's check (MORNING.md, on the night's device when the night had one, about 10 minutes). The day session writes each failed step as a backlog bug line on phase-1 and logs one line in `.coord/log.md`: `- HH:MM morning <date>: clean` or `- HH:MM morning <date>: fails <ids>`.
 
 **The weekly extreme night** (owner, 2026-10-29; replaces the nightly fuzz of 2026-10-27): once a week lane B runs the extreme-input packages (none open) and the fuzz, in 10-minute slices (G167: from `app/`, each command as `../tools/devlock.sh slice <name> node scripts/sweep.ts …`; n = 4 for the 5,000 `--edges` trees: a part of 1,250 takes about 2 min at G138's 90 s per 1,000 trees, never more than 5,000 trees a part (8 min): `--nightly --edges --seed <clock> --count 5000 --part i/4` for i = 1..4, then `--shrink <seed>`; a missing part is named and exit 1; a long shrink: `--shrink <seed> --part i/m` for each i, then `--shrink <seed> --join`), with its triage (each week the text of G138, its package file at d1278849, with a new ID); the Opus pass files the backlog lines. Wrong numbers of everyday or medium reach run any time, by reach.
@@ -54,26 +54,16 @@ With the lanes, start both from the phase-1 worktree: `cd .claude/worktrees/phas
 11. **Selftest:** a selftest step is `scripts/pipeline.sh selftest` (from A47a); its line `selftest: PASSED` finishes it; `selftest: FAILED` ends the night: henri answers `SHIFT DONE`, and the owner reads the log.
 12. **No lanes in the morning** (a selftest failed): the owner starts `scripts/night.sh` without `--lane`, and henri runs lane B's rows, then lane A's, as one queue.
 
-### Night 2026-11-05 to 11-06, to 05:30, both lanes on the Tab One (owner, 2026-11-05)
-`ANDROID_SERIAL=HA24BZ2Y` for both lanes, `--until 05:30`; before the start the owner plugs in and unlocks the Tab One, and `tools/stay-awake.sh HA24BZ2Y --restore` runs (STAY_ON=7). CORE DEVICE after each pass. Lane A runs R132 (the release bar's point 4, owner 2026-11-05), then R59 (decisions.md "A62, R59's gate"), then the rest of its table; lane B runs G165, G166, G164, G167, A69, A71, then the rest of its table (owner, 2026-11-05: "add everything"; A65, A66 and A74 on the night's device). Every "After" was checked against the merges on 2026-11-05 ("–" is merged); a step whose "After" is not merged is skipped. Follow each Opus pass as written (rule 3). Then lane A runs the declutter (owner, 2026-11-05 evening; decisions.md "The declutter"), S26 to R137, and lane B ends with G189 and A75.
+### Night 2026-11-06 to 11-07, to 09:00, both lanes on the Tab One (owner, 2026-11-06)
+`ANDROID_SERIAL=HA24BZ2Y` for both lanes, `--until 09:00`, started from the moved checkout `~/Documents/source99/n62` after S35 and the folder move (if the day chain stops before S35 or the move: from `~/Documents/source99/pascaline`, with the names on phase-1 then); before the start the owner plugs in and unlocks the Tab One, and `tools/stay-awake.sh HA24BZ2Y --restore` runs (STAY_ON=7). CORE DEVICE after each pass. Lane A has no UI rows left: it runs lane B's engine rows with no After (owner, 2026-11-06), lane B runs A81 first (owner, 2026-11-06: the release on Sat 11-07 ships with it), then G176f1, the rest of its engine rows, then A64 to A75. Two engine packages can run at once: a new Giac patch takes the next free number after phase-1 is merged into its branch; a clash is a fix round. Every "After" was checked against the merges on 2026-11-06 ("–" is merged); a step whose "After" is not merged is skipped. Follow each Opus pass as written (rule 3).
 
-### Lane A queue (ron's UI)
+### Lane A queue (ron's UI; tonight lane B's engine rows)
 Milestone reviews (section 0): after R50e (with R116's gallery groups "Entry highlights (R116)" and the lifted --pick on the History picked row; R113's rings, gallery home-tips-small); after R24d (with R92's Constants and Tools; R108's gallery group "Decimal comma in apps"; R89 on the Fairphone: save two presets with different free keys and switch; R111's note at 360 px; R33's stored-name colour in each theme, decisions.md "Owner answers of 2026-11-02"; R120's gallery unitresult-t10-comma; R124's gallery group "Mark style (R124)" and R125's "Digit groups (R125)", ’ and , grouping only before the point since R125f1; G164's sample sources, decisions.md "Needs the user"; R59 on the Tab One: import a .txt library from Downloads and from Drive, paste a long one from the clipboard, read the 9 s notice; R135's note on CAS Σ cos(k)/k to 2000).
-
-| Step | What | Agent, model | Branch | After |
-|---|---|---|---|---|
-| 523 | [R137](packages/R137.md) one fake store and one set of e2e helpers | ron, Sonnet | `p1/ron-testfakes` | – |
-
-### Lane B queue (the release, then the engine)
-[A57](packages/A57.md) runs by day; the night review's queue goes on in [its note](../research/night-review-2026-11-02.md) section 2.
 
 | Step | What | Agent, model | Branch | After |
 |---|---|---|---|---|
 | 495 | [G178](packages/G178.md) a divergent integral inside an expression is refused, not ⚠ 1 (F115) | gorge, Opus | `p1/gorge-intdivexpr` | – |
 | 496 | [G168](packages/G168.md) no value is a plain refusal: `undef`, empty calls, `DelAVars()`, the budget message (F93, F109) | gorge, Opus | `p1/gorge-novalue` | – |
-| 497 | [G183](packages/G183.md) a crashed engine restarts and says so, never a JS error text (F122, F145, G94) | gorge, Opus | `p1/gorge-trapnet` | – |
-| 498 | [G184](packages/G184.md) a Home step stopped by the time budget says "Stopped: it took too long" (F70) | gorge, Opus | `p1/gorge-floatstop` | – |
-| 499 | [G185](packages/G185.md) a Home Enter that does not return in time is stopped with the time-limit message (F62) | gorge, Opus | `p1/gorge-homewatch` | G183 |
 | 500 | [G169](packages/G169.md) a list as a distribution's x gives one value per element (F105, F93) | gorge, Opus | `p1/gorge-listlast` | – |
 | 501 | [G172](packages/G172.md) a list element only a double can value shows its number with ⚠ (F73) | gorge, Opus | `p1/gorge-listdouble` | – |
 | 502 | [G173](packages/G173.md) no Giac print forms: empty `seq[]`, `matrix[…]` in a list, `when` (F127, F108) | gorge, Opus | `p1/gorge-printforms` | – |
@@ -83,15 +73,25 @@ Milestone reviews (section 0): after R50e (with R116's gallery groups "Entry hig
 | 506 | [G187](packages/G187.md) a power that underflows past the range says Underflow, not a stack overflow (F122) | gorge, Opus | `p1/gorge-powunder` | – |
 | 507 | [G170](packages/G170.md) ilaplace leaves no broken entry in Giac's variable list (F89) | gorge, Opus | `p1/gorge-ilaplacevars` | – |
 | 508 | [G174](packages/G174.md) names stored through an argument (QR, LU…) reach the log; restart shows none of ours (F87, F96, F97) | gorge, Opus | `p1/gorge-argnames` | – |
-| 509 | [G181](packages/G181.md) atanh and atan of a tiny non-real exact argument give z (F177) | gorge, Opus | `p1/gorge-atanhtiny` | G166 |
+
+### Lane B queue (the release, then the engine)
+[A57](packages/A57.md) runs by day; the night review's queue goes on in [its note](../research/night-review-2026-11-02.md) section 2.
+
+| Step | What | Agent, model | Branch | After |
+|---|---|---|---|---|
+| 527 | [A81](packages/A81.md) GitHub issue forms: a bug report and a feature request (v0.1.0 ships with them) | annabell, Sonnet | `p1/annabell-issueforms` | – |
+| 526 | [G176f1](packages/G176f1.md) the unevaluated limit of patch 0035 drawn with its point and side (pass 83) | gorge, Opus | `p1/gorge-limtrunc-tex` | – |
+| 497 | [G183](packages/G183.md) a crashed engine restarts and says so, never a JS error text (F122, F145, G94) | gorge, Opus | `p1/gorge-trapnet` | – |
+| 498 | [G184](packages/G184.md) a Home step stopped by the time budget says "Stopped: it took too long" (F70) | gorge, Opus | `p1/gorge-floatstop` | – |
+| 499 | [G185](packages/G185.md) a Home Enter that does not return in time is stopped with the time-limit message (F62) | gorge, Opus | `p1/gorge-homewatch` | G183 |
+| 509 | [G181](packages/G181.md) atanh and atan of a tiny non-real exact argument give z (F177) | gorge, Opus | `p1/gorge-atanhtiny` | – |
 | 510 | [G182](packages/G182.md) the why line past the 1000-digit cap says what was checked (F178) | gorge, Sonnet | `p1/gorge-whypastcap` | G181 |
 | 511 | [G188](packages/G188.md) the view sweep survives an engine crash and names it (G94) | gorge, Opus | `p1/gorge-viewcrash` | – |
 | 485 | [A64](packages/A64.md) two pipeline guards that misfire | annabell, Opus | `p1/annabell-guardfix` | – |
 | 486 | [A67](packages/A67.md) red-first counts only a test the branch adds or tightens | annabell, Opus | `p1/annabell-redfirst` | – |
 | 487 | [A65](packages/A65.md) the sync folder on Android (the night's device) | annabell, Opus | `p1/annabell-syncfolder` | – |
 | 488 | [A66](packages/A66.md) an optional key click, off by default (the night's device) | annabell, Sonnet | `p1/annabell-keyclick` | – |
-| 490 | [A73f1](packages/A73f1.md) why a CAS-view start is 200 ms slower than Home (the night's device) | annabell, Sonnet | `p1/annabell-casstart` | R133 |
-| 524 | [G189](packages/G189.md) test-only engine data out of `app/src`; F155's passing rows out | gorge, Sonnet | `p1/gorge-testdata` | – |
+| 490 | [A73f1](packages/A73f1.md) why a CAS-view start is 200 ms slower than Home (the night's device) | annabell, Sonnet | `p1/annabell-casstart` | – |
 | 525 | [A75](packages/A75.md) the pipeline deletes package files; gc ages reports by commit; the release-guard test runs | annabell, Opus | `p1/annabell-housekeeping` | – |
 
 ### The commands henri replies with (one per decision; `scripts/night.sh` runs it)
