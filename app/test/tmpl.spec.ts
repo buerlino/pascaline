@@ -3,16 +3,14 @@
 // filled from the keys and must give exactly its `sample` (so the parser cases are what MathLive really writes),
 // then its value. Expected values derived by hand (parser.yaml `tmpl-*`); 2.5 ↔ 5/2 is G2 item 29 (device).
 import { expect, test, type Page } from "@playwright/test";
-import { entryValue, open, tap } from "./helpers.ts";
+import { entryValue, lastResult, open, sheet, tap } from "./helpers.ts";
 
 test.beforeEach(async ({ page }) => {
   await open(page, "");
   await page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
 });
 
-const sheet = (page: Page) => page.getByTestId("menu");
 const active = (page: Page) => sheet(page).locator('[data-active="true"]');
-const lastResult = (page: Page) => page.locator('[data-testid="result"]').last().locator(".result");
 
 /** Tmpl, then a tap on the cell. */
 async function insert(page: Page, id: string): Promise<void> {

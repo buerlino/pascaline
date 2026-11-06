@@ -4,7 +4,7 @@
 // fires after a reload. Every path by keys (digits, Enter, Esc) and by touch (taps on the rows). The real engine: the
 // names come from its definitions log.
 import { expect, test, type Page } from "@playwright/test";
-import { entryValue, flick, open, tap } from "./helpers.ts";
+import { entryValue, flick, lastResult, open, tap } from "./helpers.ts";
 
 const find = (page: Page) => page.getByTestId("find");
 const menu = (page: Page) => page.getByTestId("menu");
@@ -14,7 +14,6 @@ const mrow = (page: Page, id: string) => menu(page).locator(`[role="menuitem"][d
 const active = (page: Page) => find(page).locator('[role="menuitem"][data-active="true"]');
 const mactive = (page: Page) => menu(page).locator('[role="menuitem"][data-active="true"]');
 const title = (page: Page) => page.getByTestId("sheet-title");
-const lastResult = (page: Page) => page.locator('[data-testid="result"]').last().locator(".result");
 const names = (page: Page) => page.evaluate(() => window.pascaline.session.userNames.map((u) => u.name).sort());
 
 async function start(page: Page): Promise<void> {

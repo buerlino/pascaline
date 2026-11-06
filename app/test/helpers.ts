@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 import { linkSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
-import { test, type Page } from "@playwright/test";
+import { test, type Locator, type Page } from "@playwright/test";
 
 /** The status line's controls (R15c1, R15c2), for keys that left the cluster: `@place` (the place name, the Apps
  *  sheet), `@menu` (☰), `@symb` / `@plot` / `@num` (the view tab; from Home or CAS the last app is opened first from the
@@ -65,6 +65,19 @@ export async function tap(page: Page, ids: string[]): Promise<void> {
 }
 
 export const entryValue = (page: Page): Promise<string> => page.evaluate(() => window.pascaline.entry.value);
+
+// R137: the helpers most specs had a copy of.
+/** The newest result row's result (its `.result` part, not the row). */
+export const lastResult = (page: Page): Locator => page.locator('[data-testid="result"]').last().locator(".result");
+/** The open pick sheet (the `menu` test id). */
+export const sheet = (page: Page): Locator => page.getByTestId("menu");
+/** Put text on the system clipboard (a spec that does holds the clipboard lock: useClipboardLock). */
+export const setClipboard = (page: Page, text: string): Promise<void> => page.evaluate((s) => navigator.clipboard.writeText(s), text);
+/** Press ⌫ once and return the line. */
+export async function bksp(page: Page): Promise<string> {
+  await tap(page, ["bksp"]);
+  return entryValue(page);
+}
 
 export async function open(page: Page, query = "engine=fake"): Promise<void> {
   // R15c4: a fresh profile shows the first-start tips over the app; every other test runs without them (`tips=on` keeps them)

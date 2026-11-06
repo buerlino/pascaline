@@ -6,22 +6,18 @@ import { FakeCalc } from "../calc/fake.ts";
 import { ClipActions } from "../clipboard/actions.svelte.ts";
 import { t } from "../i18n/index.ts";
 import { Session } from "./session.svelte.ts";
-import type { Kv } from "./storage.ts";
+import { fakeKv } from "./fakeKv.ts";
 
 vi.mock("./removedRows.ts", () => {
   throw new Error("the chunk is gone");
 });
 
-const memoryKv = (): Kv => {
-  const data = new Map<string, unknown>();
-  return { get: <T>(k: string) => Promise.resolve(data.get(k) as T | undefined), set: (k, v) => (data.set(k, v), Promise.resolve()) };
-};
 const rows = (s: Session): string[] => s.items.filter((i) => i.status !== "note").map((i) => i.latex);
 const notes = (s: Session): string[] => s.items.filter((i) => i.status === "note").map((i) => i.text);
 
 describe("the Undo code does not load (R98)", () => {
   it("Clear takes nothing, resolves false and says so in the view", async () => {
-    const s = new Session(new FakeCalc(0), memoryKv());
+    const s = new Session(new FakeCalc(0), fakeKv());
     await s.restoreHistory();
     for (const x of ["1", "2"]) await s.submit(x);
     expect(await s.clearHistory()).toBe(false);
@@ -32,7 +28,7 @@ describe("the Undo code does not load (R98)", () => {
   });
 
   it("☰ Delete reports no success and the row stays", async () => {
-    const s = new Session(new FakeCalc(0), memoryKv());
+    const s = new Session(new FakeCalc(0), fakeKv());
     await s.restoreHistory();
     for (const x of ["1", "2"]) await s.submit(x);
     const clip = new ClipActions(s, {} as never, {} as never, { insert: () => {}, recall: () => {} });

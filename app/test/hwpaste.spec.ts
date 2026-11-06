@@ -5,7 +5,7 @@
 // 1e-3 entered e − 3 with Euler's e. Key sequences on the real engine; expected values are derived (1,5 is one number,
 // max of it alone is itself; 1ᴇ-3 = 0,001).
 import { expect, test, type Page } from "@playwright/test";
-import { entryValue, open, useClipboardLock } from "./helpers.ts";
+import { entryValue, lastResult, open, setClipboard, useClipboardLock } from "./helpers.ts";
 
 test.use({ permissions: ["clipboard-read", "clipboard-write"] });
 // The system clipboard is one for the whole browser: these tests run one after another.
@@ -20,8 +20,6 @@ test.beforeEach(async ({ page }) => {
 });
 
 const comma = (page: Page): Promise<void> => page.evaluate(() => window.pascaline.session.setDecimalMark("comma"));
-const setClipboard = (page: Page, text: string): Promise<void> => page.evaluate((s) => navigator.clipboard.writeText(s), text);
-const lastResult = (page: Page) => page.locator('[data-testid="result"]').last().locator(".result");
 const resultIs = async (page: Page, text: string): Promise<void> => {
   await expect(page.locator('[data-status="done"]')).toHaveCount(1, { timeout: 15_000 });
   await expect(lastResult(page)).toHaveAttribute("data-text", text);

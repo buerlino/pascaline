@@ -8,7 +8,7 @@
 // ⌫ right after a template steps into its last box. In the log base ⌫ deletes one character. By keys; the palette cells
 // by the key path (`run`), as the Tmpl palette inserts them. Expected lines derived from the rule.
 import { expect, test, type Page } from "@playwright/test";
-import { entryValue, open, tap } from "./helpers.ts";
+import { bksp, entryValue, open, tap } from "./helpers.ts";
 
 test.beforeEach(async ({ page }) => {
   await open(page);
@@ -25,10 +25,6 @@ const eq = (a: string, b: string): string => `\\operatorname{\\mathrm{EQ}}\\left
 const dms = (d: string, m: string, s: string): string => `${d}\\degree${m}\\prime${s}\\doubleprime`;
 const at = (e: string, v: string, a: string): string => `\\left.${e}\\right|_{${v}=${a}}`;
 
-async function bksp(page: Page): Promise<string> {
-  await tap(page, ["bksp"]);
-  return entryValue(page);
-}
 async function del(page: Page): Promise<string> {
   await tap(page, ["shift", "bksp"]);
   return entryValue(page);

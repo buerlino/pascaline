@@ -4,13 +4,11 @@
 // decimal comma the comma is never one (its button is off, a stored comma draws as the thin space).
 // Expected values are derived (1/3 to 12 digits; C(49,6) = 13983816; 123456789 and 1234567.5 as typed).
 import { expect, test, type Page } from "@playwright/test";
-import { entryValue, flick, open, tap, useClipboardLock } from "./helpers.ts";
+import { entryValue, flick, lastResult, open, tap, useClipboardLock } from "./helpers.ts";
 
 test.use({ permissions: ["clipboard-read", "clipboard-write"] });
 test.describe.configure({ mode: "serial" });
 useClipboardLock();
-
-const lastResult = (page: Page) => page.locator('[data-testid="result"]').last().locator(".result");
 const done = (page: Page, n: number) => expect(page.locator('[data-status="done"]')).toHaveCount(n);
 
 test.beforeEach(async ({ page }) => {

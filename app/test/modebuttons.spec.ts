@@ -3,9 +3,8 @@
 // that saves a press: a tap on a button sets the value and closes the sheet. The digits chip opens the digits list
 // itself. By keys nothing changes: ◀ ▶ move the mark with the sheet open, a digit steps the row, Enter closes. Fake engine.
 import { expect, test, type Page } from "@playwright/test";
-import { open, tap } from "./helpers.ts";
+import { open, sheet, tap } from "./helpers.ts";
 
-const sheet = (page: Page) => page.getByTestId("menu");
 const title = (page: Page) => page.getByTestId("sheet-title");
 const opt = (page: Page, row: string, id: string) => sheet(page).locator(`[data-id="${row}"] [data-option="${id}"]`);
 const setting = <K extends "angle" | "format" | "entry" | "digits">(page: Page, k: K) => page.evaluate((k) => window.pascaline.session.settings[k], k);

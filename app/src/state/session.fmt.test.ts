@@ -6,16 +6,9 @@ import type { Calc, CasOutcome, HomeOutcome } from "../calc/port.ts";
 import { EngineHost } from "../engine/host.ts";
 import { defaultHomeSettings, safePrecision } from "../engine/homeEval.ts";
 import { giacAvailable, nodeHost } from "../engine/nodeGiac.ts";
-import type { Kv } from "./storage.ts";
 import { Session } from "./session.svelte.ts";
+import { fakeKv } from "./fakeKv.ts";
 
-function memoryKv(): Kv {
-  const data = new Map<string, unknown>();
-  return {
-    get: <T>(k: string) => Promise.resolve(data.get(k) as T | undefined),
-    set: (k, v) => (data.set(k, structuredClone(v)), Promise.resolve()),
-  };
-}
 
 /** A Calc on the real Giac in this process: Home through EngineHost, CAS echoes its input. */
 async function engineCalc(): Promise<Calc> {
@@ -42,7 +35,7 @@ const text = (s: Session, i = -1): string => s.display(s.home.at(i)!).text;
 
 describe.skipIf(!giacAvailable())("Format key (real Giac)", () => {
   it("1/3 goes Standard, Scientific, Engineering and back; earlier results stay as they were", async () => {
-    const s = new Session(await engineCalc(), memoryKv());
+    const s = new Session(await engineCalc(), fakeKv());
     await s.submit("\\frac12");
     await s.submit("\\frac13");
     expect(text(s)).toBe("0.333333333333");
@@ -57,7 +50,7 @@ describe.skipIf(!giacAvailable())("Format key (real Giac)", () => {
   });
 
   it("Fixed is a notation of the Format key; the fraction is a b/c's form (R10)", async () => {
-    const s = new Session(await engineCalc(), memoryKv());
+    const s = new Session(await engineCalc(), fakeKv());
     s.setFmtMode("fix", true);
     await s.submit("\\frac73");
     const seen: string[] = [];
@@ -80,7 +73,7 @@ describe.skipIf(!giacAvailable())("Format key (real Giac)", () => {
   });
 
   it("a b/c: 2.5 ↔ 5/2 (G2 item 29, device); a whole number has no other form", async () => {
-    const s = new Session(await engineCalc(), memoryKv());
+    const s = new Session(await engineCalc(), fakeKv());
     await s.submit("\\frac52");
     expect(text(s)).toBe("2.5");
     expect(await s.cycleForm()).toBe(true);
@@ -93,7 +86,7 @@ describe.skipIf(!giacAvailable())("Format key (real Giac)", () => {
   });
 
   it("a b/c in CAS: exact 5/2 → 2.5 → 5/2", async () => {
-    const s = new Session(await engineCalc(), memoryKv());
+    const s = new Session(await engineCalc(), fakeKv());
     s.setView("cas");
     const cas = (x: Session): string => x.display(x.cas.at(-1)!).text;
     await s.submit("\\frac52");
@@ -105,7 +98,7 @@ describe.skipIf(!giacAvailable())("Format key (real Giac)", () => {
   });
 
   it("a b/c: polar for a complex result (engine abs and arg), and back to a+b*i", async () => {
-    const s = new Session(await engineCalc(), memoryKv());
+    const s = new Session(await engineCalc(), fakeKv());
     await s.submit("3+4\\mathrm{i}", "3+4*i");
     expect(text(s)).toBe("3+4*i");
     await s.cycleForm(); // -> polar
@@ -118,13 +111,13 @@ describe.skipIf(!giacAvailable())("Format key (real Giac)", () => {
   });
 
   it("a unit imaginary part shows as i (regression: 1.73205080757+1*i)", async () => {
-    const s = new Session(await engineCalc(), memoryKv());
+    const s = new Session(await engineCalc(), fakeKv());
     await s.submit("sqrt(3)+i", "sqrt(3)+i");
     expect(text(s)).toBe("1.73205080757+i");
   });
 
   it("the choice survives a reload with the history, and the ticked modes are stored", async () => {
-    const kv = memoryKv();
+    const kv = fakeKv();
     const a = new Session(await engineCalc(), kv);
     await a.restoreHistory();
     a.setFmtMode("eng", false);
@@ -141,7 +134,7 @@ describe.skipIf(!giacAvailable())("Format key (real Giac)", () => {
 
 describe("Format key (stub engine)", () => {
   it("does nothing when the last result is not a number, and in a CAS result that is symbolic", async () => {
-    const s = new Session(new FakeCalc(), memoryKv());
+    const s = new Session(new FakeCalc(), fakeKv());
     await s.submit("x");
     expect(await s.cycleFormat()).toBe(false);
     s.setView("cas");
@@ -150,7 +143,7 @@ describe("Format key (stub engine)", () => {
   });
 
   it("a CAS number cycles from its exact form through the modes and returns to it", async () => {
-    const s = new Session(new FakeCalc(), memoryKv());
+    const s = new Session(new FakeCalc(), fakeKv());
     s.setView("cas");
     await s.submit("\\frac14", "1/4");
     const item = s.cas[0]!;
@@ -165,7 +158,7 @@ describe("Format key (stub engine)", () => {
   });
 
   it("settings: unticking everything keeps the default cycle; vibration settings are clamped and stored", async () => {
-    const kv = memoryKv();
+    const kv = fakeKv();
     const s = new Session(new FakeCalc(), kv);
     for (const m of ["std", "sci", "eng"] as const) s.setFmtMode(m, false);
     expect(s.settings.fmtCycle).toEqual(["std", "sci", "eng"]);

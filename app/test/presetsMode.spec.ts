@@ -6,9 +6,8 @@
 // Enter saves, Esc cancels, an empty or taken name is refused with a notice. A switch shows the notice naming what it
 // set; the free keys' faces follow; a later change to a held setting puts a dot after the name. The fake engine.
 import { expect, test, type Page } from "@playwright/test";
-import { entryValue, open, tap } from "./helpers.ts";
+import { entryValue, open, sheet, tap } from "./helpers.ts";
 
-const sheet = (page: Page) => page.getByTestId("menu");
 const title = (page: Page) => page.getByTestId("sheet-title");
 const row = (page: Page, id: string) => sheet(page).locator(`[role="menuitem"][data-id="${id}"]`);
 const active = (page: Page) => sheet(page).locator('[data-active="true"]');

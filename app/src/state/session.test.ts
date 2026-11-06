@@ -6,19 +6,8 @@ import type { ComplexValue } from "../engine/format.ts";
 import { safePrecision } from "../engine/homeEval.ts";
 import { t } from "../i18n/index.ts";
 import { loadRemoved, Session } from "./session.svelte.ts";
-import type { Kv } from "./storage.ts";
+import { fakeKv } from "./fakeKv.ts";
 
-function memoryKv(): Kv & { data: Map<string, unknown> } {
-  const data = new Map<string, unknown>();
-  return {
-    data,
-    get: <T>(k: string) => Promise.resolve(data.get(k) as T | undefined),
-    set: (k, v) => {
-      data.set(k, structuredClone(v));
-      return Promise.resolve();
-    },
-  };
-}
 
 const third: ComplexValue = {
   re: { neg: false, digits: "3".repeat(40), exp: -1, sticky: true },
@@ -41,7 +30,7 @@ class ValueCalc extends FakeCalc implements Calc {
 
 describe("Session history", () => {
   it("stores finished entries of both views and restores them without calling the engine", async () => {
-    const kv = memoryKv();
+    const kv = fakeKv();
     const a = new Session(new ValueCalc(), kv);
     await a.restoreHistory(); // the history is written only after it was read (R106)
     await a.submit("\\frac13");
@@ -68,7 +57,7 @@ describe("Session history", () => {
   });
 
   it("does not store pending or cancelled entries, and ids keep counting", async () => {
-    const kv = memoryKv();
+    const kv = fakeKv();
     const slow = new FakeCalc(10_000);
     const a = new Session(slow, kv);
     await a.restoreHistory();
@@ -92,7 +81,7 @@ describe("Session history", () => {
   });
 
   it("an entry typed while the history is still loading is kept, stored with it, and ids stay unique", async () => {
-    const kv = memoryKv();
+    const kv = fakeKv();
     const old = new Session(new ValueCalc(), kv);
     await old.restoreHistory();
     for (const x of ["1", "2", "3"]) await old.submit(x);
@@ -108,7 +97,7 @@ describe("Session history", () => {
   });
 
   it("clearing the history clears the store", async () => {
-    const kv = memoryKv();
+    const kv = fakeKv();
     const a = new Session(new ValueCalc(), kv);
     await a.restoreHistory();
     await a.submit("2");
@@ -119,7 +108,7 @@ describe("Session history", () => {
 
 describe("deleting a row (R11)", () => {
   it("removes that row only, in the open view, and writes the store", async () => {
-    const kv = memoryKv();
+    const kv = fakeKv();
     const s = new Session(new ValueCalc(), kv);
     await s.restoreHistory();
     for (const e of ["1", "2", "3"]) await s.submit(e);
@@ -133,7 +122,7 @@ describe("deleting a row (R11)", () => {
   });
 
   it("refuses a row that is still running", async () => {
-    const s = new Session(new ValueCalc(), memoryKv());
+    const s = new Session(new ValueCalc(), fakeKv());
     await s.submit("1");
     const row = s.home[0];
     if (!row) throw new Error("no row");
@@ -145,7 +134,7 @@ describe("deleting a row (R11)", () => {
 
 describe("alpha lock (L3)", () => {
   it("alpha is one-shot; alpha twice locks; alpha again unlocks", () => {
-    const s = new Session(new FakeCalc(), memoryKv());
+    const s = new Session(new FakeCalc(), fakeKv());
     s.toggleAlpha();
     s.clearModifiers();
     expect([s.alpha, s.alphaLock]).toEqual([false, false]);
@@ -159,7 +148,7 @@ describe("alpha lock (L3)", () => {
     expect([s.alpha, s.alphaLock]).toEqual([false, false]);
   });
   it("shift, alpha, alpha locks the shift layer (lower case); shift in the lock is one-shot", () => {
-    const s = new Session(new FakeCalc(), memoryKv());
+    const s = new Session(new FakeCalc(), fakeKv());
     s.toggleShift();
     s.toggleAlpha();
     s.toggleAlpha();
@@ -177,7 +166,7 @@ describe("alpha lock (L3)", () => {
 describe("lock flicks (R9, P7 point 3)", () => {
   const mods = (s: Session) => ({ shift: s.shift, alpha: s.alpha, shiftLock: s.shiftLock, alphaLock: s.alphaLock, capsLock: s.capsLock });
   it("up on Shift locks shift: it stays on after each key; a tap on Shift or the same flick unlocks", () => {
-    const s = new Session(new FakeCalc(), memoryKv());
+    const s = new Session(new FakeCalc(), fakeKv());
     s.flickShiftLock();
     s.clearModifiers();
     s.clearModifiers();
@@ -189,7 +178,7 @@ describe("lock flicks (R9, P7 point 3)", () => {
     expect([s.shift, s.shiftLock]).toEqual([false, false]);
   });
   it("down on Alpha locks capitals, up on Alpha lower case; the same flick or an Alpha tap unlocks", () => {
-    const s = new Session(new FakeCalc(), memoryKv());
+    const s = new Session(new FakeCalc(), fakeKv());
     s.flickAlphaLock(false);
     s.clearModifiers();
     expect(mods(s)).toEqual({ shift: false, alpha: true, shiftLock: false, alphaLock: true, capsLock: false });
@@ -203,7 +192,7 @@ describe("lock flicks (R9, P7 point 3)", () => {
     expect(mods(s)).toEqual({ shift: false, alpha: false, shiftLock: false, alphaLock: false, capsLock: false });
   });
   it("one lock at a time: a lock flick or Alpha, Alpha replaces the shift lock", () => {
-    const s = new Session(new FakeCalc(), memoryKv());
+    const s = new Session(new FakeCalc(), fakeKv());
     s.flickShiftLock();
     s.flickAlphaLock(false);
     expect(mods(s)).toEqual({ shift: false, alpha: true, shiftLock: false, alphaLock: true, capsLock: false });
@@ -218,7 +207,7 @@ describe("lock flicks (R9, P7 point 3)", () => {
     expect(mods(s)).toEqual({ shift: true, alpha: true, shiftLock: false, alphaLock: true, capsLock: true });
   });
   it("the double-tap locks of L3 keep working (taps stay as on the G2)", () => {
-    const s = new Session(new FakeCalc(), memoryKv());
+    const s = new Session(new FakeCalc(), fakeKv());
     s.toggleAlpha();
     s.toggleAlpha();
     expect([s.alphaLock, s.capsLock]).toEqual([true, false]);
@@ -233,7 +222,7 @@ describe("Session user names (docs/04 3.4)", () => {
         return Promise.resolve(names);
       }
     }
-    const s = new Session(new NamesCalc(), memoryKv());
+    const s = new Session(new NamesCalc(), fakeKv());
     await new Promise((r) => setTimeout(r, 0));
     expect(s.userNames.map((u) => u.name)).toEqual(["A"]);
     names = [...names, { name: "f", kind: "fn", preview: "(x)->x^2", view: "home", time: 2 }];
@@ -257,12 +246,12 @@ describe("Session user functions for the parser (R56)", () => {
   const sent = (s: Session): string => s.home[s.home.length - 1]?.text ?? "";
 
   it("a single-letter function from the stored names is a call from the first Enter on", async () => {
-    const s = new Session(new NamesEcho([fn("p")]), memoryKv());
+    const s = new Session(new NamesEcho([fn("p")]), fakeKv());
     await s.submit("p\\left(2\\right)"); // straight after the start: the parse waits for the names
     expect(sent(s)).toBe("p(2)");
   });
   it("a stored value or no entry at all leaves it a product; Home and CAS read the same names", async () => {
-    const s = new Session(new NamesEcho([fn("p", "var")]), memoryKv());
+    const s = new Session(new NamesEcho([fn("p", "var")]), fakeKv());
     await s.submit("p\\left(2\\right)");
     expect(sent(s)).toBe("p*(2)");
     s.setView("cas");
@@ -271,7 +260,7 @@ describe("Session user functions for the parser (R56)", () => {
   });
   it("a function defined in this session is a call before its names are read back", async () => {
     const calc = new NamesEcho([]);
-    const s = new Session(calc, memoryKv());
+    const s = new Session(calc, fakeKv());
     await new Promise((r) => setTimeout(r, 0)); // the names read at the start has answered
     calc.hang = true; // the read after the definition does not answer before the next Enter
     await s.submit("p\\left(x\\right):=x^{2}");
@@ -287,7 +276,7 @@ describe("Session safe start (G19, F31)", () => {
   const tick = () => new Promise((r) => setTimeout(r, 0));
 
   it("says it once, as a history line in the i18n table (not a header note), and does not store it", async () => {
-    const kv = memoryKv();
+    const kv = fakeKv();
     const s = new Session(new SafeCalc(), kv);
     await s.restoreHistory();
     await tick();
@@ -307,7 +296,7 @@ describe("Session safe start (G19, F31)", () => {
   });
 
   it("a launch that is not a safe start adds no line", async () => {
-    const s = new Session(new ValueCalc(), memoryKv());
+    const s = new Session(new ValueCalc(), fakeKv());
     await tick();
     expect(s.home).toHaveLength(0);
     expect(s.cas).toHaveLength(0);
@@ -316,7 +305,7 @@ describe("Session safe start (G19, F31)", () => {
 
 describe("R66 (S12 row 2a): a power keeps Giac's principal root in Home and CAS", () => {
   it("Home sends the power, not surd, for a p/q exponent with q odd; so does CAS", async () => {
-    const s = new Session(new FakeCalc(), memoryKv());
+    const s = new Session(new FakeCalc(), fakeKv());
     await s.submit("\\left(-8\\right)^{\\frac{1}{3}}");
     await s.submit("\\left(-8\\right)^{\\frac{2}{3}}");
     await s.submit("\\left(-8\\right)^{\\frac{1}{2}}");
@@ -327,13 +316,13 @@ describe("R66 (S12 row 2a): a power keeps Giac's principal root in Home and CAS"
   });
 
   it("Home keeps the root template's real cube root (L6, S12 row 3)", async () => {
-    const s = new Session(new FakeCalc(), memoryKv());
+    const s = new Session(new FakeCalc(), fakeKv());
     await s.submit("\\sqrt[3]{-8}");
     expect(s.home[0]?.text).toBe("surd(-8,3)");
   });
 
   it("CAS keeps the root template's real cube root (L6)", async () => {
-    const s = new Session(new FakeCalc(), memoryKv());
+    const s = new Session(new FakeCalc(), fakeKv());
     s.setView("cas");
     await s.submit("\\sqrt[3]{-8}");
     expect(s.cas[0]?.text).toBe("surd(-8,3)");

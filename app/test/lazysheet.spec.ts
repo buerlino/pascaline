@@ -2,7 +2,7 @@
 // R46: the sheet's view is its own chunk, fetched when idle. A key that opens a sheet before the chunk is in waits in the
 // queue (decisions.md R8), so none is lost or run twice. The chunk's request is held back here until `release()`.
 import { expect, test, type Page } from "@playwright/test";
-import { entryValue, open, tap } from "./helpers.ts";
+import { entryValue, open, sheet, tap } from "./helpers.ts";
 
 /** Hold the Sheet chunk's requests back (or those of `what`); returns the function that lets them through. */
 async function hold(page: Page, what: RegExp = /\/src\/views\/(Sheet\.svelte|sheetFit\.ts)/): Promise<() => void> {
@@ -15,7 +15,6 @@ async function hold(page: Page, what: RegExp = /\/src\/views\/(Sheet\.svelte|she
   return release;
 }
 
-const sheet = (page: Page) => page.getByTestId("menu");
 
 test("Apps, then 2, typed before the sheet's chunk is in, opens the second app once it is", async ({ page }) => {
   const release = await hold(page);

@@ -2,29 +2,19 @@
 // The free keys U1–U6 (R15b, R15c): defaults from spec/keyboard.yaml, the user's slots over them, kept in the stamped store.
 import { describe, expect, it } from "vitest";
 import { legend } from "../i18n/index.ts";
-import { stamp, unstamp, USER_KEYS, type Kv } from "../state/storage.ts";
+import { stamp, unstamp, USER_KEYS } from "../state/storage.ts";
 import { MIGRATIONS } from "../state/migrations.ts";
 import { actionFor, KeyboardSpecError, keyboard, labelFor, loadKeyboard, type Key } from "./keyboard.ts";
 import { letterOf } from "../views/sheetKeys.ts";
 import { USER_KEY_IDS, USER_LAYERS, UserKeys } from "./userKeys.svelte.ts";
+import { fakeKv } from "../state/fakeKv.ts";
 
-function memKv(): Kv & { data: Map<string, unknown> } {
-  const data = new Map<string, unknown>();
-  return {
-    data,
-    get: <T>(k: string) => Promise.resolve(data.get(k) as T | undefined),
-    set: (k: string, v: unknown) => {
-      data.set(k, structuredClone(v));
-      return Promise.resolve();
-    },
-  };
-}
 const key = (id: string): Key => keyboard.byId.get(id) as Key;
 const sinh = { label: "sinh", action: { insert: "\\sinh\\left(#0\\right)" } };
 
 describe("user keys (R15b)", () => {
   it("are U1 … U6; before anything is set they are the defaults, all empty (R15c: no Home or CAS on U2, U3)", () => {
-    const u = new UserKeys(memKv());
+    const u = new UserKeys(fakeKv());
     expect(USER_KEY_IDS).toEqual(["u1", "u2", "u3", "u4", "u5", "u6"]);
     expect(u.resolve(key("u2"))).toBe(key("u2"));
     for (const id of USER_KEY_IDS) {
@@ -36,7 +26,7 @@ describe("user keys (R15b)", () => {
   });
 
   it("a slot set by the user replaces its default, in the tap and in the Shift layer, and is stored", async () => {
-    const kv = memKv();
+    const kv = fakeKv();
     const u = new UserKeys(kv);
     u.set("u1", "primary", sinh);
     u.set("u2", "shift", { label: "Settings", action: { special: "settings" } });
@@ -58,7 +48,7 @@ describe("user keys (R15b)", () => {
   });
 
   it("the user's choice wins over the default: an emptied U2 stays empty, and reset gives the default back", async () => {
-    const kv = memKv();
+    const kv = fakeKv();
     const u = new UserKeys(kv);
     u.set("u2", "primary", sinh);
     u.set("u2", "primary", null);
@@ -79,7 +69,7 @@ describe("user keys (R15b)", () => {
   });
 
   it("refuses a slot that is not a keyboard action, a key that is not free, and an empty label", () => {
-    const u = new UserKeys(memKv());
+    const u = new UserKeys(fakeKv());
     expect(() => u.set("u1", "primary", { label: "x", action: { special: "nope" } })).toThrow(KeyboardSpecError);
     expect(() => u.set("u1", "primary", { label: "x", action: { insert: "x", type: "y" } })).toThrow(KeyboardSpecError);
     expect(() => u.set("sin", "primary", sinh)).toThrow(KeyboardSpecError);
@@ -94,7 +84,7 @@ describe("user keys (R15b)", () => {
       u3: "nonsense",
       sin: { primary: { label: "cos", action: { type: "c" } } },
     };
-    const kv = memKv();
+    const kv = fakeKv();
     kv.data.set(USER_KEYS, stored);
     const u = new UserKeys(kv);
     await u.restore();
@@ -104,7 +94,7 @@ describe("user keys (R15b)", () => {
     expect(u.resolve(key("u2")).actions.alpha).toEqual({ kind: "type", text: "A" }); // a valid Alpha slot loads (R15c3)
     expect(u.resolve(key("u3"))).toBe(key("u3"));
     for (const bad of [null, "x", 7]) {
-      const k = memKv();
+      const k = fakeKv();
       k.data.set(USER_KEYS, bad);
       const v = new UserKeys(k);
       await v.restore();
@@ -113,7 +103,7 @@ describe("user keys (R15b)", () => {
   });
 
   it("slots stored for U1–U3 before R15c stay valid: the ids kept their meaning, a held Home or CAS still works", async () => {
-    const kv = memKv();
+    const kv = fakeKv();
     kv.data.set(USER_KEYS, { u1: { primary: sinh }, u2: { primary: { label: "Home", action: { special: "home" } } }, u3: { shift: { label: "CAS", action: { special: "cas" } } } });
     const u = new UserKeys(kv);
     await u.restore();
@@ -124,7 +114,7 @@ describe("user keys (R15b)", () => {
   });
 
   it("a label that starts with $ is the user's text, never a message key", () => {
-    const u = new UserKeys(memKv());
+    const u = new UserKeys(fakeKv());
     u.set("u1", "primary", { label: "$", action: { type: "$" } });
     expect(legend(labelFor(u.resolve(key("u1")), false, false))).toBe("$");
   });
@@ -140,7 +130,7 @@ describe("user keys: the Alpha layer (R15c3)", () => {
 
   it("have three layers: tap, Shift (a flick up) and Alpha (a flick down, or Alpha + the key)", async () => {
     expect(USER_LAYERS).toEqual(["primary", "shift", "alpha"]);
-    const kv = memKv();
+    const kv = fakeKv();
     const u = new UserKeys(kv);
     u.set("u1", "primary", sinh);
     u.set("u1", "shift", { label: "π", action: { insert: "\\pi" } });
@@ -164,7 +154,7 @@ describe("user keys: the Alpha layer (R15c3)", () => {
   });
 
   it("a stored record of the old two-layer shape still loads, and its Alpha falls back to the tap", async () => {
-    const kv = memKv();
+    const kv = fakeKv();
     kv.data.set(USER_KEYS, { u1: { primary: sinh, shift: { label: "π", action: { insert: "\\pi" } } } });
     const u = new UserKeys(kv);
     await u.restore();
@@ -176,7 +166,7 @@ describe("user keys: the Alpha layer (R15c3)", () => {
   });
 
   it("an empty Alpha slot falls back to the tap layer, as every key's missing Alpha layer does", () => {
-    const u = new UserKeys(memKv());
+    const u = new UserKeys(fakeKv());
     const empty = u.resolve(key("u1"));
     expect(actionFor(empty, false, true)).toEqual({ kind: "special", name: "none" }); // nothing set at all: still dead
     u.set("u1", "primary", sinh);
@@ -191,7 +181,7 @@ describe("user keys: the Alpha layer (R15c3)", () => {
   });
 
   it("the user's Alpha binding is exact: the letter-case rules (R58) do not touch it", () => {
-    const u = new UserKeys(memKv());
+    const u = new UserKeys(fakeKv());
     u.set("u1", "alpha", { label: "X", action: { type: "X" } });
     const k = u.resolve(key("u1"));
     for (const cas of [false, true])
@@ -202,7 +192,7 @@ describe("user keys: the Alpha layer (R15c3)", () => {
   });
 
   it("a free key's Alpha slot is no letter of a sheet's filter", () => {
-    const u = new UserKeys(memKv());
+    const u = new UserKeys(fakeKv());
     u.set("u1", "alpha", { label: "q", action: { type: "q" } });
     expect(letterOf(key("sin"))).toBe("G");
     expect(letterOf(u.resolve(key("u1")))).toBeUndefined();
@@ -218,7 +208,7 @@ describe("user keys: the Alpha layer (R15c3)", () => {
 
 describe("the decimal comma (R57)", () => {
   it("resolve gives the . and , keys the other faces while it is on, and every other key as it was", () => {
-    const u = new UserKeys(memKv());
+    const u = new UserKeys(fakeKv());
     const dot = keyboard.byId.get("dot") as Key;
     const sub = keyboard.byId.get("sub") as Key;
     expect(u.resolve(dot)).toBe(dot);
@@ -235,7 +225,7 @@ describe("user keys: a constant and the slot legends (R4b)", () => {
   const c = { label: "c", action: { insert: "\\const{c}{c}", chip: { key: "const:c", value: "299792458", exact: true } } };
 
   it("a constant carries its chip into the key's action, and it survives the store", async () => {
-    const kv = memKv();
+    const kv = fakeKv();
     const u = new UserKeys(kv);
     u.set("u1", "primary", c);
     const a = actionFor(u.resolve(key("u1")), false, false);
@@ -246,13 +236,13 @@ describe("user keys: a constant and the slot legends (R4b)", () => {
   });
 
   it("refuses a chip that is not { key, value, exact }", () => {
-    const u = new UserKeys(memKv());
+    const u = new UserKeys(fakeKv());
     expect(() => u.set("u1", "primary", { label: "c", action: { insert: "x", chip: { key: "const:c", value: 1, exact: true } } })).toThrow(KeyboardSpecError);
     expect(() => u.set("u1", "primary", { label: "c", action: { insert: "x", chip: "no" } })).toThrow(KeyboardSpecError);
   });
 
   it("labelOf and placeOf tell what a slot holds: nothing, a function, a place", () => {
-    const u = new UserKeys(memKv());
+    const u = new UserKeys(fakeKv());
     for (const l of USER_LAYERS) expect(u.labelOf("u1", l)).toBeUndefined();
     u.set("u1", "primary", sinh);
     u.set("u1", "shift", { label: "Mode", action: { special: "mode" } });

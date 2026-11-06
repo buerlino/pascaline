@@ -2,7 +2,7 @@
 // Copy, paste, share and export (docs/04 section 2.6, backlog step 9, P5): one test per action and a copy → paste round
 // trip, by key sequences on the real engine. Expected values are derived: the decimal expansion of 1/3 and 2/3.
 import { expect, test, type Page } from "@playwright/test";
-import { entryValue, open, tap, useClipboardLock } from "./helpers.ts";
+import { entryValue, lastResult, open, setClipboard, tap, useClipboardLock } from "./helpers.ts";
 
 test.use({ permissions: ["clipboard-read", "clipboard-write"] });
 // The system clipboard is one for the whole browser: these tests run one after another.
@@ -16,9 +16,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 const clipboard = (page: Page): Promise<string> => page.evaluate(() => navigator.clipboard.readText());
-const setClipboard = (page: Page, text: string): Promise<void> => page.evaluate((s) => navigator.clipboard.writeText(s), text);
 const done = (page: Page, n: number) => expect(page.locator('[data-status="done"]')).toHaveCount(n);
-const lastResult = (page: Page) => page.locator('[data-testid="result"]').last().locator(".result");
 
 const THIRD = "0." + "3".repeat(40);
 const TWO_THIRDS = "0." + "6".repeat(39) + "7";

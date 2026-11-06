@@ -16,25 +16,13 @@ import { factorTable } from "./factors.ts";
 import { unitLatex } from "../input/chipUnit.ts";
 import { putRow, rowSlots, unitRow } from "./row.ts";
 import { isUnitError, type Quantity, type UnitRequest } from "./types.ts";
+import { fakeKv } from "../state/fakeKv.ts";
 
 const item = (kind: string, id: string, x: Record<string, string>): IndexItem =>
   ({ id: `${kind}:${id}`, kind, names: [id], title: id, tier: 0, insert: "", ...x }) as unknown as IndexItem;
 const TABLE = factorTable([item("unit", "m", { dim: "m1", si: "1" }), item("pfx", "m", { si: "1/1000" })]);
 const MM = { tokens: [{ prefix: "m", unit: "m" }] };
 const M = { tokens: [{ unit: "m" }] };
-
-/** An in-memory store, as IndexedDB keeps it (structured clones). */
-function memKv(): Kv & { data: Map<string, unknown> } {
-  const data = new Map<string, unknown>();
-  return {
-    data,
-    get: <T>(k: string) => Promise.resolve(structuredClone(data.get(k)) as T | undefined),
-    set: (k, v) => {
-      data.set(k, structuredClone(v));
-      return Promise.resolve();
-    },
-  };
-}
 
 const session = async (kv: Kv): Promise<Session> => {
   const s = new Session(new FakeCalc(), kv);
@@ -87,7 +75,7 @@ describe.skipIf(!giacAvailable())("the unit row (R63, real Giac)", () => {
   });
 
   it("is saved with the history and read back: the same chip, the number with its unit, the slots checked", async () => {
-    const kv = memKv();
+    const kv = fakeKv([], { cloneReads: true });
     const s = await session(kv);
     const q = t04();
     const id = putRow(s, t04row(q));
@@ -110,14 +98,14 @@ describe.skipIf(!giacAvailable())("the unit row (R63, real Giac)", () => {
     expect(row.units?.unc).toEqual({ text: "1.2", shown: "39.5 ± 1.2" });
     expect(row.units?.latex).toBe(`\\pm1.2${unitLatex("m²")}`);
     expect(row.units?.text).toBe(" ± 1.2 m²"); // R63f1: Copy as shown and the row's data-text keep σ and the unit
-    const s = await session(memKv());
+    const s = await session(fakeKv([], { cloneReads: true }));
     putRow(s, row);
     const it = s.home[0] as HistoryItem;
     expect(s.mark(it)?.mark).not.toBe("=");
     // σ = 1.2 (R61's uncDigits, uncDigitsOf: exp 1 − exp 0), as the row worked out from the chip carries it: the digits
     // of 39.488 past σ's first are not confirmed (R40 mutes them from this fact); kept across a relaunch
     expect(it.facts?.uncDigits).toBe(1);
-    const kv = memKv();
+    const kv = fakeKv([], { cloneReads: true });
     const s2 = await session(kv);
     putRow(s2, row);
     s2.flushHistory();
@@ -130,7 +118,7 @@ describe.skipIf(!giacAvailable())("the unit row (R63, real Giac)", () => {
   });
 
   it("a stored row that lost its shape gives no chip and no slots, never a wrong one", async () => {
-    const kv = memKv();
+    const kv = fakeKv([], { cloneReads: true });
     const s = await session(kv);
     putRow(s, t04row(t04()));
     s.flushHistory();

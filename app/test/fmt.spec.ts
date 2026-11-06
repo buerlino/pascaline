@@ -1,12 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // The Format key (fmt) and the key vibration settings. Uses the real engine (GIAC_OUT).
 import { expect, test, type Page } from "@playwright/test";
-import { open, tap } from "./helpers.ts";
+import { open, sheet, tap } from "./helpers.ts";
 
 const lastText = (page: Page) => page.locator('[data-testid="result"] .result').last();
 const ready = (page: Page) => page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
 
-const sheet = (page: Page) => page.getByTestId("menu");
 /** The Mode sheet (format chip, ▲), 5, then a section of Settings (R49, R50e: 2 Numbers, 3 Key vibration). */
 async function openSettings(page: Page, section: "d2" | "d3"): Promise<void> {
   await tap(page, ["@mode", "d6", section]);

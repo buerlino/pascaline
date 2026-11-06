@@ -9,7 +9,7 @@
 // number's whole part) with every other box empty goes back alone, as an empty exponent on a typed base (R26d).
 // By keys; expected lines derived from the rule.
 import { expect, test, type Page } from "@playwright/test";
-import { entryValue, open, tap } from "./helpers.ts";
+import { bksp, entryValue, open, tap } from "./helpers.ts";
 
 test.beforeEach(async ({ page }) => {
   await open(page);
@@ -19,10 +19,6 @@ const PH = "\\placeholder{}";
 const MIXED = "#@\\tfrac{#?}{#?}";
 const DERIV = "\\frac{\\partial#0}{\\partial#?}";
 
-async function bksp(page: Page): Promise<string> {
-  await tap(page, ["bksp"]);
-  return entryValue(page);
-}
 async function del(page: Page): Promise<string> {
   await tap(page, ["shift", "bksp"]);
   return entryValue(page);

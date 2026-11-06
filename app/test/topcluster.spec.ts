@@ -3,12 +3,11 @@
 // table, by touch and by keys; the place name and its hit area; the free keys U1–U6. The editing wing's own jobs are in
 // editwing.spec.ts. Fake engine.
 import { expect, test, type Page } from "@playwright/test";
-import { entryValue, flick, open, recordVibrations, tap, touch, vibrations } from "./helpers.ts";
+import { entryValue, flick, open, recordVibrations, sheet, tap, touch, vibrations } from "./helpers.ts";
 
 const place = (page: Page) => page.getByTestId("place");
 const view = (page: Page) => page.evaluate(() => window.pascaline.session.view);
 const app = (page: Page) => page.evaluate(() => window.pascaline.shell.app);
-const sheet = (page: Page) => page.getByTestId("menu");
 const appsSheet = (page: Page) => page.getByTestId("apps");
 const angle = (page: Page) => page.evaluate(() => window.pascaline.session.settings.angle);
 const sinh = { label: "sinh", action: { insert: "\\sinh\\left(#0\\right)" } };

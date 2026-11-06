@@ -8,16 +8,9 @@ import { EngineHost } from "../engine/host.ts";
 import { giacAvailable, nodeHost } from "../engine/nodeGiac.ts";
 import { defaultHomeSettings } from "../engine/homeEval.ts";
 import { defaultCasSettings } from "../engine/types.ts";
-import type { Kv } from "./storage.ts";
 import { Session } from "./session.svelte.ts";
+import { fakeKv } from "./fakeKv.ts";
 
-function memoryKv(): Kv {
-  const data = new Map<string, unknown>();
-  return {
-    get: <T>(k: string) => Promise.resolve(data.get(k) as T | undefined),
-    set: (k, v) => (data.set(k, structuredClone(v)), Promise.resolve()),
-  };
-}
 
 async function engineCalc(): Promise<Calc> {
   const host = (await nodeHost());
@@ -37,7 +30,7 @@ async function engineCalc(): Promise<Calc> {
 
 describe.skipIf(!giacAvailable())("DEG copy is the text drawn (real Giac)", () => {
   const run = async (angle: "rad" | "deg", input: string, view: "home" | "cas" = "cas") => {
-    const s = new Session(await engineCalc(), memoryKv());
+    const s = new Session(await engineCalc(), fakeKv());
     s.setAngle(angle);
     s.setView(view);
     await s.submit(input, input);

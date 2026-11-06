@@ -3,6 +3,7 @@
 import { expect, test } from "@playwright/test";
 import { entryValue, open, tap } from "./helpers.ts";
 
+// Not helpers.lastResult: this one is the whole result row, not its `.result` part.
 const lastResult = (page: import("@playwright/test").Page) => page.locator('[data-testid="result"]').last();
 
 test("history survives a reload and is drawn without calling the engine", async ({ page }) => {

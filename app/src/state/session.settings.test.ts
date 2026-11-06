@@ -4,22 +4,11 @@
 import { describe, expect, it } from "vitest";
 import { FakeCalc } from "../calc/fake.ts";
 import { defaultSettings, migrateSettings, MAX_DIGITS, Session, SETTINGS_SCHEMA } from "./session.svelte.ts";
-import type { Kv } from "./storage.ts";
 import { t } from "../i18n/index.ts";
 import { decimalFromRational } from "../engine/format.ts";
 import { renderNumeric } from "./displayMode.ts";
+import { fakeKv } from "./fakeKv.ts";
 
-function memoryKv(): Kv & { data: Map<string, unknown> } {
-  const data = new Map<string, unknown>();
-  return {
-    data,
-    get: <T>(k: string) => Promise.resolve(data.get(k) as T | undefined),
-    set: (k, v) => {
-      data.set(k, structuredClone(v));
-      return Promise.resolve();
-    },
-  };
-}
 
 describe("migrateSettings", () => {
   it("version 1 (no schema field) is kept as it was and marked as migrated", () => {
@@ -67,7 +56,7 @@ describe("migrateSettings", () => {
     for (const bad of ["'", ",", "space", "", 1, null]) expect(migrateSettings({ schema: SETTINGS_SCHEMA, groupSep: bad }).settings.groupSep).toBe("thin");
   });
   it("R125: the display context carries the separator; a stored comma under the decimal comma draws as the thin space", () => {
-    const session = new Session(new FakeCalc(), memoryKv());
+    const session = new Session(new FakeCalc(), fakeKv());
     const drawn = (): string | undefined => renderNumeric({ value: { re: decimalFromRational(123456789n, 100n), im: decimalFromRational(0n, 1n) } }, "std", session.displayContext(), true)?.latex;
     expect(session.displayContext().groupSep).toBe("thin");
     expect(drawn()).toBe("1\\,234\\,567.89");
@@ -118,7 +107,7 @@ describe("the look (R50e, schema 3)", () => {
     expect(defaultSettings.look).toEqual({ family: "pascaline", brightness: "system", contrast: false, plain: false });
   });
   it("restoring tells the page the look it read", async () => {
-    const kv = memoryKv();
+    const kv = fakeKv();
     kv.data.set("settings", { schema: 3, look: { family: "nord", brightness: "light", contrast: false, plain: false } });
     const s = new Session(new FakeCalc(), kv);
     const seen: unknown[] = [];
@@ -127,7 +116,7 @@ describe("the look (R50e, schema 3)", () => {
     expect(seen).toEqual([{ family: "nord", brightness: "light", contrast: false, plain: false }]);
   });
   it("a start with nothing stored writes its look, so a later start does not ask the phone again", async () => {
-    const kv = memoryKv();
+    const kv = fakeKv();
     const s = new Session(new FakeCalc(), kv);
     await s.restoreSettings();
     expect((kv.data.get("settings") as { schema: number; look: unknown }).schema).toBe(SETTINGS_SCHEMA);
@@ -146,7 +135,7 @@ describe("a record from a newer settings schema (R94)", () => {
     expect(migrateSettings({ schema: "9" }).newer).toBe(false);
   });
   it("restore applies what it knows and writes nothing: the record and its unknown field stay, after changes too", async () => {
-    const kv = memoryKv();
+    const kv = fakeKv();
     kv.data.set("settings", structuredClone(newer));
     const s = new Session(new FakeCalc(), kv);
     await s.restoreSettings();
@@ -158,7 +147,7 @@ describe("a record from a newer settings schema (R94)", () => {
     expect(kv.data.get("settings")).toEqual(newer);
   });
   it("says once, as a note in both views, that changes are not kept", async () => {
-    const kv = memoryKv();
+    const kv = fakeKv();
     kv.data.set("settings", structuredClone(newer));
     const s = new Session(new FakeCalc(), kv);
     await s.restoreSettings();
@@ -168,7 +157,7 @@ describe("a record from a newer settings schema (R94)", () => {
     expect(notes(s.cas)).toEqual([t("settings.newer")]);
   });
   it("an older schema still migrates and is written back, with no note", async () => {
-    const kv = memoryKv();
+    const kv = fakeKv();
     kv.data.set("settings", { schema: SETTINGS_SCHEMA - 1, digits: 9, future: 1 });
     const s = new Session(new FakeCalc(), kv);
     await s.restoreSettings();
@@ -181,7 +170,7 @@ describe("a record from a newer settings schema (R94)", () => {
 
 describe("Session settings", () => {
   it("restoring version-1 settings writes them back as the current schema, with the point", async () => {
-    const kv = memoryKv();
+    const kv = fakeKv();
     kv.data.set("settings", { digits: 10, angle: "rad", format: "eng", entry: "textbook", fmtCycle: ["std"], fixDecimals: 4, haptics: { on: false, strength: 50, ms: 15 } });
     const s = new Session(new FakeCalc(), kv);
     await s.restoreSettings();
@@ -192,7 +181,7 @@ describe("Session settings", () => {
     expect(s.decimalComma).toBe(false);
   });
   it("the decimal mark is set, kept and restored", async () => {
-    const kv = memoryKv();
+    const kv = fakeKv();
     const s = new Session(new FakeCalc(), kv);
     s.setDecimalMark("comma");
     expect(s.decimalComma).toBe(true);
@@ -203,14 +192,14 @@ describe("Session settings", () => {
     expect(again.displayContext().decimalComma).toBe(true);
   });
   it("the digits setting takes 30 and nothing above", () => {
-    const s = new Session(new FakeCalc(), memoryKv());
+    const s = new Session(new FakeCalc(), fakeKv());
     s.setDigits(30);
     expect(s.settings.digits).toBe(30);
     s.setDigits(31);
     expect(s.settings.digits).toBe(30);
   });
   it("pfx can be the number format and sits in the Format key cycle", () => {
-    const s = new Session(new FakeCalc(), memoryKv());
+    const s = new Session(new FakeCalc(), fakeKv());
     s.setFormat("pfx");
     expect(s.settings.format).toBe("pfx");
     s.setFmtMode("pfx", true);

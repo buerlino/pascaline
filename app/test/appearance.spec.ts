@@ -3,9 +3,8 @@
 // and Plain keys. By touch and by keys; each value survives a reload; the first frame already has the stored theme;
 // `prefers-contrast: more` counts at the first start only; a theme pick keeps the sheet open. The fake engine.
 import { expect, test, type Page } from "@playwright/test";
-import { open, tap } from "./helpers.ts";
+import { open, sheet, tap } from "./helpers.ts";
 
-const sheet = (page: Page) => page.getByTestId("menu");
 const title = (page: Page) => page.getByTestId("sheet-title");
 const row = (page: Page, id: string) => sheet(page).locator(`[role="menuitem"][data-id="${id}"]`);
 const root = (page: Page) => page.locator("html");
