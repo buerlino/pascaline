@@ -40,7 +40,7 @@ The numbered archive is a configured tree (Debian's `config.h`, `src/config.h`, 
 Creating the mirror (needs a logged-in `gh` and the maintainer's OK):
 ```bash
 gh release create deps-giac-2.1.0-1-cdec2989 engine/giac/_downloads/giac_2.1.0-1.tar.gz engine/giac/_downloads/giac_2.1.0-1.dsc \
-  --repo buerlino/pascaline --title "Giac 2.1.0-1 source (pinned, sha256 cdec2989…)" \
+  --repo n62-dev/n62 --title "Giac 2.1.0-1 source (pinned, sha256 cdec2989…)" \
   --notes "Unmodified Giac 2.1.0-1 source tarball and .dsc (GPL-3.0-or-later) by B. Parisse and R. De Graeve, mirrored from https://www-fourier.univ-grenoble-alpes.fr/~parisse/debian/dists/stable/main/source/ so builds stay reproducible. SHA-256 cdec29897d6a55f9e53f82285ffd85cd82bcaba0bd90a494f710be002bd73f57."
 ```
 

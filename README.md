@@ -12,7 +12,7 @@
 </p>
 
 <p align="center">
-  <b><a href="https://pascaline-calc.org/">▶ Try it in your browser</a></b> · Android: coming soon
+  <b><a href="https://n62.dev/">▶ Try it in your browser</a></b> · Android: coming soon
 </p>
 
 <!-- Screenshots: the same files F-Droid shows (backlog R3); taken on the Fairphone 6, 2026-10-29. Retake when the look changes. -->
@@ -22,7 +22,7 @@
   <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/3.png" width="240" alt="Find: search for a function, constant or unit">
 </p>
 
-> Pascaline is still young: there is no release yet, and things move fast.
+> N62 is still young: there is no release yet, and things move fast.
 > On iPhone or iPad, add it to your Home Screen, or Safari may delete its data after about a week without a visit.
 
 ## What it does
@@ -33,6 +33,7 @@
 - **Graphs.** Plot functions, then find roots, intersections, extrema, slope and area right on the graph.
 - **Solve.** Equations, systems and polynomials. Every root is put back into the equation to check it.
 - **Find.** One search box for every function, constant and unit.
+- **Units, constants and uncertainty.** Type a quantity with its unit, convert it, and carry the uncertainty through the result; the constants come with their CODATA values.
 - **Nothing gets lost.** Reuse a result and you get its full value, not just the digits on screen. Copy or share it the same way.
 - **Works offline.** Everything runs on your phone or in your browser. No account, no ads, no tracking.
 
@@ -60,7 +61,7 @@ Every source download is pinned and checked, release builds are reproducible, an
 
 ## Built on
 
-Pascaline stands on the shoulders of [Giac](https://xcas.univ-grenoble-alpes.fr/), the computer algebra system by Bernard Parisse and Renée De Graeve. Also: [GSL](https://www.gnu.org/software/gsl/), [GMP](https://gmplib.org/), [MPFR](https://www.mpfr.org/), [libqalculate](https://qalculate.github.io/), [MathLive](https://mathlive.io/), [JSXGraph](https://jsxgraph.org/), [Svelte](https://svelte.dev/) and [Capacitor](https://capacitorjs.com/). Versions and licences: [THIRD_PARTY.md](THIRD_PARTY.md).
+N62 stands on the shoulders of [Giac](https://xcas.univ-grenoble-alpes.fr/), the computer algebra system by Bernard Parisse and Renée De Graeve. Also: [GSL](https://www.gnu.org/software/gsl/), [GMP](https://gmplib.org/), [MPFR](https://www.mpfr.org/), [libqalculate](https://qalculate.github.io/), [MathLive](https://mathlive.io/), [JSXGraph](https://jsxgraph.org/), [Svelte](https://svelte.dev/) and [Capacitor](https://capacitorjs.com/). Versions and licences: [THIRD_PARTY.md](THIRD_PARTY.md).
 
 ## Contributing
 
@@ -72,4 +73,4 @@ Copyright © 2026 Pascaline contributors. [GPL-3.0-or-later](LICENSE); the licen
 
 ---
 
-<sub>Not affiliated with HP Inc. or Moravia Consulting. HP and HP Prime are trademarks of HP Inc., named only to describe the key layout. Pascaline is named after Blaise Pascal's 1642 calculating machine.</sub>
+<sub>Not affiliated with HP Inc. or Moravia Consulting. HP and HP Prime are trademarks of HP Inc., named only to describe the key layout.</sub>

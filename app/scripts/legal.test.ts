@@ -132,12 +132,56 @@ describe("PRIVACY.md", () => {
     expect(perms.length).toBeGreaterThan(0);
     for (const p of perms) expect(privacy()).toContain(p);
     expect(privacy()).toMatch(/IndexedDB/);
-    expect(privacy()).toMatch(/pascaline-calc\.org/);
+    expect(privacy()).toContain("`n62.dev`");
+    expect(privacy()).toContain("https://github.com/n62-dev/n62/issues");
     expect(privacy()).toMatch(/no analytics/i);
     expect(privacy()).toMatch(/no accounts/i);
   });
   it("README and the F-Droid recipe link it", () => {
     expect(read("README.md")).toContain("PRIVACY.md");
     expect(read("fdroid/dev.n62.calc.yml")).toContain("PRIVACY.md");
+  });
+});
+
+describe("A78: N62 on the web and in every link", () => {
+  const files = ["README.md", "CONTRIBUTING.md", "PRIVACY.md", "THIRD_PARTY.md", ".github/workflows/pages.yml", "engine/giac/build-wasm.sh", "engine/giac/README.md", "tools/probes/unit-freq/fetch.mjs", "app/src/views/aboutItems.ts", "fdroid/README.md"];
+  it("the old address and repository are in none of the files that carry links", () => {
+    for (const f of files) expect(read(f), f).not.toMatch(new RegExp("pascaline" + "-calc|buer" + "lino", "i"));
+  });
+  it("the criterion's git grep outside docs/archive finds only the dated history lines", () => {
+    const r = spawnSync("git", ["grep", "-n", "-i", "-e", "pascaline" + "-calc", "-e", "buer" + "lino/pascaline", "--", ".", ":!docs/archive"], { cwd: repo, encoding: "utf8" });
+    // a hit is history when its file is listed and its line carries the fixed text; a moved line still passes, a hit outside docs/ never does
+    const history: Record<string, string[]> = {
+      "docs/release-0.1.0.md": ["`pascaline" + "-calc.org` already points to Pages", "green, pascaline" + "-calc.org serves the app"],
+      "docs/02-architecture-plan.md": ["https://github.com/buer" + "lino/pascaline (GPL-3.0)"],
+      "docs/decisions.md": ["no redirect from pascaline" + "-calc.org"],
+      "docs/shifts/packages/A77.md": ["io/github/buer" + "lino/pascaline/"],
+    };
+    // A78's own package text names the old addresses by definition: any line of it
+    const wholeFile = ["docs/shifts/packages/A78.md"];
+    expect([...Object.keys(history), ...wholeFile].every((f) => f.startsWith("docs/"))).toBe(true);
+    const stray = r.stdout.split("\n").filter(Boolean).filter((l) => {
+      const m = /^([^:]+):\d+:(.*)$/.exec(l);
+      if (!m) return true;
+      const [, file = "", text = ""] = m;
+      if (wholeFile.includes(file)) return false;
+      return !(history[file] ?? []).some((sub) => text.includes(sub));
+    });
+    // this file names neither string whole, so it never matches; a hit elsewhere is a link or an instruction that still has the old address
+    expect(stray).toEqual([]);
+  });
+  it("README links the website, PRIVACY the repository; the engine tarball mirror is a release asset of n62-dev/n62", () => {
+    expect(read("README.md")).toContain('href="https://n62.dev/"');
+    expect(read("PRIVACY.md")).toContain("contact@n62.dev");
+    expect(read("engine/giac/build-wasm.sh")).toContain("https://github.com/n62-dev/n62/releases/download/deps-giac-");
+    expect(read("engine/giac/README.md")).toContain("--repo n62-dev/n62");
+  });
+  it("the fastlane title is N62 and the texts do not name Pascaline", () => {
+    const dir = "fastlane/metadata/android/en-US/";
+    expect(read(dir + "title.txt").trim()).toBe("N62");
+    for (const f of ["short_description.txt", "full_description.txt"]) expect(read(dir + f), f).not.toMatch(/pascaline/i);
+  });
+  it("README, CONTRIBUTING and PRIVACY call the app N62 (the copyright line keeps its owner)", () => {
+    for (const f of ["README.md", "CONTRIBUTING.md", "PRIVACY.md"]) expect(read(f).replace(/Pascaline contributors/g, ""), f).not.toMatch(/Pascaline/);
   });
 });

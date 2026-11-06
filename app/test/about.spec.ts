@@ -43,7 +43,7 @@ test.describe("by keys", () => {
     await expect(title(page)).toHaveText("Settings › Help and about › About");
     await expect(row(page, "version")).toContainText(version);
     await expect(row(page, "licence")).toContainText("GPL-3.0-or-later");
-    await expect(row(page, "source")).toContainText("https://github.com/buerlino/pascaline");
+    await expect(row(page, "source")).toContainText("https://github.com/n62-dev/n62");
     for (const r of await rows(page).allInnerTexts()) expect(r).not.toMatch(/\b(HP|Prime)\b/);
     await tap(page, ["esc"]);
     await expect(title(page)).toHaveText("Mode › Settings › Help and about");

@@ -40,6 +40,11 @@ describe(".github/workflows/pages.yml", () => {
     for (const u of uses) expect(u).toMatch(/^[\w.-]+\/[\w./-]+@[0-9a-f]{40}$/);
   });
 
+  it("A78: the comments name the web version at https://n62.dev/", () => {
+    expect(text).toContain("https://n62.dev/");
+    expect(text).not.toMatch(new RegExp("pascaline" + "-calc"));
+  });
+
   it("runs only on a manual dispatch and on tags v*", () => {
     expect(Object.keys(wf.on).sort()).toEqual(["push", "workflow_dispatch"]);
     expect(wf.on["push"]).toEqual({ tags: ["v*"] });

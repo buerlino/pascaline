@@ -55,7 +55,7 @@ GIAC_TARBALL="giac_$GIAC_VERSION-$GIAC_DEBIAN_REVISION.tar.gz"
 GIAC_SHA256="cdec29897d6a55f9e53f82285ffd85cd82bcaba0bd90a494f710be002bd73f57"
 GIAC_SITES=(
   "https://www-fourier.univ-grenoble-alpes.fr/~parisse/debian/dists/stable/main/source"
-  "https://github.com/buerlino/pascaline/releases/download/deps-giac-$GIAC_VERSION-$GIAC_DEBIAN_REVISION-${GIAC_SHA256:0:8}"
+  "https://github.com/n62-dev/n62/releases/download/deps-giac-$GIAC_VERSION-$GIAC_DEBIAN_REVISION-${GIAC_SHA256:0:8}"
 )
 GIAC_URLS=("${GIAC_SITES[@]/%//$GIAC_TARBALL}")
 GIAC_DSC_URLS=("${GIAC_SITES[@]/%//${GIAC_TARBALL%.tar.gz}.dsc}")

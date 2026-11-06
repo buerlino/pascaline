@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# A45: the web version at https://pascaline-calc.org/ (GitHub Pages, source "GitHub Actions"; the domain is set in the
+# A45: the web version at https://n62.dev/ (GitHub Pages, source "GitHub Actions"; the domain is set in the
 # repository's Settings → Pages, so there is no CNAME file and no gh-pages branch). Runs only by hand or on a tag v*.
 # The environment `github-pages` must allow the tag rule v* (Settings → Environments), or a tag deploy is refused.
 # Every action is pinned by commit SHA (version in the comment); app/scripts/pages.test.ts checks this file.
@@ -7,7 +7,7 @@
 # dispatch input `kill`: `gh workflow run pages --ref v0.1.0 -f kill=true` puts app/pwa/kill/sw.js over dist/sw.js (app/pwa/README.md).
 # The version check and the golden gate (release engine) run before the upload, so only a gated build is deployed (a kill run skips the golden gate).
 # A8: a tag push whose name holds a - (the test tag vX.Y.Z-test) skips the build job, and with it the deploy, so a test build never reaches
-# pascaline-calc.org by itself; Run workflow on that tag (a dispatch) still builds and deploys it, and the kill run is unchanged.
+# https://n62.dev/ by itself; Run workflow on that tag (a dispatch) still builds and deploys it, and the kill run is unchanged.
 # A63: a kill run skips the golden gate because its tag passed it, so its first step refuses any ref that is not a tag.
 name: pages
 
