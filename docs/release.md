@@ -27,7 +27,7 @@ git push origin vX.Y.Z
 ## 3. Watch the run
 GitHub → Actions → **release** (the run named after the tag). The steps in order: one version, the tarballs, the release engine, the
 release libqalculate, the checksums, the golden gate (its log ends in `GOLDEN GATE PASSED`), the signed APK, the keystore deleted, the
-release. A release tag also starts **pages**, which deploys pascaline-calc.org after its own golden gate.
+release. A release tag also starts **pages**, which deploys https://n62.dev/ after its own golden gate.
 
 ## 4. Check what was published
 From the release page download `n62-X.Y.Z.apk` and `n62-X.Y.Z.apk.sha256` into one folder, then:

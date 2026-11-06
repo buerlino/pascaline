@@ -148,6 +148,24 @@ describe("A78: N62 on the web and in every link", () => {
   it("the old address and repository are in none of the files that carry links", () => {
     for (const f of files) expect(read(f), f).not.toMatch(new RegExp("pascaline" + "-calc|buer" + "lino", "i"));
   });
+  it("the criterion's git grep outside docs/archive finds only the dated history lines", () => {
+    const r = spawnSync("git", ["grep", "-n", "-i", "-e", "pascaline" + "-calc", "-e", "buer" + "lino/pascaline", "--", ".", ":!docs/archive"], { cwd: repo, encoding: "utf8" });
+    const hits = r.stdout.split("\n").filter(Boolean).map((l) => /^([^:]+):(\d+):/.exec(l)?.slice(1, 3).join(":") ?? l);
+    const history = [
+      "docs/release-0.1.0.md:18",
+      "docs/release-0.1.0.md:20",
+      "docs/02-architecture-plan.md:124",
+      "docs/decisions.md:19",
+      "docs/shifts/packages/A77.md:5",
+      "docs/shifts/packages/A78.md:3",
+      "docs/shifts/packages/A78.md:5",
+      "docs/shifts/packages/A78.md:6",
+      "docs/shifts/packages/A78.md:12",
+      "docs/shifts/packages/A78.md:15",
+    ];
+    // this file names neither string whole, so it never matches; a hit elsewhere is a link or an instruction that still has the old address
+    expect(hits.filter((h) => !history.includes(h))).toEqual([]);
+  });
   it("README links the website, PRIVACY the repository; the engine tarball mirror is a release asset of n62-dev/n62", () => {
     expect(read("README.md")).toContain('href="https://n62.dev/"');
     expect(read("PRIVACY.md")).toContain("contact@n62.dev");
