@@ -1,4 +1,4 @@
-# Pascaline: feasibility study (originally "an open-source Android calculator modelled on the HP Prime G2")
+# N62: feasibility study (originally "an open-source Android calculator modelled on the HP Prime G2")
 
 > **What still binds:** section 3 (the legal analysis) and its sources. The rest of this study of 2026-10-10 (the 1:1 clone: its architecture, effort, conformance and testing plan) was superseded by [02-architecture-plan.md](02-architecture-plan.md) and then [04-architecture.md](04-architecture.md); its text is in git at `82b261f9`.
 

@@ -1,6 +1,6 @@
-# Pascaline: architecture and project plan
+# N62: architecture and project plan
 
-*Pascaline is an open-source graphing CAS calculator that feels like an HP Prime: a "spiritual clone". The name comes from Blaise Pascal's 1642 calculating machine and was chosen on 2026-10-10.*
+*N62 is an open-source graphing CAS calculator that feels like an HP Prime: a "spiritual clone". Its first name, Pascaline (2026-10-10), was taken; the name and its spelling: decisions.md "The name N62".*
 
 *Date: 2026-10-10. This follows up [01-feasibility-report.md](01-feasibility-report.md) and replaces its "1:1 clone" approach. The legal advice (section 3 of 01-feasibility-report.md) still applies.*
 

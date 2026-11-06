@@ -1,5 +1,5 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
-# Feature analysis: Pascaline as a precision engineering tool
+# Feature analysis: N62 as a precision engineering tool
 
 **What still binds:** section 0 (the owner's design rules 1–13, with the removal tests), section 6 (the task benchmark, EN0) and section 7 (the precision promises); every package applies them. Sections 1–5 and 8 (the engineer-core plan of 2026-10-12, decision P8) are built or replaced by [04-architecture.md](04-architecture.md), the backlog and the brief; their text is in git at `82b261f9`.
 
@@ -24,7 +24,7 @@ The goal is now *the G2's flow, without its friction, with precision you can tru
 10. **One package at a time.** Packages go one at a time, in the brief's order, and the next starts as soon as the review has merged the one before.
 11. **Every feature has a removal test, and we act on it.** Each feature states what would show it failed (as "prefix chips must beat E-notation or go"). When it fails, its code goes completely, with no dead setting left behind. First removals (P11): the hold-and-drag cursor (K2) and the Python app (the owner never uses it; a notebook on a laptop is the better tool for scripts).
 12. **One feedback inbox.** The owner's points go into [feedback.md](feedback.md), dated, in the owner's words, and each becomes a bug (fixed now, regression test first), a feel item (the next feel package) or an idea (waits a week, then must pass rule 5).
-13. **Win against the alternatives, or have no reason to exist.** Each benchmark task (section 6) records the hand-measured presses and time on the G2, on Qalculate! and on a phone calculator. A feature whose task Pascaline does not win gets reworked or removed. Graphing is the example: Desmos and GeoGebra are better graphers, so the Function app stays at its G2 level (quick roots, intersections and areas with checked residuals) and gets no further plot types unless a task shows a win.
+13. **Win against the alternatives, or have no reason to exist.** Each benchmark task (section 6) records the hand-measured presses and time on the G2, on Qalculate! and on a phone calculator. A feature whose task N62 does not win gets reworked or removed. Graphing is the example: Desmos and GeoGebra are better graphers, so the Function app stays at its G2 level (quick roots, intersections and areas with checked residuals) and gets no further plot types unless a task shows a win.
 
 ## 1. Recommendation
 Built or superseded; see docs/04 section 0 and decision P8 (text in git at `82b261f9`).

@@ -1,5 +1,5 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
-# Pascaline architecture for the precision-engineering goal
+# N62 architecture for the precision-engineering goal
 
 *sandra, 2026-10-12. **This document supersedes [02-architecture-plan.md](02-architecture-plan.md) wherever the two differ.** docs/02 stays the record of the original plan and of the reasoning that still holds (solver choice in section 4, licence and F-Droid in sections 10–11). Binding inputs: [rules-core.md](rules-core.md) (goal, three principles, hard rules), [03-feature-analysis.md](03-feature-analysis.md) (the owner's design rules), [decisions.md](decisions.md) P8. A claim about the code cites the file or a probe (`tools/probes/`, its README; Appendix A); **(to verify)** marks what was not checked, with who checks it and how (Appendix C).*
 
@@ -131,7 +131,7 @@ Cost: one `evalf` more (about 1 ms, desktop) per irrational or float result.
 | Units result (m5) | `20 m/s`, `39.5±1.2 m^2` (value full, uncertainty 2 significant digits) | yes | `(1397/3125) m/s` | yes |
 | Session (Menu, Share) | text: one line per entry, `input = result` with the mark, full values | — | — | — |
 
-**Paste** (Shift + Copy, ☰ → Paste, any system paste): the clipboard is read as one number (`-1.5`, `1,5` with decimal comma, `1.5e-3`, `1.5E-3`, `i` parts) or a list as Copy writes it (`{1,16}`, `{1,5;2,25}`; with decimal comma `{1,5}`, 1,5 or 1 and 5, is refused); it enters as the keyboard's own LaTeX (`1.5\emark-3`, drawn `1.5ᴇ-3`), so the parser sees only what our keys produce. Anything else gives "Paste: not a number". Pasting a result copied from Pascaline gives the same value back (P5; with decimal comma not a list of one decimal).
+**Paste** (Shift + Copy, ☰ → Paste, any system paste): the clipboard is read as one number (`-1.5`, `1,5` with decimal comma, `1.5e-3`, `1.5E-3`, `i` parts) or a list as Copy writes it (`{1,16}`, `{1,5;2,25}`; with decimal comma `{1,5}`, 1,5 or 1 and 5, is refused); it enters as the keyboard's own LaTeX (`1.5\emark-3`, drawn `1.5ᴇ-3`), so the parser sees only what our keys produce. Anything else gives "Paste: not a number". Pasting a result copied from N62 gives the same value back (P5; with decimal comma not a list of one decimal).
 **Mechanics:** the APK uses `@capacitor/clipboard` and `@capacitor/share`; the PWA `navigator.clipboard`, and `navigator.share` where it exists, else copy. Files go out through the native `save` (`ACTION_CREATE_DOCUMENT`) in the APK and `<a download>` in the PWA, and come in through `<input type="file">` (`4d80167f`).
 
 ### 2.7 Decision: SI prefix display, and prefix entry
@@ -332,7 +332,7 @@ Every press counts 1: a key (Shift, Alpha and Enter too), each letter typed in F
 - **Decision (P20): Giac's tree, not its text.** Besides `giac_eval`, `api.cc` exports a structured bridge (`bridge.ts`), no Giac patch. Names, stores, settings and kinds come from it; only Giac's print is read as text, in one module; new code adds no bracket loop or name regex. Guard that stays: the poly1 check (`polyvec.ts`, one eval for subtype 10); the bridge's kinds (api.cc `kindOf`) have no polynomial, so it moves only when one is added (`4d80167f`).
 
 ### 6.2 Decision: one storage plan
-One IndexedDB database `pascaline`, store `kv` (`state/storage.ts`). Keys:
+One IndexedDB database `n62`, store `kv` (`state/storage.ts`). Keys:
 
 | Key | Holds |
 |---|---|
@@ -347,7 +347,7 @@ One IndexedDB database `pascaline`, store `kv` (`state/storage.ts`). Keys:
 | `units.targets` | the last target per dimension |
 | `backup.last`, `backup.offered`, `backup.undo` | not backed up |
 
-**Every value is stamped** with `DATA_VERSION` (`storage.ts`): `{ "@pascaline": n, value }`; a value without the stamp is version 0. On read, the key's `MIGRATIONS` steps (`state/migrations.ts`, loaded on demand) run from its version up and the value is written back. A save never overwrites a newer version's record, and each step is safe twice. A failed read is not "nothing stored": the caller keeps its defaults and that key is not written for the session. One writer per browser profile: the tab holding the Web Lock `pascaline-writer` writes the store; other tabs compute and write nothing, with a note and Use here; without `navigator.locks` every tab writes. Raise the version with a step when a stored shape or the meaning of stored Giac text changes (Φ → `Phi_`). **Replay budget:** 8.3 (`replayMs`, inside the engine-ready bar).
+**Every value is stamped** with `DATA_VERSION` (`storage.ts`): `{ "@n62": n, value }` (`@pascaline` before R138, read as `@n62`); a value without the stamp is version 0. On read, the key's `MIGRATIONS` steps (`state/migrations.ts`, loaded on demand) run from its version up and the value is written back. A save never overwrites a newer version's record, and each step is safe twice. A failed read is not "nothing stored": the caller keeps its defaults and that key is not written for the session. One writer per browser profile: the tab holding the Web Lock `n62-writer` writes the store; other tabs compute and write nothing, with a note and Use here; without `navigator.locks` every tab writes. Raise the version with a step when a stored shape or the meaning of stored Giac text changes (Φ → `Phi_`). **Replay budget:** 8.3 (`replayMs`, inside the engine-ready bar).
 
 **The backup**: one JSON file of each record as stored, stamped (without `defsStarts`, `tipsSeen`, history's `undo`); a restore checks the file, refusing at the first fault (newer format or part, bad stamp, unknown part, validator), then replaces the ticked keys in one transaction, keeps old ones in `backup.undo` for Undo, reloads (`4d80167f`).
 

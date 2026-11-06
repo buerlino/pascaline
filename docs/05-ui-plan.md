@@ -130,7 +130,7 @@ Deferred (owner, 2026-10-13): not G2 flow and not a friction the owner has hit (
 ### 3.10 Look and feel
 
 - **Design tokens** (one file, already partly in `style.css`): colours per role, the type scale (entry 28, result 26, input 22, UI 15, legend 11), spacing on a 4 px grid, radii. No colour or size written directly in a component. Built (R12b): the tokens are in `app/src/style.css`; `src/tokens.test.ts` fails on a literal colour or size in a `.svelte` file.
-- **Appearance** (owner, 2026-10-13 and 2026-10-18, decisions.md "R50"): a family (Pascaline, Graphite, Solarized, Gruvbox, Nord), a brightness System / Light / Dark (default **Dark on Android**, **System in the PWA**), and the switches High contrast and Plain keys. Built (R50e); the mockup's radio rows are ticks in the app (the sheet's convention).
+- **Appearance** (owner, 2026-10-13 and 2026-10-18, decisions.md "R50"): a family (N62, Graphite, Solarized, Gruvbox, Nord), a brightness System / Light / Dark (default **Dark on Android**, **System in the PWA**), and the switches High contrast and Plain keys. Built (R50e); the mockup's radio rows are ticks in the app (the sheet's convention).
 - **Numbers:** one maths font for entry and results (MathLive's). UI text in the system font. Monospaced digits in tables (Num, Solve, the Find value column) so columns line up.
 - **App glyphs:** one per place, drawn in the status line and the Apps sheet (3.2, R84).
 
