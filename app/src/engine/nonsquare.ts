@@ -8,7 +8,7 @@
 // vector ([1,2]^2 = v·v, [5,1]^-1 elementwise) keeps Giac's meaning: it is no matrix.
 // Runs synchronously next to the engine; only erasable TypeScript syntax.
 import { type Giac } from "./numeric.ts";
-import { callsOf, functionsIn, names, withoutStrings } from "./giacPrint.ts";
+import { callsOf, functionsIn, LIST_TYPE, names, splitList, withoutStrings } from "./giacPrint.ts";
 import { changesState } from "./novalue.ts";
 import { MAX_NODES, treeOf, UNEVALUATED, type TreeNode } from "./tree.ts";
 import type { ParseNode } from "./bridge.ts";
@@ -41,6 +41,9 @@ export interface KnownBody {
 export interface Bodies {
   reads: () => readonly string[];
   of: (name: string) => KnownBody | null | undefined;
+  /** G171: the names a run of the input may have written (its targets, the stores of the programs it reaches; the host's
+   *  candidatesOf), null when they are not known; asked for only for an input that runs once. */
+  writes?: () => ReadonlySet<string> | null;
 }
 
 export const NO_BODIES: Bodies = { reads: () => [], of: () => undefined };
@@ -66,6 +69,16 @@ function bodiesRead(bodies: Bodies): { known: Map<string, KnownBody>; unknown: b
   return { known, unknown };
 }
 
+/** G171: `text` (Giac's print, a list) is a matrix that is not square: rows of one length that is not their count. */
+function nonSquareRows(text: string): boolean {
+  const t = text.trim();
+  const rows = t.startsWith(LIST_TYPE) ? null : splitList(t);
+  if (!rows?.length) return false;
+  const cells = rows.map((r) => (r.startsWith(LIST_TYPE) ? null : splitList(r)));
+  const n = cells[0]?.length ?? 0;
+  return n > 0 && n !== rows.length && cells.every((c) => c?.length === n);
+}
+
 /** Cheap text test: could `input` hold a power, inverse or division of a matrix? */
 export function mayPowerMatrix(input: string): boolean {
   const t = withoutStrings(input, "", "typed");
@@ -84,6 +97,13 @@ export function mayPowerMatrix(input: string): boolean {
  * nothing, declares no local: the host's table and the function's tree) is walked into, its parameters bound to the
  * call's argument values, and so on through the functions that body reads; any other function keeps the check above.
  * A function the input reads without calling it (`map(L,f)`) is not walked.
+ * G171 (F88): a candidate is read as Giac prints the part (not as a string, which hid its calls and stores), and is
+ * evaluated only when it changes no state and every function of the user's it calls has a known body; `once` (the input
+ * ran once: it stores, or calls a program that does) also leaves out a candidate that reads a name the run may have
+ * written (`bodies.writes`). Any other candidate is not evaluated, so the answer is "unchecked" (⚠, never `=`), unless
+ * the output's shape proves it: the candidate is the whole input, an inverse (`inv(X)`, a number over X) or a power with
+ * a number exponent other than 1, and the output a matrix that is not square (Giac's elementwise answer keeps X's
+ * shape, a square X gives a square answer, a scalar or flat vector X none). True: refused; false: nothing found.
  */
 export function nonSquarePower(
   giac: Giac,
@@ -94,7 +114,8 @@ export function nonSquarePower(
   exactMs: number,
   userFn: (name: string) => boolean,
   bodies: Bodies = NO_BODIES,
-): boolean {
+  once = false,
+): boolean | "unchecked" {
   const mayPower = ambiguous !== false;
   const mayInverse = output.includes("[");
   const [powIn, invIn] = [powerIn(input), inverseIn(input)];
@@ -112,13 +133,14 @@ export function nonSquarePower(
   if (!(powers || inverses) || !(typed || reached().known.size > 0)) return false;
   // G101: a call's arguments are evaluated once more to bind the body: not when the input stores, or reads a function
   // of the user's whose body is not known (the known bodies store nothing, nor do the functions they read)
-  const inline = (): boolean => !changesState(input, "typed") && !reached().unknown;
+  const inline = (): boolean => !once && !changesState(input, "typed") && !reached().unknown;
   const temps = ["pasq", "pasnb"];
   const t0 = performance.now();
   // the walk stops (nothing found) before an evaluation that could take it past WALK_BUDGET_MS, at `exactMs` each
   const overBudget = (): boolean => late() || performance.now() - t0 + exactMs > WALK_BUDGET_MS;
   try {
-    const candidates: { part: string; operand: string; power: boolean; bind: Bind }[] = [];
+    // `proof`: the other operand is a number literal (an inverse's numerator, a power's exponent), G171
+    const candidates: { part: string; operand: string; power: boolean; bind: Bind; proof: boolean }[] = [];
     let nodes = 0;
     // G103: each tree (the input's, a body's) in one call (tree.ts), walked here: a power, a division or inv is a
     // candidate, a call of a known stored function is walked into
@@ -134,13 +156,13 @@ export function nonSquarePower(
         // An operand that is a number literal is no matrix (the 3 of 1/3): not evaluated.
         const literal = (k: number): boolean => t.children.length === (op === "inv" ? 1 : 2) && t.children[k]!.number;
         if (t.kind === 1 && op === "^" && powers) {
-          if (!literal(0)) candidates.push({ part: p, operand: `[op(${p})][0]`, power: true, bind });
+          if (!literal(0)) candidates.push({ part: p, operand: `[op(${p})][0]`, power: true, bind, proof: literal(1) });
         } else if (t.kind === 1 && op === "/" && inverses) {
-          if (!literal(1)) candidates.push({ part: p, operand: `[op(${p})][1]`, power: false, bind });
+          if (!literal(1)) candidates.push({ part: p, operand: `[op(${p})][1]`, power: false, bind, proof: literal(0) });
         }
         // inv's argument is its whole feuille: op() of inv(M) would be M's rows.
         else if (t.kind === 1 && op === "inv" && inverses) {
-          if (!literal(0)) candidates.push({ part: p, operand: `feuille(${p})`, power: false, bind });
+          if (!literal(0)) candidates.push({ part: p, operand: `feuille(${p})`, power: false, bind, proof: true });
         }
         else if (t.kind === 1 && op === "of" && depth < MAX_DEPTH && !into(p, bind, depth)) return false;
         return t.children.every(visit);
@@ -178,15 +200,45 @@ export function nonSquarePower(
     };
     // G103: the quoted input stored in pasq, with its tree from bridge-3 in the same call
     if (!shape("pasq", giac.value(`pasq:=quote(${input})`, [], true).tree, (e) => e, 0)) return false;
+    // G171: the names a candidate reads, through the known bodies it calls; whether the run may have written one
+    let written: ReadonlySet<string> | null | undefined;
+    const writes = (): ReadonlySet<string> | null => (written === undefined ? (written = bodies.writes?.() ?? null) : written);
+    const evaluable = (text: string): boolean => {
+      if (changesState(text, "printed")) return false;
+      const fns = functionsIn(text, "printed").filter(userFn);
+      if (fns.some((n) => !bodies.of(n))) return false;
+      if (!once) return true;
+      const read = new Set<string>();
+      for (const n of names(text, "printed")) if (!n.call && !NO_MATRIX.has(n.name)) read.add(n.name);
+      for (const todo = [...fns]; todo.length; ) {
+        const n = todo.pop()!;
+        if (read.has(n)) continue;
+        read.add(n);
+        todo.push(...(bodies.of(n)?.reads ?? []));
+      }
+      const w = writes();
+      return w === null ? [...read].every((n) => fns.includes(n)) : ![...read].some((n) => w.has(n));
+    };
+    const unchecked: (typeof candidates)[number][] = [];
     for (const c of candidates) {
-      if (overBudget()) return false;
-      const text = giac.eval(`string(${c.part})`);
-      if (changesState(text, "printed") || functionsIn(text, "printed").some(userFn)) continue;
+      if (overBudget()) {
+        if (!unchecked.length) return false;
+        break;
+      }
+      // G171 (F88): the part as Giac prints it (printing a part does not evaluate it), so its calls and stores are seen
+      if (!evaluable(giac.eval(c.part))) {
+        unchecked.push(c);
+        continue;
+      }
       const first = c.power ? `when(eval(${c.bind(`[op(${c.part})][1]`)})==1,0,1)` : "1";
       const hit = giac.eval(`when(is_matrix(pasnb:=eval(${c.bind(c.operand)})) and rowdim(pasnb)!=coldim(pasnb),${first},0)`).trim();
       if (hit === "1") return true;
     }
-    return false;
+    if (!unchecked.length) return false;
+    // G171: the output's shape decides a candidate that is the whole input (a number exponent other than 1)
+    const whole = unchecked.find((c) => c.part === "pasq" && c.proof);
+    if (whole && nonSquareRows(output) && !(whole.power && giac.eval(`[op(pasq)][1]`).trim() === "1")) return true;
+    return "unchecked";
   } finally {
     giac.eval(`purge(${temps.join(",")})`);
   }

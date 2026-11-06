@@ -547,7 +547,7 @@ export class EngineHost implements FactsHost {
 
   /** G101: the stored functions `input` reads (its tree, G99) and their bodies, for nonsquare.ts. */
   private bodiesFor(input: string): Bodies {
-    return { reads: () => this.treeOf(input).reads, of: this.bodyOf };
+    return { reads: () => this.treeOf(input).reads, of: this.bodyOf, writes: () => this.candidatesOf(input) };
   }
 
   /** G100/G101: the tree of a stored text (bridge-2), parsed once per text. */
@@ -1007,7 +1007,11 @@ export class EngineHost implements FactsHost {
     // G97 (F69): a power, inverse or division of a non-square matrix is Giac's elementwise answer, refused as in Home.
     const builtin = notBuiltin(this.giac);
     const userFn = (name: string): boolean => builtin(name) && !(name in ENGINE_DEFINITIONS) && !WORKER_DEFINITION_NAMES.includes(name);
-    if ((guarded || !single) && nonSquarePower(this.giac, body, text, ambiguous, () => false, performance.now() - t0, userFn, this.bodiesFor(input))) return fail(enEngine["error.notSquare"], "notSquare");
+    // G171: an input that ran once too (not a definition); its refused store is purged, so no name keeps Giac's answer
+    const onceRun = single && !guarded;
+    const square = onceRun && form.noValue ? false : nonSquarePower(this.giac, onceRun && asg0 ? asg0.rhs : body, text, ambiguous, () => false, performance.now() - t0, userFn, this.bodiesFor(input), onceRun);
+    if (square === true && onceRun && asg0) this.giac.eval(`purge(${asg0.name})`);
+    if (square === true) return fail(enEngine["error.notSquare"], "notSquare");
     // G111 (F98), R80f1: one list argument of LambertW, a distribution and others read as their argument list, refused as in Home.
     const listRefused = listAsArguments(this.giac, asg0 ? asg0.rhs : exactInput, userFn);
     if (listRefused) return fail(enEngine[`error.${listRefused}`], listRefused);
@@ -1022,7 +1026,7 @@ export class EngineHost implements FactsHost {
     }
     text = plainRowsText(this.giac, "pcasans", text); // G130 (F125): Giac's matrix type as plain rows, as in Home
     // A check that could not finish: the result stands with ⚠ (its numeric facts, or the text's mark).
-    const unverified = refused === "unchecked";
+    const unverified = refused === "unchecked" || square === "unchecked";
     const pair = !single && hasDefiniteIntegral(exactInput) && giacPair(text) !== null;
     // G65: the call after the input (its checks above ran it again; nothing after this does but print the result).
     const after = (): AfterInput => this.after(input, true, single, text);

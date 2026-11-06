@@ -454,11 +454,11 @@ function provedRational(giac: Giac, name: string, f: ElementFacts, digits: numbe
 }
 
 /** G38: a result whose decision did not hold at a higher precision: ⚠ without a count, elements too, with the why
- *  "decided at limited precision" (docs/04 2.4 rule 2). */
-function undecidedResult(r: HomeResult): HomeResult {
+ *  "decided at limited precision" (docs/04 2.4 rule 2); G171: one whose check could not run, with its own why. */
+function undecidedResult(r: HomeResult, why: PrecisionWhy = { decided: true }): HomeResult {
   const el = (e: HomeResult): HomeResult => ({ ...e, facts: { ...e.facts, exact: false, reliableDigits: null, warn: "unchecked" }, approximate: true });
   const top = el(r);
-  return { ...top, ...(r.items ? { items: r.items.map(el) } : {}), facts: { ...top.facts, why: { ...(r.facts.why ?? {}), decided: true } } };
+  return { ...top, ...(r.items ? { items: r.items.map(el) } : {}), facts: { ...top.facts, why: { ...(r.facts.why ?? {}), ...why } } };
 }
 
 /** `form` (G100, stores.ts): how the input stores, from Giac's tree, which the host reads; an input that stores nothing
@@ -555,6 +555,8 @@ export function homeEval(
 
   // G39: set when a convergence check could not finish: the result stands, with ⚠ (nothing confirmed it exists).
   let unverified = false;
+  // G171: a part G97's walk could not evaluate (it calls a program, or reads a name the run wrote): ⚠, never `=`
+  let unsquared: PrecisionWhy | null = null;
   const done = (r: Omit<HomeResult, "exactMs" | "totalMs" | "full"> & { full?: string }): HomeResult => {
     const out: HomeResult = {
       ...r,
@@ -564,7 +566,7 @@ export function homeEval(
       exactMs,
       totalMs: now() - t0,
     };
-    return undecided && out.ok ? undecidedResult(out) : out;
+    return undecided && out.ok ? undecidedResult(out) : unsquared && out.ok ? undecidedResult(out, unsquared) : out;
   };
   const fromBuilt = (b: Built, path: HomePath, approximate: boolean, exact: string | undefined, full: string, why?: PrecisionWhy): HomeResult => {
     const { decimal: _d, facts, ...rest } = b;
@@ -609,7 +611,10 @@ export function homeEval(
   const listRefused = listAsArguments(giac, exactBody, userFn);
   if (listRefused) return refuse(listRefused, "exact");
   // G97 (F69): a power, inverse or division of a non-square matrix is Giac's elementwise answer, no matrix power.
-  if (!once && !isTimeout(exactOut) && nonSquarePower(giac, exactBody, exactOut, ambiguous, late, exactMs, userFn, fnBody)) return refuse("notSquare", "exact");
+  // G171: an input that runs once too (its parts that read nothing the run wrote); a definition holds no power to check
+  const square = form.noValue || isTimeout(exactOut) ? false : nonSquarePower(giac, exactBody, exactOut, ambiguous, late, exactMs, userFn, fnBody, once);
+  if (square === true) return refuse("notSquare", "exact");
+  if (square === "unchecked") unsquared = once ? { once: true } : {};
   if (isTimeout(exactOut)) return viaFloat("float-timeout");
   if (isError(exactOut)) return viaFloat("float-error");
   // G106 (F78): Giac's polynomial of a list plus a number (`[1,4]+1` = poly1[1,5]), which the input did not ask for.
