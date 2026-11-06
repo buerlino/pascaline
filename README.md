@@ -6,6 +6,10 @@
 </p>
 
 <p align="center">
+  <b>Graphing calculator</b>
+</p>
+
+<p align="center">
   A graphing calculator for engineers.<br>
   The key layout of the HP Prime, our own look, and answers you can trust.<br>
   Free, offline and open source.
