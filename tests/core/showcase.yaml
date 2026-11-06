@@ -53,9 +53,9 @@ clips:
   - { id: s11, blocks: [26], title: "Plot, Root", after: s10,
       presses: ["@plot", right, right, right, right, "@menu"], eval: d1,
       expect: { text: { '[data-testid="readout-x"]': "1.25992104989" } } }                     # 2^(1/3) = 1.2599210498948…
-  - { id: J, blocks: [27, 28], title: "signed area of x² from 0 to 1", setup: ["@symb", x, sq, enter],
+  - { id: J, blocks: [27, 28], title: "signed area of x³ − 2 from 0 to 1", setup: ["@symb", x, pow, d3, right, sub, d2, enter],
       presses: ["@plot", "@menu", d5, right, right, right, right, right, right, right, right, right, right], eval: enter,
-      expect: { text: { '[data-testid="readout-Signed area"]': "0.333333333333" } } }          # c47
+      expect: { text: { '[data-testid="readout-Signed area"]': "-1.75" } } }                   # 1/4 − 2; keys as c47 (the F1 of s10)
   - { id: finale, blocks: [finale], title: "3x + 2y = 8, x − 4y = −2 as A⁻¹·b",
       presses: [tmpl, {cell: matrix22}, d3, right, d2, right, d1, right, neg, d4, right, shift, div, mul, tmpl, {cell: colvec}, d8, right, neg, d2],
       eval: enter, expect: { result: "[[2],[1]]", mark: "=" } }                                 # det −14; x = 2, y = 1

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // The showcase video's clips (tests/core/showcase.yaml), pressed at the song's own beat times
-// (tests/core/showcase-timeline.json): the press count per clip, the result, and how late each press came.
+// (tests/core/showcase-timeline.json): the press count per clip, the result, how late each press came, and
+// whether the result is on screen before the cut (the next beat after the eval).
 // Timing-sensitive, so not part of test:e2e: runs only with SHOWCASE=1 (tests/core/SHOWCASE.md, "Check").
 import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
@@ -72,13 +73,32 @@ test.describe("showcase clips at the song's tempo", () => {
       const steps = [...c.presses, c.eval];
       const late: number[] = [];
       const t0 = Date.now() + 300;
+      let evalAt = 0;
       for (const [i, s] of steps.entries()) {
         const due = t0 + ((times[i] as number) - (times[0] as number)) * 1000;
         const wait = due - Date.now();
         if (wait > 0) await page.waitForTimeout(wait);
         late.push(Date.now() - due);
+        if (i === steps.length - 1) evalAt = Date.now();
         await press(page, s);
       }
+      // the result on screen: polled every animation frame from the eval press
+      const want = { unit: c.expect.unit?.text ?? null, result: c.expect.result ?? null, text: c.expect.text ? Object.entries(c.expect.text)[0] ?? null : null };
+      await page.waitForFunction((w) => {
+        if (w.unit !== null) return document.querySelector('[data-testid="unit-result"]')?.getAttribute("data-text") === w.unit;
+        if (w.result !== null) {
+          const rows = document.querySelectorAll("article.item[data-status]");
+          return rows[rows.length - 1]?.querySelector(".result")?.getAttribute("data-text") === w.result;
+        }
+        if (w.text !== null) {
+          const [sel, t] = w.text;
+          const all = [...document.querySelectorAll(sel)].map((e) => e.textContent?.trim());
+          return Array.isArray(t) ? t.every((x) => all.includes(x)) : all.includes(t);
+        }
+        return true;
+      }, want, { polling: "raf", timeout: 15_000 });
+      const shown = Date.now() - evalAt;
+      const cutIn = Math.round(((beats.find((e) => e.t > (times[times.length - 1] as number))?.t ?? 105) - (times[times.length - 1] as number)) * 1000);
       const gaps = times.slice(1).map((t, i) => t - (times[i] as number));
       const u = c.expect.unit;
       let got = "";
@@ -91,7 +111,7 @@ test.describe("showcase clips at the song's tempo", () => {
         got = await lastRow(page);
       }
       console.log(`SHOWCASE ${c.id}: ${c.presses.length} presses + eval; beat ${Math.round(Math.min(...gaps) * 1000)}–${Math.round(Math.max(...gaps) * 1000)} ms; ` +
-        `late max ${Math.max(...late)} ms; got ${got}`);
+        `late max ${Math.round(Math.max(...late))} ms; result shown ${shown} ms after the eval, cut ${cutIn} ms after it${shown > cutIn ? " TOO LATE" : ""}; got ${got}`);
       if (u) {
         const r = page.getByTestId("unit-result");
         await expect(r).toHaveAttribute("data-text", u.text);
@@ -99,6 +119,7 @@ test.describe("showcase clips at the song's tempo", () => {
         if (u.has) await expect(r).toContainText(u.has);
       } else await check(page, c.expect, c.id);
       expect(Math.max(...late), "a press came later than 80 ms after its beat").toBeLessThan(80);
+      expect(shown, "the result showed after the cut (the gap beat)").toBeLessThan(cutIn);
     });
   }
 });
