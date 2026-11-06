@@ -1,8 +1,8 @@
-# Upstream: giac 2.1.0 series.cc in_limit. trunc has no series rule (floor has taylor_floor) and is not in sign_floor_ceil_round_tab, so after patch 0028 left trunc(x) unevaluated the limit substituted the point: limit(trunc(x),x,-1,1) = trunc(-1) = -1 (right 0: trunc(x) = 0 on (-1,0)), limit(trunc(x),x,1,-1) = 1 (right 0), limit(trunc(x/2),x,2,-1) = 1 (right 0), and the two-sided limit(trunc(x),x,-1) = -1 (no limit: -1 from the left, 0 from the right). Now each trunc(u) whose u holds the variable is rewritten by the limit L of u from the same side: floor(u) for L > 0, ceil(u) for L < 0 (u keeps the sign of L near the point), 0 for L = 0 (|u| < 1 near it); trunc(u,n) as trunc(10^n*u)/10^n. floor's and ceil's own limit rules then take the side (two-sided with distinct sides: "Unidirectional limits are distinct", as floor). An infinite L keeps trunc as before, a failed limit of u is the answer, and an L whose sign Giac cannot decide (limit(trunc(a*x),x,1,-1), a free a) leaves the limit unevaluated.
+# Upstream: giac 2.1.0 series.cc in_limit. trunc has no series rule (floor has taylor_floor) and is not in sign_floor_ceil_round_tab, so after patch 0028 left trunc(x) unevaluated the limit substituted the point: limit(trunc(x),x,-1,1) = trunc(-1) = -1 (right 0: trunc(x) = 0 on (-1,0)), limit(trunc(x),x,1,-1) = 1 (right 0), limit(trunc(x/2),x,2,-1) = 1 (right 0), and the two-sided limit(trunc(x),x,-1) = -1 (no limit: -1 from the left, 0 from the right). Now each trunc(u) whose u holds the variable is rewritten by the limit L of u from the same side: floor(u) for L > 0, ceil(u) for L < 0 (u keeps the sign of L near the point), 0 for L = 0 (|u| < 1 near it); trunc(u,n) as trunc(10^n*u)/10^n. floor's and ceil's own limit rules then take the side (two-sided with distinct sides: "Unidirectional limits are distinct", as floor). An infinite L keeps trunc as before, a failed limit of u is the answer, and an L whose sign Giac cannot decide (limit(trunc(a*x),x,1,-1), a free a) leaves the limit unevaluated, as limit(e,x=a[,side]) (limit(trunc(a*x),x=1,-1)), the form Giac's LaTeX (texprintaslimit) draws with its point and side.
 # Changed by Pascaline contributors, 2026-11-06
 --- a/src/series.cc
 +++ b/src/series.cc
-@@ -2548,6 +2548,52 @@ namespace giac {
+@@ -2548,6 +2548,53 @@ namespace giac {
      */
    }
  
@@ -11,7 +11,8 @@
 +  // floor(u) where u >= 0 and ceil(u) where u < 0, so each trunc(u) (trunc(u,n): trunc(10^n*u)/10^n) whose u holds x is
 +  // rewritten by the limit L of u from the same side: L > 0 floor(u), L < 0 ceil(u) (u keeps the sign of L near the
 +  // point), L = 0 the value 0 (|u| < 1 near the point). An infinite L keeps trunc (trunc(+infinity) is +infinity), a
-+  // failed limit of u is the answer, and an L of undecided sign sets undecided: the limit then stays unevaluated.
++  // failed limit of u is the answer, and an L of undecided sign sets undecided: the limit then stays unevaluated, as
++  // limit(e,x=a[,side]), the form texprintaslimit draws with its point and side (limit(e,x,a,side) printed a bare lim).
 +  extern const unary_function_ptr * const at_trunc;
 +  static gen limit_trunc(const gen & e,const identificateur & x,const gen & lim_point,int direction,bool & undecided,GIAC_CONTEXT){
 +    vecteur v(lop(e,at_trunc)),from,to;
@@ -55,7 +56,7 @@
    static gen in_limit(const gen & e0,const identificateur & x,const gen & lim_point,int direction,GIAC_CONTEXT){
      if (direction==-2)
        return gensizeerr(contextptr);
-@@ -2590,6 +2636,15 @@ namespace giac {
+@@ -2590,6 +2637,15 @@ namespace giac {
        direction=1;
      if (lim_point==minus_inf)
        direction=-1;    
@@ -66,7 +67,7 @@
 +      if (is_undef(e))
 +        return e;
 +      if (undecided)
-+        return direction?symbolic(at_limit,makesequence(e0,x,lim_point,direction)):symbolic(at_limit,makesequence(e0,x,lim_point));
++        return direction?symbolic(at_limit,makesequence(e0,symb_equal(x,lim_point),direction)):symbolic(at_limit,makesequence(e0,symb_equal(x,lim_point)));
 +    }
      vecteur vsign(loptab(e,sign_floor_ceil_round_tab));
      // First try substitution

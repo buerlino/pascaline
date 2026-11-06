@@ -5,6 +5,10 @@ History only: read it when a decision is questioned. What still binds is in [../
 
 ## Decided proposals moved here later
 
+### Shortened 2026-11-06 (Opus pass 85) to make room for R140's question and R144's and R146's defaults, as they stood
+- **The declutter (owner, 2026-11-05 evening): history lives in git.** Decided notes, reports past a week, merged packages' mockups and one-package probes are deleted, not archived; a link to one becomes its path and commit in a code span; `docs/archive/` keeps the full log and what code or a live doc cites. docs/04 keeps what binds (S34). A re-export no file imports goes in the next package editing it (R136: parse.ts's GREEK, LETTER_NAMES). Rule: rules section 10. Would change if: a deleted file is needed back twice a month.
+- **S4 (2026-10-18): a library file carries definitions only** (functions and exact values; [R10](r10-connector.md)); settings and key slots go only in the backup ([R11](r11-files.md)). Why: a shared file must not change one's digits or keys. Removal test: < 2 owner imports in 4 weeks. Would change if: keyboard set-ups are shared (a `// key:` line).
+
 ### Shortened 2026-11-05 (Opus pass 73) to make room for R59's lines, as they stood
 - **Honest precision** (G2): rule: docs/04 2.4 rules 2–3; assignments evaluated once. **G44, G23:** the inverse distributions are solved against our MPFR forward functions and every fallback keeps ⚠ with Giac's value; Home's 50 ms budget is checked between levels. Full text: archive, "Shortened 2026-10-21 (P23)". Would change if: a G2 user types Giac's aliases.
 - **G148, G148f1, G148f2 (Opus passes 62, 63, 65):** approx or evalf of a value past MPFR's range is refused as the bare input is, inside a larger input too; an infinite or undef output of a finite bare input asks each call's argument too. Full text: archive. Would change if: a cheaper test tells exp(-10^20) from 0.

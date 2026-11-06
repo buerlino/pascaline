@@ -1,56 +1,57 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// R15c2: the R3 cluster's editing wing (⇤ ⇥, Undo | Redo, Copy | Paste, Esc's jobs), Store from the last result and the
-// round pad's hub (decisions.md "R15c" points 1–5, "R15c Store"). Expected values are derived (what the keys must type).
+// R15c2: the R3 cluster's editing wing (Undo | Redo, Copy | Paste, Esc's jobs; since R146 ⇤ ⇥ on Shift + Undo and
+// Redo, ⇤□ □⇥ on Shift + Copy and Paste), Store from the last result and the round pad's hub (decisions.md "R15c"
+// points 1–5, "R15c Store"). Expected values are derived (what the keys must type).
 import { expect, test } from "@playwright/test";
-import { drag, entryValue, open, recordVibrations, tap, touch, vibrations } from "./helpers.ts";
+import { drag, entryValue, open, recordVibrations, sheetKey, tap, touch, vibrations } from "./helpers.ts";
 
-test("⇤ and ⇥ go to the line's ends", async ({ page }) => {
+test("⇤ and ⇥ (Shift + Undo, Shift + Redo) go to the line's ends", async ({ page }) => {
   await open(page);
-  await tap(page, ["d1", "d2", "d3", "lstart", "d9"]);
+  await tap(page, ["d1", "d2", "d3", "shift", "undo", "d9"]);
   expect(await entryValue(page)).toBe("9123");
-  await tap(page, ["left", "lend", "d5"]);
+  await tap(page, ["left", "shift", "redo", "d5"]);
   expect(await entryValue(page)).toBe("91235");
   // from inside a fraction too: ⇤ leaves the box for the start of the line
   await tap(page, ["bksp", "bksp", "bksp", "bksp", "bksp"]);
-  await tap(page, ["d1", "d2", "div", "d3", "d4", "lstart", "d7"]);
+  await tap(page, ["d1", "d2", "div", "d3", "d4", "shift", "undo", "d7"]);
   expect(await entryValue(page)).toBe("7\\frac{12}{34}");
 });
 
-test("Shift + ⇤ and Shift + ⇥ go to the ends of the box: a numerator, an exponent", async ({ page }) => {
+test("⇤□ and □⇥ (Shift + Copy, Shift + Paste) go to the ends of the box: a numerator, an exponent", async ({ page }) => {
   await open(page);
-  // the prototype's finding: 12 ÷ 34, Shift + ⇤, 5 puts the 5 at the start of the denominator
-  await tap(page, ["d1", "d2", "div", "d3", "d4", "shift", "lstart", "d5"]);
+  // the prototype's finding: 12 ÷ 34, ⇤□, 5 puts the 5 at the start of the denominator
+  await tap(page, ["d1", "d2", "div", "d3", "d4", "shift", "copy", "d5"]);
   expect(await entryValue(page)).toBe("\\frac{12}{534}");
   await page.evaluate(() => window.n62.entry.clear());
-  await tap(page, ["d2", "pow", "d3", "d4", "shift", "lstart", "d7"]);
+  await tap(page, ["d2", "pow", "d3", "d4", "shift", "copy", "d7"]);
   expect(await entryValue(page)).toBe("2^{734}");
-  await tap(page, ["shift", "lend", "d5"]);
+  await tap(page, ["shift", "paste", "d5"]);
   expect(await entryValue(page)).toBe("2^{7345}");
-  // the end of the box is not the end of the line: a digit after Shift + ⇥ stays in the exponent
-  await tap(page, ["left", "left", "shift", "lend", "d6"]);
+  // the end of the box is not the end of the line: a digit after □⇥ stays in the exponent
+  await tap(page, ["left", "left", "shift", "paste", "d6"]);
   expect(await entryValue(page)).toBe("2^{73456}");
 });
 
-test("Undo, then Redo (Shift + Undo)", async ({ page }) => {
+test("Undo, then Redo: one press each (R146)", async ({ page }) => {
   await open(page);
   await tap(page, ["d1", "add", "d2", "mul", "d3"]);
   await tap(page, ["undo"]);
   expect(await entryValue(page)).toBe("1+2\\times");
   await tap(page, ["undo"]);
   expect(await entryValue(page)).toBe("1+2");
-  await tap(page, ["shift", "undo"]);
+  await tap(page, ["redo"]);
   expect(await entryValue(page)).toBe("1+2\\times");
-  await tap(page, ["shift", "undo"]);
+  await tap(page, ["redo"]);
   expect(await entryValue(page)).toBe("1+2\\times3");
   // a template comes back whole
   await tap(page, ["div", "d4", "undo"]);
   expect(await entryValue(page)).toBe("1+2\\times\\frac{3}{\\placeholder{}}");
-  await tap(page, ["shift", "undo"]);
+  await tap(page, ["redo"]);
   expect(await entryValue(page)).toBe("1+2\\times\\frac34"); // MathLive's short form of \\frac{3}{4}
-  await expect(page.locator('[data-key="undo"] .shiftlegend')).toHaveText("Redo");
+  await expect(page.locator('[data-key="redo"] .main')).toHaveText("Redo");
 });
 
-test("⇤ ⇥ and Undo are dead in a view without an entry line (Plot)", async ({ page }) => {
+test("⇤ ⇥, Undo and Redo are dead in a view without an entry line (Plot)", async ({ page }) => {
   await recordVibrations(page);
   await open(page);
   await page.evaluate(() => window.n62.session.setHaptics({ on: true }));
@@ -58,12 +59,13 @@ test("⇤ ⇥ and Undo are dead in a view without an entry line (Plot)", async (
   await tap(page, ["d3"]); // Function
   await page.getByTestId("tab-plot").tap();
   await expect(page.getByTestId("place")).toHaveAttribute("data-view", "plot");
-  for (const id of ["lstart", "lend", "undo"]) {
-    await expect(page.locator(`[data-key="${id}"]`)).toHaveAttribute("data-key", id);
-    const before = (await vibrations(page)).length;
-    await tap(page, [id]);
-    await expect.poll(async () => (await vibrations(page)).length - before).toBe(3); // the touch, then the double dead-key buzz
-  }
+  for (const id of ["undo", "redo"])
+    for (const keys of [[id], ["shift", id]]) {
+      await tap(page, keys.slice(0, -1));
+      const before = (await vibrations(page)).length;
+      await tap(page, [id]);
+      await expect.poll(async () => (await vibrations(page)).length - before, keys.join(" ")).toBe(3); // the touch, then the double dead-key buzz
+    }
 });
 
 test("Esc: stops a running job, goes back a sheet level, drops a pick, closes Settings, else clears the line", async ({ page }) => {
@@ -75,7 +77,7 @@ test("Esc: stops a running job, goes back a sheet level, drops a pick, closes Se
   await page.evaluate(() =>
     window.n62.shell.showMenu("Test", [{ id: "more", label: "more", submenu: { title: "More", items: [{ id: "x", label: "x", run: () => {} }] } }]),
   );
-  await tap(page, ["d1"]);
+  await sheetKey(page, ["d1"]);
   await expect(page.getByTestId("sheet-title")).toHaveText("Test › More");
   await tap(page, ["esc"]);
   await expect(page.getByTestId("sheet-title")).toHaveText("Test");

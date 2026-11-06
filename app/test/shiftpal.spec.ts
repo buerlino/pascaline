@@ -5,7 +5,7 @@
 // Every cell is picked here by key or by tap and evaluated; the entry strings are what MathLive writes (the parser
 // cases of tests/golden/parser.yaml group "palettes" use them). Expected values derived by hand.
 import { expect, test, type Page } from "@playwright/test";
-import { entryValue, flick, lastResult, open, sheet, tap } from "./helpers.ts";
+import { entryValue, flick, lastResult, open, sheet, sheetKey, tap } from "./helpers.ts";
 
 test.beforeEach(async ({ page }) => {
   await open(page, "");
@@ -28,7 +28,7 @@ test("Shift + 6: the 4 × 3 grid shows 7 8 9 ÷ / 4 5 6 × / 1 2 3; that key pic
   await expect(page.getByTestId("sheet-title")).toHaveText("Relations and logic");
   await expect(sheet(page).getByTestId("cell-key")).toHaveText(["7", "8", "9", "÷", "4", "5", "6", "×", "1", "2", "3"]);
   await expect(active(page)).toHaveAttribute("data-id", "lt");
-  await tap(page, ["down", "right"]);
+  await sheetKey(page, ["down", "right"]);
   await expect(active(page)).toHaveAttribute("data-id", "ne");
   await expect(page.getByTestId("sheet-hint")).toHaveText("Not equal");
   await tap(page, ["d8"]); // the key at ≤'s place picks it, wherever the highlight is
@@ -122,13 +122,13 @@ test("Shift + 9: the 8 × 3 grid (and the % of R110) has no key labels; digits d
   await expect(page.getByTestId("sheet-title")).toHaveText("Symbols and Greek");
   await expect(sheet(page).getByTestId("cell-key")).toHaveCount(0);
   await expect(active(page)).toHaveAttribute("data-id", "fact");
-  await tap(page, ["d1", "d9", "sin"]); // nothing goes through, nothing is picked
+  await sheetKey(page, ["d1", "d9", "sin"]); // nothing goes through, nothing is picked
   await expect(active(page)).toHaveAttribute("data-id", "fact");
   expect(await entryValue(page)).toBe("");
-  await tap(page, ["down", "right"]);
+  await sheetKey(page, ["down", "right"]);
   await expect(active(page)).toHaveAttribute("data-id", "beta");
   await expect(page.getByTestId("sheet-hint")).toHaveText("beta");
-  await tap(page, ["enter"]);
+  await sheetKey(page, ["enter"]);
   await expect(sheet(page)).toBeHidden();
   expect(await entryValue(page)).toBe("\\beta");
   await tap(page, ["shift", "d9"]);
@@ -159,34 +159,36 @@ test("Shift + 9 by tap: every cell inserts its symbol, in math mode (a digit typ
 // R110: % is a fourth row of ours, under the first column; the grid's usual rule reaches it (▼ off the end of a column wraps
 // to its top, ▲ off the top goes to its last cell, ◀ ▶ go in reading order)
 test("Shift + 9: ▼ down the first column reaches %, ▲ comes back; the column wraps; ◀ ▶ reach it in reading order", async ({ page }) => {
-  await tap(page, ["shift", "d9", "down", "down"]);
+  await tap(page, ["shift", "d9"]);
+  await sheetKey(page, ["down", "down"]);
   await expect(active(page)).toHaveAttribute("data-id", "mu");
-  await tap(page, ["down"]);
+  await sheetKey(page, ["down"]);
   await expect(active(page)).toHaveAttribute("data-id", "percent");
   await expect(page.getByTestId("sheet-hint")).toHaveText("Percent %");
-  await tap(page, ["up"]);
+  await sheetKey(page, ["up"]);
   await expect(active(page)).toHaveAttribute("data-id", "mu");
-  await tap(page, ["up", "up"]);
+  await sheetKey(page, ["up", "up"]);
   await expect(active(page)).toHaveAttribute("data-id", "fact");
-  await tap(page, ["up"]);
+  await sheetKey(page, ["up"]);
   await expect(active(page)).toHaveAttribute("data-id", "percent"); // the top of the column wraps to its last cell
-  await tap(page, ["down"]);
+  await sheetKey(page, ["down"]);
   await expect(active(page)).toHaveAttribute("data-id", "fact");
-  await tap(page, ["left"]);
+  await sheetKey(page, ["left"]);
   await expect(active(page)).toHaveAttribute("data-id", "percent"); // ◀ from the first cell wraps to the last
-  await tap(page, ["left"]);
+  await sheetKey(page, ["left"]);
   await expect(active(page)).toHaveAttribute("data-id", "Omega");
-  await tap(page, ["right"]);
+  await sheetKey(page, ["right"]);
   await expect(active(page)).toHaveAttribute("data-id", "percent");
 });
 
 // R110: Shift + 6 (11 cells in 4 columns) keeps the rule it has had since R18
 test("Shift + 6: ▼ from `or` wraps to `ge` at the top of its column", async ({ page }) => {
-  await tap(page, ["shift", "d6", "down", "right", "right", "right"]);
+  await tap(page, ["shift", "d6"]);
+  await sheetKey(page, ["down", "right", "right", "right"]);
   await expect(active(page)).toHaveAttribute("data-id", "or");
-  await tap(page, ["down"]);
+  await sheetKey(page, ["down"]);
   await expect(active(page)).toHaveAttribute("data-id", "ge");
-  await tap(page, ["up"]);
+  await sheetKey(page, ["up"]);
   await expect(active(page)).toHaveAttribute("data-id", "or");
 });
 
@@ -196,7 +198,8 @@ test("Shift + 9 %: 5% is 0.05; 250 ± 0.4 % in the unit view with a kPa slot is 
   expect(await entryValue(page)).toBe("5\\%");
   await tap(page, ["enter"]);
   await expect(lastResult(page)).toHaveAttribute("data-text", "0.05"); // Home shows the decimal (the parser reads 1/20)
-  await tap(page, ["d2", "d5", "d0", "shift", "comma", "d0", "dot", "d4", "shift", "d9", "enter"]); // Shift + 9 opens on the last pick, %
+  await tap(page, ["d2", "d5", "d0", "shift", "comma", "d0", "dot", "d4", "shift", "d9"]);
+  await sheetKey(page, ["enter"]); // Shift + 9 opens on the last pick, %
   await expect(sheet(page)).toBeHidden();
   expect(await entryValue(page)).toBe("250\\pm0.4\\%");
   await flick(page, "tmpl", "up");

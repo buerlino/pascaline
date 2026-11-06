@@ -29,7 +29,7 @@ tasks:
     title: Parallel combination 4.7k ‖ 10k (resistors)
     milestone: 6
     status: active   # since S25 (prefix chips were dropped, night review 2026-10-31 fh-8): Find's par() and plain digits
-    budget: 14   # S25: the measured count, the same as the plan with prefix chips; the owner agrees it
+    budget: 14   # S25: the measured count, the same as the plan with prefix chips (owner, 2026-11-06)
     # Math, p a r (r a flick down on 8; Find's first hit after three letters, rank.ts), Enter (par(), cursor inside); 4 7 0 0 , 1 ᴇ 4,
     # Enter (Enter right after an exponent evaluates, as in t03). 4700 and 1ᴇ4 are the shortest (4.7ᴇ3 costs 5, 10000 costs 5)
     keys: [math, emark, vars, {down: d8}, enter, d4, d7, d0, d0, comma, d1, emark, d4, enter]
@@ -61,7 +61,7 @@ tasks:
     title: 2.2n × 4.7k typed as 2.2ᴇ-9 × 4.7ᴇ3
     milestone: 5
     status: active   # since S25: prefix chips were dropped (night review 2026-10-31 fh-8), so E-notation is the way
-    budget: 13   # S25: the measured count (10 planned with prefix chips); the owner agrees it
+    budget: 13   # S25: the measured count (10 planned with prefix chips) (owner, 2026-11-06)
     # 2 . 2 ᴇ (−) 9 × 4 . 7 ᴇ 3, Enter; × ends the exponent by itself (R3)
     keys: [d2, dot, d2, emark, neg, d9, mul, d4, dot, d7, emark, d3, enter]
     expect: { value: "0.00001034", text: "1.034E-5" }

@@ -74,13 +74,13 @@ export function controlKey(ev: Pick<KeyboardEvent, "key" | "shiftKey">): readonl
   return arrow && !ev.shiftKey ? [arrow, "primary"] : undefined;
 }
 
-/** R119: the layer of the Undo key that Ctrl+Z ("primary", Undo) or Ctrl+Y and Ctrl+Shift+Z ("shift", Redo) press (Cmd
- *  for Ctrl on a Mac); undefined for every other key. */
-export function undoKey(ev: Pick<KeyboardEvent, "key" | "ctrlKey" | "metaKey" | "altKey" | "shiftKey">): Layer | undefined {
+/** R119: the keypad key that Ctrl+Z (Undo) or Ctrl+Y and Ctrl+Shift+Z (Redo, a key of its own since R146) press, on its
+ *  tap layer (Cmd for Ctrl on a Mac); undefined for every other key. */
+export function undoKey(ev: Pick<KeyboardEvent, "key" | "ctrlKey" | "metaKey" | "altKey" | "shiftKey">): "undo" | "redo" | undefined {
   if (!(ev.ctrlKey || ev.metaKey) || ev.altKey) return undefined;
   const k = ev.key.toLowerCase();
-  if (k === "z") return ev.shiftKey ? "shift" : "primary";
-  return k === "y" && !ev.shiftKey ? "shift" : undefined;
+  if (k === "z") return ev.shiftKey ? "redo" : "undo";
+  return k === "y" && !ev.shiftKey ? "redo" : undefined;
 }
 
 /** The keypad key (and its layer) that types `ch` (R24c: the unit view's field takes the same path). */
@@ -95,7 +95,7 @@ export function hardwareKey(ev: KeyboardEvent, t: HwTarget): boolean {
   if (!mf || ev.isComposing) return false;
   const undo = undoKey(ev);
   if (undo) {
-    t.onKey("undo", undo, ev.repeat);
+    t.onKey(undo, "primary", ev.repeat);
     return true;
   }
   if ((ev.ctrlKey || ev.metaKey || ev.altKey) && !ev.getModifierState("AltGraph")) return false;

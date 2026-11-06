@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // English strings of Copy, Paste and Share. They sit beside the code, which loads on first use (not in the start
-// chunk, docs/04 section 8.3); the keyboard legends (key.copy, key.paste, key.view) stay in i18n/en.ts.
+// chunk, docs/04 section 8.3); the keyboard legends (key.copy, key.paste) stay in i18n/en.ts.
 const clip = {
   "clip.title": "Menu",
   "clip.copy": "Copy",

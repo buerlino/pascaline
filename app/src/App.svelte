@@ -390,12 +390,12 @@
       shiftLock={session.shiftLock}
       cas={casKeys} app={shell.app !== null}
       sheet={shell.sheet ? { filter: shell.sheet.level.filterable } : undefined}
-      onpress={press}
+      onpress={(key, layer) => route.press(ctx, key, layer, true)}
       oncount={(key) => session.taps.press(key)}
       ontouch={touched}
     />
     <!-- a pick sheet rises over the maths rows (3–9), anchored at the keypad's bottom edge; the top cluster stays
-         uncovered and live, and no key moves (decisions.md "R21") -->
+         uncovered, a tap on it closes the sheet (R144), and no key moves (decisions.md "R21") -->
     {#if shell.sheet && !shell.sheet.letters}
       <div class="layer" style:top="{mathsTop}px">{@render sheetView(shell.sheet, "keypad")}</div>
     {/if}
@@ -474,7 +474,7 @@
     right: 0;
     bottom: 0;
     z-index: 5;
-    pointer-events: none; /* the keys a short sheet leaves visible stay live; the sheet itself takes its taps */
+    pointer-events: none; /* the keys a short sheet leaves visible stay live (a tap closes it, R144); the sheet itself takes its taps */
   }
   .catch {
     position: absolute;

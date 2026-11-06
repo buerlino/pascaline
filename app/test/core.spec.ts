@@ -30,7 +30,7 @@ test.describe("core list file", () => {
 
 /** A case that writes or reads the clipboard (Copy, Paste, Share session): the clipboard is one for every worker (run
  *  173: c53's √2 landed in c49's Paste), so these run one after another, not in parallel with each other. */
-const usesClipboard = (c: CoreCase): boolean => c.expect.clipboard !== undefined || c.keys.some((k) => k === "copy");
+const usesClipboard = (c: CoreCase): boolean => c.expect.clipboard !== undefined || c.keys.some((k) => k === "copy" || k === "paste");
 
 function caseTest(c: CoreCase): void {
   const title = `${c.id} ${c.title}${c.known ? ` [known ${c.known}]` : ""}${c.needs ? ` [needs ${c.needs}]` : ""}`;

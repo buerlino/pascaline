@@ -18,7 +18,7 @@ import { actionFor, type ActionBody, type Key, type Layer, type Special } from "
 /** Shift and Alpha as one key would see them: the session's state, or the layer a gesture chose. */
 export type Mods = { shift: boolean; alpha: boolean };
 /** A key (or a hardware letter, R45) waiting for an app's or a sheet's code. */
-export type Waiting = { key: Key; mods: Mods; layer?: Layer } | { letter: string };
+export type Waiting = { key: Key; mods: Mods; layer?: Layer; screen?: boolean } | { letter: string };
 
 /** What the routing reads and calls: the models, the App-owned state (as accessors) and the App-owned actions. */
 export interface RouteCtx {
@@ -207,16 +207,22 @@ export function historyKey(c: RouteCtx, action: ActionBody): boolean {
   return false;
 }
 
-/** A key while a sheet is open (docs/05 3.1). Shift and Alpha are ignored, and the sheet leaves them as they are; no
- *  key goes through to the entry line. A flick down types the key's letter into the filter, on any key (digits
+/** A key while a sheet is open (docs/05 3.1); `screen`: a tap on the on-screen keypad (R144). Shift and Alpha are
+ *  ignored, and the sheet leaves them as they are; no key goes through to the entry line. A flick down types the key's letter into the filter, on any key (digits
  *  too; docs/05 section 7 point 6); a flick up does nothing there. False: no sheet is open. */
-export function sheetPress(c: RouteCtx, key: Key, layer: Layer | undefined): boolean {
+export function sheetPress(c: RouteCtx, key: Key, layer: Layer | undefined, screen?: boolean): boolean {
   const shell = c.shell;
   const sheet = shell.sheet;
   if (!sheet) return false;
   const level = sheet.level;
   // R4b: while Your keys is open, a free key goes to its own slot's row (the cluster stays live above the sheet)
   if (key.user && sheet.goKey(key.id, layerOf(modsFor(c, layer)))) return true;
+  // R144 (owner, 2026-11-06): any other tap on the on-screen keypad outside a pick sheet closes it and does nothing
+  // else, the press used up; Esc keeps its job (back one level), and a sheet that takes letters (Find, Vars) its keys
+  if (screen && !sheet.letters && key.id !== "esc") {
+    shell.closeSheet();
+    return true;
+  }
   // a grid whose cells show keys (Shift + 6, R18): a tap on such a key picks its cell, before its usual sheet job
   const byPlace = layer === "alpha" || layer === "shift" ? undefined : sheet.pickKey(key.id);
   if (byPlace) {
@@ -312,7 +318,7 @@ function replay(c: RouteCtx): void {
   for (const w of keys)
     if (c.shell.loading !== null || c.sheetLoad !== null) wait(c, w); // another app started loading meanwhile
     else if ("letter" in w) typeLetter(c, w.letter);
-    else if (!(c.shell.sheet && sheetPress(c, w.key, w.layer)) && !sheetChunk.pad?.route(c, w.key, w.mods)) run(c, w.key, w.mods); // a sheet or the unit pad opened meanwhile takes its keys
+    else if (!(c.shell.sheet && sheetPress(c, w.key, w.layer, w.screen)) && !sheetChunk.pad?.route(c, w.key, w.mods)) run(c, w.key, w.mods); // a sheet or the unit pad opened meanwhile takes its keys
 }
 
 const SHEET_KEYS: readonly string[] = ["apps", "menu", "tmpl", "relations", "symbols", "find", "vars", "memory"];
@@ -346,12 +352,14 @@ function rowsLoading(c: RouteCtx, key: Key): boolean {
 }
 
 /** A key fires. `layer` overrides the Shift/Alpha state for this key only: a trackpad step ("primary"), a flick up
- *  ("shift") or down ("alpha"). */
-export function press(c: RouteCtx, key: Key, layer?: Layer): void {
+ *  ("shift") or down ("alpha"). `screen`: a press of the on-screen keypad (R144: it closes an open pick sheet). */
+export function press(c: RouteCtx, key: Key, layer?: Layer, screen?: boolean): void {
   const p = key.actions.primary;
   if (p?.kind === "special" && (p.name === "shift" || p.name === "alpha")) return modifier(c, p.name, layer);
-  if (sheetUndrawn(c) || rowsLoading(c, key)) return wait(c, { key, mods: modsFor(c, layer), layer });
-  if (c.shell.sheet && sheetPress(c, key, layer)) return;
+  // (F42: a tap on a sheet that is open but not drawn yet keeps its flag and closes it once drawn; a key pressed before a
+  // sheet opens waits as typed, R8)
+  if (sheetUndrawn(c) || rowsLoading(c, key)) return wait(c, { key, mods: modsFor(c, layer), layer, screen });
+  if (c.shell.sheet && sheetPress(c, key, layer, screen)) return;
   const mods = modsFor(c, layer);
   if (sheetChunk.pad?.route(c, key, mods)) return; // the unit pad's cell (R24b)
   c.session.clearModifiers(); // a one-shot Shift or Alpha is used up by this key, a tap or a flick
@@ -407,8 +415,8 @@ export function run(c: RouteCtx, key: Key, mods: Mods): void {
     const dir = action.kind === "cmd" ? NAV[action.name] : undefined;
     if (dir && shell.nav(dir)) return;
     if (!shell.showsEntry) return c.dead(); // a view without an entry line (Plot) ignores typing, ⇤ ⇥ and Undo
-    if (action.kind === "insert" && action.latex === ANS_CHIP) return c.dead(); // Ans belongs to Home and CAS
-    if (action.kind === "insert" && action.units) return c.dead(); // ± (R71) is read by the unit view, from the Home or CAS line
+    // Ans belongs to Home and CAS; ± (R71) is read by the unit view, from the Home or CAS line
+    if (action.kind === "insert" && (action.latex === ANS_CHIP || action.units)) return c.dead();
   } else if (entry.value === "" && action.kind === "cmd" && action.name === "undo" && session.undoRemoved()) {
     return; // R98: on an empty line Undo brings back what Clear or Delete took first; then the line's own undo (P13)
   } else if (entry.value === "" && key.id === "frac" && layerOf(mods) === "primary") {

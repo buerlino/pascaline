@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // R85: Shift + Fmt (and a flick up on Fmt) opens Mode on Angle; the Fmt key's tap is unchanged (fmt.spec.ts).
 import { expect, test, type Page } from "@playwright/test";
-import { flick, open, tap } from "./helpers.ts";
+import { flick, open, sheetKey, tap } from "./helpers.ts";
 
 const title = (page: Page) => page.getByTestId("sheet-title");
 const angle = (page: Page) => page.evaluate(() => window.n62.session.settings.angle);
@@ -21,7 +21,8 @@ test("a flick up on Fmt does what Shift, Fmt does", async ({ page }) => {
 test("Shift, Fmt, ▶, Enter switches RAD → DEG", async ({ page }) => {
   await open(page);
   expect(await angle(page)).toBe("rad");
-  await tap(page, ["shift", "fmt", "right", "enter"]);
+  await tap(page, ["shift", "fmt"]);
+  await sheetKey(page, ["right", "enter"]);
   expect(await angle(page)).toBe("deg");
 });
 

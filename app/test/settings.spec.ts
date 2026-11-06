@@ -3,7 +3,7 @@
 // over the keypad's maths rows, opened by Mode's last row and by every ☰ menu's last row, with its path in the title.
 // By touch, by keys and by Android back (`history.back()`); the history never grows. The fake engine.
 import { expect, test, type Page } from "@playwright/test";
-import { entryValue, open, recordVibrations, sheet, tap, vibrations } from "./helpers.ts";
+import { entryValue, open, recordVibrations, sheet, sheetKey, tap, vibrations } from "./helpers.ts";
 
 const title = (page: Page) => page.getByTestId("sheet-title");
 const row = (page: Page, id: string) => sheet(page).locator(`[role="menuitem"][data-id="${id}"]`);
@@ -33,12 +33,12 @@ test.describe("by keys", () => {
     await tap(page, ["esc"]);
     await expect(title(page)).toHaveText("Mode › Settings");
     await expect(active(page)).toHaveAttribute("data-id", "vibration");
-    await tap(page, ["right"]);
+    await sheetKey(page, ["right"]);
     await expect(title(page)).toHaveText("Mode › Settings › Key vibration");
-    await tap(page, ["left"]);
+    await sheetKey(page, ["left"]);
     await expect(title(page)).toHaveText("Mode › Settings");
     await expect(active(page)).toHaveAttribute("data-id", "vibration");
-    await tap(page, ["down", "enter"]);
+    await sheetKey(page, ["down", "enter"]);
     await expect(title(page)).toHaveText("Mode › Settings › Your keys");
     await tap(page, ["esc", "esc"]);
     await expect(title(page)).toHaveText("Mode");
@@ -68,20 +68,20 @@ test.describe("by keys", () => {
     await tap(page, ["esc"]); // back one level, onto the same row
     await expect(title(page)).toHaveText("Mode › Settings › Numbers");
     await expect(active(page)).toHaveAttribute("data-id", "fmtCycle");
-    // the top cluster's pad moves the highlight: ▲ to the Decimal mark, a value row (R57); ▶ ◀ step it
-    await tap(page, ["up"]);
+    // the arrows move the highlight (a hardware keyboard's, R144): ▲ to the Decimal mark, a value row (R57); ▶ ◀ step it
+    await sheetKey(page, ["up"]);
     await expect(active(page)).toHaveAttribute("data-id", "mark");
     await expect(row(page, "mark").getByTestId("sheet-value")).toHaveText("Point");
-    await tap(page, ["right"]);
+    await sheetKey(page, ["right"]);
     await expect(row(page, "mark").getByTestId("sheet-value")).toHaveText("Comma");
     expect(await page.evaluate(() => window.n62.session.settings.decimalMark)).toBe("comma");
-    await tap(page, ["left", "down", "down"]);
+    await sheetKey(page, ["left", "down", "down"]);
     expect(await page.evaluate(() => window.n62.session.settings.decimalMark)).toBe("point");
     await expect(active(page)).toHaveAttribute("data-id", "decimals");
-    await tap(page, ["right", "right", "left"]);
+    await sheetKey(page, ["right", "right", "left"]);
     expect(await page.evaluate(() => window.n62.session.settings.fixDecimals)).toBe(5);
     await expect(row(page, "decimals").getByTestId("sheet-value")).toHaveText("5");
-    await tap(page, ["down"]);
+    await sheetKey(page, ["down"]);
     await expect(row(page, "uncertainty").getByTestId("sheet-value")).toHaveText("Muted digits, σ on tap");
     await expect(title(page)).toHaveText("Mode › Settings › Numbers");
   });
@@ -121,7 +121,7 @@ test.describe("by touch", () => {
     await tap(page, ["d0"]);
     await expect(title(page)).toHaveText("Home menu › Settings");
     expect(await rowIds(page)).toEqual(SECTIONS);
-    await tap(page, ["left"]);
+    await sheetKey(page, ["left"]);
     await expect(title(page)).toHaveText("Home menu");
     await expect(active(page)).toHaveAttribute("data-id", "settings");
     await tap(page, ["esc"]);

@@ -246,7 +246,7 @@ describe("sheet keys (docs/05 3.1)", () => {
       expect(sheetKey(k, false), name).toEqual({ kind: "pass" });
     }
     // the editing wing does nothing in a sheet (R15c)
-    for (const id of ["undo", "copy", "lstart", "lend", "view"]) expect(sheetKey(key(id), true), id).toEqual({ kind: "none" });
+    for (const id of ["undo", "redo", "copy", "paste", "help"]) expect(sheetKey(key(id), true), id).toEqual({ kind: "none" });
   });
   it("a free key that holds no place does nothing in a sheet (R15b): it never types through", () => {
     expect(sheetKey(key("u1"), true)).toEqual({ kind: "none" }); // empty
@@ -260,7 +260,7 @@ describe("sheet keys (docs/05 3.1)", () => {
     expect(sheetKey(key("vars"), true)).toEqual({ kind: "letter", ch: "A" });
     expect(sheetKey(key("sin"), false)).toEqual({ kind: "none" });
     expect(sheetKey(key("sub"), true)).toEqual({ kind: "none" }); // its alpha is ":"
-    expect(sheetKey(key("view"), true)).toEqual({ kind: "none" });
+    expect(sheetKey(key("help"), true)).toEqual({ kind: "none" });
   });
   it("every letter A–Z is on exactly one non-digit key, or on a digit key (reached by a flick in R9)", () => {
     const letters = keyboard.keys.map((k) => [k.id, letterOf(k)] as const).filter(([, l]) => l !== undefined);

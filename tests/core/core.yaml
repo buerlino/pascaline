@@ -226,7 +226,7 @@ cases:
   - id: c25
     area: trig
     title: "DEG by the Mode sheet, then sin 30"
-    keys: ["@mode", right, enter, sin, d3, d0, right, enter]
+    keys: ["@mode", {tap: '[data-testid="menu"] [data-id="angle"] [data-option="deg"]'}, sin, d3, d0, right, enter]
     expect: { result: "0.5", mark: "=" }
     value: "1/2"
     source: derived
@@ -235,7 +235,7 @@ cases:
   - id: c26
     area: trig
     title: "DEG: tan 45 and asin 0.5"
-    keys: ["@mode", right, enter, tan, d4, d5, right, enter, shift, sin, d0, dot, d5, right, enter]
+    keys: ["@mode", {tap: '[data-testid="menu"] [data-id="angle"] [data-option="deg"]'}, tan, d4, d5, right, enter, shift, sin, d0, dot, d5, right, enter]
     expect: { result: "30", mark: "=" }
     value: "30"
     source: derived
@@ -243,7 +243,7 @@ cases:
   - id: c27
     area: trig
     title: "DEG, then back to RAD: sin(π) is 0"
-    keys: ["@mode", right, enter, "@mode", right, enter, sin, shift, d3, right, enter]
+    keys: ["@mode", {tap: '[data-testid="menu"] [data-id="angle"] [data-option="deg"]'}, "@mode", {tap: '[data-testid="menu"] [data-id="angle"] [data-option="rad"]'}, sin, shift, d3, right, enter]
     expect: { result: "0", mark: "=" }
     value: "0"
     source: derived
@@ -433,16 +433,16 @@ cases:
 
   - id: c49
     area: entry
-    title: "Copy the last result, Paste it (Shift Copy) into the line"
-    keys: [d7, enter, copy, shift, copy, add, d1, enter]
+    title: "Copy the last result, Paste it into the line (the Paste key, owner 2026-11-06)"
+    keys: [d7, enter, copy, paste, add, d1, enter]
     expect: { result: "8", mark: "=" }
     value: "8"
     source: derived
 
   - id: c50
     area: entry
-    title: "▲ picks an earlier row; Copy and Paste take that row"
-    keys: [d2, enter, d3, enter, up, up, copy, shift, copy, add, d1, enter]
+    title: "▲ picks an earlier row; Copy takes that row, the Paste key puts it on the line (owner 2026-11-06)"
+    keys: [d2, enter, d3, enter, up, up, copy, paste, add, d1, enter]
     expect: { result: "3", mark: "=" }
     value: "3"
     source: derived
@@ -450,7 +450,7 @@ cases:
   - id: c51
     area: trig
     title: "the angle mode survives a relaunch: DEG, relaunch, sin 30"
-    keys: ["@mode", right, enter, {relaunch: true}, sin, d3, d0, right, enter]
+    keys: ["@mode", {tap: '[data-testid="menu"] [data-id="angle"] [data-option="deg"]'}, {relaunch: true}, sin, d3, d0, right, enter]
     expect: { result: "0.5", mark: "=" }
     value: "1/2"
     source: derived
@@ -553,7 +553,7 @@ cases:
   - id: c63
     area: trig
     title: "polar in DEG: 1+i, a b/c shows √2∡45"
-    keys: ["@mode", right, enter, d1, add, shift, d2, enter, frac]
+    keys: ["@mode", {tap: '[data-testid="menu"] [data-id="angle"] [data-option="deg"]'}, d1, add, shift, d2, enter, frac]
     expect: { result: "1.41421356237∡45", mark: "≈" }
     value: "abs(1+i) = sqrt(2) = 1.41421356237309504880168872421; arg = atand(1) = 45"
     source: oracle

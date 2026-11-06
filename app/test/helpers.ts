@@ -19,13 +19,19 @@ async function statusTap(page: Page, id: string): Promise<void> {
   if (id === "@mode") {
     await page.getByTestId("chip-format").tap();
     await page.getByTestId("menu").getByRole("menuitem").first().waitFor();
-    return tap(page, ["up"]);
+    return sheetKey(page, ["up"]); // (R144: an on-screen ▲ would close the sheet)
   }
   const view = id.slice(1);
   if (!["symb", "plot", "num"].includes(view)) throw new Error(`no status-line control ${id}`);
   const inApp = await page.evaluate(() => window.n62.shell.app !== null);
   if (!inApp) await fromApps(await page.evaluate(() => window.n62.shell.lastApp ?? "function"));
   await page.getByTestId(`tab-${view}`).tap();
+}
+
+/** Press keys the way a hardware keyboard does (R31: the keypad key with that character, in the current Shift/Alpha
+ *  state), the path that steps an open pick sheet (R144: an on-screen tap on the top cluster closes it instead). */
+export async function sheetKey(page: Page, ids: string[]): Promise<void> {
+  for (const id of ids) await page.evaluate((id) => window.n62.entry.onKey(id, undefined as never, false), id);
 }
 
 /**
@@ -44,7 +50,7 @@ export async function tap(page: Page, ids: string[]): Promise<void> {
       const el = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
       return el !== null && !k.contains(el) && el.closest('[role="menu"]') !== null;
     }, id);
-  const press = (id: string): Promise<void> => page.evaluate((id) => window.n62.entry.onKey(id, undefined as never, false), id);
+  const press = (id: string): Promise<void> => sheetKey(page, [id]);
   for (const id of ids) {
     if (id.startsWith("@")) {
       await statusTap(page, id);
