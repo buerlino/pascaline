@@ -13,6 +13,7 @@ import { MAX_DIGITS, type DecimalMark, type EntryMode, type MarkStyle, type Sess
 import { groupSepFor, type GroupSep } from "../render/home.ts";
 import { aboutText } from "../i18n/enAbout.ts";
 import { uncText } from "../i18n/enUnc.ts";
+import { keyFeelText } from "../i18n/enKeyFeel.ts";
 import { helpItems } from "./aboutItems.ts";
 import { findText } from "../i18n/enFind.ts";
 import { dataSection } from "./dataSection.svelte.ts";
@@ -141,7 +142,7 @@ export function settingsSections(session: Session, env: SettingsEnv = {}): MenuI
       [
         {
           id: "haptics",
-          label: t("settings.haptics"),
+          label: keyFeelText("settings.haptics"),
           keep: true,
           get selected() {
             return s.haptics.on;
@@ -150,7 +151,7 @@ export function settingsSections(session: Session, env: SettingsEnv = {}): MenuI
         },
         {
           id: "strength",
-          label: t("settings.haptics.strength"),
+          label: keyFeelText("settings.haptics.strength"),
           keep: true,
           get value() {
             return `${s.haptics.strength} %`;
@@ -159,13 +160,13 @@ export function settingsSections(session: Session, env: SettingsEnv = {}): MenuI
             return off() || !hasStrength(); // read on each look: the native plugin may load after this open
           },
           get reason() {
-            return off() ? t("settings.haptics.off") : t("settings.haptics.webNote");
+            return off() ? keyFeelText("settings.haptics.off") : keyFeelText("settings.haptics.webNote");
           },
           adjust: (by) => session.setHaptics({ strength: s.haptics.strength + 10 * by }),
         },
         {
           id: "ms",
-          label: t("settings.haptics.ms"),
+          label: keyFeelText("settings.haptics.ms"),
           keep: true,
           get value() {
             return `${s.haptics.ms} ms`;
@@ -174,31 +175,31 @@ export function settingsSections(session: Session, env: SettingsEnv = {}): MenuI
             return off();
           },
           get reason() {
-            return t("settings.haptics.off");
+            return keyFeelText("settings.haptics.off");
           },
           adjust: (by) => session.setHaptics({ ms: s.haptics.ms + 5 * by }),
         },
         {
           id: "try",
-          label: t("settings.haptics.try"),
+          label: keyFeelText("settings.haptics.try"),
           keep: true,
           get disabled() {
             return off();
           },
           get reason() {
-            return t("settings.haptics.off");
+            return keyFeelText("settings.haptics.off");
           },
           run: () => vibrate(s.haptics.strength / 100, s.haptics.ms), // one key-down pulse, as set
         },
       ],
-      () => t(s.haptics.on ? "settings.on" : "settings.off"),
+      () => keyFeelText(s.haptics.on ? "settings.on" : "settings.off"),
     ),
     // Your keys (R4b, views/yourKeys.ts): only where the app gives the slots
     ...(env.userKeys ? [section("keys", findText("keys.title"), yourKeysItems(env), () => yourKeysValue(env))] : []),
     // Data (R38a, R38b: views/dataSection.svelte.ts; R59 adds the library): only where the app gives the backup
     ...(env.data ? [dataSection(env)] : []),
-    section("counters", t("settings.counters"), tapsItems(session, env), () => {
-      return t("settings.counters.value", { n: String(session.taps.counts.presses) }); // (a reset replaces the object)
+    section("counters", keyFeelText("settings.counters"), tapsItems(session, env), () => {
+      return keyFeelText("settings.counters.value", { n: String(session.taps.counts.presses) }); // (a reset replaces the object)
     }),
     section("help", aboutText("help"), helpItems(env)),
   ];
@@ -379,13 +380,13 @@ function fmtTicks(session: Session): MenuItem[] {
 function tapsItems(session: Session, env: SettingsEnv): MenuItem[] {
   const taps = session.taps;
   return [
-    { id: "presses", label: t("settings.taps.presses"), keep: true, get value() { return String(taps.counts.presses); } },
-    { id: "shift", label: t("settings.taps.shift"), keep: true, get value() { return String(taps.counts.shift); } },
-    { id: "alpha", label: t("settings.taps.alpha"), keep: true, get value() { return String(taps.counts.alpha); } },
+    { id: "presses", label: keyFeelText("settings.taps.presses"), keep: true, get value() { return String(taps.counts.presses); } },
+    { id: "shift", label: keyFeelText("settings.taps.shift"), keep: true, get value() { return String(taps.counts.shift); } },
+    { id: "alpha", label: keyFeelText("settings.taps.alpha"), keep: true, get value() { return String(taps.counts.alpha); } },
     switchedRow(session), // R88, R89: the presets applied
-    { id: "since", label: t("settings.taps.since"), keep: true, get value() { return taps.counts.since || "—"; } },
+    { id: "since", label: keyFeelText("settings.taps.since"), keep: true, get value() { return taps.counts.since || "—"; } },
     // R127: the counts per key and layer as a file (R128 writes the same text into the sync folder); only where the app gives the file port
-    ...(env.data ? [{ id: "export", label: t("settings.taps.export"), run: () => env.data?.((c) => c.saveCounts(taps.counts)) }] : []),
-    { id: "reset", label: t("settings.taps.reset"), keep: true, run: () => taps.reset() },
+    ...(env.data ? [{ id: "export", label: keyFeelText("settings.taps.export"), run: () => env.data?.((c) => c.saveCounts(taps.counts)) }] : []),
+    { id: "reset", label: keyFeelText("settings.taps.reset"), keep: true, run: () => taps.reset() },
   ];
 }
