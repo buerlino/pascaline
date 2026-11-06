@@ -312,7 +312,7 @@ function replay(c: RouteCtx): void {
   for (const w of keys)
     if (c.shell.loading !== null || c.sheetLoad !== null) wait(c, w); // another app started loading meanwhile
     else if ("letter" in w) typeLetter(c, w.letter);
-    else if (w.screen && screenClose(c, w.key, w.layer)) continue; // a tap queued for a sheet's code closes the sheet it lands on (R144)
+    else if (w.screen && screenClose(c, w.key, w.layer)) continue; // a tap on an undrawn sheet closes it once drawn (R144)
     else if (!(c.shell.sheet && sheetPress(c, w.key, w.layer)) && !sheetChunk.pad?.route(c, w.key, w.mods)) run(c, w.key, w.mods); // a sheet or the unit pad opened meanwhile takes its keys
 }
 
@@ -366,6 +366,8 @@ export function press(c: RouteCtx, key: Key, layer?: Layer, screen = false): voi
   if (screen && screenClose(c, key, layer)) return;
   const p = key.actions.primary;
   if (p?.kind === "special" && (p.name === "shift" || p.name === "alpha")) return modifier(c, p.name, layer);
+  // (F42: a tap on a sheet that is open but not drawn yet keeps its flag and closes it once drawn; a key pressed before a
+  // sheet opens waits as typed, R8)
   if (sheetUndrawn(c) || rowsLoading(c, key)) return wait(c, { key, mods: modsFor(c, layer), layer, screen });
   if (c.shell.sheet && sheetPress(c, key, layer)) return;
   const mods = modsFor(c, layer);
@@ -376,10 +378,10 @@ export function press(c: RouteCtx, key: Key, layer?: Layer, screen = false): voi
       .catch(() => {})
       .finally(() => (c.sheetLoad = null)); // if it fails, the queued keys run without a sheet
   }
-  if (c.sheetLoad !== null) return wait(c, { key, mods, layer, screen });
+  if (c.sheetLoad !== null) return wait(c, { key, mods, layer });
   if (c.shell.loading !== null) {
     const a = actionFor(key, mods.shift, mods.alpha);
-    if (!(a?.kind === "special" && AT_ONCE.includes(a.name))) return wait(c, { key, mods, layer, screen });
+    if (!(a?.kind === "special" && AT_ONCE.includes(a.name))) return wait(c, { key, mods, layer });
   }
   run(c, key, mods);
 }

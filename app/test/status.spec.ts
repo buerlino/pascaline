@@ -219,8 +219,7 @@ test("keys typed while the Mode sheet's code loads wait for it, and are not type
   await open(page);
   await modeOnU1(page);
   expect(await angle(page)).toBe("rad");
-  await tap(page, ["d1"]);
-  await sheetKey(page, ["u1", "right", "enter"]);
+  await tap(page, ["d1", "u1", "right", "enter"]); // (typed before the sheet opens: R8, the keys act as they would after it)
   expect(await entryValue(page)).toBe("1"); // nothing evaluated yet, nothing typed
   release();
   await expect.poll(() => angle(page)).toBe("deg"); // the sheet opened, ▶ stepped Angle, Enter closed it

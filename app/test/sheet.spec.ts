@@ -145,8 +145,7 @@ test("a key that changes place closes the sheet and goes there (CAS)", async ({ 
 });
 
 test("the last pick is remembered per sheet: Apps + Enter opens the app picked last", async ({ page }) => {
-  await tap(page, ["@place"]);
-  await sheetKey(page, ["d4"]); // (a hardware 4: an on-screen key queued for the sheet's code closes it, R144)
+  await tap(page, ["@place", "d4"]);
   await expect(page.locator('[data-app="solve"]')).toBeVisible();
   // back to Home without the Apps sheet (a user key that holds Home), so its last pick stays Solve
   await page.evaluate(() => window.n62.userKeys.set("u2", "primary", { label: "Home", action: { special: "home" } }));
