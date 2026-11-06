@@ -34,9 +34,9 @@ describe("keyboard spec", () => {
 
   it("the upper cluster is R3 (decisions.md R15c): six user keys, the round pad, the editing wing; no letter line", () => {
     const at = (r: number) => keyboard.keys.filter((k) => k.row === r).sort((a, b) => a.col - b.col).map((k) => k.id);
-    expect(at(0)).toEqual(["u1", "u2", "up", "view", "esc"]);
-    expect(at(1)).toEqual(["u3", "u4", "left", "right", "undo", "copy"]);
-    expect(at(2)).toEqual(["u5", "u6", "down", "lstart", "lend"]);
+    expect(at(0)).toEqual(["u1", "u2", "up", "help", "esc"]);
+    expect(at(1)).toEqual(["u3", "u4", "left", "right", "undo", "redo"]);
+    expect(at(2)).toEqual(["u5", "u6", "down", "copy", "paste"]);
     const k = (id: string) => keyboard.byId.get(id) as Key;
     expect([k("up").col, k("up").span, k("down").col, k("down").span, k("left").col, k("right").col]).toEqual([2, 2, 2, 2, 2, 3]);
     // six user keys in columns 0-1, all empty (D's Home and CAS defaults on U2 and U3 are gone)
@@ -48,30 +48,37 @@ describe("keyboard spec", () => {
       expect(u.label.primary, u.id).toBe("$key.user");
     }
     // the keys that went to the status line (R15c1) and Cancel (now Esc) are no keys any more
-    for (const id of ["apps", "symb", "plot", "num", "help", "menu", "cancel"]) expect(keyboard.byId.has(id), id).toBe(false);
+    // and View (R146: results mode is R53's handle and swipe), ⇤ and ⇥ (now Undo's and Redo's Shift layers)
+    for (const id of ["apps", "symb", "plot", "num", "menu", "cancel", "view", "lstart", "lend"]) expect(keyboard.byId.has(id), id).toBe(false);
     expect(keyboard.byId.has("app") || keyboard.byId.has("cas")).toBe(false);
     // the wing's layers (point 2)
     expect(actionFor(k("esc"), false, false)).toEqual({ kind: "special", name: "esc" });
     expect(actionFor(k("esc"), true, false)).toEqual({ kind: "special", name: "clear" });
+    // R146 (S25's K1, owner 2026-11-06): every pair on one layer, the jumps on the Shift layers
     expect(actionFor(k("undo"), false, false)).toEqual({ kind: "cmd", name: "undo" });
-    expect(actionFor(k("undo"), true, false)).toEqual({ kind: "cmd", name: "redo" });
+    expect(actionFor(k("undo"), true, false)).toEqual({ kind: "cmd", name: "moveToMathfieldStart" });
+    expect(actionFor(k("redo"), false, false)).toEqual({ kind: "cmd", name: "redo" });
+    expect(actionFor(k("redo"), true, false)).toEqual({ kind: "cmd", name: "moveToMathfieldEnd" });
     expect(actionFor(k("copy"), false, false)).toEqual({ kind: "special", name: "copy" });
-    expect(actionFor(k("copy"), true, false)).toEqual({ kind: "special", name: "paste" });
-    expect(actionFor(k("lstart"), false, false)).toEqual({ kind: "cmd", name: "moveToMathfieldStart" });
-    expect(actionFor(k("lstart"), true, false)).toEqual({ kind: "cmd", name: "moveToGroupStart" });
-    expect(actionFor(k("lend"), false, false)).toEqual({ kind: "cmd", name: "moveToMathfieldEnd" });
-    expect(actionFor(k("lend"), true, false)).toEqual({ kind: "cmd", name: "moveToGroupEnd" });
-    // View: results mode (R53) and Help (milestone 6) not built: dead in both layers, so it is drawn dimmed
-    expect(actionFor(k("view"), false, false)).toEqual({ kind: "special", name: "none" });
-    expect(actionFor(k("view"), true, false)).toEqual({ kind: "special", name: "none" });
+    expect(actionFor(k("copy"), true, false)).toEqual({ kind: "cmd", name: "moveToGroupStart" });
+    expect(actionFor(k("paste"), false, false)).toEqual({ kind: "special", name: "paste" });
+    expect(actionFor(k("paste"), true, false)).toEqual({ kind: "cmd", name: "moveToGroupEnd" });
+    expect([k("undo"), k("redo"), k("copy"), k("paste")].map((x) => [x.label.primary, x.label.shift])).toEqual([
+      ["$key.undo", "⇤"], ["$key.redo", "⇥"], ["$key.copy", "⇤□"], ["$key.paste", "□⇥"],
+    ]);
+    // Help at the G2's r1c4: not built (milestone 6), so dead and drawn dimmed; Shift + Help (the G2's User, omitted) is Settings
+    expect(actionFor(k("help"), false, false)).toEqual({ kind: "special", name: "none" });
+    expect(actionFor(k("help"), true, false)).toEqual({ kind: "special", name: "settings" });
+    expect(k("help").label).toEqual({ primary: "$key.help", shift: "$key.settings" });
+    for (const id of ["help", "esc", "undo", "redo", "copy", "paste"]) expect(k(id).cls, id).toBe("nav");
     // R85: Fmt's free Shift cell opens Mode
     expect(k("fmt").actions.shift).toEqual({ kind: "special", name: "mode" });
     expect(k("fmt").label.shift).toBe("$key.mode");
-    expect(k("view").label).toEqual({ primary: "$key.view", shift: "$key.help" });
     // the cluster keeps no alpha letters, so no key in it draws the letter line (vertical space, docs/03 rule 9)
     for (const key of keyboard.keys.filter((x) => x.row < MATHS_ROW)) expect(key.label.alpha ?? key.actions.alpha, key.id).toBeUndefined();
-    // every new key is our choice
-    for (const id of ["u1", "u2", "u3", "u4", "u5", "u6", "view", "undo", "copy", "lstart", "lend"]) expect(k(id).source, id).toBe("assumed");
+    // Help and Esc keep their G2 cells (r1c4, r1c5), as does the pad; every other key of the cluster is our choice
+    expect([k("help").source, k("esc").source]).toEqual(["virtual-calc", "virtual-calc"]);
+    for (const id of ["u1", "u2", "u3", "u4", "u5", "u6", "undo", "redo", "copy", "paste"]) expect(k(id).source, id).toBe("assumed");
     // a user key may take an Alpha layer (R15c3, the loader test is in userKeys.test.ts) but needs both its legend and action
     const bad = (extra: string) => () => loadKeyboard(parse(spec.replace("{ id: u1, row: 0, col: 0, cls: nav, user: true,", `{ id: u1, row: 0, col: 0, cls: nav, user: true, ${extra}`)));
     expect(bad("alpha: { type: Q },")).toThrow(KeyboardSpecError);
@@ -85,7 +92,7 @@ describe("keyboard spec", () => {
   it("every key says where it comes from", () => {
     for (const k of keyboard.keys) expect(["virtual-calc", "assumed", "device"], k.id).toContain(k.source);
     // 37 since R15c2 (42 before): Apps, Symb, Plot, Num and Help left the cluster (their G2 functions are on the status
-    // line), and View, still at row 0 column 4, became `assumed` (results mode and Help are ours, not the G2's)
+    // line); 38 since R146: Help is back at its G2 cell (row 0 column 4, r1c4) in place of View
     expect(spec.match(/source: virtual-calc/g)?.length ?? 0).toBeGreaterThanOrEqual(37);
   });
 
