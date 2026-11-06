@@ -18,6 +18,7 @@ interface Clip {
   after?: string;
   presses: Step[];
   eval: Step;
+  lead?: number;
   expect: CoreExpect & { unit?: { text: string; unit: string; has?: string } };
 }
 interface Beat { t: number; block: number | string; beat: number; kind: string }
@@ -75,11 +76,12 @@ test.describe("showcase clips at the song's tempo", () => {
       const t0 = Date.now() + 300;
       let evalAt = 0;
       for (const [i, s] of steps.entries()) {
-        const due = t0 + ((times[i] as number) - (times[0] as number)) * 1000;
+        const lead = i === steps.length - 1 ? (c.lead ?? 0) : 0;
+        const due = t0 + ((times[i] as number) - (times[0] as number)) * 1000 - lead;
         const wait = due - Date.now();
         if (wait > 0) await page.waitForTimeout(wait);
         late.push(Date.now() - due);
-        if (i === steps.length - 1) evalAt = Date.now();
+        if (i === steps.length - 1) evalAt = due + lead; // the eval's beat (a lead starts the press before it)
         await press(page, s);
       }
       // the result on screen: polled every animation frame from the eval press
@@ -111,7 +113,7 @@ test.describe("showcase clips at the song's tempo", () => {
         got = await lastRow(page);
       }
       console.log(`SHOWCASE ${c.id}: ${c.presses.length} presses + eval; beat ${Math.round(Math.min(...gaps) * 1000)}–${Math.round(Math.max(...gaps) * 1000)} ms; ` +
-        `late max ${Math.round(Math.max(...late))} ms; result shown ${shown} ms after the eval, cut ${cutIn} ms after it${shown > cutIn ? " TOO LATE" : ""}; got ${got}`);
+        `late max ${Math.round(Math.max(...late))} ms; result shown ${shown} ms after the eval's beat${c.lead ? ` (pressed ${c.lead} ms early)` : ""}, cut ${cutIn} ms after it${shown > cutIn ? " TOO LATE" : ""}; got ${got}`);
       if (u) {
         const r = page.getByTestId("unit-result");
         await expect(r).toHaveAttribute("data-text", u.text);
