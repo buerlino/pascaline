@@ -9,8 +9,8 @@ const measure = process.env.PASCALINE_MEASURE === '1';
 export const webviewDebug = process.env.PASCALINE_WEBVIEW_DEBUG === '1';
 
 const config: CapacitorConfig = {
-  appId: 'io.github.buerlino.pascaline',
-  appName: 'Pascaline',
+  appId: 'dev.n62.calc',
+  appName: 'N62',
   webDir: 'dist',
   loggingBehavior: measure ? 'production' : 'none',
   // A72: the WebView's first frame, before the page paints, is the Dark --bg (app/src/style.css), not the default white

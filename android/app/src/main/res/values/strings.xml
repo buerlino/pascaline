@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Pascaline</string>
-    <string name="title_activity_main">Pascaline</string>
-    <string name="package_name">io.github.buerlino.pascaline</string>
-    <string name="custom_url_scheme">io.github.buerlino.pascaline</string>
+    <string name="app_name">N62</string>
+    <string name="title_activity_main">N62</string>
+    <string name="package_name">dev.n62.calc</string>
+    <string name="custom_url_scheme">dev.n62.calc</string>
 </resources>
