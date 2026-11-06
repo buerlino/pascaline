@@ -74,5 +74,4 @@ than 80 ms after its beat. 2026-11-06 on `189bdeb3`: 20/20, every press within 7
    R53) and the queue have merged; per chapter theme.
 3. **Blender** (owner): the screen plane, the camera keys, the song in the Video Editor from 17 s.
 
-Found on the way: xʸ after `i` (Shift 2) leaves an empty base (`unsupported command \placeholder`, so iⁱ cannot
-be typed); not yet a backlog line.
+Found on the way: iⁱ cannot be typed (backlog F184); clip 11 shows e^(iπ) instead.
