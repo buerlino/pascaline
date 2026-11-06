@@ -25,7 +25,7 @@ Pascaline is an **open-source precision engineering tool** for Android (also PWA
 - Every new dependency must be **GPL-3.0-compatible**. Record it in `THIRD_PARTY.md` with name, version, licence and URL.
 
 ### F-Droid readiness (from day one)
-- **No prebuilt binaries in git** (`.wasm`, `.so`, `.jar`, `.a`). Everything gets built from source by scripts in the repo. The only exception is throwaway experiments under `spike/`, which must be listed in `spike/RESULTS.md` and ignored via `.gitignore`.
+- **No prebuilt binaries in git** (`.wasm`, `.so`, `.jar`, `.a`). Everything gets built from source by scripts in the repo. The only exception is throwaway experiments under `spike/`, which must be ignored via `.gitignore` and named in the report of the package that made them.
 - **No Google Play Services, Firebase, analytics, crash reporters or trackers.**
 - **The app works 100% offline.** Network access is only allowed for an explicit, optional download, and only in non-F-Droid builds.
 - **Never delete** `engine/giac/_downloads/` (the SHA-checked source tarballs) or `spike/prebuilt/` (Parisse's build, kept for comparisons). Both are gitignored.
