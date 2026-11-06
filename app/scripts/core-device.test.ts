@@ -3,7 +3,7 @@
 import { readFileSync } from "node:fs";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { loadCore } from "../test/core-lib.ts";
-import { caseRecord, deviceLine, planDevice } from "../test-device/core-plan.ts";
+import { caseRecord, deviceLine, planDevice, pluginProblem } from "../test-device/core-plan.ts";
 
 const root = (rel: string): string => readFileSync(new URL(`../../${rel}`, import.meta.url), "utf8");
 
@@ -55,6 +55,22 @@ describe("device reporter rows (A40)", () => {
     expect(row("passed", "failed")?.rec).toMatchObject({ ok: false, error: "boom" });
     expect(row("passed", "skipped")?.rec).toMatchObject({ ok: null, skipped: true });
     expect(row("passed", "skipped")?.counts).toBe("needs");
+  });
+});
+
+describe("native plugins on the device (R139)", () => {
+  it("passes when both are available", () => {
+    expect(pluginProblem([["N62Files", true], ["N62Haptics", true]])).toBeNull();
+  });
+  it("names each missing plugin, and a plugin not reported", () => {
+    expect(pluginProblem([["N62Files", false], ["N62Haptics", true]])).toMatch(/not available in the APK: N62Files /);
+    expect(pluginProblem([["N62Files", true]])).toMatch(/: N62Haptics /);
+    expect(pluginProblem([])).toMatch(/N62Files, N62Haptics/);
+  });
+  it("the launch of the device spec throws it, so every core case goes red", () => {
+    const spec = readFileSync(new URL("../test-device/core.device.spec.ts", import.meta.url), "utf8");
+    expect(spec).toMatch(/pluginProblem\(/);
+    expect(spec).toMatch(/if \(problem !== null\) throw new Error\(problem\)/);
   });
 });
 

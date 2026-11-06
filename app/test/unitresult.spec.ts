@@ -8,7 +8,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { flick, open, tap, useClipboardLock } from "./helpers.ts";
 
 const up = (page: Page): Promise<unknown> =>
-  page.waitForFunction(() => window.pascaline.unitView !== undefined && document.activeElement === window.pascaline.unitView.element && document.querySelector('[data-pad="unit"]') !== null);
+  page.waitForFunction(() => window.n62.unitView !== undefined && document.activeElement === window.n62.unitView.element && document.querySelector('[data-pad="unit"]') !== null);
 const unitsKey = async (page: Page): Promise<void> => {
   await flick(page, "tmpl", "up");
   await up(page);
@@ -20,7 +20,7 @@ const chip = (page: Page, text: string) => chips(page).filter({ hasText: new Reg
 const texts = (page: Page): Promise<string[]> => chips(page).allTextContents();
 const endSlot = (page: Page): Promise<string> =>
   page.evaluate(() => {
-    const s = window.pascaline.unitView?.view.model("end")?.slot;
+    const s = window.n62.unitView?.view.model("end")?.slot;
     return (s?.tokens ?? []).map((t, i) => `${i === s?.per ? "/ " : ""}${t.prefix ?? ""}${t.unit}${t.power ? `^${t.power}` : ""}`).join(" ");
   });
 
@@ -35,7 +35,7 @@ async function plan(page: Page, steps: string): Promise<void> {
 test.describe("the unit result view (R62)", () => {
   test.beforeEach(async ({ page }) => {
     await open(page, "");
-    await page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
+    await page.waitForFunction(() => window.n62.session.engineState === "ready", undefined, { timeout: 20_000 });
   });
 
   /** 72 km/h, evaluated at once: the typed unit is kept (G25). */
@@ -61,7 +61,7 @@ test.describe("the unit result view (R62)", () => {
     await expect(result(page)).toHaveAttribute("data-unit", "m/s");
     await expect(mark(page)).toHaveText("=");
     expect(await endSlot(page)).toBe("m / s");
-    expect(await page.evaluate(() => window.pascaline.unitView?.field.getPromptValue("end"))).toContain("\\mathrm{m}");
+    expect(await page.evaluate(() => window.n62.unitView?.field.getPromptValue("end"))).toContain("\\mathrm{m}");
   });
 
   test("the row by keys (▼ ▶ Enter) picks what a tap on the same chip picks; Esc leaves the row, then the view", async ({ page }) => {
@@ -72,7 +72,7 @@ test.describe("the unit result view (R62)", () => {
     await expect(result(page)).toHaveAttribute("data-unit", second);
     const byTap = [await result(page).getAttribute("data-text"), await result(page).getAttribute("data-unit")];
     await open(page, "");
-    await page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
+    await page.waitForFunction(() => window.n62.session.engineState === "ready", undefined, { timeout: 20_000 });
     await kmh(page);
     expect(await texts(page)).toEqual(row); // the same line, the same row
     await tap(page, ["down"]);
@@ -179,14 +179,14 @@ test.describe("the unit result view (R62)", () => {
     await expect(page.getByTestId("unit-alts")).toHaveCount(0);
     await tap(page, ["down"]); // no row to enter: a dead key
     await expect(page.locator("[data-focus]")).toHaveCount(0);
-    expect(await page.evaluate(() => window.pascaline.unitView?.view.model("u1")?.slot.tokens[0]?.unit)).toBe("m");
-    expect(await page.evaluate(() => window.pascaline.unitView?.view.model("u2")?.slot.tokens[0]?.unit)).toBe("s");
+    expect(await page.evaluate(() => window.n62.unitView?.view.model("u1")?.slot.tokens[0]?.unit)).toBe("m");
+    expect(await page.evaluate(() => window.n62.unitView?.view.model("u2")?.slot.tokens[0]?.unit)).toBe("s");
   });
 
   test("More… opens Find and keeps the result; Esc there leaves the value line and the end slot as before More… (R118, vr-8)", async ({ page }) => {
     await kmh(page);
     const before = await endSlot(page); // (km/h was typed in the first slot and evaluated at once: the end slot is empty)
-    const active = await page.evaluate(() => window.pascaline.unitView?.view.activeId);
+    const active = await page.evaluate(() => window.n62.unitView?.view.activeId);
     await page.getByTestId("unit-more").tap();
     await expect(page.getByTestId("find")).toBeVisible();
     await expect(page.getByTestId("unit-view")).toBeVisible();
@@ -197,8 +197,8 @@ test.describe("the unit result view (R62)", () => {
     await expect(result(page)).toHaveAttribute("data-unit", "km/h");
     await expect(mark(page)).toHaveText("=");
     expect(await endSlot(page)).toBe(before);
-    expect(await page.evaluate(() => window.pascaline.unitView?.view.activeId)).toBe(active);
-    expect(await page.evaluate(() => window.pascaline.unitView?.view.model("u1")?.slot.tokens.length)).toBe(2);
+    expect(await page.evaluate(() => window.n62.unitView?.view.activeId)).toBe(active);
+    expect(await page.evaluate(() => window.n62.unitView?.view.model("u1")?.slot.tokens.length)).toBe(2);
   });
 
   // R121 fix round 2: under the full suite's load More… showed no Find within 5 s, its module fetched only on the tap.
@@ -218,7 +218,7 @@ test.describe("the unit result view (R62)", () => {
       window.requestIdleCallback = () => 0;
     });
     await open(page, "");
-    await page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
+    await page.waitForFunction(() => window.n62.session.engineState === "ready", undefined, { timeout: 20_000 });
     await kmh(page);
     await page.getByTestId("unit-more").tap();
     await expect(page.getByTestId("find")).toBeVisible();
@@ -235,7 +235,7 @@ test.describe("the unit result view (R62)", () => {
     const unit = await result(page).getAttribute("data-unit");
     expect(unit).not.toBe("km/h");
     expect(await endSlot(page)).not.toBe("");
-    expect(await page.evaluate(() => window.pascaline.unitView?.view.activeId)).toBe("end");
+    expect(await page.evaluate(() => window.n62.unitView?.view.activeId)).toBe("end");
   });
 });
 
@@ -247,8 +247,8 @@ test.describe("t10 with the decimal comma (R120)", () => {
   useClipboardLock(); // first hook, so the lock is held before the page opens
   test.beforeEach(async ({ page }) => {
     await open(page, "");
-    await page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
-    await page.evaluate(() => window.pascaline.session.setDecimalMark("comma"));
+    await page.waitForFunction(() => window.n62.session.engineState === "ready", undefined, { timeout: 20_000 });
+    await page.evaluate(() => window.n62.session.setDecimalMark("comma"));
   });
 
   test("12,34 ± 0,05 m × 3,2 ± 0,1 m shows ≈ 39,5 ± 1,2 m² and 39,488 · σ 1,244…; the Home row and Copy as shown keep 39,488 ± 1,2 m²", async ({ page }) => {
@@ -263,7 +263,7 @@ test.describe("t10 with the decimal comma (R120)", () => {
     await expect(page.getByTestId("unit-sub")).not.toContainText(".");
     await expect(result(page)).toHaveAttribute("data-text", "39,488");
     await tap(page, ["esc"]);
-    await page.waitForFunction(() => window.pascaline.unitView === undefined);
+    await page.waitForFunction(() => window.n62.unitView === undefined);
     const row = page.locator("article.item").last().locator(".result");
     await expect(row).toHaveAttribute("data-text", "39,488 ± 1,2 m²");
     await tap(page, ["@menu", "d6"]);
@@ -278,7 +278,7 @@ test.describe("the row at phone widths", () => {
     test(`at ${width} px the row keeps More… on screen and, from 360 px, at least four chips`, async ({ page }) => {
       await page.setViewportSize({ width, height: 800 });
       await open(page, "");
-      await page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
+      await page.waitForFunction(() => window.n62.session.engineState === "ready", undefined, { timeout: 20_000 });
       await plan(page, "d2 mul ↑d3 mul d2 d5");
       await unitsKey(page);
       await plan(page, "enter d1 d9 ↑enter");

@@ -8,7 +8,7 @@ import { open, sheet, tap } from "./helpers.ts";
 const title = (page: Page) => page.getByTestId("sheet-title");
 const row = (page: Page, id: string) => sheet(page).locator(`[role="menuitem"][data-id="${id}"]`);
 const root = (page: Page) => page.locator("html");
-const look = (page: Page) => page.evaluate(() => window.pascaline.session.settings.look);
+const look = (page: Page) => page.evaluate(() => window.n62.session.settings.look);
 const attrs = (page: Page) =>
   page.evaluate(() => ["data-family", "data-brightness", "data-contrast", "data-keys"].map((a) => document.documentElement.getAttribute(a)));
 /** The look written to IndexedDB (a reload reads this, not the page's memory). */
@@ -26,8 +26,8 @@ const stored = (page: Page) =>
 async function reload(page: Page): Promise<void> {
   await page.waitForTimeout(300); // the store writes behind the change
   await page.reload();
-  await page.waitForFunction(() => customElements.get("math-field") !== undefined && window.pascaline !== undefined);
-  await page.evaluate(() => window.pascaline.entry.ready);
+  await page.waitForFunction(() => customElements.get("math-field") !== undefined && window.n62 !== undefined);
+  await page.evaluate(() => window.n62.entry.ready);
   await page.waitForTimeout(150);
 }
 
@@ -157,7 +157,7 @@ test.describe("the first frame", () => {
     });
     await page.goto("/?engine=fake&tips=off", { waitUntil: "commit" });
     await page.waitForFunction(() => document.documentElement.getAttribute("data-family") === "nord");
-    expect(await page.evaluate(() => window.pascaline)).toBeUndefined(); // the app has not started
+    expect(await page.evaluate(() => window.n62)).toBeUndefined(); // the app has not started
     await expect.poll(() => page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--bg").trim())).toBe(mirrorBg);
     expect(await attrs(page)).toEqual(["nord", "dark", "high", "plain"]);
     expect(await page.evaluate(() => document.querySelector('meta[name="theme-color"]')?.getAttribute("content"))).toBe(

@@ -54,10 +54,10 @@ const token = (page: Page, name: string): Promise<string> =>
 
 test("Plain keys: the ⚠ mark and error text keep their colour; a sheet number is bold in the text colour", async ({ page }) => {
   await open(page, "");
-  await page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
+  await page.waitForFunction(() => window.n62.session.engineState === "ready", undefined, { timeout: 20_000 });
   await set(page, "plain", "normal");
   const text = await page.evaluate(() => getComputedStyle(document.body).color);
-  await page.evaluate(() => window.pascaline.session.submit("\\sin\\left(10^{2000}\\right)"));
+  await page.evaluate(() => window.n62.session.submit("\\sin\\left(10^{2000}\\right)"));
   const mark = page.getByTestId("mark");
   await expect(mark).toHaveAttribute("data-mark", "⚠");
   expect((await style(page, '[data-testid="mark"]')).c).toBe(await token(page, "--warn"));
@@ -67,8 +67,8 @@ test("Plain keys: the ⚠ mark and error text keep their colour; a sheet number 
   expect((await style(page, '.out .error')).c).toBe(await token(page, "--error"));
   expect((await style(page, '.out .error')).c).not.toBe(text);
   await page.evaluate(() => {
-    const w = window as unknown as { pascaline: { shell: { showMenu: (t: string, i: { id: string; label: string; run: () => void }[]) => void } } };
-    w.pascaline.shell.showMenu("T", [{ id: "a", label: "one", run: () => {} }]);
+    const w = window as unknown as { n62: { shell: { showMenu: (t: string, i: { id: string; label: string; run: () => void }[]) => void } } };
+    w.n62.shell.showMenu("T", [{ id: "a", label: "one", run: () => {} }]);
   });
   await expect(page.getByTestId("menu")).toBeVisible();
   const n = await style(page, '[data-testid="menu"] .n');

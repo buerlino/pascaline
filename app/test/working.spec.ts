@@ -31,7 +31,7 @@ async function sampleRows(page: Page): Promise<void> {
 const samples = (page: Page): Promise<Sample[]> =>
   page.evaluate(async () => {
     for (let i = 0; i < 2; i++) await new Promise(requestAnimationFrame);
-    const start = window.pascaline.session.items.at(-1)!.startedAt;
+    const start = window.n62.session.items.at(-1)!.startedAt;
     return (window as unknown as { __samples: Sample[] }).__samples.map((s) => ({ ...s, t: s.t - start }));
   });
 
@@ -79,7 +79,7 @@ test("Esc stops a job before Working… shows", async ({ page }) => {
   const escAt = await page.evaluate(
     () =>
       new Promise<number>((resolve, reject) => {
-        const key = (id: string): void => window.pascaline.entry.onKey(id, undefined as never, false);
+        const key = (id: string): void => window.n62.entry.onKey(id, undefined as never, false);
         const watch = new MutationObserver(() => {
           if (!document.querySelector('article.item[data-status="pending"]')) return;
           watch.disconnect();
@@ -93,7 +93,7 @@ test("Esc stops a job before Working… shows", async ({ page }) => {
       }),
   );
   await expect(page.locator(".item").last()).toHaveAttribute("data-status", "cancelled");
-  const start = await page.evaluate(() => window.pascaline.session.items.at(-1)!.startedAt);
+  const start = await page.evaluate(() => window.n62.session.items.at(-1)!.startedAt);
   const s = (await samples(page)).filter((x) => x.t >= 0);
   const cancelledAt = s.find((x) => x.status === "cancelled")!.t + start - escAt; // ms from Esc's own press
   expect(cancelledAt).toBeLessThan(150); // the key acted during the delay, while nothing was drawn yet

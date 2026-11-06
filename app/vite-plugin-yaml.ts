@@ -8,7 +8,7 @@ import { shippedKeyboard, shippedPalettes } from "./src/keyboard/shipped.ts";
 export function yamlPlugin(): Plugin {
   let build = false;
   return {
-    name: "pascaline-yaml",
+    name: "n62-yaml",
     configResolved(c) {
       build = c.command === "build";
     },

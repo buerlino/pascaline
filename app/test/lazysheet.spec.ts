@@ -40,7 +40,7 @@ test("Tmpl, then Enter, typed before the chunk is in, inserts the fraction once 
 test("Menu, then 9, typed before the chunk is in, picks the ninth row (Clear history) once it is", async ({ page }) => {
   const release = await hold(page);
   await open(page);
-  await page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
+  await page.waitForFunction(() => window.n62.session.engineState === "ready", undefined, { timeout: 20_000 });
   await tap(page, ["d1", "enter"]);
   await expect(page.locator('[data-testid="result"]')).toHaveCount(1);
   await tap(page, ["@menu", "d9"]);
@@ -85,7 +85,7 @@ async function longPressFirstRow(page: Page): Promise<void> {
 
 async function twoRows(page: Page): Promise<void> {
   await open(page);
-  await page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
+  await page.waitForFunction(() => window.n62.session.engineState === "ready", undefined, { timeout: 20_000 });
   await tap(page, ["d1", "enter"]);
   await expect(page.locator('[data-status="done"]')).toHaveCount(1); // Enter is ignored while a row runs
   await tap(page, ["d2", "enter"]);
@@ -145,8 +145,8 @@ test("Tmpl, then Enter, typed before the palettes' chunk is in, inserts the frac
 test("an Enter typed before the result tidy-up's chunk is in finishes its job once it is", async ({ page }) => {
   const release = await hold(page, /\/src\/render\/tidy\.ts/);
   await open(page);
-  await page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
-  await page.evaluate(() => window.pascaline.session.setView("cas"));
+  await page.waitForFunction(() => window.n62.session.engineState === "ready", undefined, { timeout: 20_000 });
+  await page.evaluate(() => window.n62.session.setView("cas"));
   await tap(page, ["d1", "add", "d2", "enter"]);
   expect(await entryValue(page)).toBe("");
   await expect(page.locator("article.item")).toHaveAttribute("data-status", "pending");
@@ -160,11 +160,11 @@ test("Settings opened again after the sheet chunk failed once answers Down and E
   let fail = true;
   await page.route(/\/src\/views\/sheetKeys\.ts/, (route) => (fail ? route.abort() : route.continue()));
   await open(page);
-  await page.evaluate(() => window.pascaline.shell.openSettings?.()); // Promise.all fails on the sheet chunk alone
+  await page.evaluate(() => window.n62.shell.openSettings?.()); // Promise.all fails on the sheet chunk alone
   await page.waitForTimeout(500);
   await expect(page.getByTestId("menu")).toHaveCount(0);
   fail = false;
-  await page.evaluate(() => window.pascaline.shell.openSettings?.());
+  await page.evaluate(() => window.n62.shell.openSettings?.());
   const settings = page.getByTestId("menu");
   await expect(page.getByTestId("sheet-title")).toHaveText("Mode › Settings");
   const active = settings.locator('[data-active="true"]');

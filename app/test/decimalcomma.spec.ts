@@ -14,9 +14,9 @@ useClipboardLock();
 
 test.beforeEach(async ({ page }) => {
   await open(page, "");
-  await page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
-  await page.evaluate(() => window.pascaline.session.setDecimalMark("comma"));
-  await page.evaluate(() => window.pascaline.entry.focus());
+  await page.waitForFunction(() => window.n62.session.engineState === "ready", undefined, { timeout: 20_000 });
+  await page.evaluate(() => window.n62.session.setDecimalMark("comma"));
+  await page.evaluate(() => window.n62.entry.focus());
 });
 
 const clipboard = (page: Page): Promise<string> => page.evaluate(() => navigator.clipboard.readText());
@@ -27,7 +27,7 @@ const resultIs = async (page: Page, text: string, count: number): Promise<void> 
 };
 /** max( ) as Find puts it on the line (R4a: a function's name is reached through Find); the cursor is inside the brackets. */
 const maxCall = (page: Page): Promise<void> =>
-  page.evaluate(() => window.pascaline.entry.run({ kind: "insert", latex: "\\operatorname{max}\\left(#0\\right)" }));
+  page.evaluate(() => window.n62.entry.run({ kind: "insert", latex: "\\operatorname{max}\\left(#0\\right)" }));
 const face = (page: Page, id: string): Promise<string> => page.locator(`[data-key="${id}"] .main`).first().innerText();
 
 test("the faces: . shows , and , shows ; in comma mode; point mode has them as before; the keys do not move", async ({ page }) => {
@@ -36,7 +36,7 @@ test("the faces: . shows , and , shows ; in comma mode; point mode has them as b
   expect((await face(page, "dot")).trim()).toBe(",");
   expect((await face(page, "comma")).trim()).toBe(";");
   expect([await box("dot"), await box("comma")]).toEqual(before);
-  await page.evaluate(() => window.pascaline.session.setDecimalMark("point"));
+  await page.evaluate(() => window.n62.session.setDecimalMark("point"));
   await expect.poll(async () => (await face(page, "dot")).trim()).toBe(".");
   expect((await face(page, "comma")).trim()).toBe(",");
   expect([await box("dot"), await box("comma")]).toEqual(before);
@@ -117,10 +117,10 @@ test("3 , ᴇ 3 types no 1 and gives what 3.ᴇ3 gives in point mode; max(1;ᴇ3
   expect(await entryValue(page)).toBe("3{,}\\emark3");
   await tap(page, ["enter"]);
   await resultIs(page, "3000", 1);
-  await page.evaluate(() => window.pascaline.session.setDecimalMark("point"));
+  await page.evaluate(() => window.n62.session.setDecimalMark("point"));
   await tap(page, ["d3", "dot", "emark", "d3", "enter"]);
   await resultIs(page, "3000", 2);
-  await page.evaluate(() => window.pascaline.session.setDecimalMark("comma"));
+  await page.evaluate(() => window.n62.session.setDecimalMark("comma"));
   await maxCall(page);
   await tap(page, ["d1", "comma", "emark", "d3"]);
   expect(await entryValue(page)).toMatch(/1;1\\emark3/);
@@ -129,7 +129,7 @@ test("3 , ᴇ 3 types no 1 and gives what 3.ᴇ3 gives in point mode; max(1;ᴇ3
 });
 
 test("max(1,5) in point mode gives 5; after Settings › Numbers › Decimal mark: Comma, the row and the recalled entry show max(1;5) and still give 5 (R57f1, R100)", async ({ page }) => {
-  await page.evaluate(() => window.pascaline.session.setDecimalMark("point"));
+  await page.evaluate(() => window.n62.session.setDecimalMark("point"));
   await maxCall(page);
   await tap(page, ["d1", "comma", "d5"]);
   await tap(page, ["enter"]);
@@ -145,7 +145,7 @@ test("max(1,5) in point mode gives 5; after Settings › Numbers › Decimal mar
   await expect(mark.getByTestId("sheet-value")).toHaveText("Comma");
   await tap(page, ["esc", "esc", "esc"]);
   await expect(page.getByTestId("menu")).toHaveCount(0);
-  expect(await page.evaluate(() => window.pascaline.session.settings.decimalMark)).toBe("comma");
+  expect(await page.evaluate(() => window.n62.session.settings.decimalMark)).toBe("comma");
   // R100 (owner, 2026-10-31): the row and the recalled line draw the argument comma as ;
   const row = page.locator('.item[data-status="done"]').first().locator("button.in .math");
   await expect(row).toHaveAttribute("data-latex", /1;5/);
@@ -154,17 +154,17 @@ test("max(1,5) in point mode gives 5; after Settings › Numbers › Decimal mar
   expect(await entryValue(page)).toMatch(/1;5/);
   await tap(page, ["enter"]);
   await resultIs(page, "5", 2);
-  await page.evaluate(() => window.pascaline.session.setDecimalMark("point"));
+  await page.evaluate(() => window.n62.session.setDecimalMark("point"));
   await expect(row).toHaveAttribute("data-latex", /1,5/);
 });
 
 // R100 fix round 1: the units key on a picked row puts its input on the line as the row draws it, not as it was typed.
 test("the units key on the row max(1,5), typed in point mode, puts max(1;5) on the line in comma mode", async ({ page }) => {
-  await page.evaluate(() => window.pascaline.session.setDecimalMark("point"));
+  await page.evaluate(() => window.n62.session.setDecimalMark("point"));
   await maxCall(page);
   await tap(page, ["d1", "comma", "d5", "enter"]);
   await resultIs(page, "5", 1);
-  await page.evaluate(() => window.pascaline.session.setDecimalMark("comma"));
+  await page.evaluate(() => window.n62.session.setDecimalMark("comma"));
   await tap(page, ["up", "shift", "tmpl"]);
   await expect(page.getByTestId("unit-view")).toBeVisible();
   expect(await entryValue(page)).toMatch(/1;5/);
@@ -178,7 +178,7 @@ test("Function: Plot › ☰ Root, Copy, then Home, Shift+Copy, Enter gives the 
   await tap(page, ["@symb"]);
   await expect(page.getByTestId("entry-label")).toHaveText("F1(x)=");
   await tap(page, ["x", "pow", "d2", "right", "sub", "d2", "enter", "@plot"]);
-  await page.waitForFunction(() => window.pascaline.plot.board !== undefined);
+  await page.waitForFunction(() => window.n62.plot.board !== undefined);
   await tap(page, Array<string>(10).fill("right")); // x = 1
   await tap(page, ["@menu", "d1"]); // Root
   await expect(page.getByTestId("readout-x")).toHaveText("1,41421356237");
@@ -255,7 +255,7 @@ test("Solve: selecting x (2,5) shows 2{,}5 on the line, Enter keeps 2.5 with no 
   expect(await entryValue(page)).toBe("");
   await expect(row("x").locator("td")).toHaveAttribute("data-value", "2.5");
   await expect(row("x").locator("td")).toHaveText("2,5");
-  await page.evaluate(() => window.pascaline.session.setDecimalMark("point"));
+  await page.evaluate(() => window.n62.session.setDecimalMark("point"));
   await row("y").locator("th button").tap();
   await row("x").locator("th button").tap();
   expect(await entryValue(page)).toBe("2.5");

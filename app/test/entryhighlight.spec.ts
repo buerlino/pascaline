@@ -13,7 +13,7 @@ const FAMILIES = ["n62", "graphite", "solarized", "gruvbox", "nord"] as const;
 async function setLook(page: Page, family: string, brightness: "dark" | "light"): Promise<void> {
   await page.evaluate(
     ([f, b]) => {
-      const s = window.pascaline.session;
+      const s = window.n62.session;
       s.settings.look = { ...s.settings.look, family: f as typeof s.settings.look.family, brightness: b as "dark" | "light" };
       s.onLook?.({ ...s.settings.look });
     },
@@ -45,7 +45,7 @@ function colours(page: Page, testid?: string) {
     };
     const root = getComputedStyle(document.documentElement);
     const tok = (name: string): string => rgb(root.getPropertyValue(`--${name}`), `--${name}`);
-    const mf = id ? document.querySelector<HTMLElement>(`[data-testid="${id}"]`) : window.pascaline.entry.field;
+    const mf = id ? document.querySelector<HTMLElement>(`[data-testid="${id}"]`) : window.n62.entry.field;
     const sr = mf?.shadowRoot;
     if (!sr) throw new Error("no field");
     const cont = sr.querySelector(".ML__container");
@@ -84,7 +84,7 @@ for (const [system, look] of [["light", "dark"], ["dark", "light"], ["dark", "da
       expect(c.box, "the box of the bracket that holds the cursor").toBe(c.pick);
       expect(c.caret, "the caret").toBe(c.alpha);
       expect(c.brackets, "the bracket's own glyphs, ( and )").toEqual([c.text, c.text]);
-      await page.evaluate(() => window.pascaline.entry.field?.executeCommand("extendSelectionBackward"));
+      await page.evaluate(() => window.n62.entry.field?.executeCommand("extendSelectionBackward"));
       const s = await colours(page);
       expect(s.sel, "the selection").toBe(s.pick);
       expect(s.glyph, "the selected glyph").toBe(s.text);

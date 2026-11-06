@@ -30,7 +30,7 @@ import type { ConstPick } from "./menu.ts";
 import { unitTools } from "./tools.ts";
 import { UnitView, carry, type ViewHost } from "./view.ts";
 
-/** The open unit view (window.pascaline.unitView in the e2e). */
+/** The open unit view (window.n62.unitView in the e2e). */
 export interface OpenUnitView {
   readonly view: UnitView;
   readonly field: MathfieldElement;
@@ -145,11 +145,11 @@ export async function openUnits(c: RouteCtx, row?: HistoryItem): Promise<void> {
     unitPad.other = undefined;
     element.remove();
     fieldEl.style.display = "";
-    window.pascaline.unitView = undefined;
+    window.n62.unitView = undefined;
     c.entry.focus();
   };
   current = { view, field: mf, element, close };
-  window.pascaline.unitView = current;
+  window.n62.unitView = current;
   // every press keeps the focus on the view (as the entry line's keys keep it on the line), for the hardware keys
   const keep = (): void => element.focus({ preventScroll: true });
   unitPad.on = (e) => {

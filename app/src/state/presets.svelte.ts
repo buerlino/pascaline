@@ -292,7 +292,7 @@ export class Presets {
 }
 
 let shared: Promise<Presets> | undefined;
-/** The app's presets, on the app's store (one model per page; the Mode sheet and window.pascaline.presets). */
+/** The app's presets, on the app's store (one model per page; the Mode sheet and window.n62.presets). */
 export function presetsFor(session: Session, userKeys: UserKeys): Promise<Presets> {
   return (shared ??= Presets.open({ session, userKeys, cells: unitCells, store: idbPresetStore }));
 }

@@ -5,12 +5,12 @@
 import { expect, test, type Page } from "@playwright/test";
 import { entryValue, lastResult, open, tap } from "./helpers.ts";
 const ready = (page: Page) =>
-  page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
+  page.waitForFunction(() => window.n62.session.engineState === "ready", undefined, { timeout: 20_000 });
 
 /** The look of the first chip on the entry line and of a variable typed after it. */
 function looks(page: Page): Promise<{ chipBg: string; chipGlyph: string; varGlyph: string; plainBg: string }> {
   return page.evaluate(() => {
-    const root = window.pascaline.entry.field?.shadowRoot;
+    const root = window.n62.entry.field?.shadowRoot;
     const chip = root?.querySelector<HTMLElement>('[style*="--chip-bg"]');
     const glyphs = [...(root?.querySelectorAll<HTMLElement>(".ML__cmr, .ML__mathit") ?? [])];
     const x = glyphs.find((g) => g.textContent === "x" && !chip?.contains(g));
@@ -25,7 +25,7 @@ function looks(page: Page): Promise<{ chipBg: string; chipGlyph: string; varGlyp
 
 test("MathLive keeps a chip macro in the value and draws it as a chip, not a variable", async ({ page }, info) => {
   await open(page);
-  await page.evaluate(() => window.pascaline.entry.insertConst("c", "c", { value: "299792458", exact: true }));
+  await page.evaluate(() => window.n62.entry.insertConst("c", "c", { value: "299792458", exact: true }));
   await tap(page, ["mul", "x"]);
   expect(await entryValue(page)).toBe("\\const{c}{c}\\times x");
   const l = await looks(page);
@@ -37,7 +37,7 @@ test("MathLive keeps a chip macro in the value and draws it as a chip, not a var
   // the chip is one unit: the cursor steps over it and ⌫ deletes it whole
   await tap(page, ["bksp", "bksp", "bksp"]);
   expect(await entryValue(page)).toBe("");
-  expect(await page.evaluate(() => window.pascaline.entry.chips)).toEqual({});
+  expect(await page.evaluate(() => window.n62.entry.chips)).toEqual({});
 });
 
 test("a recalled entry keeps the values of its chips, also after a relaunch", async ({ page }) => {
@@ -57,7 +57,7 @@ test("a recalled entry keeps the values of its chips, also after a relaunch", as
   await expect(lastResult(page)).toHaveAttribute("data-text", "1");
   await page.waitForTimeout(800); // the store write is debounced (400 ms)
   await page.reload();
-  await page.waitForFunction(() => window.pascaline !== undefined);
+  await page.waitForFunction(() => window.n62 !== undefined);
   await ready(page);
   await expect(page.locator('[data-status="done"]')).toHaveCount(3);
   await page.locator('[data-status="done"] .in').last().tap();
@@ -99,7 +99,7 @@ test("a long result's chip keeps its value, marked approximate (2^10000 × 1)", 
   await expect(page.locator('[data-status="done"]')).toHaveCount(2);
   await expect(r).toContainText("1.99506311688");
   expect(await r.getAttribute("data-text")).not.toMatch(/^=/);
-  const chip = await page.evaluate(() => Object.values(window.pascaline.session.home.at(-1)?.chips ?? {})[0]);
+  const chip = await page.evaluate(() => Object.values(window.n62.session.home.at(-1)?.chips ?? {})[0]);
   expect(chip?.value.startsWith("1.99506311688075")).toBe(true); // oracle 2^10000
   expect(chip?.exact).toBe(false);
 });
@@ -131,7 +131,7 @@ test("a short exact result still gives an exact chip (1/3 × 3 = 1)", async ({ p
 test("a ⚠ result stays ⚠ through Ans and a tapped chip (romberg × 1 × 1)", async ({ page }) => {
   await open(page, "");
   await ready(page);
-  await page.evaluate(() => window.pascaline.session.submit("\\operatorname{romberg}\\left(\\exponentialE^{-x^2},x,0,1\\right)"));
+  await page.evaluate(() => window.n62.session.submit("\\operatorname{romberg}\\left(\\exponentialE^{-x^2},x,0,1\\right)"));
   await expect(page.locator('[data-status="done"]')).toHaveCount(1);
   const mark = page.getByTestId("mark");
   await expect(mark.last()).toHaveAttribute("data-mark", "⚠");
@@ -145,7 +145,7 @@ test("a ⚠ result stays ⚠ through Ans and a tapped chip (romberg × 1 × 1)",
   await tap(page, ["mul", "d1", "enter"]);
   await expect(page.locator('[data-status="done"]')).toHaveCount(4);
   await expect(mark.last()).toHaveAttribute("data-mark", "⚠");
-  const chip = await page.evaluate(() => Object.values(window.pascaline.session.home.at(-1)?.chips ?? {})[0]);
+  const chip = await page.evaluate(() => Object.values(window.n62.session.home.at(-1)?.chips ?? {})[0]);
   expect(chip?.exact).toBe(false);
   expect(chip?.warn).toBe("unaudited");
 });

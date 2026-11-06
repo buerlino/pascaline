@@ -57,7 +57,7 @@ const STOPS: [string, [number, string][]][] = [
 function walk(page: Page, line: string, dir: 1 | -1): Promise<number[]> {
   return page.evaluate(
     ([line, dir]) => {
-      const entry = window.pascaline.entry;
+      const entry = window.n62.entry;
       const mf = entry.field!;
       entry.set(line);
       mf.position = dir === 1 ? 0 : mf.lastOffset;
@@ -81,7 +81,7 @@ for (const [line, stops] of STOPS) {
     const typed = await page.evaluate(
       ([line, offsets]) =>
         offsets.map((o) => {
-          const entry = window.pascaline.entry;
+          const entry = window.n62.entry;
           entry.set(line);
           entry.field!.position = o;
           entry.run({ kind: "type", text: "7" });
@@ -96,12 +96,12 @@ for (const [line, stops] of STOPS) {
 const set = (page: Page, line: string, at?: number): Promise<void> =>
   page.evaluate(
     ([line, at]) => {
-      window.pascaline.entry.set(line);
-      if (at !== undefined) window.pascaline.entry.field!.position = at;
+      window.n62.entry.set(line);
+      if (at !== undefined) window.n62.entry.field!.position = at;
     },
     [line, at] as const,
   );
-const position = (page: Page): Promise<number> => page.evaluate(() => window.pascaline.entry.field!.position);
+const position = (page: Page): Promise<number> => page.evaluate(() => window.n62.entry.field!.position);
 
 test("by the keys: ◀ from inside sin's bracket goes before sin; ▶ into piecewise's condition types maths", async ({ page }) => {
   await set(page, "\\sin\\left(2\\right)");
@@ -118,7 +118,7 @@ test("by the keys: ◀ from inside sin's bracket goes before sin; ▶ into piece
 });
 
 test("the trackpad: three steps left from the end of approx(2) reach the start, no pulse per step", async ({ page }) => {
-  await page.evaluate(() => window.pascaline.session.setHaptics({ on: true }));
+  await page.evaluate(() => window.n62.session.setHaptics({ on: true }));
   await set(page, "\\operatorname{approx}\\left(2\\right)");
   const before = (await vibrations(page)).length;
   await drag(page, "left", -40, 0); // three steps (12 px each)
@@ -133,12 +133,12 @@ test("▲ and ▼ never leave the cursor inside a name", async ({ page }) => {
   const line = "\\frac{\\operatorname{approx}\\left(2\\right)}{3}";
   for (const at of [13, 14]) {
     await set(page, line, at);
-    await page.evaluate(() => window.pascaline.entry.run({ kind: "cmd", name: "moveUp" }));
+    await page.evaluate(() => window.n62.entry.run({ kind: "cmd", name: "moveUp" }));
     const o = await position(page);
     expect(o >= 2 && o <= 9, `▲ from ${at} landed on ${o}`).toBe(false);
   }
   await set(page, "\\frac{3}{\\operatorname{approx}\\left(2\\right)}", 2);
-  await page.evaluate(() => window.pascaline.entry.run({ kind: "cmd", name: "moveDown" }));
+  await page.evaluate(() => window.n62.entry.run({ kind: "cmd", name: "moveDown" }));
   const o = await position(page);
   expect(o >= 4 && o <= 11, `▼ landed on ${o}`).toBe(false);
 });
@@ -156,7 +156,7 @@ const F34: [string[], string[], string][] = [
 /** The outer template's empty box is selected (where R10's ▶ puts the cursor), and it is the line's last box. */
 const atLastBox = (page: Page): Promise<boolean> =>
   page.evaluate(() => {
-    const mf = window.pascaline.entry.field!;
+    const mf = window.n62.entry.field!;
     return mf.getValue(mf.selection, "latex") === "\\placeholder{}" && mf.position >= mf.lastOffset - 1;
   });
 
@@ -181,7 +181,7 @@ test("F34 at a mark: ▶ from the end of ½ stops before EQ's comma and before D
     expect(await position(page)).toBe(end);
     await tap(page, ["right"]);
     expect(await page.evaluate(() => {
-      const mf = window.pascaline.entry.field!;
+      const mf = window.n62.entry.field!;
       return mf.getValue(mf.selection, "latex");
     })).toBe("\\placeholder{}");
   }
@@ -199,7 +199,7 @@ test("R10's walks are unchanged: a digit and ▶ per box fill ∫, ∂, evaluate
     "\\begin{pmatrix}#? & #?\\\\ #? & #?\\end{pmatrix}",
   ];
   const got = await page.evaluate((templates) => {
-    const entry = window.pascaline.entry;
+    const entry = window.n62.entry;
     return templates.map((t) => {
       let k = 0;
       const want = t.replace(/#[@?0]/g, () => String(++k)); // digit k in box k

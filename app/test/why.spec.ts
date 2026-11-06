@@ -11,7 +11,7 @@ const why = (page: Page) => page.getByTestId("row-why");
 
 /** Enter `latex` on Home and wait for its row. */
 async function run(page: Page, latex: string, rows: number): Promise<void> {
-  await page.evaluate((l) => window.pascaline.session.submit(l), latex);
+  await page.evaluate((l) => window.n62.session.submit(l), latex);
   await done(page, rows);
 }
 
@@ -24,7 +24,7 @@ async function picked(page: Page): Promise<string> {
 
 test.beforeEach(async ({ page }) => {
   await open(page, "");
-  await page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
+  await page.waitForFunction(() => window.n62.session.engineState === "ready", undefined, { timeout: 20_000 });
 });
 
 test("1/4 is exact, 1/3 is rounded and names its exact value", async ({ page }) => {
@@ -63,7 +63,7 @@ test("Giac's exact and numeric answers differ (G39)", async ({ page }) => {
 });
 
 test("a constant with a σ: the result uses G (± 1.5·10⁻¹⁵)", async ({ page }) => {
-  await page.evaluate(() => window.pascaline.entry.insertConst("G", "G", { value: "(667430/10^16)", exact: false, unc: "0.00015E-11" }));
+  await page.evaluate(() => window.n62.entry.insertConst("G", "G", { value: "(667430/10^16)", exact: false, unc: "0.00015E-11" }));
   await tap(page, ["mul", "d2", "enter"]);
   await done(page, 1);
   // R40f1: the picked row's why-line ends with the row's own σ line (σ = 1.5ᴇ-15 × 2, derived), so the keys reach it

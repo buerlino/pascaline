@@ -15,12 +15,12 @@ const rowIds = (page: Page) => sheet(page).getByRole("menuitem").evaluateAll((el
 const notice = (page: Page) => page.getByTestId("notice");
 const label = (page: Page) => page.getByTestId("entry-label");
 const face = (page: Page, id: string) => page.locator(`[data-key="${id}"] .main`);
-const historyRows = (page: Page) => page.evaluate(() => window.pascaline.session.items.length);
-const angle = (page: Page) => page.evaluate(() => window.pascaline.session.settings.angle);
+const historyRows = (page: Page) => page.evaluate(() => window.n62.session.items.length);
+const angle = (page: Page) => page.evaluate(() => window.n62.session.settings.angle);
 
 /** A free key's tap layer holds `label` (typing it). */
 const setKey = (page: Page, id: string, label: string) =>
-  page.evaluate(([id, label]) => window.pascaline.userKeys.set(id as string, "primary", { label: label as string, action: { type: label as string } }), [id, label]);
+  page.evaluate(([id, label]) => window.n62.userKeys.set(id as string, "primary", { label: label as string, action: { type: label as string } }), [id, label]);
 
 /** Mode › Presets › Save, the name typed on a hardware keyboard, Enter. */
 async function saveAs(page: Page, name: string): Promise<void> {
@@ -92,7 +92,7 @@ test.describe("by keys", () => {
     await expect(label(page)).toHaveCount(0);
     expect(await entryValue(page)).toBe("12");
     expect(await historyRows(page)).toBe(0);
-    expect(await page.evaluate(() => window.pascaline.session.settings.angle)).toBe("rad");
+    expect(await page.evaluate(() => window.n62.session.settings.angle)).toBe("rad");
   });
 
   test("◀ ▶ on the row apply the previous or next preset with the sheet open; the notice names it; the free keys' faces switch; Counters shows the switches", async ({ page }) => {
@@ -100,7 +100,7 @@ test.describe("by keys", () => {
     await page.getByTestId("chip-angle").tap(); // DEG
     await saveAs(page, "Lab");
     await page.evaluate(() => {
-      const { session, userKeys } = window.pascaline;
+      const { session, userKeys } = window.n62;
       userKeys.reset();
       session.setAngle("rad");
       session.setFormat("sci");
@@ -227,7 +227,7 @@ test.describe("by touch", () => {
 
   test("past seven rows the list scrolls with its count", async ({ page }) => {
     await page.evaluate(async (path) => {
-      const { session, userKeys } = window.pascaline;
+      const { session, userKeys } = window.n62;
       const m = (await import(/* @vite-ignore */ path)) as typeof import("../src/views/modeSheet.ts");
       const presets = await m.presetsFor(session, userKeys);
       for (let i = 1; i <= 8; i++) presets.capture(`Job ${i}`);
@@ -243,7 +243,7 @@ for (const [w, h] of [[360, 740], [372, 767]] as const)
   test(`fit at ${w} × ${h}: Mode with DEG, PFX 30, one line and a long preset name shows all six rows`, async ({ page }) => {
     await page.setViewportSize({ width: w, height: h });
     await page.evaluate(() => {
-      const s = window.pascaline.session;
+      const s = window.n62.session;
       s.setAngle("deg");
       s.setFormat("pfx");
       s.setDigits(30);

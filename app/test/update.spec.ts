@@ -62,15 +62,15 @@ test.describe("an older build's data (ef857a6) in today's app", () => {
     expect(snapshot.build).toBe("ef857a6");
     await seed(page);
     await page.goto("/?tips=off");
-    await page.waitForFunction(() => customElements.get("math-field") !== undefined && window.pascaline !== undefined);
-    await page.evaluate(() => window.pascaline.entry.ready);
-    await page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 30_000 });
+    await page.waitForFunction(() => customElements.get("math-field") !== undefined && window.n62 !== undefined);
+    await page.evaluate(() => window.n62.entry.ready);
+    await page.waitForFunction(() => window.n62.session.engineState === "ready", undefined, { timeout: 30_000 });
   });
 
   test("the view, the angle mode and the CAS history are back", async ({ page }) => {
-    expect(await page.evaluate(() => window.pascaline.shell.app)).toBeNull();
-    expect(await page.evaluate(() => window.pascaline.session.settings.angle)).toBe("deg");
-    expect(await page.evaluate(() => window.pascaline.session.view)).toBe("cas");
+    expect(await page.evaluate(() => window.n62.shell.app)).toBeNull();
+    expect(await page.evaluate(() => window.n62.session.settings.angle)).toBe("deg");
+    expect(await page.evaluate(() => window.n62.session.view)).toBe("cas");
     await expect(page.locator('[data-status="done"]')).toHaveCount(2);
     expect(await results(page)).toEqual([expect.stringContaining("sin"), "3*x^2"]); // derived: d/dx x³
   });
@@ -79,7 +79,7 @@ test.describe("an older build's data (ef857a6) in today's app", () => {
     await tap(page, ["@home"]);
     await expect(page.locator('[data-status="done"]')).toHaveCount(3);
     expect((await results(page)).at(-1)).toBe("3"); // derived: 1+2
-    expect(await page.evaluate(() => window.pascaline.session.userNames.map((u) => `${u.name}:${u.kind}`).sort())).toEqual(["A:var", "h:fn", "p:fn"]);
+    expect(await page.evaluate(() => window.n62.session.userNames.map((u) => `${u.name}:${u.kind}`).sort())).toEqual(["A:var", "h:fn", "p:fn"]);
     await tap(page, ["alpha", "vars", "mul", "d2", "enter"]); // A×2
     await expect(page.locator('[data-status="done"]')).toHaveCount(4);
     await expect(lastResult(page)).toHaveAttribute("data-text", "10"); // derived: 5·2
@@ -90,7 +90,7 @@ test.describe("an older build's data (ef857a6) in today's app", () => {
 
   test("the CAS definition follows the stored angle mode", async ({ page }) => {
     await tap(page, ["@home"]);
-    await page.evaluate(() => window.pascaline.entry.field?.setValue("h\\left(30\\right)"));
+    await page.evaluate(() => window.n62.entry.field?.setValue("h\\left(30\\right)"));
     await tap(page, ["enter"]);
     await expect(page.locator('[data-status="done"]')).toHaveCount(4);
     await expect(lastResult(page)).toHaveAttribute("data-text", "0.5"); // derived: sin 30° = 1/2

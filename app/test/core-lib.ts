@@ -119,8 +119,8 @@ async function settled(page: Page): Promise<void> {
 }
 
 export async function engineReady(page: Page): Promise<void> {
-  await page.waitForFunction(() => window.pascaline?.session.engineState === "ready", undefined, { timeout: 20_000 });
-  await page.evaluate(() => window.pascaline.entry.ready);
+  await page.waitForFunction(() => window.n62?.session.engineState === "ready", undefined, { timeout: 20_000 });
+  await page.evaluate(() => window.n62.entry.ready);
 }
 
 /** A fresh page at the app, engine ready. */
@@ -164,7 +164,7 @@ export async function replay(page: Page, steps: readonly CoreStep[], hooks: Repl
     } else if ("back" in s) await (hooks.back ? hooks.back() : page.evaluate(() => history.back()));
     else if ("wait" in s) await page.waitForTimeout(s.wait);
     else {
-      await page.evaluate(() => window.pascaline.shell.flush());
+      await page.evaluate(() => window.n62.shell.flush());
       await page.waitForTimeout(800); // the stores' writes are debounced and asynchronous (persist.spec)
       if (hooks.relaunch) page = await hooks.relaunch();
       else await page.reload();
@@ -245,7 +245,7 @@ export async function check(page: Page, e: CoreExpect, id = ""): Promise<void> {
     });
   }
   if (e.clipboard !== undefined) await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toContain(e.clipboard); // the copy code loads on first use
-  if (e.entry !== undefined) expect(await page.evaluate(() => window.pascaline.entry.value), "entry").toBe(e.entry);
+  if (e.entry !== undefined) expect(await page.evaluate(() => window.n62.entry.value), "entry").toBe(e.entry);
   for (const [sel, want] of Object.entries(e.text ?? {})) {
     const loc = page.locator(sel);
     if (Array.isArray(want)) await expect(loc).toHaveText(want);

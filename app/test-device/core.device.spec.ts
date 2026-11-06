@@ -4,7 +4,7 @@
 // tools/core-device.sh holds the device lock and keeps the screen awake around it.
 import { _android as android, test, type AndroidDevice, type Page } from "@playwright/test";
 import { check, engineReady, loadCore, replay } from "../test/core-lib.ts";
-import { planDevice } from "./core-plan.ts";
+import { NATIVE_PLUGINS, pluginProblem, planDevice } from "./core-plan.ts";
 import { installTouchTap } from "./touch-tap.ts";
 
 const PKG = "dev.n62.calc"; // our app only (docs/shifts/rules.md section 3)
@@ -18,8 +18,15 @@ async function launch(): Promise<Page> {
   const view = await device.webView({ pkg: PKG }, { timeout: 30_000 });
   const page = await view.page();
   installTouchTap(page);
-  await page.waitForFunction(() => customElements.get("math-field") !== undefined && window.pascaline !== undefined, undefined, { timeout: 30_000 });
+  await page.waitForFunction(() => customElements.get("math-field") !== undefined && window.n62 !== undefined, undefined, { timeout: 30_000 });
   await engineReady(page);
+  // R139: a plugin name that differs between the JS and the APK is a silent fallback; failing here turns every case red, which the
+  // night's CORE DEVICE count and case list report (a test with a non-case title would not reach them)
+  const problem = pluginProblem(await page.evaluate((names) => {
+    const cap = (window as unknown as { Capacitor?: { isPluginAvailable(n: string): boolean } }).Capacitor;
+    return names.map((n) => [n, cap?.isPluginAvailable(n) ?? false] as const);
+  }, NATIVE_PLUGINS));
+  if (problem !== null) throw new Error(problem);
   return page;
 }
 

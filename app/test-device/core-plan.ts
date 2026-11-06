@@ -21,6 +21,16 @@ export function planDevice(input: readonly CoreCase[]): CorePlan {
   return { active: rest.filter((c) => c.known === undefined), known: rest.filter((c) => c.known !== undefined), needs };
 }
 
+/** R139: the local plugins the APK must carry, by the names the JS asks for. */
+export const NATIVE_PLUGINS: readonly string[] = ["N62Files", "N62Haptics"];
+
+/** The message a launch throws when a plugin is missing (every case then goes red, so the night's run reports it), else null.
+ *  `seen` is `[name, isPluginAvailable]` per plugin. */
+export function pluginProblem(seen: readonly (readonly [string, boolean])[]): string | null {
+  const missing = NATIVE_PLUGINS.filter((n) => seen.find(([m]) => m === n)?.[1] !== true);
+  return missing.length === 0 ? null : `native plugin(s) not available in the APK: ${missing.join(", ")} (the app would silently take the web path)`;
+}
+
 /** The line the run prints at the end, the shape of the desktop reporter's. */
 export const deviceLine = (passed: number, p: CorePlan): string =>
   `CORE DEVICE ${passed}/${p.active.length} (known ${p.known.length}, needs ${p.needs.length})`;

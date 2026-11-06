@@ -89,7 +89,7 @@ export function pwaLite(): Plugin {
   let outDir = "dist";
   let root = process.cwd();
   return {
-    name: "pascaline-pwa-lite",
+    name: "n62-pwa-lite",
     apply: "build",
     configResolved(c) {
       outDir = buildOutDir(c.root, c.build.outDir);

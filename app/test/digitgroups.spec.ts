@@ -13,7 +13,7 @@ const done = (page: Page, n: number) => expect(page.locator('[data-status="done"
 
 test.beforeEach(async ({ page }) => {
   await open(page, "");
-  await page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
+  await page.waitForFunction(() => window.n62.session.engineState === "ready", undefined, { timeout: 20_000 });
 });
 
 test("a 12-digit result is drawn in groups; the text, the chip and ×3 stay plain (1/3 × 3 = 1)", async ({ page }) => {
@@ -88,7 +88,7 @@ test("R125f1: with ’ or , only the digits before the point are grouped on Home
   ];
   let n = 0;
   for (const [sep, pi, big] of cases) {
-    await page.evaluate((v) => (window.pascaline.session.settings.groupSep = v as "thin"), sep);
+    await page.evaluate((v) => (window.n62.session.settings.groupSep = v as "thin"), sep);
     await tap(page, PI);
     await done(page, ++n);
     await expect(lastResult(page).locator(".math")).toHaveAttribute("data-latex", pi);
@@ -101,20 +101,20 @@ test("R125f1: with ’ or , only the digits before the point are grouped on Home
 
 test("CAS draws the separator too, and the comma with the point", async ({ page }) => {
   await page.evaluate(() => {
-    window.pascaline.session.settings.groupSep = "comma";
-    window.pascaline.session.setView("cas");
+    window.n62.session.settings.groupSep = "comma";
+    window.n62.session.setView("cas");
   });
-  await page.evaluate(() => window.pascaline.session.submit("\\operatorname{evalf}\\left(\\frac{123456789}{100}\\right)"));
+  await page.evaluate(() => window.n62.session.submit("\\operatorname{evalf}\\left(\\frac{123456789}{100}\\right)"));
   await done(page, 1);
   await expect(lastResult(page).locator(".math")).toHaveAttribute("data-latex", "1{,}234{,}567.89");
   await expect(lastResult(page)).toHaveAttribute("data-text", "1234567.89");
 });
 
 test("the unit view draws the separator (R120's path); its Copy text has none", async ({ page }) => {
-  await page.evaluate(() => (window.pascaline.session.settings.groupSep = "apos"));
+  await page.evaluate(() => (window.n62.session.settings.groupSep = "apos"));
   await tap(page, ["d2", "mul", "shift", "d3", "mul", "d2", "d5"]);
   await flick(page, "tmpl", "up");
-  await page.waitForFunction(() => window.pascaline.unitView !== undefined && document.querySelector('[data-pad="unit"]') !== null);
+  await page.waitForFunction(() => window.n62.unitView !== undefined && document.querySelector('[data-pad="unit"]') !== null);
   await flick(page, "enter", "up");
   await expect(page.getByTestId("unit-result").locator(".value")).toHaveText("157.079632679");
   await expect(page.getByTestId("unit-result")).toHaveAttribute("data-text", "157.079632679");
@@ -122,8 +122,8 @@ test("the unit view draws the separator (R120's path); its Copy text has none", 
 
 test("under the decimal comma the comma is never a separator: its button is off with the reason, a stored comma draws as the thin space", async ({ page }) => {
   await page.evaluate(() => {
-    window.pascaline.session.settings.groupSep = "comma";
-    window.pascaline.session.setDecimalMark("comma");
+    window.n62.session.settings.groupSep = "comma";
+    window.n62.session.setDecimalMark("comma");
   });
   await tap(page, ["d1", "d2", "d3", "d4", "d5", "d6", "d7", "dot", "d5", "enter"]);
   await done(page, 1);
@@ -133,21 +133,21 @@ test("under the decimal comma the comma is never a separator: its button is off 
   await expect(groupsRow(page).locator('[data-option="comma"]')).toBeDisabled();
   await expect(groupsRow(page).locator('[data-option="thin"]')).toHaveAttribute("aria-pressed", "true");
   await expect(groupsRow(page).getByTestId("row-hint")).toHaveText("Not the comma: the decimal mark is the comma");
-  expect(await page.evaluate(() => window.pascaline.session.settings.groupSep)).toBe("comma"); // nothing stored silently
+  expect(await page.evaluate(() => window.n62.session.settings.groupSep)).toBe("comma"); // nothing stored silently
 });
 
 test("the setting survives a relaunch, goes into a preset and into a backup", async ({ page }) => {
   await page.evaluate(() => {
-    window.pascaline.session.settings.groupSep = "apos";
-    window.pascaline.session.save();
+    window.n62.session.settings.groupSep = "apos";
+    window.n62.session.save();
   });
   await page.waitForTimeout(900); // the writes are debounced and asynchronous
   await page.reload();
-  await page.waitForFunction(() => window.pascaline !== undefined);
-  await page.evaluate(() => window.pascaline.entry.ready);
-  expect(await page.evaluate(() => window.pascaline.session.settings.groupSep)).toBe("apos");
+  await page.waitForFunction(() => window.n62 !== undefined);
+  await page.evaluate(() => window.n62.entry.ready);
+  expect(await page.evaluate(() => window.n62.session.settings.groupSep)).toBe("apos");
   const after = await page.evaluate(async (path) => {
-    const { session, userKeys } = window.pascaline;
+    const { session, userKeys } = window.n62;
     const presets = await ((await import(/* @vite-ignore */ path)) as typeof import("../src/views/modeSheet.ts")).presetsFor(session, userKeys);
     const id = presets.capture("Swiss", ["numbers"]);
     session.settings.groupSep = "thin";
@@ -168,7 +168,7 @@ test("the setting survives a relaunch, goes into a preset and into a backup", as
 });
 
 test("Solve's Num view draws the separator: the root of x=123456789 is 123’456’789; data-value and Copy stay plain", async ({ page }) => {
-  await page.evaluate(() => (window.pascaline.session.settings.groupSep = "apos"));
+  await page.evaluate(() => (window.n62.session.settings.groupSep = "apos"));
   await tap(page, ["@place", "d4", "@symb"]);
   await expect(page.getByTestId("entry-label")).toHaveText("E1:");
   await tap(page, ["x", "shift", "dot", ...NINE, "enter"]);
@@ -180,13 +180,13 @@ test("Solve's Num view draws the separator: the root of x=123456789 is 123’456
   await expect(x).toHaveText("123’456’789");
   await tap(page, ["copy"]);
   await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toBe("123456789");
-  await page.evaluate(() => (window.pascaline.session.settings.groupSep = "thin")); // the default: a gap, not a character
+  await page.evaluate(() => (window.n62.session.settings.groupSep = "thin")); // the default: a gap, not a character
   await expect(x).toHaveText("123456789");
   await expect(x.locator(".gsep")).toHaveCount(2);
 });
 
 test("Function's Num cells draw the separator: x·1000000 at x = 0.1 is 100’000; data-text stays plain", async ({ page }) => {
-  await page.evaluate(() => (window.pascaline.session.settings.groupSep = "apos"));
+  await page.evaluate(() => (window.n62.session.settings.groupSep = "apos"));
   await tap(page, ["@symb"]);
   await expect(page.getByTestId("entry-label")).toHaveText("F1(x)=");
   await tap(page, ["x", "mul", "d1", "d0", "d0", "d0", "d0", "d0", "d0", "enter"]);
@@ -197,8 +197,8 @@ test("Function's Num cells draw the separator: x·1000000 at x = 0.1 is 100’00
   await expect(cell).toHaveAttribute("data-text", "100000");
   await expect(cell).toHaveText("100’000");
   await page.evaluate(() => {
-    window.pascaline.session.settings.groupSep = "comma";
-    window.pascaline.session.setDecimalMark("comma"); // a stored comma under the decimal comma: the thin space
+    window.n62.session.settings.groupSep = "comma";
+    window.n62.session.setDecimalMark("comma"); // a stored comma under the decimal comma: the thin space
   });
   await expect(cell).toHaveText("100000");
   await expect(cell.locator(".gsep")).toHaveCount(1);

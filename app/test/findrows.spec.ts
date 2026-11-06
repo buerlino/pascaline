@@ -40,14 +40,14 @@ const typeCounted = (page: Page, ch: string): Promise<KeyCount> =>
       }
     });
     mo.observe(list, { subtree: true, childList: true, attributes: true, characterData: true });
-    window.pascaline.shell.sheet?.level.type(ch);
+    window.n62.shell.sheet?.level.type(ch);
     await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
     mo.disconnect();
     const after = [...list.querySelectorAll<HTMLElement>(".row")];
     const fresh = after.filter((el) => !ids.has(el.dataset["id"])).length;
     const samePlace = after.filter((el, i) => ids.get(el.dataset["id"]) === i).length;
     for (const n of built) patched.delete(n as Element);
-    return { built: built.size, patched: [...patched].filter((el) => after.includes(el as HTMLElement)).length, fresh, samePlace, shown: after.length, hits: window.pascaline.shell.sheet?.level.rows.length ?? 0 };
+    return { built: built.size, patched: [...patched].filter((el) => after.includes(el as HTMLElement)).length, fresh, samePlace, shown: after.length, hits: window.n62.shell.sheet?.level.rows.length ?? 0 };
   }, ch);
 
 test.beforeEach(async ({ page }) => {

@@ -9,7 +9,7 @@ import { entryValue, flick, lastResult, open, sheet, tap } from "./helpers.ts";
 
 test.beforeEach(async ({ page }) => {
   await open(page, "");
-  await page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
+  await page.waitForFunction(() => window.n62.session.engineState === "ready", undefined, { timeout: 20_000 });
 });
 
 const active = (page: Page) => sheet(page).locator('[data-active="true"]');
@@ -78,10 +78,10 @@ test("x == 2 with x free stays x==2, never false; sin(1)²+cos(1)² == 1 is true
   await tap(page, ["x", ...S6, "d4", "d2", "enter"]);
   await expect(lastResult(page)).toHaveAttribute("data-text", "(x==2)");
   await expect(lastRow(page).getByTestId("mark")).toHaveCount(0);
-  await page.evaluate(() => window.pascaline.session.submit("\\sin\\left(1\\right)^2+\\cos\\left(1\\right)^2==1"));
+  await page.evaluate(() => window.n62.session.submit("\\sin\\left(1\\right)^2+\\cos\\left(1\\right)^2==1"));
   await expect(lastResult(page)).toHaveAttribute("data-text", "true");
   await expect(lastRow(page).getByTestId("mark")).toHaveCount(0);
-  await page.evaluate(() => window.pascaline.session.submit("\\operatorname{evalf}\\left(\\pi\\right)==\\pi"));
+  await page.evaluate(() => window.n62.session.submit("\\operatorname{evalf}\\left(\\pi\\right)==\\pi"));
   await expect(lastResult(page)).toHaveAttribute("data-text", "true");
   await expect(lastRow(page).getByTestId("mark")).toHaveText("≈");
 });
@@ -90,14 +90,14 @@ test("x == 2 with x free stays x==2, never false; sin(1)²+cos(1)² == 1 is true
 // Giac's latex() (π, not "pi"); Ans carries it as the test again
 test("a closed == the rule leaves open stays as typed and is drawn as maths; Ans keeps it", async ({ page }) => {
   await page.evaluate(() =>
-    window.pascaline.session.submit("\\cos\\left(\\frac{\\pi}{7}\\right)-\\cos\\left(\\frac{2\\pi}{7}\\right)+\\cos\\left(\\frac{3\\pi}{7}\\right)==\\frac{1}{2}"));
+    window.n62.session.submit("\\cos\\left(\\frac{\\pi}{7}\\right)-\\cos\\left(\\frac{2\\pi}{7}\\right)+\\cos\\left(\\frac{3\\pi}{7}\\right)==\\frac{1}{2}"));
   await expect(lastResult(page)).toHaveAttribute("data-text", "((cos(pi/7)-cos(2*pi/7)+cos(3*pi/7))==(1/2))");
   await expect(lastResult(page)).toContainText("π");
   await expect(lastResult(page)).not.toContainText("pi");
   await expect(lastRow(page).getByTestId("mark")).toHaveCount(0);
-  await page.evaluate(() => window.pascaline.session.submit("xy==2"));
+  await page.evaluate(() => window.n62.session.submit("xy==2"));
   await expect(lastResult(page)).toHaveAttribute("data-text", "((x*y)==2)");
-  await page.evaluate(() => window.pascaline.session.submit("\\ans"));
+  await page.evaluate(() => window.n62.session.submit("\\ans"));
   await expect(lastResult(page)).toHaveAttribute("data-text", "((x*y)==2)");
 });
 
@@ -200,7 +200,7 @@ test("Shift + 9 %: 5% is 0.05; 250 ± 0.4 % in the unit view with a kPa slot is 
   await expect(sheet(page)).toBeHidden();
   expect(await entryValue(page)).toBe("250\\pm0.4\\%");
   await flick(page, "tmpl", "up");
-  await page.waitForFunction(() => window.pascaline.unitView !== undefined && document.querySelector('[data-pad="unit"]') !== null);
+  await page.waitForFunction(() => window.n62.unitView !== undefined && document.querySelector('[data-pad="unit"]') !== null);
   await tap(page, ["d4", "add"]); // k, Pa
   await flick(page, "enter", "up");
   const result = page.getByTestId("unit-result");
@@ -216,7 +216,7 @@ test("Shift + 9 values: 5! = 120; ∞; 30° is 30 in DEG; sin(30°) = 0.5 in RAD
   await tapCell(page, "d9", "inf");
   await tap(page, ["enter"]);
   await expect(lastRow(page)).toContainText("+∞");
-  await page.evaluate(() => window.pascaline.session.setAngle("deg"));
+  await page.evaluate(() => window.n62.session.setAngle("deg"));
   await tap(page, ["d3", "d0"]);
   await tapCell(page, "d9", "deg");
   await tap(page, ["enter"]);
@@ -230,7 +230,7 @@ test("Shift + 9 values: 5! = 120; ∞; 30° is 30 in DEG; sin(30°) = 0.5 in RAD
   expect(await entryValue(page)).toBe("30\\degree15\\prime36\\doubleprime");
   await tap(page, ["enter"]);
   await expect(lastResult(page)).toHaveAttribute("data-text", "30.26");
-  await page.evaluate(() => window.pascaline.session.setAngle("rad"));
+  await page.evaluate(() => window.n62.session.setAngle("rad"));
   await tap(page, ["sin", "d3", "d0"]);
   await tapCell(page, "d9", "deg");
   await tap(page, ["enter"]);

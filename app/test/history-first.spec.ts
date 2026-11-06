@@ -8,7 +8,7 @@ const N = 200;
 
 async function seed(page: Page): Promise<void> {
   await page.goto("/?engine=fake&tips=off");
-  await page.waitForFunction(() => window.pascaline !== undefined);
+  await page.waitForFunction(() => window.n62 !== undefined);
   await page.evaluate(async (n) => {
     const items = Array.from({ length: n }, (_, k) => ({
       id: k + 1, view: "home", latex: `${k}+1`, status: "done", resultLatex: String(k + 1), text: String(k + 1), approximate: false, startedAt: 0,
@@ -32,23 +32,23 @@ async function seed(page: Page): Promise<void> {
 async function held(page: Page): Promise<void> {
   await seed(page);
   await page.goto("/?engine=fake&tips=off&readydelay=2500");
-  await page.waitForFunction((n) => window.pascaline?.session.home.length === n, N);
-  await page.waitForFunction(() => window.pascaline.renderStats.count >= 10);
+  await page.waitForFunction((n) => window.n62?.session.home.length === n, N);
+  await page.waitForFunction(() => window.n62.renderStats.count >= 10);
 }
 
 test("engine not ready: the newest five rows (10 renders); a frame after ready, twenty (about 40)", async ({ page }) => {
   await held(page);
-  expect(await page.evaluate(() => window.pascaline.session.engineState)).toBe("starting");
+  expect(await page.evaluate(() => window.n62.session.engineState)).toBe("starting");
   await expect(page.locator("article.item")).toHaveCount(5);
   // 5 rows, input and result each: 10 renders (a re-format of the five by the settings read may add 5)
-  const before = await page.evaluate(() => window.pascaline.renderStats.count);
+  const before = await page.evaluate(() => window.n62.renderStats.count);
   expect(before).toBeGreaterThanOrEqual(10);
   expect(before).toBeLessThanOrEqual(15);
   await expect(page.locator("article.item").last()).toContainText(String(N));
-  await expect.poll(() => page.evaluate(() => window.pascaline.session.engineState)).toBe("ready");
+  await expect.poll(() => page.evaluate(() => window.n62.session.engineState)).toBe("ready");
   await expect(page.locator("article.item")).toHaveCount(20);
   // 15 rows more, 2 renders each
-  const after = await page.evaluate(() => window.pascaline.renderStats.count);
+  const after = await page.evaluate(() => window.n62.renderStats.count);
   expect(after - before).toBeGreaterThanOrEqual(30);
   expect(after - before).toBeLessThanOrEqual(40);
 });
@@ -56,15 +56,15 @@ test("engine not ready: the newest five rows (10 renders); a frame after ready, 
 test("the newest row recalls and inserts before and after ready", async ({ page }) => {
   await held(page);
   await page.locator("article.item").last().locator(".in").click();
-  expect(await page.evaluate(() => window.pascaline.entry.value)).toBe(`${N - 1}+1`);
-  await page.evaluate(() => window.pascaline.entry.clear());
+  expect(await page.evaluate(() => window.n62.entry.value)).toBe(`${N - 1}+1`);
+  await page.evaluate(() => window.n62.entry.clear());
   await page.locator("article.item").last().locator(".result").click();
-  await expect.poll(() => page.evaluate(() => window.pascaline.entry.value)).toContain(String(N));
-  await page.evaluate(() => window.pascaline.entry.clear());
-  await expect.poll(() => page.evaluate(() => window.pascaline.session.engineState)).toBe("ready");
+  await expect.poll(() => page.evaluate(() => window.n62.entry.value)).toContain(String(N));
+  await page.evaluate(() => window.n62.entry.clear());
+  await expect.poll(() => page.evaluate(() => window.n62.session.engineState)).toBe("ready");
   await expect(page.locator("article.item")).toHaveCount(20);
   await page.locator("article.item").last().locator(".in").click();
-  expect(await page.evaluate(() => window.pascaline.entry.value)).toBe(`${N - 1}+1`);
+  expect(await page.evaluate(() => window.n62.entry.value)).toBe(`${N - 1}+1`);
 });
 
 test("scrolling to the top after ready adds 20; a row picked above the five is drawn while starting", async ({ page }) => {
@@ -72,7 +72,7 @@ test("scrolling to the top after ready adds 20; a row picked above the five is d
   for (let i = 0; i < 8; i++) await tap(page, ["up"]); // the picked row is the 8th from the bottom
   await expect(page.locator('[data-selected="true"]')).toHaveCount(1);
   expect(await page.locator("article.item").count()).toBeGreaterThanOrEqual(8);
-  await expect.poll(() => page.evaluate(() => window.pascaline.session.engineState)).toBe("ready");
+  await expect.poll(() => page.evaluate(() => window.n62.session.engineState)).toBe("ready");
   await expect(page.locator('[data-selected="true"]')).toHaveCount(1);
   const drawn = await page.locator("article.item").count();
   await page.locator(".history").evaluate((el) => (el.scrollTop = 0));

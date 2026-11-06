@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // R88: two presets applied through the model, then a reload: the settings and the free keys of the last one survive, and
 // the model reads its record back with the last one active. The model is part of the Mode sheet's chunk; the test
-// imports that module from the dev server (the app's own instance) and gives it window.pascaline's session and keys, so
+// imports that module from the dev server (the app's own instance) and gives it window.n62's session and keys, so
 // the start chunk carries no hook for it.
 import { expect, test } from "@playwright/test";
 import { entryValue, open, tap } from "./helpers.ts";
@@ -13,7 +13,7 @@ type ModeSheet = typeof import("../src/views/modeSheet.ts");
 test("the settings and free keys of the last preset applied survive a reload", async ({ page }) => {
   await open(page);
   await page.evaluate(async (path) => {
-    const { session, userKeys } = window.pascaline;
+    const { session, userKeys } = window.n62;
     const presets = await ((await import(/* @vite-ignore */ path)) as ModeSheet).presetsFor(session, userKeys);
     session.setAngle("deg");
     session.setFormat("eng");
@@ -35,19 +35,19 @@ test("the settings and free keys of the last preset applied survive a reload", a
   await expect(page.locator('[data-key="u2"] .main')).toHaveText("mol");
   await page.waitForTimeout(1300); // the store writes are asynchronous, the counters wait 1 s
   await page.reload();
-  await page.waitForFunction(() => window.pascaline !== undefined);
-  await page.evaluate(() => window.pascaline.entry.ready);
+  await page.waitForFunction(() => window.n62 !== undefined);
+  await page.evaluate(() => window.n62.entry.ready);
   const after = await page.evaluate(async (path) => {
-    const presets = await ((await import(/* @vite-ignore */ path)) as ModeSheet).presetsFor(window.pascaline.session, window.pascaline.userKeys);
-    const s = window.pascaline.session.settings;
+    const presets = await ((await import(/* @vite-ignore */ path)) as ModeSheet).presetsFor(window.n62.session, window.n62.userKeys);
+    const s = window.n62.session.settings;
     return {
       settings: { angle: s.angle, format: s.format, digits: s.digits, decimalMark: s.decimalMark },
-      u1: window.pascaline.userKeys.labelOf("u1", "primary") ?? null,
-      u2: window.pascaline.userKeys.labelOf("u2", "primary") ?? null,
+      u1: window.n62.userKeys.labelOf("u1", "primary") ?? null,
+      u2: window.n62.userKeys.labelOf("u2", "primary") ?? null,
       names: presets.list.map((p) => p.name),
       active: presets.list.find((p) => p.id === presets.active)?.name,
       modified: presets.modified,
-      switched: window.pascaline.session.taps.counts.presets,
+      switched: window.n62.session.taps.counts.presets,
     };
   }, MODE_SHEET);
   expect(after).toEqual({
@@ -75,7 +75,7 @@ async function hidden(page: Page, yes: boolean): Promise<void> {
 }
 /** A fresh start on the same store, as after a kill: the old page lets go of the writer lock without a flush (R95). */
 async function relaunch(page: Page): Promise<Page> {
-  await page.evaluate(() => window.pascaline.yieldWriter());
+  await page.evaluate(() => window.n62.yieldWriter());
   const next = await page.context().newPage();
   await open(next);
   return next;
@@ -97,7 +97,7 @@ test("a hide while a preset is being named keeps the half-typed line, not the na
   const next = await relaunch(page);
   expect(await entryValue(next)).toBe("2+3");
   await page.reload(); // a reload's pagehide flush keeps the same line
-  await page.evaluate(() => window.pascaline.entry.ready);
+  await page.evaluate(() => window.n62.entry.ready);
   expect(await entryValue(page)).toBe("2+3");
 });
 

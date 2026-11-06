@@ -32,7 +32,7 @@ describe("the application id dev.n62.calc (A77)", () => {
   });
 
   it("the Java sources sit in dev/n62/calc with that package", () => {
-    for (const f of ["MainActivity", "PascalineFilesPlugin", "PascalineHapticsPlugin"]) {
+    for (const f of ["MainActivity", "N62FilesPlugin", "N62HapticsPlugin"]) {
       const src = read(`android/app/src/main/java/dev/n62/calc/${f}.java`);
       expect(src).toMatch(/^package dev\.n62\.calc;$/m);
     }

@@ -199,7 +199,7 @@ test.describe("at 412 × 915", () => {
   test("a list that takes letters stays above the keypad", async ({ page }) => {
     await page.evaluate(() => {
       const items = Array.from({ length: 14 }, (_, i) => ({ id: `u${i}`, label: `unit ${i}` }));
-      window.pascaline.shell.showMenu("Units", items);
+      window.n62.shell.showMenu("Units", items);
     });
     const [s, pad] = await Promise.all([boxOf(page, '[role="menu"]'), boxOf(page, ".pad")]);
     expect(s.y + s.height).toBeLessThanOrEqual(pad.y + 1);

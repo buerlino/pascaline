@@ -14,11 +14,11 @@ const mrow = (page: Page, id: string) => menu(page).locator(`[role="menuitem"][d
 const active = (page: Page) => find(page).locator('[role="menuitem"][data-active="true"]');
 const mactive = (page: Page) => menu(page).locator('[role="menuitem"][data-active="true"]');
 const title = (page: Page) => page.getByTestId("sheet-title");
-const names = (page: Page) => page.evaluate(() => window.pascaline.session.userNames.map((u) => u.name).sort());
+const names = (page: Page) => page.evaluate(() => window.n62.session.userNames.map((u) => u.name).sort());
 
 async function start(page: Page): Promise<void> {
   await open(page, "");
-  await page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
+  await page.waitForFunction(() => window.n62.session.engineState === "ready", undefined, { timeout: 20_000 });
 }
 /** `value ▶ name` in Home: Shift + the exponent key is Sto▶, Alpha + Vars is A, Alpha + Math is B. */
 async function store(page: Page, digit: string, letterKey: "vars" | "math", count: number): Promise<void> {
@@ -29,8 +29,8 @@ async function store(page: Page, digit: string, letterKey: "vars" | "math", coun
 async function reload(page: Page): Promise<void> {
   await page.waitForTimeout(900);
   await page.reload();
-  await page.waitForFunction(() => window.pascaline?.session.engineState === "ready", undefined, { timeout: 20_000 });
-  await page.evaluate(() => window.pascaline.entry.ready);
+  await page.waitForFunction(() => window.n62?.session.engineState === "ready", undefined, { timeout: 20_000 });
+  await page.evaluate(() => window.n62.entry.ready);
 }
 
 test.beforeEach(async ({ page }) => {

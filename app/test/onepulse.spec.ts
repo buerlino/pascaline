@@ -7,7 +7,7 @@ import { drag, entryValue, flick, open, recordVibrations, tap, touch, vibrations
 test.beforeEach(async ({ page }) => {
   await recordVibrations(page);
   await open(page);
-  await page.evaluate(() => window.pascaline.session.setHaptics({ on: true, ms: 10 }));
+  await page.evaluate(() => window.n62.session.setHaptics({ on: true, ms: 10 }));
 });
 
 const since = async (page: import("@playwright/test").Page, run: () => Promise<void>): Promise<number> => {
@@ -36,7 +36,7 @@ test("a flick up or down is one pulse and still fires; a tap is one pulse", asyn
 test("a dead key keeps its double pulse after the touch", async ({ page }) => {
   await tap(page, ["@symb"]);
   // Fmt is dead only once the app is in (it opens async; before that Fmt cycles the format)
-  await page.waitForFunction(() => window.pascaline.shell.app !== null && window.pascaline.shell.current !== undefined);
+  await page.waitForFunction(() => window.n62.shell.app !== null && window.n62.shell.current !== undefined);
   expect(await since(page, () => tap(page, ["fmt"]))).toBe(3); // the touch, then the double
 });
 

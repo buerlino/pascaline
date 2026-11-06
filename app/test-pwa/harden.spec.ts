@@ -30,7 +30,7 @@ function secondBuild(marker = "v2-marker"): string {
   return dir;
 }
 const precache = (sw: string): string[] => JSON.parse(/const PRECACHE = (\[.*\]);/.exec(sw)?.[1] ?? "[]") as string[];
-const ready = (page: Page): Promise<unknown> => page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 30_000 });
+const ready = (page: Page): Promise<unknown> => page.waitForFunction(() => window.n62.session.engineState === "ready", undefined, { timeout: 30_000 });
 const swReady = (page: Page): Promise<unknown> => page.evaluate(() => navigator.serviceWorker.ready.then(() => undefined));
 
 test("the manifest's id is /", async ({ request }) => {
@@ -98,12 +98,12 @@ test.describe("on a site that can change", () => {
   });
   const visit = async (page: Page): Promise<void> => {
     await page.goto(`${site.url}/`);
-    await page.waitForFunction(() => customElements.get("math-field") !== undefined && window.pascaline !== undefined);
+    await page.waitForFunction(() => customElements.get("math-field") !== undefined && window.n62 !== undefined);
     await ready(page);
     await swReady(page);
     // the page is controlled from its second load on: that is the page an update has to reach
     await page.reload();
-    await page.waitForFunction(() => customElements.get("math-field") !== undefined && window.pascaline !== undefined);
+    await page.waitForFunction(() => customElements.get("math-field") !== undefined && window.n62 !== undefined);
     await ready(page);
     await page.waitForFunction(() => navigator.serviceWorker.controller !== null);
   };
@@ -113,7 +113,7 @@ test.describe("on a site that can change", () => {
     let loads = 0;
     page.on("load", () => loads++);
     await page.evaluate(() => ((window as unknown as { __old: number }).__old = 1));
-    await page.evaluate(() => window.pascaline.entry.set("12+34", {}));
+    await page.evaluate(() => window.n62.entry.set("12+34", {}));
     site.root = secondBuild();
     await page.evaluate(() => navigator.serviceWorker.getRegistration().then((r) => r?.update()));
     const line = page.locator('[data-testid="update-note"]');
@@ -123,11 +123,11 @@ test.describe("on a site that can change", () => {
     await page.waitForTimeout(1500);
     expect(loads).toBe(0); // nothing reloaded on its own; the user's line is still there
     expect(await page.evaluate(() => (window as unknown as { __old?: number }).__old)).toBe(1);
-    expect(await page.evaluate(() => window.pascaline.entry.value)).toBe("12+34");
+    expect(await page.evaluate(() => window.n62.entry.value)).toBe("12+34");
 
     await line.click();
     await page.waitForFunction(() => (window as unknown as { __old?: number }).__old === undefined);
-    await page.waitForFunction(() => customElements.get("math-field") !== undefined && window.pascaline !== undefined);
+    await page.waitForFunction(() => customElements.get("math-field") !== undefined && window.n62 !== undefined);
     await page.waitForTimeout(1500);
     expect(loads).toBe(1);
     expect(await page.evaluate(() => fetch("/index.html").then((r) => r.text()))).toContain("v2-marker");
@@ -150,9 +150,9 @@ test.describe("on a site that can change", () => {
     await page.waitForFunction(() => navigator.serviceWorker.getRegistration().then((r) => r?.waiting?.state === "installed"));
     await expect(line).toBeVisible();
     await Promise.all([page.waitForEvent("load", { timeout: 20_000 }), line.click()]);
-    await page.waitForFunction(() => customElements.get("math-field") !== undefined && window.pascaline !== undefined);
+    await page.waitForFunction(() => customElements.get("math-field") !== undefined && window.n62 !== undefined);
     expect(await page.evaluate(() => fetch("/index.html").then((r) => r.text()))).toContain("v3-marker");
-    await page.waitForFunction(() => customElements.get("math-field") !== undefined && window.pascaline !== undefined);
+    await page.waitForFunction(() => customElements.get("math-field") !== undefined && window.n62 !== undefined);
     await expect(line).toHaveCount(0);
   });
 
@@ -165,8 +165,8 @@ test.describe("on a site that can change", () => {
       .poll(() => page.evaluate(async () => (await navigator.serviceWorker.getRegistrations()).length + (await caches.keys()).length), { timeout: 20_000 })
       .toBe(0);
     await page.reload();
-    await page.waitForFunction(() => customElements.get("math-field") !== undefined && window.pascaline !== undefined);
-    await page.evaluate(() => window.pascaline.entry.ready);
+    await page.waitForFunction(() => customElements.get("math-field") !== undefined && window.n62 !== undefined);
+    await page.evaluate(() => window.n62.entry.ready);
     await ready(page);
     await tap(page, ["d1", "add", "d1", "enter"]);
     await expect(page.locator('[data-testid="result"] .result').last()).toHaveAttribute("data-text", "2");
@@ -191,11 +191,11 @@ test.describe("a lazy chunk that is gone after a deploy", () => {
     await ready(page);
     gone = true; // armed after the start, which may fetch the chunk when idle
     const reloaded = page.waitForEvent("load");
-    void page.evaluate(() => window.pascaline.shell.open("function")).catch(() => {});
+    void page.evaluate(() => window.n62.shell.open("function")).catch(() => {});
     await reloaded;
-    await page.waitForFunction(() => customElements.get("math-field") !== undefined && window.pascaline !== undefined);
+    await page.waitForFunction(() => customElements.get("math-field") !== undefined && window.n62 !== undefined);
     await ready(page);
-    await page.evaluate(() => window.pascaline.shell.open("function"));
+    await page.evaluate(() => window.n62.shell.open("function"));
     await expect(page.locator('[data-app="function"]')).toBeVisible();
     expect(loads).toBe(2);
   });
@@ -206,11 +206,11 @@ test.describe("a lazy chunk that is gone after a deploy", () => {
     page.on("load", () => loads++);
     await open(page, "");
     await ready(page);
-    void page.evaluate(() => window.pascaline.shell.open("function")).catch(() => {});
+    void page.evaluate(() => window.n62.shell.open("function")).catch(() => {});
     await expect.poll(() => loads, { timeout: 10_000 }).toBe(2);
-    await page.waitForFunction(() => customElements.get("math-field") !== undefined && window.pascaline !== undefined);
+    await page.waitForFunction(() => customElements.get("math-field") !== undefined && window.n62 !== undefined);
     await ready(page);
-    void page.evaluate(() => window.pascaline.shell.open("function")).catch(() => {});
+    void page.evaluate(() => window.n62.shell.open("function")).catch(() => {});
     await page.waitForTimeout(2500);
     expect(loads).toBe(2); // the session flag stops the loop
   });
@@ -230,7 +230,7 @@ test("navigator.storage.persist() is asked once, after the first stored value", 
   await tap(page, ["d1", "add", "d1", "enter"]);
   await expect.poll(asked, { timeout: 10_000 }).toBe(1);
   await page.reload();
-  await page.waitForFunction(() => customElements.get("math-field") !== undefined && window.pascaline !== undefined);
+  await page.waitForFunction(() => customElements.get("math-field") !== undefined && window.n62 !== undefined);
   await ready(page);
   await tap(page, ["d2", "add", "d2", "enter"]);
   await page.waitForTimeout(1500);

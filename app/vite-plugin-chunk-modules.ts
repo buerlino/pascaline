@@ -10,7 +10,7 @@ const APP = import.meta.dirname;
 
 export function chunkModulesPlugin(): Plugin {
   return {
-    name: "pascaline-chunk-modules",
+    name: "n62-chunk-modules",
     apply: "build",
     generateBundle(_options, bundle) {
       const out: Record<string, string[]> = {};

@@ -31,17 +31,17 @@ async function del(page: Page): Promise<string> {
 }
 /** A Tmpl palette cell, by the key path (`run`), as the palette inserts it. */
 const insert = (page: Page, latex: string): Promise<void> =>
-  page.evaluate((l) => window.pascaline.entry.run({ kind: "insert", latex: l }), latex);
+  page.evaluate((l) => window.n62.entry.run({ kind: "insert", latex: l }), latex);
 /** A MathLive command by the key path (the grid's way to reach the line's ends). */
 const cmd = (page: Page, name: string): Promise<void> =>
-  page.evaluate((n) => window.pascaline.entry.run({ kind: "cmd", name: n }), name);
+  page.evaluate((n) => window.n62.entry.run({ kind: "cmd", name: n }), name);
 /** The selected LaTeX, or "" when the selection is collapsed. */
 const selected = (page: Page): Promise<string> =>
   page.evaluate(() => {
-    const mf = window.pascaline.entry.field;
+    const mf = window.n62.entry.field;
     return !mf || mf.selectionIsCollapsed ? "" : mf.getValue(mf.selection, "latex");
   });
-const position = (page: Page): Promise<number> => page.evaluate(() => window.pascaline.entry.field?.position ?? -1);
+const position = (page: Page): Promise<number> => page.evaluate(() => window.n62.entry.field?.position ?? -1);
 
 // ---- every template on an empty line goes in one ⌫ (point 4) ------------------------------------------------------------
 for (const [name, latex] of [["log base", LOGB], ["EQ", EQ], ["DMS", DMS], ["evaluate-at", EVAL]] as const) {

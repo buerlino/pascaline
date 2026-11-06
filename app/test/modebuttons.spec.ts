@@ -7,7 +7,7 @@ import { open, sheet, tap } from "./helpers.ts";
 
 const title = (page: Page) => page.getByTestId("sheet-title");
 const opt = (page: Page, row: string, id: string) => sheet(page).locator(`[data-id="${row}"] [data-option="${id}"]`);
-const setting = <K extends "angle" | "format" | "entry" | "digits">(page: Page, k: K) => page.evaluate((k) => window.pascaline.session.settings[k], k);
+const setting = <K extends "angle" | "format" | "entry" | "digits">(page: Page, k: K) => page.evaluate((k) => window.n62.session.settings[k], k);
 
 test.beforeEach(async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });

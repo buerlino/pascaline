@@ -6,7 +6,7 @@ import { open, tap } from "../test/helpers.ts";
 
 test("after one online visit: reload offline, 1+1 in Home, the Function app opens", async ({ page, context }) => {
   await open(page, "");
-  await page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 30_000 });
+  await page.waitForFunction(() => window.n62.session.engineState === "ready", undefined, { timeout: 30_000 });
   // The worker registers once the engine is up; "ready" resolves when its install (the whole precache) is done.
   await page.evaluate(() => navigator.serviceWorker.ready.then(() => undefined));
   const cached = await page.evaluate(async () => {
@@ -19,9 +19,9 @@ test("after one online visit: reload offline, 1+1 in Home, the Function app open
 
   await context.setOffline(true);
   await page.reload();
-  await page.waitForFunction(() => customElements.get("math-field") !== undefined && window.pascaline !== undefined);
-  await page.evaluate(() => window.pascaline.entry.ready);
-  await page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 30_000 });
+  await page.waitForFunction(() => customElements.get("math-field") !== undefined && window.n62 !== undefined);
+  await page.evaluate(() => window.n62.entry.ready);
+  await page.waitForFunction(() => window.n62.session.engineState === "ready", undefined, { timeout: 30_000 });
   expect(await page.evaluate(() => navigator.serviceWorker.controller !== null)).toBe(true);
 
   // Home: 1+1 =

@@ -7,7 +7,7 @@ import { entryValue, lastResult, open, sheet, tap } from "./helpers.ts";
 
 test.beforeEach(async ({ page }) => {
   await open(page, "");
-  await page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
+  await page.waitForFunction(() => window.n62.session.engineState === "ready", undefined, { timeout: 20_000 });
 });
 
 const active = (page: Page) => sheet(page).locator('[data-active="true"]');
@@ -82,14 +82,14 @@ test("mixed number: 2, then the template takes the 2 as its whole part: 2 11/13 
 });
 
 test("DMS: 30°15′36″ is 30.26 in DEG and sin(30°0′0″) = 0.5 in RAD and DEG (degrees in every angle mode)", async ({ page }) => {
-  await page.evaluate(() => window.pascaline.session.setAngle("deg"));
+  await page.evaluate(() => window.n62.session.setAngle("deg"));
   await insert(page, "dms");
   await tap(page, ["d3", "d0", "right", "d1", "d5", "right", "d3", "d6"]);
   expect(await entryValue(page)).toBe("30\\degree15\\prime36\\doubleprime");
   await tap(page, ["enter"]);
   await expect(lastResult(page)).toHaveAttribute("data-text", "30.26");
   for (const angle of ["deg", "rad"] as const) {
-    await page.evaluate((a) => window.pascaline.session.setAngle(a), angle);
+    await page.evaluate((a) => window.n62.session.setAngle(a), angle);
     await tap(page, ["sin"]);
     await insert(page, "dms");
     // the key takes sin's selected □ as its degrees, bare (R43b); one ▶ leaves the degrees for the minutes
@@ -178,7 +178,7 @@ for (const [name, enter, group, values] of GROUPS)
     });
 
 test("R75: in the one-line mode x⁻¹ after a matrix brackets all of it: (M)^-1 = [[-2,1],[1.5,-0.5]]", async ({ page }) => {
-  await page.evaluate(() => window.pascaline.session.setEntry("line"));
+  await page.evaluate(() => window.n62.session.setEntry("line"));
   await insert(page, "matrix22");
   await tap(page, ["d1", "right", "d2", "right", "d3", "right", "d4", "right", "shift", "div"]);
   expect(await entryValue(page)).toBe(`\\left(${M}\\right)^{-1}`);

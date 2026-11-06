@@ -21,7 +21,7 @@ export function themeCssMap(assets: Iterable<{ fileName: string; originalFileNam
 
 export function themeCssPlugin(): Plugin {
   return {
-    name: "pascaline-theme-css",
+    name: "n62-theme-css",
     transformIndexHtml: {
       order: "post",
       handler(html, ctx) {

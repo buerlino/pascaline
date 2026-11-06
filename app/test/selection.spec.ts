@@ -64,7 +64,7 @@ const keyIds = doc.keys.map((k) => k["id"] as string);
 async function select(page: Page, latex: string, from?: number, to?: number): Promise<void> {
   await page.evaluate(
     ([l, a, b]) => {
-      const mf = window.pascaline.entry.field;
+      const mf = window.n62.entry.field;
       if (!mf) throw new Error("no field");
       mf.value = l as string;
       mf.focus();
@@ -88,7 +88,7 @@ test("every key and layer, normal and one-line entry: 1+2 selected stays an argu
   const failures: string[] = [];
   let pressed = 0;
   for (const line of [false, true]) {
-    await page.evaluate((l) => window.pascaline.session.setEntry(l ? "line" : "textbook"), line);
+    await page.evaluate((l) => window.n62.session.setEntry(l ? "line" : "textbook"), line);
     for (const key of doc.keys) {
       for (const layer of LAYERS) {
         const a = act(key, layer, line);
@@ -176,14 +176,14 @@ for (const [id, layer, all, atom, none] of ROWS) {
     await press(page, id, layer);
     expect(await entryValue(page)).toBe(atom);
     await select(page, "4+2");
-    await page.evaluate(() => window.pascaline.entry.field?.executeCommand("moveToMathfieldEnd"));
+    await page.evaluate(() => window.n62.entry.field?.executeCommand("moveToMathfieldEnd"));
     await press(page, id, layer);
     expect(await entryValue(page)).toBe(none);
   });
 }
 
 test("one-line entry: 1+2 selected, x², xʸ and x⁻¹ bracket it; a single term stays bare", async ({ page }) => {
-  await page.evaluate(() => window.pascaline.session.setEntry("line"));
+  await page.evaluate(() => window.n62.session.setEntry("line"));
   await select(page, "1+2");
   await press(page, "sq", "primary");
   expect(await entryValue(page)).toBe('\\left(1+2\\right)\\char"5E 2');

@@ -5,11 +5,11 @@ import { expect, test, type Page } from "@playwright/test";
 import { entryValue, open } from "./helpers.ts";
 
 const submit = (page: Page, latex: string): Promise<void> =>
-  page.evaluate((l) => window.pascaline.session.submit(l), latex);
+  page.evaluate((l) => window.n62.session.submit(l), latex);
 
 test.beforeEach(async ({ page }) => {
   await open(page, "");
-  await page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
+  await page.waitForFunction(() => window.n62.session.engineState === "ready", undefined, { timeout: 20_000 });
 });
 
 test("no confirmed digit: the mark says so and the row holds no number", async ({ page }) => {

@@ -5,7 +5,7 @@ import { entryValue, lastResult, open, sheet, tap } from "./helpers.ts";
 
 test.beforeEach(async ({ page }) => {
   await open(page, "");
-  await page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
+  await page.waitForFunction(() => window.n62.session.engineState === "ready", undefined, { timeout: 20_000 });
 });
 
 test("a b/c while typing is the stacked fraction; pressed twice it is two fractions, no mixed number (R10)", async ({ page }) => {
@@ -37,7 +37,7 @@ test("alpha: one-shot alpha types the capital of the key, shift alpha its lower 
 });
 
 test("L4: in one-line mode xʸ and a typed ^ are a literal caret; 2^10 gives 1024", async ({ page }) => {
-  await page.evaluate(() => window.pascaline.session.setEntry("line"));
+  await page.evaluate(() => window.n62.session.setEntry("line"));
   await tap(page, ["d2", "pow", "d1", "d0"]);
   expect(await entryValue(page)).toBe('2\\char"5E 10');
   await tap(page, ["enter"]);
@@ -108,7 +108,7 @@ test("F22: 10ˣ with no digit before it is the plain template: on an empty line,
 test("F22: 5 2 with the 2 selected, then 10ˣ: the 2 is the exponent and the 5 stays a factor (5×10²)", async ({ page }) => {
   await tap(page, ["d5", "d2"]);
   await page.evaluate(() => {
-    const mf = window.pascaline.entry.field;
+    const mf = window.n62.entry.field;
     if (mf) mf.selection = { ranges: [[1, 2]] };
   });
   await tap(page, ["shift", "log"]);
@@ -119,7 +119,7 @@ test("F22: a typed 110² is a power of 110: ⌫ after the 0 deletes the 0, as af
   await tap(page, ["d1", "d1", "d0", "pow", "d2"]);
   expect(await entryValue(page)).toBe("110^2");
   await page.evaluate(() => {
-    const mf = window.pascaline.entry.field;
+    const mf = window.n62.entry.field;
     if (mf) mf.position = 3;
   });
   await tap(page, ["bksp"]);
@@ -127,7 +127,7 @@ test("F22: a typed 110² is a power of 110: ⌫ after the 0 deletes the 0, as af
 });
 
 test("F22: 5 DMS 2 ▶ 3 is 5°2′3″: the 5 is the degrees, the cursor starts in the minutes", async ({ page }) => {
-  await page.evaluate(() => window.pascaline.session.setAngle("deg"));
+  await page.evaluate(() => window.n62.session.setAngle("deg"));
   await tap(page, ["d5"]);
   await cell(page, "dms");
   await tap(page, ["d2", "right", "d3"]);

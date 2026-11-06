@@ -6,7 +6,7 @@ import { entryValue, lastResult, open, tap } from "./helpers.ts";
 
 test.beforeEach(async ({ page }) => {
   await open(page, "");
-  await page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
+  await page.waitForFunction(() => window.n62.session.engineState === "ready", undefined, { timeout: 20_000 });
 });
 
 /** The mixed-number template from the Tmpl palette (R10; it was a/b twice before). */
@@ -54,7 +54,7 @@ test("shift . is =, and the ≈ key (shift Enter) wraps approx()", async ({ page
 });
 
 test("inverse trigonometry sits on shift sin, cos, tan", async ({ page }) => {
-  await page.evaluate(() => window.pascaline.session.setAngle("deg"));
+  await page.evaluate(() => window.n62.session.setAngle("deg"));
   await tap(page, ["shift", "sin", "d1", "enter"]);
   await resultIs(page, "90", 1);
   await tap(page, ["shift", "cos", "d1", "enter"]);
@@ -118,7 +118,7 @@ test("ᴇ after an operator starts with 1: 2 × ᴇ 3 = 2000, drawn 2×1ᴇ3", a
 });
 
 test("ᴇ after + − ÷ in the one-line mode starts with 1", async ({ page }) => {
-  await page.evaluate(() => window.pascaline.session.setEntry("line"));
+  await page.evaluate(() => window.n62.session.setEntry("line"));
   await tap(page, ["d2", "add", "emark", "d3"]);
   expect(await entryValue(page)).toBe("2+1\\emark3");
   await tap(page, ["enter"]);
@@ -160,8 +160,8 @@ test("ᴇ stays bare after a number, a letter, a closing bracket or a chip", asy
   await tap(page, ["esc", "paren", "d2", "right", "emark", "d3"]);
   expect(await entryValue(page)).toBe("\\left(2\\right)\\emark3");
   await page.evaluate(() => {
-    window.pascaline.entry.clear();
-    window.pascaline.entry.insertAns();
+    window.n62.entry.clear();
+    window.n62.entry.insertAns();
   });
   await tap(page, ["emark", "d3"]);
   expect(await entryValue(page)).toBe("\\ans\\emark3");
@@ -221,20 +221,20 @@ test("store: value ▶ name, then the name reads back", async ({ page }) => {
 });
 
 test("∡ polar entry follows the angle mode: 2∡1 rad, 2∡30 deg", async ({ page }) => {
-  await page.evaluate(() => window.pascaline.session.setAngle("rad"));
+  await page.evaluate(() => window.n62.session.setAngle("rad"));
   await tap(page, ["d2", "shift", "mul", "d1"]);
   expect(await entryValue(page)).toBe("2\\mathbin{\\measuredangle}1");
   await tap(page, ["enter"]);
   await expect(page.locator('[data-status="done"]')).toHaveCount(1);
   // oracle (mpmath): 2cos(1) = 1.08060461174, 2sin(1) = 1.68294196962
   expect(await lastResult(page).getAttribute("data-text")).toMatch(/^1\.08060461174\+1\.68294196962\*?i$/);
-  await page.evaluate(() => window.pascaline.session.setAngle("deg"));
+  await page.evaluate(() => window.n62.session.setAngle("deg"));
   await tap(page, ["esc", "d2", "shift", "mul", "d3", "d0", "enter"]);
   await expect(page.locator('[data-status="done"]')).toHaveCount(2);
   // derived: 2(cos 30° + i sin 30°) = √3 + i
   expect(await lastResult(page).getAttribute("data-text")).toMatch(/^1\.73205080757\+1?\*?i$/);
   // the angle can be a fraction: ÷ does not take the sign into its numerator; rad: 2∡π/6 is √3 + i too
-  await page.evaluate(() => window.pascaline.session.setAngle("rad"));
+  await page.evaluate(() => window.n62.session.setAngle("rad"));
   await tap(page, ["esc", "d2", "shift", "mul", "shift", "d3", "div", "d6"]);
   expect(await entryValue(page)).toBe("2\\mathbin{\\measuredangle}\\frac{\\pi}{6}");
   await tap(page, ["enter"]);

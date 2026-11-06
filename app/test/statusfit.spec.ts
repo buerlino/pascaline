@@ -25,7 +25,7 @@ const CHIPS = [
 
 async function goTo(page: Page, place: Place): Promise<void> {
   await page.evaluate(async (p) => {
-    const { session, shell } = window.pascaline;
+    const { session, shell } = window.n62;
     if (p === "home" || p === "cas") {
       shell.close();
       session.view = p;
@@ -34,13 +34,13 @@ async function goTo(page: Page, place: Place): Promise<void> {
     const [app, view] = p.split(":") as ["function" | "solve", "symb" | "plot" | "num"];
     await shell.open(app, view);
   }, place);
-  await page.waitForFunction(() => window.pascaline.shell.loading === null);
+  await page.waitForFunction(() => window.n62.shell.loading === null);
 }
 
 async function setState(page: Page, chips: (typeof CHIPS)[number], mod: Mod): Promise<void> {
   await page.evaluate(
     ([c, m]) => {
-      const s = window.pascaline.session;
+      const s = window.n62.session;
       s.settings.angle = c.angle;
       s.settings.format = c.format;
       s.settings.digits = c.digits;

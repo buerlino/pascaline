@@ -9,7 +9,7 @@
 //   there). The checks are derived from the rule ("The cursor stops only at a box", "The cursor goes where the user
 //   aims" point 2, R43), not from today's output. A case that fails today is marked test.fail() with F34 in KNOWN_FAIL;
 //   the fix removes it.
-// One page for the whole file; a template is one page.evaluate through `window.pascaline.entry.run` (the key path).
+// One page for the whole file; a template is one page.evaluate through `window.n62.entry.run` (the key path).
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -76,7 +76,7 @@ function check(lines: string[], contexts: [string, string, string][]): Promise<s
   return page.evaluate(
     async ([lines, contexts]) => {
       const stops = (await (0, eval)('import("/src/entry/stops.ts")')) as typeof import("../src/entry/stops.ts");
-      const entry = window.pascaline.entry;
+      const entry = window.n62.entry;
       const mf = entry.field!;
       const fail: string[] = [];
       const latexAt = (o: number): string => mf.getElementInfo(o)?.latex ?? "";

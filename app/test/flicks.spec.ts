@@ -8,16 +8,16 @@ import { entryValue, flick, open, recordVibrations, tap, touch, vibrations } fro
 test.beforeEach(async ({ page }) => {
   await recordVibrations(page);
   await open(page);
-  await page.evaluate(() => window.pascaline.session.setHaptics({ on: true }));
+  await page.evaluate(() => window.n62.session.setHaptics({ on: true }));
 });
 
 const bubble = (page: Page) => page.getByTestId("flick-bubble");
 const mods = (page: Page) =>
   page.evaluate(() => {
-    const s = window.pascaline.session;
+    const s = window.n62.session;
     return { shift: s.shift, alpha: s.alpha, shiftLock: s.shiftLock, alphaLock: s.alphaLock, capsLock: s.capsLock };
   });
-const taps = (page: Page) => page.evaluate(() => ({ shift: window.pascaline.session.taps.counts.shift, alpha: window.pascaline.session.taps.counts.alpha }));
+const taps = (page: Page) => page.evaluate(() => ({ shift: window.n62.session.taps.counts.shift, alpha: window.n62.session.taps.counts.alpha }));
 
 async function centre(page: Page, id: string): Promise<{ x: number; y: number }> {
   const box = await page.locator(`[data-key="${id}"]`).boundingBox();
@@ -62,7 +62,7 @@ test("the removed layers are dead: ◀ and ▶ have no shift layer, 0 has no quo
 });
 
 test("a key that does nothing in the open view gives a double haptic: Tmpl in Plot, Fmt in an app (R13; Menu is never dead since R15c1: Settings is its last row)", async ({ page }) => {
-  await page.evaluate(() => window.pascaline.session.setHaptics({ on: true, ms: 10 }));
+  await page.evaluate(() => window.n62.session.setHaptics({ on: true, ms: 10 }));
   await tap(page, ["@symb"]); // the last app (Function) opens on its Symb view
   await expect(page.getByTestId("place")).toHaveAttribute("data-view", "symb");
   const before = (await vibrations(page)).length;
@@ -114,12 +114,12 @@ test("a sideways slip is still the tap; the arrows (trackpad) and ⌫ (repeat) h
   await b.end();
   expect(await entryValue(page)).toBe("78");
   // an arrow slid up is a trackpad drag (steps), never a flick
-  await page.evaluate(() => window.pascaline.entry.clear());
+  await page.evaluate(() => window.n62.entry.clear());
   await tap(page, ["d1", "enter"]);
   await expect(page.locator('[data-status="done"]')).toHaveCount(1);
   await tap(page, ["d2", "enter"]);
   await expect(page.locator('[data-status="done"]')).toHaveCount(2);
-  await page.evaluate(() => window.pascaline.entry.clear());
+  await page.evaluate(() => window.n62.entry.clear());
   const a = await touch(page, "right");
   await a.move(0, -30);
   await expect(bubble(page)).toHaveCount(0);
@@ -251,7 +251,7 @@ test("Shift and Alpha taps stay as on the G2 (one-shot, Alpha twice locks) and a
   await flick(page, "alpha", "down");
   expect(await taps(page)).toEqual({ shift: 2, alpha: 5 });
   // the counter in Settings (since R15c2: Shift + a user key whose Shift slot is Settings), with its reset
-  await page.evaluate(() => window.pascaline.userKeys.set("u1", "shift", { label: "Settings", action: { special: "settings" } }));
+  await page.evaluate(() => window.n62.userKeys.set("u1", "shift", { label: "Settings", action: { special: "settings" } }));
   await tap(page, ["shift", "u1"]);
   await expect(page.getByTestId("sheet-title")).toHaveText("Mode › Settings");
   await tap(page, ["d6"]); // R49: Counters, a section of the Settings level (the sixth since R38a: Data is fifth)
@@ -264,8 +264,8 @@ test("Shift and Alpha taps stay as on the G2 (one-shot, Alpha twice locks) and a
   // stored on the device: still zero after a relaunch (the write waits a second)
   await page.waitForTimeout(1300);
   await page.reload();
-  await page.waitForFunction(() => window.pascaline !== undefined);
-  await page.evaluate(() => window.pascaline.session.taps.ready);
+  await page.waitForFunction(() => window.n62 !== undefined);
+  await page.evaluate(() => window.n62.session.taps.ready);
   expect(await taps(page)).toEqual({ shift: 0, alpha: 0 });
 });
 
@@ -274,7 +274,7 @@ test("inside a sheet a flick down types the letter on any key, digits too; a tap
     const w = window as unknown as { ran: string[] };
     w.ran = [];
     const names = ["volt", "watt", "weber", "yard", "zeta", "zepto", "ampere", "bar", "coulomb", "day", "erg", "farad"];
-    window.pascaline.shell.showMenu("Test", names.map((n) => ({ id: n, label: n, run: () => void w.ran.push(n) })));
+    window.n62.shell.showMenu("Test", names.map((n) => ({ id: n, label: n, run: () => void w.ran.push(n) })));
   });
   await flick(page, "d2", "down"); // Z
   await expect(page.getByTestId("sheet-filter")).toHaveText("Z");
@@ -293,14 +293,14 @@ test("keys typed while an app loads keep their layer: Function, Shift, a user ke
     await gate;
     await route.continue();
   });
-  await page.evaluate(() => window.pascaline.userKeys.set("u1", "shift", { label: "Mode", action: { special: "mode" } }));
+  await page.evaluate(() => window.n62.userKeys.set("u1", "shift", { label: "Mode", action: { special: "mode" } }));
   await page.getByTestId("place").tap();
   await page.getByTestId("apps").locator('[data-id="function"]').tap();
   await tap(page, ["shift", "u1"]);
-  expect(await page.evaluate(() => window.pascaline.shell.loading)).toBe("function");
+  expect(await page.evaluate(() => window.n62.shell.loading)).toBe("function");
   await expect(page.getByTestId("sheet-title")).toHaveText("Mode");
   release();
-  await page.waitForFunction(() => window.pascaline.shell.app === "function" && window.pascaline.shell.loading === null);
+  await page.waitForFunction(() => window.n62.shell.app === "function" && window.n62.shell.loading === null);
   await expect(page.getByTestId("sheet-title")).toHaveText("Mode");
 });
 
@@ -313,9 +313,9 @@ test("a typed key waiting for the load keeps its layer, and a Shift pressed afte
   });
   await tap(page, ["@symb", "alpha", "vars", "shift", "dot", "d2", "shift"]);
   await flick(page, "math", "down");
-  expect(await page.evaluate(() => window.pascaline.shell.loading)).toBe("function");
+  expect(await page.evaluate(() => window.n62.shell.loading)).toBe("function");
   release();
-  await page.waitForFunction(() => window.pascaline.shell.app === "function" && window.pascaline.shell.loading === null);
+  await page.waitForFunction(() => window.n62.shell.app === "function" && window.n62.shell.loading === null);
   await expect.poll(() => entryValue(page)).toBe("A=2B");
   // the last Shift was used up by the flick, as a one-shot is by any key
   expect((await mods(page)).shift).toBe(false);

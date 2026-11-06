@@ -21,7 +21,7 @@ test("Shift + ⇤ and Shift + ⇥ go to the ends of the box: a numerator, an exp
   // the prototype's finding: 12 ÷ 34, Shift + ⇤, 5 puts the 5 at the start of the denominator
   await tap(page, ["d1", "d2", "div", "d3", "d4", "shift", "lstart", "d5"]);
   expect(await entryValue(page)).toBe("\\frac{12}{534}");
-  await page.evaluate(() => window.pascaline.entry.clear());
+  await page.evaluate(() => window.n62.entry.clear());
   await tap(page, ["d2", "pow", "d3", "d4", "shift", "lstart", "d7"]);
   expect(await entryValue(page)).toBe("2^{734}");
   await tap(page, ["shift", "lend", "d5"]);
@@ -53,7 +53,7 @@ test("Undo, then Redo (Shift + Undo)", async ({ page }) => {
 test("⇤ ⇥ and Undo are dead in a view without an entry line (Plot)", async ({ page }) => {
   await recordVibrations(page);
   await open(page);
-  await page.evaluate(() => window.pascaline.session.setHaptics({ on: true }));
+  await page.evaluate(() => window.n62.session.setHaptics({ on: true }));
   await page.getByTestId("place").tap();
   await tap(page, ["d3"]); // Function
   await page.getByTestId("tab-plot").tap();
@@ -73,7 +73,7 @@ test("Esc: stops a running job, goes back a sheet level, drops a pick, closes Se
   await expect(page.locator(".item").last()).toHaveAttribute("data-status", "cancelled");
   // a sheet: back one level; at the top it closes
   await page.evaluate(() =>
-    window.pascaline.shell.showMenu("Test", [{ id: "more", label: "more", submenu: { title: "More", items: [{ id: "x", label: "x", run: () => {} }] } }]),
+    window.n62.shell.showMenu("Test", [{ id: "more", label: "more", submenu: { title: "More", items: [{ id: "x", label: "x", run: () => {} }] } }]),
   );
   await tap(page, ["d1"]);
   await expect(page.getByTestId("sheet-title")).toHaveText("Test › More");

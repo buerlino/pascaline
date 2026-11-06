@@ -16,7 +16,7 @@ type Tok = { prefix?: string; unit: string; power?: string };
 const here = (p: string): string => fileURLToPath(new URL(p, import.meta.url));
 
 const up = (page: Page): Promise<unknown> =>
-  page.waitForFunction(() => window.pascaline.unitView !== undefined && document.activeElement === window.pascaline.unitView.element && document.querySelector('[data-pad="unit"]') !== null);
+  page.waitForFunction(() => window.n62.unitView !== undefined && document.activeElement === window.n62.unitView.element && document.querySelector('[data-pad="unit"]') !== null);
 const unitsKey = async (page: Page): Promise<void> => {
   await flick(page, "tmpl", "up");
   await up(page);
@@ -25,7 +25,7 @@ const find = (page: Page) => page.getByTestId("find");
 const rows = (page: Page) => find(page).getByRole("menuitem");
 const row = (page: Page, id: string) => find(page).locator(`[role="menuitem"][data-id="${id}"]`);
 const slot = (page: Page, id = "u1"): Promise<{ tokens: Tok[]; per?: number } | undefined> =>
-  page.evaluate((id) => window.pascaline.unitView?.view.model(id)?.slot, id);
+  page.evaluate((id) => window.n62.unitView?.view.model(id)?.slot, id);
 const tokens = async (page: Page): Promise<Tok[]> => (await slot(page))?.tokens ?? [];
 
 /** The key whose Alpha layer is a letter: Find types it on a flick down, on any key (docs/04 3.7). */
@@ -53,12 +53,12 @@ const openFind = async (page: Page, ...then: string[]): Promise<void> => {
 const restart = async (page: Page): Promise<void> => {
   await page.waitForTimeout(300);
   await page.reload();
-  await page.waitForFunction(() => customElements.get("math-field") !== undefined && window.pascaline !== undefined);
-  await page.evaluate(() => window.pascaline.entry.ready);
+  await page.waitForFunction(() => customElements.get("math-field") !== undefined && window.n62 !== undefined);
+  await page.evaluate(() => window.n62.entry.ready);
   await page.waitForTimeout(150);
 };
 const emptyOf = async (page: Page): Promise<void> => {
-  for (let i = 0; i < 8 && !(await page.evaluate(() => window.pascaline.unitView?.view.model("u1")?.empty)); i++) await tap(page, ["bksp"]);
+  for (let i = 0; i < 8 && !(await page.evaluate(() => window.n62.unitView?.view.model("u1")?.empty)); i++) await tap(page, ["bksp"]);
 };
 
 test.describe("Find in a slot", () => {
@@ -101,7 +101,7 @@ test.describe("Find in a slot", () => {
     await tap(page, ["bksp"]);
     expect(await tokens(page)).toEqual([]);
     await openFind(page, "d1", "d7"); // Prefixes, 7: M
-    expect(await page.evaluate(() => window.pascaline.unitView?.view.model("u1")?.armed)).toEqual({ prefix: "M", sqrt: false });
+    expect(await page.evaluate(() => window.n62.unitView?.view.model("u1")?.armed)).toEqual({ prefix: "M", sqrt: false });
     await tap(page, ["bksp"]);
     await openFind(page);
     await typeFind(page, "psi");
@@ -250,7 +250,7 @@ test.describe("the user cells", () => {
     await page.locator('[role="menuitem"][data-id="unitcells"]').tap();
     await leg("u1:primary").tap();
     await page.locator('[role="menuitem"][data-id="empty"]').tap();
-    await page.evaluate(() => window.pascaline.shell.closeSheet());
+    await page.evaluate(() => window.n62.shell.closeSheet());
     await unitsKey(page);
     await expect(cell(page, "u1").locator(".main")).toHaveText("+");
     await tap(page, ["u1"]); // an empty user cell opens Find
@@ -266,7 +266,7 @@ test.describe("the user cells", () => {
     await page.locator('[role="menuitem"][data-id="unitcells"]').tap();
     await leg("u1:primary").tap();
     await page.locator('[role="menuitem"][data-id="default"]').tap();
-    await page.evaluate(() => window.pascaline.shell.closeSheet());
+    await page.evaluate(() => window.n62.shell.closeSheet());
     await unitsKey(page);
     await expect(cell(page, "u1").locator(".main")).toHaveText("dB");
   });

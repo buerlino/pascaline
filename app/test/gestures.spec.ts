@@ -15,7 +15,7 @@ import {
 test.beforeEach(async ({ page }) => {
   await recordVibrations(page);
   await open(page);
-  await page.evaluate(() => window.pascaline.session.setHaptics({ on: true }));
+  await page.evaluate(() => window.n62.session.setHaptics({ on: true }));
 });
 
 const picked = (page: import("@playwright/test").Page) =>

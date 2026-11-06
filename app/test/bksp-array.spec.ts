@@ -32,14 +32,14 @@ async function del(page: Page): Promise<string> {
 }
 /** A Tmpl palette cell, by the key path (`run`), as the palette inserts it. */
 const insert = (page: Page, latex: string): Promise<void> =>
-  page.evaluate((l) => window.pascaline.entry.run({ kind: "insert", latex: l }), latex);
+  page.evaluate((l) => window.n62.entry.run({ kind: "insert", latex: l }), latex);
 /** A MathLive command by the key path (the grid's way to reach the line's ends). */
 const cmd = (page: Page, name: string): Promise<void> =>
-  page.evaluate((n) => window.pascaline.entry.run({ kind: "cmd", name: n }), name);
+  page.evaluate((n) => window.n62.entry.run({ kind: "cmd", name: n }), name);
 /** The selected LaTeX, or "" when the selection is collapsed. */
 const selected = (page: Page): Promise<string> =>
   page.evaluate(() => {
-    const mf = window.pascaline.entry.field;
+    const mf = window.n62.entry.field;
     return !mf || mf.selectionIsCollapsed ? "" : mf.getValue(mf.selection, "latex");
   });
 /** 5, then the matrix filled with 1 2 3 4 by keys (▶ goes to the next cell). */
@@ -71,7 +71,7 @@ for (const [name, latex, cells] of [["the 2×2 matrix", MATRIX, 4], ["the row ve
     await insert(page, latex);
     const line = await entryValue(page);
     await page.evaluate(() => {
-      if (window.pascaline.entry.field) window.pascaline.entry.field.position = 1; // right after the 5
+      if (window.n62.entry.field) window.n62.entry.field.position = 1; // right after the 5
     });
     // into the first cell, then on to the start of each later cell: nothing deleted (points 5 and 3)
     for (let i = 0; i < cells; i++) {

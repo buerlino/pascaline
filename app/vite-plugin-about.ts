@@ -12,7 +12,7 @@ const ROOT = resolve(import.meta.dirname, "..");
 
 export function aboutPlugin(): Plugin {
   return {
-    name: "pascaline-about",
+    name: "n62-about",
     resolveId: (id) => (id === ID ? `\0${ID}` : null),
     load(id) {
       if (id !== `\0${ID}`) return null;

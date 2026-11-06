@@ -46,11 +46,11 @@ async function replay(page: Page, steps: readonly Step[], want?: string): Promis
 }
 
 /** The counter of every press (R70): what the app counted since the page opened. */
-const pressed = (page: Page): Promise<number> => page.evaluate(() => window.pascaline.session.taps.counts.presses);
+const pressed = (page: Page): Promise<number> => page.evaluate(() => window.n62.session.taps.counts.presses);
 
 async function start(page: Page): Promise<void> {
   await open(page, "");
-  await page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
+  await page.waitForFunction(() => window.n62.session.engineState === "ready", undefined, { timeout: 20_000 });
 }
 
 test.describe("task list", () => {

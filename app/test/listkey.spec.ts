@@ -8,7 +8,7 @@ import { entryValue, open, tap } from "./helpers.ts";
 
 const field = (page: Page) =>
   page.evaluate(() => {
-    const mf = window.pascaline.entry.field;
+    const mf = window.n62.entry.field;
     if (!mf) throw new Error("no field");
     return { pos: mf.position, last: mf.lastOffset, sel: mf.getValue(mf.selection, "latex") };
   });
@@ -34,7 +34,7 @@ test.describe("Shift + 8 (fake engine)", () => {
 
   test("with 1,2 selected it wraps the selection (R17)", async ({ page }) => {
     await page.evaluate(() => {
-      const mf = window.pascaline.entry.field;
+      const mf = window.n62.entry.field;
       if (!mf) throw new Error("no field");
       mf.value = "1,2";
       mf.focus();
@@ -55,7 +55,7 @@ test.describe("Shift + 8 (fake engine)", () => {
 test.describe("Shift + 8 (real engine)", () => {
   test.beforeEach(async ({ page }) => {
     await open(page, "");
-    await page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
+    await page.waitForFunction(() => window.n62.session.engineState === "ready", undefined, { timeout: 20_000 });
   });
 
   const READINGS = ["9.81", "9.79", "9.83", "9.80", "9.82", "9.78", "9.84", "9.81", "9.80", "9.82"];
@@ -74,7 +74,7 @@ test.describe("Shift + 8 (real engine)", () => {
         await tap(page, [...r].map((c) => (c === "." ? "dot" : `d${c}`)));
       }
       await page.evaluate((n) => {
-        const p = window.pascaline;
+        const p = window.n62;
         p.entry.field?.executeCommand("selectAll");
         p.entry.run({ kind: "insert", latex: `\\operatorname{${n}}\\left(#0\\right)` });
       }, name);

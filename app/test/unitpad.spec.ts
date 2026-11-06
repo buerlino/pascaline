@@ -12,16 +12,16 @@ import { flick, open, recordVibrations, tap, vibrations } from "./helpers.ts";
 type Tok = { prefix?: string; unit: string; power?: string };
 /** The view is up once its pad is on the keys and its field has the focus (it loads with its first open). */
 const up = (page: Page): Promise<unknown> =>
-  page.waitForFunction(() => window.pascaline.unitView !== undefined && document.activeElement === window.pascaline.unitView.element && document.querySelector('[data-pad="unit"]') !== null);
+  page.waitForFunction(() => window.n62.unitView !== undefined && document.activeElement === window.n62.unitView.element && document.querySelector('[data-pad="unit"]') !== null);
 const unitsKey = async (page: Page): Promise<void> => {
   await flick(page, "tmpl", "up");
   await up(page);
 };
 const shown = (page: Page) => page.getByTestId("unit-view");
 const reading = (page: Page) => page.getByTestId("unit-reading");
-const activeId = (page: Page): Promise<string | undefined> => page.evaluate(() => window.pascaline.unitView?.view.activeId);
+const activeId = (page: Page): Promise<string | undefined> => page.evaluate(() => window.n62.unitView?.view.activeId);
 const tokens = (page: Page, id: string): Promise<{ tokens: Tok[]; per?: number } | undefined> =>
-  page.evaluate((id) => window.pascaline.unitView?.view.model(id)?.slot, id);
+  page.evaluate((id) => window.n62.unitView?.view.model(id)?.slot, id);
 /** A slot as the probe writes what it means: "pfx:unit^exp", sorted (exponents below the ÷ negative). */
 const meant = (s: { tokens: Tok[]; per?: number } | undefined): string =>
   (s?.tokens ?? [])
@@ -47,7 +47,7 @@ test.describe("the unit view from the keys", () => {
     await tap(page, ["d7", "d2"]);
     await unitsKey(page);
     await expect(shown(page)).toBeVisible();
-    expect(await page.evaluate(() => window.pascaline.unitView?.view.formula)).toEqual({ latex: "72\\placeholder[u1]{}\\to\\placeholder[end]{}", slots: ["u1"] });
+    expect(await page.evaluate(() => window.n62.unitView?.view.formula)).toEqual({ latex: "72\\placeholder[u1]{}\\to\\placeholder[end]{}", slots: ["u1"] });
     await expect(page.locator('[data-key="d9"][data-pad="unit"]')).toBeVisible(); // the pad is up
     await expect(page.locator('[data-key="d4"][data-pad="prefix"]')).toBeVisible();
     expect(await activeId(page)).toBe("u1");
@@ -60,8 +60,8 @@ test.describe("the unit view from the keys", () => {
     await expect(reading(page)).toHaveText("kilometer per hour");
     expect(meant(await tokens(page, "u1"))).toBe("h^-1 k:m");
     // the field shows the slot (setPromptValue), never as text on the entry line
-    expect(await page.evaluate(() => window.pascaline.unitView?.field.getPromptValue("u1"))).toContain("\\mathrm{km}");
-    expect(await page.evaluate(() => window.pascaline.entry.value)).toBe("72");
+    expect(await page.evaluate(() => window.n62.unitView?.field.getPromptValue("u1"))).toContain("\\mathrm{km}");
+    expect(await page.evaluate(() => window.n62.entry.value)).toBe("72");
     await tap(page, ["enter"]);
     expect(await activeId(page)).toBe("end");
     await tap(page, ["d9", "div", "d3"]);
@@ -84,9 +84,9 @@ test.describe("the unit view from the keys", () => {
     await tap(page, ["esc"]);
     await expect(shown(page)).toBeHidden();
     await expect(page.locator('[data-key="d9"][data-pad]')).toHaveCount(0); // the keypad is the keypad again
-    expect(await page.evaluate(() => window.pascaline.entry.value)).toBe("1+2");
+    expect(await page.evaluate(() => window.n62.entry.value)).toBe("1+2");
     await tap(page, ["d3"]);
-    expect(await page.evaluate(() => window.pascaline.entry.value)).toBe("1+23");
+    expect(await page.evaluate(() => window.n62.entry.value)).toBe("1+23");
     await tap(page, ["bksp"]);
     await unitsKey(page);
     await expect(shown(page)).toBeVisible();
@@ -108,14 +108,14 @@ test.describe("the unit view from the keys", () => {
   test("on an empty line: the quantity 1 and its slot; on a picked history row: that row's input", async ({ page }) => {
     await unitsKey(page);
     await expect(shown(page)).toBeVisible();
-    expect(await page.evaluate(() => window.pascaline.unitView?.view.formula.latex)).toBe("1\\placeholder[u1]{}\\to\\placeholder[end]{}");
+    expect(await page.evaluate(() => window.n62.unitView?.view.formula.latex)).toBe("1\\placeholder[u1]{}\\to\\placeholder[end]{}");
     await tap(page, ["esc"]);
     await tap(page, ["d5", "mul", "d3", "enter"]);
     await expect(page.locator('[data-status="done"]')).toHaveCount(1);
     await tap(page, ["up"]); // picks the row
     await unitsKey(page);
     await expect(shown(page)).toBeVisible();
-    expect(await page.evaluate(() => window.pascaline.unitView?.view.formula.slots)).toEqual(["u1", "u2"]);
+    expect(await page.evaluate(() => window.n62.unitView?.view.formula.slots)).toEqual(["u1", "u2"]);
   });
 
   test("a hardware key on the field takes the keypad's path: a digit is its prefix cell, a letter does nothing", async ({ page }) => {
@@ -133,13 +133,13 @@ test.describe("the unit view from the keys", () => {
     expect(await activeId(page)).toBe("end");
     await page.keyboard.press("Escape");
     await expect(shown(page)).toBeHidden();
-    expect(await page.evaluate(() => window.pascaline.entry.value)).toBe("72");
+    expect(await page.evaluate(() => window.n62.entry.value)).toBe("72");
   });
 
   test("Delete, Backspace, the arrows, Enter and Escape press the same keys on the unit view as on the entry line (one map)", async ({ page }) => {
     // every hardware key the entry line or the unit view hands to the keypad goes through entry.onKey: record them
     await page.evaluate(() => {
-      const e = window.pascaline.entry;
+      const e = window.n62.entry;
       const on = e.onKey;
       const log: [string, string][] = [];
       (window as unknown as { keyLog: [string, string][] }).keyLog = log;
@@ -189,7 +189,7 @@ test.describe("the unit view from the keys", () => {
 test("⌫ on an empty slot steps back to the slot before (as ⌫ at the start of a box on the entry line); on the first slot, and Shift + ⌫ anywhere, a dead key with the double pulse (R118, bu-11)", async ({ page }) => {
   await recordVibrations(page);
   await open(page, "engine=fake");
-  await page.evaluate(() => window.pascaline.session.setHaptics({ on: true, ms: 10 }));
+  await page.evaluate(() => window.n62.session.setHaptics({ on: true, ms: 10 }));
   await tap(page, ["d1", "add", "d2"]);
   await unitsKey(page);
   await tap(page, ["d4", "d9", "enter"]);
@@ -207,7 +207,7 @@ test("⌫ on an empty slot steps back to the slot before (as ⌫ at the start of
   expect(await pulses(["bksp"])).toBe(1);
   expect(meant(await tokens(page, "u1")), "the next ⌫ removes its last token").toBe("");
   await tap(page, ["bksp"]); // the armed k
-  expect(await page.evaluate(() => window.pascaline.unitView?.view.model("u1")?.empty)).toBe(true);
+  expect(await page.evaluate(() => window.n62.unitView?.view.model("u1")?.empty)).toBe(true);
   expect(await pulses(["bksp"]), "⌫ on the first slot, empty: dead").toBe(3);
   expect(await activeId(page)).toBe("u1");
   await tap(page, ["d9", "enter"]);
@@ -244,7 +244,7 @@ test("the probe's 50 units replayed on the pad, each within the probe's count an
     else if (pressed > r.count) wrong.push(`${r.u}: ${pressed} presses, the probe counts ${r.count}`);
     else replayed++;
     // empty the slot again (⌫ until empty; the count is the probe's, so this is not counted)
-    for (let i = 0; i < 12 && !(await page.evaluate(() => window.pascaline.unitView?.view.model("u1")?.empty)); i++) await tap(page, ["bksp"]);
+    for (let i = 0; i < 12 && !(await page.evaluate(() => window.n62.unitView?.view.model("u1")?.empty)); i++) await tap(page, ["bksp"]);
   }
   expect(wrong, "units that did not mean what the probe means within its count").toEqual([]);
   expect(replayed, "units of the probe's 50 on the pad and replayed").toBeGreaterThanOrEqual(44);
@@ -253,7 +253,7 @@ test("the probe's 50 units replayed on the pad, each within the probe's count an
 test.describe("on the engine (check 2026-10-19, Part 2 point 5)", () => {
   test.beforeEach(async ({ page }) => {
     await open(page, "");
-    await page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
+    await page.waitForFunction(() => window.n62.session.engineState === "ready", undefined, { timeout: 20_000 });
   });
   const message = (page: Page) => page.getByTestId("unit-message");
   const result = (page: Page) => page.getByTestId("unit-result");

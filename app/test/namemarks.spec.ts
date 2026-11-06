@@ -12,7 +12,7 @@ const done = (page: Page, n: number) => expect(page.locator('[data-status="done"
 /** The colour of each rendered variable letter on the line, in order, and the colour --name-mark resolves to. */
 async function letters(page: Page): Promise<{ colours: string[]; texts: string[]; mark: string }> {
   return page.evaluate(() => {
-    const mf = window.pascaline.entry.field;
+    const mf = window.n62.entry.field;
     if (!mf?.shadowRoot) throw new Error("no field");
     const probe = document.createElement("span");
     probe.style.color = "var(--name-mark)";
@@ -27,13 +27,13 @@ async function letters(page: Page): Promise<{ colours: string[]; texts: string[]
 test.beforeEach(async ({ page }) => {
   await page.setViewportSize({ width: 412, height: 915 });
   await open(page, "");
-  await page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
+  await page.waitForFunction(() => window.n62.session.engineState === "ready", undefined, { timeout: 20_000 });
 });
 
 async function storeX(page: Page): Promise<void> {
   await tap(page, ["d3", "shift", "emark", "x", "enter"]); // 3▶x
   await done(page, 1);
-  await page.waitForFunction(() => window.pascaline.session.userNames.some((u) => u.name === "x"));
+  await page.waitForFunction(() => window.n62.session.userNames.some((u) => u.name === "x"));
 }
 
 for (const view of ["home", "cas"] as const) {
@@ -59,7 +59,7 @@ test("after Memory deletes x, the next x is plain", async ({ page }) => {
   await tap(page, ["x"]);
   await expect.poll(async () => (await letters(page)).colours[0]).toBe((await letters(page)).mark);
   await tap(page, ["bksp", "shift", "math", "enter", "esc"]); // Memory: Enter deletes the highlighted name
-  await expect.poll(() => page.evaluate(() => window.pascaline.session.userNames.length)).toBe(0);
+  await expect.poll(() => page.evaluate(() => window.n62.session.userNames.length)).toBe(0);
   await tap(page, ["x"]);
   expect(await entryValue(page)).toBe("x");
   await expect.poll(async () => {
@@ -71,7 +71,7 @@ test("after Memory deletes x, the next x is plain", async ({ page }) => {
 test("a letter inside a chip is never marked, whatever the chip shows", async ({ page }) => {
   await storeX(page);
   await page.evaluate(() => {
-    const mf = window.pascaline.entry.field;
+    const mf = window.n62.entry.field;
     if (mf) mf.value = "\\res{1}{x}+x";
   });
   await expect.poll(async () => (await letters(page)).texts).toEqual(["x", "x"]);
@@ -83,7 +83,7 @@ test("a letter inside a chip is never marked, whatever the chip shows", async ({
 test("a power of the name is marked, a subscripted letter is another name and is not", async ({ page }) => {
   await storeX(page);
   await page.evaluate(() => {
-    const mf = window.pascaline.entry.field;
+    const mf = window.n62.entry.field;
     if (mf) mf.value = "x^{2}+x_{1}";
   });
   await expect.poll(async () => (await letters(page)).texts).toEqual(["x", "x"]);

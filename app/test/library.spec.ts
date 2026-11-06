@@ -16,15 +16,15 @@ const menu = (page: Page) => page.getByTestId("menu");
 const row = (page: Page, id: string) => menu(page).locator(`[data-id="${id}"]`);
 const notice = (page: Page) => page.getByTestId("notice");
 const names = (page: Page): Promise<Record<string, string | undefined>> =>
-  page.evaluate(() => Object.fromEntries(window.pascaline.session.userNames.map((u) => [u.name, u.desc])));
-const cas = (page: Page, giac: string): Promise<string> => page.evaluate((g) => window.pascaline.calc.cas(g, window.pascaline.session.settings).then((r) => r.text), giac);
+  page.evaluate(() => Object.fromEntries(window.n62.session.userNames.map((u) => [u.name, u.desc])));
+const cas = (page: Page, giac: string): Promise<string> => page.evaluate((g) => window.n62.calc.cas(g, window.n62.session.settings).then((r) => r.text), giac);
 const putClipboard = (page: Page, text: string): Promise<void> => page.evaluate((t) => navigator.clipboard.writeText(t), text);
 
 async function start(page: Page): Promise<void> {
   await page.setViewportSize({ width: 412, height: 915 });
   await page.emulateMedia({ reducedMotion: "reduce" });
   await open(page, "");
-  await page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 30_000 });
+  await page.waitForFunction(() => window.n62.session.engineState === "ready", undefined, { timeout: 30_000 });
 }
 /** Mode › Settings › Data › Library. */
 async function library(page: Page): Promise<void> {
@@ -43,7 +43,7 @@ test("beams.txt through the picker: beam_M is in Find with its description, and 
   await start(page);
   await savePicker(page, "fake");
   await page.reload();
-  await page.waitForFunction(() => window.pascaline?.session.engineState === "ready", undefined, { timeout: 30_000 });
+  await page.waitForFunction(() => window.n62?.session.engineState === "ready", undefined, { timeout: 30_000 });
   await library(page);
   // the Data level holds one Library row; its level the four rows (no new row in the ☰ menu)
   await expect(menu(page).getByRole("menuitem")).toHaveCount(4);
@@ -96,7 +96,7 @@ test("from the clipboard: beams.txt imports; a bad text is refused whole with it
   await fromClipboard(page, "// n62 library 4\n// twice\ntw(x):=2*x\n// test: tw(2) == 4\n// test: tw(3) == 7\n");
   await expect(notice(page)).toContainText("line 5");
   expect(Object.keys(await names(page))).not.toContain("tw");
-  await page.waitForFunction(() => window.pascaline.session.engineState === "ready");
+  await page.waitForFunction(() => window.n62.session.engineState === "ready");
   expect(await cas(page, "type(tw)")).not.toBe("func");
 
   // G54: a body's median is ours (the median of 1,2,3,4 is 5/2, derived)
@@ -116,8 +116,8 @@ test("from the clipboard: beams.txt imports; a bad text is refused whole with it
 
 test("a clash with an own name shows the notice and changes nothing; Replace imports", async ({ page }) => {
   await start(page);
-  await page.evaluate(() => window.pascaline.session.setView("cas"));
-  await page.evaluate(() => window.pascaline.session.submit("beam_M", "beam_M(q,L):=q*L"));
+  await page.evaluate(() => window.n62.session.setView("cas"));
+  await page.evaluate(() => window.n62.session.submit("beam_M", "beam_M(q,L):=q*L"));
   await expect(page.locator('[data-status="done"]')).toHaveCount(1);
   await fromClipboard(page, readFileSync(BEAMS, "utf8"));
   await expect(notice(page)).toContainText("beam_M (line 6)");
