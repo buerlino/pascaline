@@ -26,7 +26,7 @@ describe("pwa-lite build plugin", () => {
 
     const sw = readFileSync(join(out, "sw.js"), "utf8");
     expect(sw).toContain(`const LIST = ["./","assets/a.js","index.html"];`);
-    expect(sw).toMatch(/const CACHE = 'pascaline-[0-9a-f]{12}';/);
+    expect(sw).toMatch(/const CACHE = 'n62-[0-9a-f]{12}';/);
   });
 
   const engineOut = (): { root: string; out: string } => {
