@@ -61,11 +61,7 @@ Milestone reviews (section 0): after R50e (with R116's gallery groups "Entry hig
 
 | Step | What | Agent, model | Branch | After |
 |---|---|---|---|---|
-| 528 | [R140](packages/R140.md) N62 and Solarized palettes; control keys like the rest | ron, Sonnet | `p1/ron-palettes` | – |
-| 539 | [R150](packages/R150.md) Teal in; Graphite, Gruvbox and Nord out | ron, Sonnet | `p1/ron-tealfamily` | R140 |
-| 530 | [R141](packages/R141.md) the round pad a circle, no hub, no zone outlines | ron, Sonnet | `p1/ron-roundpad` | R140 |
-| 531 | [R142](packages/R142.md) variable letters italic in every mode, no bold | ron, Sonnet | `p1/ron-italicletters` | R141 |
-| 532 | [R143](packages/R143.md) ▾ on every legend that opens a menu | ron, Sonnet | `p1/ron-menumark` | R142 |
+| 532 | [R143](packages/R143.md) ▾ on every legend that opens a menu | ron, Sonnet | `p1/ron-menumark` | – |
 | 534 | [R145](packages/R145.md) ⚙ Settings in every ☰ menu's title row | ron, Sonnet | `p1/ron-menugear` | – |
 | 535 | [R147](packages/R147.md) a tap picks a history row, a second tap inserts | ron, Opus | `p1/ron-tappick` | – |
 | 536 | [R53](packages/R53.md) results mode: the keypad folds by a handle or swipe | ron, Opus | `p1/ron-results-fold` | R147 |

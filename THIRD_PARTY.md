@@ -94,6 +94,6 @@ Colour values only (no code); lightness adjusted where our contrast rules need i
 
 | Palette | Author | Licence | Source | Copyright |
 |---|---|---|---|---|
-| Solarized | Ethan Schoonover | MIT | https://github.com/altercation/solarized | Copyright © 2011 Ethan Schoonover |
-| Gruvbox | Pavel Pertsev | MIT | https://github.com/morhetz/gruvbox | Copyright © Pavel Pertsev |
-| Nord | Arctic Ice Studio | MIT | https://github.com/nordtheme/nord | Copyright © 2016–present Sven Greb (Arctic Ice Studio) |
+| Solarized | Ethan Schoonover (palette); the grounds #2d4056 and #ffffd6 are the N62 owner's | MIT | https://github.com/altercation/solarized | Copyright © 2011 Ethan Schoonover |
+
+N62's own colours (black, the logo's teal #529997, an orange accent) and the Teal family are ours, GPL-3.0-or-later; Solarized's two grounds (#2d4056 dark, #ffffd6 light) are the owner's choice and the other Solarized colours are matched to them (R140, R150).
