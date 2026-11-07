@@ -6,6 +6,9 @@
 export const MIN_FACE_PX = 9;
 export const MIN_LEGEND_PX = 8;
 
+/** The menu mark (R143) keeps at least this far (px) from the key's edge. */
+const MARK_EDGE_PX = 2;
+
 /** A legend's font is at most this many times its line's height: the design's own largest ratio (11 px in the 10 px line of a short screen). */
 const LEGEND_MAX_EM = 1.1;
 
@@ -59,7 +62,12 @@ export function fitLegends(pad: HTMLElement): void {
     const cs = getComputedStyle(key);
     const inner = key.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
     // each legend has its own line (the shift function above the face, the letter below it): the key's whole width
-    for (const el of key.querySelectorAll<HTMLElement>("[data-fit]")) avail.set(el, inner);
+    for (const el of key.querySelectorAll<HTMLElement>("[data-fit]")) {
+      // R143: the menu mark ▾ hangs after the text out of the flow (scrollWidth counts it). It may use the key's side padding,
+      // up to MARK_EDGE_PX from the key's edge: a face is centred as text + mark together (Keypad.svelte), a legend starts at the padding
+      const marked = el.dataset["opens"] === "true";
+      avail.set(el, marked ? key.clientWidth - 2 * MARK_EDGE_PX - (el.dataset["fit"] === "legend" ? parseFloat(cs.paddingLeft) : 0) : inner);
+    }
   }
   // write
   for (const it of items) {

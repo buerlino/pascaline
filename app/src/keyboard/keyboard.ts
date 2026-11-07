@@ -20,7 +20,7 @@ export type Special =
   | "units"
   /** A key whose function we don't have yet (it keeps its alpha letter): does nothing. */
   | "none";
-const SPECIALS: readonly Special[] = [
+export const SPECIALS: readonly Special[] = [
   "shift", "alpha", "enter", "clear", "esc", "settings", "mode", "apps", "symb", "plot", "num", "menu", "fmt", "copy", "paste", "tmpl",
   "home", "cas", "switch", "relations", "symbols", "find", "vars", "memory", "units", "none",
 ];

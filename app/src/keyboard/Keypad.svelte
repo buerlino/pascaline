@@ -6,6 +6,7 @@
   import { fitLegends } from "./fit.ts";
   import { keyNames, loadKeyNames } from "./keyNamesLoader.svelte.ts";
   import { actionFor, gridPlace, keyboard, labelFor, type Key, type Layer } from "./keyboard.ts";
+  import { opensSheet } from "./opens.ts";
   import { typesVariable, varLayers } from "./variable.ts";
   import { touchKey, touchPresses } from "../state/pressCount.ts";
   import { sheetChunk } from "../views/sheetView.svelte.ts";
@@ -61,6 +62,9 @@
     legend(labelFor(k, shift, alpha, cas) || k.label.primary || "");
   const hint = (k: Key): string => (shift && !alpha) || !k.label.shift ? "" : legend(k.label.shift);
   const alphaHint = (k: Key): string => (alpha || !k.label.alpha ? "" : k.label.alpha);
+  // R143: a legend whose layer opens a sheet carries the mark ▾ (CSS, on data-opens); the letter line never does
+  const opensFace = (k: Key): "true" | undefined => (face(k) !== "" && opensSheet(actionFor(k, shift, alpha, false, cas)) ? "true" : undefined);
+  const opensHint = (k: Key): "true" | undefined => (hint(k) !== "" && opensSheet(k.actions.shift) ? "true" : undefined);
   // R142: a legend is italic, in every mode, exactly when its action types one letter (a variable, ISO 80000-2; variable.ts):
   // the key says which layers type one (data-v), the CSS picks the face or legend that shows that layer
   /** Rows with a letter on some key reserve the letter line on every key, so the faces of a row stay level. The upper
@@ -333,8 +337,8 @@
       data-pad={key.pad}
       data-v={varLayers(key)}
     >
-      <span class="shiftlegend" data-fit="legend">{hint(key)}</span>
-      <span class="main" data-fit="face">{face(key)}</span>
+      <span class="shiftlegend" data-fit="legend" data-opens={opensHint(key)}>{hint(key)}</span>
+      <span class="main" data-fit="face" data-opens={opensFace(key)}>{face(key)}</span>
       {#if lettered}<span class="alphalegend" data-fit="legend">{alphaHint(key)}</span>{/if}
     </button>
   {/each}
@@ -414,6 +418,27 @@
     font-style: italic;
     font-family: KaTeX_Math, "STIX Two Text", "Times New Roman", "Times", serif;
     font-weight: 400;
+  }
+  /* R143 (owner, 2026-11-06): a legend whose layer opens a menu or grid instead of typing ends in ▾, the sign the status
+     line's place name uses for "opens a list". In the legend's own colour (so Plain keys and every family keep it), the
+     same everywhere. It hangs after the text out of the flow (absolute, from the legend's right edge), so the text keeps its
+     place and size: fit.ts measures the text alone and the mark sits in the key's side padding. */
+  [data-opens="true"] {
+    position: relative;
+  }
+  /* a face is centred as text and mark together: half the mark's width (0.78em of the sign's 0.55em, and its 1px margin) to the left */
+  .main[data-opens="true"] {
+    translate: calc(-0.22em - 0.5px) 0;
+  }
+  [data-opens="true"]::after {
+    content: "▾";
+    position: absolute;
+    left: 100%;
+    top: 0;
+    bottom: 0;
+    margin-left: 1px;
+    font-size: 0.78em;
+    font-style: normal;
   }
   /* The press (R12c): the key's own text colour laid over it at once, no fade, a layer of its own so it shows over every
      background, Plain keys' and High contrast's too. It is the only motion in the app. */

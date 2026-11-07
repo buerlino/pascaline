@@ -11,6 +11,8 @@ The owner's other open items are in [backlog.md](backlog.md), "Needs the user". 
 
 **R59: the Math key's Find and the user's functions.** An imported function is found in Vars' Find (R4b), not in the Math key's Find. Recommendation: list the user's names there too, as a later small package, so a library function is found where the built-ins are.
 
+**R143: Math's face at 360 px.** The ▾ hangs in the key's side padding and the face is centred as text and mark together, so Vars, Tmpl and the Shift legends keep their size; Math (the widest word) goes from 17 px to 16.3 px at 360 px (4 %). Recommendation: keep it; a shorter word or a smaller mark (0.6 em) would be the only ways to keep 17 px, and the owner asked for about 0.78 em.
+
 **R140: the colour-vision floors in High contrast.** Recommendation: keep Shift and Alpha 0.10 apart and ⚠ 0.06 from Shift there (0.12 and 0.08 elsewhere): at 7:1 N62 Light's Alpha is #265c5a, and Shift reaches 0.12 from it only as the brown #5d2800 (Opus pass 85).
 
 ## Decided proposals
