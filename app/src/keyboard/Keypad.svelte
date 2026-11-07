@@ -5,7 +5,8 @@
   import { FlickTracker, PAD_KEYS, REPEAT_KEYS, Repeat, Stepper, type Flick, type PadDir } from "./gestures.ts";
   import { fitLegends } from "./fit.ts";
   import { keyNames, loadKeyNames } from "./keyNamesLoader.svelte.ts";
-  import { actionFor, gridPlace, keyboard, labelFor, type Key, type Layer } from "./keyboard.ts";
+  import { actionFor, gridPlace, keyboard, labelFor, type ActionBody, type Key, type Layer } from "./keyboard.ts";
+  import { isLetter, typesVariable } from "./variable.ts";
   import { touchKey, touchPresses } from "../state/pressCount.ts";
   import { sheetChunk } from "../views/sheetView.svelte.ts";
   import type { UserKeys } from "./userKeys.svelte.ts";
@@ -60,6 +61,11 @@
     legend(labelFor(k, shift, alpha, cas) || k.label.primary || "");
   const hint = (k: Key): string => (shift && !alpha) || !k.label.shift ? "" : legend(k.label.shift);
   const alphaHint = (k: Key): string => (alpha || !k.label.alpha ? "" : k.label.alpha);
+  // R142: a legend is italic, in every mode, exactly when its action types one letter (a variable, ISO 80000-2); the
+  // face is the active layer's action, a legend its own layer's (variable.ts)
+  const faceVar = (k: Key): boolean => typesVariable(actionFor(k, shift, alpha, false, cas));
+  const shiftVar = (k: Key): boolean => hint(k) !== "" && typesVariable(k.actions.shift);
+  const alphaVar = (k: Key): boolean => alphaHint(k) !== "" && typesVariable(k.actions.alpha);
   /** Rows with a letter on some key reserve the letter line on every key, so the faces of a row stay level. The upper
    *  cluster has no letters, and no line for them (vertical space, docs/03 rule 9). */
   const letterRows = new Set(keyboard.keys.filter((k) => k.label.alpha).map((k) => k.row));
@@ -91,7 +97,10 @@
     if (!padEl) return;
     const pad = padEl;
     fitLegends(pad);
-    if (typeof ResizeObserver === "undefined") return;
+    // R142: the italic font may arrive after the first fit; its letters have other widths, so fit again when it has
+    const refit = (): void => fitLegends(pad);
+    document.fonts?.addEventListener("loadingdone", refit);
+    if (typeof ResizeObserver === "undefined") return () => document.fonts?.removeEventListener("loadingdone", refit);
     let width = pad.clientWidth;
     const ro = new ResizeObserver(() => {
       if (pad.clientWidth !== width) {
@@ -100,7 +109,10 @@
       }
     });
     ro.observe(pad);
-    return () => ro.disconnect();
+    return () => {
+      ro.disconnect();
+      document.fonts?.removeEventListener("loadingdone", refit);
+    };
   });
 
   // ---- gestures (docs/decisions.md P7). One pointer handler on the whole pad, one gesture per finger.
@@ -127,7 +139,7 @@
     | { kind: "repeat"; repeat: Repeat };
 
   /** The bubble above a key while a flick is armed (P7 point 2): what the lift will fire, or ✕ for nothing. */
-  let bubble = $state<{ x: number; y: number; dir: Flick; text: string; none: boolean } | null>(null);
+  let bubble = $state<{ x: number; y: number; dir: Flick; text: string; none: boolean; variable: boolean } | null>(null);
   let bubbleOwner: number | undefined;
 
   /** What a flick on this key fires, as the bubble shows it (empty text: nothing). Mirrors App.svelte's press(). */
@@ -150,6 +162,12 @@
     return legend(labelFor(k, sh, al, cas));
   }
 
+  /** The action a flick fires, for the bubble's italic flag; a sheet's filter letter is typed too (flickText). */
+  function flickAction(k: Key, dir: Flick): ActionBody | undefined {
+    if (sheet) return dir === "down" && sheet.filter ? { kind: "type", text: sheetChunk.keys?.letterOf(k) ?? "" } : undefined;
+    return actionFor(k, dir === "up", dir === "down", false, cas);
+  }
+
   function showBubble(id: number, g: Extract<Gesture, { kind: "key" }>): void {
     const st = g.flick.state;
     if (!g.key || !g.el || (st !== "up" && st !== "down")) {
@@ -158,7 +176,9 @@
     }
     const text = flickText(g.key, st);
     bubbleOwner = id;
-    bubble = { x: g.el.offsetLeft + g.el.offsetWidth / 2, y: g.el.offsetTop, dir: st, text: text || "✕", none: text === "" };
+    // (the bubble's letter follows the same flag as the legend it shows: a one-letter text from a flick that types)
+    const variable = text !== "" && isLetter(text) && typesVariable(flickAction(g.key, st));
+    bubble = { x: g.el.offsetLeft + g.el.offsetWidth / 2, y: g.el.offsetTop, dir: st, text: text || "✕", none: text === "", variable };
   }
   const gestures = new Map<number, Gesture>();
   /** The app goes away (home, app switcher, a lost pointerup): every gesture ends and nothing fires. */
@@ -325,9 +345,9 @@
       data-user={key.user ? (userKeys.isEmpty(key) ? "empty" : "set") : undefined}
       data-pad={key.pad}
     >
-      <span class="shiftlegend" data-fit="legend">{hint(key)}</span>
-      <span class="main" data-fit="face">{face(key)}</span>
-      {#if lettered}<span class="alphalegend" data-fit="legend">{alphaHint(key)}</span>{/if}
+      <span class="shiftlegend" data-fit="legend" data-var={shiftVar(key) ? "true" : undefined}>{hint(key)}</span>
+      <span class="main" data-fit="face" data-var={faceVar(key) ? "true" : undefined}>{face(key)}</span>
+      {#if lettered}<span class="alphalegend" data-fit="legend" data-var={alphaVar(key) ? "true" : undefined}>{alphaHint(key)}</span>{/if}
     </button>
   {/each}
   {#if padArea}<div class="hub" data-trackpad data-testid="pad-hub" style:grid-row={padArea.rows} style:grid-column={padArea.cols}></div>{/if}
@@ -337,6 +357,7 @@
       data-testid="flick-bubble"
       data-dir={bubble.dir}
       data-none={bubble.none ? "true" : undefined}
+      data-var={bubble.variable ? "true" : undefined}
       style:left={`${bubble.x}px`}
       style:top={`${bubble.y}px`}
       aria-hidden="true"
@@ -391,6 +412,15 @@
     justify-self: center;
     white-space: nowrap;
     line-height: 1.1;
+  }
+  /* R142: a legend that types a variable is italic in every mode (ISO 80000-2; the Alpha letters, x, y, Greek letters a layer
+     types), in the face the entry line draws a typed letter in (MathLive's math italic, from mathlive/static.css, loaded
+     for the entry line) and a real italic serif behind it, never a synthesised slant. Functions, units, numbers and
+     constants stay upright. No bold anywhere: the meaning is the position and the colour. */
+  [data-var="true"] {
+    font-style: italic;
+    font-family: KaTeX_Math, "STIX Two Text", "Times New Roman", "Times", serif;
+    font-weight: 400;
   }
   /* The press (R12c): the key's own text colour laid over it at once, no fade, a layer of its own so it shows over every
      background, Plain keys' and High contrast's too. It is the only motion in the app. */
