@@ -10,14 +10,15 @@ import { functionsIn, isError, leadingName, names, namesIn, programParams, type 
  * G50 (deep check 2026-10-19 D10), G60: our definitions for the functions whose complex values Giac gets wrong. Left:
  * atan, whose cut Giac takes on the other side (atan(2*i) has 0 right digits at any Digits), which is a branch
  * convention and not a one-line patch (G75's measure); pasatan is the principal branch by its ln form (mpmath's, also
- * on the cuts). Complex tanh was coth until patch 0003 (G75); complex asin, acos and acosh were a double through
+ * on the cuts); a z below 1/4 in size, far from the cuts, is -i*atanh(i*z) (G181, patch 0036: the ln form of 1+O(z)
+ * cancels -log10|z| digits, so atan(10^-1000*i) was 0). Complex tanh was coth until patch 0003 (G75); complex asin, acos and acosh were a double through
  * Giac's double pi in ln and acos until patch 0005 (G60), which also gives asin, acos and acosh of an MPFR real outside
  * their domain. Each is used for a non-real argument, and is the function itself otherwise (Giac runs in radians in
  * every mode, G46); the agreement check then confirms its digits like any other exact value. A list or matrix argument
  * is mapped element by element first (its type is DOM_LIST, which would fall back to Giac's own function).
  */
 export const COMPLEX_DEFINITIONS: Readonly<Record<string, string>> = {
-  pasatan: "pasatan(z):={ if (type(z)==DOM_LIST) return map(z,pasatan); if (type(evalf(z))==DOM_COMPLEX) return i/2*(ln(1-i*z)-ln(1+i*z)); return atan(z); }",
+  pasatan: "pasatan(z):={ if (type(z)==DOM_LIST) return map(z,pasatan); if (type(evalf(z))==DOM_COMPLEX) { if (abs(evalf(z))<1/4) return -i*atanh(i*z); return i/2*(ln(1-i*z)-ln(1+i*z)); } return atan(z); }",
 };
 
 /** The Giac names (and aliases) that COMPLEX_DEFINITIONS replace. */
