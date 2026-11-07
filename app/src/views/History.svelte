@@ -7,6 +7,7 @@
   import { mathlive } from "../render/mathlive.svelte.ts";
   import { MAX_DRAWN_LATEX } from "../render/longResult.ts";
   import { markText, noDigit as hasNoDigit } from "../state/displayMode.ts";
+  import { rowTap } from "../state/pickRows.ts";
   import { edgeFade } from "./edgeFade.ts";
   import type { MarkInfo } from "../engine/format.ts";
   import type { HistoryItem, MarkStyle, UsedValue } from "../state/session.svelte.ts";
@@ -89,7 +90,7 @@
   /** R147: a tap on a row's entry or result picks the row; on the picked row it recalls or inserts (`act`). A scroll
    *  drag never reaches here: the browser cancels the pointer and sends no click. */
   function tapRow(index: number, act: () => void): void {
-    tapped(() => (index === selected ? act() : onpick(index)));
+    tapped(() => (rowTap(selected, index) === "act" ? act() : onpick(index)));
   }
   /** R147: a tap on the history outside every row (its empty part) drops the pick. */
   function tapHistory(e: MouseEvent): void {
