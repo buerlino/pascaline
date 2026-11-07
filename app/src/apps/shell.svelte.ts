@@ -275,9 +275,9 @@ export class AppShell {
     }
     const place = this.app === null ? "home" : `${this.app}:${this.view}`;
     const sheet = new Sheet(`menu:${place}`, this.menuTitle.text, () => this.menuItems, { icon: this.menuTitle.icon, at: opts?.at, settings: this.toSettings });
+    this.sheet = sheet;
     // a view whose ☰ has no rows and no pointer opens Settings directly (R145)
     if (this.menuItems.length === 0) this.picked(sheet.openSettings());
-    this.sheet ??= sheet;
     return true;
   }
   /** Open a list of items over the view (a long press on a history row): same sheet and keys as the Menu key.
