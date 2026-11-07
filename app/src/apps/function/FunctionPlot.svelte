@@ -6,6 +6,7 @@
   import type JXGType from "jsxgraph";
   import { onMount } from "svelte";
   import { t } from "../../i18n/index.ts";
+  import { numText } from "../../i18n/enNum.ts";
   import { mark } from "../../marks.ts";
   import { longpress } from "../longpress.ts";
   import Grouped from "../Grouped.svelte";
@@ -200,9 +201,9 @@
 
 <!-- data-floor: the readout keeps its lines on a short screen, the board gives way (R82, App.svelte .stage) -->
 <div class="plot" data-floor>
-  <div class="board" bind:this={box} onpointerdown={pointerDown} onpointerup={pointerUp} aria-label={t("plot.label")} role="img"></div>
-  {#if !ready}<p class="note">{t("plot.loading")}</p>{/if}
-  {#if ready && app.active.length === 0}<p class="note">{t("plot.empty")}</p>{/if}
+  <div class="board" bind:this={box} onpointerdown={pointerDown} onpointerup={pointerUp} aria-label={numText("plot.label")} role="img"></div>
+  {#if !ready}<p class="note">{numText("plot.loading")}</p>{/if}
+  {#if ready && app.active.length === 0}<p class="note">{numText("plot.empty")}</p>{/if}
   {#if app.active.length > 0}
     <div class="readout" data-testid="readout">
       {#if app.readout}

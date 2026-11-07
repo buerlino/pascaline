@@ -56,10 +56,10 @@ export class AppShell {
   clip: { copyRaw(text: string | undefined, notice?: string): Promise<boolean>; say(message: string): void } | undefined;
   /** The Menu of Home and CAS (set by App.svelte); the apps bring their own. */
   homeMenu: (() => MenuItem[]) | undefined;
-  /** Settings as a level of the sheet (set by App.svelte once the Mode code is in; R49): the last row of every Menu
-   *  (R15c1) opens it as its submenu. Undefined until then: the row then opens Mode › Settings (openSettings). */
+  /** Settings as a level of the sheet (set by App.svelte once the Mode code is in; R49): the ⚙ in every Menu's title
+   *  row (R145) opens it as the next level. Undefined until then: the ⚙ then opens Mode › Settings (openSettings). */
   settingsMenu: (() => SubMenu | undefined) | undefined;
-  /** Opens Mode › Settings (set by App.svelte): a user key that holds Settings, or a Menu's last row before the code is in. */
+  /** Opens Mode › Settings (set by App.svelte): a user key that holds Settings, or the ⚙ before the Mode code is in. */
   openSettings: (() => void) | undefined;
   /** Which of Home and CAS is under the keys (set by App.svelte); names the Menu there (R83). */
   homeView: (() => "home" | "cas") | undefined;
@@ -283,8 +283,7 @@ export class AppShell {
   /** Open a list of items over the view (a long press on a history row): same sheet and keys as the Menu key.
    *  `settings`: the ⚙ in its title row opens Settings (R145). */
   showMenu(title: string, items: readonly MenuItem[], opts?: { remember?: boolean; at?: string; settings?: boolean }): void {
-    const { settings, ...rest } = opts ?? {};
-    this.sheet = new Sheet(`list:${title}`, title, () => items, { ...rest, ...(settings ? { settings: this.toSettings } : {}) });
+    this.sheet = new Sheet(`list:${title}`, title, () => items, { ...opts, settings: opts?.settings ? this.toSettings : undefined });
   }
   /** Find (R4a): its categories, searched by the letters typed (Sheet id "find"; route.ts gives it docs/04 3.7's keys). */
   showFind(title: string, categories: readonly MenuItem[], search: (q: string) => readonly MenuItem[]): void {

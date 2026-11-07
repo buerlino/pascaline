@@ -3,7 +3,6 @@
 // Home/CAS Menu, the row actions, the template palette and Find (R4a: a level that searches) use it.
 // Plain state, no DOM: the keys reach it through sheetKeys.ts, touch through Sheet.svelte.
 import type { MenuItem, SubMenu } from "../apps/types.ts";
-import { t } from "../i18n/index.ts";
 import type { IconId } from "./icons.ts";
 import { lastPicks } from "./picks.ts";
 
@@ -243,12 +242,11 @@ export class Sheet {
   get hasSettings(): boolean {
     return this.settings !== undefined && this.levels.length === 1;
   }
-  /** R145: the ⚙ (or an empty ☰): Settings as the next level, or run what opens it. */
+  /** R145: the ⚙ (or an empty ☰): Settings as the next level, or run what opens it (the run item is never drawn: no label). */
   openSettings(): Picked {
-    const to = this.settings?.();
-    if (!to || !this.hasSettings) return STAY;
-    if (typeof to === "function") return { kind: "run", item: { id: "settings", label: t("menu.settings"), run: to } };
-    this.push(this.level, "settings", to);
+    const to = this.hasSettings ? this.settings?.() : undefined;
+    if (typeof to === "function") return { kind: "run", item: { id: "", label: "", run: to } };
+    if (to) this.push(this.level, "settings", to);
     return STAY;
   }
   /** The title with its path, e.g. `Menu › Intersection of F2(x) and`; the last three levels when deeper (the title

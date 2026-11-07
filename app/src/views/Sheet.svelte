@@ -7,12 +7,18 @@
   // (`over: "view"`) stays above the keypad, over the history or view. The keys drive it through App.svelte and
   // sheetKeys.ts; touch is a shortcut: a tap on a row picks it, ◀ ▶ step a value, ‹ goes back a level, × closes it.
   import { t } from "../i18n/index.ts";
-  import { GEAR, ICONS } from "./icons.ts";
+  import { sheetText } from "../i18n/enSheet.ts";
+  import { ICONS } from "./icons.ts";
   import MathView from "../render/Math.svelte";
   import type { MenuItem } from "../apps/types.ts";
   import type { Row, Sheet } from "./sheet.svelte.ts";
   import { fitCell, fitRow, hasOptions, hasSteps, ROW, rowHeight, showsReason, twoLines } from "./sheetFit.ts";
   import { builtRows, keyedById, plainRow, rowKey, sameRows } from "./sheetWindow.ts";
+
+  /** R145: the ⚙ in a ☰ sheet's title row (drawn, not the emoji glyph, which Android paints in colour). Here, not in
+   *  icons.ts: only this lazy chunk draws it, and icons.ts is in the start chunk (R145f1). */
+  const GEAR =
+    '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="8" cy="8" r="2.4"/><path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.4 3.4l1.4 1.4M11.2 11.2l1.4 1.4M12.6 3.4l-1.4 1.4M4.8 11.2l-1.4 1.4"/></svg>';
 
   let {
     sheet,
@@ -200,8 +206,8 @@
       <div class="head">
         <span class="gtitle" data-testid="sheet-title">{sheet.path}</span>
         <span class="hint" data-testid="sheet-hint">{level.current?.label ?? ""}</span>
-        {#if cutTop || cutBottom}<span class="count" data-testid="sheet-count">{t("sheet.count", { n: String(rows.length) })}</span>{/if}
-        <button type="button" class="icon" aria-label={t("apps.close")} onclick={onclose}>×</button>
+        {#if cutTop || cutBottom}<span class="count" data-testid="sheet-count">{sheetText("sheet.count", { n: String(rows.length) })}</span>{/if}
+        <button type="button" class="icon" aria-label={sheetText("apps.close")} onclick={onclose}>×</button>
       </div>
       <div
         class="grid"
@@ -233,12 +239,12 @@
       </div>
     {:else}
       <div class="head">
-        {#if sheet.depth > 1}<button type="button" class="icon" aria-label={t("sheet.back")} onclick={onback}>‹</button>{/if}
+        {#if sheet.depth > 1}<button type="button" class="icon" aria-label={sheetText("sheet.back")} onclick={onback}>‹</button>{/if}
         {#if sheet.icon}<span class="ticon" aria-hidden="true">{@html ICONS[sheet.icon]}</span>{/if}<span class="title" data-testid="sheet-title">{sheet.path}</span>
         {#if level.filter !== ""}<span class="filter" data-testid="sheet-filter">{level.filter}</span>{/if}
-        {#if (cutTop || cutBottom) && level.text === undefined}<span class="count" data-testid="sheet-count">{t("sheet.count", { n: String(rows.length) })}</span>{/if}
-        {#if sheet.hasSettings}<button type="button" class="icon gear" data-testid="sheet-gear" aria-label={t("menu.settings")} onclick={ongear}>{@html GEAR}</button>{/if}
-        <button type="button" class="icon" aria-label={t("apps.close")} onclick={onclose}>×</button>
+        {#if (cutTop || cutBottom) && level.text === undefined}<span class="count" data-testid="sheet-count">{sheetText("sheet.count", { n: String(rows.length) })}</span>{/if}
+        {#if sheet.hasSettings}<button type="button" class="icon gear" data-testid="sheet-gear" aria-label={t("mode.settings")} onclick={ongear}>{@html GEAR}</button>{/if}
+        <button type="button" class="icon" aria-label={sheetText("apps.close")} onclick={onclose}>×</button>
       </div>
       {#if level.text !== undefined}
         <!-- a text to read (R87, a licence): the list's scroll and fade, no rows; ▲ ▼ page through it -->
@@ -269,12 +275,12 @@
             style:height={px(rowHeight(row, { reason: second, steps, options: options !== undefined }))}
             onclick={() => ontap(r.index)}
           >
-            <span class="n">{r.n === undefined ? "" : r.n % 10}</span>{#if r.item.glyph}<span class="tile math" class:small={"text" in r.item.glyph && r.item.glyph.text.length > 1} data-testid="row-glyph" aria-hidden="true">{@html "icon" in r.item.glyph ? ICONS.home : r.item.glyph.text}</span>{/if}<span class="text"><span class="label">{r.item.label}</span>{#if reason}<span class="reason">{r.item.reason}</span>{:else if r.item.hint}<span class="reason" data-testid="row-hint">{r.item.hint}</span>{:else if r.item.dots && steps}<span class="dots under" data-testid="row-dots" aria-hidden="true">{#each r.item.dots as c}<i style:background={c}></i>{/each}</span>{/if}</span>{#if r.item.dots && !steps}<span class="dots" data-testid="row-dots" aria-hidden="true">{#each r.item.dots as c}<i style:background={c}></i>{/each}</span>{/if}{#if r.item.note}<span class="note" data-testid="row-note">{r.item.note}</span>{/if}{#if options}<span class="seg" data-testid="row-options">{#each options as o (o.id)}<button type="button" class="opt" data-option={o.id} aria-label={o.spoken} aria-pressed={o.selected} disabled={r.item.disabled || o.disabled} onclick={(e) => { e.stopPropagation(); onoption(r.index, o.id); }}>{o.label}</button>{/each}</span>{/if}{#if steps}<button type="button" class="step" data-testid="step-down" aria-label={t("sheet.stepDown")} disabled={r.item.disabled} onclick={(e) => { e.stopPropagation(); sheet.adjustAt(r.index, -1); }}>◀</button>{/if}{#if r.item.value !== undefined}<span class="value" data-testid="sheet-value">{r.item.value}</span>{/if}{#if steps}<button type="button" class="step" data-testid="step-up" aria-label={t("sheet.stepUp")} disabled={r.item.disabled} onclick={(e) => { e.stopPropagation(); sheet.adjustAt(r.index, 1); }}>▶</button>{/if}{#if r.item.selected !== undefined}<span class="tick" aria-hidden="true">{r.item.selected ? "✓" : ""}</span>{/if}{#if r.item.submenu}<span class="more" aria-hidden="true">›</span>{/if}
+            <span class="n">{r.n === undefined ? "" : r.n % 10}</span>{#if r.item.glyph}<span class="tile math" class:small={"text" in r.item.glyph && r.item.glyph.text.length > 1} data-testid="row-glyph" aria-hidden="true">{@html "icon" in r.item.glyph ? ICONS.home : r.item.glyph.text}</span>{/if}<span class="text"><span class="label">{r.item.label}</span>{#if reason}<span class="reason">{r.item.reason}</span>{:else if r.item.hint}<span class="reason" data-testid="row-hint">{r.item.hint}</span>{:else if r.item.dots && steps}<span class="dots under" data-testid="row-dots" aria-hidden="true">{#each r.item.dots as c}<i style:background={c}></i>{/each}</span>{/if}</span>{#if r.item.dots && !steps}<span class="dots" data-testid="row-dots" aria-hidden="true">{#each r.item.dots as c}<i style:background={c}></i>{/each}</span>{/if}{#if r.item.note}<span class="note" data-testid="row-note">{r.item.note}</span>{/if}{#if options}<span class="seg" data-testid="row-options">{#each options as o (o.id)}<button type="button" class="opt" data-option={o.id} aria-label={o.spoken} aria-pressed={o.selected} disabled={r.item.disabled || o.disabled} onclick={(e) => { e.stopPropagation(); onoption(r.index, o.id); }}>{o.label}</button>{/each}</span>{/if}{#if steps}<button type="button" class="step" data-testid="step-down" aria-label={sheetText("sheet.stepDown")} disabled={r.item.disabled} onclick={(e) => { e.stopPropagation(); sheet.adjustAt(r.index, -1); }}>◀</button>{/if}{#if r.item.value !== undefined}<span class="value" data-testid="sheet-value">{r.item.value}</span>{/if}{#if steps}<button type="button" class="step" data-testid="step-up" aria-label={sheetText("sheet.stepUp")} disabled={r.item.disabled} onclick={(e) => { e.stopPropagation(); sheet.adjustAt(r.index, 1); }}>▶</button>{/if}{#if r.item.selected !== undefined}<span class="tick" aria-hidden="true">{r.item.selected ? "✓" : ""}</span>{/if}{#if r.item.submenu}<span class="more" aria-hidden="true">›</span>{/if}
           </div>
         {/each}
         {/if}
         {#if built < rows.length}<div class="rest" data-testid="sheet-rest" aria-hidden="true" style:height={px(rest)}></div>{/if}
-        {#if rows.length === 0}<p class="empty" data-testid="sheet-empty">{t("sheet.noMatch")}</p>{/if}
+        {#if rows.length === 0}<p class="empty" data-testid="sheet-empty">{sheetText("sheet.noMatch")}</p>{/if}
       </div>
       {/if}
       <!-- Find (R4a): the highlighted item's details (docs/04 3.6) -->
