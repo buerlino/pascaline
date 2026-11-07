@@ -767,6 +767,9 @@ Digits:=40:; pc("g181-atan-1e-1000-1+i-12",'(atan(10^-1000*(1+i)))',(1/10^1000)+
 // patch 0036-atanh-atan-small-complex.patch
 // g181-atanh-1e-300-1+i-12 (precision.yaml, derived)
 Digits:=40:; pc("g181-atanh-1e-300-1+i-12",'(atanh(10^-300*(1+sqrt(-1))))',(1/10^300)+(1/10^300)*i,5/10^312+5/10^312);
+// patch 0036-atanh-atan-small-complex.patch
+// g181-atanh-1E-300-1+i-typed-12 (precision.yaml, derived)
+Digits:=40:; pc("g181-atanh-1E-300-1+i-typed-12",'(atanh((1/10^300)*(1+sqrt(-1))))',(1/10^300)+(1/10^300)*i,5/10^312+5/10^312);
 // patch 0027-atanh-small-real-exact.patch
 // g181-atanh-1e-1000-12 (precision.yaml, derived)
 Digits:=40:; pc("g181-atanh-1e-1000-12",'(atanh(10^-1000))',(1/10^1000),5/10^1012);
