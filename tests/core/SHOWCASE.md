@@ -88,7 +88,7 @@ later; a flick eval starts `lead` ms before its beat). 2026-11-07 on the selling
 3. **Blender** (owner): the screen plane, the camera keys, the song in the Video Editor from 17 s.
 
 Found on the way (no backlog line yet unless named):
-- **History rows show `\exponentialE` and `\imaginaryI` raw, in red** (clips K and s6): `app/src/render/Math.svelte`
+- **History rows show `\exponentialE` and `\imaginaryI` raw, in red** (clips K and s6; F189, package R152): `app/src/render/Math.svelte`
   passes `{ macros: ENTRY_MACROS }` to MathLive's `convertLatexToMarkup`, which replaces MathLive's own macros
   (checked in Node: `\exponentialE^{\imaginaryI\pi}` draws without the option, raw with any `macros`); the entry
   line merges them (`entry/field.ts`). Every user with an e or i in a row sees it.
