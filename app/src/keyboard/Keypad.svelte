@@ -428,7 +428,7 @@
   }
   /* a face is centred as text and mark together: half the mark's width (about 0.78 em of 0.55 em, and its margin) to the left */
   .main[data-opens="true"] {
-    translate: -0.25em 0;
+    translate: var(--mark-shift) 0;
   }
   [data-opens="true"]::after {
     content: "▾";
@@ -436,8 +436,8 @@
     left: 100%;
     top: 0;
     bottom: 0;
-    margin-left: 0.1em;
-    font-size: 0.78em;
+    margin-left: var(--mark-gap);
+    font-size: var(--mark-size);
     font-style: normal;
   }
   /* The press (R12c): the key's own text colour laid over it at once, no fade, a layer of its own so it shows over every
