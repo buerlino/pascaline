@@ -31,7 +31,7 @@
 | [A61](packages/A61.md) | What the WebView answers to `persisted()` | annabell, Sonnet | day (the Fairphone) | R96f1 | ~0.2 d |
 | [S33](packages/S33.md) | One place per pipeline rule: brief 0c against rules section 4 | sandra, Opus | day, no lane running | A75 | ~0.5 d |
 | [A76](packages/A76.md) | The release builds only what ships; the update test from the last release | annabell, Sonnet | day | the v0.1.0 tag | ~0.3 d |
-| [A82](packages/A82.md) | Store and README screenshots in the final look | annabell, Sonnet | day Sat 11-07 (the Fairphone) | R140, R146, R147, R53 | ~0.2 d |
+| [A82](packages/A82.md) | Store and README screenshots in the final look | annabell, Sonnet | day Sat 11-07 (the Fairphone) | R140, R146, R147, R53, R153–R157 | ~0.2 d |
 | [A80](packages/A80.md), [R139](packages/R139.md), [S35](packages/S35.md) | The internal sweep: scripts and variables, the app's internals, the docs (owner, 2026-11-06: today, then the folder move) | annabell Opus, ron Sonnet, sandra Opus | day, no lane running (R139 the Tab One) | A79, then in this order | ~1 d |
 | [A83](packages/A83.md) | The cheap checks fail first, before the queue and inside it (owner, 2026-11-07: A83 to A85 now, in this order) | annabell, Opus | day, no lane running | – | ~0.5 d |
 | [A84](packages/A84.md) | The audit beside the long checks; one fix round gets both lists | annabell, Opus | day, no lane running | A83 | ~0.5 d |
@@ -66,6 +66,11 @@ Milestone reviews (section 0): after R50e (with R116's gallery groups "Entry hig
 | Step | What | Agent, model | Branch | After |
 |---|---|---|---|---|
 | 539 | [R152](packages/R152.md) a history row draws e and i, never `\exponentialE` in red (F189) | ron, Sonnet | `p1/ron-historye` | – |
+| 540 | [R153](packages/R153.md) N62 turns teal; the old N62 becomes Black & White; Teal goes | ron, Opus | `p1/ron-tealn62` | – |
+| 541 | [R154](packages/R154.md) the entry outline says what the keypad will do | ron, Sonnet | `p1/ron-entryring` | R153, R151 |
+| 542 | [R155](packages/R155.md) a short dash runs round the outline while a job runs | ron, Sonnet | `p1/ron-entrysnake` | R154 |
+| 543 | [R156](packages/R156.md) key shadows, a switch in Appearance (on by default) | ron, Opus | `p1/ron-keyshadow` | R153, R151 |
+| 544 | [R157](packages/R157.md) the logo on Home's tile, and faint on an empty history | ron, Sonnet | `p1/ron-logomark` | R153, R149, R151 |
 | 536 | [R53](packages/R53.md) results mode: the keypad folds by a handle or swipe | ron, Opus | `p1/ron-results-fold` | – |
 | 537 | [R148](packages/R148.md) more room: 4 px gaps, short rows below 760 px | ron, Sonnet | `p1/ron-room` | R53 |
 | 538 | [R149](packages/R149.md) N62 + Enter rolls the credits | ron, Sonnet | `p1/ron-credits` | – |

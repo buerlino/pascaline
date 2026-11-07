@@ -35,7 +35,7 @@ The owner's other open items are in [backlog.md](backlog.md), "Needs the user". 
 - **Small packages (2026-10-14, the owner's rule).** One concern each, about a day or less, with its own reading list; placed by importance, then dependencies.
 
 ### Feel, keys and screen (milestone 4a)
-- **Owner answers of 2026-11-06 (UI, before v0.1.0):** R140–R150 and R53 as written; families N62, Teal, Solarized; ▾ marks a menu key; they rewrite the core cases they change; a colour-blindness test, no picker (R140); the credits roll, the one motion (R149). Mockup: `docs/mockups/ui-2026-11-06.html`. Would change if: the owner's look on 11-07 disagrees.
+- **Owner answers of 2026-11-06 (UI, before v0.1.0):** R140–R150 and R53 as written (families: R50); ▾ marks a menu key; they rewrite the core cases they change; a colour-blindness test, no picker (R140); the credits roll (R149). Mockup: `docs/mockups/ui-2026-11-06.html`.
 - **R41's status line at font scale 2.0 waits for a device (Opus pass 61).** Chromium's emulation puts it 35 px over 360 px at 2.0 (fine at 1.5); annabell's next device run checks it with TalkBack. Would change if: the device clips Mode or ☰ (a ron package).
 - **Owner answers of 2026-11-02 (vision; interview with sandra).** A working engineer, phone first; units and constants first; no AI in the app; marks, σ and digit groups each a setting. Full text: archive. Would change if: an outside round shows another first user.
 - **Owner answers of 2026-10-31 and 2026-11-01 (stored data, the comma, `%`):** built (R95, R100, R94, R110). Full text: archive. Would change if: two tabs side by side are wanted on purpose.
@@ -46,7 +46,7 @@ The owner's other open items are in [backlog.md](backlog.md), "Needs the user". 
 - **M4-2 (decided 2026-10-20, the owner):** the task budgets (t02 9 presses, t04 12, t10 25, t05 4), t09's two deviations, ± on Shift + `,` (R71), the unit result as its mockup (R62). Full text: archive. Your hand timing stays the gate.
 - **S8 (decided 2026-10-20, the owner): before outside round 1,** every press is counted (R70) and Android's backup is off (A23; the phone-to-phone transfer no longer carries N62's data).
 - **S6 (decided 2026-10-20, the owner; built by A11, R38a, R38b): the backup** goes out by Android's "Save to" screen and comes in by a file picker; restore checks the whole file. Full text: archive. Would change if: the Save-to screen is missing on a supported WebView.
-- **R50 (2026-10-18; 2026-11-06): themes N62, Teal, Solarized** (R140, R150; Teal's screen: Opus pass 87). Rule: docs/05 3.10. Would change if: a family goes unused for 4 weeks or the start chunk cannot hold lazy theme files.
+- **R50 (2026-10-18; owner 2026-11-07): themes N62 (teal, #529997's hue), Black & White (the old N62), Solarized**; entry outline, busy dash, key shadows, Home logo (R153–R157; `docs/mockups/n62-teal-2026-11-07.html`). Rule: docs/05 3.10. Would change if: a family goes unused for 4 weeks.
 - **Redo after ⌫ (Opus pass 44, 2026-10-20; R15c2):** Redo does not delete again (MathLive keeps no snapshot after a deletion, [#3125](https://github.com/arnog/mathlive/issues/3125)); no workaround of ours. Full text: archive.
 - **R15c Store (decided 2026-10-19, the owner; G2 item 58, device):** Shift + ᴇ (Store ▶) on an empty line after a result starts `Ans ▶`, as + − × ÷ do; built in R15c2.
 - **R15c (2026-10-17): the top cluster becomes R3; Apps, Menu and the views move to the status line.** Rule: docs/04 5.1, docs/05 3.2; built by R15c1–R15c4. Full text: archive.
