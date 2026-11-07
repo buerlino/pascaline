@@ -755,6 +755,24 @@ Digits:=40:; pc("g165-acos-cos-1e-300-12",'(acos(cos((1/10^300))))',(1/10^300),5
 // patch 0031-asin-half-integer-tie.patch
 // g165-acos-cos-neg-1e-50-12 (precision.yaml, oracle)
 Digits:=40:; pc("g165-acos-cos-neg-1e-50-12",'(acos(cos(-10^-50)))',(1/10^50),5/10^62);
+// patch 0036-atanh-atan-small-complex.patch
+// g181-atanh-1e-1000-1+i-12 (precision.yaml, derived)
+Digits:=40:; pc("g181-atanh-1e-1000-1+i-12",'(atanh(10^-1000*(1+i)))',(1/10^1000)+(1/10^1000)*i,5/10^1012+5/10^1012);
+// patch 0036-atanh-atan-small-complex.patch
+// g181-atan-1e-1000-i-12 (precision.yaml, derived)
+Digits:=40:; pc("g181-atan-1e-1000-i-12",'(atan(10^-1000*i))',(1/10^1000)*i,5/10^1012);
+// patch 0036-atanh-atan-small-complex.patch
+// g181-atan-1e-1000-1+i-12 (precision.yaml, derived)
+Digits:=40:; pc("g181-atan-1e-1000-1+i-12",'(atan(10^-1000*(1+i)))',(1/10^1000)+(1/10^1000)*i,5/10^1012+5/10^1012);
+// patch 0036-atanh-atan-small-complex.patch
+// g181-atanh-1e-300-1+i-12 (precision.yaml, derived)
+Digits:=40:; pc("g181-atanh-1e-300-1+i-12",'(atanh(10^-300*(1+sqrt(-1))))',(1/10^300)+(1/10^300)*i,5/10^312+5/10^312);
+// patch 0036-atanh-atan-small-complex.patch
+// g181-atanh-1E-300-1+i-typed-12 (precision.yaml, derived)
+Digits:=40:; pc("g181-atanh-1E-300-1+i-typed-12",'(atanh((1/10^300)*(1+sqrt(-1))))',(1/10^300)+(1/10^300)*i,5/10^312+5/10^312);
+// patch 0027-atanh-small-real-exact.patch
+// g181-atanh-1e-1000-12 (precision.yaml, derived)
+Digits:=40:; pc("g181-atanh-1e-1000-12",'(atanh(10^-1000))',(1/10^1000),5/10^1012);
 // patch 0033-pow-exp-principal-branch.patch
 // g175-sqrt-exp-4i-12 (precision.yaml, oracle)
 Digits:=40:; pc("g175-sqrt-exp-4i-12",'(sqrt(exp(4*i)))',(416146836547/10^12)-(909297426826/10^12)*i,5/10^13+5/10^13);

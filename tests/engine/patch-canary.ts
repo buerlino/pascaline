@@ -142,6 +142,10 @@ const CANARIES: [string, string, RegExp, string][] = [
   // (limit(trunc(x),x,-1,1) = -1, right 0)
   ["0035-limit-trunc-side.patch", "giac-2.1.0/src/series.cc", /direction=-1;\s*vecteur vsign\(loptab\(e,sign_floor_ceil_round_tab\)\);/, "static gen in_limit(const gen & e0,const identificateur & x,const gen & lim_point,int direction,GIAC_CONTEXT){"],
   ["0035-limit-trunc-side.patch", "giac-2.1.0/src/usual.cc", /sign_floor_ceil_round_tab_alias\[\]=\{\(alias_type\)&__sign,\(alias_type\)&__floor,\(alias_type\)&__ceil,\(alias_type\)&__round,\(alias_type\)&__sum,0\};/, "const alias_type sign_floor_ceil_round_tab_alias[]="],
+  // G181, patch 0036: complex MPFR atanh is ln((1+e)/(1-e))/2 and atan's atanasln ln((i+e)/(i-e)), which cancel -log10|e|
+  // digits for a small e (evalf(atanh(i/10^1000)) at Digits 40 was -0.5e-2000*i, evalf(atan(i/10^1000)) 0)
+  ["0036-atanh-atan-small-complex.patch", "giac-2.1.0/src/usual.cc", /return e\._REALptr->atanh\(\);\s*if \( \(e\.type==_CPLX\) && \(e\.subtype \|\| e\._CPLXptr->type==_REAL\)\)\s*return no_context_evalf\(rdiv\(ln\(rdiv\(1\+e,1-e,contextptr\),contextptr\),plus_two\)\);/, "gen atanh(const gen & e0,GIAC_CONTEXT){"],
+  ["0036-atanh-atan-small-complex.patch", "giac-2.1.0/src/usual.cc", /return plus_one_half\*cst_i\*ln\(rdiv\(cst_i\+e,cst_i-e,contextptr\),contextptr\);/, "static gen atanasln(const gen & e,GIAC_CONTEXT){"],
 ];
 
 const tar = tarball(SOURCES.giac);

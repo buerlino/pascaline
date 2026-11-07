@@ -1,0 +1,114 @@
+# Upstream: giac 2.1.0 usual.cc atanh, atan. atanh(z) = ln((1+z)/(1-z))/2 and atan's ln((i+z)/(i-z)) take the ln of 1+O(z), so for a small non-real z (exact or a complex MPFR value) the evalf cancels -log10|z| digits in both parts and a part far below the other is lost: at Digits 40 evalf(atanh(i/10^1000)) = -0.5e-2000*i (right 1e-1000*i), atanh(10^-1000*(1+i)) the same (right 1e-1000+1e-1000*i), evalf(atan(i/10^1000)) = 0 (right 1e-1000*i); the exact atanh(10^-100*i) was ln((10^200-1+2*10^100*i)/(10^200+1))/2, which cancels the same way. Now a complex MPFR z (parts MPFR or exactly 0, the larger below 1/4) is computed by its parts, s = |z|^2: atanh(z) = atanh(2x/(1+s))/2 + i*atan(2y/(1-s))/2, atan(z) = atan(2x/(1-s))/2 + i*atanh(2y/(1+s))/2, MPFR's real atanh and atan; an exact non-real z below 1/4 (its double; a part that reads 0 too) gives atanh(i*y) = i*atan(y) for a zero real part (radians), else atanh stays unevaluated, as for a real x (patch 0027). Larger z, doubles and free names keep their forms (atanh(i/2) = ln((3+4*i)/5)/2).
+# Changed by Pascaline contributors, 2026-11-07
+--- a/src/usual.cc
++++ b/src/usual.cc
+@@ -596,6 +596,8 @@ namespace giac {
+   symbolic symb_atan(const gen & e){
+     return symbolic(at_atan,e);
+   }
++  // Pascaline patch 0036 (G181): atan and atanh of a small complex MPFR value, defined beside atanh.
++  static bool atan_atanh_small_cplx(const gen & e,bool hyp,gen & res);
+   static gen atanasln(const gen & e,GIAC_CONTEXT){
+     return plus_one_half*cst_i*ln(rdiv(cst_i+e,cst_i-e,contextptr),contextptr);
+   }
+@@ -688,6 +690,17 @@ namespace giac {
+       else
+         return 200*e._REALptr->atan()/cst_pi;
+     }
++    // Pascaline patch 0036 (G181): a complex MPFR value below 1/4 in size: atanasln's ln((i+z)/(i-z)) cancels
++    // -log10|z| digits (evalf(atan(i/10^1000)) at Digits 40 was 0); atan(z) = -i*atanh(i*z) by the parts.
++    gen small_res;
++    if (atan_atanh_small_cplx(e,false,small_res)){
++      if (angle_radian(contextptr))
++	return small_res;
++      else if(angle_degree(contextptr))
++	return small_res*gen(rad2deg_d);
++      else
++	return small_res*gen(rad2grad_d);
++    }
+     if ( (e.type==_CPLX) && (e.subtype || e._CPLXptr->type==_REAL || e._CPLXptr->type==_FLOAT_)){
+       if (angle_radian(contextptr)) 
+ 	return no_context_evalf(atanasln(e,contextptr));
+@@ -3334,6 +3347,55 @@ namespace giac {
+ #endif
+   define_unary_function_ptr5( at_acosh ,alias_at_acosh,&__acosh,0,true);
+ 
++  // Pascaline patch 0036 (G181): atanh(z) = ln((1+z)/(1-z))/2 takes the ln of 1+2z+O(z^2), so for a small complex
++  // z its float value cancels -log10|z| digits in both parts, and a part far below the other is lost whole: at Digits 40
++  // evalf(atanh(i/10^1000)) was -0.5e-2000*i (right 1e-1000*i), atanh(10^-1000*(1+i)) the same (right 1e-1000+1e-1000*i).
++  // By the parts z = x+i*y, s = x^2+y^2 (|z| < 1/4, so 1-s > 0):
++  //   atanh(z) = atanh(2*x/(1+s))/2 + i*atan(2*y/(1-s))/2,  atan(z) = atan(2*x/(1-s))/2 + i*atanh(2*y/(1+s))/2,
++  // MPFR's real atanh and atan of numbers with no cancellation. e: a _CPLX whose parts are MPFR or exactly 0, the
++  // larger below 1/4 (small_cplx_lost_bits, patch 0020); an exact 0 part is an MPFR zero, so the result's zero part is
++  // one too (patch 0023). hyp: atanh, else atan (in radians).
++  static bool atan_atanh_small_cplx(const gen & e,bool hyp,gen & res){
++    int prec=0;
++    if (!small_cplx_lost_bits(e,prec))
++      return false;
++    gen x=*e._CPLXptr,y=*(e._CPLXptr+1);
++    if (x.type!=_REAL)
++      x=real_object(gen(0),prec);
++    if (y.type!=_REAL)
++      y=real_object(gen(0),prec);
++    gen s=x*x+y*y;
++    gen u=2*x/(hyp?1+s:1-s),v=2*y/(hyp?1-s:1+s);
++    if (u.type!=_REAL || v.type!=_REAL)
++      return false;
++    gen a=hyp?u._REALptr->atanh():u._REALptr->atan(),b=hyp?v._REALptr->atan():v._REALptr->atanh();
++    if (a.type!=_REAL || b.type!=_REAL)
++      return false;
++    res=gen(a/2,b/2);
++    return true;
++  }
++  // Pascaline patch 0036 (G181): an exact z below 1/4 in size (its double; a part that reads 0 too) that is not real:
++  // the exact form ln((1+z)/(1-z))/2 cancels at evalf as the float one does, and Giac had it for 10^-100*i
++  // (ln((10^200-1+2*10^100*i)/(10^200+1))/2). Real part exactly 0: atanh(i*y) = i*atan(y), in radians (an angle-mode
++  // atan would scale it); else atanh stays unevaluated, as for a real x (patch 0027), and evalf takes the parts above.
++  static bool small_exact_value(const gen & x,GIAC_CONTEXT){
++    if (x.type==_REAL || x.type==_DOUBLE_ || x.type==_FLOAT_)
++      return false;
++    if (x.type==_CPLX){
++      for (int k=0;k<2;++k){
++        int t=(x._CPLXptr+k)->type;
++        if (t==_REAL || t==_DOUBLE_ || t==_FLOAT_)
++          return false;
++      }
++    }
++    gen d=evalf_double(x,1,contextptr);
++    if (d.type==_DOUBLE_)
++      return d._DOUBLE_val*d._DOUBLE_val<0.0625;
++    if (d.type!=_CPLX || d._CPLXptr->type!=_DOUBLE_ || (d._CPLXptr+1)->type!=_DOUBLE_)
++      return false;
++    double r=d._CPLXptr->_DOUBLE_val,i=(d._CPLXptr+1)->_DOUBLE_val;
++    return r*r+i*i<0.0625;
++  }
+   // static symbolic symb_atanh(const gen & e){  return symbolic(at_atanh,e);}
+   gen atanh(const gen & e0,GIAC_CONTEXT){
+     if (e0.type==_FLOAT_){
+@@ -3358,6 +3420,12 @@ namespace giac {
+       if (is_positive(expo,contextptr))
+ 	return series(*e._SPOL1ptr,*at_atanh,0,contextptr);
+     }
++    // Pascaline patch 0036 (G181): a small complex MPFR value by its parts (atan_atanh_small_cplx), not the ln form.
++    {
++      gen small_res;
++      if (atan_atanh_small_cplx(e,true,small_res))
++        return small_res;
++    }
+ #ifdef BF2GMP_H
+     if ( e.type==_REAL || ((e.type==_CPLX) && (e.subtype || e._CPLXptr->type==_REAL)) )
+       return no_context_evalf(rdiv(ln(rdiv(1+e,1-e,contextptr),contextptr),plus_two));
+@@ -3390,6 +3458,13 @@ namespace giac {
+     // atanh keeps it unevaluated, as patch 0026 does for asinh, and evalf takes MPFR's atanh. A float x keeps today's path.
+     if (small_exact_real(e,contextptr))
+       return symbolic(at_atanh,e);
++    // Pascaline patch 0036 (G181): a small exact z that is not real (small_exact_value).
++    if (small_exact_value(e,contextptr)){
++      gen r=re(e,contextptr);
++      if (angle_radian(contextptr) && (is_exactly_zero(r) || is_exactly_zero(ratnormal(r,contextptr))))
++        return cst_i*atan(im(e,contextptr),contextptr);
++      return symbolic(at_atanh,e);
++    }
+     return rdiv(ln(rdiv(1+e,1-e,contextptr),contextptr),plus_two);
+     // return symbolic(at_atanh,e);
+   }
