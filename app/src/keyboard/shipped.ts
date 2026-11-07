@@ -6,6 +6,7 @@
 //   check      a palette cell to confirm on the device; keyboard.test.ts reads it
 //   desc       a palette cell's description for readers of the yaml; the app names cells through i18n
 //   unit_slot  the unit slot's layout record; tools/probes/unit-presses.mjs reads it (milestone 5 reads it at run time)
+//   label.alpha  where it is the letter its alpha action types (the 26 letters, R142's bytes): loadKeyboard puts it back
 // `shipped: true` tells loadKeyboard not to ask for them.
 
 const DROP = new Set(["sample", "source", "check", "desc"]);
@@ -21,7 +22,9 @@ function strip(v: unknown): unknown {
 export function shippedKeyboard(doc: unknown): unknown {
   if (doc === null || typeof doc !== "object" || Array.isArray(doc)) return doc;
   const { unit_slot: _unitSlot, templates: _templates, relations: _relations, symbols: _symbols, ...rest } = doc as Record<string, unknown>;
-  return { ...(strip(rest) as Record<string, unknown>), shipped: true };
+  const out = strip(rest) as { keys: { label: { alpha?: string }; alpha?: { type?: string } }[] };
+  for (const k of out.keys) if (k.alpha?.type === k.label.alpha) delete k.label.alpha;
+  return { ...out, shipped: true };
 }
 
 /** The palettes alone (`keyboard.yaml?palettes`): Tmpl, Shift + 6 and Shift + 9, slimmed the same way. */
