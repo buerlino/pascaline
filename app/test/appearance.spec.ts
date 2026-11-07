@@ -71,8 +71,8 @@ test.describe("the level", () => {
     await sheetKey(page, ["down", "right", "right"]); // Brightness: Light, Dark
     await expect(row(page, "brightness").getByTestId("sheet-value")).toHaveText("Dark");
     await tap(page, ["d3", "d4"]);
-    expect(await look(page)).toEqual({ family: "solarized", brightness: "dark", contrast: true, plain: true });
-    await expect.poll(() => attrs(page)).toEqual(["solarized", "dark", "high", "plain"]); // the lazy CSS is in first
+    expect(await look(page)).toEqual({ family: "teal", brightness: "dark", contrast: true, plain: true });
+    await expect.poll(() => attrs(page)).toEqual(["teal", "dark", "high", "plain"]); // the lazy CSS is in first
   });
 
   test("by touch: a tap on Theme lists the three with their dots; a pick keeps the sheet open and the page follows", async ({ page }) => {
@@ -80,7 +80,7 @@ test.describe("the level", () => {
     await row(page, "appearance").tap();
     await row(page, "theme").locator(".label").tap();
     await expect(title(page)).toHaveText("Settings › Appearance › Theme");
-    await expect(sheet(page).locator("[data-testid=row-dots]")).toHaveCount(5);
+    await expect(sheet(page).locator("[data-testid=row-dots]")).toHaveCount(3);
     await row(page, "teal").tap();
     await expect(sheet(page)).toBeVisible();
     await expect(root(page)).toHaveAttribute("data-family", "teal");
