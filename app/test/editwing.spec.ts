@@ -122,13 +122,45 @@ test("Store: Shift + ᴇ on an empty line after a result starts Ans ▶ (G2 item
   expect(await entryValue(page)).toBe("9\\blacktriangleright");
 });
 
-test("the round pad: a hub ring at the centre; a drag from the hub steps the cursor, a tap on it does nothing; a drag from ▲ steps too", async ({ page }) => {
+/** The drawn pad and its grid area (the four zones' union) as boxes. */
+async function padBoxes(page: import("@playwright/test").Page) {
+  return page.evaluate(() => {
+    const r = (el: Element) => el.getBoundingClientRect();
+    const pad = r(document.querySelector("[data-trackpad]") as Element);
+    const zones = ["up", "down", "left", "right"].map((id) => r(document.querySelector(`[data-key="${id}"]`) as Element));
+    const area = {
+      left: Math.min(...zones.map((z) => z.left)),
+      right: Math.max(...zones.map((z) => z.right)),
+      top: Math.min(...zones.map((z) => z.top)),
+      bottom: Math.max(...zones.map((z) => z.bottom)),
+    };
+    return { w: pad.width, h: pad.height, cx: pad.left + pad.width / 2, cy: pad.top + pad.height / 2, ax: (area.left + area.right) / 2, ay: (area.top + area.bottom) / 2 };
+  });
+}
+
+for (const [width, height] of [
+  [360, 740],
+  [412, 839],
+  [412, 640], // the short-row layout (max-height: 700px)
+] as const)
+  test(`the round pad is a true circle centred in its area, with no hub ring (${width} × ${height})`, async ({ page }) => {
+    await page.setViewportSize({ width, height });
+    await open(page);
+    const pad = page.locator("[data-trackpad]").first();
+    expect(await pad.evaluate((el) => getComputedStyle(el).borderTopLeftRadius)).toBe("50%");
+    const b = await padBoxes(page);
+    expect(Math.abs(b.w - b.h)).toBeLessThanOrEqual(1);
+    expect(Math.abs(b.cx - b.ax)).toBeLessThanOrEqual(1);
+    expect(Math.abs(b.cy - b.ay)).toBeLessThanOrEqual(1);
+    const hub = page.getByTestId("pad-hub");
+    expect(await hub.evaluate((el) => getComputedStyle(el).borderTopStyle)).toBe("none");
+    expect(await hub.evaluate((el) => parseFloat(getComputedStyle(el).borderTopWidth))).toBe(0);
+  });
+
+test("the round pad: a drag from the hub steps the cursor, a tap on it does nothing; a drag from ▲ steps too", async ({ page }) => {
   await open(page);
-  const pad = page.locator("[data-trackpad]").first();
-  expect(await pad.evaluate((el) => getComputedStyle(el).borderTopLeftRadius)).toBe("50%");
   const hub = page.getByTestId("pad-hub");
-  await expect(hub).toBeVisible();
-  expect(await hub.evaluate((el) => getComputedStyle(el).borderTopStyle)).toBe("dashed");
+  await expect(hub).toHaveCount(1);
   await tap(page, ["d1", "d2", "d3", "d4"]);
   // a tap on the hub: no step
   const t = await touch(page, '[data-testid="pad-hub"]');
@@ -143,4 +175,20 @@ test("the round pad: a hub ring at the centre; a drag from the hub steps the cur
   await drag(page, "up", 13, 0);
   await tap(page, ["d9"]);
   expect(await entryValue(page)).toBe("1230495");
+});
+
+test("High contrast: the arrow zones have no outline, the round pad has one, every other key keeps its", async ({ page }) => {
+  await page.emulateMedia({ contrast: "more" }); // the first start turns High contrast on (R50e)
+  await open(page);
+  await expect(page.locator("html")).toHaveAttribute("data-contrast", "high");
+  await expect.poll(() => page.evaluate(() => getComputedStyle(document.querySelector('[data-trackpad]') as Element).outlineStyle)).toBe("solid");
+  const styles = await page.evaluate(() =>
+    [...document.querySelectorAll<HTMLElement>(".pad .key")].map((k) => ({
+      id: k.dataset["key"] ?? "",
+      zone: k.dataset["zone"] === "true",
+      style: getComputedStyle(k).outlineStyle,
+    })),
+  );
+  expect(styles.filter((s) => s.zone).map((s) => s.id).sort()).toEqual(["down", "left", "right", "up"]);
+  for (const s of styles) expect(s.style, s.id).toBe(s.zone ? "none" : "solid");
 });

@@ -50,12 +50,14 @@
 :root[data-keys="plain"] .key[data-dead="true"] .main {
   color: var(--key-text-dead);
 }
-:root[data-contrast="high"] .key:not([aria-pressed="true"]):not([data-locked="true"]):not(:focus-visible),
+:root[data-contrast="high"] .key:not([aria-pressed="true"]):not([data-locked="true"]):not([data-zone="true"]):not(:focus-visible),
 :root[data-contrast="high"] .trackpad:not(:focus-visible) {
   outline-width: 1.5px;
   outline-style: solid;
   outline-color: var(--line);
   outline-offset: -1.5px;
 }
+/* the four arrow zones are transparent rectangles over the round pad: no outline of their own, so the pad (the rule above)
+   reads as one round key (R141) */
 /* an armed Shift/Alpha fills with its colour and has no outline (R140); only a locked one keeps Keypad's own 3px outline,
    so a lock still differs from a press */

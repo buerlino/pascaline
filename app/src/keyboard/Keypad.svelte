@@ -115,6 +115,8 @@
     const ends = keys.map((k) => gridPlace(keyboard, k).start + gridPlace(keyboard, k).span);
     return { rows: `${Math.min(...rows) + 1} / ${Math.max(...rows) + 2}`, cols: `${Math.min(...starts)} / ${Math.max(...ends)}` };
   })();
+  /** The pad's width in columns, for the circle's diameter (R141). */
+  const padSpan = padArea ? Number(padArea.cols.split(" / ")[1]) - Number(padArea.cols.split(" / ")[0]) : 0;
 
   // Any other key fires when the finger lifts: a tap is the key in the current layer, a flick up or down its shift or
   // letter layer (FlickTracker: distance only, no hold time), a flick slid back to the middle nothing. A sideways slip
@@ -293,6 +295,8 @@
   class:shifted={shift}
   class:alphaed={alpha}
   style:grid-template-columns={`repeat(${keyboard.units}, 1fr)`}
+  style:--pad-units={keyboard.units}
+  style:--pad-span={padSpan}
   bind:this={padEl}
   onpointerdown={down}
   onpointermove={move}
@@ -464,9 +468,20 @@
       min-height: var(--nav-h-short);
     }
   }
-  /* the trackpad (K1): one surface under the four arrow keys, which stay as its tap zones; drawn round, the G2's shape
-     (R15c, R3), with a dashed hub ring at its centre where a drag may start (a tap there does nothing) */
+  /* the trackpad (K1): one surface under the four arrow keys, which stay as its tap zones; drawn as a true circle (R15c, R3,
+     R141) whose diameter is the smaller side of its grid area, centred in it. The area's width is two columns, worked out
+     from the pad's own width (a container, so cqw is the pad's content box); its height is the rows'. The hub at the centre
+     is the same-sized invisible drag surface: a drag may start there, a tap on it does nothing. */
+  .pad {
+    container-type: inline-size;
+  }
   .trackpad {
+    --area-w: calc(
+      (100cqw - (var(--pad-units) - 1) * var(--sp-15)) / var(--pad-units) * var(--pad-span) + (var(--pad-span) - 1) * var(--sp-15)
+    );
+    place-self: center;
+    height: min(100%, var(--area-w));
+    aspect-ratio: 1;
     border-radius: 50%;
     background: var(--key-ctl);
   }
@@ -476,8 +491,6 @@
     place-self: center;
     width: 28%;
     height: 30%;
-    box-sizing: border-box;
-    border: var(--stroke-mid) dashed var(--key-muted);
     border-radius: 50%;
   }
   .key[data-zone="true"] {
