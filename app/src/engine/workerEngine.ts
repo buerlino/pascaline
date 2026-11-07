@@ -2,7 +2,7 @@
 // MathEngine backed by giac.worker.ts. State that must survive a Cancel or a relaunch (variable and function
 // definitions) is logged here, outside the worker, stored, and replayed into a fresh worker (D2; docs/04 section 6.2).
 import type { Request, Response } from "./protocol.ts";
-import { applyDefChanges, replayOrder, validDefs, type DefChange, type DefEntry } from "./defs.ts";
+import { applyDefChanges, validDefs, type DefChange, type DefEntry } from "./defs.ts";
 import {
   EngineCancelled,
   EngineCrashError,
@@ -23,6 +23,7 @@ import {
 import type { Quantity, UnitError, UnitJob } from "../units/types.ts";
 import type { ConstTable } from "./constUnc.ts";
 import type { ChipFactsTable } from "./chipFacts.ts";
+import { enEngine } from "../i18n/enEngine.ts";
 
 /** The part of a Worker that WorkerEngine uses (lets tests drive it without a browser). */
 export interface WorkerLike {
@@ -53,6 +54,13 @@ export interface WorkerEngineOptions {
   defs?: DefsStore;
 }
 
+/** G185 (F62): a Home or unit-view call that has not answered this long after the engine was ready is stopped: the
+ *  worker is restarted on Cancel's path and the call answers Home's time-out. Some Giac calls never look at the
+ *  interrupt (MPFR reducing sin(cosh(10!))'s argument), so neither Home's step budget nor Giac's clock stops them. The
+ *  larger of 4 s and 8 × the slowest Home Enter that finishes (tools/probes/home-slowest.ts on the 8× fast clock: 228 ms,
+ *  so 1.83 s on the Tab One); Opus pass 86, decisions.md "Time limits". Kept here, not in homeEval.ts (start chunk). */
+export const HOME_WATCHDOG_MS = 4000;
+
 /** How long the first calls wait for the stored definitions before the engine starts without them (a blocked store). */
 export const DEFS_LOAD_TIMEOUT_MS = 3000;
 
@@ -62,14 +70,17 @@ type RequestBody = Request extends infer R ? (R extends { id: number } ? Omit<R,
 /** Vite's BASE_URL made absolute against the page: with `base: "./"` a relative base would
  *  otherwise resolve against the worker script's own folder (assets/). */
 function defaultBaseUrl(): string {
-  const env = (import.meta as ImportMeta & { env?: { BASE_URL?: string } }).env;
-  const base = env?.BASE_URL ?? "/";
+  const base = import.meta.env?.BASE_URL ?? "/";
   return typeof location === "undefined" ? base : new URL(base, location.href).href;
 }
 
 function defaultWorker(): WorkerLike {
   return new Worker(new URL("./giac.worker.ts", import.meta.url), { type: "module" }) as unknown as WorkerLike;
 }
+
+/** Home's time-out result (homeEval.ts `failed` with Giac's interrupt): the row shows `error.timeout`. */
+const timedOut = (text = enEngine["error.timeout"]): HomeResult =>
+  ({ ok: false, display: text, path: "exact", approximate: true, exactMs: 0, totalMs: HOME_WATCHDOG_MS, error: "timeout", full: text, facts: { exact: false, reliableDigits: null } });
 
 export class WorkerEngine implements MathEngine {
   private worker!: WorkerLike;
@@ -208,52 +219,47 @@ export class WorkerEngine implements MathEngine {
   }
 
   async home(input: string, settings: HomeSettings, consts?: ConstTable, chips?: ChipFactsTable): Promise<HomeResult> {
-    const r = await this.call({ type: "home", input, settings, ...(consts ? { consts } : {}), ...(chips ? { chips } : {}) });
-    if (r.type !== "home") throw new Error(`unexpected ${r.type}`);
+    const r = await this.ask({ type: "home", input, settings, ...(consts ? { consts } : {}), ...(chips ? { chips } : {}) }, timedOut());
     this.keep(r.defs);
     return r.result;
   }
 
   async cas(input: string, settings: CasSettings): Promise<CasResult> {
-    const r = await this.call({ type: "cas", input, settings });
-    if (r.type !== "cas") throw new Error(`unexpected ${r.type}`);
+    const r = await this.ask({ type: "cas", input, settings });
     this.keep(r.defs);
     return r.result;
   }
 
   async solve(req: SolveRequest, settings: HomeSettings): Promise<SolveOutcome> {
-    const r = await this.call({ type: "solve", req, settings });
-    if (r.type !== "solve") throw new Error(`unexpected ${r.type}`);
-    return r.result;
+    return (await this.ask({ type: "solve", req, settings })).result;
   }
 
   async unknowns(equations: string[]): Promise<string[]> {
-    const r = await this.call({ type: "unknowns", equations });
-    if (r.type !== "unknowns") throw new Error(`unexpected ${r.type}`);
-    return r.result;
+    return (await this.ask({ type: "unknowns", equations })).result;
   }
 
   async analyze(req: AnalysisRequest, settings: HomeSettings): Promise<AnalysisResult> {
-    const r = await this.call({ type: "analyze", req, settings });
-    if (r.type !== "analyze") throw new Error(`unexpected ${r.type}`);
-    return r.result;
+    return (await this.ask({ type: "analyze", req, settings })).result;
   }
 
   async table(req: TableRequest, settings: HomeSettings): Promise<HomeResult[][]> {
-    const r = await this.call({ type: "table", req, settings });
-    if (r.type !== "table") throw new Error(`unexpected ${r.type}`);
-    return r.result;
+    return (await this.ask({ type: "table", req, settings })).result;
   }
 
   async units(job: UnitJob, settings: HomeSettings): Promise<Quantity | UnitError> {
-    const r = await this.call({ type: "units", job, settings });
-    if (r.type !== "units") throw new Error(`unexpected ${r.type}`);
-    return r.result;
+    return (await this.ask({ type: "units", job, settings }, { error: "engine", detail: "timeout" })).result;
+  }
+
+  /** A call whose answer has the type `want` (the request's own but for eval's "result"). `late`: the result it gives
+   *  when the watchdog stops it (G185, post). */
+  private async ask<T extends RequestBody, W extends string = T["type"]>(body: T, late?: HomeResult | UnitError, want = body.type as W): Promise<Extract<Response, { type: W }>> {
+    const r = await this.call(body, late && ({ id: 0, type: body.type, result: late, defs: [] } as Response));
+    if (r.type !== want) throw new Error(`unexpected ${r.type}`);
+    return r as Extract<Response, { type: W }>;
   }
 
   async eval(input: string): Promise<EvalResult> {
-    const r = await this.call({ type: "eval", input });
-    if (r.type !== "result") throw new Error(`unexpected ${r.type}`);
+    const r = await this.ask({ type: "eval", input }, undefined, "result");
     this.keep(r.defs);
     return { output: r.output, ok: r.ok, engineMs: r.engineMs };
   }
@@ -274,11 +280,6 @@ export class WorkerEngine implements MathEngine {
   async definitions(): Promise<readonly DefEntry[]> {
     await this.gate;
     return this.stored();
-  }
-
-  /** Commands replayed into a fresh worker, in replay order (for tests and diagnostics). */
-  get replayCommands(): readonly string[] {
-    return replayOrder(this.log).flatMap((e) => e.cmds);
   }
 
   private stop(err: Error): void {
@@ -336,21 +337,27 @@ export class WorkerEngine implements MathEngine {
 
   /** A request, posted once the stored definitions have gone to the worker (at once when they have). Public for code
    *  that loads later (R59, calc/library.ts). */
-  call(body: RequestBody): Promise<Response> {
-    if (this.gateOpen) return this.post(body);
+  call(body: RequestBody, late?: Response): Promise<Response> {
+    if (this.gateOpen) return this.post(body, late);
     const gen = this.generation;
     return this.gate.then(() => {
       if (gen !== this.generation) throw this.stopError;
-      return this.post(body);
+      return this.post(body, late);
     });
   }
 
-  /** A request, posted now (init, and the stored definitions themselves). */
-  private post(body: RequestBody): Promise<Response> {
+  /** A request, posted now (init, and the stored definitions themselves). G185: with `late` (Home and the unit view) it is
+   *  under the watchdog, counted from the engine being ready (its start and the replay are not the call's; a call queued
+   *  behind another job counts from then too): at HOME_WATCHDOG_MS the call answers `late` and the worker restarts as on
+   *  Cancel. A timer whose call has answered, or was ended by a Cancel or a crash (pending emptied), finds it gone and does
+   *  nothing; so a new Enter, which the session sends only once the last one answered (session.busy), meets no old limit. */
+  private post(body: RequestBody, late?: Response): Promise<Response> {
     const id = this.nextId++;
     return new Promise<Response>((resolve, reject) => {
       this.pending.set(id, { resolve, reject });
       this.worker.postMessage({ ...body, id } as Request);
+      if (late)
+        this.readyPromise.then(() => setTimeout(() => this.pending.delete(id) && (resolve(late), this.cancel()), HOME_WATCHDOG_MS), () => {});
     });
   }
 }
