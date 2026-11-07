@@ -1,33 +1,18 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Plain keys and High contrast (R50d). Lazy: applyTheme loads it with the switch, so the start chunk does not carry it.
-   Plain keys: bold always means Shift, italic always means Alpha; weight and style only, never a colour. The two
-   exceptions keep theirs: the ⚠ mark and error text (principle 3), and the plot curves (not touched here). */
+   Plain keys turns the colour off and changes nothing else (R142): the meaning stays in position (Shift top left, the
+   letter bottom left) and in the italic letter, which every mode has (Keypad.svelte). The two exceptions keep their
+   colour: the ⚠ mark and error text (principle 3), and the plot curves (not touched here). */
 :root[data-keys="plain"] .shiftlegend,
 :root[data-keys="plain"] .alphalegend,
 :root[data-keys="plain"] .shifted .main,
 :root[data-keys="plain"] .alphaed .main {
   color: var(--key-text);
 }
-:root[data-keys="plain"] .shiftlegend,
-:root[data-keys="plain"] .shifted .main,
-:root[data-keys="plain"] .sheet .n,
-:root[data-keys="plain"] .bubble {
-  font-weight: 700;
-}
-:root[data-keys="plain"] .alphalegend,
-:root[data-keys="plain"] .alphaed .main {
-  font-style: italic;
-  font-family: "STIX Two Math", "Cambria Math", "Times New Roman", serif;
-}
-/* the alpha flick bubble is italic, the shift one bold */
+/* the flick bubble keeps one colour in both layers */
 :root[data-keys="plain"] .bubble {
   color: var(--text);
   border-color: var(--text);
-}
-:root[data-keys="plain"] .bubble[data-dir="down"] {
-  font-weight: 400;
-  font-style: italic;
-  font-family: "STIX Two Math", "Cambria Math", "Times New Roman", serif;
 }
 :root[data-keys="plain"] .bubble[data-none="true"] {
   color: var(--text-dead);
@@ -50,12 +35,14 @@
 :root[data-keys="plain"] .key[data-dead="true"] .main {
   color: var(--key-text-dead);
 }
-:root[data-contrast="high"] .key:not([aria-pressed="true"]):not([data-locked="true"]):not(:focus-visible),
+:root[data-contrast="high"] .key:not([aria-pressed="true"]):not([data-locked="true"]):not([data-zone="true"]):not(:focus-visible),
 :root[data-contrast="high"] .trackpad:not(:focus-visible) {
   outline-width: 1.5px;
   outline-style: solid;
   outline-color: var(--line);
   outline-offset: -1.5px;
 }
+/* the four arrow zones are transparent rectangles over the round pad: no outline of their own, so the pad (the rule above)
+   reads as one round key (R141) */
 /* an armed Shift/Alpha fills with its colour and has no outline (R140); only a locked one keeps Keypad's own 3px outline,
    so a lock still differs from a press */

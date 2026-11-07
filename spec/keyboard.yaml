@@ -53,7 +53,7 @@
 #     steps in two dimensions, one step per 12 px with a haptic tick, through the same actions as the arrow keys
 #     (entry line, Plot, Num, Symb lists). A touch that makes no full step is a tap on its zone: one step, in the
 #     current Shift state. Steps fire while dragging, a tap when the finger lifts. The surface is drawn round (R15c),
-#     with a dashed hub ring at its centre: a drag may start there; a tap on it does nothing.
+#     as a circle with no drawn hub (R141): a drag may start at its centre; a tap there does nothing.
 #   Flicks (R9, P7 points 2 and 3): every other key fires when the finger lifts. A slide of 20 px up or down from
 #     the touch point (mostly vertical) arms a flick: up = the key's `shift` layer, down = its `alpha` layer (the
 #     capital; in the CAS view the lower case, R58), whatever Shift and Alpha are set to. Distance alone decides: no hold time and no dwell, so one fast
@@ -75,8 +75,8 @@ row_columns: { 6: 5, 7: 5, 8: 5, 9: 5 }
 
 keys:
   # ---- rows 0-2: the upper cluster, R3 (decisions.md "R15c", chosen by the owner 2026-10-17; built in R15c2). Three bands
-  # of two columns: the free keys U1-U6 (`user: true`, all empty, set from Find, R4b), the round pad (one drag surface with
-  # a dashed hub, no OK; Keypad.svelte) and the editing wing, read in pairs level with the pad, each pair on one layer
+  # of two columns: the free keys U1-U6 (`user: true`, all empty, set from Find, R4b), the round pad (a circle, no drawn hub, no OK; a drag from
+  # anywhere on it, the centre too, steps the cursor, a tap at the centre does nothing; Keypad.svelte) and the editing wing, read in pairs level with the pad, each pair on one layer
   # (R146, S25's K1, owner 2026-11-06): Help | Esc, Undo | Redo, Copy | Paste on the tap; Settings | Clear, ⇤ | ⇥, ⇤□ | □⇥
   # on Shift (a flick up reaches each). Apps, Menu and the views are on the status line (R15c1); Mode is on its chips;
   # results mode is R53's handle and the swipe on the entry line, so there is no View key. There is no Cancel key: Esc

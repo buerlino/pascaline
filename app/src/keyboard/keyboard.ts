@@ -237,6 +237,8 @@ export function loadKeyboard(doc: unknown): Keyboard {
       const a = item[layer];
       if (a !== undefined) actions[layer] = parseAction(a, `${where} ${layer}`);
     }
+    const typed = actions.alpha;
+    if (shipped && typed?.kind === "type" && label.alpha === undefined) label.alpha = typed.text; // (shipped.ts left it out)
     if (!label.primary || !actions.primary) throw new KeyboardSpecError(`${where}: needs a primary label and action`);
     for (const layer of ["shift", "alpha"] as const) {
       const a = actions[layer];

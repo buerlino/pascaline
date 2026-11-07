@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// R50d: Plain keys (bold = Shift, italic = Alpha, colour exceptions kept) and High contrast (outline round the keys).
+// R50d, R142: Plain keys (colour only, the colour exceptions kept) and High contrast (outline round the keys).
 import { expect, test, type Page } from "@playwright/test";
 import { open, tap } from "./helpers.ts";
 
@@ -18,21 +18,19 @@ const style = (page: Page, sel: string): Promise<{ w: string; s: string; c: stri
     return { w: c.fontWeight, s: c.fontStyle, c: c.color, o: c.outlineStyle === "solid" ? c.outlineWidth : "none" };
   });
 
-test("Plain keys: bold is Shift, italic is Alpha; neither switch changes nothing", async ({ page }) => {
+test("Plain keys changes colour only: the legends keep their weight and style, a letter is italic in both modes (R142)", async ({ page }) => {
   await open(page);
-  const before = [await style(page, '[data-key="x"] .shiftlegend'), await style(page, '[data-key="x"] .alphalegend')];
-  expect(before.map((b) => [b.w, b.s])).toEqual([["400", "normal"], ["400", "normal"]]);
+  const look = async () => [await style(page, '[data-key="x"] .shiftlegend'), await style(page, '[data-key="x"] .alphalegend')];
+  const before = await look();
+  expect(before.map((b) => [b.w, b.s])).toEqual([["400", "italic"], ["400", "italic"]]); // x's shift legend is y, its letter D
   await set(page, "plain", "normal");
   const text = await page.evaluate(() => getComputedStyle(document.body).color);
-  const sl = await style(page, '[data-key="x"] .shiftlegend');
-  expect(sl.w).toBe("700");
-  expect(sl.c).toBe(text);
-  const al = await style(page, '[data-key="x"] .alphalegend');
-  expect(al.s).toBe("italic");
-  expect(al.c).toBe(text);
+  const after = await look();
+  expect(after.map((b) => [b.w, b.s])).toEqual([["400", "italic"], ["400", "italic"]]);
+  expect(after.every((b) => b.c === text)).toBe(true);
   await tap(page, ["shift"]);
   const face = await style(page, '[data-key="x"] .main');
-  expect(face.w).toBe("700");
+  expect([face.w, face.s]).toEqual(["400", "italic"]);
   expect(face.c).toBe(text);
   await tap(page, ["alpha"]);
   await tap(page, ["alpha"]);
@@ -52,7 +50,7 @@ const token = (page: Page, name: string): Promise<string> =>
     return c;
   }, name);
 
-test("Plain keys: the ⚠ mark and error text keep their colour; a sheet number is bold in the text colour", async ({ page }) => {
+test("Plain keys: the ⚠ mark and error text keep their colour; a sheet number is upright, not bold, in the text colour", async ({ page }) => {
   await open(page, "");
   await page.waitForFunction(() => window.n62.session.engineState === "ready", undefined, { timeout: 20_000 });
   await set(page, "plain", "normal");
@@ -72,7 +70,7 @@ test("Plain keys: the ⚠ mark and error text keep their colour; a sheet number 
   });
   await expect(page.getByTestId("menu")).toBeVisible();
   const n = await style(page, '[data-testid="menu"] .n');
-  expect(n.w).toBe("700");
+  expect(n.w).toBe("400");
   expect(n.c).toBe(text);
 });
 
