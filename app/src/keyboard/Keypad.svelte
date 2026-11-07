@@ -6,6 +6,7 @@
   import { fitLegends } from "./fit.ts";
   import { keyNames, loadKeyNames } from "./keyNamesLoader.svelte.ts";
   import { actionFor, gridPlace, keyboard, labelFor, type Key, type Layer } from "./keyboard.ts";
+  import { opensSheet } from "./opens.ts";
   import { typesVariable, varLayers } from "./variable.ts";
   import { touchKey, touchPresses } from "../state/pressCount.ts";
   import { sheetChunk } from "../views/sheetView.svelte.ts";
@@ -61,6 +62,7 @@
     legend(labelFor(k, shift, alpha, cas) || k.label.primary || "");
   const hint = (k: Key): string => (shift && !alpha) || !k.label.shift ? "" : legend(k.label.shift);
   const alphaHint = (k: Key): string => (alpha || !k.label.alpha ? "" : k.label.alpha);
+  // R143: a legend whose layer opens a sheet carries the mark ▾ (CSS, on data-opens); the letter line never does
   // R142: a legend is italic, in every mode, exactly when its action types one letter (a variable, ISO 80000-2; variable.ts):
   // the key says which layers type one (data-v), the CSS picks the face or legend that shows that layer
   /** Rows with a letter on some key reserve the letter line on every key, so the faces of a row stay level. The upper
@@ -68,12 +70,14 @@
   const letterRows = new Set(keyboard.keys.filter((k) => k.label.alpha).map((k) => k.row));
   const locked = (k: Key): boolean => (k.id === "alpha" && alphaLock) || (k.id === "shift" && shiftLock);
 
+  /** What a tap on the key does in the current layer. */
+  const act = (k: Key) => actionFor(k, shift, alpha, false, cas);
   /** A key that does nothing in the current layer (a key we don't have yet, or a layer it has no function in). */
   const dead = (k: Key): boolean => {
     if (sheet) return sheetChunk.keys?.sheetKey(k, sheet.filter).kind === "none"; // (not drawn dead before the sheet's code is in)
     const p = k.actions.primary;
     if (p?.kind === "special" && (p.name === "shift" || p.name === "alpha")) return false; // the modifiers work in every layer
-    const a = actionFor(k, shift, alpha, false, cas);
+    const a = act(k);
     return !a || (a.kind === "special" && a.name === "none") || (app && a.kind === "insert" && a.units === true);
   };
 
@@ -333,8 +337,8 @@
       data-pad={key.pad}
       data-v={varLayers(key)}
     >
-      <span class="shiftlegend" data-fit="legend">{hint(key)}</span>
-      <span class="main" data-fit="face">{face(key)}</span>
+      <span class="shiftlegend" data-fit="legend" data-opens={opensSheet(key.actions.shift) || undefined}>{hint(key)}</span>
+      <span class="main" data-fit="face" data-opens={opensSheet(act(key)) || undefined}>{face(key)}</span>
       {#if lettered}<span class="alphalegend" data-fit="legend">{alphaHint(key)}</span>{/if}
     </button>
   {/each}
@@ -414,6 +418,19 @@
     font-style: italic;
     font-family: KaTeX_Math, "STIX Two Text", "Times New Roman", "Times", serif;
     font-weight: 400;
+  }
+  /* R143 (owner, 2026-11-06): a legend whose layer opens a menu or grid instead of typing ends in ▾, the sign the status
+     line's place name uses for "opens a list". In the legend's own colour (so Plain keys and every family keep it), the
+     same everywhere. It hangs after the text out of the flow (absolute, at its static position, in the key's side padding),
+     so the text keeps its place: fit.ts counts it, and a face is shifted left by half of it to stay centred as one unit. */
+  .main[data-opens="true"] {
+    translate: var(--mark-shift) 0;
+  }
+  [data-opens="true"]:not(:empty)::after {
+    content: "▾";
+    position: absolute;
+    margin-left: var(--mark-gap);
+    font-size: var(--mark-size);
   }
   /* The press (R12c): the key's own text colour laid over it at once, no fade, a layer of its own so it shows over every
      background, Plain keys' and High contrast's too. It is the only motion in the app. */

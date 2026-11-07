@@ -227,8 +227,9 @@ test.describe("at 360 × 740", () => {
     });
 });
 
-// R146: Shift + Help's legend ("Settings") fits its cluster key at the legend size: fitLegends leaves it unshrunk (no
-// inline font size) at 360 and 412 px wide. With Shift on the face "Settings" is shrunk to fit (measured 11.5 px at 360,
+// R146: Shift + Help's legend ("Settings") fits its cluster key at the legend size at 360 and 412 px wide; R143: with the
+// menu mark ▾ after it (out of the flow, inside the key's width: a cluster key has no padding to spare) it shrinks by at most a pixel (10 px at 360, the legend's 11 px
+// at 412) and the mark ends inside the key. With Shift on the face "Settings" is shrunk to fit (measured 11.5 px at 360,
 // 13.9 px at 412, against 15 px for its neighbours; the report's decision item), never cut.
 for (const width of [360, 412])
   test(`R146: the Settings legend on Help fits at the legend size at ${width} px; Shift on, the face is not cut`, async ({ page }) => {
@@ -238,11 +239,15 @@ for (const width of [360, 412])
     const fits = (sel: string) =>
       help.evaluate((key, s) => {
         const el = key.querySelector<HTMLElement>(s);
-        const cs = getComputedStyle(key);
-        const inner = key.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
-        return { text: el?.textContent?.trim(), shrunk: el?.style.fontSize !== "", cut: (el?.scrollWidth ?? 0) > inner + 0.5 };
+        const k = key.getBoundingClientRect();
+        const r = el?.getBoundingClientRect();
+        return {
+          text: el?.textContent?.trim(), px: Math.round(parseFloat(el ? getComputedStyle(el).fontSize : "0")),
+          cut: r ? r.right + 0.55 * parseFloat(getComputedStyle(el!).fontSize) > k.right + 0.5 : true, // (the mark hangs after the text, about 0.55 em)
+        };
       }, sel);
-    expect(await fits(".shiftlegend")).toEqual({ text: "Settings", shrunk: false, cut: false });
+    expect(await fits(".shiftlegend")).toMatchObject({ text: "Settings", cut: false });
+    expect((await fits(".shiftlegend")).px).toBeGreaterThanOrEqual(10);
     await tap(page, ["shift"]);
     expect(await fits('[data-fit="face"]')).toMatchObject({ text: "Settings", cut: false });
   });
