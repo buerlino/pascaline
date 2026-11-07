@@ -574,8 +574,14 @@ export function homeEval(
     const rational = exact !== undefined && facts.exact && b.value !== undefined && isZero(b.value.im) && plainRational(exact);
     return done({ ok: true, ...rest, facts: why ? { ...facts, why } : facts, ...(exact !== undefined ? { exact } : {}), ...(rational ? { rational } : {}), path, approximate, full });
   };
-  const failed = (display: string, path: HomePath, exact?: string): HomeResult =>
-    done({ ok: false, display, ...(exact !== undefined ? { exact } : {}), path, approximate: true, facts: { exact: false, reliableDigits: null } });
+  // G184 (F70): Giac's interrupt text (its budget or clock stopped the step) is a time-out, on every path that fails with
+  // it (the float path, atDouble, the checks after them): the time-limit message, never Giac's text as an engine error.
+  const failed = (text: string, path: HomePath, exact?: string): HomeResult => {
+    const stop = isTimeout(text);
+    const display = stop ? enEngine["error.timeout"] : text;
+    const r = done({ ok: false, display, ...(exact !== undefined ? { exact } : {}), path, approximate: true, facts: { exact: false, reliableDigits: null } });
+    return stop ? { ...r, error: "timeout" } : r;
+  };
   const refuse = (code: Refusal, path: HomePath): HomeResult => ({ ...failed(enEngine[`error.${code}`], path), error: code, approximate: false });
 
   const viaFloat = (path: HomePath, exact?: string): HomeResult => {
