@@ -436,8 +436,7 @@ const shots: Shot[] = [
   ...padShots(),
   ...unitFindShots(),
   ...unitResultShots(),
-  ...lookShots(someHistory),
-  ...menuMarkShots(),
+  ...lookShots(someHistory), ...menuMarkShots(),
   ...entryShots(),
   {
     id: "home-tmpl",
