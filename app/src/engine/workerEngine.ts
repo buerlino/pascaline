@@ -2,7 +2,7 @@
 // MathEngine backed by giac.worker.ts. State that must survive a Cancel or a relaunch (variable and function
 // definitions) is logged here, outside the worker, stored, and replayed into a fresh worker (D2; docs/04 section 6.2).
 import type { Request, Response } from "./protocol.ts";
-import { applyDefChanges, replayOrder, validDefs, type DefChange, type DefEntry } from "./defs.ts";
+import { applyDefChanges, validDefs, type DefChange, type DefEntry } from "./defs.ts";
 import {
   EngineCancelled,
   EngineCrashError,
@@ -70,8 +70,7 @@ type RequestBody = Request extends infer R ? (R extends { id: number } ? Omit<R,
 /** Vite's BASE_URL made absolute against the page: with `base: "./"` a relative base would
  *  otherwise resolve against the worker script's own folder (assets/). */
 function defaultBaseUrl(): string {
-  const env = (import.meta as ImportMeta & { env?: { BASE_URL?: string } }).env;
-  const base = env?.BASE_URL ?? "/";
+  const base = import.meta.env?.BASE_URL ?? "/";
   return typeof location === "undefined" ? base : new URL(base, location.href).href;
 }
 
@@ -80,10 +79,8 @@ function defaultWorker(): WorkerLike {
 }
 
 /** Home's time-out result (homeEval.ts `failed` with Giac's interrupt): the row shows `error.timeout`. */
-function timedOut(): HomeResult {
-  const text = enEngine["error.timeout"];
-  return { ok: false, display: text, path: "exact", approximate: true, exactMs: 0, totalMs: HOME_WATCHDOG_MS, error: "timeout", full: text, facts: { exact: false, reliableDigits: null } };
-}
+const timedOut = (text = enEngine["error.timeout"]): HomeResult =>
+  ({ ok: false, display: text, path: "exact", approximate: true, exactMs: 0, totalMs: HOME_WATCHDOG_MS, error: "timeout", full: text, facts: { exact: false, reliableDigits: null } });
 
 export class WorkerEngine implements MathEngine {
   private worker!: WorkerLike;
@@ -253,17 +250,16 @@ export class WorkerEngine implements MathEngine {
     return (await this.ask({ type: "units", job, settings }, { error: "engine", detail: "timeout" })).result;
   }
 
-  /** A call whose answer has the request's type (all but eval and the library's). `late`: the result it gives when the
-   *  watchdog stops it (G185, post). */
-  private async ask<T extends RequestBody>(body: T, late?: HomeResult | UnitError): Promise<Extract<Response, { type: T["type"] }>> {
+  /** A call whose answer has the type `want` (the request's own but for eval's "result"). `late`: the result it gives
+   *  when the watchdog stops it (G185, post). */
+  private async ask<T extends RequestBody, W extends string = T["type"]>(body: T, late?: HomeResult | UnitError, want = body.type as W): Promise<Extract<Response, { type: W }>> {
     const r = await this.call(body, late && ({ id: 0, type: body.type, result: late, defs: [] } as Response));
-    if (r.type !== body.type) throw new Error(`unexpected ${r.type}`);
-    return r as Extract<Response, { type: T["type"] }>;
+    if (r.type !== want) throw new Error(`unexpected ${r.type}`);
+    return r as Extract<Response, { type: W }>;
   }
 
   async eval(input: string): Promise<EvalResult> {
-    const r = await this.call({ type: "eval", input });
-    if (r.type !== "result") throw new Error(`unexpected ${r.type}`);
+    const r = await this.ask({ type: "eval", input }, undefined, "result");
     this.keep(r.defs);
     return { output: r.output, ok: r.ok, engineMs: r.engineMs };
   }
@@ -284,11 +280,6 @@ export class WorkerEngine implements MathEngine {
   async definitions(): Promise<readonly DefEntry[]> {
     await this.gate;
     return this.stored();
-  }
-
-  /** Commands replayed into a fresh worker, in replay order (for tests and diagnostics). */
-  get replayCommands(): readonly string[] {
-    return replayOrder(this.log).flatMap((e) => e.cmds);
   }
 
   private stop(err: Error): void {
@@ -366,7 +357,7 @@ export class WorkerEngine implements MathEngine {
       this.pending.set(id, { resolve, reject });
       this.worker.postMessage({ ...body, id } as Request);
       if (late)
-        this.readyPromise.then(() => void setTimeout(() => this.pending.delete(id) && (resolve(late), this.cancel()), HOME_WATCHDOG_MS), () => {});
+        this.readyPromise.then(() => setTimeout(() => this.pending.delete(id) && (resolve(late), this.cancel()), HOME_WATCHDOG_MS), () => {});
     });
   }
 }

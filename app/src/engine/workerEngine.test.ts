@@ -8,7 +8,10 @@ import { giacAvailable, loadNodeGiac } from "./nodeGiac.ts";
 import { EngineCancelled, EngineCrashError, EngineMemoryError, defaultCasSettings } from "./types.ts";
 import { HOME_WATCHDOG_MS, WorkerEngine, type WorkerLike } from "./workerEngine.ts";
 import { enEngine } from "../i18n/enEngine.ts";
-import type { DefEntry } from "./defs.ts";
+import { replayOrder, type DefEntry } from "./defs.ts";
+
+/** The commands a fresh worker replays, in replay order (the log; no safe start in these tests, so definitions() is it). */
+const replayCommands = async (e: WorkerEngine): Promise<string[]> => replayOrder(await e.definitions()).flatMap((d) => d.cmds);
 
 /** Runs the real request handler (and a fresh Giac instance) in this thread. */
 class InProcessWorker implements WorkerLike {
@@ -132,7 +135,7 @@ describe.skipIf(!giacAvailable())("WorkerEngine (real Giac in process)", () => {
     expect((await engine.home("1/3", defaultHomeSettings)).display).toBe("0.333333333333");
     await engine.cas("f(x):=x^2+1", defaultCasSettings);
     await engine.home("a:=0.5", defaultHomeSettings);
-    expect(engine.replayCommands).toEqual(["f(x):=x^2+1", "a:=(1/2)"]);
+    expect(await replayCommands(engine)).toEqual(["f(x):=x^2+1", "a:=(1/2)"]);
     const t = await engine.cancel();
     expect(t.replayMs).toBeGreaterThanOrEqual(0);
     expect((await engine.cas("f(3)", defaultCasSettings)).text).toBe("10");
@@ -174,7 +177,7 @@ describe.skipIf(!giacAvailable())("WorkerEngine Solve and Cancel (real Giac in p
     const r = await engine.solve({ kind: "equations", equations: ["X^2=2"], unknowns: ["X"], guesses: ["1"] }, defaultHomeSettings);
     expect(r.roots[0]!.result.display).toBe("1.41421356237"); // oracle sqrt(2): tests/golden/solve.yaml sqrt2-pos
     expect((await engine.home("X", defaultHomeSettings)).display).toBe("7");
-    expect(engine.replayCommands).toEqual(["X:=(7)"]);
+    expect(await replayCommands(engine)).toEqual(["X:=(7)"]);
     // Cancel while a solve is queued or running: the restarted engine still has X = 7.
     const job = expect(
       engine.solve({ kind: "equations", equations: ["X^2+Y^2=4", "Y=exp(X)"], unknowns: ["X", "Y"], guesses: ["-1", "1"] }, defaultHomeSettings),
@@ -263,7 +266,7 @@ describe.skipIf(!giacAvailable())("WorkerEngine definitions across a relaunch (r
     await a.home("Q:=2", defaultHomeSettings);
     await a.home("P:=3", defaultHomeSettings);
     await a.home("purge(Q)", defaultHomeSettings);
-    expect(a.replayCommands).toEqual(["P:=(3)"]);
+    expect(await replayCommands(a)).toEqual(["P:=(3)"]);
     a.dispose();
     const b = launch(store);
     expect((await b.home("Q", defaultHomeSettings)).display).toBe("Q");
