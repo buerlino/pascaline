@@ -21,6 +21,7 @@
   import { counted, countScreenTaps, hwKind } from "./state/pressCount.ts";
   import { createLoaders, type FindCode, type ModeSheetCode } from "./appLoaders.ts";
   import { tipsDue } from "./state/tips.ts";
+  import { canPick } from "./state/pickRows.ts";
   import History from "./views/History.svelte";
   import StatusLine from "./views/StatusLine.svelte";
   /** Set while the first Mode or Settings open waits for that code. */
@@ -78,7 +79,10 @@
     shell.openSettings = openSettings;
     shell.settingsMenu = () => (loaders.modeSheet ? (settingsMenu ??= loaders.modeSheet.settingsMenu(session, settingsEnv)) : undefined); // (R49)
     shell.homeView = () => (session.view === "cas" ? "cas" : "home"); // the last row of every Menu
-    entry.onSymbol = counted(hwOther("symbol"), (ch) => entry.run({ kind: "insert", latex: ch }));
+    entry.onSymbol = counted(hwOther("symbol"), (ch) => {
+      picked = null; // a key that types drops the pick (R147: its buttons may lie over the line)
+      entry.run({ kind: "insert", latex: ch });
+    });
     entry.onDead = counted(hwOther("dead"), dead);
     entry.onPress = counted(hwOther("other"), () => {}); // R107f1: a leaving ) or | is a press that needs nothing more
     entry.onPaste = (text) => route.pasteText(ctx, text); // R114: Ctrl+V and every system paste take the Paste key's path
@@ -274,8 +278,17 @@
     setTimeout(() => vibrate(h.strength / 100, h.ms), h.ms + 70);
   }
 
-  /** The picked history row (P4: Up on an empty line; route.ts walks it). */
+  /** The picked history row (P4: Up on an empty line; route.ts walks it; R147: a first tap on a row). */
   let picked = $state<number | null>(null);
+  /** R147: a tap picks a row (null: drops the pick); its buttons come from the clipboard code, as after ▲. */
+  function pick(i: number | null): void {
+    picked = i !== null && canPick(session.items, i) ? i : null;
+    if (picked !== null) void loadClip();
+  }
+  /** R3 (r19 section 3, R147): a row picked on an empty line lays its buttons over the line's slot, so neither the
+   *  history nor the keypad moves. Read when the pick starts or moves (entry.value is not reactive); a key that types
+   *  drops the pick, so the line cannot change under it. With text on the line (a tap can pick there) they sit above it. */
+  const overLine = $derived(picked !== null && entry.value === "");
   /** The CAS view is under the keys (no app on top): Alpha types lower case there (R58). */
   const casKeys = $derived(session.view === "cas" && shell.app === null);
   /** The key routing (keyboard/route.ts, R15c2) works on this: the models, this component's state and its actions. */
@@ -330,6 +343,7 @@
           sigma={(item) => session.sigma(item)}
           reason={(item) => session.reason(item)}
           marks={session.settings.marks}
+          onpick={pick}
           onrecall={(item) => { picked = null; shell.prompt?.cancel(); entry.set(session.input(item), item.chips); }}
           oninsert={(item) => { picked = null; shell.prompt?.cancel(); insertResult(item); }}
           oncancel={() => void cancel()}
@@ -352,11 +366,13 @@
       {@const row = session.items[picked]}
       {#if row}
       {@const why = clip.rowWhy(row)}
-      {#if why}<div class="rowwhy" data-testid="row-why">{why}</div>{/if}
-      <div class="rowbar" role="toolbar" aria-label={t("history.actions")} data-testid="row-actions">
-        {#each clip.rowButtons(row) as b (b.id)}
-          <button type="button" disabled={b.disabled} onpointerdown={noFocus} onclick={() => { picked = null; b.run?.(); }}>{b.label}</button>
-        {/each}
+      <div class="rowslot" class:over={overLine} style:min-height={overLine ? `${entryHeight}px` : undefined}>
+        {#if why}<div class="rowwhy" data-testid="row-why">{why}</div>{/if}
+        <div class="rowbar" role="toolbar" aria-label={t("history.actions")} data-testid="row-actions">
+          {#each clip.rowButtons(row) as b (b.id)}
+            <button type="button" disabled={b.disabled} onpointerdown={noFocus} onclick={() => { picked = null; b.run?.(); }}>{b.label}</button>
+          {/each}
+        </div>
       </div>
       {/if}
     {/if}
@@ -484,6 +500,19 @@
   .loading {
     margin: auto;
     color: var(--muted);
+  }
+  /* R3 (R147): on an empty line the picked row's why line and buttons lie over the entry line's box, with its bottom
+     edge (the line is the screen's last row in the flow); a long why line rises over the history's foot */
+  .rowslot.over {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 4;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    background: var(--bg);
   }
   .rowbar {
     display: flex;

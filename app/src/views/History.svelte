@@ -21,6 +21,7 @@
     marks = "reason",
     onrecall,
     oninsert,
+    onpick = () => {},
     oncancel,
     onlongpress,
     undo = null,
@@ -47,10 +48,13 @@
     reason?: (item: HistoryItem) => string | null;
     /** R124: how the marks are drawn: Muted, ⚠ coloured, ⚠ + reason. */
     marks?: MarkStyle;
-    /** Tapping an entry puts it back on the line, with the values of its chips. */
+    /** A second tap on the picked row's entry puts it back on the line, with the values of its chips (R147). */
     onrecall: (item: HistoryItem) => void;
-    /** L5: tapping a result puts it on the entry line at the cursor, as a chip (docs/04 2.8). */
+    /** L5: a second tap on the picked row's result puts it on the entry line at the cursor, as a chip (docs/04 2.8, R147). */
     oninsert: (item: HistoryItem) => void;
+    /** R147 (the G2's way): a first tap on a row's entry or result picks the row (its index into items), as ▲ does; a tap
+     *  on the history's empty part drops the pick (null). */
+    onpick?: (index: number | null) => void;
     oncancel: () => void;
     /** A long press on a finished row: its copy actions (docs/04 2.6). */
     onlongpress?: (item: HistoryItem) => void;
@@ -82,8 +86,17 @@
     if (longPressed) longPressed = false;
     else act();
   }
+  /** R147: a tap on a row's entry or result picks the row; on the picked row it recalls or inserts (`act`). A scroll
+   *  drag never reaches here: the browser cancels the pointer and sends no click. */
+  function tapRow(index: number, act: () => void): void {
+    tapped(() => (index === selected ? act() : onpick(index)));
+  }
+  /** R147: a tap on the history outside every row (its empty part) drops the pick. */
+  function tapHistory(e: MouseEvent): void {
+    if (selected !== null && !(e.target as Element).closest(".item, .undone, .earlier")) onpick(null);
+  }
 
-  // R40: a tap on a row with a σ line (not on its entry or result, which recall and insert) shows it; a second hides it
+  // R40: a tap on a row with a σ line (not on its entry or result, which pick and then recall or insert, R147) shows it; a second hides it
   let sigmaOpen = $state<number | null>(null);
   // R124: a tap on a ⚠ row's reason line shows its full text (it wraps); a second tap ellipses it again
   let reasonOpen = $state<number | null>(null);
@@ -175,7 +188,8 @@
   });
 </script>
 
-<section class="history" aria-label={t("history.label")} data-marks={marks} bind:this={scroller}>
+<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_noninteractive_element_interactions (R147: a tap on the empty part drops a pick; Esc does it by keys) -->
+<section class="history" aria-label={t("history.label")} data-marks={marks} bind:this={scroller} onclick={tapHistory}>
   {#if items.length === 0 && !undo}
     <p class="empty">{t("history.empty")}</p>
   {/if}
@@ -187,12 +201,13 @@
       <div class="item note" data-status="note" data-testid="safe-start" role="status">{item.text}</div>
     {:else}
     {@const r = reason(item)}
+    {@const at = k + items.length - shown.length}
     <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_noninteractive_element_interactions (R40: the σ line is a touch extra; a picked row's why-line, R36, serves the keys) -->
     <article class="item" data-status={item.status}
       onpointerdown={(e) => pressStart(e, item)} onpointerup={endPress} onpointercancel={endPress} onclick={(e) => toggleSigma(e, item)}
       oncontextmenu={(e) => e.preventDefault()}
-      data-selected={selected !== null && k + items.length - shown.length === selected ? "true" : undefined}>
-      <button type="button" class="in" title={t("history.recall")} use:edgeFade onclick={() => tapped(() => onrecall(item))}>
+      data-selected={at === selected ? "true" : undefined}>
+      <button type="button" class="in" title={t("history.recall")} use:edgeFade onclick={() => tapRow(at, () => onrecall(item))}>
         <Math latex={drawnInput(item)} />
       </button>
       <div class="out" data-testid="result" use:edgeFade={item.status}>
@@ -212,7 +227,7 @@
           {@const noDigit = hasNoDigit(m)}
           {#if m}<span class="mark" data-mark={m.mark} data-testid="mark" title={t(`mark.${m.mark === "=" ? "exact" : m.mark === "≈" ? "approx" : "warn"}`)}>{noDigit ? t("mark.noDigit") : markText(m)}</span>{/if}
           <button type="button" class="result" data-text={d.latex.length > MAX_DRAWN_LATEX ? "" : d.text} title={t("history.insert")}
-            onpointerdown={(e) => e.preventDefault()} onclick={() => tapped(() => oninsert(item))}>
+            onpointerdown={(e) => e.preventDefault()} onclick={() => tapRow(at, () => oninsert(item))}>
             {#if !noDigit}<Math latex={d.latex} size={d.text.length} />{/if}
           </button>
         {/if}
