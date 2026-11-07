@@ -125,25 +125,25 @@ describe("Settings › Appearance (R50e)", () => {
   it("▶ ◀ step the theme in place, round the ends; the sheet stays", () => {
     const s = settings(1);
     s.right();
-    expect(session.settings.look.family).toBe("graphite");
+    expect(session.settings.look.family).toBe("teal");
     expect(s.left()).toBe(true);
     expect(s.left()).toBe(true);
-    expect(session.settings.look.family).toBe("nord");
-    expect(byId(s, "theme")?.value).toBe("Nord");
+    expect(session.settings.look.family).toBe("solarized");
+    expect(byId(s, "theme")?.value).toBe("Solarized");
   });
-  it("Enter, a digit or a tap on Theme lists the five; a pick keeps the sheet open and the page is told", () => {
+  it("Enter, a digit or a tap on Theme lists the three; a pick keeps the sheet open and the page is told", () => {
     const seen: string[] = [];
     session.onLook = (l) => void seen.push(l.family);
     const s = settings(1);
     expect(s.enter()).toEqual({ kind: "stay" });
     expect(s.path).toBe("Settings › Appearance › Theme");
-    expect(s.level.items.map((x) => x.label)).toEqual(["N62", "Graphite", "Solarized", "Gruvbox", "Nord"]);
+    expect(s.level.items.map((x) => x.label)).toEqual(["N62", "Teal", "Solarized"]);
     expect(s.level.items.every((x) => x.dots?.length === 5)).toBe(true);
-    expect(s.pickNumber(4)).toEqual({ kind: "stay" });
-    expect(session.settings.look.family).toBe("gruvbox");
+    expect(s.pickNumber(3)).toEqual({ kind: "stay" });
+    expect(session.settings.look.family).toBe("solarized");
     expect(s.path).toBe("Settings › Appearance › Theme");
-    expect(s.level.items.filter((x) => x.selected).map((x) => x.id)).toEqual(["gruvbox"]);
-    expect(seen).toEqual(["gruvbox"]);
+    expect(s.level.items.filter((x) => x.selected).map((x) => x.id)).toEqual(["solarized"]);
+    expect(seen).toEqual(["solarized"]);
     s.back();
     expect(s.activate(0)).toEqual({ kind: "stay" }); // a tap
     expect(s.path).toBe("Settings › Appearance › Theme");

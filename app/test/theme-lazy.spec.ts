@@ -10,7 +10,7 @@ test("start fetches no family file; the page keeps N62's tokens", async ({ page 
   await page.emulateMedia({ colorScheme: "dark" });
   await open(page);
   await page.waitForTimeout(500);
-  expect(urls.filter((u) => /\/theme\/(n62|graphite|solarized|gruvbox|nord)\.css|theme\/modes\.css/.test(u))).toEqual([]);
+  expect(urls.filter((u) => /\/theme\/(n62|teal|solarized)\.css|theme\/modes\.css/.test(u))).toEqual([]);
   const root = page.locator("html");
   await expect(root).toHaveAttribute("data-family", "n62");
   await expect(root).not.toHaveAttribute("data-contrast", /.*/);

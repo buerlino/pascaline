@@ -76,14 +76,14 @@ test("Plain keys: the ⚠ mark and error text keep their colour; a sheet number 
   expect(n.c).toBe(text);
 });
 
-test("High contrast: a one-shot Shift fills the key with --shift, a locked one adds a 3 px outline (R140)", async ({ page }) => {
+test("High contrast: a one-shot Shift fills the key with --key-shift, a locked one adds a 3 px outline (R140)", async ({ page }) => {
   await open(page);
   await set(page, "colour", "high");
   await tap(page, ["shift"]);
   const press = await style(page, '[data-key="shift"]');
   expect(press.o).toBe("none");
-  expect(await page.locator('[data-key="shift"]').evaluate((el) => getComputedStyle(el).backgroundColor)).toBe(await token(page, "--shift"));
-  expect((await style(page, '[data-key="shift"] .main')).c).toBe(await token(page, "--on-shift"));
+  expect(await page.locator('[data-key="shift"]').evaluate((el) => getComputedStyle(el).backgroundColor)).toBe(await token(page, "--key-shift"));
+  expect((await style(page, '[data-key="shift"] .main')).c).toBe(await token(page, "--on-key-shift"));
   await tap(page, ["shift"]); // off
   const box = (await page.locator('[data-key="shift"]').boundingBox())!;
   const [x, y] = [box.x + box.width / 2, box.y + box.height / 2];

@@ -76,7 +76,7 @@ describe("no colour is written directly in the keypad", () => {
 
 // The sheet (docs/05 3.1): rows on --panel, numbers in --shift, reasons in --muted. The highlighted row or cell takes the
 // picked-row roles (R12b): the --pick ground with a --focus edge; on it the numbers, values and ticks are --text and a
-// disabled label --muted, the two that read on --pick in every theme. Checked in all 40 theme combinations.
+// disabled label --muted, the two that read on --pick in every theme. Checked in all 24 theme combinations.
 for (const [sel, t] of allThemeBlocks()) {
   describe(`sheet contrast, ${sel}`, () => {
     it("on --panel: labels, numbers and reason lines at least 4.5:1, a disabled label at least 3:1", () => {
@@ -115,7 +115,7 @@ describe("the sheet's highlighted row and cell (R12b)", () => {
 });
 
 // R40: the digits past a constant's σ are one muted span (render/uncMute.ts mutedTail, class `unc`), drawn in --muted: it
-// keeps the text floor on the history's ground and on a picked row, in all 40 theme combinations.
+// keeps the text floor on the history's ground and on a picked row, in all 24 theme combinations.
 describe("muted digits (R40)", () => {
   it("Math.svelte draws .unc in --muted", () => {
     const src = readFileSync(new URL("./render/Math.svelte", import.meta.url), "utf8");
@@ -161,12 +161,13 @@ describe("no colour is written directly in the sheet", () => {
 describe("curve colours", () => {
   it("each curve colour is at least 3:1 on the --bg of its brightness", () => {
     const src = readFileSync(new URL("./apps/function/app.svelte.ts", import.meta.url), "utf8");
-    for (const b of ["dark", "light"] as const) {
+    for (const b of ["dark", "light", "teal"] as const) {
       const list = new RegExp(`CURVE_COLORS_${b.toUpperCase()}\\s*=\\s*\\[([^\\]]*)\\]`).exec(src)?.[1] ?? "";
       const colors = [...list.matchAll(/#[0-9a-fA-F]{6}/g)].map((m) => m[0]);
       expect(colors.length, b).toBe(10);
+      // N62's start blocks are the ones in style.css; Teal's own list (R150) is checked on every Teal combination in scripts/theme-gen.test.ts
       for (const [theme, t] of blocks)
-        if (theme.endsWith(b)) for (const c of colors) expect(contrast(c, t["bg"] as string), `${c} on ${theme} --bg`).toBeGreaterThanOrEqual(3);
+        if (b !== "teal" && theme.endsWith(b)) for (const c of colors) expect(contrast(c, t["bg"] as string), `${c} on ${theme} --bg`).toBeGreaterThanOrEqual(3);
     }
   });
 });
@@ -179,7 +180,7 @@ describe("no colour is written directly in the three components", () => {
 });
 
 // R116: the entry line's highlights. App.svelte maps MathLive's variables to theme tokens (one scheme for the caret,
-// the box of the bracket that holds the cursor and the selection); every theme block (style.css and the five lazy
+// the box of the bracket that holds the cursor and the selection); every theme block (style.css and the lazy
 // family files: every family, brightness, High contrast and Plain keys) meets the floors with that mapping.
 const MATHLIVE = ["caret-color", "contains-highlight-background-color", "contains-highlight-color", "selection-background-color", "selection-color"] as const;
 /** The `--name: var(--token)` pairs of App.svelte's `.entry :global(math-field)` rule. */
@@ -190,7 +191,7 @@ function entryMap(): Record<string, string> {
 }
 /** Every block of a theme combination, with whether it is High contrast. */
 function allThemeBlocks(): [string, Record<string, string>, boolean][] {
-  const files = ["./style.css", ...["n62", "graphite", "solarized", "gruvbox", "nord"].map((f) => `./theme/${f}.css`)];
+  const files = ["./style.css", ...["n62", "teal", "solarized"].map((f) => `./theme/${f}.css`)];
   return files.flatMap((f) =>
     [...readFileSync(new URL(f, import.meta.url), "utf8").matchAll(/:root(\[data-family="[a-z0-9]+"\]\[data-brightness="(?:dark|light)"\](?:\[data-[a-z]+="[a-z]+"\])*)\s*\{([^}]*)\}/g)].map(
       (m): [string, Record<string, string>, boolean] => [m[1] as string, tokens(m[2] as string), (m[1] as string).includes('data-contrast="high"')],
@@ -215,9 +216,9 @@ describe("entry highlights (R116)", () => {
     for (const v of MATHLIVE) expect(map[v], `--${v}`).toMatch(/^[a-z-]+$/);
     expect(map["selection-background-color"]).toBe(map["contains-highlight-background-color"]); // the box and the selection: one ground (never both at once)
   });
-  const blocks40 = allThemeBlocks();
-  it("reads the 40 theme combinations", () => expect(blocks40).toHaveLength(40));
-  for (const [sel, t, hc] of blocks40)
+  const blocks24 = allThemeBlocks();
+  it("reads the 24 theme combinations", () => expect(blocks24).toHaveLength(24));
+  for (const [sel, t, hc] of blocks24)
     it(`${sel}: the box, the selection and the caret meet the floors, and the box stands apart from --panel`, () => {
       const T = hc ? 7 : 4.5;
       const c = (role: string): string => t[map[role] ?? "-"] ?? `missing --${map[role]}`;
@@ -229,7 +230,7 @@ describe("entry highlights (R116)", () => {
       expect(contrast(c("contains-highlight-background-color"), t["panel"] as string), "the box apart from --panel").toBeGreaterThanOrEqual(PICK_APART);
       expect(contrast(c("selection-background-color"), t["panel"] as string), "the selection apart from --panel").toBeGreaterThanOrEqual(PICK_APART);
     });
-  for (const [sel, t] of blocks40)
+  for (const [sel, t] of blocks24)
     it(`${sel}: the caret and the box are one hue family (at most ${HUE_NEAR}° apart when both have a hue)`, () => {
       const [ch, cs] = hueSat(t[map["caret-color"] ?? "-"] ?? "#000000");
       const [bh, bs] = hueSat(t[map["contains-highlight-background-color"] ?? "-"] ?? "#000000");

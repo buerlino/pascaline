@@ -88,7 +88,7 @@ describe("the look (R50e, schema 3)", () => {
     }
   });
   it("a stored look wins over the first-start look, field by field", () => {
-    const stored = { schema: 3, look: { family: "nord", brightness: "light", contrast: false, plain: true } };
+    const stored = { schema: 3, look: { family: "solarized", brightness: "light", contrast: false, plain: true } };
     const { settings, migrated } = migrateSettings(stored, first);
     expect(migrated).toBe(true); // schema 3 → 4 (R57) keeps the look
     expect(settings.look).toEqual(stored.look);
@@ -96,7 +96,7 @@ describe("the look (R50e, schema 3)", () => {
     expect(migrateSettings({ schema: 3, look: 7 }, first).settings.look).toEqual(first);
   });
   it("migrating from schema 1, 2 or 3 to 4 keeps a stored look and gives the point as the decimal mark (R57)", () => {
-    const look = { family: "nord", brightness: "light", contrast: true, plain: true };
+    const look = { family: "teal", brightness: "light", contrast: true, plain: true };
     for (const schema of [undefined, 2, 3]) {
       const { settings, migrated } = migrateSettings({ ...(schema === undefined ? {} : { schema }), digits: 9, look }, first);
       expect(migrated).toBe(true);
@@ -108,12 +108,12 @@ describe("the look (R50e, schema 3)", () => {
   });
   it("restoring tells the page the look it read", async () => {
     const kv = fakeKv();
-    kv.data.set("settings", { schema: 3, look: { family: "nord", brightness: "light", contrast: false, plain: false } });
+    kv.data.set("settings", { schema: 3, look: { family: "teal", brightness: "light", contrast: false, plain: false } });
     const s = new Session(new FakeCalc(), kv);
     const seen: unknown[] = [];
     s.onLook = (l) => seen.push(l);
     await s.restoreSettings();
-    expect(seen).toEqual([{ family: "nord", brightness: "light", contrast: false, plain: false }]);
+    expect(seen).toEqual([{ family: "teal", brightness: "light", contrast: false, plain: false }]);
   });
   it("a start with nothing stored writes its look, so a later start does not ask the phone again", async () => {
     const kv = fakeKv();

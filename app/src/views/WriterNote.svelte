@@ -48,7 +48,7 @@
     border: 0;
     border-radius: var(--radius-l);
     background: var(--key-nav);
-    color: inherit;
+    color: var(--key-text);
     font: inherit;
     font-weight: 700;
     white-space: nowrap;

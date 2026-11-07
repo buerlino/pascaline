@@ -4,7 +4,7 @@
 // `/*theme-css*/{}` placeholder: the hashed names from the bundle, or the source files in the dev server.
 import type { Plugin } from "vite";
 
-export const THEME_CSS = ["n62", "graphite", "solarized", "gruvbox", "nord", "modes"] as const;
+export const THEME_CSS = ["n62", "teal", "solarized", "modes"] as const;
 const PLACEHOLDER = "/*theme-css*/{}";
 
 /** The built asset for each theme file: found by its source name, else by the `<name>-<hash>.css` pattern. */

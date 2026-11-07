@@ -7,7 +7,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { open, tap } from "./helpers.ts";
 
-const FAMILIES = ["n62", "graphite", "solarized", "gruvbox", "nord"] as const;
+const FAMILIES = ["n62", "teal", "solarized"] as const;
 
 /** Put a look on the page as Settings › Appearance does, and wait for its colours (the lazy family file too). */
 async function setLook(page: Page, family: string, brightness: "dark" | "light"): Promise<void> {
