@@ -2,7 +2,7 @@
 // R133 (F172): until the engine is ready History draws the newest 5 rows (10 MathLive renders: input and result each);
 // a frame after it, 20 (40). The newest row recalls and inserts in both states; a picked row above the five is drawn.
 import { expect, test, type Page } from "@playwright/test";
-import { tap } from "./helpers.ts";
+import { tap, tapTwice } from "./helpers.ts";
 
 const N = 200;
 
@@ -55,15 +55,15 @@ test("engine not ready: the newest five rows (10 renders); a frame after ready, 
 
 test("the newest row recalls and inserts before and after ready", async ({ page }) => {
   await held(page);
-  await page.locator("article.item").last().locator(".in").click();
+  await tapTwice(page.locator("article.item").last().locator(".in"), "click");
   expect(await page.evaluate(() => window.n62.entry.value)).toBe(`${N - 1}+1`);
   await page.evaluate(() => window.n62.entry.clear());
-  await page.locator("article.item").last().locator(".result").click();
+  await tapTwice(page.locator("article.item").last().locator(".result"), "click");
   await expect.poll(() => page.evaluate(() => window.n62.entry.value)).toContain(String(N));
   await page.evaluate(() => window.n62.entry.clear());
   await expect.poll(() => page.evaluate(() => window.n62.session.engineState)).toBe("ready");
   await expect(page.locator("article.item")).toHaveCount(20);
-  await page.locator("article.item").last().locator(".in").click();
+  await tapTwice(page.locator("article.item").last().locator(".in"), "click");
   expect(await page.evaluate(() => window.n62.entry.value)).toBe(`${N - 1}+1`);
 });
 

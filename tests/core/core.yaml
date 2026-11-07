@@ -102,8 +102,8 @@ cases:
 
   - id: c10
     area: entry
-    title: a tapped result goes into the line
-    keys: [d7, enter, {tap: "result:last"}, add, d1, enter]
+    title: "a tapped result goes into the line: the first tap picks its row, the second inserts it (R147; owner, 2026-11-06)"
+    keys: [d7, enter, {tap: "result:last"}, {tap: "result:last"}, add, d1, enter]
     expect: { result: "8", mark: "=" }
     value: "8"
     source: derived

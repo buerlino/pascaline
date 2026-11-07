@@ -122,6 +122,16 @@ function presetShots(): Shot[] {
         await settle(p);
       },
     },
+    {
+      id: "picked-tap",
+      title: "A row picked by a tap on its result (R147): its buttons lie over the empty entry line (R3); the history and the keys do not move",
+      setup: async (p) => {
+        await someHistory(p);
+        await p.locator('[data-testid="result"] .result').last().tap();
+        await p.getByTestId("row-actions").waitFor();
+        await settle(p);
+      },
+    },
   ];
   const sizes = [
     { tag: "small", group: "Small phone (360 × 740)", viewport: { width: 360, height: 740 } },
@@ -323,7 +333,7 @@ const shots: Shot[] = [
   {
     id: "home-picked",
     group: "Home",
-    title: "Home, a history row picked",
+    title: "Home, a history row picked with ▲ (its buttons over the empty line, R3)",
     setup: async (p) => {
       await someHistory(p);
       await tap(p, ["up", "up"]);

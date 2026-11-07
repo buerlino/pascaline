@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Entry leftovers L2–L5 (docs/backlog.md), key-sequence tests on the real engine. Expected values are derived.
 import { expect, test, type Page } from "@playwright/test";
-import { entryValue, lastResult, open, sheet, tap } from "./helpers.ts";
+import { entryValue, lastResult, open, sheet, tap, tapTwice } from "./helpers.ts";
 
 test.beforeEach(async ({ page }) => {
   await open(page, "");
@@ -53,7 +53,7 @@ test("L5: tapping a result puts it on the entry line, in Home and CAS", async ({
   await tap(page, ["d1", "div", "d4", "enter"]);
   await expect(lastResult(page)).toHaveAttribute("data-text", "0.25");
   await tap(page, ["d2", "mul"]);
-  await lastResult(page).tap();
+  await tapTwice(lastResult(page));
   expect(await entryValue(page)).toBe("2\\times\\res{1}{0.25}"); // a chip carrying 1/4 (docs/04 2.8)
   await tap(page, ["enter"]);
   await expect(lastResult(page)).toHaveAttribute("data-text", "0.5");
@@ -63,7 +63,7 @@ test("L5: tapping a result puts it on the entry line, in Home and CAS", async ({
   await tap(page, ["x", "add", "d1", "enter"]);
   await expect(page.locator('[data-testid="result"]').last().locator(".math")).toHaveAttribute("data-latex", "x+1");
   await tap(page, ["d2", "mul"]);
-  await lastResult(page).tap();
+  await tapTwice(lastResult(page));
   expect(await entryValue(page)).toBe("2\\times\\res{2}{x+1}"); // the second chip of the session: the counter no longer restarts at Enter (R16)
   await tap(page, ["enter"]);
   await expect(page.locator('[data-testid="result"]').last().locator(".math")).toHaveAttribute("data-latex", /2\\left\(x\+1\\right\)|2x\+2/);

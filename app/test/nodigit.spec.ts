@@ -34,7 +34,7 @@ test("⚠ n with n > 0 still shows its digits", async ({ page }) => {
 test("tapping a no-digit row puts no digit on the line (oracle: sin(10^2000) = +0.2678…, not the shown double)", async ({ page }) => {
   await submit(page, "\\sin\\left(10^{2000}\\right)");
   await expect(page.locator('[data-status="done"]')).toHaveCount(1);
-  await page.locator('[data-testid="result"] .result').dispatchEvent("click"); // empty button: no box to hit
+  for (let i = 0; i < 2; i++) await page.locator('[data-testid="result"] .result').dispatchEvent("click"); // empty button: no box to hit; R147: the first picks
   const line = await entryValue(page);
   expect(line).toContain("{⚠}");
   expect(line).not.toMatch(/\d\./);

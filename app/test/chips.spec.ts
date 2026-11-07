@@ -3,7 +3,7 @@
 // macro, the chip looks unlike a variable; a screenshot is attached to the report), and chips that keep their value
 // through recall and relaunch. Expected values are derived.
 import { expect, test, type Page } from "@playwright/test";
-import { entryValue, lastResult, open, tap } from "./helpers.ts";
+import { entryValue, lastResult, open, tap, tapTwice } from "./helpers.ts";
 const ready = (page: Page) =>
   page.waitForFunction(() => window.n62.session.engineState === "ready", undefined, { timeout: 20_000 });
 
@@ -45,12 +45,12 @@ test("a recalled entry keeps the values of its chips, also after a relaunch", as
   await ready(page);
   await tap(page, ["d1", "div", "d3", "enter"]);
   await expect(lastResult(page)).toHaveAttribute("data-text", "0.333333333333");
-  await lastResult(page).tap();
+  await tapTwice(lastResult(page));
   expect(await entryValue(page)).toBe("\\res{1}{0.333333333333}");
   await tap(page, ["mul", "d3", "enter"]);
   await expect(lastResult(page)).toHaveAttribute("data-text", "1");
   // tap the entry (not the result): it comes back with its chip, and gives 1 again
-  await page.locator('[data-status="done"] .in').last().tap();
+  await tapTwice(page.locator('[data-status="done"] .in').last());
   expect(await entryValue(page)).toBe("\\res{1}{0.333333333333}\\times3");
   await tap(page, ["enter"]);
   await expect(page.locator('[data-status="done"]')).toHaveCount(3);
@@ -60,7 +60,7 @@ test("a recalled entry keeps the values of its chips, also after a relaunch", as
   await page.waitForFunction(() => window.n62 !== undefined);
   await ready(page);
   await expect(page.locator('[data-status="done"]')).toHaveCount(3);
-  await page.locator('[data-status="done"] .in').last().tap();
+  await tapTwice(page.locator('[data-status="done"] .in').last());
   expect(await entryValue(page)).toBe("\\res{1}{0.333333333333}\\times3");
   await tap(page, ["enter"]);
   await expect(page.locator('[data-status="done"]')).toHaveCount(4);
@@ -72,17 +72,17 @@ test("÷, x² and x⁻¹ after a chip take the whole chip", async ({ page }) => 
   await ready(page);
   await tap(page, ["d1", "frac", "d2", "right", "sub", "d1", "enter"]);
   await expect(lastResult(page)).toHaveAttribute("data-text", "-0.5");
-  await lastResult(page).tap();
+  await tapTwice(lastResult(page));
   await tap(page, ["sq"]);
   expect(await entryValue(page)).toBe("\\res{1}{-0.5}^2");
   await tap(page, ["enter"]);
   await expect(lastResult(page)).toHaveAttribute("data-text", "0.25"); // (−1/2)² = 1/4, not −(1/2)²
-  await lastResult(page).tap();
+  await tapTwice(lastResult(page));
   await tap(page, ["div", "d2"]);
   expect(await entryValue(page)).toBe("\\frac{\\res{2}{0.25}}{2}"); // chip 2: the counter no longer restarts at Enter (R16)
   await tap(page, ["enter"]);
   await expect(lastResult(page)).toHaveAttribute("data-text", "0.125");
-  await lastResult(page).tap();
+  await tapTwice(lastResult(page));
   await tap(page, ["shift", "div", "enter"]);
   await expect(lastResult(page)).toHaveAttribute("data-text", "8");
 });
@@ -93,7 +93,7 @@ test("a long result's chip keeps its value, marked approximate (2^10000 × 1)", 
   await ready(page);
   await tap(page, ["d2", "pow", "d1", "d0", "d0", "d0", "d0", "right", "enter"]);
   await expect(lastResult(page)).toContainText("1.99506311688");
-  await lastResult(page).tap();
+  await tapTwice(lastResult(page));
   await tap(page, ["mul", "d1", "enter"]);
   const r = lastResult(page);
   await expect(page.locator('[data-status="done"]')).toHaveCount(2);
@@ -121,7 +121,7 @@ test("a short exact result still gives an exact chip (1/3 × 3 = 1)", async ({ p
   await ready(page);
   await tap(page, ["d1", "div", "d3", "enter"]);
   await expect(page.locator('[data-status="done"]')).toHaveCount(1);
-  await lastResult(page).tap();
+  await tapTwice(lastResult(page));
   await tap(page, ["mul", "d3", "enter"]);
   await expect(lastResult(page)).toHaveAttribute("data-text", "1");
 });
@@ -141,7 +141,7 @@ test("a ⚠ result stays ⚠ through Ans and a tapped chip (romberg × 1 × 1)",
   await tap(page, ["mul", "d1", "enter"]);
   await expect(page.locator('[data-status="done"]')).toHaveCount(3);
   await expect(mark.last()).toHaveAttribute("data-mark", "⚠");
-  await page.locator('[data-testid="result"]').first().locator(".result").tap();
+  await tapTwice(page.locator('[data-testid="result"]').first().locator(".result"));
   await tap(page, ["mul", "d1", "enter"]);
   await expect(page.locator('[data-status="done"]')).toHaveCount(4);
   await expect(mark.last()).toHaveAttribute("data-mark", "⚠");
