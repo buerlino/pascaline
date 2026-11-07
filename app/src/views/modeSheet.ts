@@ -107,8 +107,8 @@ export function modeItems(session: Session, env: SettingsEnv = {}): MenuItem[] {
   ];
 }
 
-/** Settings (R49, docs/05 3.4): the next level of the pick sheet, from Mode's last row and every ☰ menu's last row
- *  (AppShell.withSettings). Its title joins the path (`Mode › Settings › Numbers`); each section opens on its first row. */
+/** Settings (R49, docs/05 3.4): the next level of the pick sheet, from Mode's last row and the ⚙ in every ☰
+ *  menu's title row (AppShell.toSettings, R145). Its title joins the path (`Mode › Settings › Numbers`); each section opens on its first row. */
 export function settingsMenu(session: Session, env: SettingsEnv = {}): SubMenu {
   return { title: t("mode.settings"), items: settingsSections(session, env), remember: false };
 }

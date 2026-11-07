@@ -3,6 +3,7 @@
   // Symb view: the slots of an app, each with its on/off toggle. The selected slot is edited on the shared
   // entry line (the app loads it there); tapping a slot selects it.
   import { t } from "../i18n/index.ts";
+  import { numText } from "../i18n/enNum.ts";
   import Math from "../render/Math.svelte";
   import type { SlotsState } from "./slots.svelte.ts";
 
@@ -27,7 +28,7 @@
   });
 </script>
 
-<ol class="slots" bind:this={list} aria-label={t("symb.label")}>
+<ol class="slots" bind:this={list} aria-label={numText("symb.label")}>
   {#each slots.names as name, i (name)}
     <li class="slot" data-slot={i} data-name={name} data-selected={slots.selected === i} aria-current={slots.selected === i} data-on={slots.enabled[i]}>
       <button
@@ -35,7 +36,7 @@
         class="toggle"
         role="switch"
         aria-checked={slots.enabled[i]}
-        aria-label={t("symb.toggle")}
+        aria-label={numText("symb.toggle")}
         style:--c={colors[i % colors.length] ?? "var(--text)"}
         onpointerdown={(e) => e.preventDefault()}
         onclick={() => slots.toggle(i)}

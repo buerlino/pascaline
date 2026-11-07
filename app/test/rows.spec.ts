@@ -78,9 +78,9 @@ test("Delete removes the picked row and only that one", async ({ page }) => {
   expect(texts).toEqual(["0.333333333333", "0.25"]);
 });
 
-test("Menu is one list of ten (nine, then Settings), the same with or without a picked row", async ({ page }) => {
+test("Menu is one list of nine (R145: Settings is the ⚙, not a row), the same with or without a picked row", async ({ page }) => {
   await three(page);
-  const names = ["Insert", "Recall", "Copy", "Store ▶", "Delete", "Copy as›", "Paste", "Share session", "Clear history", "Settings›"]; // R49: Settings opens a level, so it shows ›
+  const names = ["Insert", "Recall", "Copy", "Store ▶", "Delete", "Copy as›", "Paste", "Share session", "Clear history"];
   await tap(page, ["@menu"]);
   await expect(page.getByTestId("menu").getByRole("menuitem")).toHaveText(names.map((n, i) => `${(i + 1) % 10}${n}`));
   await tap(page, ["esc", "up", "@menu"]);
@@ -162,5 +162,5 @@ test("CAS has the same buttons and its own rows", async ({ page }) => {
   await tap(page, ["@home"]);
   await done(page, 1); // Home still has its row
   await tap(page, ["@menu"]);
-  await expect(page.getByTestId("menu").getByRole("menuitem")).toHaveCount(10);
+  await expect(page.getByTestId("menu").getByRole("menuitem")).toHaveCount(9);
 });

@@ -67,6 +67,7 @@
   --sheet-max: 420px;
   --status-h: 28px;
   --touch: 44px;
+  --touch-big: 48px; /* R145: the ⚙ in a sheet head */
   --key-h: 48px;
   --key-h-short: 42px;
   --nav-h: 36px;

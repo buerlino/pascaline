@@ -58,7 +58,7 @@ describe("R83 the Menu says whose it is", () => {
       await s.open("function", "symb");
       (s.instance as FunctionApp).define(0, "x^2");
       s.toggleMenu();
-      expect(ids(s)).toEqual(["in-plot", "settings"]);
+      expect(ids(s)).toEqual(["in-plot"]);
       expect(s.sheet?.level.items[0]?.label).toBe("Root, extremum … in Plot");
       if (pick === "digit") expect(s.pick(1)).toBe(true);
       else s.picked(s.sheet!.enter());
@@ -81,7 +81,7 @@ describe("R83 the Menu says whose it is", () => {
     await Promise.resolve();
     expect(s.view).toBe("num");
     expect(s.sheet?.path).toBe("Num menu");
-    expect(s.sheet?.level.items[0]?.id).toBe("solve"); // disabled without an equation, so the highlight starts on Settings
+    expect(s.sheet?.level.items[0]?.id).toBe("solve"); // disabled without an equation: the highlight stays on the first row
   });
 
   it("a view with rows of its own gets no pointer", async () => {
@@ -94,6 +94,42 @@ describe("R83 the Menu says whose it is", () => {
     }
     s.close();
     s.toggleMenu();
-    expect(ids(s)).toEqual(["copy", "settings"]);
+    expect(ids(s)).toEqual(["copy"]);
+  });
+
+  it("R145: Settings is the ⚙ of the root level, not a row; it opens as the next level, and ‹ goes back", () => {
+    const s = shell();
+    s.settingsMenu = () => ({ title: "Settings", items: [{ id: "numbers", label: "Numbers" }], remember: false });
+    s.toggleMenu();
+    expect(s.sheet?.hasSettings).toBe(true);
+    expect(ids(s)).toEqual(["copy"]);
+    s.picked(s.sheet!.openSettings());
+    expect(s.sheet?.path).toBe("Home menu › Settings");
+    expect(ids(s)).toEqual(["numbers"]);
+    expect(s.sheet?.hasSettings).toBe(false);
+    expect(s.sheet?.back()).toBe(true);
+    expect(s.sheet?.path).toBe("Home menu");
+  });
+
+  it("R145: before the Mode code is in the ⚙ opens Mode › Settings; a long-press list has no ⚙", () => {
+    const s = shell();
+    let opened = 0;
+    s.openSettings = () => void opened++;
+    s.toggleMenu();
+    s.picked(s.sheet!.openSettings());
+    expect([opened, s.sheet]).toEqual([1, null]);
+    s.showMenu("Row", [{ id: "a", label: "A" }]);
+    expect(s.sheet?.hasSettings).toBe(false);
+    s.showMenu("Row", [{ id: "a", label: "A" }], { settings: true });
+    expect(s.sheet?.hasSettings).toBe(true);
+  });
+
+  it("R145: a ☰ with no rows and no pointer opens Settings directly", () => {
+    const s = shell();
+    s.homeMenu = () => [];
+    s.settingsMenu = () => ({ title: "Settings", items: [{ id: "numbers", label: "Numbers" }] });
+    expect(s.toggleMenu()).toBe(true);
+    expect(s.sheet?.path).toBe("Home menu › Settings");
+    expect(s.sheet?.depth).toBe(2);
   });
 });
