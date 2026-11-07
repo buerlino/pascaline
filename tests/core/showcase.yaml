@@ -6,44 +6,46 @@
 # unit: {text, unit} (the unit view's result). lead: ms the eval starts before its beat (a flick eval is slower than a
 # tap; its result must show before the cut). Values derived (the working is in the comment).
 # Selling-points order (2026-11-07, the v6 cut: 12 clips, blocks 1-17): 1,000+ functions (s7 F s5), up to 30 digits
-# (s13 K; the digits chip opens the Digits list, its 9th preset is 30), HP Prime key layout (A s10 s11), 400+ units and 70+ constants (s8 U E), free and offline (s6).
+# (s13 K; the digits chip opens the Digits list, its 9th preset is 30), HP Prime key layout (A s10 s11), 400+ units
+# and 70+ constants (s8 U E), free and offline (s6). Every setup sets the Teal theme first (owner, 2026-11-07): Mode,
+# 6 Settings, 1 Appearance, 1 Theme, 2 Teal, four Esc (a theme pick keeps the sheet open); s11 gets it from s10.
 clips:
   # 1,000+ functions
-  - { id: s7, blocks: [1], title: "d/dx x² (CAS)", setup: ["@cas"],
+  - { id: s7, blocks: [1], title: "d/dx x² (CAS)", setup: [{tap: '[data-testid="chip-format"]'}, d6, d1, d1, d2, esc, esc, esc, esc, "@cas"],
       presses: [tmpl, {cell: deriv}, x, sq, right, x], eval: enter, expect: { result: "2*x" } }
-  - { id: F, blocks: [2, 3], title: "solve from Find (CAS)", setup: ["@cas"],
+  - { id: F, blocks: [2, 3], title: "solve from Find (CAS)", setup: [{tap: '[data-testid="chip-format"]'}, d6, d1, d1, d2, esc, esc, esc, esc, "@cas"],
       presses: [math, {down: d9}, comma, sq, {down: d5}, frac, enter, x, sq, shift, dot, d1, d6], eval: enter,
       expect: { result: "{-4,4}" } }
-  - { id: s5, blocks: [4], title: "√200 = 10√2 (CAS)", setup: ["@cas"],
+  - { id: s5, blocks: [4], title: "√200 = 10√2 (CAS)", setup: [{tap: '[data-testid="chip-format"]'}, d6, d1, d1, d2, esc, esc, esc, esc, "@cas"],
       presses: [shift, sq, d2, d0, d0, right], eval: enter, expect: { result: "10*sqrt(2)" } }
   # up to 30 digits
-  - { id: s13, blocks: [5], title: "the digits chip 12 → 30, then √2",
+  - { id: s13, blocks: [5], title: "the digits chip 12 → 30, then √2", setup: [{tap: '[data-testid="chip-format"]'}, d6, d1, d1, d2, esc, esc, esc, esc],
       presses: [{tap: '[data-testid="chip-digits"]'}, d9, shift, sq, d2, right], eval: enter,
       expect: { result: "1.41421356237309504880168872421", mark: "≈" } }                      # √2 at 30 digits (c18's oracle value)
   - { id: K, blocks: [6, 7], title: "π, then e^(π√163), at 30 digits",
-      setup: [{tap: '[data-testid="chip-digits"]'}, d9],
+      setup: [{tap: '[data-testid="chip-format"]'}, d6, d1, d1, d2, esc, esc, esc, esc, {tap: '[data-testid="chip-digits"]'}, d9],
       presses: [shift, d3, enter, shift, ln, shift, d3, shift, sq, d1, d6, d3, right], eval: enter,
       expect: { result: "262537412640768743.999999999999", mark: "≈" } }                      # e^(π√163) = 262537412640768743.99999999999925…
   # HP Prime key layout
-  - { id: A, blocks: [8, 9], title: "Σ template",
+  - { id: A, blocks: [8, 9], title: "Σ template", setup: [{tap: '[data-testid="chip-format"]'}, d6, d1, d1, d2, esc, esc, esc, esc],
       presses: [tmpl, {cell: sum}, alpha, log, right, d1, right, d1, d0, right, alpha, log, sq], eval: enter,
       expect: { result: "385", mark: "=" } }                                                    # 10·11·21/6 (c60)
-  - { id: s10, blocks: [10], title: "F1 = x³ − 2", setup: ["@symb"],
+  - { id: s10, blocks: [10], title: "F1 = x³ − 2", setup: [{tap: '[data-testid="chip-format"]'}, d6, d1, d1, d2, esc, esc, esc, esc, "@symb"],
       presses: [x, pow, d3, right, sub, d2], eval: enter, expect: {} }
   - { id: s11, blocks: [11], title: "Plot, Root", after: s10,
       presses: ["@plot", right, right, right, right, "@menu"], eval: d1,
       expect: { text: { '[data-testid="readout-x"]': "1.25992104989" } } }                     # 2^(1/3) = 1.2599210498948…
   # 400+ units and 70+ constants
-  - { id: s8, blocks: [12], title: "5 kg in lb",
+  - { id: s8, blocks: [12], title: "5 kg in lb", setup: [{tap: '[data-testid="chip-format"]'}, d6, d1, d1, d2, esc, esc, esc, esc],
       presses: [d5, {up: tmpl}, d4, d6, enter, {up: d6}], eval: {up: enter}, lead: 150,
       expect: { unit: { text: "11.0231131092", unit: "lb" } } }                                 # 5 / 0.45359237
-  - { id: U, blocks: [13, 14], title: "500 m in 40 ± 1 s",
+  - { id: U, blocks: [13, 14], title: "500 m in 40 ± 1 s", setup: [{tap: '[data-testid="chip-format"]'}, d6, d1, d1, d2, esc, esc, esc, esc],
       presses: [d5, d0, d0, div, d4, d0, {up: comma}, d1, right, {up: tmpl}, d9, enter, d3], eval: {up: enter}, lead: 150,
       expect: { unit: { text: "12.5", unit: "m/s", has: "± 0.31" } } }                         # 500/40; σ = 500/40² × 1 = 0.3125
-  - { id: E, blocks: [15, 16], title: "72.25 kg × g₀",
+  - { id: E, blocks: [15, 16], title: "72.25 kg × g₀", setup: [{tap: '[data-testid="chip-format"]'}, d6, d1, d1, d2, esc, esc, esc, esc],
       presses: [d7, d2, dot, d2, d5, {up: tmpl}, d4, d6, math, {row: "ucat:const"}, {row: "uconst:Physics"}, {row: "const:g_0"}, enter],
       eval: enter, expect: { unit: { text: "708.5304625", unit: "N" } } }                       # 72.25 × 9.80665
   # free and offline
-  - { id: s6, blocks: [17], title: "Euler: e^(iπ)",
+  - { id: s6, blocks: [17], title: "Euler: e^(iπ)", setup: [{tap: '[data-testid="chip-format"]'}, d6, d1, d1, d2, esc, esc, esc, esc],
       presses: [shift, ln, shift, d2, shift, d3], eval: enter,
       expect: { result: "-1", mark: "=" } }                                                     # e^(iπ) = −1

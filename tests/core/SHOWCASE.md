@@ -42,9 +42,11 @@ before the HP layout because the slot kinds are fixed. The headlines and the cap
 | Free & offline | 17 | s6: e^(iπ) | `= -1` |
 
 A tap on the status line's digits chip opens the Digits list (4, 6, 8, 10, 12, 15, 20, 25, 30): `9` picks 30. Each
-clip starts from a cleared app, so K sets 30 digits in its setup. The chapter themes are open (owner).
+clip starts from a cleared app, so K sets 30 digits in its setup. The whole video is in the **Teal** theme (owner,
+2026-11-07): every setup starts with Mode, 6 (Settings), 1 (Appearance), 1 (Theme), 2 (Teal) and four Esc, as a
+theme pick keeps the sheet open; s11 gets it from s10's replay.
 
-Between the beats: each clip's setup (CAS, an app, the digits) is recorded before its first press and cut away, so
+Between the beats: each clip's setup (the theme, CAS, an app, the digits) is recorded before its first press and cut away, so
 the screen changes on the gap beat. A chapter change is a camera move plus the headline. In Blender: short clips
 straight on with hard cuts; long clips a slow push-in; big moves in the fills; a caption of the result on each eval
 beat.
@@ -54,8 +56,8 @@ beat.
 `SHOWCASE=1 PW_PORT=<free port> GIAC_OUT=<abs dir> npx playwright test test/showcase.spec.ts` (from `app/`, under
 `host-cpu`): every clip at its blocks' beat times; fails on a wrong press count, a wrong result, or a press more
 than 80 ms after its beat, or a result not on screen before the cut (the next beat after the eval, 267–441 ms
-later; a flick eval starts `lead` ms before its beat). 2026-11-07 on the selling-points list (phase-1 b8ea3bd7):
-12/12.
+later; a flick eval starts `lead` ms before its beat). 2026-11-07 on the selling-points list with the Teal setups
+(phase-1 48b2db67): 12/12, and every setup leaves the page in Teal with no sheet open.
 
 ## Next
 
@@ -78,13 +80,14 @@ later; a flick eval starts `lead` ms before its beat). 2026-11-07 on the selling
      its `input/` holds copies of the yaml and the timeline: this repo is the source);
    - an eval whose result shows late is pressed earlier in the next take (`record.sh --advance`, the stitch's
      `advance.json`); a flick eval (s8, U) starts early enough that its result shows before the cut (`lead`).
-   **Preview take** (2026-11-07, Fairphone 6, the test build of 2026-11-06 19:19): 12/12 results right, every press
+   **Preview take** (2026-11-07, Fairphone 6, the test build of 2026-11-06 19:19, before Teal (R150), so in N62 and
+   without the theme steps): 12/12 results right, every press
    within 1 ms of its beat on the host; `OUTPUT SYNC: worst 4` (s11's result, the read-back taking the wrong change),
    every press 0–1 frames off; stretch at most 17 % (A); U's result 249 ms after beat 7 (the unit view's "Working…"
    line). The take `~/.cache/n62/showcase/take-2026-11-07-sellpoints/` is `input/screen.mp4`. Both locks matter:
    `record.sh` and `stitch.py` take `host-cpu` themselves, and the phone (a PIN) must stay awake while they wait.
 2. **Final take** Sat 11-14 on the release candidate of v0.1.0 (release Sun 11-15), after the UI rows (R140–R150,
-   R53) and the queue have merged.
+   R53) and the queue have merged; a take in Teal needs a test build with R150 on the phone.
 3. **Blender** (owner): the screen plane, the camera keys, the song in the Video Editor from 17 s.
 
 Found on the way (no backlog line yet unless named):
