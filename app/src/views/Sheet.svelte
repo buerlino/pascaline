@@ -458,9 +458,9 @@
     align-items: center;
     justify-content: center;
     box-sizing: border-box;
-    width: 48px;
-    height: 48px;
-    margin-block: -8px; /* the head stays --head-h tall: the target reaches past its padding */
+    width: var(--touch-big);
+    height: var(--touch-big);
+    margin-block: calc(-1 * var(--sp-2)); /* the head stays --head-h tall: the target reaches past its padding */
     padding: 0;
   }
   .gear :global(svg) {
