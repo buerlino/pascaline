@@ -424,6 +424,7 @@
     ontap={(i) => shell.picked(sheet.activate(i))}
     onoption={(i, o) => shell.picked(sheet.pickOption(i, o))}
     onback={() => sheet.back()}
+    ongear={() => shell.picked(sheet.openSettings())}
     onclose={() => shell.closeSheet()}
   />
   {/if}

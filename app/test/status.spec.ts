@@ -81,22 +81,26 @@ test("the tabs switch the views of Function and Solve, the current one marked; H
   await expect(page.getByTestId("place")).toHaveAccessibleName(/^Place: Solve\./);
 });
 
-test("☰ opens the view's menu and Settings is its last row, key 0 in Home (R15c1)", async ({ page }) => {
+test("☰ opens the view's menu of nine and Settings is the ⚙ in its title row (R145); key 0 picks nothing in Home", async ({ page }) => {
   await open(page);
   const rows = sheet(page).getByRole("menuitem");
+  const gear = page.getByTestId("sheet-gear");
   await page.getByTestId("menu-button").tap();
-  await expect(rows).toHaveCount(10);
-  await expect(rows.last()).toContainText("Settings");
+  await expect(rows).toHaveCount(9);
+  await expect(sheet(page).locator('[data-id="settings"]')).toHaveCount(0);
+  await expect(gear).toHaveAccessibleName("Settings");
   await page.getByTestId("menu-button").tap(); // closes again
   await expect(sheet(page)).toBeHidden();
-  await tap(page, ["@menu", "d0"]); // the Menu key still works; 0 picks item 10
+  await tap(page, ["@menu", "d0"]); // the Menu key still works; 0 has no item 10 any more: a dead press
+  await expect(page.getByTestId("sheet-title")).toHaveText("Home menu");
+  await gear.tap();
   await expect(page.getByTestId("sheet-title")).toHaveText("Home menu › Settings");
   await tap(page, ["esc", "esc"]);
   await tap(page, ["@plot"]);
   await page.waitForFunction(() => window.n62.shell.app === "function" && window.n62.shell.loading === null);
   await page.getByTestId("menu-button").tap();
-  await expect(rows.last()).toContainText("Settings");
-  await rows.last().tap();
+  await expect(sheet(page).locator('[data-id="settings"]')).toHaveCount(0);
+  await gear.tap();
   await expect(page.getByTestId("sheet-title")).toHaveText("Plot menu › Settings");
 });
 

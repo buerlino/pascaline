@@ -97,7 +97,7 @@ test.describe("replay", () => {
     expect(await pressed(page)).toBe(countPresses(t05.keys ?? []));
     expect(await pressed(page)).toBe(4);
     await tap(page, ["@menu"]); // 1 more: the ☰ button, a tap on the screen
-    await page.getByTestId("menu").getByRole("menuitem").last().tap(); // Settings: 1 more
+    await page.getByTestId("sheet-gear").tap(); // Settings (R145: the ⚙ in the title row): 1 more
     await page.getByTestId("menu").locator('[data-id="counters"]').tap(); // Counters: 1 more
     await expect(page.getByTestId("sheet-title")).toHaveText("Home menu › Settings › Counters");
     const value = page.getByTestId("menu").locator('[data-id="presses"]').getByTestId("sheet-value");

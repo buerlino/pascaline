@@ -4,6 +4,7 @@
   // answer). ▲▼ or a tap select one; the entry line edits it; Menu → Solve. Below: the info line, with ⚠
   // when the residual check failed, and the polynomial roots when asked for.
   import { t } from "../../i18n/index.ts";
+  import { numText } from "../../i18n/enNum.ts";
   import { longpress } from "../longpress.ts";
   import Grouped from "../Grouped.svelte";
   import type { SolveApp } from "./app.svelte.ts";
@@ -21,7 +22,7 @@
 
 <div class="num">
   {#if app.unknowns.length === 0}
-    <p class="empty">{t("solve.empty")}</p>
+    <p class="empty">{numText("solve.empty")}</p>
   {:else}
     <table data-testid="solve-table">
       <tbody>
@@ -46,7 +47,7 @@
         </ol>
       {/if}
       <p class="info" class:late={app.report.info === t("history.working")}>
-        {#if app.report.warn}<span class="warn" title={t("solve.warnTitle")}>⚠</span>{/if}
+        {#if app.report.warn}<span class="warn" title={numText("solve.warnTitle")}>⚠</span>{/if}
         <span data-testid="solve-info">{app.report.info}</span>
       </p>
     </div>

@@ -134,3 +134,28 @@ export function groupShots(): LookShot[] {
     },
   }));
 }
+
+/** R143: the ▾ on every legend that opens a menu, the keypad alone at both phone sizes (360 and 412 wide), tap layer and Shift
+ *  armed (≤≠, α∞, Memory, Mode and Settings are marked), in N62 (light and dark come with every shot), with Plain keys and with High contrast. */
+export function menuMarkShots(): (LookShot & { viewport: { width: number; height: number } })[] {
+  const looks: [string, string, Record<string, unknown>][] = [
+    ["colour", "N62", {}],
+    ["plain", "Plain keys", { plain: true }],
+    ["high", "High contrast", { contrast: true }],
+  ];
+  return ([[360, 740], [412, 915]] as const).flatMap(([width, height]) =>
+    looks.flatMap(([id, title, patch]) =>
+      [false, true].map((on) => ({
+        id: `menumark-${id}-${width}${on ? "-shift" : ""}`,
+        group: "The menu mark ▾ (R143)",
+        title: `${title}, ${width} × ${height}, ${on ? "Shift armed" : "tap layer"}`,
+        viewport: { width, height },
+        element: ".pad",
+        setup: async (p: Page) => {
+          if (on) await tap(p, ["shift"]);
+          if (Object.keys(patch).length > 0) await setLook(p, patch);
+        },
+      })),
+    ),
+  );
+}
