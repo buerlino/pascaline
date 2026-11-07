@@ -6,7 +6,7 @@ import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { test, type Page } from "@playwright/test";
 import { parse } from "yaml";
 import { entryValue, flick, open, setFontScale, tap } from "../test/helpers.ts";
-import { entryShots, groupShots, lookShots, markShots } from "./looks.ts";
+import { entryShots, groupShots, lookShots, markShots, menuMarkShots } from "./looks.ts";
 
 const OUT = new URL("../test/gallery/", import.meta.url).pathname;
 const THEMES = ["light", "dark"] as const;
@@ -437,6 +437,7 @@ const shots: Shot[] = [
   ...unitFindShots(),
   ...unitResultShots(),
   ...lookShots(someHistory),
+  ...menuMarkShots(),
   ...entryShots(),
   {
     id: "home-tmpl",
