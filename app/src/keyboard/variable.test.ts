@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { parse } from "yaml";
 import { actionFor, loadKeyboard, labelFor } from "./keyboard.ts";
-import { isLetter, typesVariable } from "./variable.ts";
+import { typesVariable } from "./variable.ts";
 
 const kb = loadKeyboard(parse(readFileSync(new URL("../../../spec/keyboard.yaml", import.meta.url), "utf8")));
 
@@ -18,7 +18,7 @@ describe("typesVariable", () => {
     expect(typesVariable({ kind: "cmd", name: "undo" })).toBe(false);
     expect(typesVariable({ kind: "special", name: "alpha" })).toBe(false);
     expect(typesVariable(undefined)).toBe(false);
-    expect(isLetter("é")).toBe(true);
+    expect(typesVariable({ kind: "type", text: "é" })).toBe(true);
   });
 });
 

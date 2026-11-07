@@ -6,7 +6,7 @@
   import { fitLegends } from "./fit.ts";
   import { keyNames, loadKeyNames } from "./keyNamesLoader.svelte.ts";
   import { actionFor, gridPlace, keyboard, labelFor, type Key, type Layer } from "./keyboard.ts";
-  import { typesVariable } from "./variable.ts";
+  import { typesVariable, varLayers } from "./variable.ts";
   import { touchKey, touchPresses } from "../state/pressCount.ts";
   import { sheetChunk } from "../views/sheetView.svelte.ts";
   import type { UserKeys } from "./userKeys.svelte.ts";
@@ -61,11 +61,8 @@
     legend(labelFor(k, shift, alpha, cas) || k.label.primary || "");
   const hint = (k: Key): string => (shift && !alpha) || !k.label.shift ? "" : legend(k.label.shift);
   const alphaHint = (k: Key): string => (alpha || !k.label.alpha ? "" : k.label.alpha);
-  // R142: a legend is italic, in every mode, exactly when its action types one letter (a variable, ISO 80000-2); the
-  // face is the active layer's action, a legend its own layer's (variable.ts)
-  const faceVar = (k: Key): boolean => typesVariable(actionFor(k, shift, alpha, false, cas));
-  const shiftVar = (k: Key): boolean => typesVariable(k.actions.shift);
-  const alphaVar = (k: Key): boolean => typesVariable(k.actions.alpha);
+  // R142: a legend is italic, in every mode, exactly when its action types one letter (a variable, ISO 80000-2; variable.ts):
+  // the key says which layers type one (data-v), the CSS picks the face or legend that shows that layer
   /** Rows with a letter on some key reserve the letter line on every key, so the faces of a row stay level. The upper
    *  cluster has no letters, and no line for them (vertical space, docs/03 rule 9). */
   const letterRows = new Set(keyboard.keys.filter((k) => k.label.alpha).map((k) => k.row));
@@ -113,16 +110,17 @@
   // The trackpad (K1): the four arrow keys are its tap zones; a drag steps in 2D (gestures.ts), a tap is one step. The
   // hub at its centre (R15c) is the surface too: a drag from it steps, a tap on it is no zone and does nothing.
   const isPadKey = (k: Key): boolean => (PAD_KEYS as readonly string[]).includes(k.id);
-  const padArea = ((): { rows: string; cols: string } | undefined => {
+  /** The round pad's cells; `span` is its width in columns, for the circle's diameter (R141). */
+  const padArea = ((): { rows: string; cols: string; span: number } | undefined => {
     const keys = keyboard.keys.filter(isPadKey);
     if (keys.length === 0) return undefined;
     const rows = keys.map((k) => k.row);
-    const starts = keys.map((k) => gridPlace(keyboard, k).start);
-    const ends = keys.map((k) => gridPlace(keyboard, k).start + gridPlace(keyboard, k).span);
-    return { rows: `${Math.min(...rows) + 1} / ${Math.max(...rows) + 2}`, cols: `${Math.min(...starts)} / ${Math.max(...ends)}` };
+    const places = keys.map((k) => gridPlace(keyboard, k));
+    const starts = places.map((p) => p.start);
+    const ends = places.map((p) => p.start + p.span);
+    const [from, to] = [Math.min(...starts), Math.max(...ends)];
+    return { rows: `${Math.min(...rows) + 1} / ${Math.max(...rows) + 2}`, cols: `${from} / ${to}`, span: to - from };
   })();
-  /** The pad's width in columns, for the circle's diameter (R141). */
-  const padSpan = padArea ? Number(padArea.cols.split(" / ")[1]) - Number(padArea.cols.split(" / ")[0]) : 0;
 
   // Any other key fires when the finger lifts: a tap is the key in the current layer, a flick up or down its shift or
   // letter layer (FlickTracker: distance only, no hold time), a flick slid back to the middle nothing. A sideways slip
@@ -304,7 +302,7 @@
   class:alphaed={alpha}
   style:grid-template-columns={`repeat(${keyboard.units}, 1fr)`}
   style:--pad-units={keyboard.units}
-  style:--pad-span={padSpan}
+  style:--pad-span={padArea?.span ?? 0}
   bind:this={padEl}
   onpointerdown={down}
   onpointermove={move}
@@ -318,6 +316,7 @@
   {#each keys as key (key.id)}
     <!-- the letter line: the row's, or a pad cell's own flick down (the cluster has none otherwise) -->
     {@const lettered = letterRows.has(key.row) || (key.pad && key.label.alpha)}
+    {@const place = gridPlace(keyboard, key)}
     <button
       type="button"
       class={`key ${key.cls}`}
@@ -326,16 +325,17 @@
       aria-pressed={key.id === "shift" ? shift : key.id === "alpha" ? alpha : undefined}
       data-locked={locked(key) ? "true" : undefined}
       style:grid-row={key.row + 1}
-      style:grid-column={`${gridPlace(keyboard, key).start} / span ${gridPlace(keyboard, key).span}`}
+      style:grid-column={`${place.start} / span ${place.span}`}
       data-dead={dead(key) ? "true" : undefined}
       data-zone={isPadKey(key) ? "true" : undefined}
       data-letters={lettered ? "true" : undefined}
       data-user={key.user ? (userKeys.isEmpty(key) ? "empty" : "set") : undefined}
       data-pad={key.pad}
+      data-v={varLayers(key)}
     >
-      <span class="shiftlegend" data-fit="legend" data-var={shiftVar(key) ? "true" : undefined}>{hint(key)}</span>
-      <span class="main" data-fit="face" data-var={faceVar(key) ? "true" : undefined}>{face(key)}</span>
-      {#if lettered}<span class="alphalegend" data-fit="legend" data-var={alphaVar(key) ? "true" : undefined}>{alphaHint(key)}</span>{/if}
+      <span class="shiftlegend" data-fit="legend">{hint(key)}</span>
+      <span class="main" data-fit="face">{face(key)}</span>
+      {#if lettered}<span class="alphalegend" data-fit="legend">{alphaHint(key)}</span>{/if}
     </button>
   {/each}
   {#if padArea}<div class="hub" data-trackpad data-testid="pad-hub" style:grid-row={padArea.rows} style:grid-column={padArea.cols}></div>{/if}
@@ -345,7 +345,7 @@
       data-testid="flick-bubble"
       data-dir={bubble.dir}
       data-none={bubble.none ? "true" : undefined}
-      data-var={bubble.variable ? "true" : undefined}
+      data-var={bubble.variable}
       style:left={`${bubble.x}px`}
       style:top={`${bubble.y}px`}
       aria-hidden="true"
@@ -405,7 +405,12 @@
      types), in the face the entry line draws a typed letter in (MathLive's math italic, from mathlive/static.css, loaded
      for the entry line) and a real italic serif behind it, never a synthesised slant. Functions, units, numbers and
      constants stay upright. No bold anywhere: the meaning is the position and the colour. */
-  [data-var="true"] {
+  .bubble[data-var="true"],
+  .key[data-v*="s"] .shiftlegend,
+  .key[data-v*="a"] .alphalegend,
+  .pad:not(.shifted, .alphaed) .key[data-v*="p"] .main,
+  .shifted:not(.alphaed) .key[data-v*="s"] .main,
+  .alphaed .key[data-v*="a"] .main {
     font-style: italic;
     font-family: KaTeX_Math, "STIX Two Text", "Times New Roman", "Times", serif;
     font-weight: 400;

@@ -182,3 +182,25 @@ test("the unit cells drawn on the keys are upright", async ({ page }) => {
     for (const s of seen) expect(s.style, `${s.key} ${s.part} "${s.text}"`).toBe("normal");
   }
 });
+
+test("the italic font arriving after the first paint moves no key or legend", async ({ page }) => {
+  // layout-shift entries that name a keypad node, from the load until the fonts are settled; and every legend box's
+  // size before and after the fonts are ready (the legend lines have fixed heights, the keys fixed cells)
+  await page.addInitScript(() => {
+    const w = window as unknown as { __shifts: string[] };
+    w.__shifts = [];
+    new PerformanceObserver((list) => {
+      for (const e of list.getEntries() as unknown as { value: number; sources?: { node?: Element }[] }[])
+        for (const s of e.sources ?? []) if (e.value > 0 && s.node instanceof Element && s.node.closest(".pad")) w.__shifts.push(`${e.value} ${s.node.className}`);
+    }).observe({ type: "layout-shift", buffered: true });
+  });
+  await page.goto("/?engine=fake&tips=off");
+  const boxes = (): Promise<string> =>
+    page.evaluate(() => [...document.querySelectorAll(".pad .key")].map((k) => { const r = k.getBoundingClientRect(); return [r.x, r.y, r.width, r.height].map(Math.round).join(","); }).join(";"));
+  await page.waitForFunction(() => document.querySelector(".pad .key") !== null);
+  const early = await boxes();
+  await page.evaluate(() => document.fonts.ready);
+  await page.waitForTimeout(500);
+  expect(await boxes()).toBe(early);
+  expect(await page.evaluate(() => (window as unknown as { __shifts: string[] }).__shifts)).toEqual([]);
+});

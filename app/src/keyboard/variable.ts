@@ -3,12 +3,16 @@
 // keypad is a variable exactly when its action types one letter: the Alpha letters, the Greek letters a key layer types,
 // x and y on the x key. The flag comes from the action, never from the legend's text (a user key's legend follows the
 // action it holds), and no mode changes it.
-import type { ActionBody } from "./keyboard.ts";
+import type { ActionBody, Key } from "./keyboard.ts";
 
 const LETTER = /^\p{L}$/u;
 
-/** True if `text` is one letter (what a sheet's filter takes from a flick down). */
-export const isLetter = (text: string): boolean => LETTER.test(text);
-
 /** True if the action types one letter, so the legend that shows it is a variable (italic). */
-export const typesVariable = (a: ActionBody | undefined): boolean => a?.kind === "type" && isLetter(a.text);
+export const typesVariable = (a: ActionBody | undefined): boolean => a?.kind === "type" && LETTER.test(a.text);
+
+/** A key's `data-v` attribute: which layers type a letter, as p (tap), s (Shift), a (Alpha, which falls back to the tap).
+ *  The keypad's CSS picks the face or legend that shows that layer. Absent when none does. */
+export const varLayers = (k: Key): string | undefined => {
+  const { primary: p, shift: s, alpha: a = p } = k.actions;
+  return (typesVariable(p) ? "p" : "") + (typesVariable(s) ? "s" : "") + (typesVariable(a) ? "a" : "") || undefined;
+};
