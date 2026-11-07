@@ -5,8 +5,14 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { parse } from "yaml";
-import { SPECIALS, keyboard, type ActionBody } from "./keyboard.ts";
-import { OPENS_NOTHING, OPENS_SHEET, opensSheet } from "./opens.ts";
+import { OPENS_SHEET, SPECIALS, keyboard, type ActionBody, type Special } from "./keyboard.ts";
+import { opensSheet } from "./opens.ts";
+
+/** Every other special: it does something else (a modifier, an edit, a place, a view, the unit view, nothing). A new
+ *  special must be added here or to OPENS_SHEET (keyboard.ts), so someone decides. */
+const OPENS_NOTHING: ReadonlySet<Special> = new Set<Special>([
+  "shift", "alpha", "enter", "clear", "esc", "fmt", "copy", "paste", "symb", "plot", "num", "home", "cas", "switch", "units", "none",
+]);
 
 const spec = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "../../../spec/keyboard.yaml"), "utf8");
 
@@ -38,7 +44,7 @@ describe("opensSheet (R143)", () => {
         }
     };
     walk(parse(spec));
-    for (const s of used) expect(OPENS_SHEET.has(s as never) || OPENS_NOTHING.has(s as never), s).toBe(true);
+    for (const s of used) expect(OPENS_SHEET.includes(s as never) || OPENS_NOTHING.has(s as never), s).toBe(true);
   });
 
   it("the shipped layers that open a sheet are the ones the owner named (R143)", () => {

@@ -243,7 +243,7 @@ for (const width of [360, 412])
         const r = el?.getBoundingClientRect();
         return {
           text: el?.textContent?.trim(), px: Math.round(parseFloat(el ? getComputedStyle(el).fontSize : "0")),
-          cut: r ? r.left + (el?.scrollWidth ?? 0) > k.right + 0.5 : true, // (the mark counts: scrollWidth includes it)
+          cut: r ? r.right + 0.55 * parseFloat(getComputedStyle(el!).fontSize) > k.right + 0.5 : true, // (the mark hangs after the text, about 0.55 em)
         };
       }, sel);
     expect(await fits(".shiftlegend")).toMatchObject({ text: "Settings", cut: false });

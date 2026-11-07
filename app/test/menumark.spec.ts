@@ -118,7 +118,8 @@ test("at 360 px the mark never shrinks Vars, Math, Tmpl or α∞ by more than 5 
   const out = await page.evaluate(() =>
     [...document.querySelectorAll<HTMLElement>('[data-opens="true"]')].map((el) => {
       const k = el.closest(".key")?.getBoundingClientRect();
-      return k ? el.getBoundingClientRect().left + el.scrollWidth - k.right : 0;
+      // (the mark hangs out of the flow: about half an em wide, after the text)
+      return k ? el.getBoundingClientRect().right + 0.55 * parseFloat(getComputedStyle(el).fontSize) - k.right : 0;
     }),
   );
   expect(Math.max(...out), "the mark ends inside its key").toBeLessThanOrEqual(0);

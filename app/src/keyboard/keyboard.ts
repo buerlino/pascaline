@@ -20,9 +20,10 @@ export type Special =
   | "units"
   /** A key whose function we don't have yet (it keeps its alpha letter): does nothing. */
   | "none";
+/** The specials that open a sheet (a list or a grid) instead of acting (R143: their legend carries the mark ▾; opens.ts). */
+export const OPENS_SHEET: readonly Special[] = ["settings", "mode", "apps", "menu", "tmpl", "relations", "symbols", "find", "vars", "memory"];
 export const SPECIALS: readonly Special[] = [
-  "shift", "alpha", "enter", "clear", "esc", "settings", "mode", "apps", "symb", "plot", "num", "menu", "fmt", "copy", "paste", "tmpl",
-  "home", "cas", "switch", "relations", "symbols", "find", "vars", "memory", "units", "none",
+  "shift", "alpha", "enter", "clear", "esc", "symb", "plot", "num", "fmt", "copy", "paste", "home", "cas", "switch", "units", "none", ...OPENS_SHEET,
 ];
 
 /** The first of the maths rows (3–9): a pick sheet is drawn over them, never over the top cluster (rows 0–2), whose
