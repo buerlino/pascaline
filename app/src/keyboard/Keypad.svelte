@@ -426,9 +426,9 @@
   [data-opens="true"] {
     position: relative;
   }
-  /* a face is centred as text and mark together: half the mark's width (0.78em of the sign's 0.55em, and its 1px margin) to the left */
+  /* a face is centred as text and mark together: half the mark's width (about 0.78 em of 0.55 em, and its margin) to the left */
   .main[data-opens="true"] {
-    translate: calc(-0.22em - 0.5px) 0;
+    translate: -0.25em 0;
   }
   [data-opens="true"]::after {
     content: "▾";
@@ -436,7 +436,7 @@
     left: 100%;
     top: 0;
     bottom: 0;
-    margin-left: 1px;
+    margin-left: 0.1em;
     font-size: 0.78em;
     font-style: normal;
   }
