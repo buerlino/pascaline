@@ -4,6 +4,7 @@
   import type { AppShell, PaletteId } from "./apps/shell.svelte.ts";
   import type { SubMenu } from "./apps/types.ts";
   import type { ClipActions } from "./clipboard/actions.svelte.ts";
+  import type { RowBarView } from "./appLoaders.ts";
   import type { EntryController } from "./entry/controller.ts";
   import { t } from "./i18n/index.ts";
   import { openLayer } from "./input/backLayer.ts";
@@ -21,7 +22,6 @@
   import { counted, countScreenTaps, hwKind } from "./state/pressCount.ts";
   import { createLoaders, type FindCode, type ModeSheetCode } from "./appLoaders.ts";
   import { tipsDue } from "./state/tips.ts";
-  import { canPick } from "./state/pickRows.ts";
   import History from "./views/History.svelte";
   import StatusLine from "./views/StatusLine.svelte";
   /** Set while the first Mode or Settings open waits for that code. */
@@ -34,6 +34,8 @@
 
   // The lazy code (appLoaders.ts, R97): the Mode lists, Find with its index, and copy, paste and share. None is in the start chunk.
   let clip = $state.raw<ClipActions | undefined>();
+  /** The picked row's buttons (views/RowBar.svelte), loaded with the clipboard code (R147: not in the start chunk). */
+  let rowBar = $state.raw<RowBarView | undefined>();
   // svelte-ignore state_referenced_locally (main.ts mounts App once with these three objects; none is ever replaced)
   const loaders = createLoaders({
     session,
@@ -41,7 +43,10 @@
     entry,
     busy: () => busy,
     insertResult: (item) => insertResult(item),
-    onClip: (c) => (clip = c),
+    onClip: (c, bar) => {
+      rowBar = bar;
+      clip = c;
+    },
   });
   const { loadModeSheet, loadFind, loadClip } = loaders;
 
@@ -280,15 +285,11 @@
 
   /** The picked history row (P4: Up on an empty line; route.ts walks it; R147: a first tap on a row). */
   let picked = $state<number | null>(null);
-  /** R147: a tap picks a row (null: drops the pick); its buttons come from the clipboard code, as after ▲. */
+  /** R147: a tap picks a row (History draws no note row as one, so every index it gives can be picked; null drops
+   *  the pick); its buttons come with the clipboard code, as after ▲. */
   function pick(i: number | null): void {
-    picked = i !== null && canPick(session.items, i) ? i : null;
-    if (picked !== null) void loadClip();
+    if ((picked = i) !== null) void loadClip();
   }
-  /** R3 (r19 section 3, R147): a row picked on an empty line lays its buttons over the line's slot, so neither the
-   *  history nor the keypad moves. Read when the pick starts or moves (entry.value is not reactive); a key that types
-   *  drops the pick, so the line cannot change under it. With text on the line (a tap can pick there) they sit above it. */
-  const overLine = $derived(picked !== null && entry.value === "");
   /** The CAS view is under the keys (no app on top): Alpha types lower case there (R58). */
   const casKeys = $derived(session.view === "cas" && shell.app === null);
   /** The key routing (keyboard/route.ts, R15c2) works on this: the models, this component's state and its actions. */
@@ -320,7 +321,7 @@
   const typeLetter = (ch: string): void => route.typeLetter(ctx, ch);
   const cancel = (): Promise<void> => route.escape(ctx);
 
-  /** A tap on the status line's strip, or on a row bar button, is not a place for typing: it must not take the caret out of the entry line. */
+  /** A tap on the status line's strip is not a place for typing: it must not take the caret out of the entry line. */
   const noFocus = (e: Event): void => e.preventDefault();
 
   const busy = $derived(session.busy || shell.busy);
@@ -361,20 +362,10 @@
 
     {#if clip?.notice}<div class="notice" role="status" data-testid="notice">{clip.notice}</div>{/if}
 
-    <!-- R11: the picked row's actions, items 1-5 of the Menu (docs/05 3.3); shown only while a row is picked -->
-    {#if clip && shell.app === null && picked !== null}
-      {@const row = session.items[picked]}
-      {#if row}
-      {@const why = clip.rowWhy(row)}
-      <div class="rowslot" class:over={overLine} style:min-height={overLine ? `${entryHeight}px` : undefined}>
-        {#if why}<div class="rowwhy" data-testid="row-why">{why}</div>{/if}
-        <div class="rowbar" role="toolbar" aria-label={t("history.actions")} data-testid="row-actions">
-          {#each clip.rowButtons(row) as b (b.id)}
-            <button type="button" disabled={b.disabled} onpointerdown={noFocus} onclick={() => { picked = null; b.run?.(); }}>{b.label}</button>
-          {/each}
-        </div>
-      </div>
-      {/if}
+    <!-- R11: the picked row's actions, items 1-5 of the Menu (docs/05 3.3); shown only while a row is picked (RowBar.svelte, with the clipboard code) -->
+    {#if clip && rowBar && shell.app === null && picked !== null && session.items[picked]}
+      {@const Bar = rowBar}
+      <Bar {clip} {entry} row={session.items[picked]!} height={entryHeight} onaction={() => (picked = null)} />
     {/if}
 
     <div class="entry" class:hidden={!shell.showsEntry} aria-label={t("entry.label")} bind:clientHeight={entryHeight}>
@@ -499,46 +490,6 @@
   }
   .loading {
     margin: auto;
-    color: var(--muted);
-  }
-  /* R3 (R147): on an empty line the picked row's why line and buttons lie over the entry line's box, with its bottom
-     edge (the line is the screen's last row in the flow); a long why line rises over the history's foot */
-  .rowslot.over {
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 4;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-end;
-    background: var(--bg);
-  }
-  .rowbar {
-    display: flex;
-    gap: var(--sp-15);
-    padding: var(--sp-1) var(--sp-3);
-  }
-  .rowwhy {
-    padding: var(--sp-05) var(--sp-3) 0;
-    font-size: var(--fs-note);
-    color: var(--muted);
-    /* wraps: the σ part (R40f1) comes last and must not be cut off at phone width */
-    white-space: normal;
-    overflow-wrap: anywhere;
-  }
-  .rowbar button {
-    flex: 1;
-    min-height: var(--touch);
-    font: inherit;
-    font-size: var(--fs-note);
-    border-radius: var(--radius);
-    border: var(--stroke-thin) solid var(--line);
-    background: var(--panel);
-    color: var(--text);
-    padding: 0 var(--sp-1);
-  }
-  .rowbar button:disabled {
     color: var(--muted);
   }
   .notice {

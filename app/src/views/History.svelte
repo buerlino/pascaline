@@ -21,7 +21,7 @@
     marks = "reason",
     onrecall,
     oninsert,
-    onpick = () => {},
+    onpick,
     oncancel,
     onlongpress,
     undo = null,
@@ -54,7 +54,7 @@
     oninsert: (item: HistoryItem) => void;
     /** R147 (the G2's way): a first tap on a row's entry or result picks the row (its index into items), as ▲ does; a tap
      *  on the history's empty part drops the pick (null). */
-    onpick?: (index: number | null) => void;
+    onpick: (index: number | null) => void;
     oncancel: () => void;
     /** A long press on a finished row: its copy actions (docs/04 2.6). */
     onlongpress?: (item: HistoryItem) => void;
@@ -93,7 +93,7 @@
   }
   /** R147: a tap on the history outside every row (its empty part) drops the pick. */
   function tapHistory(e: MouseEvent): void {
-    if (selected !== null && !(e.target as Element).closest(".item, .undone, .earlier")) onpick(null);
+    if (!(e.target as Element).closest(".item")) onpick(null);
   }
 
   // R40: a tap on a row with a σ line (not on its entry or result, which pick and then recall or insert, R147) shows it; a second hides it
