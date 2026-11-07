@@ -81,7 +81,6 @@ Milestone reviews (section 0): after R50e (with R116's gallery groups "Entry hig
 
 | Step | What | Agent, model | Branch | After |
 |---|---|---|---|---|
-| 499 | [G185](packages/G185.md) a Home Enter that does not return in time is stopped with the time-limit message (F62); step 1 merged, steps 2–3 run as G185f1 (Opus pass 86) | gorge, Opus | `p1/gorge-homewatch` | – |
 | 509 | [G181](packages/G181.md) atanh and atan of a tiny non-real exact argument give z (F177) | gorge, Opus | `p1/gorge-atanhtiny` | – |
 | 510 | [G182](packages/G182.md) the why line past the 1000-digit cap says what was checked (F178) | gorge, Sonnet | `p1/gorge-whypastcap` | G181 |
 | 511 | [G188](packages/G188.md) the view sweep survives an engine crash and names it (G94) | gorge, Opus | `p1/gorge-viewcrash` | – |
