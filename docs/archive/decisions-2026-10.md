@@ -5,6 +5,9 @@ History only: read it when a decision is questioned. What still binds is in [../
 
 ## Decided proposals moved here later
 
+### Shortened 2026-11-07 (Opus pass 86) to make room for G184's and G185's Home time limits, as it stood
+- **Engine defaults, not G2 copies (owner, 2026-10-19).** Choice: the default is what the engine does as built; a G2 special case stays only for a silent wrong number (principle 3) or a keystroke saving (principle 2), never for the match alone; of two equal readings, less code wins; the G2's layout and flow stay the backbone (P11). Would change if: a removal costs muscle memory (docs/03 rule 8).
+
 ### Shortened 2026-11-06 (Opus pass 85) to make room for R140's question and R144's and R146's defaults, as they stood
 - **The declutter (owner, 2026-11-05 evening): history lives in git.** Decided notes, reports past a week, merged packages' mockups and one-package probes are deleted, not archived; a link to one becomes its path and commit in a code span; `docs/archive/` keeps the full log and what code or a live doc cites. docs/04 keeps what binds (S34). A re-export no file imports goes in the next package editing it (R136: parse.ts's GREEK, LETTER_NAMES). Rule: rules section 10. Would change if: a deleted file is needed back twice a month.
 - **S4 (2026-10-18): a library file carries definitions only** (functions and exact values; [R10](r10-connector.md)); settings and key slots go only in the backup ([R11](r11-files.md)). Why: a shared file must not change one's digits or keys. Removal test: < 2 owner imports in 4 weeks. Would change if: keyboard set-ups are shared (a `// key:` line).
