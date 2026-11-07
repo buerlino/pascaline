@@ -90,7 +90,10 @@
     });
     entry.onDead = counted(hwOther("dead"), dead);
     entry.onPress = counted(hwOther("other"), () => {}); // R107f1: a leaving ) or | is a press that needs nothing more
-    entry.onPaste = (text) => route.pasteText(ctx, text); // R114: Ctrl+V and every system paste take the Paste key's path
+    entry.onPaste = (text) => {
+      picked = null; // a paste types too: it drops the pick (R147), so its buttons never cover the pasted text
+      route.pasteText(ctx, text); // R114: Ctrl+V and every system paste take the Paste key's path
+    };
     // the first start (R15c4): once the keypad is drawn and the browser is idle, so the tips never compete with the start
     void tipsDue(location.search).then((due) => due && ("requestIdleCallback" in window ? requestIdleCallback(showTips, { timeout: 2000 }) : setTimeout(showTips, 500)));
     return countScreenTaps((kind) => session.taps.press(kind));

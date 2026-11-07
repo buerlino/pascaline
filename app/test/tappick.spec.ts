@@ -164,3 +164,25 @@ test("with text on the line a tapped pick shows its buttons above the line, not 
   await results(page).first().tap(); // the second tap inserts at the cursor
   expect(await entryValue(page)).toMatch(/^5\\res\{\d+\}\{7\}$/);
 });
+
+test("a system paste drops the pick: the line holds the pasted text, uncovered, and Enter evaluates it", async ({ page }) => {
+  await two(page);
+  await results(page).last().tap();
+  await expect(bar(page)).toBeVisible();
+  // a paste event on the field's focused element, as Ctrl+V, Shift+Insert and the context menu deliver it (hwpaste.spec.ts)
+  await page.evaluate(() => {
+    const mf = window.n62.entry.field;
+    if (!mf) throw new Error("no field");
+    mf.focus();
+    const target = mf.shadowRoot?.activeElement ?? mf.shadowRoot?.querySelector("textarea") ?? mf;
+    const data = new DataTransfer();
+    data.setData("text/plain", "12");
+    target.dispatchEvent(new ClipboardEvent("paste", { clipboardData: data, bubbles: true, cancelable: true, composed: true }));
+  });
+  await expect.poll(() => entryValue(page)).toBe("12");
+  await expect(selected(page)).toHaveCount(0);
+  await expect(bar(page)).toHaveCount(0);
+  await page.keyboard.press("Enter");
+  await expect(page.locator('[data-status="done"]')).toHaveCount(3);
+  await expect(results(page).last()).toHaveAttribute("data-text", "12");
+});
