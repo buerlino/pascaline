@@ -51,6 +51,7 @@ export const en = {
   "menu.title": "{view} menu",
   "menu.inView": "{labels} in {view}",
   "sheet.back": "Back",
+  "menu.settings": "Settings",
   "sheet.count": "{n} items",
   "sheet.stepDown": "Previous value",
   "sheet.stepUp": "Next value",

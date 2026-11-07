@@ -7,7 +7,7 @@
   // (`over: "view"`) stays above the keypad, over the history or view. The keys drive it through App.svelte and
   // sheetKeys.ts; touch is a shortcut: a tap on a row picks it, ◀ ▶ step a value, ‹ goes back a level, × closes it.
   import { t } from "../i18n/index.ts";
-  import { ICONS } from "./icons.ts";
+  import { GEAR, ICONS } from "./icons.ts";
   import MathView from "../render/Math.svelte";
   import type { MenuItem } from "../apps/types.ts";
   import type { Row, Sheet } from "./sheet.svelte.ts";
@@ -20,6 +20,7 @@
     ontap,
     onoption,
     onback,
+    ongear,
     onclose,
     over = "view",
     below = 0,
@@ -32,6 +33,8 @@
     /** A value button of a row was tapped (R86): the row's index and the option's id. */
     onoption: (index: number, option: string) => void;
     onback: () => void;
+    /** The ⚙ in the root level's title row (R145): Settings as the next level. */
+    ongear: () => void;
     onclose: () => void;
     /** Over the keypad (a pick sheet) or above it, over the history or view (a list that takes letters). */
     over?: "keypad" | "view";
@@ -234,6 +237,7 @@
         {#if sheet.icon}<span class="ticon" aria-hidden="true">{@html ICONS[sheet.icon]}</span>{/if}<span class="title" data-testid="sheet-title">{sheet.path}</span>
         {#if level.filter !== ""}<span class="filter" data-testid="sheet-filter">{level.filter}</span>{/if}
         {#if (cutTop || cutBottom) && level.text === undefined}<span class="count" data-testid="sheet-count">{t("sheet.count", { n: String(rows.length) })}</span>{/if}
+        {#if sheet.hasSettings}<button type="button" class="icon gear" data-testid="sheet-gear" aria-label={t("menu.settings")} onclick={ongear}>{@html GEAR}</button>{/if}
         <button type="button" class="icon" aria-label={t("apps.close")} onclick={onclose}>×</button>
       </div>
       {#if level.text !== undefined}
@@ -447,6 +451,21 @@
     padding: var(--sp-05) var(--sp-2);
     cursor: pointer;
     color: var(--text);
+  }
+  /* R145: a 48 × 48 px target, the glyph the size of × (its line box) */
+  .gear {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    width: 48px;
+    height: 48px;
+    margin-block: -8px; /* the head stays --head-h tall: the target reaches past its padding */
+    padding: 0;
+  }
+  .gear :global(svg) {
+    width: var(--fs-input);
+    height: var(--fs-input);
   }
   .list {
     overflow-y: auto;

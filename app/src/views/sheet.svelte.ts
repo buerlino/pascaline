@@ -2,7 +2,8 @@
 // One sheet for every list (docs/05 3.1 with section 7): the model behind Sheet.svelte. Apps, the view menus, the
 // Home/CAS Menu, the row actions, the template palette and Find (R4a: a level that searches) use it.
 // Plain state, no DOM: the keys reach it through sheetKeys.ts, touch through Sheet.svelte.
-import type { MenuItem } from "../apps/types.ts";
+import type { MenuItem, SubMenu } from "../apps/types.ts";
+import { t } from "../i18n/index.ts";
 import type { IconId } from "./icons.ts";
 import { lastPicks } from "./picks.ts";
 
@@ -203,6 +204,9 @@ export interface SheetOptions {
   longPreview?: boolean;
   /** The rows' load while they are not in (see Level.loading). */
   loading?: () => Promise<void> | null;
+  /** R145: where the ⚙ in the title row goes, read when it is tapped: Settings as a level of this sheet, or (before its
+   *  code is in) a function that opens Mode › Settings. Absent: no ⚙. */
+  settings?: () => SubMenu | (() => void);
 }
 
 /** What a pick did: opened a submenu or did nothing (the sheet stays), or chose an item to run (the sheet closes). */
@@ -218,10 +222,12 @@ export class Sheet {
   readonly letters: boolean;
   /** The icon before the title, if any. */
   readonly icon: IconId | undefined;
+  private readonly settings: SheetOptions["settings"];
 
   constructor(id: string, title: string, items: () => readonly MenuItem[], opts?: SheetOptions) {
     this.id = id;
     this.icon = opts?.icon;
+    this.settings = opts?.settings;
     const root = new Level(title, items, id, opts);
     this.levels = [root];
     this.letters = root.filterable;
@@ -232,6 +238,18 @@ export class Sheet {
   }
   get depth(): number {
     return this.levels.length;
+  }
+  /** R145: the ⚙ stands in the title row of the root level when the sheet was given Settings. */
+  get hasSettings(): boolean {
+    return this.settings !== undefined && this.levels.length === 1;
+  }
+  /** R145: the ⚙ (or an empty ☰): Settings as the next level, or run what opens it. */
+  openSettings(): Picked {
+    const to = this.settings?.();
+    if (!to || !this.hasSettings) return STAY;
+    if (typeof to === "function") return { kind: "run", item: { id: "settings", label: t("menu.settings"), run: to } };
+    this.push(this.level, "settings", to);
+    return STAY;
   }
   /** The title with its path, e.g. `Menu › Intersection of F2(x) and`; the last three levels when deeper (the title
    *  row is one line: `Help and about › Parts › GPL-3.0-or-later`). */
@@ -340,12 +358,16 @@ export class Sheet {
       return STAY;
     }
     if (item.submenu) {
-      const sub = item.submenu;
-      const base: SheetOptions = sub.search ? { search: sub.search, remember: false } : { remember: sub.remember ?? true };
-      const opts: SheetOptions = { ...base, ...(sub.text === undefined ? {} : { text: sub.text }), ...(sub.longPreview ? { longPreview: true } : {}), ...(sub.loading ? { loading: sub.loading } : {}) };
-      this.levels = [...this.levels, new Level(sub.title, () => sub.items, `${level.memo}/${item.id}`, opts)];
+      this.push(level, item.id, item.submenu);
       return STAY;
     }
     return { kind: "run", item };
+  }
+
+  /** A submenu on top of `level`, from the item `id`. */
+  private push(level: Level, id: string, sub: SubMenu): void {
+    const base: SheetOptions = sub.search ? { search: sub.search, remember: false } : { remember: sub.remember ?? true };
+    const opts: SheetOptions = { ...base, ...(sub.text === undefined ? {} : { text: sub.text }), ...(sub.longPreview ? { longPreview: true } : {}), ...(sub.loading ? { loading: sub.loading } : {}) };
+    this.levels = [...this.levels, new Level(sub.title, () => sub.items, `${level.memo}/${id}`, opts)];
   }
 }

@@ -206,10 +206,11 @@ export class AppShell {
     const a = this.instance;
     return a?.nav?.(this.view, dir, this.entryEdited) ?? false;
   }
-  /** The open view's own Menu items (Home/CAS: the copy actions), then Settings as the last row (R15c1). */
+  /** The open view's own Menu items (Home/CAS: the copy actions), or the pointer row (R83). Settings is the ⚙ in the
+   *  title row (R145), not a row. */
   get menuItems(): readonly MenuItem[] {
     const own = this.app === null ? this.homeMenu?.() : this.instance?.menu?.(this.view);
-    return this.withSettings(own && own.length > 0 ? own : this.pointer());
+    return own && own.length > 0 ? own : this.pointer();
   }
   /** R83: a view whose Menu has no rows of its own gets one row naming the view that has them; it switches there and
    *  opens that Menu on its first row. Nothing when the view has rows, or no view has. */
@@ -237,11 +238,8 @@ export class AppShell {
     const v = this.app === null ? (this.homeView?.() ?? "home") : this.view;
     return { text: t("menu.title", { view: t(`view.${v}`) }), icon: v };
   }
-  /** A Menu list with Settings as its last row: the same level as Mode's last row opens, as a submenu (R49). */
-  withSettings(own: readonly MenuItem[]): MenuItem[] {
-    const settings = this.settingsMenu?.();
-    return [...own, { id: "settings", label: t("mode.settings"), ...(settings ? { submenu: settings } : { run: () => this.openSettings?.() }) }];
-  }
+  /** R145: where a ☰ sheet's ⚙ goes: Settings as a level of the sheet (R49), else, before the Mode code is in, Mode › Settings. */
+  private readonly toSettings = (): SubMenu | (() => void) => this.settingsMenu?.() ?? (() => this.openSettings?.());
   /** What the Copy key takes from the open app view; undefined when it has nothing to copy. */
   copyText(): Promise<string | undefined> | string | undefined {
     return this.instance?.copyText?.(this.view);
@@ -276,12 +274,17 @@ export class AppShell {
       return true;
     }
     const place = this.app === null ? "home" : `${this.app}:${this.view}`;
-    this.sheet = this.menuItems.length > 0 ? new Sheet(`menu:${place}`, this.menuTitle.text, () => this.menuItems, { icon: this.menuTitle.icon, at: opts?.at }) : null;
-    return this.sheet !== null;
+    const sheet = new Sheet(`menu:${place}`, this.menuTitle.text, () => this.menuItems, { icon: this.menuTitle.icon, at: opts?.at, settings: this.toSettings });
+    // a view whose ☰ has no rows and no pointer opens Settings directly (R145)
+    if (this.menuItems.length === 0) this.picked(sheet.openSettings());
+    this.sheet ??= sheet;
+    return true;
   }
-  /** Open a list of items over the view (a long press on a history row): same sheet and keys as the Menu key. */
-  showMenu(title: string, items: readonly MenuItem[], opts?: { remember?: boolean; at?: string }): void {
-    this.sheet = new Sheet(`list:${title}`, title, () => items, opts);
+  /** Open a list of items over the view (a long press on a history row): same sheet and keys as the Menu key.
+   *  `settings`: the ⚙ in its title row opens Settings (R145). */
+  showMenu(title: string, items: readonly MenuItem[], opts?: { remember?: boolean; at?: string; settings?: boolean }): void {
+    const { settings, ...rest } = opts ?? {};
+    this.sheet = new Sheet(`list:${title}`, title, () => items, { ...rest, ...(settings ? { settings: this.toSettings } : {}) });
   }
   /** Find (R4a): its categories, searched by the letters typed (Sheet id "find"; route.ts gives it docs/04 3.7's keys). */
   showFind(title: string, categories: readonly MenuItem[], search: (q: string) => readonly MenuItem[]): void {

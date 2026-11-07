@@ -11,3 +11,7 @@ export const ICONS = {
 } as const;
 
 export type IconId = keyof typeof ICONS;
+
+/** R145: the ⚙ in a ☰ sheet's title row (drawn, not the emoji glyph, which Android paints in colour). */
+export const GEAR =
+  '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="8" cy="8" r="2.4"/><path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.4 3.4l1.4 1.4M11.2 11.2l1.4 1.4M12.6 3.4l-1.4 1.4M4.8 11.2l-1.4 1.4"/></svg>';
