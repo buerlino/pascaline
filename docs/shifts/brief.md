@@ -61,11 +61,8 @@ Milestone reviews (section 0): after R50e (with R116's gallery groups "Entry hig
 
 | Step | What | Agent, model | Branch | After |
 |---|---|---|---|---|
-| 532 | [R143](packages/R143.md) ▾ on every legend that opens a menu | ron, Sonnet | `p1/ron-menumark` | – |
-| 534 | [R145](packages/R145.md) ⚙ Settings in every ☰ menu's title row | ron, Sonnet | `p1/ron-menugear` | – |
-| 535 | [R147](packages/R147.md) a tap picks a history row, a second tap inserts | ron, Opus | `p1/ron-tappick` | – |
-| 536 | [R53](packages/R53.md) results mode: the keypad folds by a handle or swipe | ron, Opus | `p1/ron-results-fold` | R147 |
-| 537 | [R148](packages/R148.md) more room: 4 px gaps, short rows below 760 px | ron, Sonnet | `p1/ron-room` | R53, R147 |
+| 536 | [R53](packages/R53.md) results mode: the keypad folds by a handle or swipe | ron, Opus | `p1/ron-results-fold` | – |
+| 537 | [R148](packages/R148.md) more room: 4 px gaps, short rows below 760 px | ron, Sonnet | `p1/ron-room` | R53 |
 | 538 | [R149](packages/R149.md) N62 + Enter rolls the credits | ron, Sonnet | `p1/ron-credits` | – |
 | 495 | [G178](packages/G178.md) a divergent integral inside an expression is refused, not ⚠ 1 (F115) | gorge, Opus | `p1/gorge-intdivexpr` | – |
 | 496 | [G168](packages/G168.md) no value is a plain refusal: `undef`, empty calls, `DelAVars()`, the budget message (F93, F109) | gorge, Opus | `p1/gorge-novalue` | – |
