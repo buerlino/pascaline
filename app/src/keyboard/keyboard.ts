@@ -152,7 +152,7 @@ export function parseAction(v: unknown, where: string): Action {
 }
 
 function parseBody(v: unknown, where: string): ActionBody {
-  if (!isObj(v)) throw new KeyboardSpecError(`${where}: an action must be a mapping`);
+  if (!isObj(v)) throw new KeyboardSpecError(`${where}: not a mapping`);
   const names = Object.keys(v).filter((k) => k !== "sample" && k !== "chip" && k !== "units");
   if (names.length !== 1) throw new KeyboardSpecError(`${where}: an action has exactly one of type/insert/cmd/special`);
   const name = names[0] as string;
@@ -172,7 +172,7 @@ function parseBody(v: unknown, where: string): ActionBody {
       const c = v["chip"];
       if (c !== undefined) {
         if (!isObj(c) || typeof c["key"] !== "string" || typeof c["value"] !== "string" || typeof c["exact"] !== "boolean" || (c["unc"] !== undefined && typeof c["unc"] !== "string"))
-          throw new KeyboardSpecError(`${where}: 'chip' must be { key, value, exact, unc? }`);
+          throw new KeyboardSpecError(`${where}: bad chip`);
         const { key, ...chip } = c as unknown as { key: string } & Chip;
         return { kind: "insert", latex, chip: { key, chip } };
       }
@@ -180,7 +180,7 @@ function parseBody(v: unknown, where: string): ActionBody {
       const units = v["units"] === true ? { units: true as const } : {};
       if (sample === undefined) return { kind: "insert", latex, ...units };
       if (!Array.isArray(sample) || sample.length !== 2 || sample.some((s) => typeof s !== "string"))
-        throw new KeyboardSpecError(`${where}: 'sample' must be [latex, giac]`);
+        throw new KeyboardSpecError(`${where}: bad sample`);
       return { kind: "insert", latex, sample: [sample[0] as string, sample[1] as string], ...units };
     }
     default:
@@ -211,7 +211,7 @@ export function loadKeyboard(doc: unknown): Keyboard {
   const byId = new Map<string, Key>();
   const cells = new Set<string>();
   for (const item of list) {
-    if (!isObj(item)) throw new KeyboardSpecError("keyboard.yaml: every key must be a mapping");
+    if (!isObj(item)) throw new KeyboardSpecError("keyboard.yaml: a key must be a mapping");
     const id = str(item, "id", "key");
     const where = `key '${id}'`;
     if (byId.has(id)) throw new KeyboardSpecError(`${where}: duplicate id`);
@@ -229,7 +229,7 @@ export function loadKeyboard(doc: unknown): Keyboard {
     const source = shipped ? undefined : (str(item, "source", where) as Source);
     if (source !== undefined && !SOURCES.includes(source)) throw new KeyboardSpecError(`${where}: unknown source '${source}'`);
     const labelRaw = item["label"];
-    if (!isObj(labelRaw)) throw new KeyboardSpecError(`${where}: 'label' must be a mapping`);
+    if (!isObj(labelRaw)) throw new KeyboardSpecError(`${where}: label not a mapping`);
     const label: Partial<Record<Layer, string>> = {};
     const actions: Partial<Record<Layer, Action>> = {};
     for (const layer of LAYERS) {
@@ -274,7 +274,7 @@ export function loadPalette(v: unknown, section: string, byId: ReadonlyMap<strin
   const ids = new Set<string>();
   const cells = new Set<string>();
   for (const it of list) {
-    if (!isObj(it)) throw new KeyboardSpecError(`${section}: every item must be a mapping`);
+    if (!isObj(it)) throw new KeyboardSpecError(`${section}: an item must be a mapping`);
     const id = str(it, "id", section);
     const where = `${section} '${id}'`;
     if (ids.has(id)) throw new KeyboardSpecError(`${where}: duplicate id`);

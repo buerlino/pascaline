@@ -337,7 +337,7 @@
       data-pad={key.pad}
       data-v={varLayers(key)}
     >
-      <span class="shiftlegend" data-fit="legend" data-opens={(hint(key) && opensSheet(key.actions.shift)) || undefined}>{hint(key)}</span>
+      <span class="shiftlegend" data-fit="legend" data-opens={opensSheet(key.actions.shift) || undefined}>{hint(key)}</span>
       <span class="main" data-fit="face" data-opens={opensSheet(act(key)) || undefined}>{face(key)}</span>
       {#if lettered}<span class="alphalegend" data-fit="legend">{alphaHint(key)}</span>{/if}
     </button>
@@ -426,7 +426,7 @@
   .main[data-opens="true"] {
     translate: var(--mark-shift) 0;
   }
-  [data-opens="true"]::after {
+  [data-opens="true"]:not(:empty)::after {
     content: "▾";
     position: absolute;
     margin-left: var(--mark-gap);

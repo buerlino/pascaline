@@ -62,8 +62,8 @@ export function fitLegends(pad: HTMLElement): void {
     // R143: the menu mark ▾ hangs after the text out of the flow (scrollWidth counts it): on a maths key (the rows with a letter
     // line) it may use 6 px of the key's side padding, so the mark does not shrink the text; a narrow cluster key (Help's
     // "Settings") has no room to spare: text and mark fit its width together
-    const spare = key.dataset["letters"] ? 6 : 0;
-    for (const el of key.querySelectorAll<HTMLElement>("[data-fit]")) avail.set(el, inner + (el.dataset["opens"] ? spare : 0));
+    const lettered = key.dataset["letters"];
+    for (const el of key.querySelectorAll<HTMLElement>("[data-fit]")) avail.set(el, inner + (lettered && el.dataset["opens"] ? 6 : 0));
   }
   // write
   for (const it of items) {
