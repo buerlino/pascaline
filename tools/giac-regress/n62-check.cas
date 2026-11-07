@@ -809,6 +809,16 @@ Digits:=40:; pc("g166-keep-atan-tan-neg-pi/2-plus-1e-15-12",'(atan(tan(-pi/2+10^
 Digits:=40:; pc("g166-keep-atan-tan-1e14-12",'(atan(tan(10^14)))',(210969811707/10^12),5/10^13);
 // g165-keep-acos-cos-1e-30-12 (precision.yaml, oracle)
 Digits:=40:; pc("g165-keep-acos-cos-1e-30-12",'(acos(cos(10^-30)))',(1/10^30),5/10^42);
+// g181-atanh-1e-1000-i-12 (precision.yaml, derived)
+Digits:=40:; pc("g181-atanh-1e-1000-i-12",'(atanh(10^-1000*i))',(1/10^1000)*i,5/10^1012);
+// g181-atanh-2.5i-1e-1000-12 (precision.yaml, derived)
+Digits:=40:; pc("g181-atanh-2.5i-1e-1000-12",'(atanh((25/10^1)*i*10^-1000))',(25/10^1001)*i,5/10^1012);
+// g181-atanh-acosh-1e-1000-cos-ln-neg-pi-12 (precision.yaml, oracle)
+Digits:=40:; pc("g181-atanh-acosh-1e-1000-cos-ln-neg-pi-12",'(atanh(acosh(-(1000001/10^6))*10^-1000)*cos(0-ln(-pi)))',(330445953108/10^1010)+(150360674449/10^1010)*i,5/10^1011+5/10^1011);
+// g181-atanh-1e-600-i-12 (precision.yaml, derived)
+Digits:=40:; pc("g181-atanh-1e-600-i-12",'(atanh(10^-600*i))',(1/10^600)*i,5/10^612);
+// g181-atanh-tenth-plus-fifth-i-30 (precision.yaml, oracle)
+Digits:=40:; pc("g181-atanh-tenth-plus-fifth-i-30",'(atanh(1/5+i/10))',(200586618131234322782446147699/10^30)+(103748113217601332471011581907/10^30)*i,5/10^31+5/10^31);
 // g175-keep-sqrt-exp-3i-12 (precision.yaml, oracle)
 Digits:=40:; pc("g175-keep-sqrt-exp-3i-12",'(sqrt(exp(3*i)))',(707372016677/10^13)+(997494986604/10^12)*i,5/10^14+5/10^13);
 // g175-keep-sqrt-exp-2-12 (precision.yaml, oracle)
