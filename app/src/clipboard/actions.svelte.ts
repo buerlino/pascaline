@@ -14,6 +14,8 @@ import { whyLine } from "./whyLine.ts";
 import type { ClipboardPort } from "./port.ts";
 import type { CopySource, TextOptions } from "./text.ts";
 import type { LibrarySource } from "../views/libraryJobs.ts";
+/** The picked row's buttons draw the row actions below, so they come in this chunk, not the start chunk (R147). */
+export { default as RowBar } from "../views/RowBar.svelte";
 
 /** A history item as the copy texts read it: the engine's facts (R3 keeps them in `facts`) on the item itself. */
 const source = (i: HistoryItem): CopySource => i;
@@ -303,11 +305,11 @@ export class ClipActions {
     return sigma ? `${why} · ${sigma}` : why;
   }
 
-  /** Menu with a picked row (R13): the whole list, acting on that row; ☰ and Menu end it with Settings (R15c1), a long
-   *  press (`settings` false) shows the nine only. */
+  /** Menu with a picked row (R13): the whole list, acting on that row; ☰ and Menu add the ⚙ for Settings to its title row
+   *  (R145), a long press (`settings` false) has none. */
   openMenu(item: HistoryItem, settings = true): void {
     const items = this.menu(item);
-    this.shell.showMenu(tc("clip.title"), settings ? this.shell.withSettings(items) : items, { remember: false });
+    this.shell.showMenu(tc("clip.title"), items, { remember: false, settings });
   }
 
   /** A long press on a history row: the same list, on that row, over the history. */

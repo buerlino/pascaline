@@ -21,3 +21,7 @@ export function pickAfter(items: readonly Row[], from: number): number | null {
 
 /** True when `i` is a row that can be picked. */
 export const canPick = (items: readonly Row[], i: number): boolean => pickable(items, i);
+
+/** R147 (the G2's way): what a tap on row `index`'s entry or result does while `selected` is picked: the first tap
+ *  picks the row ("pick"), a tap on the picked row recalls or inserts ("act"). */
+export const rowTap = (selected: number | null, index: number): "pick" | "act" => (index === selected ? "act" : "pick");

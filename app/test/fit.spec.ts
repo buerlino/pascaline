@@ -110,18 +110,9 @@ test.describe("at 412 × 915", () => {
       expect(hits).toEqual(["up", "down", "left", "right", "help", "esc", "undo", "redo", "copy", "paste"]);
     });
 
-  // R15c1: Settings as the last row makes the Home menu (10 rows) and the Plot menu (9, two lines of reasons) taller than
-  // the 337 px over the maths rows at 36 px a row: they scroll, with the count in the title row (docs/05 3.1)
-  const SCROLLS = ["home menu", "function plot menu"];
-  for (const name of SCROLLS)
-    test(`fit: ${name} is the one case that scrolls, and says so with its count`, async ({ page }) => {
-      await openSheet(page, name);
-      const m = await sheet(page).locator(".list").evaluate((el) => ({ scroll: el.scrollHeight, client: el.clientHeight }));
-      expect(m.scroll).toBeGreaterThan(m.client);
-      await expect(page.getByTestId("sheet-count")).toHaveCount(1);
-    });
-
-  for (const name of Object.keys(OPENERS).filter((n) => !SCROLLS.includes(n)))
+  // R145: Settings is the ⚙ in the title row, no longer a tenth row: the Home menu (9 rows) and the Plot menu (8, two lines
+  // of reasons) fit the room over the maths rows at 412 × 915 like every other pick sheet
+  for (const name of Object.keys(OPENERS))
     test(`fit: ${name} shows all its items without a scroll`, async ({ page }) => {
       await openSheet(page, name);
       const box = sheet(page).locator(".list, .grid");
@@ -227,8 +218,9 @@ test.describe("at 360 × 740", () => {
     });
 });
 
-// R146: Shift + Help's legend ("Settings") fits its cluster key at the legend size: fitLegends leaves it unshrunk (no
-// inline font size) at 360 and 412 px wide. With Shift on the face "Settings" is shrunk to fit (measured 11.5 px at 360,
+// R146: Shift + Help's legend ("Settings") fits its cluster key at the legend size at 360 and 412 px wide; R143: with the
+// menu mark ▾ after it (out of the flow, inside the key's width: a cluster key has no padding to spare) it shrinks by at most a pixel (10 px at 360, the legend's 11 px
+// at 412) and the mark ends inside the key. With Shift on the face "Settings" is shrunk to fit (measured 11.5 px at 360,
 // 13.9 px at 412, against 15 px for its neighbours; the report's decision item), never cut.
 for (const width of [360, 412])
   test(`R146: the Settings legend on Help fits at the legend size at ${width} px; Shift on, the face is not cut`, async ({ page }) => {
@@ -238,11 +230,15 @@ for (const width of [360, 412])
     const fits = (sel: string) =>
       help.evaluate((key, s) => {
         const el = key.querySelector<HTMLElement>(s);
-        const cs = getComputedStyle(key);
-        const inner = key.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
-        return { text: el?.textContent?.trim(), shrunk: el?.style.fontSize !== "", cut: (el?.scrollWidth ?? 0) > inner + 0.5 };
+        const k = key.getBoundingClientRect();
+        const r = el?.getBoundingClientRect();
+        return {
+          text: el?.textContent?.trim(), px: Math.round(parseFloat(el ? getComputedStyle(el).fontSize : "0")),
+          cut: r ? r.right + 0.55 * parseFloat(getComputedStyle(el!).fontSize) > k.right + 0.5 : true, // (the mark hangs after the text, about 0.55 em)
+        };
       }, sel);
-    expect(await fits(".shiftlegend")).toEqual({ text: "Settings", shrunk: false, cut: false });
+    expect(await fits(".shiftlegend")).toMatchObject({ text: "Settings", cut: false });
+    expect((await fits(".shiftlegend")).px).toBeGreaterThanOrEqual(10);
     await tap(page, ["shift"]);
     expect(await fits('[data-fit="face"]')).toMatchObject({ text: "Settings", cut: false });
   });
@@ -255,4 +251,43 @@ test("flow: a tap on a Tmpl cell closes the sheet, the template goes on the line
   await expect(sheet(page)).toHaveCount(0);
   await tap(page, ["d5"]);
   expect(await entryValue(page)).toMatch(/^\\frac\{5\}\{/);
+});
+
+// R145: Settings is the ⚙ in the title row of every ☰ menu, in sight without a scroll; the list holds no Settings row
+for (const [width, height] of [[360, 740], [412, 839]] as const)
+  test(`R145: Home's ☰ at ${width} × ${height} has a 48 px ⚙ in its title row, inside the viewport; a tap opens Settings as the next level`, async ({ page }) => {
+    await page.setViewportSize({ width, height });
+    await open(page);
+    await tap(page, ["@menu"]);
+    const gear = page.getByTestId("sheet-gear");
+    await expect(gear).toHaveAccessibleName("Settings");
+    const [g, head] = await Promise.all([boxOf(page, '[data-testid="sheet-gear"]'), boxOf(page, '[role="menu"] .head')]);
+    expect(g.width).toBeGreaterThanOrEqual(48);
+    expect(g.height).toBeGreaterThanOrEqual(48);
+    expect(g.y).toBeGreaterThanOrEqual(0);
+    expect(g.y + g.height).toBeLessThanOrEqual(height);
+    expect(g.x + g.width).toBeLessThanOrEqual(width);
+    expect(Math.abs(g.y + g.height / 2 - (head.y + head.height / 2))).toBeLessThanOrEqual(3);
+    expect(await sheet(page).getByRole("menuitem").count()).toBe(9);
+    await expect(sheet(page).locator('[data-id="settings"]')).toHaveCount(0);
+    await gear.tap();
+    await expect(page.getByTestId("sheet-title")).toHaveText("Home menu › Settings");
+    await sheet(page).getByRole("button", { name: "Back" }).tap();
+    await expect(page.getByTestId("sheet-title")).toHaveText("Home menu");
+  });
+
+test("R145: CAS's ☰ and the ☰ on a picked row have the ⚙ and no Settings row; a long press has none", async ({ page }) => {
+  await page.setViewportSize({ width: 412, height: 915 });
+  await open(page);
+  await tap(page, ["d1", "add", "d2", "enter"]);
+  await expect(page.locator('[data-testid="result"]')).toHaveCount(1);
+  await tap(page, ["up", "@menu"]); // a picked row: its menu, with the ⚙
+  await expect(page.getByTestId("sheet-gear")).toBeVisible();
+  await expect(sheet(page).locator('[data-id="settings"]')).toHaveCount(0);
+  await expect(sheet(page).getByRole("menuitem")).toHaveCount(9);
+  await page.getByTestId("sheet-gear").tap();
+  await expect(page.getByTestId("sheet-title")).toHaveText("Menu › Settings");
+  await tap(page, ["esc", "esc"]);
+  await page.evaluate(() => window.n62.shell.showMenu("Row", [{ id: "a", label: "A" }])); // as a long press does
+  await expect(page.getByTestId("sheet-gear")).toHaveCount(0);
 });

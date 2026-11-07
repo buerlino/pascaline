@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // History persistence and the lazy-loaded entry line.
 import { expect, test } from "@playwright/test";
-import { entryValue, open, tap } from "./helpers.ts";
+import { entryValue, open, tap, tapTwice } from "./helpers.ts";
 
 // Not helpers.lastResult: this one is the whole result row, not its `.result` part.
 const lastResult = (page: import("@playwright/test").Page) => page.locator('[data-testid="result"]').last();
@@ -97,7 +97,7 @@ test("a half-typed line with a fraction and a result chip survives a kill (F30)"
   await engineReady(page);
   await tap(page, ["d1", "div", "d3", "enter"]);
   await expect(lastResult(page).locator(".result")).toHaveAttribute("data-text", "0.333333333333");
-  await lastResult(page).locator(".result").tap();
+  await tapTwice(lastResult(page).locator(".result"));
   await tap(page, ["add", "d1", "div", "d2"]);
   const line = await entryValue(page);
   expect(line).toBe("\\res{1}{0.333333333333}+\\frac12");

@@ -59,7 +59,11 @@ export function fitLegends(pad: HTMLElement): void {
     const cs = getComputedStyle(key);
     const inner = key.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
     // each legend has its own line (the shift function above the face, the letter below it): the key's whole width
-    for (const el of key.querySelectorAll<HTMLElement>("[data-fit]")) avail.set(el, inner);
+    // R143: the menu mark ▾ hangs after the text out of the flow (scrollWidth counts it): on a maths key (the rows with a letter
+    // line) it may use 6 px of the key's side padding, so the mark does not shrink the text; a narrow cluster key (Help's
+    // "Settings") has no room to spare: text and mark fit its width together
+    const lettered = key.dataset["letters"];
+    for (const el of key.querySelectorAll<HTMLElement>("[data-fit]")) avail.set(el, inner + (lettered && el.dataset["opens"] ? 6 : 0));
   }
   // write
   for (const it of items) {

@@ -2,7 +2,7 @@
 // P4 (docs/decisions.md): the reference's logical key layout. One test per moved or new key, key sequences on the real
 // engine. Expected values are derived (mathematically provable) unless noted.
 import { expect, test, type Page } from "@playwright/test";
-import { entryValue, lastResult, open, tap } from "./helpers.ts";
+import { entryValue, lastResult, open, tap, tapTwice } from "./helpers.ts";
 
 test.beforeEach(async ({ page }) => {
   await open(page, "");
@@ -398,7 +398,7 @@ test("0xFF typed with the keys is an error, not 0", async ({ page }) => {
 test("1/3, tap the result, ×3 is 1", async ({ page }) => {
   await tap(page, ["d1", "div", "d3", "enter"]);
   await resultIs(page, "0.333333333333", 1);
-  await lastResult(page).tap();
+  await tapTwice(lastResult(page));
   await tap(page, ["mul", "d3", "enter"]);
   await resultIs(page, "1", 2); // derived: (1/3)·3 = 1
 });

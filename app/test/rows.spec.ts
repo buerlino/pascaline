@@ -78,9 +78,9 @@ test("Delete removes the picked row and only that one", async ({ page }) => {
   expect(texts).toEqual(["0.333333333333", "0.25"]);
 });
 
-test("Menu is one list of ten (nine, then Settings), the same with or without a picked row", async ({ page }) => {
+test("Menu is one list of nine (R145: Settings is the ⚙, not a row), the same with or without a picked row", async ({ page }) => {
   await three(page);
-  const names = ["Insert", "Recall", "Copy", "Store ▶", "Delete", "Copy as›", "Paste", "Share session", "Clear history", "Settings›"]; // R49: Settings opens a level, so it shows ›
+  const names = ["Insert", "Recall", "Copy", "Store ▶", "Delete", "Copy as›", "Paste", "Share session", "Clear history"];
   await tap(page, ["@menu"]);
   await expect(page.getByTestId("menu").getByRole("menuitem")).toHaveText(names.map((n, i) => `${(i + 1) % 10}${n}`));
   await tap(page, ["esc", "up", "@menu"]);
@@ -141,13 +141,19 @@ test("with an empty history the actions are disabled; with only an error row the
   await expect(item(page, /^2 ?Recall/)).toBeDisabled();
 });
 
-test("the row buttons cost no viewport: the keypad does not move", async ({ page }) => {
+test("the row buttons cost no viewport: on an empty line no history pixel and no key moves (R3, R147)", async ({ page }) => {
   await three(page);
   const top = () => page.locator('[data-key="d5"]').evaluate((e) => e.getBoundingClientRect().top);
-  const before = await top();
+  const rows = () => page.locator("article.item").evaluateAll((els) => els.map((e) => e.getBoundingClientRect().top));
+  const scroll = () => page.locator("section.history").evaluate((e) => [e.scrollTop, e.getBoundingClientRect().height]);
+  const [before, rowsBefore, scrollBefore] = [await top(), await rows(), await scroll()];
   await tap(page, ["up"]);
   await expect(bar(page)).toBeVisible();
   expect(await top()).toBe(before);
+  expect(await rows()).toEqual(rowsBefore);
+  expect(await scroll()).toEqual(scrollBefore);
+  await tap(page, ["up"]); // walking the rows moves nothing either
+  expect(await rows()).toEqual(rowsBefore);
 });
 
 test("CAS has the same buttons and its own rows", async ({ page }) => {
@@ -162,5 +168,5 @@ test("CAS has the same buttons and its own rows", async ({ page }) => {
   await tap(page, ["@home"]);
   await done(page, 1); // Home still has its row
   await tap(page, ["@menu"]);
-  await expect(page.getByTestId("menu").getByRole("menuitem")).toHaveCount(10);
+  await expect(page.getByTestId("menu").getByRole("menuitem")).toHaveCount(9);
 });

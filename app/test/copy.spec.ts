@@ -171,9 +171,12 @@ test("a long press on a history row opens the Menu list on that row, and the lif
   expect(await entryValue(page)).toBe("");
 });
 
-test("a short tap on a history row still puts the result on the line", async ({ page }) => {
+test("two short taps on a history row put the result on the line (R147: the first picks); neither opens the menu", async ({ page }) => {
   await tap(page, ["d1", "div", "d3", "enter"]);
   await done(page, 1);
+  await lastResult(page).click();
+  await expect(page.getByTestId("menu")).toHaveCount(0);
+  expect(await entryValue(page)).toBe("");
   await lastResult(page).click();
   await expect(page.getByTestId("menu")).toHaveCount(0);
   expect(await entryValue(page)).toContain("\\res");

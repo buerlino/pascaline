@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // R49 (docs/05 3.4, decisions.md "Settings in the Mode sheet, and presets"): Settings is the next level of the pick sheet
-// over the keypad's maths rows, opened by Mode's last row and by every ☰ menu's last row, with its path in the title.
+// over the keypad's maths rows, opened by Mode's last row and by the ⚙ in every ☰ menu's title row (R145), with its path in the title.
 // By touch, by keys and by Android back (`history.back()`); the history never grows. The fake engine.
 import { expect, test, type Page } from "@playwright/test";
 import { entryValue, open, recordVibrations, sheet, sheetKey, tap, vibrations } from "./helpers.ts";
@@ -115,20 +115,20 @@ test.describe("by touch", () => {
     await expect(sheet(page)).toHaveCount(0);
   });
 
-  test("every ☰ menu's last row opens the same level, with that menu in the path; ◀ goes back to the menu", async ({ page }) => {
+  test("the ⚙ in every ☰ menu's title row opens the same level, with that menu in the path; ◀ goes back to the menu", async ({ page }) => {
     await tap(page, ["@menu"]);
-    await expect(sheet(page).getByRole("menuitem").last()).toHaveAttribute("data-id", "settings");
-    await tap(page, ["d0"]);
+    expect(await rowIds(page)).not.toContain("settings");
+    await page.getByTestId("sheet-gear").tap();
     await expect(title(page)).toHaveText("Home menu › Settings");
     expect(await rowIds(page)).toEqual(SECTIONS);
     await sheetKey(page, ["left"]);
     await expect(title(page)).toHaveText("Home menu");
-    await expect(active(page)).toHaveAttribute("data-id", "settings");
+    await expect(page.getByTestId("sheet-gear")).toBeVisible();
     await tap(page, ["esc"]);
     await tap(page, ["@plot"]);
     await page.waitForFunction(() => window.n62.shell.app === "function" && window.n62.shell.loading === null);
     await tap(page, ["@menu"]);
-    await sheet(page).getByRole("menuitem").last().tap();
+    await page.getByTestId("sheet-gear").tap();
     await expect(title(page)).toHaveText("Plot menu › Settings");
     await row(page, "numbers").tap();
     await expect(title(page)).toHaveText("Plot menu › Settings › Numbers");

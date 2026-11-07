@@ -3,7 +3,7 @@
 // 1,749,440 characters, LaTeX 1,773,448 on the engine build of 2026-11-05). MathLive cannot draw it (its SSR build took 2.5 s
 // and overflowed the stack), and the row showed the LaTeX source. Now the row is a drawn note, and Copy holds the whole text.
 import { expect, test } from "@playwright/test";
-import { open, tap, useClipboardLock } from "./helpers.ts";
+import { open, tap, tapTwice, useClipboardLock } from "./helpers.ts";
 
 test.use({ permissions: ["clipboard-read", "clipboard-write"] });
 test.describe.configure({ mode: "serial" });
@@ -32,7 +32,7 @@ test("CAS Σ cos(k)/k to 2000: a drawn note, no LaTeX source, and Copy still hol
   expect(text.length).toBeLessThan(1_800_000);
   // R135f2: the tap on the result puts nothing on the line (its 1.77 MB of LaTeX overflowed MathLive's stack)
   const line = (): Promise<string> => page.evaluate(() => window.n62.entry.value);
-  await row.locator("button.result").click();
+  await tapTwice(row.locator("button.result"), "click"); // R147: the first tap picks the row
   await expect(page.getByTestId("notice")).toHaveText("Too long to insert: Copy holds it");
   const after = await line();
   expect(after).toBe("");

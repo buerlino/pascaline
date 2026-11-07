@@ -3,6 +3,7 @@
   // Num view: x and the functions that are on. One engine call per screen (FunctionApp.refreshNum);
   // numbers through the Home formatter. ▲▼ (or a swipe, or the wheel) scroll by rows; the menu sets start and step.
   import { t } from "../../i18n/index.ts";
+  import { numText } from "../../i18n/enNum.ts";
   import { curveColors, type FunctionApp } from "./app.svelte.ts";
   import Grouped from "../Grouped.svelte";
 
@@ -37,7 +38,7 @@
 
 <div class="num" role="grid" tabindex="-1" bind:this={box} onwheel={wheel} ontouchstart={(e) => (touchY = e.touches[0]?.clientY)} ontouchmove={touchMove}>
   {#if app.numSlots.length === 0}
-    <p class="empty">{t("num.empty")}</p>
+    <p class="empty">{numText("num.empty")}</p>
   {:else}
     <table data-testid="num-table">
       <thead>

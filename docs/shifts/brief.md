@@ -33,6 +33,10 @@
 | [A76](packages/A76.md) | The release builds only what ships; the update test from the last release | annabell, Sonnet | day | the v0.1.0 tag | ~0.3 d |
 | [A82](packages/A82.md) | Store and README screenshots in the final look | annabell, Sonnet | day Sat 11-07 (the Fairphone) | R140, R146, R147, R53 | ~0.2 d |
 | [A80](packages/A80.md), [R139](packages/R139.md), [S35](packages/S35.md) | The internal sweep: scripts and variables, the app's internals, the docs (owner, 2026-11-06: today, then the folder move) | annabell Opus, ron Sonnet, sandra Opus | day, no lane running (R139 the Tab One) | A79, then in this order | ~1 d |
+| [A83](packages/A83.md) | The cheap checks fail first, before the queue and inside it (owner, 2026-11-07: A83 to A85 now, in this order) | annabell, Opus | day, no lane running | – | ~0.5 d |
+| [A84](packages/A84.md) | The audit beside the long checks; one fix round gets both lists | annabell, Opus | day, no lane running | A83 | ~0.5 d |
+| [A85](packages/A85.md) | The Opus pass on its own branch, `integ` only to merge | annabell, Opus | day, no lane running | A84 | ~0.5 d |
+| [R151](packages/R151.md) | Room under the start chunk's 61.00 kB limit (the limit stays) | ron, Opus | lane A, the next night | – | ~0.5 d |
 
 **Why these models:** Opus where a slip breaks entry, the unit chain or stored data for every later package, or gives a wrong number (P17: the engine, input and units); sandra and sofia run Opus; Sonnet elsewhere (an existing pattern, pinned by tests); the audit model follows P17.
 
@@ -57,15 +61,13 @@ With the lanes, start both from the phase-1 worktree: `cd .claude/worktrees/phas
 `ANDROID_SERIAL=HA24BZ2Y` for both lanes, `--until 09:00`, started from the moved checkout `~/Documents/source99/n62` after S35 and the folder move (if the day chain stops before S35 or the move: from `~/Documents/source99/pascaline`, with the names on phase-1 then); before the start the owner plugs in and unlocks the Tab One, and `tools/stay-awake.sh HA24BZ2Y --restore` runs (STAY_ON=7). CORE DEVICE after each pass. Lane A runs the UI rows 528–538 first (owner, 2026-11-06: before v0.1.0, now Sun 11-08), then the engine rows below them; lane B runs A81 first (v0.1.0 ships with it), then G176f1, the rest of its engine rows, then A64 to A75. Two engine packages can run at once: a new Giac patch takes the next free number after phase-1 is merged into its branch; a clash is a fix round. Every "After" was checked against the merges on 2026-11-06 ("–" is merged); a step whose "After" is not merged is skipped. Follow each Opus pass as written (rule 3).
 
 ### Lane A queue (ron's UI, then engine rows)
-Milestone reviews (section 0): after R50e (with R116's gallery groups "Entry highlights (R116)" and the lifted --pick on the History picked row; R113's rings, gallery home-tips-small); after R24d (with R92's Constants and Tools; R108's gallery group "Decimal comma in apps"; R89 on the Fairphone: save two presets with different free keys and switch; R111's note at 360 px; R33's stored-name colour in each theme, decisions.md "Owner answers of 2026-11-02"; R120's gallery unitresult-t10-comma; R124's gallery group "Mark style (R124)" and R125's "Digit groups (R125)", ’ and , grouping only before the point since R125f1; G164's sample sources, decisions.md "Needs the user"; R59 on the Tab One: import a .txt library from Downloads and from Drive, paste a long one from the clipboard, read the 9 s notice; R135's note on CAS Σ cos(k)/k to 2000).
+Milestone reviews (section 0): after R50e (with R116's gallery groups "Entry highlights (R116)" and the lifted --pick on the History picked row; R113's rings, gallery home-tips-small); after R24d (with R92's Constants and Tools; R108's gallery group "Decimal comma in apps"; R89 on the Fairphone: save two presets with different free keys and switch; R111's note at 360 px; R33's stored-name colour in each theme, decisions.md "Owner answers of 2026-11-02"; R120's gallery unitresult-t10-comma; R124's gallery group "Mark style (R124)" and R125's "Digit groups (R125)", ’ and , grouping only before the point since R125f1; G164's sample sources, decisions.md "Needs the user"; R59 on the Tab One: import a .txt library from Downloads and from Drive, paste a long one from the clipboard, read the 9 s notice; R135's note on CAS Σ cos(k)/k to 2000; R143's ▾ at 360 px, where Math's face and Help's Shift legend Settings come out up to 1 px smaller, kept by Opus pass 88).
 
 | Step | What | Agent, model | Branch | After |
 |---|---|---|---|---|
-| 532 | [R143](packages/R143.md) ▾ on every legend that opens a menu | ron, Sonnet | `p1/ron-menumark` | – |
-| 534 | [R145](packages/R145.md) ⚙ Settings in every ☰ menu's title row | ron, Sonnet | `p1/ron-menugear` | – |
-| 535 | [R147](packages/R147.md) a tap picks a history row, a second tap inserts | ron, Opus | `p1/ron-tappick` | – |
-| 536 | [R53](packages/R53.md) results mode: the keypad folds by a handle or swipe | ron, Opus | `p1/ron-results-fold` | R147 |
-| 537 | [R148](packages/R148.md) more room: 4 px gaps, short rows below 760 px | ron, Sonnet | `p1/ron-room` | R53, R147 |
+| 539 | [R152](packages/R152.md) a history row draws e and i, never `\exponentialE` in red (F189) | ron, Sonnet | `p1/ron-historye` | – |
+| 536 | [R53](packages/R53.md) results mode: the keypad folds by a handle or swipe | ron, Opus | `p1/ron-results-fold` | – |
+| 537 | [R148](packages/R148.md) more room: 4 px gaps, short rows below 760 px | ron, Sonnet | `p1/ron-room` | R53 |
 | 538 | [R149](packages/R149.md) N62 + Enter rolls the credits | ron, Sonnet | `p1/ron-credits` | – |
 | 495 | [G178](packages/G178.md) a divergent integral inside an expression is refused, not ⚠ 1 (F115) | gorge, Opus | `p1/gorge-intdivexpr` | – |
 | 496 | [G168](packages/G168.md) no value is a plain refusal: `undef`, empty calls, `DelAVars()`, the budget message (F93, F109) | gorge, Opus | `p1/gorge-novalue` | – |
@@ -84,7 +86,6 @@ Milestone reviews (section 0): after R50e (with R116's gallery groups "Entry hig
 
 | Step | What | Agent, model | Branch | After |
 |---|---|---|---|---|
-| 499 | [G185](packages/G185.md) a Home Enter that does not return in time is stopped with the time-limit message (F62); step 1 merged, steps 2–3 run as G185f1 (Opus pass 86) | gorge, Opus | `p1/gorge-homewatch` | – |
 | 509 | [G181](packages/G181.md) atanh and atan of a tiny non-real exact argument give z (F177) | gorge, Opus | `p1/gorge-atanhtiny` | – |
 | 510 | [G182](packages/G182.md) the why line past the 1000-digit cap says what was checked (F178) | gorge, Sonnet | `p1/gorge-whypastcap` | G181 |
 | 511 | [G188](packages/G188.md) the view sweep survives an engine crash and names it (G94) | gorge, Opus | `p1/gorge-viewcrash` | – |

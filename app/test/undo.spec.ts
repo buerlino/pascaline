@@ -2,7 +2,7 @@
 // Undo on its own key (P13, R16; R15c2: it was Shift + Cancel): the entry line's own MathLive history, and the rule that undo never brings a
 // chip back with a value other than its own. Expected values are derived.
 import { expect, test, type Page } from "@playwright/test";
-import { entryValue, flick, open, tap, touch } from "./helpers.ts";
+import { entryValue, flick, open, tap, tapTwice, touch } from "./helpers.ts";
 
 const results = (page: Page) => page.locator('[data-testid="result"] .result');
 const ready = (page: Page) =>
@@ -15,7 +15,7 @@ async function lineWithChip(page: Page): Promise<void> {
   await ready(page);
   await tap(page, ["d1", "div", "d3", "enter"]);
   await expect(results(page).last()).toHaveAttribute("data-text", "0.333333333333");
-  await results(page).last().tap();
+  await tapTwice(results(page).last());
   await tap(page, ["mul", "d3"]);
   expect(await entryValue(page)).toBe("\\res{1}{0.333333333333}\\times3");
 }
@@ -47,7 +47,7 @@ test("a recalled entry whose chip key is taken keeps both values apart, also aft
   // row 1: 1/3; row 2: 2 (its result is chip 1 on a fresh line only if the table was cleared)
   await tap(page, ["d1", "div", "d3", "enter"]);
   await expect(results(page).last()).toHaveAttribute("data-text", "0.333333333333");
-  await results(page).last().tap(); // chip res:1 = 1/3
+  await tapTwice(results(page).last()); // chip res:1 = 1/3
   await tap(page, ["mul", "d3"]);
   // recall an entry that carries res:1 with ANOTHER value, then undo back to the first line
   await page.evaluate(() => window.n62.entry.set("\\res{1}{7}+1", { "res:1": { value: "7", exact: true } }));

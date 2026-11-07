@@ -20,8 +20,8 @@ finale on beats 273–293. Another song means new constants, read off `grid.py`'
 The test build on the phone (`tools/device-build.sh --test --install`), Show taps off, the phone unlocked. Then:
 
 ```bash
-tools/showcase/record.sh --clips s1,A,s8 [--out DIR] [--advance FILE]   # all 20 without --clips; DIR default ~/.cache/n62/showcase/take-<time>
-python3 -I tools/showcase/stitch.py DIR [--end 105] [--no-intra]       # numpy and ffmpeg; about 5 min for the 88 s under host-cpu
+tools/showcase/record.sh --clips s13,K [--out DIR] [--advance FILE]     # every clip of showcase.yaml without --clips; DIR default ~/.cache/n62/showcase/take-<time>
+python3 -I tools/showcase/stitch.py DIR [--end 105] [--no-intra]       # numpy and ffmpeg; the v6 cut: --end 71.2334 (3254 frames, about 3 min under host-cpu)
 ```
 
 `record.sh` holds the device lock (default `ANDROID_SERIAL` 4d42e62f) and `host-cpu`, keeps the screen on, puts the status
@@ -35,7 +35,7 @@ result) in `DIR/<clip>.json`; the test fails on a wrong result, a missing press,
 `stitch.py` finds the flash (the page's place on screen), each press's response (the first large change: highlight and
 character together) and the result (the first change inside its box after the eval's own response), and maps time
 so that every seen press lands on its beat and the result on beat 7. It writes `screen.mp4` and `screen-intra.mp4`
-(60 fps, 5280 frames, BT.709), `report.md` (the delays, the stretch, and the output read back: `OUTPUT SYNC: worst
+(60 fps, `--end` gives the length, BT.709), `report.md` (the delays, the stretch, and the output read back: `OUTPUT SYNC: worst
 N frame(s) off the beat`), `advance.json` (for `record.sh --advance`: an eval whose result shows late is pressed early
 in the next take, which keeps the stretch small), `check.mp4` (with `~/Music/n62-beat-preview.mp3`) and
 `check-<clip>.png` (the frame before and on beat 1 and beat 7).
