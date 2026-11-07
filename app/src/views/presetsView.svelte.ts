@@ -72,7 +72,7 @@ function modeShort(m: GroupValues): string[] {
   return out;
 }
 
-/** What a preset holds, in a line (`DEG · ENG 4 · comma · 5 keys · Graphite`): the Mode values, the decimal mark, the
+/** What a preset holds, in a line (`DEG · ENG 4 · comma · 5 keys · Teal`): the Mode values, the decimal mark, the
  *  free keys set and the theme when it is not the default one. A group not held, or a field stored before it existed,
  *  is left out. */
 export function summary(p: Preset): string {

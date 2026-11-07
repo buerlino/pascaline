@@ -165,7 +165,7 @@ describe("the format's backup part: every rule it states is the code's (R126)", 
     const groupLines = s.split("\n").filter((l) => /^- `[a-z]+`: /.test(l));
     expect(groupLines.map((l) => /^- `([a-z]+)`/.exec(l)?.[1])).toEqual([...PRESET_GROUPS]);
     // every word any setting takes, so a value the code accepts and the text leaves out shows
-    const words = new Set<string>(["maybe", "", "rad", "deg", "std", "sci", "eng", "pfx", "textbook", "line", "point", "comma", "sigma", "muted", "colour", "reason", "thin", "apos", "system", "light", "dark", "n62", "graphite", "solarized", "gruvbox", "nord"]);
+    const words = new Set<string>(["maybe", "", "rad", "deg", "std", "sci", "eng", "pfx", "textbook", "line", "point", "comma", "sigma", "muted", "colour", "reason", "thin", "apos", "system", "light", "dark", "n62", "teal", "solarized"]);
     for (const m of s.matchAll(/"([a-z][a-z0-9]*)"/g)) words.add(m[1] as string);
     const ok = (group: string, field: string, v: unknown): boolean => {
       if (group === "look") return SETTING_RULES["look"]?.({ ...defaultLook(), [field]: v }) === true;

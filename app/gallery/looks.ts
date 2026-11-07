@@ -14,7 +14,7 @@ export interface LookShot {
   readonly element?: string;
 }
 
-const FAMILIES = ["n62", "graphite", "solarized", "gruvbox", "nord"] as const;
+const FAMILIES = ["n62", "teal", "solarized"] as const;
 const name = (f: string): string => f[0]!.toUpperCase() + f.slice(1);
 
 /** Put a look on the page as Settings › Appearance does, and wait for its lazy CSS. */
@@ -44,7 +44,9 @@ export function lookShots(someHistory: (p: Page) => Promise<void>): LookShot[] {
     })),
     { id: "look-contrast", group: "Themes (R50e): the switches", title: "N62, High contrast", setup: set({ contrast: true }) },
     { id: "look-plain", group: "Themes (R50e): the switches", title: "N62, Plain keys (bold is Shift, italic is Alpha)", setup: set({ plain: true }) },
-    { id: "look-nord-both", group: "Themes (R50e): the switches", title: "Nord, High contrast and Plain keys together", setup: set({ family: "nord", contrast: true, plain: true }) },
+    { id: "look-teal-contrast", group: "Themes (R50e): the switches", title: "Teal, High contrast (the teal lightened until black reads at 7:1)", setup: set({ family: "teal", contrast: true }) },
+    { id: "look-teal-plain", group: "Themes (R50e): the switches", title: "Teal, Plain keys", setup: set({ family: "teal", plain: true }) },
+    { id: "look-teal-both", group: "Themes (R50e): the switches", title: "Teal, High contrast and Plain keys together", setup: set({ family: "teal", contrast: true, plain: true }) },
   ];
 }
 

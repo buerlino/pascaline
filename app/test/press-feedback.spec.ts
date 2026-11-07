@@ -5,7 +5,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { open, tap } from "./helpers.ts";
 
-const FAMILIES = ["n62", "graphite", "solarized", "gruvbox", "nord"] as const;
+const FAMILIES = ["n62", "teal", "solarized"] as const;
 const MODES = [
   { keys: "colour", contrast: "normal" },
   { keys: "plain", contrast: "normal" },

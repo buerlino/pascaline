@@ -52,41 +52,41 @@ test.describe("the level", () => {
     await expect(row(page, "plain").getByTestId("row-hint")).toHaveText("No colour coding");
   });
 
-  test("by keys: ▶ ◀ step the theme in place, Enter lists the five, a digit picks and the sheet stays", async ({ page }) => {
+  test("by keys: ▶ ◀ step the theme in place, Enter lists the three, a digit picks and the sheet stays", async ({ page }) => {
     await tap(page, ["@mode", "d6", "d1"]);
     await sheetKey(page, ["right"]);
-    await expect(root(page)).toHaveAttribute("data-family", "graphite");
-    await expect(row(page, "theme").getByTestId("sheet-value")).toHaveText("Graphite");
+    await expect(root(page)).toHaveAttribute("data-family", "teal");
+    await expect(row(page, "theme").getByTestId("sheet-value")).toHaveText("Teal");
     await sheetKey(page, ["left", "left"]);
-    await expect(row(page, "theme").getByTestId("sheet-value")).toHaveText("Nord");
+    await expect(row(page, "theme").getByTestId("sheet-value")).toHaveText("Solarized");
     await tap(page, ["enter"]);
     await expect(title(page)).toHaveText("Settings › Appearance › Theme");
-    await expect(sheet(page).getByRole("menuitem")).toHaveCount(5);
-    await expect(sheet(page).locator('[data-active="true"]')).toHaveAttribute("data-id", "nord");
-    await tap(page, ["d3"]);
-    await expect(root(page)).toHaveAttribute("data-family", "solarized");
+    await expect(sheet(page).getByRole("menuitem")).toHaveCount(3);
+    await expect(sheet(page).locator('[data-active="true"]')).toHaveAttribute("data-id", "solarized");
+    await tap(page, ["d2"]);
+    await expect(root(page)).toHaveAttribute("data-family", "teal");
     await expect(title(page)).toHaveText("Settings › Appearance › Theme"); // a pick keeps the sheet open
     await tap(page, ["esc"]);
     await expect(title(page)).toHaveText("Mode › Settings › Appearance");
     await sheetKey(page, ["down", "right", "right"]); // Brightness: Light, Dark
     await expect(row(page, "brightness").getByTestId("sheet-value")).toHaveText("Dark");
     await tap(page, ["d3", "d4"]);
-    expect(await look(page)).toEqual({ family: "solarized", brightness: "dark", contrast: true, plain: true });
-    await expect.poll(() => attrs(page)).toEqual(["solarized", "dark", "high", "plain"]); // the lazy CSS is in first
+    expect(await look(page)).toEqual({ family: "teal", brightness: "dark", contrast: true, plain: true });
+    await expect.poll(() => attrs(page)).toEqual(["teal", "dark", "high", "plain"]); // the lazy CSS is in first
   });
 
-  test("by touch: a tap on Theme lists the five with their dots; a pick keeps the sheet open and the page follows", async ({ page }) => {
+  test("by touch: a tap on Theme lists the three with their dots; a pick keeps the sheet open and the page follows", async ({ page }) => {
     await tap(page, ["@mode", "d6"]);
     await row(page, "appearance").tap();
     await row(page, "theme").locator(".label").tap();
     await expect(title(page)).toHaveText("Settings › Appearance › Theme");
-    await expect(sheet(page).locator("[data-testid=row-dots]")).toHaveCount(5);
-    await row(page, "gruvbox").tap();
+    await expect(sheet(page).locator("[data-testid=row-dots]")).toHaveCount(3);
+    await row(page, "teal").tap();
     await expect(sheet(page)).toBeVisible();
-    await expect(root(page)).toHaveAttribute("data-family", "gruvbox");
-    await expect(row(page, "gruvbox")).toHaveAttribute("data-selected", "true");
+    await expect(root(page)).toHaveAttribute("data-family", "teal");
+    await expect(row(page, "teal")).toHaveAttribute("data-selected", "true");
     // the status line above the sheet already wears the theme
-    await expect.poll(() => page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--bg").trim())).toBe("#1d2021");
+    await expect.poll(() => page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--bg").trim())).toBe("#529997");
     await sheet(page).getByRole("button", { name: "Back" }).tap();
     await row(page, "brightness").getByTestId("step-up").tap();
     await expect(root(page)).toHaveAttribute("data-brightness", "light");
@@ -98,10 +98,10 @@ test.describe("the level", () => {
   });
 
   test("two theme picks in a row end in the last one", async ({ page }) => {
-    await tap(page, ["@mode", "d6", "d1", "enter", "d2", "d5"]);
-    await expect(root(page)).toHaveAttribute("data-family", "nord");
+    await tap(page, ["@mode", "d6", "d1", "enter", "d2", "d3"]);
+    await expect(root(page)).toHaveAttribute("data-family", "solarized");
     await page.waitForTimeout(400);
-    await expect(root(page)).toHaveAttribute("data-family", "nord");
+    await expect(root(page)).toHaveAttribute("data-family", "solarized");
   });
 });
 
@@ -127,12 +127,12 @@ test.describe("survives a reload", () => {
 
   test("each of the four values, set by keys", async ({ page }) => {
     await tap(page, ["@mode", "d6", "d1"]);
-    await sheetKey(page, ["left", "down", "left", "d3", "d4"]); // Nord, Dark, High contrast, Plain keys
-    await expect.poll(() => stored(page)).toEqual({ family: "nord", brightness: "dark", contrast: true, plain: true });
+    await sheetKey(page, ["left", "down", "left", "d3", "d4"]); // Solarized (left wraps), Dark, High contrast, Plain keys
+    await expect.poll(() => stored(page)).toEqual({ family: "solarized", brightness: "dark", contrast: true, plain: true });
     await reload(page);
-    expect(await attrs(page)).toEqual(["nord", "dark", "high", "plain"]);
+    expect(await attrs(page)).toEqual(["solarized", "dark", "high", "plain"]);
     await tap(page, ["@mode", "d6", "d1"]);
-    await expect(row(page, "theme").getByTestId("sheet-value")).toHaveText("Nord");
+    await expect(row(page, "theme").getByTestId("sheet-value")).toHaveText("Solarized");
   });
 
   test("switching the switches off again survives too", async ({ page }) => {
@@ -147,7 +147,7 @@ test.describe("survives a reload", () => {
 test.describe("the first frame", () => {
   test("shows the stored theme before main.ts has run (its file held)", async ({ page }) => {
     await tap(page, ["@mode", "d6", "d1"]);
-    await sheetKey(page, ["left", "d3", "d4"]); // Nord, High contrast, Plain keys
+    await sheetKey(page, ["left", "d3", "d4"]); // Solarized, High contrast, Plain keys
     await expect.poll(() => page.evaluate(() => localStorage.getItem("n62.look"))).toContain('"plain":true');
     await expect.poll(() => page.evaluate(() => localStorage.getItem("n62.look"))).toContain('"bg":"#');
     await page.waitForTimeout(300);
@@ -159,14 +159,14 @@ test.describe("the first frame", () => {
       await route.abort();
     });
     await page.goto("/?engine=fake&tips=off", { waitUntil: "commit" });
-    await page.waitForFunction(() => document.documentElement.getAttribute("data-family") === "nord");
+    await page.waitForFunction(() => document.documentElement.getAttribute("data-family") === "solarized");
     expect(await page.evaluate(() => window.n62)).toBeUndefined(); // the app has not started
     await expect.poll(() => page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--bg").trim())).toBe(mirrorBg);
-    expect(await attrs(page)).toEqual(["nord", "dark", "high", "plain"]);
+    expect(await attrs(page)).toEqual(["solarized", "dark", "high", "plain"]);
     expect(await page.evaluate(() => document.querySelector('meta[name="theme-color"]')?.getAttribute("content"))).toBe(
       await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--bg").trim()),
     );
-    expect(await page.evaluate(() => [...document.querySelectorAll("link[rel=stylesheet]")].map((l) => l.getAttribute("href") ?? "").filter((h) => /theme\/(nord|modes)\.css/.test(h)).length)).toBe(2);
+    expect(await page.evaluate(() => [...document.querySelectorAll("link[rel=stylesheet]")].map((l) => l.getAttribute("href") ?? "").filter((h) => /theme\/(solarized|modes)\.css/.test(h)).length)).toBe(2);
     await page.screenshot({ path: "test-results/appearance-first-frame.png" });
     release();
   });

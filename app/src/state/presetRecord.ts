@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // The presets' stored record (R88, docs/04 6.2 `presets`): its shape and its load check. A module without imports, so
 // the backup's check (state/backup.ts) runs the same rule as the model (state/presets.svelte.ts) without pulling the
-// start chunk's modules into its own (see the note in backup.ts).
+// start chunk's modules into its own (see the note in backup.ts). Its one import is theme/look.ts, which has none of its own.
+import { RETIRED_FAMILIES } from "../theme/look.ts";
 
 /** The stamped key the presets are stored under. */
 export const PRESETS_KEY = "presets";
@@ -43,11 +44,12 @@ const isId = (n: unknown): n is number => typeof n === "number" && Number.isInte
 /** The key a name is compared by: two names that differ only in case or outer spaces are the same name. */
 export const nameKey = (name: string): string => name.trim().toLocaleLowerCase();
 
-/** R138: a look (a settings `look`, a preset's look group) whose family is the house look's id before the name N62,
- *  `pascaline`, with the family `n62`; anything else as it is. The store starts empty under N62 and a restore writes
+/** R138, R150: a look (a settings `look`, a preset's look group) whose family is the house look's id before the name N62,
+ *  `pascaline`, or one of the families taken out (`graphite`, `gruvbox`, `nord`), with the family `n62` and the other three
+ *  values as they are; anything else as it is. The store starts empty under N62 and a restore writes
  *  what the backup's check gave, so a look is renamed where one comes from outside: a backup file (state/backup.ts) and
  *  a stored preset (readPresets). index.html's inline script needs no alias: an unknown family shows as `n62`. */
-export const renamedLook = (x: unknown): unknown => (isObject(x) && x["family"] === "pascaline" ? { ...x, family: "n62" } : x);
+export const renamedLook = (x: unknown): unknown => (isObject(x) && typeof x["family"] === "string" && ["pascaline", ...RETIRED_FAMILIES].includes(x["family"]) ? { ...x, family: "n62" } : x);
 
 /** The presets' value with each preset's look group through renamedLook (R138). A value of another shape is returned
  *  as it is, for the check that follows. */

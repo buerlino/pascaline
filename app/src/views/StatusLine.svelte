@@ -169,6 +169,7 @@
   }
   .place:active {
     background: var(--key-nav);
+    color: var(--key-text);
   }
   .tile {
     position: relative;
@@ -260,6 +261,7 @@
   }
   .menubtn:active {
     background: var(--key-nav);
+    color: var(--key-text);
   }
   .chips {
     display: flex;

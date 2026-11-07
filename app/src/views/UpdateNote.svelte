@@ -27,5 +27,6 @@
   }
   .update:active {
     background: var(--key-nav);
+    color: var(--key-shift);
   }
 </style>
