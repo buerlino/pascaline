@@ -5,8 +5,8 @@
   import { FlickTracker, PAD_KEYS, REPEAT_KEYS, Repeat, Stepper, type Flick, type PadDir } from "./gestures.ts";
   import { fitLegends } from "./fit.ts";
   import { keyNames, loadKeyNames } from "./keyNamesLoader.svelte.ts";
-  import { actionFor, gridPlace, keyboard, labelFor, type ActionBody, type Key, type Layer } from "./keyboard.ts";
-  import { isLetter, typesVariable } from "./variable.ts";
+  import { actionFor, gridPlace, keyboard, labelFor, type Key, type Layer } from "./keyboard.ts";
+  import { typesVariable } from "./variable.ts";
   import { touchKey, touchPresses } from "../state/pressCount.ts";
   import { sheetChunk } from "../views/sheetView.svelte.ts";
   import type { UserKeys } from "./userKeys.svelte.ts";
@@ -64,8 +64,8 @@
   // R142: a legend is italic, in every mode, exactly when its action types one letter (a variable, ISO 80000-2); the
   // face is the active layer's action, a legend its own layer's (variable.ts)
   const faceVar = (k: Key): boolean => typesVariable(actionFor(k, shift, alpha, false, cas));
-  const shiftVar = (k: Key): boolean => hint(k) !== "" && typesVariable(k.actions.shift);
-  const alphaVar = (k: Key): boolean => alphaHint(k) !== "" && typesVariable(k.actions.alpha);
+  const shiftVar = (k: Key): boolean => typesVariable(k.actions.shift);
+  const alphaVar = (k: Key): boolean => typesVariable(k.actions.alpha);
   /** Rows with a letter on some key reserve the letter line on every key, so the faces of a row stay level. The upper
    *  cluster has no letters, and no line for them (vertical space, docs/03 rule 9). */
   const letterRows = new Set(keyboard.keys.filter((k) => k.label.alpha).map((k) => k.row));
@@ -97,10 +97,7 @@
     if (!padEl) return;
     const pad = padEl;
     fitLegends(pad);
-    // R142: the italic font may arrive after the first fit; its letters have other widths, so fit again when it has
-    const refit = (): void => fitLegends(pad);
-    document.fonts?.addEventListener("loadingdone", refit);
-    if (typeof ResizeObserver === "undefined") return () => document.fonts?.removeEventListener("loadingdone", refit);
+    if (typeof ResizeObserver === "undefined") return;
     let width = pad.clientWidth;
     const ro = new ResizeObserver(() => {
       if (pad.clientWidth !== width) {
@@ -109,10 +106,7 @@
       }
     });
     ro.observe(pad);
-    return () => {
-      ro.disconnect();
-      document.fonts?.removeEventListener("loadingdone", refit);
-    };
+    return () => ro.disconnect();
   });
 
   // ---- gestures (docs/decisions.md P7). One pointer handler on the whole pad, one gesture per finger.
@@ -162,12 +156,6 @@
     return legend(labelFor(k, sh, al, cas));
   }
 
-  /** The action a flick fires, for the bubble's italic flag; a sheet's filter letter is typed too (flickText). */
-  function flickAction(k: Key, dir: Flick): ActionBody | undefined {
-    if (sheet) return dir === "down" && sheet.filter ? { kind: "type", text: sheetChunk.keys?.letterOf(k) ?? "" } : undefined;
-    return actionFor(k, dir === "up", dir === "down", false, cas);
-  }
-
   function showBubble(id: number, g: Extract<Gesture, { kind: "key" }>): void {
     const st = g.flick.state;
     if (!g.key || !g.el || (st !== "up" && st !== "down")) {
@@ -176,8 +164,8 @@
     }
     const text = flickText(g.key, st);
     bubbleOwner = id;
-    // (the bubble's letter follows the same flag as the legend it shows: a one-letter text from a flick that types)
-    const variable = text !== "" && isLetter(text) && typesVariable(flickAction(g.key, st));
+    // (the bubble's letter follows the same flag as the legend it shows; ✕ is none)
+    const variable = text !== "" && typesVariable(actionFor(g.key, st === "up", st === "down", false, cas));
     bubble = { x: g.el.offsetLeft + g.el.offsetWidth / 2, y: g.el.offsetTop, dir: st, text: text || "✕", none: text === "", variable };
   }
   const gestures = new Map<number, Gesture>();
