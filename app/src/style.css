@@ -17,6 +17,10 @@
   /* type scale: entry 28, result 26, input 22, UI 15, legend 11, and the steps between */
   --fs-cell: 10px;
   --fs-legend: 11px;
+  /* the menu mark ▾ after a legend that opens a sheet (R143): its size, the gap before it, and the face's shift left to centre text and mark together */
+  --mark-size: 0.78em;
+  --mark-gap: 0.1em;
+  --mark-shift: -0.25em;
   --fs-caption: 12px;
   --fs-small: 13px;
   --fs-note: 14px;
