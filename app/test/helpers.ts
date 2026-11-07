@@ -75,6 +75,11 @@ export const entryValue = (page: Page): Promise<string> => page.evaluate(() => w
 // R137: the helpers most specs had a copy of.
 /** The newest result row's result (its `.result` part, not the row). */
 export const lastResult = (page: Page): Locator => page.locator('[data-testid="result"]').last().locator(".result");
+/** R147 (the G2's way): a first tap on a history row's result or input picks the row, a second inserts or recalls it. */
+export async function tapTwice(l: Locator, how: "tap" | "click" = "tap"): Promise<void> {
+  await l[how]();
+  await l[how]();
+}
 /** The open pick sheet (the `menu` test id). */
 export const sheet = (page: Page): Locator => page.getByTestId("menu");
 /** Put text on the system clipboard (a spec that does holds the clipboard lock: useClipboardLock). */

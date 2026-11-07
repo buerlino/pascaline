@@ -14,6 +14,8 @@ import { whyLine } from "./whyLine.ts";
 import type { ClipboardPort } from "./port.ts";
 import type { CopySource, TextOptions } from "./text.ts";
 import type { LibrarySource } from "../views/libraryJobs.ts";
+/** The picked row's buttons draw the row actions below, so they come in this chunk, not the start chunk (R147). */
+export { default as RowBar } from "../views/RowBar.svelte";
 
 /** A history item as the copy texts read it: the engine's facts (R3 keeps them in `facts`) on the item itself. */
 const source = (i: HistoryItem): CopySource => i;

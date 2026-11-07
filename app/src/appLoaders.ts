@@ -5,6 +5,7 @@
 // variables, not reactive); what the template draws from the clipboard code, App.svelte keeps through `onClip`.
 import type { AppShell } from "./apps/shell.svelte.ts";
 import type { ClipActions } from "./clipboard/actions.svelte.ts";
+import type RowBar from "./views/RowBar.svelte";
 import type { EntryController } from "./entry/controller.ts";
 import type { HistoryItem, Session } from "./state/session.svelte.ts";
 
@@ -20,8 +21,12 @@ export interface LoaderDeps {
   /** A tapped or picked result goes on the entry line (the clipboard code's `insert`). */
   readonly insertResult: (item: HistoryItem) => void;
   /** The clipboard code has arrived. */
-  readonly onClip: (clip: ClipActions) => void;
+  /** The clipboard code is in, with the picked row's buttons (R147: they load with it). */
+  readonly onClip: (clip: ClipActions, rowBar: RowBarView) => void;
 }
+
+/** The picked history row's buttons (views/RowBar.svelte). */
+export type RowBarView = typeof RowBar;
 
 export function createLoaders(d: LoaderDeps) {
   let clipLoading: Promise<ClipActions> | undefined;
@@ -49,7 +54,7 @@ export function createLoaders(d: LoaderDeps) {
         const c = new m.ClipActions(d.session, d.shell, d.entry, { insert: d.insertResult, recall: (item) => d.entry.set(d.session.input(item), item.chips) });
         d.shell.clip = c;
         d.shell.homeMenu = () => c.menu();
-        d.onClip(c);
+        d.onClip(c, m.RowBar);
         return c;
       })),
   };

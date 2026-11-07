@@ -122,6 +122,7 @@ function presetShots(): Shot[] {
         await settle(p);
       },
     },
+    { id: "picked-tap", title: "A row picked by a tap on its result (R147): its buttons over the empty entry line (R3), the history and the keys unmoved", setup: async (p) => { await someHistory(p); await p.locator('[data-testid="result"] .result').last().tap(); await p.getByTestId("row-actions").waitFor(); } },
   ];
   const sizes = [
     { tag: "small", group: "Small phone (360 × 740)", viewport: { width: 360, height: 740 } },
@@ -320,15 +321,7 @@ const shots: Shot[] = [
   // R98: the note row after Clear history and after ☰ Delete of a row (Undo or a tap on it brings the rows back)
   { id: "home-cleared", group: "Home", title: "Home after Clear history (R98): the note row", setup: async (p) => { await someHistory(p); await tap(p, ["shift", "esc"]); await p.getByTestId("undo-note").waitFor(); } },
   { id: "home-deleted", group: "Home", title: "Home after Delete of a row (R98): the note under the rows that stay", setup: async (p) => { await someHistory(p); await p.evaluate(() => window.n62.session.removeItem(window.n62.session.items[0]!)); await p.getByTestId("undo-note").waitFor(); } },
-  {
-    id: "home-picked",
-    group: "Home",
-    title: "Home, a history row picked",
-    setup: async (p) => {
-      await someHistory(p);
-      await tap(p, ["up", "up"]);
-    },
-  },
+  { id: "home-picked", group: "Home", title: "Home, a history row picked with ▲ (its buttons over the empty line, R3)", setup: async (p) => { await someHistory(p); await tap(p, ["up", "up"]); } },
   {
     id: "home-menu",
     group: "Home",

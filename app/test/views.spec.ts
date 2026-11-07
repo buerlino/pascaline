@@ -2,7 +2,7 @@
 // Desktop key-sequence tests against the real engine (docs/shifts/brief.md section 8, item 2).
 // Run with GIAC_OUT=<dir with giac.mjs> when the engine is not built in this checkout.
 import { expect, test, type Page } from "@playwright/test";
-import { entryValue, open, tap } from "./helpers.ts";
+import { entryValue, open, tap, tapTwice } from "./helpers.ts";
 
 test.beforeEach(async ({ page }) => {
   await open(page, "");
@@ -128,10 +128,10 @@ test("CAS (R67): Alpha e is a name and Shift + 2 the constant; a tapped result k
   await expect(res).toHaveAttribute("data-latex", "2+3\\mathrm{i}");
   await tap(page, ["alpha", "frac", "mul", "d2", "enter"]);
   await expect(res).toHaveAttribute("data-latex", "e\\cdot 2"); // not 5.43656365692: e is the name e_, in Giac's order
-  await page.locator('[data-testid="result"] .result').first().tap();
+  await tapTwice(page.locator('[data-testid="result"] .result').first());
   await tap(page, ["mul", "d2", "enter"]);
   await expect(res).toHaveAttribute("data-latex", "4+6\\mathrm{i}");
-  await page.locator('[data-testid="result"] .result').nth(1).tap();
+  await tapTwice(page.locator('[data-testid="result"] .result').nth(1));
   await tap(page, ["mul", "d2", "enter"]);
   await expect(res).toHaveAttribute("data-latex", "4e"); // (e_*2)*2 is 4*e_, still the name
 });

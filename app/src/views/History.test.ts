@@ -28,6 +28,7 @@ const draw = (n: number, engineState: "starting" | "ready" | "failed"): string[]
       mark: () => null,
       onrecall: () => {},
       oninsert: () => {},
+      onpick: () => {},
       oncancel: () => {},
     },
   });

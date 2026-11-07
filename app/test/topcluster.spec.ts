@@ -246,7 +246,7 @@ test("the place name's target is the line's full height and at least 96 px from 
   expect(hit).toBe("row");
   await page.touchscreen.tap(50, 38);
   expect(await view(page)).toBe("home");
-  await expect.poll(() => entryValue(page)).not.toBe(""); // the row's tap put it on the line
+  await expect(page.locator('article.item[data-selected="true"]')).toHaveCount(1); // the row's tap picked it (R147)
 });
 
 test("a status tap while an app's code loads runs at once (decisions.md R8)", async ({ page }) => {

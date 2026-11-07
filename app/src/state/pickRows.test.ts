@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 import { describe, expect, it } from "vitest";
-import { canPick, pickAfter, pickAtOrBefore } from "./pickRows.ts";
+import { canPick, pickAfter, pickAtOrBefore, rowTap } from "./pickRows.ts";
 
 const rows = (...s: string[]) => s.map((status) => ({ status })) as { status: "done" | "note" | "error" }[];
 
@@ -31,5 +31,19 @@ describe("pickRows (P4, G19): a note row is never picked", () => {
     expect(canPick(rows("note", "done"), 0)).toBe(false);
     expect(canPick(rows("note", "done"), 1)).toBe(true);
     expect(canPick(rows("done"), 5)).toBe(false);
+  });
+});
+
+describe("rowTap (R147): a first tap picks, a second tap on the picked row acts", () => {
+  it("a tap on a row with nothing picked picks it, not inserts", () => {
+    expect(rowTap(null, 2)).toBe("pick");
+  });
+  it("a tap on another row moves the pick there", () => {
+    expect(rowTap(1, 2)).toBe("pick");
+    expect(rowTap(2, 0)).toBe("pick");
+  });
+  it("a tap on the picked row inserts its result or recalls its entry", () => {
+    expect(rowTap(2, 2)).toBe("act");
+    expect(rowTap(0, 0)).toBe("act");
   });
 });

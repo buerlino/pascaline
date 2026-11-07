@@ -4,7 +4,7 @@
 // decimal comma the comma is never one (its button is off, a stored comma draws as the thin space).
 // Expected values are derived (1/3 to 12 digits; C(49,6) = 13983816; 123456789 and 1234567.5 as typed).
 import { expect, test, type Page } from "@playwright/test";
-import { entryValue, flick, lastResult, open, tap, useClipboardLock } from "./helpers.ts";
+import { entryValue, flick, lastResult, open, tap, tapTwice, useClipboardLock } from "./helpers.ts";
 
 test.use({ permissions: ["clipboard-read", "clipboard-write"] });
 test.describe.configure({ mode: "serial" });
@@ -21,7 +21,7 @@ test("a 12-digit result is drawn in groups; the text, the chip and ×3 stay plai
   await done(page, 1);
   await expect(lastResult(page)).toHaveAttribute("data-text", "0.333333333333");
   await expect(lastResult(page).locator(".math")).toHaveAttribute("data-latex", "0.333\\,333\\,333\\,333");
-  await lastResult(page).tap();
+  await tapTwice(lastResult(page));
   const v = await entryValue(page);
   expect(v).toContain("\\res");
   expect(v).not.toContain("\\,"); // the chip's shown text is the plain digits
@@ -72,7 +72,7 @@ test("Settings › Numbers › Digit groups › ’: 123456789 is drawn 123’45
   await expect(lastResult(page).locator(".math")).toHaveText("123’456’789");
   await tap(page, ["copy"]);
   await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toBe("123456789");
-  await lastResult(page).tap();
+  await tapTwice(lastResult(page));
   const v = await entryValue(page);
   expect(v).toContain("\\res");
   expect(v).not.toMatch(/'|’|\\,/); // the chip's shown text is the plain digits
