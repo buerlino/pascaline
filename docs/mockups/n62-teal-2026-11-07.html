@@ -1,0 +1,407 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>N62 in Teal</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=STIX+Two+Text:ital,wght@0,500;0,600;1,500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a proof sheet. Controls on top, the new N62 pair (the black-and-white Dark and Light beside them on request),
+   the ideas and the open questions below. Flat colour only: no gradient anywhere on this page or in the phones. */
+:root {
+  --paper: #e9f1f0;
+  --card: #f6fbfa;
+  --ink: #0b1f1e;
+  --sub: #48625f;
+  --rule: #c5d8d5;
+  --teal: #1d6a66;
+  --orange: #973f00;
+  --display: "STIX Two Text", "STIX Two Math", Cambria, Georgia, serif;
+  --body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", "Roboto Mono", "DejaVu Sans Mono", monospace;
+  --italic: "STIX Two Text", Cambria, "Times New Roman", "Noto Serif", serif;
+  --app: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #061312; --card: #0b1d1c; --ink: #e2eeec; --sub: #92b2ae; --rule: #1c3735; --teal: #6fd6cb; --orange: #ffab57;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #061312; --card: #0b1d1c; --ink: #e2eeec; --sub: #92b2ae; --rule: #1c3735; --teal: #6fd6cb; --orange: #ffab57;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--paper); color: var(--ink); font: 15px/1.55 var(--body);
+  padding-block: 32px 64px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 1480px; margin: 0 auto; display: grid; gap: 30px; }
+header { display: grid; gap: 8px; max-width: 70ch; }
+.eyebrow { font: 500 12px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--teal); }
+.brand { display: flex; align-items: center; gap: 14px; }
+.brand .tile { width: 52px; height: 52px; border-radius: 12px; --tp: 8px; }
+h1 { font: 600 40px/1.05 var(--display); margin: 0; letter-spacing: -0.01em; text-wrap: balance; }
+h1 em { font-style: italic; font-weight: 500; color: var(--teal); }
+h2 { font: 600 22px/1.2 var(--display); margin: 0; text-wrap: balance; }
+h3 { font: 600 17px/1.25 var(--display); margin: 0; text-wrap: balance; }
+p { margin: 0; }
+.lede { color: var(--sub); max-width: 64ch; }
+
+.controls { display: flex; flex-wrap: wrap; gap: 14px 28px; align-items: center; padding: 14px 16px; border: 1px solid var(--rule); border-radius: 12px; background: var(--card); }
+.seg { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; border: 0; margin: 0; padding: 0; }
+.seg legend { float: left; font: 500 11.5px/1 var(--mono); letter-spacing: .07em; text-transform: uppercase; color: var(--sub); margin-right: 4px; padding: 0; }
+.opts { display: inline-flex; flex-wrap: wrap; border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; }
+.opts input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.opts label { padding: 6px 11px; font-size: 13.5px; cursor: pointer; border-left: 1px solid var(--rule); white-space: nowrap; }
+.opts label:first-of-type { border-left: 0; }
+.opts input:checked + label { background: var(--teal); color: var(--paper); }
+.opts input:focus-visible + label { outline: 2px solid var(--orange); outline-offset: -2px; }
+.opts label small { font: 500 10.5px var(--mono); opacity: .8; margin-left: 4px; }
+.check { display: inline-flex; gap: 7px; align-items: center; cursor: pointer; font-size: 13.5px; }
+.check input { accent-color: var(--teal); width: 16px; height: 16px; margin: 0; }
+.check input:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
+
+.phones { display: flex; flex-wrap: wrap; gap: 28px; align-items: flex-start; }
+figure { margin: 0; display: grid; gap: 12px; width: 340px; max-width: 100%; }
+figcaption { display: grid; gap: 6px; }
+figcaption .nm { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+figcaption .tag { font: 500 10.5px/1 var(--mono); letter-spacing: .07em; text-transform: uppercase; padding: 3px 6px; border-radius: 4px; border: 1px solid var(--rule); color: var(--sub); }
+figcaption .tag.new { border-color: var(--teal); color: var(--teal); }
+figcaption .idea { color: var(--sub); font-size: 13.5px; line-height: 1.45; }
+.sw { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 14px; font: 12px/1.35 var(--mono); color: var(--sub); }
+.sw span { display: flex; gap: 6px; align-items: center; min-width: 0; }
+.sw i { flex: none; width: 12px; height: 12px; border-radius: 3px; box-shadow: inset 0 0 0 1px rgba(127,127,127,.45); }
+.sw b { font-weight: 500; color: var(--ink); }
+.sw .cr { margin-left: auto; font-variant-numeric: tabular-nums; }
+
+.ideas { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 22px 36px; }
+.ideas section { display: grid; gap: 7px; align-content: start; }
+.ideas .k { font: 500 11.5px/1 var(--mono); letter-spacing: .07em; text-transform: uppercase; color: var(--orange); }
+.ideas p { color: var(--ink); max-width: 60ch; }
+.ideas p + p { color: var(--sub); font-size: 14px; }
+.decide { display: grid; gap: 10px; max-width: 76ch; padding-top: 6px; border-top: 1px solid var(--rule); }
+.decide ol { margin: 0; padding-left: 20px; display: grid; gap: 7px; }
+.decide li::marker { font: 500 13px var(--mono); color: var(--teal); }
+.decide b { font-weight: 600; }
+
+/* ---------- the logo: a black mark on the logo teal, as on the app icon ---------- */
+svg.mark { display: block; width: 100%; height: 100%; fill: currentColor; }
+.tile { display: inline-grid; place-items: center; background: #529997; color: #000000; padding: var(--tp, 3px); flex: none; }
+.bare { display: inline-block; flex: none; }
+
+/* ---------- the phone: every colour from its palette class, all flat ---------- */
+/* New N62: every colour is the logo teal's hue (OKLCH h 193°) at another lightness, except Shift's orange and the error red */
+.p-new-d {
+  --bg:#092726; --panel:#0e2f2e; --line:#335b59; --num:#194241; --fn:#123736; --enter:#529997; --on-enter:#000000;
+  --text:#ebf6f6; --dead:#749392; --muted:#abccca; --shift:#ff9a33; --alpha:#6ae5e2; --on-shift:#000000; --on-alpha:#000000;
+  --approx:#6ae5e2; --chip:#123736; --error:#ff8a7a; --grip:#749392;
+  --ring:#529997; --edge:#000000; --wm: color-mix(in oklab, #000000 30%, var(--bg));
+}
+.p-new-l {
+  --bg:#cae6e5; --panel:#e0f3f2; --line:#88adab; --num:#eefaf9; --fn:#d7efee; --enter:#529997; --on-enter:#000000;
+  --text:#062424; --dead:#587271; --muted:#314e4d; --shift:#a03f00; --alpha:#005b5a; --on-shift:#ffffff; --on-alpha:#ffffff;
+  --approx:#005b5a; --chip:#d7efee; --error:#a8231b; --grip:#314e4d;
+  --ring:#368281; --edge:rgba(0,0,0,.3); --wm: color-mix(in oklab, var(--text) 7%, var(--bg));
+}
+/* today's black-and-white family, unchanged, shown under the plain names Dark and Light */
+.p-old-d { --bg:#000000; --panel:#0c1011; --line:#2a3536; --num:#1b2122; --fn:#121718; --enter:#529997; --on-enter:#000000; --text:#eef2f2; --dead:#6f7d7e; --muted:#a7b4b4; --shift:#ff9a33; --alpha:#529997; --on-shift:#000000; --on-alpha:#000000; --approx:#529997; --chip:#163231; --error:#ff7b72; --grip:#a7b4b4; }
+.p-old-l { --bg:#f4f6f6; --panel:#e8eded; --line:#b9c6c6; --num:#ffffff; --fn:#e6ecec; --enter:#529997; --on-enter:#000000; --text:#0b1213; --dead:#687474; --muted:#44504f; --shift:#a14600; --alpha:#2e706e; --on-shift:#ffffff; --on-alpha:#ffffff; --approx:#2e706e; --chip:#d6e8e6; --error:#b3261e; --grip:#44504f; }
+.nums-same .new { --num: var(--fn); }
+
+.phone { background: var(--bg); color: var(--text); border-radius: 24px; padding: 10px 8px 12px; display: flex; flex-direction: column; height: 700px; box-shadow: 0 0 0 1px var(--rule); overflow: hidden; font-family: var(--app); }
+.status { display: flex; align-items: center; gap: 6px; height: 28px; padding: 0 4px; font-size: 13px; }
+.place { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; }
+.place .glyph { font-size: 14px; }
+.place .tile { width: 24px; height: 24px; border-radius: 6px; }
+.place .bare { width: 22px; height: 21px; color: var(--text); }
+.mid { flex: 1; }
+.slot { width: 16px; text-align: center; font-weight: 700; font-size: 14px; }
+.slot .ms { color: var(--shift); }
+.slot .ma { color: var(--alpha); }
+.chips { display: flex; gap: 4px; }
+.chips span { background: var(--chip); border-radius: 6px; padding: 1px 7px; font-size: 11.5px; color: var(--muted); }
+.burger { width: 28px; text-align: center; font-size: 16px; }
+.hist { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; gap: 4px; padding: 4px 4px 6px; overflow: hidden; }
+.hist.empty { justify-content: center; align-items: center; }
+.wm { width: 132px; height: 128px; color: var(--wm); }
+.row { display: grid; gap: 1px; padding: 5px 8px; border-radius: 8px; }
+.row .in { color: var(--muted); font-size: 13.5px; }
+.row .out { text-align: right; font-size: 19px; display: flex; justify-content: flex-end; gap: 8px; align-items: baseline; font-variant-numeric: tabular-nums; }
+.row .mk { color: var(--approx); font-size: 15px; }
+.msg { display: none; margin: 0 6px 6px; font-size: 13px; color: var(--error); }
+.st-error .msg { display: block; }
+
+/* the entry field: a solid outline in one colour per state; 1 px today, 2.5 px at rest and 3.5 px when it has news */
+.entry {
+  --rw: 1px; --rc: var(--line);
+  position: relative; min-height: 64px; margin: 0 2px 6px; border-radius: 12px; display: flex; align-items: center; padding: 0 12px; font-size: 21px;
+  background: var(--panel); border: var(--rw) solid var(--rc);
+}
+.new .entry { --rw: 2.5px; --rc: var(--ring); }
+.new.st-shift .entry { --rw: 3.5px; --rc: var(--shift); }
+.new.st-alpha .entry { --rw: 3.5px; --rc: var(--alpha); }
+.new.st-error .entry { --rw: 3.5px; --rc: var(--error); }
+.new.st-work .entry { --rw: 3.5px; }
+.entry .cur { display: inline-block; width: 2px; height: 22px; background: var(--alpha); margin-left: 2px; vertical-align: -4px; }
+.entry .e-err { display: none; }
+.st-error .entry .e-err { display: inline; }
+.st-error .entry .e-ok { display: none; }
+/* working: one short solid piece of the outline runs round it (a dash on the same path, no gradient) */
+.run { display: none; position: absolute; inset: -3.5px; width: calc(100% + 7px); height: calc(100% + 7px); pointer-events: none; overflow: visible; }
+.new.st-work .run { display: block; }
+.run rect { x: 1.75px; y: 1.75px; width: calc(100% - 3.5px); height: calc(100% - 3.5px); rx: 10.25px; ry: 10.25px; fill: none; stroke: var(--text); stroke-width: 3.5px; stroke-dasharray: 14 86; stroke-linecap: round; }
+@media (prefers-reduced-motion: no-preference) {
+  .run rect { animation: run 1.3s linear infinite; }
+}
+@keyframes run { to { stroke-dashoffset: -100; } }
+
+.handle { height: 18px; display: grid; place-items: center; }
+.handle i { width: 44px; height: 4px; border-radius: 2px; background: var(--grip); opacity: .7; }
+.kp { display: grid; gap: 5px; }
+.g6 { display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px 4px; }
+.g5 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px 4px; }
+.key { position: relative; border-radius: 9px; background: var(--fn); min-height: 45px; display: grid; place-items: center; font-size: 16px; line-height: 1; color: var(--text); }
+.cl .key { min-height: 35px; font-size: 13px; }
+.key.num { background: var(--num); font-size: 19px; }
+.key.user { background: transparent; box-shadow: inset 0 0 0 1px var(--line); color: var(--dead); }
+.edge-line .new .key:not(.user), .edge-line .new .pad { box-shadow: 0 2px 0 var(--edge); }
+.key .sl { position: absolute; top: 4px; left: 6px; font-size: 10.5px; color: var(--shift); }
+.key .al { position: absolute; bottom: 3px; left: 6px; font-size: 11px; color: var(--alpha); }
+.cl .key .sl { top: 2px; font-size: 9.5px; }
+.cl .key .main { padding-top: 8px; }
+.var { font-family: var(--italic); font-style: italic; }
+.key .al.var { font-size: 12.5px; }
+.key .main.var { font-size: 1.12em; }
+.key.dead .main { color: var(--dead); }
+.key .main.shf { color: var(--shift); }
+.key .main.alf { color: var(--alpha); }
+.key.shiftk .main { color: var(--shift); font-weight: 600; font-size: 14px; }
+.key.alphak .main { color: var(--alpha); font-weight: 600; font-size: 14px; }
+.st-shift .key.shiftk { background: var(--shift); }
+.st-shift .key.shiftk .main { color: var(--on-shift); }
+.st-alpha .key.alphak { background: var(--alpha); }
+.st-alpha .key.alphak .main { color: var(--on-alpha); }
+.key.enter { background: var(--enter); color: var(--on-enter); grid-column: span 2; font-size: 15px; font-weight: 600; }
+.key.enter .sl, .key.enter .main { color: var(--on-enter); }
+.key.enter .sl { opacity: .85; }
+.opens::after { content: "▾"; font-size: .78em; margin-left: 1px; opacity: .9; font-style: normal; }
+.padcell { grid-column: 3 / 5; grid-row: 1 / 4; display: grid; place-items: center; container-type: size; }
+.pad { width: min(100cqw, 100cqh); height: min(100cqw, 100cqh); border-radius: 50%; background: var(--fn); position: relative; font-size: 13px; color: var(--text); }
+.pad b { position: absolute; font-weight: 400; opacity: .85; }
+.pad .u { top: 9%; left: 50%; transform: translateX(-50%); }
+.pad .d { bottom: 9%; left: 50%; transform: translateX(-50%); }
+.pad .l { left: 11%; top: 50%; transform: translateY(-50%); }
+.pad .r { right: 11%; top: 50%; transform: translateY(-50%); }
+.hide-old .old-fig { display: none; }
+@media (max-width: 420px) { h1 { font-size: 32px; } }
+</style>
+
+<!-- the logo's mark from logo/monochrome/n62_monochrome.svg; its 108×108 canvas cropped to the mark (x 30.3–77.7, y 31–77) -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="n62-mark" viewBox="29.8 30.5 48.4 47"><path d="M49.66,51.815L40.512,39.993L40.166,39.993L40.166,66.139C40.166,68.445 40.327,70.186 40.65,71.362C40.973,72.537 41.596,73.333 42.518,73.748C43.44,74.163 44.754,74.37 46.461,74.37L46.461,76.446L30.275,76.446L30.275,74.37C32.119,74.37 33.503,74.174 34.425,73.782C35.347,73.391 35.97,72.595 36.293,71.396C36.615,70.197 36.777,68.445 36.777,66.139L36.777,36.604C35.67,35.174 34.702,34.229 33.872,33.768C33.042,33.307 31.843,33.076 30.275,33.076L30.275,31.001L42.034,31.001L57.245,50.858L58.354,49.748C59.478,48.602 60.41,47.563 61.152,46.63C61.894,45.697 62.45,44.759 62.821,43.815C63.192,42.871 63.377,41.814 63.377,40.646C63.377,39.387 63.001,38.381 62.248,37.628C61.495,36.875 60.467,36.499 59.163,36.499C58.062,36.499 57.123,36.735 56.348,37.207C55.572,37.679 54.87,38.544 54.241,39.803L53.432,39.466C53.948,37.825 54.769,36.555 55.893,35.656C57.017,34.757 58.399,34.307 60.04,34.307C61.321,34.307 62.445,34.549 63.411,35.032C64.378,35.515 65.136,36.19 65.687,37.055C66.237,37.92 66.513,38.949 66.513,40.14C66.513,41.129 66.305,42.078 65.889,42.989C65.473,43.899 64.855,44.837 64.035,45.804C63.214,46.77 62.209,47.86 61.017,49.074L58.039,51.895L59.158,53.356L63.613,53.356C64.512,53.356 65.142,53.154 65.501,52.749C65.861,52.345 66.232,51.637 66.614,50.625L67.592,50.625L66.513,56.019L61.199,56.019L67.626,64.41L67.972,64.41L67.972,41.999C67.972,39.924 67.88,38.356 67.696,37.296C67.511,36.235 67.165,35.405 66.658,34.805C66.105,34.16 65.459,33.71 64.721,33.457C63.983,33.203 62.877,33.076 61.401,33.076L61.401,31.001L77.725,31.001L77.725,33.076C76.48,33.076 75.546,33.18 74.924,33.387C74.301,33.595 73.736,33.952 73.229,34.46C72.676,34.921 72.238,35.728 71.915,36.881C71.592,38.033 71.431,39.855 71.431,42.345L71.431,76.999L69.148,76.999L50.62,53.055C50.319,53.202 50.024,53.362 49.736,53.535C48.433,54.322 47.343,55.345 46.466,56.603C45.589,57.862 45.005,59.312 44.713,60.953L44.949,60.986C45.646,60.312 46.331,59.795 47.005,59.435C47.68,59.076 48.455,58.896 49.332,58.896C51.175,58.896 52.647,59.525 53.748,60.784C54.85,62.043 55.4,63.773 55.4,65.976C55.4,68.269 54.822,70.05 53.664,71.32C52.507,72.59 50.86,73.225 48.725,73.225C47.062,73.225 45.696,72.815 44.629,71.994C43.561,71.174 42.774,70.072 42.269,68.69C41.763,67.308 41.51,65.796 41.51,64.155C41.51,61.436 42.044,59.121 43.111,57.21C44.179,55.3 45.657,53.816 47.545,52.76C48.217,52.384 48.922,52.069 49.66,51.815ZM52.467,66.246C52.467,64.717 52.124,63.436 51.439,62.402C50.753,61.368 49.714,60.851 48.32,60.851C47.669,60.851 47.056,60.981 46.483,61.239C45.91,61.498 45.443,61.919 45.084,62.503C44.724,63.088 44.544,63.875 44.544,64.863C44.544,66.257 44.702,67.493 45.016,68.572C45.331,69.651 45.809,70.499 46.449,71.118C47.09,71.736 47.893,72.045 48.86,72.045C49.984,72.045 50.866,71.612 51.506,70.747C52.147,69.881 52.467,68.381 52.467,66.246ZM38.134,33.597L68.091,72.323L68.091,68.298L41.512,33.597L38.134,33.597Z"/></symbol></svg>
+
+<div class="wrap" id="root">
+  <header>
+    <span class="eyebrow">Theme · decided 7 November 2026</span>
+    <div class="brand"><span class="tile" aria-hidden="true"><svg class="mark"><use href="#n62-mark"/></svg></span><h1>N62, <em>in teal</em></h1></div>
+    <p class="lede">The teal family takes the name N62. Today's black-and-white family stays, named Black & White. Everything is flat colour now: no gradients, no glow, no depth. Use the switches to arm Shift or Alpha, empty the history, and try the keys with and without a shadow line.</p>
+  </header>
+
+  <div class="controls">
+    <fieldset class="seg">
+      <legend>Keypad</legend>
+      <span class="opts">
+        <input type="radio" name="st" id="st-rest" value="rest" checked><label for="st-rest">Resting</label>
+        <input type="radio" name="st" id="st-shift" value="shift"><label for="st-shift">Shift</label>
+        <input type="radio" name="st" id="st-alpha" value="alpha"><label for="st-alpha">Alpha</label>
+        <input type="radio" name="st" id="st-work" value="work"><label for="st-work">Working</label>
+        <input type="radio" name="st" id="st-error" value="error"><label for="st-error">Error</label>
+      </span>
+    </fieldset>
+    <fieldset class="seg">
+      <legend>Key edge</legend>
+      <span class="opts">
+        <input type="radio" name="edge" id="edge-line" value="line" checked><label for="edge-line">Black line</label>
+        <input type="radio" name="edge" id="edge-flat" value="flat"><label for="edge-flat">Flat</label>
+      </span>
+    </fieldset>
+    <fieldset class="seg">
+      <legend>Number keys</legend>
+      <span class="opts">
+        <input type="radio" name="nums" id="nums-light" value="light" checked><label for="nums-light">A step lighter</label>
+        <input type="radio" name="nums" id="nums-same" value="same"><label for="nums-same">Same as the rest</label>
+      </span>
+    </fieldset>
+    <fieldset class="seg">
+      <legend>Home logo</legend>
+      <span class="opts">
+        <input type="radio" name="logo" id="logo-tile" value="tile" checked><label for="logo-tile">Black on teal tile</label>
+        <input type="radio" name="logo" id="logo-bare" value="bare"><label for="logo-bare">Bare, text colour</label>
+      </span>
+    </fieldset>
+    <label class="check"><input type="checkbox" id="t-empty"> Empty history</label>
+    <label class="check"><input type="checkbox" id="t-old"> Show Black & White</label>
+  </div>
+
+  <div class="phones" id="phones"></div>
+
+  <div class="ideas">
+    <section>
+      <span class="k">The outline</span>
+      <h3>One solid colour that says what the keypad will do</h3>
+      <p>At rest the entry field has a 2.5 px outline in the logo teal (1 px today). Arm Shift and it turns orange, arm Alpha and it turns bright teal, and on an error it turns red; with news it grows to 3.5 px. While the engine works, one short white piece of the outline runs round it.</p>
+      <p>All of it is flat colour, with no glow and no blend. With reduced motion set, the running piece stands still.</p>
+    </section>
+    <section>
+      <span class="k">The keys</span>
+      <h3>Flat, with an optional black line under each key</h3>
+      <p>The keys are flat fields of colour. The black line is a solid 2 px line under each key, with no blur. In Dark it is pure black; in Light it is black at 30 %, so it reads as a shadow and not as a frame.</p>
+      <p>Without the line the Light keys nearly melt into the screen (1.1:1 key to screen), which suits the uniform look but makes the keys harder to aim at. Try both with the Key edge switch.</p>
+    </section>
+    <section>
+      <span class="k">One colour family</span>
+      <h3>Every colour is the logo teal at another lightness</h3>
+      <p>The logo teal #529997 has a hue of 193° in OKLCH. Every colour in both N62 themes uses that same hue, from the darkest screen to the brightest Alpha. Only Shift's orange and the error red stand outside it. #529997 itself is Enter in both themes, the Home tile, and the outline in Dark.</p>
+      <p>In Light the outline is the same teal one step deeper (#368281), because #529997 on the pale screen measures only 2.5:1, below the 3:1 the tests ask for lines. Light's Alpha moved one step deeper too (#005b5a), so that an armed Alpha still differs from the outline at rest.</p>
+    </section>
+    <section>
+      <span class="k">The mark</span>
+      <h3>The app icon on the Home key, and faintly on an empty screen</h3>
+      <p>The Home key shows the logo as on the app icon: the black mark on a small logo-teal tile. A black mark alone would vanish on Dark's screen; on the tile it reads in both themes. On an empty history the mark sits in the middle, a shade darker than the screen and only just visible. A tap on it shows "N for number, 6 first perfect number, 2 first prime number".</p>
+    </section>
+  </div>
+
+  <section class="decide">
+    <h2>Decided (owner, 7 November 2026)</h2>
+    <ol>
+      <li><b>Families:</b> N62 is this teal family. Today's black-and-white family stays as Black & White, Solarized stays, and R150's Teal goes.</li>
+      <li><b>The outline</b> as shown, with the running dash while the engine works.</li>
+      <li><b>Key shadows</b> become a switch in Appearance, on by default.</li>
+      <li><b>Number keys</b> are a step lighter than the other keys.</li>
+      <li><b>The logo:</b> the black mark on the teal tile on Home, and very faint on an empty history.</li>
+    </ol>
+    <p>Built by the packages R153 to R157.</p>
+  </section>
+</div>
+
+<script>
+const PALS = [
+  { cls: "p-new-d", name: "N62 Dark", isNew: true, idea: "Deep teal screen and keys; white key text, orange Shift, bright-teal Alpha, the logo teal on Enter and the outline.",
+    v: { bg: "#092726", fn: "#123736", num: "#194241", text: "#ebf6f6", shift: "#ff9a33", alpha: "#6ae5e2", enter: "#529997", onEnter: "#000000", ring: "#529997" } },
+  { cls: "p-new-l", name: "N62 Light", isNew: true, idea: "Pale teal screen and keys; dark teal ink, burnt-orange Shift, deep-teal Alpha, the logo teal on Enter.",
+    v: { bg: "#cae6e5", fn: "#d7efee", num: "#eefaf9", text: "#062424", shift: "#a03f00", alpha: "#005b5a", enter: "#529997", onEnter: "#000000", ring: "#368281" } },
+  { cls: "p-old-d", name: "Black & White Dark", isNew: false, idea: "Today's black-and-white family, unchanged, without the N62 name.",
+    v: { bg: "#000000", fn: "#121718", num: "#1b2122", text: "#eef2f2", shift: "#ff9a33", alpha: "#529997", enter: "#529997", onEnter: "#000000", ring: "#2a3536" } },
+  { cls: "p-old-l", name: "Black & White Light", isNew: false, idea: "Today's black-and-white family, unchanged, without the N62 name.",
+    v: { bg: "#f4f6f6", fn: "#e6ecec", num: "#ffffff", text: "#0b1213", shift: "#a14600", alpha: "#2e706e", enter: "#529997", onEnter: "#000000", ring: "#b9c6c6" } },
+];
+
+// WCAG contrast, measured from the palette itself so the numbers under each phone cannot drift from its colours
+const lin = (c) => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
+const lum = (h) => { const [r, g, b] = [1, 3, 5].map((i) => lin(parseInt(h.slice(i, i + 2), 16) / 255)); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
+const cr = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p); return ((x + 0.05) / (y + 0.05)).toFixed(1); };
+
+// a key: m main, s shift legend, a alpha legend; mv/sv italic; mo/so opens a sheet; c class
+const K = (m, o = {}) => ({ m, ...o });
+const isLetter = (x) => typeof x === "string" && /^\p{L}$/u.test(x);
+const CL = [
+  [K("＋", { c: "user" }), K("＋", { c: "user" }), null, null, K("Help", { s: "Settings", so: 1 }), K("Esc", { s: "Clear" })],
+  [K("＋", { c: "user" }), K("＋", { c: "user" }), null, null, K("Undo", { s: "⇤" }), K("Redo", { s: "⇥" })],
+  [K("＋", { c: "user" }), K("＋", { c: "user" }), null, null, K("Copy", { s: "⇤□" }), K("Paste", { s: "□⇥" })],
+];
+const UP = [
+  [K("Vars", { a: "A", mo: 1 }), K("Math", { s: "Mem", so: 1, a: "B", mo: 1 }), K("Tmpl", { s: "Units", a: "C", mo: 1 }), K("x", { s: "y", sv: 1, mv: 1, a: "D" }), K("a b/c", { a: "E" }), K("⌫", { s: "Del" })],
+  [K("xʸ", { s: "ⁿ√", a: "F" }), K("sin", { s: "sin⁻¹", a: "G" }), K("cos", { s: "cos⁻¹", a: "H" }), K("tan", { s: "tan⁻¹", a: "I" }), K("ln", { s: "eˣ", a: "J" }), K("log", { s: "10ˣ", a: "K" })],
+  [K("x²", { s: "√", a: "L" }), K("(−)", { s: "|x|", a: "M" }), K("( )", { a: "N" }), K(",", { s: "±", a: "O" }), K("Enter", { s: "≈", c: "enter" })],
+];
+const LO = [
+  [K("ᴇ", { s: "Store", a: "P" }), K("7", { a: "Q", c: "num" }), K("8", { s: "{ }", a: "R", c: "num" }), K("9", { s: "α∞", so: 1, a: "S", c: "num" }), K("÷", { s: "x⁻¹", a: "T" })],
+  [K("alpha", { c: "alphak" }), K("4", { a: "U", c: "num" }), K("5", { a: "V", c: "num" }), K("6", { s: "≤≠", so: 1, a: "W", c: "num" }), K("×", { s: "∡", a: "X" })],
+  [K("shift", { c: "shiftk" }), K("1", { a: "Y", c: "num" }), K("2", { s: "i", a: "Z", c: "num" }), K("3", { s: "π", a: "#", c: "num" }), K("−", { a: ":" })],
+  [K("Fmt", { s: "Mode", so: 1 }), K("0", { c: "num" }), K(".", { s: "=", c: "num" }), K("␣", { s: "_", c: "num" }), K("+", { s: "Ans", a: ";" })],
+];
+const esc = (t) => t.replace(/[&<>]/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[ch]);
+
+// the face shows what a tap gives in the current layer, as the app does: Shift puts the shift function on the face in
+// the Shift colour (a key with none is dimmed); Alpha puts the letter there (a key with none keeps its own face)
+function key(k, layer) {
+  const special = k.c === "user" || k.c === "shiftk" || k.c === "alphak";
+  let face = k.m, faceCls = k.mv ? " var" : "", faceOpens = k.mo, dead = false, showS = !!k.s, showA = !!k.a;
+  if (!special && layer === "shift") {
+    if (k.s) { face = k.s; faceCls = (k.sv ? " var" : "") + (k.c === "enter" ? "" : " shf"); faceOpens = k.so; showS = false; }
+    else dead = k.c !== "enter";
+  }
+  if (!special && layer === "alpha" && k.a) {
+    face = k.a; faceCls = (isLetter(k.a) ? " var" : "") + " alf"; faceOpens = 0; showA = false;
+  }
+  const cls = ["key", k.c || "", dead ? "dead" : ""].join(" ").trim();
+  const s = showS ? `<span class="sl${k.sv ? " var" : ""}${k.so ? " opens" : ""}">${esc(k.s)}</span>` : "";
+  const a = showA ? `<span class="al${isLetter(k.a) ? " var" : ""}">${esc(k.a)}</span>` : "";
+  const m = `<span class="main${faceCls}${faceOpens ? " opens" : ""}">${esc(face)}</span>`;
+  return `<div class="${cls}">${s}${m}${a}</div>`;
+}
+const grid = (rows, n, layer) => `<div class="g${n}">${rows.flat().filter(Boolean).map((k) => key(k, layer)).join("")}</div>`;
+function cluster(layer) {
+  const cells = [];
+  CL.forEach((r, i) => r.forEach((k, j) => { if (k) cells.push(key(k, layer).replace('<div class="', `<div style="grid-row:${i + 1};grid-column:${j + 1}" class="`)); }));
+  cells.push(`<div class="padcell"><div class="pad" role="img" aria-label="Round arrow pad"><b class="u">▲</b><b class="l">◀</b><b class="r">▶</b><b class="d">▼</b></div></div>`);
+  return `<div class="g6 cl">${cells.join("")}</div>`;
+}
+const ROWS = [
+  ["5!", "120", "="], ["ln(10)", "2.30258509299", "≈"], ["π × 0.5²", "0.785398163397", "≈"],
+  ["2.2ᴇ−9 × 4.7ᴇ3", "1.034ᴇ−5", "="], ["√2 × 3", "4.24264068712", "≈"], ["sin(30)", "1/2", "="],
+];
+const MARK = `<svg class="mark" aria-hidden="true"><use href="#n62-mark"/></svg>`;
+function phone(p, state, empty, numsSame, logo) {
+  const layer = state === "shift" ? "shift" : state === "alpha" ? "alpha" : "primary";
+  const rows = ROWS.map((r) => `<div class="row"><span class="in">${esc(r[0])}</span><span class="out"><span class="mk">${r[2]}</span>${esc(r[1])}</span></div>`).join("");
+  const hist = empty ? (p.isNew ? `<div class="wm" role="img" aria-label="N62 mark">${MARK}</div>` : "") : rows;
+  const place = !p.isNew ? `<span class="glyph">⌂</span><span>Home</span>`
+    : logo === "bare" ? `<span class="bare" aria-hidden="true">${MARK}</span><span>Home</span>`
+    : `<span class="tile" aria-hidden="true">${MARK}</span><span>Home</span>`;
+  const slot = state === "shift" ? `<b class="ms">⇧</b>` : state === "alpha" ? `<b class="ma">α</b>` : "";
+  const v = p.v;
+  const num = p.isNew && numsSame ? v.fn : v.num;
+  const sw = [
+    ["Screen", v.bg, ""], ["Keys", v.fn, ""],
+    ["Text", v.text, cr(v.text, num)], ["Shift", v.shift, cr(v.shift, num)],
+    ["Alpha", v.alpha, cr(v.alpha, num)], ["Enter", v.enter, cr(v.onEnter, v.enter)],
+    ["Outline", v.ring, cr(v.ring, v.bg)], ["Numbers", num, ""],
+  ];
+  return `<figure class="${p.isNew ? "new-fig" : "old-fig"}"><div class="phone ${p.cls} ${p.isNew ? "new" : "old"} st-${state}" role="img" aria-label="${p.name}, ${state}">
+    <div class="status"><span class="place">${place}<span>▾</span></span><span class="mid"></span><span class="slot">${slot}</span><span class="chips"><span>DEG</span><span>STD 12</span></span><span class="burger">☰</span></div>
+    <div class="hist${empty ? " empty" : ""}">${hist}</div>
+    <div class="msg">Division by zero</div>
+    <div class="entry"><span class="e-ok">12 ÷ 47<span class="cur"></span></span><span class="e-err">12 ÷ 0<span class="cur"></span></span><svg class="run" aria-hidden="true"><rect pathLength="100"/></svg></div>
+    <div class="handle"><i></i></div>
+    <div class="kp">${cluster(layer)}${grid(UP, 6, layer)}${grid(LO, 5, layer)}</div>
+  </div><figcaption>
+    <div class="nm"><h3>${p.name}</h3><span class="tag${p.isNew ? " new" : ""}">${p.isNew ? "new" : "today"}</span></div>
+    <p class="idea">${p.idea}</p>
+    <div class="sw">${sw.map(([n, c, r]) => `<span><i style="background:${c}"></i><b>${n}</b> ${c}${r ? `<span class="cr">${r}:1</span>` : ""}</span>`).join("")}</div>
+  </figcaption></figure>`;
+}
+
+const root = document.getElementById("root");
+const box = document.getElementById("phones");
+function render() {
+  const state = document.querySelector('input[name="st"]:checked').value;
+  const edge = document.querySelector('input[name="edge"]:checked').value;
+  const numsSame = document.querySelector('input[name="nums"]:checked').value === "same";
+  const empty = document.getElementById("t-empty").checked;
+  const logo = document.querySelector('input[name="logo"]:checked').value;
+  box.innerHTML = PALS.map((p) => phone(p, state, empty, numsSame, logo)).join("");
+  root.classList.toggle("edge-line", edge === "line");
+  root.classList.toggle("nums-same", numsSame);
+  root.classList.toggle("hide-old", !document.getElementById("t-old").checked);
+}
+document.querySelectorAll(".controls input").forEach((i) => i.addEventListener("change", render));
+render();
+</script>
+
+</html>
