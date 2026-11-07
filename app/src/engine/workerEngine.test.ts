@@ -1,13 +1,17 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // WorkerEngine with in-process stand-ins for the Web Worker.
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Request, Response } from "./protocol.ts";
 import { createRequestHandler } from "./host.ts";
 import { defaultHomeSettings } from "./homeEval.ts";
 import { giacAvailable, loadNodeGiac } from "./nodeGiac.ts";
 import { EngineCancelled, EngineCrashError, EngineMemoryError, defaultCasSettings } from "./types.ts";
-import { WorkerEngine, type WorkerLike } from "./workerEngine.ts";
-import type { DefEntry } from "./defs.ts";
+import { HOME_WATCHDOG_MS, WorkerEngine, type WorkerLike } from "./workerEngine.ts";
+import { enEngine } from "../i18n/enEngine.ts";
+import { replayOrder, type DefEntry } from "./defs.ts";
+
+/** The commands a fresh worker replays, in replay order (the log; no safe start in these tests, so definitions() is it). */
+const replayCommands = async (e: WorkerEngine): Promise<string[]> => replayOrder(await e.definitions()).flatMap((d) => d.cmds);
 
 /** Runs the real request handler (and a fresh Giac instance) in this thread. */
 class InProcessWorker implements WorkerLike {
@@ -131,7 +135,7 @@ describe.skipIf(!giacAvailable())("WorkerEngine (real Giac in process)", () => {
     expect((await engine.home("1/3", defaultHomeSettings)).display).toBe("0.333333333333");
     await engine.cas("f(x):=x^2+1", defaultCasSettings);
     await engine.home("a:=0.5", defaultHomeSettings);
-    expect(engine.replayCommands).toEqual(["f(x):=x^2+1", "a:=(1/2)"]);
+    expect(await replayCommands(engine)).toEqual(["f(x):=x^2+1", "a:=(1/2)"]);
     const t = await engine.cancel();
     expect(t.replayMs).toBeGreaterThanOrEqual(0);
     expect((await engine.cas("f(3)", defaultCasSettings)).text).toBe("10");
@@ -173,7 +177,7 @@ describe.skipIf(!giacAvailable())("WorkerEngine Solve and Cancel (real Giac in p
     const r = await engine.solve({ kind: "equations", equations: ["X^2=2"], unknowns: ["X"], guesses: ["1"] }, defaultHomeSettings);
     expect(r.roots[0]!.result.display).toBe("1.41421356237"); // oracle sqrt(2): tests/golden/solve.yaml sqrt2-pos
     expect((await engine.home("X", defaultHomeSettings)).display).toBe("7");
-    expect(engine.replayCommands).toEqual(["X:=(7)"]);
+    expect(await replayCommands(engine)).toEqual(["X:=(7)"]);
     // Cancel while a solve is queued or running: the restarted engine still has X = 7.
     const job = expect(
       engine.solve({ kind: "equations", equations: ["X^2+Y^2=4", "Y=exp(X)"], unknowns: ["X", "Y"], guesses: ["-1", "1"] }, defaultHomeSettings),
@@ -262,7 +266,7 @@ describe.skipIf(!giacAvailable())("WorkerEngine definitions across a relaunch (r
     await a.home("Q:=2", defaultHomeSettings);
     await a.home("P:=3", defaultHomeSettings);
     await a.home("purge(Q)", defaultHomeSettings);
-    expect(a.replayCommands).toEqual(["P:=(3)"]);
+    expect(await replayCommands(a)).toEqual(["P:=(3)"]);
     a.dispose();
     const b = launch(store);
     expect((await b.home("Q", defaultHomeSettings)).display).toBe("Q");
@@ -511,6 +515,130 @@ describe("WorkerEngine after a trap in the engine (G183, stand-in worker)", () =
     w.onmessage?.({ data: { id: w.calls.at(-1)!, type: "fatal", message: "Aborted(OOM)", dead: "memory" } });
     await expect(job).rejects.toBeInstanceOf(EngineMemoryError);
     expect(workers).toHaveLength(2);
+    engine.dispose();
+  });
+});
+
+// --- G185 (F62): Home's client watchdog -----------------------------------------------------------------------------
+
+describe("WorkerEngine Home watchdog (G185, F62; stand-in workers, fake timers)", () => {
+  afterEach(() => void vi.useRealTimers());
+
+  /** The engine started and ready on fake timers. */
+  async function started<W extends StuckWorker>(make: () => W, store?: MemoryStore): Promise<{ engine: WorkerEngine; workers: W[] }> {
+    const workers: W[] = [];
+    const engine = new WorkerEngine({ baseUrl: "/", createWorker: () => (workers.push(make()), workers.at(-1)!), ...(store ? { defs: store } : {}) });
+    const ready = engine.ready();
+    await vi.advanceTimersByTimeAsync(10);
+    await ready;
+    return { engine, workers };
+  }
+  /** A call's outcome, read without awaiting it. */
+  function watch<T>(p: Promise<T>): { value?: T; error?: unknown } {
+    const o: { value?: T; error?: unknown } = {};
+    p.then((v) => (o.value = v), (e: unknown) => (o.error = e));
+    return o;
+  }
+
+  it("a home that never answers resolves as Home's time-out at HOME_WATCHDOG_MS; a clean worker replays the log (a stored a:=5)", async () => {
+    vi.useFakeTimers();
+    expect(HOME_WATCHDOG_MS).toBe(4000); // Opus pass 86 (decisions.md "Time limits"; G185 step 1)
+    const store = new MemoryStore();
+    store.saved = [entry("a", "a:=5")];
+    const { engine, workers } = await started(() => new OkWorker(), store);
+    const out = watch(engine.home("sin(cosh(10!))", defaultHomeSettings));
+    await vi.advanceTimersByTimeAsync(HOME_WATCHDOG_MS - 1);
+    expect(out).toEqual({});
+    expect(workers).toHaveLength(1);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(out.error).toBeUndefined();
+    expect(out.value).toMatchObject({ ok: false, error: "timeout", display: enEngine["error.timeout"], full: enEngine["error.timeout"] });
+    expect(out.value!.facts).toEqual({ exact: false, reliableDigits: null });
+    expect(workers).toHaveLength(2);
+    expect(workers[0]!.terminated).toBe(true);
+    await vi.advanceTimersByTimeAsync(10);
+    await engine.ready();
+    expect(workers[1]!.inits).toEqual([[entry("a", "a:=5")]]);
+    expect((await engine.definitions()).map((e) => e.name)).toEqual(["a"]);
+    // the restarted engine has no limit left over: nothing restarts it again
+    await vi.advanceTimersByTimeAsync(3 * HOME_WATCHDOG_MS);
+    expect(workers).toHaveLength(2);
+    engine.dispose();
+  });
+
+  it("a unit-view job that never answers ends as the unit view's engine error at the same limit, and the engine restarts", async () => {
+    vi.useFakeTimers();
+    const { engine, workers } = await started(() => new StuckWorker());
+    const out = watch(engine.units({ expr: "2*(((1)*pasdimL^(1)))", inexact: false }, defaultHomeSettings));
+    await vi.advanceTimersByTimeAsync(HOME_WATCHDOG_MS);
+    expect(out).toEqual({ value: { error: "engine", detail: "timeout" } });
+    expect(workers).toHaveLength(2);
+    engine.dispose();
+  });
+
+  it("a home that answers in time is untouched, and no restart follows it", async () => {
+    vi.useFakeTimers();
+    const { engine, workers } = await started(() => new AnsweringWorker());
+    const out = watch(engine.home("1+1", defaultHomeSettings));
+    await vi.advanceTimersByTimeAsync(HOME_WATCHDOG_MS - 100);
+    const w = workers[0]!;
+    const result = { ok: true, display: "2", path: "exact", approximate: false, exactMs: 1, totalMs: 1, facts: { exact: true, reliableDigits: null }, full: "2" } as const;
+    w.onmessage?.({ data: { id: w.calls.at(-1)!, type: "home", result, defs: [] } });
+    await vi.advanceTimersByTimeAsync(0);
+    expect(out).toEqual({ value: result });
+    await vi.advanceTimersByTimeAsync(3 * HOME_WATCHDOG_MS);
+    expect(workers).toHaveLength(1);
+    expect(w.terminated).toBe(false);
+    engine.dispose();
+  });
+
+  it("a cas call is not limited (Cancel only)", async () => {
+    vi.useFakeTimers();
+    const { engine, workers } = await started(() => new StuckWorker());
+    const out = watch(engine.cas("int(exp(x^2),x)", defaultCasSettings));
+    await vi.advanceTimersByTimeAsync(60_000);
+    expect(out).toEqual({});
+    expect(workers).toHaveLength(1);
+    void engine.cancel();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(out.error).toBeInstanceOf(EngineCancelled);
+    engine.dispose();
+  });
+
+  it("a Cancel before the limit clears it: the home is cancelled and the new worker is not stopped at the limit", async () => {
+    vi.useFakeTimers();
+    const { engine, workers } = await started(() => new StuckWorker());
+    const out = watch(engine.home("sin(cosh(10!))", defaultHomeSettings));
+    await vi.advanceTimersByTimeAsync(HOME_WATCHDOG_MS / 2);
+    void engine.cancel();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(out.error).toBeInstanceOf(EngineCancelled);
+    await vi.advanceTimersByTimeAsync(3 * HOME_WATCHDOG_MS);
+    expect(workers).toHaveLength(2);
+    engine.dispose();
+  });
+
+  it("the engine's start is not the call's time: a home sent before a slow ready is answered", async () => {
+    vi.useFakeTimers();
+    /** Ready only after twice the limit; answers home at once after that. */
+    class SlowStartWorker extends AnsweringWorker {
+      override postMessage(msg: Request): void {
+        if (msg.type !== "init") return super.postMessage(msg);
+        this.inits.push(msg.replay);
+        setTimeout(() => this.onmessage?.({ data: { id: msg.id, type: "ready", instantiateMs: 1, initMs: 1, replayMs: 0 } }), 2 * HOME_WATCHDOG_MS);
+      }
+    }
+    const workers: SlowStartWorker[] = [];
+    const engine = new WorkerEngine({ baseUrl: "/", createWorker: () => (workers.push(new SlowStartWorker()), workers.at(-1)!) });
+    const out = watch(engine.home("1+1", defaultHomeSettings));
+    await vi.advanceTimersByTimeAsync(2 * HOME_WATCHDOG_MS + 100);
+    expect(workers).toHaveLength(1);
+    expect(out).toEqual({});
+    const w = workers[0]!;
+    const result = { ok: true, display: "2", path: "exact", approximate: false, exactMs: 1, totalMs: 1, facts: { exact: true, reliableDigits: null }, full: "2" } as const;
+    w.onmessage?.({ data: { id: w.calls.at(-1)!, type: "home", result, defs: [] } });
+    await vi.advanceTimersByTimeAsync(0);
+    expect(out).toEqual({ value: result });
     engine.dispose();
   });
 });
