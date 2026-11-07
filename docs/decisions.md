@@ -9,10 +9,6 @@ The owner's other open items are in [backlog.md](backlog.md), "Needs the user". 
 
 **G164's sample sources** (`app/public/samples/materials.txt`): check its 16 sources by the freeze (11-12), and keep copper on its data sheet (G164's report).
 
-**R59: the Math key's Find and the user's functions.** An imported function is found in Vars' Find (R4b), not in the Math key's Find. Recommendation: list the user's names there too, as a later small package, so a library function is found where the built-ins are.
-
-**R140: the colour-vision floors in High contrast.** Recommendation: keep Shift and Alpha 0.10 apart and ⚠ 0.06 from Shift there (0.12 and 0.08 elsewhere): at 7:1 N62 Light's Alpha is #265c5a, and Shift reaches 0.12 from it only as the brown #5d2800 (Opus pass 85).
-
 ## Decided proposals
 
 ### Pipeline and process
@@ -20,13 +16,9 @@ The owner's other open items are in [backlog.md](backlog.md), "Needs the user". 
 - **The declutter (owner, 2026-11-05 evening): history lives in git.** Decided notes, old reports, merged packages' mockups and one-package probes are deleted, not archived. Rule: rules section 10. Full text: archive, "Shortened 2026-11-06 (Opus pass 85)". Would change if: a deleted file is needed back twice a month.
 - **Owner answers of 2026-11-05 (morning).** The weekly fuzz runs in 10-minute slices from Wed 11-11 (G167: `--part i/n` and a separate shrink, Opus pass 69); the red-first check can test the stock engine for a G125 package (A71); sofia's gate script calls `tools/devlock.sh` by its absolute path. Would change if: the fuzz count is cut to fit one slice.
 - **Owner answers of 2026-11-02, evening ([night review](research/night-review-2026-11-02.md) section 6, the full text).** The queue as proposed; red-first counts only added or tightened tests (A67). Would change if: a fix needs a test loosened.
-- **Owner answers of 2026-10-31 (night review 2026-10-30, section 6; evening).** Gated deploys (A52); A53's diff stage; R103 trimmed; R90 dropped; `tests/core/ONE-TIME.md`. Full text: archive.
+- **Owner answers of 2026-10-22 to 2026-10-31 and Opus passes 55–78, built:** R77, R78, A25, A33, A34, A36, G109 (a solve result in braces), G111, G112, G113, R4a's gate; Home's sequences as G119 shows them (F108), Find's ten categories, R90 dropped; R91's split start chunk, ron at night with milestone reviews, the weekly fuzz, `--effort high`; A52's gated deploys, A53, R103, `tests/core/ONE-TIME.md`; R69, R79, R80, G56, G75, G77, G82f1, G85–G90, G97, G99–G103, A32, S17, S23; the nine features approved and six dropped on 2026-10-18 ("Feature analysis"). Full text: [archive](archive/decisions-2026-10.md).
 - **G125 (Opus pass 5): a bug an earlier merge already fixed** keeps its tests as regression tests that fail on the stock build, and merges review-only. Rule: brief section 8a (A71). Would change if: a test passes on stock too.
-- **Owner answers of 2026-10-29.** R91's split start chunk; ron at night with three milestone reviews (brief section 0); a weekly fuzz; `--effort high` with the usage tripwire. Full text: archive.
-- **Owner answers of 2026-10-28 (after the day shift).** Home's sequences as G119 shows them (F108); R90 dropped 2026-10-31 (R24c brought the unit view); Find's ten categories stay. Full text: archive.
-- **Owner answers of 2026-10-22 to 2026-10-26 (except 2026-10-25), A33 and A34:** built; R77, R78, A25, A36, G109, G112, G113 and R4a's gate. Full text: [archive](archive/decisions-2026-10.md), "Shortened 2026-10-30 (16:00 review)".
 - **Owner answers of 2026-10-25, afternoon (verification check).** A wall-clock test that fails only under load is a timing case, not a bug (`isTiming`); the gate gets the pipeline's retry list (A39). Would change if: a timing case fails without load. Full text: archive.
-- **Owner answers of 2026-10-25 (after the tenth night).** A solve result shows in braces (G109); Find's census exclusions (G111). Full text: archive.
 - **P23 (decided 2026-10-21, ended 2026-10-27, the owner): the core freeze and its net.** The net stays: the core list on every merge and on the night's device; a red case is a bug to fix, not a gate; the list changes only with the owner. Rule: brief section 0, `tests/core/README.md`. Full text: archive.
 - **The docs budgets stay (the owner, 2026-10-20):** brief 32 kB (2026-11-05), backlog 20, decisions 40; when decisions.md has under 1 kB left, the Opus pass moves the full texts of built entries to the archive and keeps a short line.
 - **How research reaches the docs (decided 2026-10-20, the owner; H7 and the consolidation).** Rule: rules sections 9 and 10; brief 0c step 5 and section 8; KhiCAS only for a named need, after a per-file licence check (E5). Full text: archive. Would change if: the line baseline blocks a fix two nights running.
@@ -43,6 +35,7 @@ The owner's other open items are in [backlog.md](backlog.md), "Needs the user". 
 - **R4b's four defaults, as built (Opus pass 18):** Memory deletes a name without asking (Clear all asks once); a Find pick for a slot closes the sheets; a key's constant keeps its value and σ; Vars is dead without an entry line. Full text: archive.
 - **Settings in the Mode sheet, and presets (owner, 2026-10-27; built by R49, R85–R89).** Settings is a level of the pick sheet; a preset snapshots any user settings. Rule: docs/05 3.4. Full text: archive. Would change if: presets are switched under 5 times in 4 weeks (they go).
 - **R15c1 menus (the owner, 2026-10-20): a long menu scrolls** over the keypad (docs/05 3.1); the ⚙ in its title opens Settings (R145). Would change if: the scroll feels slow on the APK.
+- **R140's colour-vision floors (owner, 2026-11-07):** in High contrast Shift and Alpha stay 0.10 apart and ⚠ 0.06 from Shift (0.12 and 0.08 elsewhere): at 7:1 N62 Light's Alpha is #265c5a, and Shift reaches 0.12 from it only as the brown #5d2800. Would change if: a colour-vision test fails at these floors.
 - **M4-2 (decided 2026-10-20, the owner):** the task budgets (t02 9 presses, t04 12, t10 25, t05 4), t09's two deviations, ± on Shift + `,` (R71), the unit result as its mockup (R62). Full text: archive. Your hand timing stays the gate.
 - **S8 (decided 2026-10-20, the owner): before outside round 1,** every press is counted (R70) and Android's backup is off (A23; the phone-to-phone transfer no longer carries N62's data).
 - **S6 (decided 2026-10-20, the owner; built by A11, R38a, R38b): the backup** goes out by Android's "Save to" screen and comes in by a file picker; restore checks the whole file. Full text: archive. Would change if: the Save-to screen is missing on a supported WebView.
@@ -68,7 +61,6 @@ The owner's other open items are in [backlog.md](backlog.md), "Needs the user". 
 - **G141 (Opus pass 68): a literal past `MAX_EVAL_DIGITS` makes the value ⚠ unchecked,** a power of ten too (`(1-cos(10^-600))*10^1200+1` showed ≈ 1, right 1.5); G126's and G153's rows turn ⚠ until S20.
 - **G138 (Opus pass 69): a nightly known row names one tree, not a shape:** a shape would hide a new cause that shrinks to it (F175: ∛ of F151's leaf); G141 removes F151's families. Would change if: one cause fills two weekly reports.
 - **G133f1 (Opus pass 24):** Home's "Underflow" for an exact 0 it cannot prove (`re(asin(i/10))`) is a bug line, F139 (wrong reason, no wrong number), not a plan change.
-- **Opus passes 55–78 (R69, R79, R80, G56, G75, G77, G82f1, G85–G90, G97, G99–G103, A32, S17, S23):** built; their rules are in docs/04 and the code. Full text: [archive](archive/decisions-2026-10.md), "Shortened 2026-10-30 (16:00 review)".
 - **G78 (Opus pass 45; F50, F51):** `√(asinh(asin 3.7))` stays refused at Home's budget; a series or limit whose value is ±∞ keeps Giac's infinity; an infinity inside a taken `when` or `piecewise` branch is not looked for. Full text: archive. Would change if: the owner wants these refused or computed.
 - **G78f1, G68, G84, G70, G71, G67, G65 (Opus passes 46–49):** an underflow is refused with its reason; Solve confirms only the digits every solve agrees on; Area applies Home's refusals. Full text: archive.
 - **G58, G59 (Opus pass 45):** a Giac call deaf to its interrupt gets a `control_c()` patch at its cause (P19), `HOME_DEADLINE_MS` = 2 s until then; when the exact and numeric answers disagree Home shows ⚠ "the exact and numeric answers differ". Would change if: Parisse fixes the loops first.
@@ -116,9 +108,6 @@ The owner's other open items are in [backlog.md](backlog.md), "Needs the user". 
 - **The units menu (2026-10-13): the G2's flow, our data** ([spec/units-menu.yaml](../spec/units-menu.yaml)): Shift + Units, the tabs and the categories in the G2's order; the grids built from the Find index by dimension, SI 2022 prefixes, CODATA 2022 constants. Would change if: the owner misses a G2 unit in a grid.
 - **S4 (2026-10-18): a library file carries definitions only;** settings and key slots go only in the backup. Full text: archive, "Shortened 2026-11-06 (Opus pass 85)". Would change if: keyboard set-ups are shared (a `// key:` line).
 
-### Feature analysis 2026-10-18
-- **Nine features approved, six dropped (2026-10-18):** full text in the archive, "Feature analysis: nine features from a read-and-probe pass".
-
 ## Defaults
 
 The defaults that bind code and tests, one line each. A default changes when its "would change if" happens or the owner says so.
@@ -160,7 +149,7 @@ The defaults that bind code and tests, one line each. A default changes when its
 - **R52:** `SerializeError` carries the English text plus key and values; `parseError(key, vars)` in `app/src/i18n/enParser.ts`.
 - **Home number formats:** `digits` are significant digits; STD plain for 1E-4 ≤ |x| < 10^digits; rounding half away from zero (the G2 rounds ties half to even, item 8; one rule, no option). **G31:** Fixed turns to scientific with the same decimals when a nonzero value would show only zeros, with confirmed digits only (in each complex part too, G36).
 - **G5:** a list's mark: docs/04 2.4. **Chips and Ans** (R2): rule: docs/04 2.8; a chip has two arguments (key, shown); an operator on an empty line starts with Ans only when the view has a result.
-- **Time limits:** CAS 10 s soft budget (Cancel prominent), Giac's 600 s net; Solve and analysis 30 s; Cancel replays the definitions only (not Ans). Home and units (passes 86, 91; G185): a 4 s watchdog from engine-ready restarts the engine; a Σ Giac sums term by term is stopped, no closed form (G184; Σ cos(K)/K to 2000, Tab One), CAS keeps it.
+- **Time limits:** CAS 10 s soft budget (Cancel prominent), Giac's 600 s net; Solve and analysis 30 s; Cancel replays the definitions only (not Ans). Home and units (passes 86, 91; G185; owner, 2026-11-07): a 4 s watchdog from engine-ready restarts the engine; a Σ Giac sums term by term is stopped, no closed form (G184; Σ cos(K)/K to 2000, Tab One), CAS keeps it.
 - **Solve and Plot:** a root is accepted at relative residual ≤ 1e-15 at 30 digits, else ⚠ (systems: < 1e-6 with ⚠); Plot searches only the visible window; the signed area by Romberg, `int`, then `gaussquad` with ⚠. Full text: archive.
 - **Function app:** window x ∈ [-10, 10] square; trace step 0.1 (1-2-5 rule); Num from 0 by 0.1, `NaN` at a pole; a refused Num value gets a notice (R99). Full text: archive.
 - **Parser (L6):** odd root templates are real roots; `{…}` is a list; the decimal comma is MathLive's `3{,}5` in either mode, and `{,}5` is 0.5 as `.5` is (R99); a bare comma, like `;`, separates arguments (R57); `p(x):=…` makes p a function (R56).
@@ -194,7 +183,7 @@ The defaults that bind code and tests, one line each. A default changes when its
 - **G33:** a definition's description is the comment line above it; G30's E-series tables are checked against round(10^(2+k/n)) with the one published exception (9.20 at E192).
 - **R59, R59f1 (Opus passes 72, 73):** the clash sheet (Replace and import / Cancel) stays (r10 3.1); WorkerEngine's call and keep are public (the library stays out of the start chunk); the owner counts the removal test's imports by hand. Would change if: an import count is wanted.
 - **The release path (A7, A8, A45, A48; 2026-10-15, owner 2026-10-29 and 2026-11-03):** v0.1.0, APK and website from one tag (A48); golden on the release engine before signing; the web names (`sw.js`, IndexedDB, manifest `id`) frozen. The test tag is `vX.Y.Z-test`; `master` follows phase-1 from 2026-11-03 (owner). Full text: archive.
-- **Releases:** the engine is built in the pinned container (P2 met: +2.3 % start), under `setarch -R` so `giac.wasm` is bit-reproducible. **Minimum WebView:** Chrome 95, with an inline "update" notice below it (minSdk 24).
+- **Releases:** the engine is built in the pinned container (P2 met: +2.3 % start), under `setarch -R` so `giac.wasm` is bit-reproducible. **Minimum WebView:** Chrome 111 (owner, 2026-11-07: `color-mix` needs 111, R141's container units 105), with an inline "update" notice below it (R160; minSdk 24).
 - **Tests:** the golden gate as docs/04 7.3; a pending task's budget is its planned press count, values `derived` or `oracle`; timing tests skip their assertion when the load average exceeds the cores; Vitest has no DOM, a DOM count is a Playwright test (R132, Opus pass 72). Full text: archive.
 - **A47b, a start does not wait for the queue (Opus pass 13):** a run's start copies node_modules under its own `nodemods` lock, not under `integ`. Full text: archive. Would change if: a copy is ever seen half-refreshed.
 - **A45, a criterion on a shared file (Opus pass 19):** its exact text under "For shared files" meets it; the audit does not FIX the file, the next Opus pass applies it. Full text: archive. Would change if: the owner lets workers edit `THIRD_PARTY.md`.

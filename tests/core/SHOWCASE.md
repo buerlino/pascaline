@@ -96,6 +96,6 @@ Found on the way (no backlog line yet unless named):
   (checked in Node: `\exponentialE^{\imaginaryI\pi}` draws without the option, raw with any `macros`); the entry
   line merges them (`entry/field.ts`). Every user with an e or i in a row sees it.
 - **A 30-digit Home result does not fit its row** on the Fairphone: grouped, it is about 39 characters and fades out
-  after about 27, so K's nines are off screen (the captions carry them).
+  after about 27, so K's nines are off screen (the captions carry them). F190, package R158: a plain number wraps at a digit group (owner, 2026-11-07).
 - iⁱ cannot be typed (backlog F184); F1 = p(x) − 2 does not work in the Function app (the trace shows `(0)->-2`,
   Root fails).
