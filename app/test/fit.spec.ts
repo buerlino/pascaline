@@ -228,7 +228,7 @@ test.describe("at 360 × 740", () => {
 });
 
 // R146: Shift + Help's legend ("Settings") fits its cluster key at the legend size at 360 and 412 px wide; R143: with the
-// menu mark ▾ after it (out of the flow, in the key's padding) it shrinks by at most a pixel (10 px at 360, the legend's 11 px
+// menu mark ▾ after it (out of the flow, inside the key's width: a cluster key has no padding to spare) it shrinks by at most a pixel (10 px at 360, the legend's 11 px
 // at 412) and the mark ends inside the key. With Shift on the face "Settings" is shrunk to fit (measured 11.5 px at 360,
 // 13.9 px at 412, against 15 px for its neighbours; the report's decision item), never cut.
 for (const width of [360, 412])
