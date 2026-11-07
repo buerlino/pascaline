@@ -419,8 +419,12 @@ export const THEME_DIR = join(here, "../src/theme");
 /** One block; the first (N62, no transform) ones in style.css carry their long comment elsewhere. */
 export function block(c: Combo): string {
   const { t } = theme(c);
-  return `${selector(c)} {\n${Object.entries(t).map(([k, v]) => `  --${k}: ${v};`).join("\n")}\n  color-scheme: ${c.brightness};\n}\n`;
+  return `${selector(c)} {\n${Object.entries(t).map(([k, v]) => `  --${k}: ${v};`).join("\n")}\n  color-scheme: ${colorScheme(t)};\n}\n`;
 }
+
+/** The UA colour scheme (scrollbars, native controls): light when the screen's text is dark, whatever the family's brightness
+ *  name says, so Teal Dark (black text on the teal screen) is `light` too (R150). */
+export const colorScheme = (t: Palette): "light" | "dark" => (lightInk(t) ? "dark" : "light");
 
 /** The content of src/theme/<family>.css. N62's untransformed blocks are in style.css, so they are not here. */
 export function familyFile(id: string): string {

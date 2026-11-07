@@ -4,7 +4,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { FAMILIES } from "./theme-families.ts";
 import { apart, CVD, type Mat } from "./cvd.ts";
-import { LAYER_APART, WARN_APART, checks, combos, cr, dimmedOk, expected, familyPath, outOfDate, selector, styleFile, theme } from "./theme-gen.ts";
+import { LAYER_APART, WARN_APART, block, checks, combos, cr, dimmedOk, expected, familyPath, outOfDate, selector, styleFile, theme } from "./theme-gen.ts";
 
 describe("generated theme files", () => {
   it("are up to date (run npm run themes)", () => {
@@ -65,12 +65,40 @@ describe("R140: Shift, Alpha and ⚠ stay apart", () => {
       const { t } = theme(c);
       for (const [name, m] of Object.entries(CVD)) expect(apart(t["shift"] as string, t["alpha"] as string, m), name).toBeGreaterThanOrEqual(LAYER_APART[c.high ? "high" : "normal"]);
     });
+  // The legends on the keys (key-shift, key-alpha) are moved by their own branch of withLayersApart (Teal splits them from the screen's).
+  for (const c of combos().filter((x) => !x.plain))
+    it(`${selector(c)}: the key legends key-shift and key-alpha at least ${LAYER_APART[c.high ? "high" : "normal"]} apart for protanopia, deuteranopia and tritanopia`, () => {
+      const { t } = theme(c);
+      for (const [name, m] of Object.entries(CVD)) expect(apart(t["key-shift"] as string, t["key-alpha"] as string, m), name).toBeGreaterThanOrEqual(LAYER_APART[c.high ? "high" : "normal"]);
+    });
   // moveUntil (theme-gen.ts) returns the colour unchanged when no step meets the floor; this test is what catches that.
   for (const c of combos().filter((x) => !x.plain))
     it(`${selector(c)}: ⚠ and Shift at least ${WARN_APART[c.high ? "high" : "normal"]} apart (normal vision)`, () => {
       const { t } = theme(c);
       expect(apart(t["warn"] as string, t["shift"] as string)).toBeGreaterThanOrEqual(WARN_APART[c.high ? "high" : "normal"]);
     });
+});
+
+describe("R150: color-scheme follows the screen's text", () => {
+  const read = (p: string): string => readFileSync(new URL(`../src/${p}`, import.meta.url), "utf8");
+  /** [brightness named in the selector, color-scheme] of each block. */
+  const schemes = (src: string): [string, string][] =>
+    [...src.matchAll(/:root\[[^{]*data-brightness="(dark|light)"[^{]*\{[^}]*?color-scheme: (light|dark);/g)].map((m) => [m[1] as string, m[2] as string]);
+  it("all 8 Teal blocks end in color-scheme: light", () => {
+    const s = schemes(read("theme/teal.css"));
+    expect(s).toHaveLength(8);
+    expect(s.map((x) => x[1])).toEqual(Array(8).fill("light"));
+  });
+  it("N62 and Solarized keep dark for Dark and light for Light", () => {
+    for (const p of ["theme/n62.css", "theme/solarized.css", "style.css"]) {
+      const s = schemes(read(p));
+      expect(s.length, p).toBeGreaterThan(0);
+      for (const [b, scheme] of s) expect(scheme, p).toBe(b);
+    }
+  });
+  it("block() writes the same for every combination", () => {
+    for (const c of combos()) expect(block(c)).toContain(`color-scheme: ${c.family === "teal" ? "light" : c.brightness};\n`);
+  });
 });
 
 describe("R140: Shift, Alpha, Fmt, ⌫ and the pad wear the other keys' colour", () => {

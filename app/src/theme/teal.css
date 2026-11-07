@@ -35,7 +35,7 @@
   --on-alpha: #ffffff;
   --on-key-shift: #000000;
   --on-key-alpha: #000000;
-  color-scheme: dark;
+  color-scheme: light;
 }
 :root[data-family="teal"][data-brightness="dark"][data-keys="plain"] {
   --bg: #529997;
@@ -72,7 +72,7 @@
   --on-alpha: #ffffff;
   --on-key-shift: #000000;
   --on-key-alpha: #000000;
-  color-scheme: dark;
+  color-scheme: light;
 }
 :root[data-family="teal"][data-brightness="dark"][data-contrast="high"] {
   --bg: #57a3a1;
@@ -109,7 +109,7 @@
   --on-alpha: #ffffff;
   --on-key-shift: #000000;
   --on-key-alpha: #000000;
-  color-scheme: dark;
+  color-scheme: light;
 }
 :root[data-family="teal"][data-brightness="dark"][data-contrast="high"][data-keys="plain"] {
   --bg: #57a3a1;
@@ -146,7 +146,7 @@
   --on-alpha: #ffffff;
   --on-key-shift: #000000;
   --on-key-alpha: #000000;
-  color-scheme: dark;
+  color-scheme: light;
 }
 :root[data-family="teal"][data-brightness="light"] {
   --bg: #529997;
