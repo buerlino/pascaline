@@ -85,6 +85,14 @@ on screen before every cut (the run's lines give each clip's margin).
      shows before the cut (the desktop check: `lead` in showcase.yaml; the recorder: its measured `advance.json`). The per-clip delays go in the run's report.
 2. **Final take** Sat 11-14 on the release candidate of v0.1.0 (release Sun 11-15), after the UI rows (R140–R150,
    R53) and the queue have merged; per chapter theme.
+   **Dress rehearsal** (2026-11-06, Fairphone 6, phase-1 141e2e11, no chapter themes yet): desktop check 20/20; all 20
+   clips recorded, results right, every press within 1 ms of its beat on the host; the retake with the first take's
+   `advance.json` (`~/.cache/n62/showcase/take-2026-11-06-b/`) is `input/screen.mp4`. Down → response median 86–138 ms;
+   stretch at most 61 % (s10); results −14 to +56 ms against beat 7 except U. The report's `OUTPUT SYNC: worst 4` is
+   mostly the read-back taking the wrong change (a pad key, a highlight going off, the "Working…" line); real offsets:
+   **U**'s result 10 frames after beat 7 (the unit view's ~170 ms after "Working…"; pressing earlier would precede
+   press 13; still 11 frames before the cut), E press 10 (Find → Constants) 4 frames early. Both locks matter:
+   `record.sh` and `stitch.py` take `host-cpu` themselves, and the phone (a PIN) must stay awake while they wait.
 3. **Blender** (owner): the screen plane, the camera keys, the song in the Video Editor from 17 s.
 
 Found on the way: iⁱ cannot be typed (backlog F184); clip 11 shows e^(iπ) instead.
